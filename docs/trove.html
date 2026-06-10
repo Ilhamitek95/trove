@@ -1,0 +1,995 @@
+<!-- Trove — multi-vendor marketplace · brand-aligned build -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>trove — a curated marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Dream Avenue substitute: Cormorant (delicate high-contrast serif) · Quicksand per brief -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* brand palette from the brief */
+    --rose:#D8C5BE;        /* primary dusty rose */
+    --coral:#E2836A;       /* primary coral */
+    --coral-deep:#C5664B;  /* legible coral for text */
+    --cream:#FBF6F1;       /* off-white */
+    --sage:#C3D1C7;        /* muted green */
+    --char:#262321;        /* near-black */
+    --taupe:#A98B7D;       /* secondary */
+    --peach:#F5C68A;
+    --blush:#F4CFE0;
+    --moss:#C7D9AC;
+    --sky:#B9D0E0;
+    /* derived */
+    --paper:#FFFDFB;
+    --rose-tint:#F1E7E1;
+    --line:rgba(38,35,33,.10);
+    --line-soft:rgba(38,35,33,.07);
+    --muted:#8C7B72;
+    --ink-80:rgba(38,35,33,.78);
+    --r:18px;
+    --shadow:0 18px 50px -28px rgba(38,35,33,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
+       -webkit-font-smoothing:antialiased;line-height:1.6;font-weight:500;letter-spacing:.005em}
+  ::selection{background:var(--coral);color:#fff}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+  .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
+  .serif{font-family:'Cormorant',Georgia,serif}
+  .eyebrow{font-family:'Quicksand';font-weight:600;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--coral-deep)}
+  h1,h2,h3,h4{font-family:'Cormorant',Georgia,serif;font-weight:500;letter-spacing:.002em}
+
+  /* ---------- HEADER ---------- */
+  .promo{background:var(--char);color:var(--cream)}
+  .promo .wrap{display:flex;justify-content:center;align-items:center;height:38px;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(251,246,241,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+  .nav{display:flex;align-items:center;gap:34px;height:84px}
+  .brand{font-family:'Cormorant';font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
+  .nav .links{display:flex;gap:30px;margin-left:14px;font-size:13.5px;font-weight:600;letter-spacing:.04em}
+  .nav .links a{padding:4px 0;color:var(--ink-80);position:relative}
+  .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
+  .nav .links a:hover{color:var(--char)}
+  .nav .links a:hover::after{width:100%}
+  .nav .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--muted);width:230px;transition:width .25s}
+  .search:focus-within{width:280px;border-color:var(--rose)}
+  .search input{border:none;outline:none;background:none;flex:1;font-family:inherit;font-size:13px;color:var(--char)}
+  .icon-btn{position:relative;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;color:var(--char);transition:background .15s}
+  .icon-btn:hover{background:var(--rose-tint)}
+  .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--coral);color:#fff;border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
+  .cart-count.hide{display:none}
+
+  .view{display:none}
+  .view.active{display:block;animation:fade .5s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- HERO ---------- */
+  .hero{padding:64px 0 30px}
+  .hero .wrap{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
+  .hero .lead .eyebrow{margin-bottom:24px;display:block}
+  .hero h1{font-size:clamp(52px,7vw,92px);line-height:.96;font-weight:400;letter-spacing:-.01em}
+  .hero h1 em{font-style:italic;color:var(--coral-deep)}
+  .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
+  .hero .ctas{display:flex;align-items:center;gap:24px}
+  .hero-img{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:5/6;background:var(--rose)}
+  .hero-img .grad{position:absolute;inset:0}
+  .hero-img img{position:absolute;inset:0;filter:saturate(.92)}
+  .hero-tag{position:absolute;left:22px;bottom:22px;background:rgba(251,246,241,.92);backdrop-filter:blur(6px);border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+  .hero-tag .d{width:34px;height:34px;border-radius:9px;background:var(--char)}
+  .hero-tag .l{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .hero-tag .n{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1}
+  .marquee{margin-top:42px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0}
+  .marquee .wrap{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
+  .marquee span{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:10px}
+  .marquee span b{font-family:'Cormorant';font-size:22px;font-weight:600;color:var(--char);letter-spacing:0;text-transform:none}
+
+  /* ---------- SECTION ---------- */
+  section.band{padding:88px 0}
+  .band-head{text-align:center;max-width:620px;margin:0 auto 48px}
+  .band-head .eyebrow{display:block;margin-bottom:16px}
+  .band-head h2{font-size:clamp(34px,4.5vw,52px);line-height:1.04;font-weight:400}
+  .band-head p{color:var(--ink-80);margin-top:14px;font-weight:400;font-size:16px}
+  .band-head.left{text-align:left;margin:0 0 40px;max-width:none;display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap}
+  .band-head.left>div{max-width:560px}
+  .link-more{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:3px;white-space:nowrap}
+  .link-more:hover{color:var(--coral-deep)}
+
+  /* categories */
+  .cat-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:18px}
+  .cat{cursor:pointer;text-align:center}
+  .cat .tile{aspect-ratio:1;border-radius:16px;overflow:hidden;position:relative;margin-bottom:14px;transition:transform .3s}
+  .cat .tile .grad{position:absolute;inset:0}
+  .cat .tile img{position:absolute;inset:0;filter:saturate(.85);mix-blend-mode:multiply;opacity:.9}
+  .cat:hover .tile{transform:translateY(-5px)}
+  .cat .name{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1.1}
+  .cat .ct{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:1px}
+
+  /* product grid + card */
+  .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+  .card{cursor:pointer;display:flex;flex-direction:column}
+  .card .ph{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:16px;background:var(--rose);margin-bottom:15px}
+  .card .ph .grad{position:absolute;inset:0}
+  .card .ph img{position:absolute;inset:0;filter:saturate(.9);transition:transform .6s}
+  .card:hover .ph img{transform:scale(1.04)}
+  .card .ph .sale{position:absolute;top:14px;left:14px;background:var(--coral);color:#fff;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
+  .card .add{position:absolute;left:14px;right:14px;bottom:14px;padding:12px;border-radius:11px;background:rgba(251,246,241,.94);backdrop-filter:blur(6px);color:var(--char);font-weight:600;font-size:13px;letter-spacing:.04em;opacity:0;transform:translateY(8px);transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .card:hover .add{opacity:1;transform:none}
+  .card .add:hover{background:var(--char);color:var(--cream)}
+  .card .add.added{background:var(--coral);color:#fff;opacity:1;transform:none}
+  .card .vrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe);font-weight:600;display:flex;align-items:center;gap:6px}
+  .card .vrow.house{color:var(--coral-deep)}
+  .card .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px}
+  .card h3{font-size:21px;font-weight:600;line-height:1.1;margin:6px 0 7px}
+  .card .foot{display:flex;justify-content:space-between;align-items:baseline}
+  .price{font-family:'Quicksand';font-weight:600;font-size:15px}
+  .price s{color:var(--muted);font-weight:400;font-size:13px;margin-right:7px}
+  .stars{font-size:11px;color:var(--coral);letter-spacing:1px}
+  .stars span{color:var(--muted);font-weight:600;font-size:11px;margin-left:3px}
+
+  /* house band */
+  .house{background:var(--rose);border-radius:28px;overflow:hidden;display:grid;grid-template-columns:1fr 1.05fr}
+  .house .copy{padding:72px 60px}
+  .house .eyebrow{color:var(--coral-deep)}
+  .house h2{font-size:clamp(38px,4vw,56px);line-height:1.0;font-weight:400;margin:18px 0 18px}
+  .house h2 em{font-style:italic}
+  .house p{color:var(--char);opacity:.82;max-width:40ch;font-weight:400;font-size:16px;margin-bottom:30px}
+  .house .pts{display:flex;gap:40px;margin-bottom:36px}
+  .house .pts div b{font-family:'Cormorant';font-size:30px;font-weight:600;display:block;line-height:1}
+  .house .pts div span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--char);opacity:.6;font-weight:600}
+  .house .gallery{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .house .gallery .g{position:relative;overflow:hidden;min-height:170px;cursor:pointer}
+  .house .gallery .g .grad{position:absolute;inset:0}
+  .house .gallery .g img{filter:saturate(.9)}
+
+  /* vendors */
+  .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+  .vcard{cursor:pointer;text-align:center}
+  .vcard .cover{aspect-ratio:16/10;border-radius:18px;overflow:hidden;position:relative;margin-bottom:-34px;transition:transform .3s}
+  .vcard:hover .cover{transform:translateY(-4px)}
+  .vcard .cover .grad{position:absolute;inset:0}
+  .vcard .cover img{position:absolute;inset:0;filter:saturate(.85);opacity:.92}
+  .vcard .av{width:68px;height:68px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:'Cormorant';font-size:30px;color:#fff;font-weight:600}
+  .vcard h3{font-size:24px;font-weight:600;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
+  .vcard .loc{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:2px}
+  .vcard p{font-size:14px;color:var(--ink-80);margin:14px auto 0;max-width:34ch;font-weight:400}
+  .vcard .vmeta{display:flex;justify-content:center;gap:22px;margin-top:16px;font-size:12px;color:var(--muted);font-weight:600}
+  .vcard .vmeta b{color:var(--char)}
+  .verified{color:var(--coral)}
+
+  /* sell */
+  .sell{background:var(--sage);border-radius:28px;padding:72px 60px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+  .sell .eyebrow{color:var(--char);opacity:.55}
+  .sell h2{font-size:clamp(38px,4vw,54px);line-height:1.0;font-weight:400;margin:16px 0 18px}
+  .sell h2 em{font-style:italic;color:var(--coral-deep)}
+  .sell p{color:var(--char);opacity:.82;max-width:42ch;margin-bottom:30px;font-weight:400;font-size:16px}
+  .steps{display:flex;flex-direction:column}
+  .step{display:flex;gap:22px;padding:20px 0;border-bottom:1px solid rgba(38,35,33,.13)}
+  .step:last-child{border:none}
+  .step .nm{font-family:'Cormorant';font-size:30px;font-weight:500;color:var(--cream);line-height:1;width:42px;flex-shrink:0}
+  .step h4{font-size:21px;font-weight:600;margin-bottom:2px}
+  .step p{font-size:14px;margin:0;opacity:.7}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
+  .btn-dark{background:var(--char);color:var(--cream)}
+  .btn-dark:hover{background:#3a352f;transform:translateY(-2px)}
+  .btn-coral{background:var(--coral);color:#fff}
+  .btn-coral:hover{background:var(--coral-deep);transform:translateY(-2px)}
+  .btn-ghost{border:1px solid var(--char);color:var(--char)}
+  .btn-ghost:hover{background:var(--char);color:var(--cream)}
+  .txt-link{font-size:13.5px;font-weight:600;letter-spacing:.05em;border-bottom:1px solid var(--coral);padding-bottom:3px}
+  .txt-link:hover{color:var(--coral-deep)}
+
+  /* ---------- BROWSE ---------- */
+  .browse-head{text-align:center;padding:56px 0 8px}
+  .crumb{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px}
+  .crumb a:hover{color:var(--coral-deep)}
+  .browse-head h1{font-size:clamp(38px,5vw,60px);font-weight:400}
+  .browse-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:48px 0 100px}
+  .filters h4{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 16px}
+  .fgroup{padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line)}
+  .fitem{display:flex;align-items:center;gap:11px;padding:7px 0;font-size:14px;color:var(--ink-80);cursor:pointer;font-weight:500}
+  .fitem:hover{color:var(--char)}
+  .fitem input{accent-color:var(--coral);width:15px;height:15px}
+  .fitem .c{margin-left:auto;font-size:11px;color:var(--muted)}
+  .sortbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
+  .sortbar .n{font-size:13px;color:var(--muted);font-weight:500}
+  .sortbar .n b{color:var(--char)}
+  .sortbar select{font-family:inherit;font-weight:600;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:11px 18px;background:var(--paper);color:var(--char);letter-spacing:.03em}
+
+  /* ---------- VENDOR ---------- */
+  .vhero{position:relative;height:300px;overflow:hidden}
+  .vhero .grad{position:absolute;inset:0}
+  .vhero img{position:absolute;inset:0;filter:saturate(.85);opacity:.85}
+  .vhero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,var(--cream))}
+  .vhead{position:relative;text-align:center;margin-top:-90px;z-index:5}
+  .vhead .lav{width:104px;height:104px;border-radius:50%;border:5px solid var(--cream);margin:0 auto 18px;display:grid;place-items:center;font-family:'Cormorant';font-size:46px;color:#fff;font-weight:600}
+  .vhead h1{font-size:clamp(38px,5vw,56px);font-weight:400;display:flex;align-items:center;justify-content:center;gap:12px}
+  .vhead .loc{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:6px}
+  .vhead p{font-size:16px;color:var(--ink-80);max-width:56ch;margin:18px auto 0;font-weight:400}
+  .vhead .vstats{display:flex;justify-content:center;gap:54px;margin-top:30px}
+  .vhead .vstats b{font-family:'Cormorant';font-size:32px;font-weight:600;display:block;line-height:1}
+  .vhead .vstats span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+  /* ---------- PDP ---------- */
+  .pdp{display:grid;grid-template-columns:1fr 1fr;gap:64px;padding:40px 0 90px}
+  .pdp .gallery{display:grid;grid-template-columns:70px 1fr;gap:16px}
+  .pdp .thumbs{display:flex;flex-direction:column;gap:14px}
+  .pdp .thumbs .t{aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid var(--line);position:relative;cursor:pointer}
+  .pdp .thumbs .t.on{border-color:var(--coral);border-width:2px}
+  .pdp .main-img{aspect-ratio:4/5;border-radius:22px;overflow:hidden;position:relative;background:var(--rose)}
+  .pdp .main-img .grad{position:absolute;inset:0}
+  .pdp .info{padding-top:14px}
+  .pdp .info .vlink{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe);font-weight:600;display:inline-flex;align-items:center;gap:8px}
+  .pdp .info .vlink:hover{color:var(--coral-deep)}
+  .pdp .info h1{font-size:clamp(40px,4.5vw,58px);line-height:1.0;font-weight:400;margin:14px 0 14px}
+  .pdp .stars{margin-bottom:18px}
+  .pdp .pricerow .price{font-size:26px;font-weight:600}
+  .pdp .desc{color:var(--ink-80);font-size:16px;line-height:1.75;margin:22px 0 28px;max-width:50ch;font-weight:400}
+  .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px}
+  .swatches{display:flex;gap:12px;margin-bottom:30px}
+  .sw{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+  .sw.on{border-color:var(--char)}
+  .pdp .buyrow{display:flex;gap:14px;margin-bottom:30px}
+  .pdp .buyrow .btn{flex:1;justify-content:center;padding:17px}
+  .ship{display:flex;gap:16px;padding:20px 22px;background:var(--rose-tint);border-radius:16px;font-size:14px;color:var(--ink-80);font-weight:400}
+  .ship .ico{width:24px;height:24px;flex-shrink:0;color:var(--char)}
+  .ship b{display:block;font-weight:700;color:var(--char);margin-bottom:2px;font-family:'Quicksand';font-size:13px;letter-spacing:.02em}
+  .sold-card{margin-top:18px;border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:.2s}
+  .sold-card:hover{border-color:var(--coral)}
+  .sold-card .sav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:22px;font-weight:600}
+  .sold-card .st{flex:1}
+  .sold-card .st .l{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .sold-card .st .nm{font-family:'Cormorant';font-size:22px;font-weight:600;display:flex;align-items:center;gap:7px;line-height:1.1;margin-top:2px}
+
+  /* ---------- CART ---------- */
+  .scrim{position:fixed;inset:0;background:rgba(38,35,33,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
+  .scrim.open{opacity:1;visibility:visible}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:92vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .4s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+  .drawer.open{transform:none}
+  .drawer .dhead{padding:26px 28px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .drawer .dhead h3{font-size:28px;font-weight:500}
+  .drawer .dbody{flex:1;overflow-y:auto;padding:6px 28px}
+  .vendor-group{padding:22px 0;border-bottom:1px solid var(--line)}
+  .vendor-group .vg-head{display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--char);font-weight:700;margin-bottom:18px}
+  .vendor-group .vg-head .gem{width:7px;height:7px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
+  .vendor-group .vg-head .ship-note{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500}
+  .citem{display:flex;gap:16px;margin-bottom:18px}
+  .citem .cimg{width:70px;height:86px;border-radius:11px;overflow:hidden;flex-shrink:0;position:relative;background:var(--rose)}
+  .citem .ci{flex:1}
+  .citem .ci .n{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1.15}
+  .citem .ci .v{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+  .citem .ci .qrow{display:flex;align-items:center;gap:12px;margin-top:10px}
+  .qbtn{width:28px;height:28px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;font-size:16px;background:var(--paper);font-weight:500}
+  .qbtn:hover{border-color:var(--char)}
+  .citem .ci .qv{font-size:13px;min-width:18px;text-align:center;font-weight:600}
+  .citem .ci .rm{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;font-weight:500}
+  .citem .ci .rm:hover{color:var(--coral-deep)}
+  .citem .cp{font-weight:600;font-size:14px;white-space:nowrap}
+  .empty{text-align:center;padding:90px 20px;color:var(--muted)}
+  .empty .big{font-family:'Cormorant';font-size:34px;color:var(--char);font-weight:500;margin-bottom:8px}
+  .dfoot{border-top:1px solid var(--line);padding:24px 28px;background:var(--paper)}
+  .drow{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-80);margin-bottom:10px;font-weight:500}
+  .drow.total{font-family:'Cormorant';font-size:26px;font-weight:600;color:var(--char);margin-top:8px}
+  .dfoot .note{font-size:12px;color:var(--muted);margin:12px 0 16px;font-weight:500;line-height:1.5}
+  .checkout{width:100%;padding:17px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.05em}
+  .checkout:hover{background:#3a352f}
+
+  /* ---------- FOOTER ---------- */
+  footer{background:var(--rose);color:var(--char);padding:80px 0 36px;margin-top:40px}
+  .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:54px;border-bottom:1px solid rgba(38,35,33,.13)}
+  footer .brand{font-size:44px;margin-bottom:18px;display:block}
+  footer p.blurb{font-size:14.5px;max-width:32ch;line-height:1.65;opacity:.78;font-weight:400}
+  footer h5{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:18px;opacity:.55}
+  footer ul{list-style:none}
+  footer li{margin-bottom:12px}
+  footer a{font-size:14px;font-weight:500;opacity:.82}
+  footer a:hover{opacity:1;color:var(--coral-deep)}
+  .fbot{padding-top:26px;display:flex;justify-content:space-between;font-size:12px;opacity:.6;flex-wrap:wrap;gap:12px;font-weight:500;letter-spacing:.04em}
+
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:15px 26px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:120;opacity:0;transition:.35s;box-shadow:var(--shadow);letter-spacing:.03em}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+
+  /* ---------- RESPONSIVE ---------- */
+  @media(max-width:960px){
+    .hero .wrap{grid-template-columns:1fr;gap:40px}
+    .hero-img{max-width:480px}
+    .house,.sell,.pdp{grid-template-columns:1fr}
+    .house .gallery{grid-template-columns:1fr 1fr 1fr 1fr}
+    .house .gallery .g{min-height:120px}
+    .pgrid{grid-template-columns:repeat(2,1fr)}
+    .cat-rail{grid-template-columns:repeat(3,1fr)}
+    .vgrid{grid-template-columns:1fr}
+    .browse-layout{grid-template-columns:1fr}
+    .filters{display:none}
+    .nav .links{display:none}
+    .card .add{opacity:1;transform:none;position:static;margin-top:12px;background:var(--char);color:var(--cream)}
+  }
+  @media(max-width:560px){
+    .wrap{padding:0 20px}
+    .pgrid,.cat-rail{grid-template-columns:1fr 1fr}
+    .search{display:none}
+    .house .copy,.sell{padding:46px 30px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
+
+  /* supplemental tokens */
+  :root{--cream-2:#F6EFE8;--green:#5E7E63;--green-bg:#E4ECE5}
+
+  /* account menu */
+  .acct-wrap{position:relative}
+  .acct-menu{position:absolute;right:0;top:52px;width:252px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:8px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:.18s;z-index:80}
+  .acct-menu.open{opacity:1;visibility:visible;transform:none}
+  .acct-menu .am-head{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--line-soft);margin-bottom:6px}
+  .acct-menu .am-av{width:40px;height:40px;border-radius:50%;background:var(--coral);color:#fff;display:grid;place-items:center;font-family:'Cormorant';font-size:20px;font-weight:600}
+  .acct-menu .am-n{font-family:'Cormorant';font-size:18px;font-weight:600;line-height:1}
+  .acct-menu .am-e{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+  .acct-menu a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--ink-80)}
+  .acct-menu a:hover{background:var(--cream-2);color:var(--char)}
+  .acct-menu a svg{width:16px;height:16px;stroke-width:1.7;opacity:.7}
+  .acct-menu .am-div{height:1px;background:var(--line-soft);margin:6px 4px}
+  .acct-menu a.sell{color:var(--coral-deep)}
+
+  /* checkout */
+  .co-wrap{max-width:1080px;margin:0 auto;padding:38px 32px 90px}
+  .co-back{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px;display:inline-flex;gap:8px;cursor:pointer}
+  .co-back:hover{color:var(--char)}
+  .co-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
+  .co-step{margin-bottom:30px}
+  .co-step .sh{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .co-step .sh .num{width:28px;height:28px;border-radius:50%;background:var(--char);color:var(--cream);display:grid;place-items:center;font-family:'Cormorant';font-size:16px;font-weight:600;flex-shrink:0}
+  .co-step .sh h3{font-size:24px;font-weight:600}
+  .co-field{margin-bottom:14px}
+  .co-field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .co-field input,.co-field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none}
+  .co-field input:focus{border-color:var(--char)}
+  .co-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .saved-opt{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.14s}
+  .saved-opt:hover{border-color:var(--rose)}
+  .saved-opt.on{border-color:var(--char);background:var(--rose-tint)}
+  .saved-opt .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;transition:.14s}
+  .saved-opt.on .radio{border-color:var(--char);background:var(--char);box-shadow:inset 0 0 0 3px var(--paper)}
+  .saved-opt b{font-weight:700}
+  .co-summary{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:26px;position:sticky;top:100px}
+  .co-summary h3{font-size:24px;font-weight:600;margin-bottom:18px}
+  .co-sum-group{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line-soft)}
+  .co-sum-shop{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+  .co-sum-shop .gem{width:6px;height:6px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
+  .co-li{display:flex;gap:12px;margin-bottom:11px}
+  .co-li .im{width:42px;height:50px;border-radius:8px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
+  .co-li .nm{font-family:'Cormorant';font-size:15px;font-weight:600;line-height:1.1}
+  .co-li .qt{font-size:11px;color:var(--muted);font-weight:600}
+  .co-li .pr{margin-left:auto;font-weight:600;font-size:13px;white-space:nowrap}
+  .co-tot{padding-top:6px}
+  .co-tot .row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-80);font-weight:500;margin-bottom:9px}
+  .co-tot .row.grand{font-family:'Cormorant';font-size:24px;font-weight:600;color:var(--char);margin-top:8px;padding-top:12px;border-top:1px solid var(--line-soft)}
+  .co-place{width:100%;padding:16px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;margin-top:18px;transition:.18s}
+  .co-place:hover{background:#3a352f}
+  .co-secure{font-size:11.5px;color:var(--muted);font-weight:500;text-align:center;margin-top:12px;display:flex;gap:6px;align-items:center;justify-content:center}
+  .stripe-note{display:flex;gap:11px;align-items:flex-start;background:var(--rose-tint);border-radius:12px;padding:13px 15px;font-size:12px;color:var(--ink-80);font-weight:500;line-height:1.5;margin-top:6px}
+  .stripe-note svg{flex-shrink:0;color:var(--coral-deep);margin-top:1px}
+
+  /* confirmation */
+  .confirm{max-width:620px;margin:0 auto;padding:70px 32px 90px;text-align:center}
+  .confirm .check{width:74px;height:74px;border-radius:50%;background:var(--green-bg);color:var(--green);display:grid;place-items:center;margin:0 auto 24px}
+  .confirm h1{font-size:clamp(40px,5vw,58px);font-weight:400;line-height:1.0}
+  .confirm h1 em{font-style:italic;color:var(--coral-deep)}
+  .confirm .lede{font-size:16px;color:var(--ink-80);font-weight:400;margin:14px 0 6px}
+  .confirm .ordid{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--char)}
+  .confirm .ship-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:30px 0}
+  .confirm .ship-card .sg{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+  .confirm .ship-card .sg:last-child{border:none}
+  .confirm .ship-card .sg .d{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-weight:600;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="promo"><div class="wrap">Complimentary trove-fulfilled shipping over AED 200</div></div>
+<header class="top">
+  <div class="wrap nav">
+    <a href="#" class="brand" onclick="go('home');return false">trove</a>
+    <nav class="links">
+      <a href="#" onclick="go('shop','all');return false">Shop all</a>
+      <a href="#" onclick="go('shop','Home');return false">Home</a>
+      <a href="#" onclick="go('shop','Apparel');return false">Apparel</a>
+      <a href="#" onclick="go('shop','House');return false">trove label</a>
+      <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Shops</a>
+    </nav>
+    <div class="right">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" placeholder="Search the trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
+      </div>
+      <a class="icon-btn" title="Saved" href="trove-account.html#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
+      <div class="acct-wrap">
+        <button class="icon-btn" title="Account" onclick="toggleAcct(event)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+        <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
+          <div class="am-head"><div class="am-av">L</div><div><div class="am-n">Layla Hassan</div><div class="am-e">layla@email.com</div></div></div>
+          <a href="trove-account.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
+          <a href="trove-account.html#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
+          <a href="trove-account.html#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
+          <a href="trove-account.html#following"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Following</a>
+          <div class="am-div"></div>
+          <a class="sell" href="trove-seller.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on trove ↗</a>
+          <a href="trove-login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign in / out</a>
+        </div>
+      </div>
+      <button class="icon-btn" title="Cart" onclick="openCart()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 2H2"/></svg>
+        <span class="cart-count hide" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HOME -->
+<div class="view active" id="view-home">
+  <section class="hero">
+    <div class="wrap">
+      <div class="lead">
+        <span class="eyebrow">A curated marketplace</span>
+        <h1>Beautiful things,<br><em>gathered</em> with care.</h1>
+        <p>Independent makers and our own house label, brought together in one quiet, considered place. Find something worth keeping.</p>
+        <div class="ctas">
+          <button class="btn btn-dark" onclick="go('shop','all')">Explore the trove</button>
+          <a class="txt-link" href="#" onclick="go('sell');return false">Open a shop →</a>
+        </div>
+      </div>
+      <div class="hero-img" id="heroImg"></div>
+    </div>
+  </section>
+
+  <div class="marquee"><div class="wrap">
+    <span><b>340</b> independent shops</span>
+    <span><b>12,000</b> considered pieces</span>
+    <span><b>4.9</b> average rating</span>
+    <span><b>2–4 day</b> carbon-neutral delivery</span>
+  </div></div>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="band-head"><span class="eyebrow">Browse by</span><h2>Where would you like to begin?</h2></div>
+      <div class="cat-rail" id="catRail"></div>
+    </div>
+  </section>
+
+  <section class="band" style="padding-top:0">
+    <div class="wrap">
+      <div class="band-head left">
+        <div><span class="eyebrow">The weekly edit</span><h2>This week's finds</h2></div>
+        <a class="link-more" href="#" onclick="go('shop','all');return false">Shop everything →</a>
+      </div>
+      <div class="pgrid" id="trendingGrid"></div>
+    </div>
+  </section>
+
+  <section class="band" style="padding-top:0">
+    <div class="wrap">
+      <div class="house">
+        <div class="copy">
+          <span class="eyebrow">The house label</span>
+          <h2>trove label.<br><em>Our own, made well.</em></h2>
+          <p>Designed in-house and produced with makers we trust — the standard we hold the whole marketplace to. Honest materials, fair prices.</p>
+          <div class="pts">
+            <div><b>1 yr</b><span>Guarantee</span></div>
+            <div><b>100%</b><span>Traceable</span></div>
+            <div><b>Neutral</b><span>Shipping</span></div>
+          </div>
+          <button class="btn btn-coral" onclick="go('shop','House')">Shop trove label</button>
+        </div>
+        <div class="gallery" id="houseGallery"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band" id="vendors">
+    <div class="wrap">
+      <div class="band-head"><span class="eyebrow">Meet the makers</span><h2>Shops we're loving</h2>
+        <p>Every shop is vetted by hand before it joins the trove.</p></div>
+      <div class="vgrid" id="vendorGrid"></div>
+    </div>
+  </section>
+
+  <section class="band" style="padding-top:0">
+    <div class="wrap">
+      <div class="sell">
+        <div>
+          <span class="eyebrow">Sell on trove</span>
+          <h2>Turn your craft into a <em>shopfront</em>.</h2>
+          <p>List in minutes and reach shoppers who came to discover. We handle payments, shipping and storefront design — you keep your brand and 92% of every sale.</p>
+          <button class="btn btn-dark" onclick="go('sell')">Start selling</button>
+        </div>
+        <div class="steps">
+          <div class="step"><span class="nm">i</span><div><h4>Open your shop</h4><p>Claim your handle and style your storefront in minutes.</p></div></div>
+          <div class="step"><span class="nm">ii</span><div><h4>List your pieces</h4><p>Bulk-upload or add one at a time, beautifully.</p></div></div>
+          <div class="step"><span class="nm">iii</span><div><h4>Get discovered</h4><p>Land in curated collections and the weekly edit.</p></div></div>
+          <div class="step"><span class="nm">iv</span><div><h4>Ship &amp; get paid</h4><p>Print trove labels or let us fulfil. Weekly payouts.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SHOP -->
+<div class="view" id="view-shop">
+  <div class="browse-head"><div class="wrap">
+    <div class="crumb"><a href="#" onclick="go('home');return false">trove</a> &nbsp;/&nbsp; <span id="crumbCat">All</span></div>
+    <h1 id="browseTitle">Shop all</h1>
+  </div></div>
+  <div class="wrap browse-layout">
+    <aside class="filters">
+      <div class="fgroup"><h4>Category</h4><div id="catFilters"></div></div>
+      <div class="fgroup"><h4>Seller</h4>
+        <label class="fitem"><input type="checkbox" onchange="setHouseFilter(this.checked)"> trove label only</label>
+      </div>
+      <div class="fgroup" style="border:none"><h4>Price</h4>
+        <label class="fitem"><input type="radio" name="pr" onchange="setPrice(0,9999)" checked> Any price</label>
+        <label class="fitem"><input type="radio" name="pr" onchange="setPrice(0,80)"> Under AED 80</label>
+        <label class="fitem"><input type="radio" name="pr" onchange="setPrice(80,200)"> AED 80–200</label>
+        <label class="fitem"><input type="radio" name="pr" onchange="setPrice(200,9999)"> AED 200+</label>
+      </div>
+    </aside>
+    <div>
+      <div class="sortbar">
+        <span class="n"><b id="resCount">0</b> pieces from <b id="shopCount">0</b> shops</span>
+        <select id="sortSel" onchange="renderShop()">
+          <option value="feat">Curated</option>
+          <option value="low">Price · low to high</option>
+          <option value="high">Price · high to low</option>
+          <option value="rating">Top rated</option>
+        </select>
+      </div>
+      <div class="pgrid" id="shopGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- VENDOR -->
+<div class="view" id="view-vendor">
+  <div class="vhero"><div class="grad" id="vheroGrad"></div></div>
+  <div class="wrap vhead">
+    <div class="lav" id="vLav"></div>
+    <h1 id="vName"></h1>
+    <div class="loc" id="vLoc"></div>
+    <p id="vBio"></p>
+    <div class="vstats">
+      <div><b id="vProds"></b><span>Pieces</span></div>
+      <div><b id="vRate"></b><span>Rating</span></div>
+      <div><b id="vSince"></b><span>On trove</span></div>
+    </div>
+  </div>
+  <div class="wrap" style="padding:56px 32px 100px">
+    <div class="band-head left"><div><span class="eyebrow">From this shop</span><h2 style="font-size:38px">The collection</h2></div></div>
+    <div class="pgrid" id="vendorProducts"></div>
+  </div>
+</div>
+
+<!-- PDP -->
+<div class="view" id="view-pdp">
+  <div class="wrap" style="padding-top:28px">
+    <div class="crumb"><a href="#" onclick="go('home');return false">trove</a> &nbsp;/&nbsp; <a href="#" onclick="go('shop','all');return false">Shop</a> &nbsp;/&nbsp; <span id="pdpCrumb"></span></div>
+  </div>
+  <div class="wrap">
+    <div class="pdp">
+      <div class="gallery">
+        <div class="thumbs" id="pdpThumbs"></div>
+        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt=""></div>
+      </div>
+      <div class="info">
+        <a class="vlink" id="pdpVendorLink" href="#"></a>
+        <h1 id="pdpName"></h1>
+        <div class="stars" id="pdpStars"></div>
+        <div class="pricerow"><span class="price" id="pdpPrice"></span></div>
+        <p class="desc" id="pdpDesc"></p>
+        <div class="lbl">Colour</div>
+        <div class="swatches" id="pdpSwatches"></div>
+        <div class="buyrow">
+          <button class="btn btn-dark" id="pdpAdd">Add to cart</button>
+          <button class="btn btn-ghost">Save</button>
+        </div>
+        <div class="ship">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>
+          <div><b>Trove-fulfilled · arrives in 2–4 days</b>Free returns within 30 days, carbon-neutral on every order.</div>
+        </div>
+        <div class="sold-card" id="pdpSoldCard">
+          <div class="sav" id="pdpSav"></div>
+          <div class="st"><div class="l">Sold &amp; shipped by</div><div class="nm" id="pdpSoldName"></div></div>
+          <span class="link-more">Visit shop →</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SELL -->
+<div class="view" id="view-sell">
+  <section class="band" style="padding-bottom:0">
+    <div class="wrap" style="text-align:center;max-width:760px">
+      <span class="eyebrow">Sell on trove</span>
+      <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0">Your shop, in the company of <em style="font-style:italic;color:var(--coral-deep)">good</em> shops.</h1>
+      <p style="font-size:17px;color:var(--ink-80);max-width:48ch;margin:24px auto 32px;font-weight:400">Join 340 independent makers reaching shoppers who came to discover something worth keeping. No listing fees — a flat 8% when you sell.</p>
+      <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-coral" onclick="location.href='trove-login.html'">Open your shop free</button>
+        <button class="btn btn-ghost" onclick="go('home')">← Back to shopping</button>
+      </div>
+    </div>
+  </section>
+  <section class="band">
+    <div class="wrap" style="max-width:780px;margin:0 auto">
+      <div class="sell" style="background:var(--rose)">
+        <div class="steps" style="grid-column:1/-1">
+          <div class="step"><span class="nm">i</span><div><h4>Open your shop</h4><p>Claim your handle and style your storefront in under ten minutes.</p></div></div>
+          <div class="step"><span class="nm">ii</span><div><h4>List your pieces</h4><p>Bulk-upload or add one at a time — we generate clean product pages.</p></div></div>
+          <div class="step"><span class="nm">iii</span><div><h4>Get discovered</h4><p>Land in curated collections, search and the weekly trove edit.</p></div></div>
+          <div class="step"><span class="nm">iv</span><div><h4>Ship &amp; get paid</h4><p>Print trove labels or let us fulfil. Payouts land weekly.</p></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- CHECKOUT -->
+<div class="view" id="view-checkout">
+  <div class="co-wrap">
+    <span class="co-back" onclick="openCart()">← Back to cart</span>
+    <h1 style="font-size:clamp(34px,4vw,48px);font-weight:400;margin-bottom:28px">Checkout</h1>
+    <div class="co-grid">
+      <div>
+        <div class="co-step">
+          <div class="sh"><span class="num">1</span><h3>Contact</h3></div>
+          <div class="co-field"><label>Email</label><input id="coEmail" value="layla@email.com"></div>
+        </div>
+        <div class="co-step">
+          <div class="sh"><span class="num">2</span><h3>Shipping address</h3></div>
+          <div id="coAddrSaved"></div>
+          <div id="coAddrForm"></div>
+        </div>
+        <div class="co-step">
+          <div class="sh"><span class="num">3</span><h3>Delivery</h3></div>
+          <div id="coDelivery"></div>
+        </div>
+        <div class="co-step">
+          <div class="sh"><span class="num">4</span><h3>Payment</h3></div>
+          <div id="coPaySaved"></div>
+          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Payments are processed by Stripe and split to each shop automatically. In this prototype no charge is made.</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="co-summary">
+          <h3>Order summary</h3>
+          <div id="coSummary"></div>
+          <div class="co-tot" id="coTotals"></div>
+          <button class="co-place" onclick="placeOrder()">Place order · <span id="coPlaceTot"></span></button>
+          <div class="co-secure"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Secured by Stripe</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRMATION -->
+<div class="view" id="view-confirm">
+  <div class="confirm">
+    <div class="check"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
+    <h1>Thank you, <em>Layla</em>.</h1>
+    <p class="lede">Your order is in. A receipt is on its way to your email.</p>
+    <div class="ordid" id="confOrdId"></div>
+    <div class="ship-card" id="confShip"></div>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-dark" href="trove-account.html#orders">Track your order</a>
+      <button class="btn btn-ghost" onclick="go('home')">Continue shopping</button>
+    </div>
+  </div>
+</div>
+
+<!-- CART -->
+<div class="scrim" id="scrim" onclick="closeCart()"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead"><h3>Your trove</h3>
+    <button class="icon-btn" onclick="closeCart()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+  </div>
+  <div class="dbody" id="cartBody"></div>
+  <div class="dfoot" id="cartFoot" style="display:none">
+    <div class="drow"><span>Subtotal</span><span id="cartSubtotal"></span></div>
+    <div class="drow"><span>Shipping</span><span id="cartShip">Calculated at checkout</span></div>
+    <div class="drow total"><span>Total</span><span id="cartTotal"></span></div>
+    <div class="note" id="cartVendorNote">Items ship from their individual shops.</div>
+    <button class="checkout" onclick="startCheckout()">Checkout</button>
+  </div>
+</aside>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <span class="brand serif">trove</span>
+        <p class="blurb">A curated marketplace of independent shops and our own house label. Find beautiful things. Keep them.</p>
+      </div>
+      <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li><a href="#" onclick="go('shop','House');return false">trove label</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li><li><a href="#">Gift cards</a></li></ul></div>
+      <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Trove fulfilment</a></li></ul></div>
+      <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
+    </div>
+    <div class="fbot"><span>© 2026 trove marketplace · Dubai, UAE</span><span>Privacy · Terms · Seller agreement</span></div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"><span id="toastMsg"></span></div>
+
+<script>
+/* ---------------- DATA ---------------- */
+const VENDORS = {
+  trove:  {name:'trove label', house:true, loc:'In-house · Dubai', color:'#262321', bio:'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.', rating:'4.9', prods:48, since:'2024'},
+  kiln:   {name:'Kiln & Clay', loc:'Lisbon, Portugal', color:'#A98B7D', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
+  loom:   {name:'Northbound Loom', loc:'Reykjavík, Iceland', color:'#B9D0E0', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
+  ember:  {name:'Ember Goods', loc:'Marrakech, Morocco', color:'#F5C68A', bio:'Leather and brass made the slow way, in a workshop in the medina.', rating:'5.0', prods:54, since:'2023'},
+  fern:   {name:'Fern Apothecary', loc:'Portland, USA', color:'#C7D9AC', bio:'Plant-based skincare and home scent, formulated in tiny batches.', rating:'4.9', prods:41, since:'2021'},
+  paper:  {name:'Folio Paper Co.', loc:'Kyoto, Japan', color:'#F4CFE0', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:'4.8', prods:73, since:'2022'},
+};
+const CATS = [
+  {name:'Home', color:'#C3D1C7', ct:'2,140'},
+  {name:'Apparel', color:'#B9D0E0', ct:'1,860'},
+  {name:'Ceramics', color:'#A98B7D', ct:'940'},
+  {name:'Beauty', color:'#F4CFE0', ct:'1,120'},
+  {name:'Stationery', color:'#F5C68A', ct:'780'},
+  {name:'Accessories', color:'#D8C5BE', ct:'1,540'},
+];
+const P = (id,name,vendor,price,was,cat,rating,reviews,desc,seed)=>({id,name,vendor,price,was,cat,rating,reviews,desc,seed});
+const PRODUCTS = [
+  P(1,'Reeded Stoneware Mug','kiln',64,null,'Ceramics','4.9',214,'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.','mug7'),
+  P(2,'The Everyday Tee','trove',95,null,'Apparel','4.8',512,'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.','tee4'),
+  P(3,'Lopapeysa Wool Sweater','loom',420,480,'Apparel','4.9',88,'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.','knit5'),
+  P(4,'Hammered Brass Tray','ember',140,null,'Home','5.0',156,'Hand-hammered brass catch-all for keys, cards and the small things that wander.','tray3'),
+  P(5,'Cedar & Smoke Candle','fern',88,null,'Home','4.9',340,'Coconut-soy wax, fifty-five hour burn. Smells like a cabin you don\'t want to leave.','candle8'),
+  P(6,'Linen-Bound Notebook','paper',72,null,'Stationery','4.8',267,'A5, 192 pages of cream paper that won\'t bleed through. Lay-flat binding.','note2'),
+  P(7,'Waxed Canvas Weekender','trove',285,null,'Accessories','4.9',193,'Waxed canvas and bridle leather, built to be handed down. Our house staple.','bag6'),
+  P(8,'Glazed Serving Bowl','kiln',128,null,'Ceramics','4.9',97,'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.','bowl9'),
+  P(9,'Merino Watch Cap','loom',110,null,'Apparel','4.8',142,'Ribbed merino beanie, double-folded. Itch-free and packs flat.','cap2'),
+  P(10,'Folded Leather Wallet','ember',195,null,'Accessories','5.0',221,'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.','wallet3'),
+  P(11,'Botanical Hand Balm','fern',54,null,'Beauty','4.9',408,'Shea and calendula for working hands. Sinks in fast, no greasy film.','balm5'),
+  P(12,'Glazed Ceramic Planter','trove',76,95,'Home','4.7',164,'House-label planter with drainage and matching saucer, in three sizes.','planter4'),
+  P(13,'Weighted Brass Clip','paper',38,null,'Stationery','4.8',119,'A weighted brass clip that keeps the page you\'re on, open.','clip1'),
+  P(14,'Hand-Knotted Wool Throw','loom',360,null,'Home','4.9',64,'Chunky undyed throw, fringed by hand. The one everyone fights over.','throw7'),
+  P(15,'Olive & Sea Salt Soap','fern',32,null,'Beauty','4.9',286,'Cold-process bar, cured six weeks. Gentle enough for face and hands.','soap3'),
+  P(16,'Combed Cotton Socks · 3','trove',58,null,'Apparel','4.8',377,'House-label combed-cotton socks, reinforced heel and toe. The ones you\'ll look for.','socks2'),
+];
+
+let state={view:'home',cat:'all',houseOnly:false,min:0,max:9999,q:''};
+let cart=[];
+const SAVED_ADDR=[
+  {label:'Home',name:'Layla Hassan',line:'Apt 1204, Marina Gate 2',city:'Dubai Marina, Dubai'},
+  {label:'Work',name:'Layla Hassan',line:'Level 14, Boulevard Plaza Tower 1',city:'Downtown Dubai, Dubai'},
+];
+const SAVED_CARDS=[
+  {brand:'Visa',color:'#1A1F71',last4:'4242',exp:'08/27'},
+  {brand:'MC',color:'#EB5C2E',last4:'8210',exp:'02/26'},
+];
+let coAddr=0, coCard=0, coNewAddr=false;
+
+/* helpers */
+const $=id=>document.getElementById(id);
+function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
+function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
+function img(seed){return `https://picsum.photos/seed/trv${seed}/640/780`;}
+function aed(n){return 'AED '+n.toLocaleString();}
+function vColor(v){return VENDORS[v].color;}
+function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
+
+/* product card */
+function productCard(p){
+  const V=VENDORS[p.vendor], house=V.house;
+  return `<article class="card" onclick="openPDP(${p.id})">
+    <div class="ph">
+      <div class="grad" style="${grad(vColor(p.vendor))}"></div>
+      <img src="${img(p.seed)}" alt="" loading="lazy" onerror="this.style.display='none'">
+      ${p.was?`<span class="sale">Sale</span>`:''}
+      <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
+    </div>
+    <div class="vrow ${house?'house':''}"><span class="gem"></span>${V.name}</div>
+    <h3>${p.name}</h3>
+    <div class="foot">
+      <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
+      <span class="stars">${stars(p.rating)}<span>${p.rating}</span></span>
+    </div>
+  </article>`;
+}
+
+/* HOME */
+function renderHome(){
+  const hp=PRODUCTS[6]; // weekender, house label, charcoal
+  $('heroImg').innerHTML=`<div class="grad" style="${grad(vColor(hp.vendor))}"></div>
+    <img src="${img(hp.seed)}" alt="" onerror="this.style.display='none'">
+    <div class="hero-tag"><div class="d" style="background:${vColor(hp.vendor)}"></div>
+      <div><div class="l">trove label</div><div class="n">${hp.name}</div></div></div>`;
+  $('heroImg').style.cursor='pointer';
+  $('heroImg').onclick=()=>openPDP(hp.id);
+
+  $('catRail').innerHTML=CATS.map(c=>`<div class="cat" onclick="go('shop','${c.name}')">
+    <div class="tile"><div class="grad" style="${grad(c.color)}"></div></div>
+    <div class="name">${c.name}</div><div class="ct">${c.ct}</div></div>`).join('');
+
+  $('trendingGrid').innerHTML=PRODUCTS.slice(0,8).map(productCard).join('');
+
+  const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
+  $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
+    <div class="grad" style="${grad('#262321')}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>`).join('');
+
+  const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
+  $('vendorGrid').innerHTML=vs.map(([k,v])=>`<article class="vcard" onclick="openVendor('${k}')">
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div></div>
+    <div class="av" style="background:${v.color}">${v.name[0]}</div>
+    <h3>${v.name}</h3>
+    <div class="loc">${v.loc}</div>
+    <p>${v.bio}</p>
+    <div class="vmeta"><span><b>${v.prods}</b> pieces</span><span><b>${v.rating}★</b></span><span>since <b>${v.since}</b></span></div>
+  </article>`).join('');
+}
+
+/* SHOP */
+function buildCatFilters(){
+  const cats=['all',...CATS.map(c=>c.name)];
+  $('catFilters').innerHTML=cats.map(c=>{
+    const ct=c==='all'?PRODUCTS.length:PRODUCTS.filter(p=>p.cat===c).length;
+    return `<label class="fitem"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat='${c}';renderShop()"> ${c==='all'?'All categories':c}<span class="c">${ct}</span></label>`;
+  }).join('');
+}
+function setHouseFilter(v){state.houseOnly=v;renderShop();}
+function setPrice(min,max){state.min=min;state.max=max;renderShop();}
+function filteredProducts(){
+  const q=state.q.toLowerCase();
+  let list=PRODUCTS.filter(p=>(state.cat==='all'||p.cat===state.cat)&&(!state.houseOnly||VENDORS[p.vendor].house)&&p.price>=state.min&&p.price<=state.max
+    &&(!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name).toLowerCase().includes(q)));
+  const s=$('sortSel').value;
+  if(s==='low')list.sort((a,b)=>a.price-b.price);
+  else if(s==='high')list.sort((a,b)=>b.price-a.price);
+  else if(s==='rating')list.sort((a,b)=>b.rating-a.rating);
+  return list;
+}
+function renderShop(){
+  const list=filteredProducts(), shops=new Set(list.map(p=>p.vendor));
+  $('resCount').textContent=list.length; $('shopCount').textContent=shops.size;
+  $('browseTitle').textContent=state.q?`“${state.q}”`:(state.cat==='all'?'Shop all':(state.cat==='House'?'trove label':state.cat));
+  $('crumbCat').textContent=state.q?'Search':(state.cat==='all'?'All':state.cat);
+  $('shopGrid').innerHTML=list.length?list.map(productCard).join(''):'<p style="color:var(--muted);padding:40px 0;font-weight:400">No pieces match these filters yet. Try widening your price range.</p>';
+}
+
+/* VENDOR */
+function openVendor(key){
+  const v=VENDORS[key];
+  $('vheroGrad').style=grad(v.color);
+  $('vLav').style.background=v.color; $('vLav').textContent=v.name[0];
+  $('vName').innerHTML=`${v.name}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
+  $('vLoc').textContent=v.loc; $('vBio').textContent=v.bio;
+  $('vProds').textContent=v.prods; $('vRate').textContent=v.rating+'★'; $('vSince').textContent=v.since;
+  const prods=PRODUCTS.filter(p=>p.vendor===key);
+  $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
+  showView('vendor'); window.scrollTo(0,0);
+}
+
+/* PDP */
+function openPDP(id){
+  const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
+  $('pdpCrumb').textContent=p.name;
+  $('pdpGrad').style=grad(V.color);
+  $('pdpImg').src=img(p.seed);
+  $('pdpThumbs').innerHTML=[p.seed,p.seed+'a',p.seed+'b'].map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain('${s}',this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(s)}" alt="" onerror="this.style.display='none'"></div>`).join('');
+  $('pdpVendorLink').innerHTML=`${V.name}`;
+  $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
+  $('pdpName').textContent=p.name;
+  $('pdpStars').innerHTML=`${stars(p.rating)} <span>${p.rating} · ${p.reviews} reviews</span>`;
+  $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
+  $('pdpDesc').textContent=p.desc;
+  const sw=['#262321','#A98B7D','#D8C5BE','#C3D1C7'];
+  $('pdpSwatches').innerHTML=sw.map((c,i)=>`<div class="sw ${i===0?'on':''}" style="background:${c}" onclick="document.querySelectorAll('.sw').forEach(e=>e.classList.remove('on'));this.classList.add('on')"></div>`).join('');
+  const addBtn=$('pdpAdd'); addBtn.textContent='Add to cart'; addBtn.className='btn btn-dark';
+  addBtn.onclick=()=>addToCart(p.id,addBtn);
+  $('pdpSav').style.background=V.color; $('pdpSav').textContent=V.name[0];
+  $('pdpSoldName').textContent=V.name;
+  $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
+  showView('pdp'); window.scrollTo(0,0);
+}
+function swapMain(seed,el){$('pdpImg').src=img(seed);document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+
+/* CART */
+function addToCart(id,btn){
+  const ex=cart.find(c=>c.pid===id);
+  if(ex)ex.qty++; else cart.push({pid:id,qty:1});
+  updateCartCount(); renderCart();
+  if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
+  const p=PRODUCTS.find(x=>x.id===id); toast(`${p.name} added to your trove`);
+}
+function changeQty(id,d){const c=cart.find(x=>x.pid===id);if(!c)return;c.qty+=d;if(c.qty<=0)cart=cart.filter(x=>x.pid!==id);updateCartCount();renderCart();}
+function removeItem(id){cart=cart.filter(x=>x.pid!==id);updateCartCount();renderCart();}
+function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);}
+function renderCart(){
+  const body=$('cartBody');
+  if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">Your trove is empty</div><p style="font-weight:400">Pieces you add will gather here, grouped by shop.</p></div>`;$('cartFoot').style.display='none';return;}
+  const groups={};
+  cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p});});
+  let html='';
+  Object.entries(groups).forEach(([v,items])=>{
+    const V=VENDORS[v];
+    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
+    items.forEach(({p,qty})=>{
+      html+=`<div class="citem">
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>
+        <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
+          <div class="qrow"><button class="qbtn" onclick="changeQty(${p.id},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${p.id},1)">+</button><span class="rm" onclick="removeItem(${p.id})">Remove</span></div>
+        </div>
+        <div class="cp">${aed(p.price*qty)}</div></div>`;
+    });
+    html+='</div>';
+  });
+  body.innerHTML=html;
+  const subtotal=cart.reduce((s,c)=>{const p=PRODUCTS.find(x=>x.id===c.pid);return s+p.price*c.qty;},0);
+  const shopCount=Object.keys(groups).length;
+  $('cartSubtotal').textContent=aed(subtotal); $('cartTotal').textContent=aed(subtotal);
+  $('cartVendorNote').textContent=shopCount>1?`Your order spans ${shopCount} shops — each ships separately, tracked together in one place.`:'Ships from one shop, tracked in one place.';
+  $('cartFoot').style.display='block';
+}
+function openCart(){renderCart();$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
+function closeCart(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
+
+/* SEARCH + ACCOUNT MENU */
+function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.min=0;state.max=9999;buildCatFilters();renderShop();showView('shop');window.scrollTo(0,0);}
+function toggleAcct(e){e.stopPropagation();$('acctMenu').classList.toggle('open');}
+document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.remove('open');});
+
+/* CHECKOUT */
+function cartGroups(){const g={};cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);(g[p.vendor]=g[p.vendor]||[]).push({...c,p});});return g;}
+function startCheckout(){if(!cart.length){toast('Your trove is empty');return;}closeCart();renderCheckout();showView('checkout');window.scrollTo(0,0);}
+function selAddr(i){coAddr=i;coNewAddr=false;renderCheckout();}
+function newAddr(){coNewAddr=true;coAddr=-1;renderCheckout();}
+function selCard(i){coCard=i;renderCheckout();}
+function renderCheckout(){
+  const groups=cartGroups();
+  // addresses
+  $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>`<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" onclick="selAddr(${i})"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span></div></div>`).join('')
+    +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
+  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input placeholder="Your name"></div><div class="co-field"><label>Address</label><input placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>City / Area</label><input></div><div class="co-field"><label>Country</label><input value="United Arab Emirates"></div></div></div>`:'';
+  // delivery grouped by shop
+  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('');
+  // payment
+  $('coPaySaved').innerHTML=SAVED_CARDS.map((c,i)=>`<div class="saved-opt ${coCard===i?'on':''}" onclick="selCard(${i})"><div class="radio"></div><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></div>`).join('');
+  // summary
+  let sub=0,html='';
+  Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
+    html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
+    items.forEach(({p,qty})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
+    html+='</div>';});
+  $('coSummary').innerHTML=html;
+  const shopShip=Object.keys(groups).filter(v=>!VENDORS[v].house).length*15;
+  const ship=sub>=200?0:shopShip;
+  const total=sub+ship;
+  $('coTotals').innerHTML=`<div class="row"><span>Subtotal</span><span>${aed(sub)}</span></div><div class="row"><span>Shipping</span><span>${ship===0?'Free':aed(ship)}</span></div><div class="row grand"><span>Total</span><span>${aed(total)}</span></div>`;
+  $('coPlaceTot').textContent=aed(total);
+}
+function placeOrder(){
+  const groups=cartGroups();
+  const n=Object.keys(groups).length;
+  const id='TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10);
+  $('confOrdId').textContent='Order '+id;
+  $('confShip').innerHTML=`<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
+    +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
+      return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · ${V.house?'arrives 2–4 days':'arrives 3–6 days'}</div></div></div>`;}).join('');
+  cart=[];updateCartCount();renderCart();
+  showView('confirm');window.scrollTo(0,0);
+}
+
+let toastT;
+function toast(m){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
+
+function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;}
+function go(v,cat){if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';buildCatFilters();renderShop();showView('shop');}else showView(v);window.scrollTo(0,0);}
+
+renderHome(); buildCatFilters(); updateCartCount();
+</script>
+</body>
+</html>

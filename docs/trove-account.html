@@ -1,0 +1,534 @@
+<!-- trove — consumer "my account" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>trove · my account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rose:#D8C5BE; --coral:#E2836A; --coral-deep:#C5664B; --cream:#FBF6F1;
+    --sage:#C3D1C7; --char:#262321; --taupe:#A98B7D; --peach:#F5C68A; --blush:#F4CFE0;
+    --moss:#C7D9AC; --sky:#B9D0E0; --paper:#FFFDFB; --rose-tint:#F1E7E1; --cream-2:#F6EFE8;
+    --line:rgba(38,35,33,.10); --line-soft:rgba(38,35,33,.06);
+    --muted:#8C7B72; --ink-80:rgba(38,35,33,.78);
+    --green:#5E7E63; --green-bg:#E4ECE5; --sky-text:#33617e;
+    --r:16px; --shadow:0 16px 44px -28px rgba(38,35,33,.30);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
+       -webkit-font-smoothing:antialiased;font-weight:500;line-height:1.5}
+  ::selection{background:var(--coral);color:#fff}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  img{display:block;width:100%;height:100%;object-fit:cover}
+  input,select,textarea{font-family:inherit}
+  h1,h2,h3,h4{font-family:'Cormorant',Georgia,serif;font-weight:500;letter-spacing:.002em}
+  .serif{font-family:'Cormorant',Georgia,serif}
+
+  .app{display:grid;grid-template-columns:262px 1fr;min-height:100vh}
+
+  /* sidebar */
+  .side{background:var(--paper);border-right:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .side .logo{font-family:'Cormorant';font-size:34px;font-weight:600;padding:0 10px 4px;line-height:1}
+  .user-card{margin:22px 0 16px;padding:16px 12px;text-align:center;border:1px solid var(--line);border-radius:14px}
+  .user-card .av{width:60px;height:60px;border-radius:50%;background:var(--coral);display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:28px;font-weight:600;margin:0 auto 10px}
+  .user-card .nm{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1}
+  .user-card .em{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px}
+  nav.menu{display:flex;flex-direction:column;gap:2px}
+  .mitem{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;font-size:14px;font-weight:600;color:var(--ink-80);transition:.14s;position:relative}
+  .mitem:hover{background:var(--cream-2)}
+  .mitem.on{background:var(--rose-tint);color:var(--char)}
+  .mitem.on::before{content:"";position:absolute;left:-18px;top:9px;bottom:9px;width:3px;background:var(--coral);border-radius:0 3px 3px 0}
+  .mitem svg{width:18px;height:18px;stroke-width:1.7}
+  .mitem .pill{margin-left:auto;background:var(--rose);color:var(--char);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 6px}
+  .side .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+  .side .foot a{font-size:13px;font-weight:600;color:var(--ink-80);padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:10px}
+  .side .foot a:hover{background:var(--cream-2);color:var(--char)}
+  .side .foot a svg{width:16px;height:16px;stroke-width:1.8}
+
+  /* main */
+  .main{display:flex;flex-direction:column;min-width:0}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:24px 40px;border-bottom:1px solid var(--line-soft);position:sticky;top:0;background:rgba(251,246,241,.82);backdrop-filter:blur(10px);z-index:20}
+  .topbar h1{font-size:32px;font-weight:500}
+  .topbar .sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
+  .content{padding:32px 40px 70px;max-width:960px;width:100%}
+
+  .view{display:none}
+  .view.active{display:block;animation:fade .4s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:999px;font-weight:600;font-size:13px;letter-spacing:.03em;transition:.18s}
+  .btn svg{width:15px;height:15px}
+  .btn-dark{background:var(--char);color:var(--cream)} .btn-dark:hover{background:#3a352f}
+  .btn-coral{background:var(--coral);color:#fff} .btn-coral:hover{background:var(--coral-deep)}
+  .btn-ghost{border:1px solid var(--line);color:var(--char);background:var(--paper)} .btn-ghost:hover{border-color:var(--char)}
+  .btn-sm{padding:8px 15px;font-size:12px}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:22px}
+
+  /* overview */
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .stat .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat .big{font-family:'Cormorant';font-size:40px;font-weight:600;line-height:1;margin:8px 0 2px}
+  .stat .s{font-size:12px;color:var(--muted);font-weight:600}
+  .hello{font-size:clamp(32px,4vw,46px);font-weight:400;margin-bottom:4px}
+  .hello em{font-style:italic;color:var(--coral-deep)}
+
+  /* tracking */
+  .track{margin-top:18px}
+  .track .th{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px}
+  .track .th .oid{font-family:'Cormorant';font-size:22px;font-weight:600}
+  .progress{display:flex;align-items:center;margin:8px 4px 6px}
+  .pstep{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
+  .pstep .dot{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);border:2px solid var(--line);display:grid;place-items:center;color:var(--muted);z-index:2}
+  .pstep.done .dot{background:var(--char);border-color:var(--char);color:var(--cream)}
+  .pstep.now .dot{background:var(--coral);border-color:var(--coral);color:#fff}
+  .pstep .pl{font-size:11px;font-weight:600;margin-top:8px;color:var(--muted)}
+  .pstep.done .pl,.pstep.now .pl{color:var(--char)}
+  .pline{position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--line);z-index:1}
+  .pstep.done .pline{background:var(--char)}
+  .pstep:last-child .pline{display:none}
+  .quick-links{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+  .ql{border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.16s;background:var(--paper)}
+  .ql:hover{border-color:var(--rose);transform:translateY(-3px)}
+  .ql .ic{width:38px;height:38px;border-radius:10px;background:var(--rose-tint);display:grid;place-items:center;color:var(--coral-deep);margin-bottom:12px}
+  .ql .ic svg{width:19px;height:19px;stroke-width:1.7}
+  .ql .t{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1.05}
+  .ql .d{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
+
+  /* order cards */
+  .order-card{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:18px;background:var(--paper)}
+  .order-card .oc-head{display:flex;align-items:center;gap:22px;padding:16px 22px;background:var(--cream-2);border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+  .order-card .oc-head .h{display:flex;flex-direction:column}
+  .order-card .oc-head .h .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .order-card .oc-head .h .v{font-size:14px;font-weight:700;margin-top:2px}
+  .order-card .oc-head .h .v.tot{font-family:'Cormorant';font-size:19px}
+  .order-card .oc-head .stat{margin-left:auto}
+  .opill{font-size:11px;font-weight:700;letter-spacing:.04em;padding:6px 14px;border-radius:999px}
+  .opill.delivered{background:var(--green-bg);color:var(--green)}
+  .opill.shipped{background:var(--sky);color:var(--sky-text)}
+  .opill.processing{background:var(--peach);color:#946321}
+  .oc-body{padding:18px 22px}
+  .oc-shop{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);font-weight:700;display:flex;align-items:center;gap:7px;margin:6px 0 12px}
+  .oc-shop .gem{width:7px;height:7px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
+  .oline{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .oline .im{width:50px;height:60px;border-radius:9px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
+  .oline .nm{font-family:'Cormorant';font-size:17px;font-weight:600;line-height:1.1}
+  .oline .qt{font-size:12px;color:var(--muted);font-weight:600}
+  .oline .pr{margin-left:auto;font-weight:600;font-size:14px}
+  .oc-foot{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
+
+  /* product grid (wishlist) */
+  .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .pcard{position:relative}
+  .pcard .ph{position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:var(--rose);margin-bottom:12px}
+  .pcard .ph .grad{position:absolute;inset:0}
+  .pcard .ph img{position:absolute;inset:0;filter:saturate(.9)}
+  .pcard .heart{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(251,246,241,.92);display:grid;place-items:center;color:var(--coral-deep);transition:.15s}
+  .pcard .heart:hover{background:#fff;transform:scale(1.08)}
+  .pcard .vr{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--taupe);font-weight:700}
+  .pcard h3{font-size:19px;font-weight:600;line-height:1.1;margin:4px 0 6px}
+  .pcard .row{display:flex;justify-content:space-between;align-items:center}
+  .pcard .price{font-weight:600;font-size:14px}
+  .empty-state{text-align:center;padding:70px 20px}
+  .empty-state .big{font-family:'Cormorant';font-size:30px;font-weight:500;margin-bottom:6px}
+  .empty-state p{color:var(--muted);font-weight:500;margin-bottom:20px}
+
+  /* address + payment rows */
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .addr-card{border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;position:relative;background:var(--paper)}
+  .addr-card.def{border-color:var(--rose);background:var(--rose-tint)}
+  .addr-card .badge{position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--coral-deep)}
+  .addr-card h4{font-size:19px;font-weight:600;margin-bottom:8px}
+  .addr-card p{font-size:13.5px;color:var(--ink-80);font-weight:500;line-height:1.6}
+  .addr-card .acts{display:flex;gap:14px;margin-top:14px;font-size:12.5px;font-weight:600}
+  .addr-card .acts a{color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:1px;cursor:pointer}
+  .addr-card .acts a.danger{color:var(--coral-deep);border-color:transparent}
+  .add-tile{border:1.5px dashed var(--line);border-radius:var(--r);display:grid;place-items:center;cursor:pointer;min-height:150px;color:var(--muted);font-weight:600;transition:.15s}
+  .add-tile:hover{border-color:var(--coral);color:var(--coral-deep);background:var(--paper)}
+  .add-tile .inner{text-align:center}
+  .add-tile svg{width:26px;height:26px;margin-bottom:8px;stroke-width:1.6}
+
+  .pay-row{display:flex;align-items:center;gap:16px;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:14px;background:var(--paper)}
+  .pay-row.def{border-color:var(--rose);background:var(--rose-tint)}
+  .pay-row .brand{width:46px;height:32px;border-radius:7px;display:grid;place-items:center;color:#fff;font-size:10px;font-weight:700;letter-spacing:.05em}
+  .pay-row .pn{font-weight:700;font-size:14px}
+  .pay-row .pe{font-size:12px;color:var(--muted);font-weight:600}
+  .pay-row .pacts{margin-left:auto;display:flex;gap:12px;align-items:center;font-size:12.5px;font-weight:600}
+  .pay-row .pacts .def-badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--coral-deep);font-weight:700}
+  .pay-row .pacts a{cursor:pointer;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:1px}
+  .pay-row .pacts a.danger{color:var(--coral-deep);border:none}
+  .secure-note{display:flex;gap:10px;align-items:flex-start;background:var(--rose-tint);border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--ink-80);font-weight:500;margin-top:6px;line-height:1.5}
+  .secure-note svg{flex-shrink:0;color:var(--coral-deep);margin-top:1px}
+
+  /* following */
+  .follow-row{display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--line-soft);padding:18px 0}
+  .follow-row:last-child{border:none}
+  .follow-row .fav{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:24px;font-weight:600;flex-shrink:0}
+  .follow-row .fn{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1}
+  .follow-row .fl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:3px}
+  .follow-row .facts{margin-left:auto;display:flex;gap:10px}
+  .followbtn{padding:9px 18px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--char);transition:.15s}
+  .followbtn.on{background:var(--char);color:var(--cream)}
+  .followbtn:not(.on){color:var(--char)}
+
+  /* profile form */
+  .form-card{max-width:560px}
+  .field{margin-bottom:18px}
+  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .field input{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
+  .field input:focus{border-color:var(--char)}
+  .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line-soft)}
+  .toggle-row:last-child{border:none}
+  .toggle-row .tt{font-weight:600;font-size:14px}
+  .toggle-row .td{font-size:12px;color:var(--muted);font-weight:500}
+  .sw{width:44px;height:25px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+  .sw.on{background:var(--coral)}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;transition:.2s}
+  .sw.on::after{left:22px}
+  .sub-h{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 0 14px}
+
+  /* drawer */
+  .scrim{position:fixed;inset:0;background:rgba(38,35,33,.4);z-index:90;opacity:0;visibility:hidden;transition:.3s}
+  .scrim.open{opacity:1;visibility:visible}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+  .drawer.open{transform:none}
+  .drawer .dhead{padding:24px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+  .drawer .dhead h3{font-size:26px;font-weight:500}
+  .drawer .dbody{flex:1;overflow-y:auto;padding:24px 28px}
+  .drawer .dfoot{padding:18px 28px;border-top:1px solid var(--line);display:flex;gap:12px;background:var(--paper)}
+  .drawer .dfoot .btn{flex:1;justify-content:center;padding:14px}
+  .iact{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--muted)}
+  .iact:hover{background:var(--rose-tint);color:var(--char)}
+
+  .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;z-index:130;opacity:0;transition:.32s;box-shadow:var(--shadow)}
+  .toast.show{opacity:1;transform:translateX(-50%)}
+
+  @media(max-width:920px){
+    .app{grid-template-columns:1fr}
+    .side{display:none}
+    .grid-3,.quick-links,.twocol,.pgrid,.ftwo{grid-template-columns:1fr}
+    .quick-links{grid-template-columns:1fr 1fr}
+    .content,.topbar{padding-left:20px;padding-right:20px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <a class="logo serif" href="trove.html">trove</a>
+    <div class="user-card">
+      <div class="av" id="uAv">L</div>
+      <div class="nm" id="uName">Layla</div>
+      <div class="em" id="uEmail">layla@email.com</div>
+    </div>
+    <nav class="menu">
+      <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="ordPill">3</span></a>
+      <a class="mitem" data-v="wishlist" onclick="go('wishlist')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items<span class="pill" id="wishPill">3</span></a>
+      <a class="mitem" data-v="addresses" onclick="go('addresses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Addresses</a>
+      <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payment methods</a>
+      <a class="mitem" data-v="following" onclick="go('following')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Following<span class="pill" id="followPill">3</span></a>
+      <a class="mitem" data-v="details" onclick="go('details')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My details</a>
+    </nav>
+    <div class="foot">
+      <a href="trove.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Continue shopping</a>
+      <a href="trove-login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</a>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub">Welcome back</div></div>
+      <a class="btn btn-ghost" href="trove.html">Continue shopping →</a>
+    </div>
+    <div class="content">
+
+      <!-- OVERVIEW -->
+      <div class="view active" id="view-overview">
+        <h2 class="hello">Hello, <em>Layla</em>.</h2>
+        <p style="color:var(--muted);font-weight:500;margin-bottom:24px">Here's what's happening with your trove.</p>
+        <div class="grid-3">
+          <div class="card stat"><div class="lbl">Active orders</div><div class="big" id="oActive">1</div><div class="s">1 on the way</div></div>
+          <div class="card stat"><div class="lbl">Saved items</div><div class="big" id="oSaved">3</div><div class="s">across 3 shops</div></div>
+          <div class="card stat"><div class="lbl">Following</div><div class="big" id="oFollow">3</div><div class="s">shops you love</div></div>
+        </div>
+        <div class="card track">
+          <div class="th"><div><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">TRV-9F2K</div></div>
+            <span class="opill shipped">On the way</span></div>
+          <div class="progress">
+            <div class="pstep done"><div class="pline"></div><div class="dot">✓</div><div class="pl">Ordered</div></div>
+            <div class="pstep done"><div class="pline"></div><div class="dot">✓</div><div class="pl">Packed</div></div>
+            <div class="pstep now"><div class="pline"></div><div class="dot">●</div><div class="pl">Shipped</div></div>
+            <div class="pstep"><div class="dot"></div><div class="pl">Delivered</div></div>
+          </div>
+          <div style="font-size:13px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">Estimated arrival <b style="color:var(--char)">Thursday, 12 June</b></div>
+        </div>
+        <div class="quick-links">
+          <div class="ql" onclick="go('orders')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg></div><div class="t">Your orders</div><div class="d">Track & reorder</div></div>
+          <div class="ql" onclick="go('wishlist')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></div><div class="t">Saved items</div><div class="d">Your wishlist</div></div>
+          <div class="ql" onclick="go('addresses')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="t">Addresses</div><div class="d">Where we ship</div></div>
+          <div class="ql" onclick="go('details')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div class="t">My details</div><div class="d">Profile & prefs</div></div>
+        </div>
+      </div>
+
+      <!-- ORDERS -->
+      <div class="view" id="view-orders"><div id="ordersList"></div></div>
+
+      <!-- WISHLIST -->
+      <div class="view" id="view-wishlist"><div id="wishWrap"></div></div>
+
+      <!-- ADDRESSES -->
+      <div class="view" id="view-addresses">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <span style="font-size:13px;color:var(--muted);font-weight:600">Where your orders are shipped.</span>
+          <button class="btn btn-coral btn-sm" onclick="openAddr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add address</button>
+        </div>
+        <div class="twocol" id="addrList"></div>
+      </div>
+
+      <!-- PAYMENTS -->
+      <div class="view" id="view-payments">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+          <span style="font-size:13px;color:var(--muted);font-weight:600">Cards used at checkout.</span>
+          <button class="btn btn-coral btn-sm" onclick="openCard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add card</button>
+        </div>
+        <div id="cardList"></div>
+        <div class="secure-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <span>Your card details are tokenised and held securely by Stripe — they never touch trove's servers. (In this prototype no real card is stored.)</span></div>
+      </div>
+
+      <!-- FOLLOWING -->
+      <div class="view" id="view-following">
+        <p style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px">Shops you follow appear first in your feed and notify you of new drops.</p>
+        <div class="card" id="followList" style="margin-top:14px"></div>
+      </div>
+
+      <!-- DETAILS -->
+      <div class="view" id="view-details">
+        <div class="card form-card">
+          <div class="sub-h">Personal details</div>
+          <div class="ftwo"><div class="field"><label>First name</label><input id="dFirst" value="Layla"></div><div class="field"><label>Last name</label><input id="dLast" value="Hassan"></div></div>
+          <div class="field"><label>Email</label><input id="dEmail" value="layla@email.com"></div>
+          <div class="field"><label>Phone</label><input id="dPhone" value="+971 50 123 4567"></div>
+          <button class="btn btn-dark btn-sm" onclick="saveDetails()" style="margin:4px 0 6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save details</button>
+        </div>
+        <div class="card form-card" style="margin-top:18px">
+          <div class="sub-h">Notifications</div>
+          <div class="toggle-row"><div><div class="tt">Order updates</div><div class="td">Shipping and delivery alerts</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><div><div class="tt">New drops from shops you follow</div><div class="td">A note when a followed shop restocks</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="toggle-row"><div><div class="tt">The weekly edit</div><div class="td">Our curated newsletter, Sundays</div></div><div class="sw" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="card form-card" style="margin-top:18px">
+          <div class="sub-h">Password</div>
+          <div class="field"><label>New password</label><input type="password" placeholder="••••••••"></div>
+          <button class="btn btn-ghost btn-sm" onclick="toast('Password updated')">Update password</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- DRAWER -->
+<div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer">
+  <div class="dhead"><h3 id="drawerTitle">Add address</h3>
+    <button class="iact" onclick="closeDrawer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+  </div>
+  <div class="dbody" id="drawerBody"></div>
+  <div class="dfoot"><button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button><button class="btn btn-coral" id="drawerSave">Save</button></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- DATA ---------- */
+const VENDORS={
+  kiln:{name:'Kiln & Clay',loc:'Lisbon, Portugal',color:'#A98B7D'},
+  fern:{name:'Fern Apothecary',loc:'Portland, USA',color:'#C7D9AC'},
+  loom:{name:'Northbound Loom',loc:'Reykjavík, Iceland',color:'#B9D0E0'},
+  ember:{name:'Ember Goods',loc:'Marrakech, Morocco',color:'#F5C68A'},
+  paper:{name:'Folio Paper Co.',loc:'Kyoto, Japan',color:'#F4CFE0'},
+};
+let orders=[
+  {id:'TRV-9F2K',date:'8 Jun 2026',status:'shipped',total:152,
+   groups:[{v:'kiln',items:[{n:'Reeded Stoneware Mug',q:2,p:64,seed:'mug7'}]},{v:'fern',items:[{n:'Botanical Hand Balm',q:1,p:54,seed:'balm5'}]}]},
+  {id:'TRV-8C1A',date:'24 May 2026',status:'delivered',total:285,
+   groups:[{v:'loom',items:[{n:'Hand-Knotted Wool Throw',q:1,p:285,seed:'throw7'}]}]},
+  {id:'TRV-7B9X',date:'2 May 2026',status:'delivered',total:140,
+   groups:[{v:'ember',items:[{n:'Hammered Brass Tray',q:1,p:140,seed:'tray3'}]}]},
+];
+let wishlist=[
+  {n:'Lopapeysa Wool Sweater',v:'loom',p:420,seed:'knit5'},
+  {n:'Cedar & Smoke Candle',v:'fern',p:88,seed:'candle8'},
+  {n:'Folded Leather Wallet',v:'ember',p:195,seed:'wallet3'},
+];
+let addresses=[
+  {id:1,label:'Home',name:'Layla Hassan',line:'Apt 1204, Marina Gate 2',city:'Dubai Marina, Dubai',country:'United Arab Emirates',phone:'+971 50 123 4567',def:true},
+  {id:2,label:'Work',name:'Layla Hassan',line:'Level 14, Boulevard Plaza Tower 1',city:'Downtown Dubai, Dubai',country:'United Arab Emirates',phone:'+971 50 123 4567',def:false},
+];
+let cards=[
+  {id:1,brand:'Visa',color:'#1A1F71',last4:'4242',exp:'08 / 27',def:true},
+  {id:2,brand:'MC',color:'#EB5C2E',last4:'8210',exp:'02 / 26',def:false},
+];
+let following={kiln:true,fern:true,loom:true,ember:false,paper:false};
+
+/* ---------- HELPERS ---------- */
+const $=id=>document.getElementById(id);
+function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
+function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
+function img(seed){return `https://picsum.photos/seed/trv${seed}/200/250`;}
+function aed(n){return 'AED '+Math.round(n).toLocaleString();}
+let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
+
+/* ---------- ORDERS ---------- */
+function renderOrders(){
+  $('ordersList').innerHTML=orders.map(o=>{
+    const label=o.status==='shipped'?'On the way':o.status==='processing'?'Processing':'Delivered';
+    const lines=o.groups.map(g=>{
+      const V=VENDORS[g.v];
+      return `<div class="oc-shop"><span class="gem"></span>${V.name}</div>`+
+        g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(it.seed)}" onerror="this.style.display='none'"></div>
+          <div><div class="nm">${it.n}</div><div class="qt">Qty ${it.q}</div></div><div class="pr">${aed(it.p*it.q)}</div></div>`).join('');
+    }).join('');
+    return `<div class="order-card">
+      <div class="oc-head">
+        <div class="h"><span class="k">Order</span><span class="v">${o.id}</span></div>
+        <div class="h"><span class="k">Placed</span><span class="v">${o.date}</span></div>
+        <div class="h"><span class="k">Total</span><span class="v tot">${aed(o.total)}</span></div>
+        <div class="stat"><span class="opill ${o.status}">${label}</span></div>
+      </div>
+      <div class="oc-body">${lines}</div>
+      <div class="oc-foot">
+        ${o.status!=='delivered'?`<button class="btn btn-dark btn-sm" onclick="toast('Tracking ${o.id} — out for delivery')">Track order</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="toast('Items added to your cart')">Buy again</button>
+        ${o.status==='delivered'?`<button class="btn btn-ghost btn-sm" onclick="toast('Thanks — opening review')">Leave a review</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="toast('Invoice downloaded (demo)')">Invoice</button>
+      </div></div>`;
+  }).join('');
+}
+
+/* ---------- WISHLIST ---------- */
+function renderWishlist(){
+  $('wishPill').textContent=wishlist.length; $('oSaved').textContent=wishlist.length;
+  if(!wishlist.length){$('wishWrap').innerHTML=`<div class="empty-state"><div class="big">Nothing saved yet</div><p>Tap the heart on anything you love and it'll wait for you here.</p><a class="btn btn-coral" href="trove.html">Discover the trove</a></div>`;return;}
+  $('wishWrap').innerHTML=`<div class="pgrid">${wishlist.map((w,i)=>{
+    const V=VENDORS[w.v];
+    return `<div class="pcard">
+      <div class="ph"><div class="grad" style="${grad(V.color)}"></div><img src="${img(w.seed)}" onerror="this.style.display='none'">
+        <button class="heart" title="Remove" onclick="removeWish(${i})"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></button></div>
+      <div class="vr">${V.name}</div><h3>${w.n}</h3>
+      <div class="row"><span class="price">${aed(w.p)}</span><button class="btn btn-dark btn-sm" onclick="toast('${w.n} added to cart')">Add to cart</button></div>
+    </div>`;}).join('')}</div>`;
+}
+function removeWish(i){const w=wishlist[i];wishlist.splice(i,1);renderWishlist();toast(`${w.n} removed from saved`);}
+
+/* ---------- ADDRESSES ---------- */
+function renderAddr(){
+  $('addrList').innerHTML=addresses.map(a=>`<div class="addr-card ${a.def?'def':''}">
+    ${a.def?'<span class="badge">Default</span>':''}
+    <h4>${a.label}</h4>
+    <p>${a.name}<br>${a.line}<br>${a.city}<br>${a.country}<br>${a.phone}</p>
+    <div class="acts"><a onclick="openAddr(${a.id})">Edit</a>${!a.def?`<a onclick="setDefAddr(${a.id})">Set default</a><a class="danger" onclick="delAddr(${a.id})">Delete</a>`:''}</div>
+  </div>`).join('')+`<div class="add-tile" onclick="openAddr()"><div class="inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg><div>Add a new address</div></div></div>`;
+}
+function setDefAddr(id){addresses.forEach(a=>a.def=a.id===id);renderAddr();toast('Default address updated');}
+function delAddr(id){if(confirm('Delete this address?')){addresses=addresses.filter(a=>a.id!==id);renderAddr();toast('Address deleted');}}
+let editAddrId=null;
+function openAddr(id){
+  editAddrId=id||null; const a=id?addresses.find(x=>x.id===id):{};
+  $('drawerTitle').textContent=id?'Edit address':'Add address';
+  $('drawerBody').innerHTML=`
+    <div class="field"><label>Label</label><input id="aLabel" value="${a.label||''}" placeholder="Home, Work…"></div>
+    <div class="field"><label>Full name</label><input id="aName" value="${a.name||'Layla Hassan'}"></div>
+    <div class="field"><label>Address</label><input id="aLine" value="${a.line||''}" placeholder="Street, building, apt"></div>
+    <div class="field"><label>City / Area</label><input id="aCity" value="${a.city||''}"></div>
+    <div class="field"><label>Country</label><input id="aCountry" value="${a.country||'United Arab Emirates'}"></div>
+    <div class="field"><label>Phone</label><input id="aPhone" value="${a.phone||''}"></div>`;
+  $('drawerSave').onclick=saveAddr; openDrawer();
+}
+function saveAddr(){
+  const data={label:$('aLabel').value||'Address',name:$('aName').value,line:$('aLine').value,city:$('aCity').value,country:$('aCountry').value,phone:$('aPhone').value};
+  if(!data.line){toast('Add a street address');return;}
+  if(editAddrId){Object.assign(addresses.find(a=>a.id===editAddrId),data);toast('Address updated');}
+  else{addresses.push({id:Date.now(),def:addresses.length===0,...data});toast('Address added');}
+  closeDrawer();renderAddr();
+}
+
+/* ---------- PAYMENTS ---------- */
+function renderCards(){
+  $('cardList').innerHTML=cards.map(c=>`<div class="pay-row ${c.def?'def':''}">
+    <div class="brand" style="background:${c.color}">${c.brand}</div>
+    <div><div class="pn">•••• •••• •••• ${c.last4}</div><div class="pe">Expires ${c.exp}</div></div>
+    <div class="pacts">${c.def?'<span class="def-badge">Default</span>':`<a onclick="setDefCard(${c.id})">Set default</a>`}<a class="danger" onclick="delCard(${c.id})">Remove</a></div>
+  </div>`).join('');
+}
+function setDefCard(id){cards.forEach(c=>c.def=c.id===id);renderCards();toast('Default card updated');}
+function delCard(id){if(confirm('Remove this card?')){cards=cards.filter(c=>c.id!==id);renderCards();toast('Card removed');}}
+function openCard(){
+  $('drawerTitle').textContent='Add card';
+  $('drawerBody').innerHTML=`
+    <div class="secure-note" style="margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>In production this is Stripe's secure card field. This demo only keeps the last 4 digits.</span></div>
+    <div class="field"><label>Cardholder name</label><input id="cName" placeholder="Name on card"></div>
+    <div class="field"><label>Card number</label><input id="cNum" placeholder="1234 5678 9012 3456" maxlength="19"></div>
+    <div class="ftwo"><div class="field"><label>Expiry</label><input id="cExp" placeholder="MM / YY"></div><div class="field"><label>CVC</label><input id="cCvc" placeholder="123" maxlength="4"></div></div>`;
+  $('drawerSave').onclick=saveCard; openDrawer();
+}
+function saveCard(){
+  const num=($('cNum').value||'').replace(/\s/g,''); const exp=$('cExp').value||'—';
+  if(num.length<4){toast('Enter a card number');return;}
+  cards.push({id:Date.now(),brand:num[0]==='4'?'Visa':'MC',color:num[0]==='4'?'#1A1F71':'#EB5C2E',last4:num.slice(-4),exp,def:cards.length===0});
+  closeDrawer();renderCards();toast('Card added');
+}
+
+/* ---------- FOLLOWING ---------- */
+function renderFollowing(){
+  const list=Object.keys(VENDORS);
+  const followedCount=Object.values(following).filter(Boolean).length;
+  $('followPill').textContent=followedCount; $('oFollow').textContent=followedCount;
+  $('followList').innerHTML=list.map(k=>{const V=VENDORS[k],on=following[k];
+    return `<div class="follow-row"><div class="fav" style="${grad(V.color)}">${V.name[0]}</div>
+      <div><div class="fn">${V.name}</div><div class="fl">${V.loc}</div></div>
+      <div class="facts"><a class="btn btn-ghost btn-sm" href="trove.html">Visit shop</a>
+        <button class="followbtn ${on?'on':''}" onclick="toggleFollow('${k}')">${on?'Following':'Follow'}</button></div></div>`;
+  }).join('');
+}
+function toggleFollow(k){following[k]=!following[k];renderFollowing();toast(following[k]?`Following ${VENDORS[k].name}`:`Unfollowed ${VENDORS[k].name}`);}
+
+/* ---------- DETAILS ---------- */
+function saveDetails(){
+  const n=$('dFirst').value||'there';
+  $('uName').textContent=n;$('uAv').textContent=(n[0]||'L').toUpperCase();$('uEmail').textContent=$('dEmail').value;
+  toast('Details saved');
+}
+
+/* ---------- DRAWER ---------- */
+function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
+function closeDrawer(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
+
+/* ---------- ROUTER ---------- */
+const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, reorder and review'],wishlist:['Saved items','Your wishlist'],addresses:['Addresses','Where we ship'],payments:['Payment methods','Cards & checkout'],following:['Following','Shops you love'],details:['My details','Profile & preferences']};
+function go(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  $('view-'+v).classList.add('active');
+  document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
+  $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
+  if(v==='orders')renderOrders(); if(v==='wishlist')renderWishlist(); if(v==='addresses')renderAddr(); if(v==='payments')renderCards(); if(v==='following')renderFollowing();
+  window.scrollTo(0,0);
+}
+
+/* init */
+renderWishlist(); renderFollowing();
+const _sec=(location.hash||'').replace('#','');
+if(['orders','wishlist','addresses','payments','following','details'].includes(_sec))go(_sec); else go('overview');
+</script>
+</body>
+</html>

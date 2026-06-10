@@ -1,0 +1,21 @@
+{
+  "name": "trove-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "API for the trove multi-vendor marketplace — auth, products, orders, and Stripe Connect payouts.",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/seed.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.3.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "stripe": "^16.12.0"
+  }
+}

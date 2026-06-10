@@ -1,0 +1,172 @@
+<!-- trove — sign in / two paths -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>trove · sign in</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rose:#D8C5BE; --coral:#E2836A; --coral-deep:#C5664B; --cream:#FBF6F1;
+    --sage:#C3D1C7; --char:#262321; --taupe:#A98B7D; --paper:#FFFDFB;
+    --rose-tint:#F1E7E1; --line:rgba(38,35,33,.12); --muted:#8C7B72; --ink-80:rgba(38,35,33,.78);
+    --stripe:#635BFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
+       -webkit-font-smoothing:antialiased;font-weight:500;min-height:100vh}
+  ::selection{background:var(--coral);color:#fff}
+  a{color:inherit}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  h1,h2,h3{font-family:'Cormorant',Georgia,serif;font-weight:500}
+  .serif{font-family:'Cormorant',Georgia,serif}
+
+  .shell{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
+
+  /* left brand panel */
+  .brandside{background:var(--rose);padding:56px 64px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;transition:background .5s}
+  .brandside.seller{background:var(--char)}
+  .brandside .logo{font-family:'Cormorant';font-size:40px;font-weight:600;line-height:1;transition:color .5s}
+  .brandside.seller .logo,.brandside.seller .bmid h1,.brandside.seller .bmid p,.brandside.seller .quote,.brandside.seller .quote cite{color:var(--cream)}
+  .bmid{max-width:24ch}
+  .bmid .eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--coral-deep);font-weight:700;display:block;margin-bottom:18px;transition:color .5s}
+  .brandside.seller .bmid .eyebrow{color:var(--coral)}
+  .bmid h1{font-size:clamp(40px,4.5vw,62px);line-height:1.0;font-weight:400}
+  .bmid h1 em{font-style:italic;color:var(--coral-deep)}
+  .brandside.seller .bmid h1 em{color:var(--coral)}
+  .bmid p{font-size:16px;color:var(--ink-80);font-weight:400;margin-top:18px;line-height:1.6}
+  .quote{font-family:'Cormorant';font-size:20px;font-style:italic;color:var(--char);opacity:.8;max-width:30ch}
+  .quote cite{display:block;font-style:normal;font-family:'Quicksand';font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;opacity:.6;margin-top:10px}
+  .deco{position:absolute;right:-80px;bottom:-80px;width:280px;height:280px;border-radius:50%;background:rgba(251,246,241,.25);pointer-events:none}
+
+  /* right auth panel */
+  .authside{display:flex;align-items:center;justify-content:center;padding:40px}
+  .auth{width:100%;max-width:400px}
+  .tabs{display:flex;gap:6px;background:var(--rose-tint);padding:5px;border-radius:999px;margin-bottom:34px}
+  .tabs button{flex:1;padding:12px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.03em;color:var(--muted);transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .tabs button.on{background:var(--paper);color:var(--char);box-shadow:0 2px 10px -4px rgba(38,35,33,.2)}
+  .tabs button svg{width:15px;height:15px}
+  .auth h2{font-size:34px;font-weight:500;line-height:1.05}
+  .auth .lede{font-size:14px;color:var(--muted);font-weight:500;margin:6px 0 28px}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .field input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
+  .field input:focus{border-color:var(--char)}
+  .field .fl{display:flex;justify-content:space-between;align-items:center}
+  .field .fl a{font-size:11.5px;color:var(--coral-deep);font-weight:600;text-decoration:none}
+  .field .fl a:hover{text-decoration:underline}
+  .submit{width:100%;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:8px}
+  .submit:hover{background:#3a352f}
+  .submit.seller{background:var(--stripe)}
+  .submit.seller:hover{filter:brightness(1.08)}
+  .or{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+  .social{display:flex;gap:10px}
+  .social button{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+  .social button:hover{border-color:var(--char)}
+  .swap{text-align:center;font-size:13.5px;color:var(--muted);font-weight:500;margin-top:24px}
+  .swap a{color:var(--char);font-weight:700;text-decoration:none;border-bottom:1px solid var(--coral);padding-bottom:1px}
+  .demo{text-align:center;font-size:11px;color:var(--muted);font-weight:500;margin-top:22px;display:flex;gap:7px;align-items:center;justify-content:center}
+
+  @media(max-width:860px){
+    .shell{grid-template-columns:1fr}
+    .brandside{padding:40px 32px;min-height:auto}
+    .brandside .bmid{margin:30px 0}
+    .quote,.deco{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <!-- BRAND PANEL -->
+  <div class="brandside" id="brandside">
+    <a class="logo serif" href="trove.html">trove</a>
+    <div class="bmid">
+      <span class="eyebrow" id="bEyebrow">Welcome back</span>
+      <h1 id="bTitle">Beautiful things, <em>gathered</em>.</h1>
+      <p id="bText">Sign in to pick up where you left off — your saved finds, your shops, your trove.</p>
+    </div>
+    <div class="quote" id="bQuote">"The nicest corner of the internet to actually buy something."<cite>— a happy shopper</cite></div>
+    <div class="deco"></div>
+  </div>
+
+  <!-- AUTH PANEL -->
+  <div class="authside">
+    <div class="auth">
+      <div class="tabs">
+        <button class="on" id="tabShop" onclick="setMode('shop')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6 5 2H2"/></svg>
+          I'm shopping
+        </button>
+        <button id="tabSell" onclick="setMode('sell')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>
+          I sell on trove
+        </button>
+      </div>
+
+      <h2 id="aTitle">Sign in to shop</h2>
+      <p class="lede" id="aLede">Your account, orders, and saved finds.</p>
+
+      <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@email.com" value="layla@email.com"></div>
+      <div class="field"><div class="fl"><label>Password</label><a href="#" onclick="return false">Forgot?</a></div>
+        <input id="pass" type="password" placeholder="••••••••" value="demo1234"></div>
+
+      <button class="submit" id="submitBtn" onclick="signIn()">Sign in</button>
+
+      <div class="or">or</div>
+      <div class="social">
+        <button onclick="signIn()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12c0-.7-.06-1.4-.18-2H12v3.8h5.6a4.8 4.8 0 0 1-2 3.2v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.3-2.6c-.9.6-2 1-3.3 1-2.5 0-4.7-1.7-5.4-4H3.2v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.2A10 10 0 0 0 2 12c0 1.6.4 3.2 1.2 4.6z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.2 7.4L6.6 10c.7-2.3 2.9-4 5.4-4z"/></svg>Google</button>
+        <button onclick="signIn()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 12.6c0-2 1.6-3 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7s-1.6-.7-2.6-.7c-1.3 0-2.6.8-3.2 2-1.4 2.4-.4 6 1 8 .6 1 1.4 2 2.4 2s1.3-.6 2.5-.6 1.5.6 2.6.6 1.7-1 2.3-2c.7-1 1-2 1-2.1-.1 0-1.9-.8-1.9-2.9zM15.7 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.5-.8 2.4.9 0 1.8-.5 2.4-1.1z"/></svg>Apple</button>
+      </div>
+
+      <div class="swap" id="swap">New to trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
+      <div class="demo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Prototype — any details sign you straight in.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let mode='shop', registering=false;
+const COPY={
+  shop:{eyebrow:'Welcome back',title:'Beautiful things, <em>gathered</em>.',text:'Sign in to pick up where you left off — your saved finds, your shops, your trove.',
+        quote:'"The nicest corner of the internet to actually buy something."',cite:'— a happy shopper',
+        aTitle:'Sign in to shop',aLede:'Your account, orders, and saved finds.',email:'layla@email.com'},
+  sell:{eyebrow:'For sellers',title:'Your shop, <em>beautifully</em> run.',text:'Sign in to manage products, orders and payouts from your trove dashboard.',
+        quote:'"Listing took ten minutes. The first sale came the same week."',cite:'— a trove maker',
+        aTitle:'Sign in to your shop',aLede:'Manage products, orders and payments.',email:'mara@kilnandclay.com'}
+};
+function setMode(m){
+  mode=m; registering=false;
+  document.getElementById('tabShop').classList.toggle('on',m==='shop');
+  document.getElementById('tabSell').classList.toggle('on',m==='sell');
+  document.getElementById('brandside').classList.toggle('seller',m==='sell');
+  const c=COPY[m];
+  document.getElementById('bEyebrow').textContent=c.eyebrow;
+  document.getElementById('bTitle').innerHTML=c.title;
+  document.getElementById('bText').textContent=c.text;
+  document.getElementById('bQuote').innerHTML=`${c.quote}<cite>${c.cite}</cite>`;
+  document.getElementById('aTitle').textContent=c.aTitle;
+  document.getElementById('aLede').textContent=c.aLede;
+  document.getElementById('email').value=c.email;
+  document.getElementById('submitBtn').classList.toggle('seller',m==='sell');
+  updateRegisterUI();
+}
+function toggleRegister(){registering=!registering;updateRegisterUI();}
+function updateRegisterUI(){
+  const c=COPY[mode];
+  document.getElementById('submitBtn').textContent=registering?(mode==='sell'?'Create your shop':'Create account'):'Sign in';
+  document.getElementById('aTitle').textContent=registering?(mode==='sell'?'Open your shop':'Create your account'):c.aTitle;
+  document.getElementById('swap').innerHTML=registering
+    ? `Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>`
+    : (mode==='sell'?`Not selling yet? <a href="#" onclick="toggleRegister();return false">Open a shop</a>`:`New to trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
+}
+function signIn(){
+  const btn=document.getElementById('submitBtn');
+  btn.textContent='One moment…'; btn.style.opacity='.7';
+  setTimeout(()=>{ window.location.href = mode==='sell' ? 'trove-seller.html' : 'trove-account.html'; },650);
+}
+</script>
+</body>
+</html>

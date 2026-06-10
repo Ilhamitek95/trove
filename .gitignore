@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+
+# database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+# logs
+*.log
+npm-debug.log*
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
