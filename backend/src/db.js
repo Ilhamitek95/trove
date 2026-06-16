@@ -9,7 +9,10 @@
 const path = require('path');
 const Database = require('better-sqlite3');
 
-const db = new Database(path.join(__dirname, '..', 'trove.db'));
+// DB_PATH lets the database live on a mounted persistent disk in production
+// (e.g. Render Disk). Defaults to a local file for development.
+const dbFile = process.env.DB_PATH || path.join(__dirname, '..', 'trove.db');
+const db = new Database(dbFile);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 

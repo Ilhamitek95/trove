@@ -239,7 +239,7 @@
     </nav>
     <div class="foot">
       <a href="trove.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Continue shopping</a>
-      <a href="trove-login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</a>
+      <a href="trove-login.html" id="signOutLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</a>
     </div>
   </aside>
 
@@ -349,6 +349,8 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="config.js"></script>
+<script src="api.js"></script>
 <script>
 /* ---------- DATA ---------- */
 const VENDORS={
@@ -358,28 +360,12 @@ const VENDORS={
   ember:{name:'Ember Goods',loc:'Marrakech, Morocco',color:'#F5C68A'},
   paper:{name:'Folio Paper Co.',loc:'Kyoto, Japan',color:'#F4CFE0'},
 };
-let orders=[
-  {id:'TRV-9F2K',date:'8 Jun 2026',status:'shipped',total:152,
-   groups:[{v:'kiln',items:[{n:'Reeded Stoneware Mug',q:2,p:64,seed:'mug7'}]},{v:'fern',items:[{n:'Botanical Hand Balm',q:1,p:54,seed:'balm5'}]}]},
-  {id:'TRV-8C1A',date:'24 May 2026',status:'delivered',total:285,
-   groups:[{v:'loom',items:[{n:'Hand-Knotted Wool Throw',q:1,p:285,seed:'throw7'}]}]},
-  {id:'TRV-7B9X',date:'2 May 2026',status:'delivered',total:140,
-   groups:[{v:'ember',items:[{n:'Hammered Brass Tray',q:1,p:140,seed:'tray3'}]}]},
-];
-let wishlist=[
-  {n:'Lopapeysa Wool Sweater',v:'loom',p:420,seed:'knit5'},
-  {n:'Cedar & Smoke Candle',v:'fern',p:88,seed:'candle8'},
-  {n:'Folded Leather Wallet',v:'ember',p:195,seed:'wallet3'},
-];
-let addresses=[
-  {id:1,label:'Home',name:'Layla Hassan',line:'Apt 1204, Marina Gate 2',city:'Dubai Marina, Dubai',country:'United Arab Emirates',phone:'+971 50 123 4567',def:true},
-  {id:2,label:'Work',name:'Layla Hassan',line:'Level 14, Boulevard Plaza Tower 1',city:'Downtown Dubai, Dubai',country:'United Arab Emirates',phone:'+971 50 123 4567',def:false},
-];
-let cards=[
-  {id:1,brand:'Visa',color:'#1A1F71',last4:'4242',exp:'08 / 27',def:true},
-  {id:2,brand:'MC',color:'#EB5C2E',last4:'8210',exp:'02 / 26',def:false},
-];
-let following={kiln:true,fern:true,loom:true,ember:false,paper:false};
+let orders=[];
+let wishlist=[];          // local-only feature (no backend yet)
+let addresses=[];
+let cards=[];             // cards live with Stripe; entered at checkout
+let following={};         // local-only feature (no backend yet)
+let ME=null;
 
 /* ---------- HELPERS ---------- */
 const $=id=>document.getElementById(id);
@@ -390,30 +376,40 @@ function aed(n){return 'AED '+Math.round(n).toLocaleString();}
 let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
 /* ---------- ORDERS ---------- */
+const ORDER_STATUS={paid:['Processing','processing'],fulfilled:['On the way','shipped'],cancelled:['Cancelled','processing'],failed:['Payment failed','processing']};
+function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function renderOrders(){
+  if(!orders.length){ $('ordersList').innerHTML=`<div class="empty-state"><div class="big">No orders yet</div><p>When you buy something it'll appear here, ready to track.</p><a class="btn btn-coral" href="trove.html">Start shopping</a></div>`; return; }
   $('ordersList').innerHTML=orders.map(o=>{
-    const label=o.status==='shipped'?'On the way':o.status==='processing'?'Processing':'Delivered';
-    const lines=o.groups.map(g=>{
-      const V=VENDORS[g.v];
-      return `<div class="oc-shop"><span class="gem"></span>${V.name}</div>`+
-        g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(it.seed)}" onerror="this.style.display='none'"></div>
-          <div><div class="nm">${it.n}</div><div class="qt">Qty ${it.q}</div></div><div class="pr">${aed(it.p*it.q)}</div></div>`).join('');
-    }).join('');
+    const [label,cls]=ORDER_STATUS[o.status]||['Processing','processing'];
+    const groups={};
+    (o.items||[]).forEach(it=>{(groups[it.shop.name]=groups[it.shop.name]||{color:it.shop.color,items:[]}).items.push(it);});
+    const lines=Object.entries(groups).map(([name,g])=>
+      `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
+      g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#A98B7D')}"></div></div>
+        <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div></div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
+    ).join('');
     return `<div class="order-card">
       <div class="oc-head">
         <div class="h"><span class="k">Order</span><span class="v">${o.id}</span></div>
-        <div class="h"><span class="k">Placed</span><span class="v">${o.date}</span></div>
+        <div class="h"><span class="k">Placed</span><span class="v">${fmtDate(o.createdAt)}</span></div>
         <div class="h"><span class="k">Total</span><span class="v tot">${aed(o.total)}</span></div>
-        <div class="stat"><span class="opill ${o.status}">${label}</span></div>
+        <div class="stat"><span class="opill ${cls}">${label}</span></div>
       </div>
       <div class="oc-body">${lines}</div>
       <div class="oc-foot">
-        ${o.status!=='delivered'?`<button class="btn btn-dark btn-sm" onclick="toast('Tracking ${o.id} — out for delivery')">Track order</button>`:''}
-        <button class="btn btn-ghost btn-sm" onclick="toast('Items added to your cart')">Buy again</button>
-        ${o.status==='delivered'?`<button class="btn btn-ghost btn-sm" onclick="toast('Thanks — opening review')">Leave a review</button>`:''}
-        <button class="btn btn-ghost btn-sm" onclick="toast('Invoice downloaded (demo)')">Invoice</button>
+        <button class="btn btn-ghost btn-sm" onclick="toast('Reorder is coming soon')">Buy again</button>
+        <button class="btn btn-ghost btn-sm" onclick="toast('Invoices are coming soon')">Invoice</button>
       </div></div>`;
   }).join('');
+}
+function renderOverview(){
+  const first=(ME&&ME.name?ME.name.split(' ')[0]:'there');
+  const hello=document.querySelector('#view-overview .hello'); if(hello)hello.innerHTML=`Hello, <em>${first}</em>.`;
+  $('oActive').textContent=orders.filter(o=>o.status!=='cancelled').length;
+  const latest=orders[0], track=document.querySelector('#view-overview .track');
+  if(latest){ if($('trackId'))$('trackId').textContent=latest.id; }
+  else if(track){ track.style.display='none'; }
 }
 
 /* ---------- WISHLIST ---------- */
@@ -440,8 +436,8 @@ function renderAddr(){
     <div class="acts"><a onclick="openAddr(${a.id})">Edit</a>${!a.def?`<a onclick="setDefAddr(${a.id})">Set default</a><a class="danger" onclick="delAddr(${a.id})">Delete</a>`:''}</div>
   </div>`).join('')+`<div class="add-tile" onclick="openAddr()"><div class="inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg><div>Add a new address</div></div></div>`;
 }
-function setDefAddr(id){addresses.forEach(a=>a.def=a.id===id);renderAddr();toast('Default address updated');}
-function delAddr(id){if(confirm('Delete this address?')){addresses=addresses.filter(a=>a.id!==id);renderAddr();toast('Address deleted');}}
+async function setDefAddr(id){ try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'PATCH',body:{isDefault:true}}); await reloadAddresses(); toast('Default address updated'); }catch(e){ toast(e.message||'Could not update'); } }
+async function delAddr(id){ if(!confirm('Delete this address?'))return; try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'DELETE'}); await reloadAddresses(); toast('Address deleted'); }catch(e){ toast(e.message||'Could not delete'); } }
 let editAddrId=null;
 function openAddr(id){
   editAddrId=id||null; const a=id?addresses.find(x=>x.id===id):{};
@@ -455,16 +451,22 @@ function openAddr(id){
     <div class="field"><label>Phone</label><input id="aPhone" value="${a.phone||''}"></div>`;
   $('drawerSave').onclick=saveAddr; openDrawer();
 }
-function saveAddr(){
-  const data={label:$('aLabel').value||'Address',name:$('aName').value,line:$('aLine').value,city:$('aCity').value,country:$('aCountry').value,phone:$('aPhone').value};
+async function saveAddr(){
+  const data={label:$('aLabel').value||'Address',name:$('aName').value.trim(),line:$('aLine').value.trim(),city:$('aCity').value.trim(),country:$('aCountry').value.trim(),phone:$('aPhone').value.trim()};
+  if(!data.name){toast('Add a name');return;}
   if(!data.line){toast('Add a street address');return;}
-  if(editAddrId){Object.assign(addresses.find(a=>a.id===editAddrId),data);toast('Address updated');}
-  else{addresses.push({id:Date.now(),def:addresses.length===0,...data});toast('Address added');}
-  closeDrawer();renderAddr();
+  if(!data.city){toast('Add a city');return;}
+  try{
+    if(editAddrId) await TroveAPI.api('/api/account/addresses/'+editAddrId,{method:'PATCH',body:data});
+    else await TroveAPI.api('/api/account/addresses',{method:'POST',body:{...data,isDefault:addresses.length===0}});
+    toast(editAddrId?'Address updated':'Address added');
+    closeDrawer(); await reloadAddresses();
+  }catch(e){ toast(e.message||'Could not save address'); }
 }
 
 /* ---------- PAYMENTS ---------- */
 function renderCards(){
+  if(!cards.length){ $('cardList').innerHTML=`<div class="empty-state" style="padding:36px 20px"><div class="big">No saved cards</div><p>You'll enter your card securely with Stripe when you check out.</p></div>`; return; }
   $('cardList').innerHTML=cards.map(c=>`<div class="pay-row ${c.def?'def':''}">
     <div class="brand" style="background:${c.color}">${c.brand}</div>
     <div><div class="pn">•••• •••• •••• ${c.last4}</div><div class="pe">Expires ${c.exp}</div></div>
@@ -473,15 +475,7 @@ function renderCards(){
 }
 function setDefCard(id){cards.forEach(c=>c.def=c.id===id);renderCards();toast('Default card updated');}
 function delCard(id){if(confirm('Remove this card?')){cards=cards.filter(c=>c.id!==id);renderCards();toast('Card removed');}}
-function openCard(){
-  $('drawerTitle').textContent='Add card';
-  $('drawerBody').innerHTML=`
-    <div class="secure-note" style="margin-bottom:20px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>In production this is Stripe's secure card field. This demo only keeps the last 4 digits.</span></div>
-    <div class="field"><label>Cardholder name</label><input id="cName" placeholder="Name on card"></div>
-    <div class="field"><label>Card number</label><input id="cNum" placeholder="1234 5678 9012 3456" maxlength="19"></div>
-    <div class="ftwo"><div class="field"><label>Expiry</label><input id="cExp" placeholder="MM / YY"></div><div class="field"><label>CVC</label><input id="cCvc" placeholder="123" maxlength="4"></div></div>`;
-  $('drawerSave').onclick=saveCard; openDrawer();
-}
+function openCard(){ toast('Cards are added securely with Stripe at checkout, not stored here.'); }
 function saveCard(){
   const num=($('cNum').value||'').replace(/\s/g,''); const exp=$('cExp').value||'—';
   if(num.length<4){toast('Enter a card number');return;}
@@ -506,8 +500,8 @@ function toggleFollow(k){following[k]=!following[k];renderFollowing();toast(foll
 /* ---------- DETAILS ---------- */
 function saveDetails(){
   const n=$('dFirst').value||'there';
-  $('uName').textContent=n;$('uAv').textContent=(n[0]||'L').toUpperCase();$('uEmail').textContent=$('dEmail').value;
-  toast('Details saved');
+  $('uName').textContent=n;$('uAv').textContent=(n[0]||'?').toUpperCase();
+  toast("Profile changes aren't saved yet — coming soon.");
 }
 
 /* ---------- DRAWER ---------- */
@@ -525,10 +519,35 @@ function go(v){
   window.scrollTo(0,0);
 }
 
-/* init */
-renderWishlist(); renderFollowing();
-const _sec=(location.hash||'').replace('#','');
-if(['orders','wishlist','addresses','payments','following','details'].includes(_sec))go(_sec); else go('overview');
+/* ---------- DATA LOADING + BOOT ---------- */
+async function reloadOrders(){
+  try{ const {orders:o}=await TroveAPI.api('/api/account/orders'); orders=o||[]; }catch(_){ orders=[]; }
+  if($('ordPill'))$('ordPill').textContent=orders.length;
+}
+async function reloadAddresses(){
+  try{ const {addresses:a}=await TroveAPI.api('/api/account/addresses'); addresses=(a||[]).map(x=>({id:x.id,label:x.label,name:x.name,line:x.line,city:x.city,country:x.country,phone:x.phone,def:!!x.is_default})); }catch(_){ addresses=[]; }
+  renderAddr();
+}
+function initUser(){
+  const n=ME.name||'there', first=n.split(' ')[0];
+  $('uName').textContent=first; $('uEmail').textContent=ME.email; $('uAv').textContent=(first[0]||'?').toUpperCase();
+  if($('dFirst'))$('dFirst').value=first;
+  if($('dLast'))$('dLast').value=n.split(' ').slice(1).join(' ');
+  if($('dEmail'))$('dEmail').value=ME.email;
+  if($('dPhone'))$('dPhone').value='';
+  const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='trove-login.html';};
+}
+async function boot(){
+  let session=null;
+  try{ session=await TroveAPI.me(); }catch(_){}
+  if(!session||!session.user){ location.href='trove-login.html'; return; }
+  ME=session.user; initUser();
+  await Promise.all([reloadOrders(), reloadAddresses()]);
+  renderWishlist(); renderFollowing(); renderOverview();
+  const _sec=(location.hash||'').replace('#','');
+  if(['orders','wishlist','addresses','payments','following','details'].includes(_sec))go(_sec); else go('overview');
+}
+boot();
 </script>
 </body>
 </html>

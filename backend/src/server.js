@@ -1,15 +1,26 @@
 'use strict';
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const db = require('./db');
+const SqliteStore = require('./session-store');
 const { stripe } = require('./stripe');
 
 const app = express();
 const PORT = process.env.PORT || 4242;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+const isProd = process.env.NODE_ENV === 'production';
+const crossSite = process.env.CROSS_SITE === '1';   // set ONLY when the frontend lives on a different domain than this API
 const FEE_PCT = Number(process.env.PLATFORM_FEE_PERCENT || 8);
+
+// CLIENT_URL = this site's public URL (used for Stripe Connect return links).
+// For split hosting you may list several allowed origins, comma-separated.
+const CLIENT_URL = process.env.CLIENT_URL || `http://localhost:${PORT}`;
+const ALLOWED_ORIGINS = CLIENT_URL.split(',').map((s) => s.trim()).filter(Boolean);
+
+// Behind a hosting proxy (Render/Railway/Fly) so secure cookies are honoured.
+app.set('trust proxy', 1);
 
 /* ----------------------------------------------------------------------------
  * STRIPE WEBHOOK — must read the RAW body, so it is mounted BEFORE express.json.
@@ -75,22 +86,45 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
 });
 
 /* ---------------- Standard middleware ---------------- */
-app.use(cors({ origin: CLIENT_URL, credentials: true }));
+// CORS only matters in split hosting; for single-origin the browser sends no Origin.
+app.use(cors({
+  origin(origin, cb) {
+    if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true); // same-origin, curl, allowed list
+    return cb(new Error(`Origin ${origin} is not allowed`));
+  },
+  credentials: true,
+}));
 app.use(express.json());
 app.use(session({
+  store: new SqliteStore(),
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: 'lax', maxAge: 1000 * 60 * 60 * 24 * 14 }, // set secure:true behind HTTPS
+  cookie: {
+    httpOnly: true,
+    secure: isProd,                          // HTTPS-only in production
+    sameSite: crossSite ? 'none' : 'lax',    // 'none' needed when frontend is a different domain
+    maxAge: 1000 * 60 * 60 * 24 * 14,
+  },
 }));
 
 /* ---------------- Routes ---------------- */
 app.get('/api/health', (_req, res) => res.json({ ok: true, stripe: !!stripe }));
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/products', require('./routes/products.routes'));
+app.use('/api/shops', require('./routes/shops.routes'));
 app.use('/api/seller', require('./routes/seller.routes'));
 app.use('/api/checkout', require('./routes/checkout.routes'));
 app.use('/api/account', require('./routes/account.routes'));
+
+// Unknown /api/* path → JSON 404 (so the SPA fallback below never swallows API calls).
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
+
+/* ---------------- Static storefront (single-origin) ----------------
+ * Serves docs/ from the same origin as the API, so session cookies are
+ * first-party and there's one URL to deploy. "/" → docs/index.html.        */
+const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
+app.use(express.static(DOCS_DIR, { extensions: ['html'] }));
 
 /* ---------------- Errors ---------------- */
 app.use((err, _req, res, _next) => {
@@ -98,4 +132,8 @@ app.use((err, _req, res, _next) => {
   res.status(err.status || 500).json({ error: err.message || 'Server error' });
 });
 
-app.listen(PORT, () => console.log(`trove API on http://localhost:${PORT}  (client: ${CLIENT_URL})`));
+app.listen(PORT, () => {
+  console.log(`trove running on http://localhost:${PORT}`);
+  console.log(`  • storefront: http://localhost:${PORT}/trove.html`);
+  console.log(`  • API:        http://localhost:${PORT}/api/health   (stripe ${stripe ? 'configured' : 'OFF'})`);
+});

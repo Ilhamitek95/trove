@@ -1,5 +1,5 @@
 'use strict';
-/** Seeds demo data that mirrors the front-end. Run: npm run seed */
+/** Seeds demo data that mirrors the storefront. Run: npm run seed */
 const db = require('./db');
 const { hashPassword } = require('./middleware');
 
@@ -17,23 +17,50 @@ const layla = mkUser.run('layla@email.com', pw, 'Layla Hassan', 'buyer').lastIns
 db.prepare('INSERT INTO addresses (user_id,label,name,line,city,is_default) VALUES (?,?,?,?,?,1)')
   .run(layla, 'Home', 'Layla Hassan', 'Apt 1204, Marina Gate 2', 'Dubai Marina, Dubai');
 
-// Platform / house label
-const admin = mkUser.run('hello@trove.com', pw, 'Trove', 'admin').lastInsertRowid;
-const house = mkShop.run(admin, 'trove label', 'trove-label', 'Our own line, made well.', 'In-house · Dubai', '#262321', 1).lastInsertRowid;
+// A seller (+ their shop) in one step. House brand owner is role 'admin'.
+function shop(email, ownerName, shopName, slug, bio, location, color, isHouse) {
+  const uid = mkUser.run(email, pw, ownerName, isHouse ? 'admin' : 'seller').lastInsertRowid;
+  return mkShop.run(uid, shopName, slug, bio, location, color, isHouse ? 1 : 0).lastInsertRowid;
+}
 
-// Seller
-const mara = mkUser.run('mara@kilnandclay.com', pw, 'Mara', 'seller').lastInsertRowid;
-const kiln = mkShop.run(mara, 'Kiln & Clay', 'kiln-and-clay', 'Small-batch stoneware, thrown by hand.', 'Lisbon, Portugal', '#A98B7D', 0).lastInsertRowid;
+const house = shop('hello@trove.com', 'Trove', 'trove label', 'trove-label',
+  'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.',
+  'In-house · Dubai', '#262321', true);
+const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay',
+  "Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.",
+  'Lisbon, Portugal', '#A98B7D', false);
+const loom = shop('hello@northboundloom.com', 'Northbound Loom', 'Northbound Loom', 'northbound-loom',
+  'Heavyweight knitwear and woven goods from a family workshop running since 1978.',
+  'Reykjavík, Iceland', '#B9D0E0', false);
+const ember = shop('hello@embergoods.com', 'Ember Goods', 'Ember Goods', 'ember-goods',
+  'Leather and brass made the slow way, in a workshop in the medina.',
+  'Marrakech, Morocco', '#F5C68A', false);
+const fern = shop('hello@fernapothecary.com', 'Fern Apothecary', 'Fern Apothecary', 'fern-apothecary',
+  'Plant-based skincare and home scent, formulated in tiny batches.',
+  'Portland, USA', '#C7D9AC', false);
+const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.', 'folio-paper',
+  'Stationery, notebooks and desk goods for people who still write things down.',
+  'Kyoto, Japan', '#F4CFE0', false);
 
 const products = [
-  [house, 'The Everyday Tee', 'Heavyweight organic cotton, garment-dyed.', 'Apparel', c(95), null, 120, 'live', 'tee4'],
-  [house, 'Waxed Canvas Weekender', 'Waxed canvas and bridle leather.', 'Accessories', c(285), null, 30, 'live', 'bag6'],
-  [house, 'Glazed Ceramic Planter', 'Drainage and matching saucer.', 'Home', c(76), c(95), 44, 'live', 'planter4'],
-  [kiln, 'Reeded Stoneware Mug', 'Hand-thrown, reactive matte glaze. 320ml.', 'Ceramics', c(64), null, 38, 'live', 'mug7'],
-  [kiln, 'Glazed Serving Bowl', 'Wide low bowl in speckled clay.', 'Ceramics', c(128), null, 12, 'live', 'bowl9'],
-  [kiln, 'Stoneware Vase · Tall', 'A quiet centrepiece.', 'Home', c(140), null, 7, 'live', 'vase5'],
-  [kiln, 'Glazed Spoon Rest', 'A small, useful thing.', 'Home', c(34), null, 52, 'draft', 'spoon1'],
+  [kiln,  'Reeded Stoneware Mug',     'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.', 'Ceramics',    c(64),  null,   38,  'live', 'mug7'],
+  [house, 'The Everyday Tee',         'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.',         'Apparel',     c(95),  null,   120, 'live', 'tee4'],
+  [loom,  'Lopapeysa Wool Sweater',   'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.', 'Apparel',     c(420), c(480), 18,  'live', 'knit5'],
+  [ember, 'Hammered Brass Tray',      'Hand-hammered brass catch-all for keys, cards and the small things that wander.',       'Home',        c(140), null,   26,  'live', 'tray3'],
+  [fern,  'Cedar & Smoke Candle',     "Coconut-soy wax, fifty-five hour burn. Smells like a cabin you don't want to leave.",   'Home',        c(88),  null,   64,  'live', 'candle8'],
+  [paper, 'Linen-Bound Notebook',     "A5, 192 pages of cream paper that won't bleed through. Lay-flat binding.",              'Stationery',  c(72),  null,   90,  'live', 'note2'],
+  [house, 'Waxed Canvas Weekender',   'Waxed canvas and bridle leather, built to be handed down. Our house staple.',           'Accessories', c(285), null,   30,  'live', 'bag6'],
+  [kiln,  'Glazed Serving Bowl',      'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.',      'Ceramics',    c(128), null,   12,  'live', 'bowl9'],
+  [loom,  'Merino Watch Cap',         'Ribbed merino beanie, double-folded. Itch-free and packs flat.',                        'Apparel',     c(110), null,   44,  'live', 'cap2'],
+  [ember, 'Folded Leather Wallet',    'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.',          'Accessories', c(195), null,   33,  'live', 'wallet3'],
+  [fern,  'Botanical Hand Balm',      'Shea and calendula for working hands. Sinks in fast, no greasy film.',                  'Beauty',      c(54),  null,   110, 'live', 'balm5'],
+  [house, 'Glazed Ceramic Planter',   'House-label planter with drainage and matching saucer, in three sizes.',               'Home',        c(76),  c(95),  44,  'live', 'planter4'],
+  [paper, 'Weighted Brass Clip',      "A weighted brass clip that keeps the page you're on, open.",                            'Stationery',  c(38),  null,   75,  'live', 'clip1'],
+  [loom,  'Hand-Knotted Wool Throw',  'Chunky undyed throw, fringed by hand. The one everyone fights over.',                   'Home',        c(360), null,   9,   'live', 'throw7'],
+  [fern,  'Olive & Sea Salt Soap',    'Cold-process bar, cured six weeks. Gentle enough for face and hands.',                  'Beauty',      c(32),  null,   140, 'live', 'soap3'],
+  [house, 'Combed Cotton Socks · 3',  "House-label combed-cotton socks, reinforced heel and toe. The ones you'll look for.",   'Apparel',     c(58),  null,   88,  'live', 'socks2'],
 ];
 for (const p of products) mkProd.run(...p);
 
-console.log('Seeded: 3 users (layla@ / mara@ / hello@, password demo1234), 2 shops, %d products.', products.length);
+console.log('Seeded: 7 users, 6 shops, %d products.', products.length);
+console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

@@ -411,14 +411,14 @@
       <div class="acct-wrap">
         <button class="icon-btn" title="Account" onclick="toggleAcct(event)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
         <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
-          <div class="am-head"><div class="am-av">L</div><div><div class="am-n">Layla Hassan</div><div class="am-e">layla@email.com</div></div></div>
+          <div class="am-head"><div class="am-av" id="amAv">·</div><div><div class="am-n" id="amName">Welcome</div><div class="am-e" id="amEmail">Sign in to your account</div></div></div>
           <a href="trove-account.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
           <a href="trove-account.html#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
           <a href="trove-account.html#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
           <a href="trove-account.html#following"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Following</a>
           <div class="am-div"></div>
           <a class="sell" href="trove-seller.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on trove ↗</a>
-          <a href="trove-login.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign in / out</a>
+          <a href="trove-login.html" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
         </div>
       </div>
       <button class="icon-btn" title="Cart" onclick="openCart()">
@@ -658,7 +658,7 @@
         <div class="co-step">
           <div class="sh"><span class="num">4</span><h3>Payment</h3></div>
           <div id="coPaySaved"></div>
-          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Payments are processed by Stripe and split to each shop automatically. In this prototype no charge is made.</span></div>
+          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="payNote">Payments are processed by Stripe and split to each shop automatically. In this prototype no charge is made.</span></div>
         </div>
       </div>
       <div>
@@ -678,7 +678,7 @@
 <div class="view" id="view-confirm">
   <div class="confirm">
     <div class="check"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
-    <h1>Thank you, <em>Layla</em>.</h1>
+    <h1>Thank you, <em id="confName">there</em>.</h1>
     <p class="lede">Your order is in. A receipt is on its way to your email.</p>
     <div class="ordid" id="confOrdId"></div>
     <div class="ship-card" id="confShip"></div>
@@ -723,9 +723,11 @@
 
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
 
+<script src="config.js"></script>
+<script src="api.js"></script>
 <script>
 /* ---------------- DATA ---------------- */
-const VENDORS = {
+let VENDORS = {
   trove:  {name:'trove label', house:true, loc:'In-house · Dubai', color:'#262321', bio:'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.', rating:'4.9', prods:48, since:'2024'},
   kiln:   {name:'Kiln & Clay', loc:'Lisbon, Portugal', color:'#A98B7D', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
   loom:   {name:'Northbound Loom', loc:'Reykjavík, Iceland', color:'#B9D0E0', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
@@ -742,7 +744,7 @@ const CATS = [
   {name:'Accessories', color:'#D8C5BE', ct:'1,540'},
 ];
 const P = (id,name,vendor,price,was,cat,rating,reviews,desc,seed)=>({id,name,vendor,price,was,cat,rating,reviews,desc,seed});
-const PRODUCTS = [
+let PRODUCTS = [
   P(1,'Reeded Stoneware Mug','kiln',64,null,'Ceramics','4.9',214,'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.','mug7'),
   P(2,'The Everyday Tee','trove',95,null,'Apparel','4.8',512,'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.','tee4'),
   P(3,'Lopapeysa Wool Sweater','loom',420,480,'Apparel','4.9',88,'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.','knit5'),
@@ -763,7 +765,8 @@ const PRODUCTS = [
 
 let state={view:'home',cat:'all',houseOnly:false,min:0,max:9999,q:''};
 let cart=[];
-const SAVED_ADDR=[
+let ME=null, LIVE=false;
+let SAVED_ADDR=[
   {label:'Home',name:'Layla Hassan',line:'Apt 1204, Marina Gate 2',city:'Dubai Marina, Dubai'},
   {label:'Work',name:'Layla Hassan',line:'Level 14, Boulevard Plaza Tower 1',city:'Downtown Dubai, Dubai'},
 ];
@@ -782,6 +785,59 @@ function aed(n){return 'AED '+n.toLocaleString();}
 function vColor(v){return VENDORS[v].color;}
 function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
 
+/* ---------------- PAYMENTS ----------------
+ * Demo mode until both values in config.js are set; then checkout creates a
+ * real order on the API and takes payment with Stripe's card form. */
+const CFG = window.TROVE_CONFIG || {};
+const paymentsLive = () => LIVE && TroveAPI.paymentsEnabled;
+let stripeJs=null, stripeElements=null, payElement=null, payIntent=null;
+
+function resetPayment(){payIntent=null;stripeElements=null;payElement=null;}
+
+function loadStripeJs(){
+  return new Promise((resolve,reject)=>{
+    if(window.Stripe) return resolve();
+    const s=document.createElement('script');
+    s.src='https://js.stripe.com/v3/';
+    s.onload=resolve; s.onerror=()=>reject(new Error('Could not load the payment form. Check your connection and refresh.'));
+    document.head.appendChild(s);
+  });
+}
+
+function checkoutPayload(){
+  let address=null;
+  if(coNewAddr){
+    const g=id=>($(id)?$(id).value.trim():'');
+    const line=g('coNewLine');
+    if(line) address={name:g('coNewName'),line,city:g('coNewCity'),country:g('coNewCountry')};
+  }else if(SAVED_ADDR[coAddr]){
+    const a=SAVED_ADDR[coAddr]; address={name:a.name,line:a.line,city:a.city};
+  }
+  return {
+    email:$('coEmail').value.trim(),
+    items:cart.map(c=>({productId:c.pid,qty:c.qty})),
+    address,
+  };
+}
+
+async function mountPaymentElement(){
+  const status=$('payStatus');
+  try{
+    await loadStripeJs();
+    if(!stripeJs) stripeJs=window.Stripe(TroveAPI.stripeKey);
+    if(!payIntent){
+      status.textContent='Preparing secure payment…';
+      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
+      payIntent=data;
+      stripeElements=stripeJs.elements({clientSecret:data.clientSecret});
+      payElement=stripeElements.create('payment');
+    }
+    try{payElement.unmount();}catch(_){/* not mounted yet */}
+    payElement.mount('#payment-element');
+    status.textContent='';
+  }catch(e){ status.textContent=e.message; }
+}
+
 /* product card */
 function productCard(p){
   const V=VENDORS[p.vendor], house=V.house;
@@ -796,7 +852,7 @@ function productCard(p){
     <h3>${p.name}</h3>
     <div class="foot">
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
-      <span class="stars">${stars(p.rating)}<span>${p.rating}</span></span>
+      ${p.rating?`<span class="stars">${stars(p.rating)}<span>${p.rating}</span></span>`:''}
     </div>
   </article>`;
 }
@@ -813,7 +869,7 @@ function renderHome(){
 
   $('catRail').innerHTML=CATS.map(c=>`<div class="cat" onclick="go('shop','${c.name}')">
     <div class="tile"><div class="grad" style="${grad(c.color)}"></div></div>
-    <div class="name">${c.name}</div><div class="ct">${c.ct}</div></div>`).join('');
+    <div class="name">${c.name}</div><div class="ct">${LIVE?PRODUCTS.filter(p=>p.cat===c.name).length:c.ct}</div></div>`).join('');
 
   $('trendingGrid').innerHTML=PRODUCTS.slice(0,8).map(productCard).join('');
 
@@ -828,7 +884,7 @@ function renderHome(){
     <h3>${v.name}</h3>
     <div class="loc">${v.loc}</div>
     <p>${v.bio}</p>
-    <div class="vmeta"><span><b>${v.prods}</b> pieces</span><span><b>${v.rating}★</b></span><span>since <b>${v.since}</b></span></div>
+    <div class="vmeta"><span><b>${v.prods}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.since?`<span>since <b>${v.since}</b></span>`:''}</div>
   </article>`).join('');
 }
 
@@ -844,8 +900,11 @@ function setHouseFilter(v){state.houseOnly=v;renderShop();}
 function setPrice(min,max){state.min=min;state.max=max;renderShop();}
 function filteredProducts(){
   const q=state.q.toLowerCase();
-  let list=PRODUCTS.filter(p=>(state.cat==='all'||p.cat===state.cat)&&(!state.houseOnly||VENDORS[p.vendor].house)&&p.price>=state.min&&p.price<=state.max
-    &&(!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name).toLowerCase().includes(q)));
+  let list=PRODUCTS.filter(p=>{
+    const catMatch=state.cat==='all'||(state.cat==='House'?VENDORS[p.vendor].house:p.cat===state.cat);
+    return catMatch&&(!state.houseOnly||VENDORS[p.vendor].house)&&p.price>=state.min&&p.price<=state.max
+      &&(!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name).toLowerCase().includes(q));
+  });
   const s=$('sortSel').value;
   if(s==='low')list.sort((a,b)=>a.price-b.price);
   else if(s==='high')list.sort((a,b)=>b.price-a.price);
@@ -867,7 +926,7 @@ function openVendor(key){
   $('vLav').style.background=v.color; $('vLav').textContent=v.name[0];
   $('vName').innerHTML=`${v.name}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
   $('vLoc').textContent=v.loc; $('vBio').textContent=v.bio;
-  $('vProds').textContent=v.prods; $('vRate').textContent=v.rating+'★'; $('vSince').textContent=v.since;
+  $('vProds').textContent=v.prods; $('vRate').textContent=v.rating?v.rating+'★':'—'; $('vSince').textContent=v.since||'—';
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
   showView('vendor'); window.scrollTo(0,0);
@@ -883,7 +942,7 @@ function openPDP(id){
   $('pdpVendorLink').innerHTML=`${V.name}`;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
-  $('pdpStars').innerHTML=`${stars(p.rating)} <span>${p.rating} · ${p.reviews} reviews</span>`;
+  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} reviews</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
   const sw=['#262321','#A98B7D','#D8C5BE','#C3D1C7'];
@@ -907,7 +966,7 @@ function addToCart(id,btn){
 }
 function changeQty(id,d){const c=cart.find(x=>x.pid===id);if(!c)return;c.qty+=d;if(c.qty<=0)cart=cart.filter(x=>x.pid!==id);updateCartCount();renderCart();}
 function removeItem(id){cart=cart.filter(x=>x.pid!==id);updateCartCount();renderCart();}
-function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);}
+function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);resetPayment();}
 function renderCart(){
   const body=$('cartBody');
   if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">Your trove is empty</div><p style="font-weight:400">Pieces you add will gather here, grouped by shop.</p></div>`;$('cartFoot').style.display='none';return;}
@@ -953,11 +1012,18 @@ function renderCheckout(){
   // addresses
   $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>`<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" onclick="selAddr(${i})"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span></div></div>`).join('')
     +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
-  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input placeholder="Your name"></div><div class="co-field"><label>Address</label><input placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>City / Area</label><input></div><div class="co-field"><label>Country</label><input value="United Arab Emirates"></div></div></div>`:'';
+  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>City / Area</label><input id="coNewCity"></div><div class="co-field"><label>Country</label><input id="coNewCountry" value="United Arab Emirates"></div></div></div>`:'';
   // delivery grouped by shop
   $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('');
-  // payment
-  $('coPaySaved').innerHTML=SAVED_CARDS.map((c,i)=>`<div class="saved-opt ${coCard===i?'on':''}" onclick="selCard(${i})"><div class="radio"></div><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></div>`).join('');
+  // payment — real Stripe card form when configured, demo cards otherwise
+  if(paymentsLive()){
+    $('coPaySaved').innerHTML=`<div id="payment-element" style="margin:6px 0 4px"></div><div id="payStatus" style="font-size:13px;color:var(--muted);min-height:18px;margin-top:6px"></div>`;
+    $('payNote').textContent='Payments are processed securely by Stripe and split to each shop automatically.';
+    mountPaymentElement();
+  }else{
+    $('coPaySaved').innerHTML=SAVED_CARDS.map((c,i)=>`<div class="saved-opt ${coCard===i?'on':''}" onclick="selCard(${i})"><div class="radio"></div><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></div>`).join('');
+    $('payNote').textContent='Demo mode — card payments launch soon. No charge is made and no real order is placed.';
+  }
   // summary
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
@@ -971,16 +1037,34 @@ function renderCheckout(){
   $('coTotals').innerHTML=`<div class="row"><span>Subtotal</span><span>${aed(sub)}</span></div><div class="row"><span>Shipping</span><span>${ship===0?'Free':aed(ship)}</span></div><div class="row grand"><span>Total</span><span>${aed(total)}</span></div>`;
   $('coPlaceTot').textContent=aed(total);
 }
-function placeOrder(){
+function showConfirmation(orderId){
   const groups=cartGroups();
   const n=Object.keys(groups).length;
-  const id='TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10);
-  $('confOrdId').textContent='Order '+id;
+  $('confOrdId').textContent='Order '+orderId;
   $('confShip').innerHTML=`<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
       return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · ${V.house?'arrives 2–4 days':'arrives 3–6 days'}</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
   showView('confirm');window.scrollTo(0,0);
+}
+async function placeOrder(){
+  if(paymentsLive()){
+    if(!payIntent||!stripeElements){toast('The payment form is still loading — one moment');return;}
+    const btn=document.querySelector('.co-place');
+    btn.disabled=true;btn.style.opacity=.6;
+    const {error}=await stripeJs.confirmPayment({
+      elements:stripeElements,
+      confirmParams:{return_url:location.href.split('#')[0]},
+      redirect:'if_required',
+    });
+    btn.disabled=false;btn.style.opacity=1;
+    if(error){$('payStatus').textContent=error.message;return;}
+    const id=payIntent.orderId;
+    resetPayment();
+    showConfirmation(id);
+    return;
+  }
+  showConfirmation('TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10));
 }
 
 let toastT;
@@ -989,7 +1073,49 @@ function toast(m){$('toastMsg').textContent=m;$('toast').classList.add('show');c
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;}
 function go(v,cat){if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';buildCatFilters();renderShop();showView('shop');}else showView(v);window.scrollTo(0,0);}
 
-renderHome(); buildCatFilters(); updateCartCount();
+/* ---------------- BOOT: live data + auth, with demo fallback ---------------- */
+async function loadCatalog(){
+  if(!(await TroveAPI.health())) return;            // no backend reachable → keep demo data
+  try{
+    const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
+    VENDORS={};
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,bio:s.bio,prods:s.productCount,since:s.since,rating:null};});
+    PRODUCTS=pRes.products.map(p=>{
+      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:null,reviews:0,desc:p.description,seed:p.imageSeed};
+    });
+    LIVE=true;
+  }catch(e){console.warn('trove: using demo data —',e.message);}
+}
+async function loadAuth(){
+  let session=null;
+  try{session=await TroveAPI.me();}catch(_){}
+  ME=session&&session.user;
+  if(ME){
+    $('amAv').textContent=((ME.name||'?').trim()[0]||'·').toUpperCase();
+    $('amName').textContent=ME.name;
+    $('amEmail').textContent=ME.email;
+    $('authLabel').textContent='Sign out';
+    $('authLink').removeAttribute('href');
+    $('authLink').style.cursor='pointer';
+    $('authLink').onclick=signOut;
+    if($('coEmail'))$('coEmail').value=ME.email;
+    try{
+      const {addresses}=await TroveAPI.api('/api/account/addresses');
+      if(addresses&&addresses.length)SAVED_ADDR=addresses.map(a=>({label:a.label,name:a.name,line:a.line,city:a.city}));
+      else{SAVED_ADDR=[];coNewAddr=true;}
+    }catch(_){}
+  }else{
+    $('amName').textContent='Welcome'; $('amEmail').textContent='Sign in to your account'; $('amAv').textContent='·';
+    $('authLabel').textContent='Sign in';
+  }
+}
+async function signOut(){await TroveAPI.logout();location.href='trove.html';}
+async function boot(){
+  await Promise.all([loadCatalog(),loadAuth()]);
+  renderHome(); buildCatFilters(); updateCartCount();
+}
+boot();
 </script>
 </body>
 </html>

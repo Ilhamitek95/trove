@@ -109,16 +109,19 @@
       <h2 id="aTitle">Sign in to shop</h2>
       <p class="lede" id="aLede">Your account, orders, and saved finds.</p>
 
+      <div class="field" id="nameField" style="display:none"><label>Your name</label><input id="name" placeholder="Your full name"></div>
       <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@email.com" value="layla@email.com"></div>
       <div class="field"><div class="fl"><label>Password</label><a href="#" onclick="return false">Forgot?</a></div>
         <input id="pass" type="password" placeholder="••••••••" value="demo1234"></div>
+      <div class="field" id="shopField" style="display:none"><label>Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
+      <div id="authErr" style="display:none;color:var(--coral-deep);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
       <button class="submit" id="submitBtn" onclick="signIn()">Sign in</button>
 
       <div class="or">or</div>
       <div class="social">
-        <button onclick="signIn()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12c0-.7-.06-1.4-.18-2H12v3.8h5.6a4.8 4.8 0 0 1-2 3.2v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.3-2.6c-.9.6-2 1-3.3 1-2.5 0-4.7-1.7-5.4-4H3.2v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.2A10 10 0 0 0 2 12c0 1.6.4 3.2 1.2 4.6z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.2 7.4L6.6 10c.7-2.3 2.9-4 5.4-4z"/></svg>Google</button>
-        <button onclick="signIn()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 12.6c0-2 1.6-3 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7s-1.6-.7-2.6-.7c-1.3 0-2.6.8-3.2 2-1.4 2.4-.4 6 1 8 .6 1 1.4 2 2.4 2s1.3-.6 2.5-.6 1.5.6 2.6.6 1.7-1 2.3-2c.7-1 1-2 1-2.1-.1 0-1.9-.8-1.9-2.9zM15.7 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.5-.8 2.4.9 0 1.8-.5 2.4-1.1z"/></svg>Apple</button>
+        <button onclick="notImplemented()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12c0-.7-.06-1.4-.18-2H12v3.8h5.6a4.8 4.8 0 0 1-2 3.2v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.3-2.6c-.9.6-2 1-3.3 1-2.5 0-4.7-1.7-5.4-4H3.2v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.2A10 10 0 0 0 2 12c0 1.6.4 3.2 1.2 4.6z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.2 7.4L6.6 10c.7-2.3 2.9-4 5.4-4z"/></svg>Google</button>
+        <button onclick="notImplemented()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 12.6c0-2 1.6-3 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7s-1.6-.7-2.6-.7c-1.3 0-2.6.8-3.2 2-1.4 2.4-.4 6 1 8 .6 1 1.4 2 2.4 2s1.3-.6 2.5-.6 1.5.6 2.6.6 1.7-1 2.3-2c.7-1 1-2 1-2.1-.1 0-1.9-.8-1.9-2.9zM15.7 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.5-.8 2.4.9 0 1.8-.5 2.4-1.1z"/></svg>Apple</button>
       </div>
 
       <div class="swap" id="swap">New to trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
@@ -127,7 +130,10 @@
   </div>
 </div>
 
+<script src="config.js"></script>
+<script src="api.js"></script>
 <script>
+const $=id=>document.getElementById(id);
 let mode='shop', registering=false;
 const COPY={
   shop:{eyebrow:'Welcome back',title:'Beautiful things, <em>gathered</em>.',text:'Sign in to pick up where you left off — your saved finds, your shops, your trove.',
@@ -161,11 +167,40 @@ function updateRegisterUI(){
   document.getElementById('swap').innerHTML=registering
     ? `Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>`
     : (mode==='sell'?`Not selling yet? <a href="#" onclick="toggleRegister();return false">Open a shop</a>`:`New to trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
+  $('nameField').style.display=registering?'block':'none';
+  $('shopField').style.display=(registering&&mode==='sell')?'block':'none';
+  $('authErr').style.display='none';
 }
-function signIn(){
-  const btn=document.getElementById('submitBtn');
-  btn.textContent='One moment…'; btn.style.opacity='.7';
-  setTimeout(()=>{ window.location.href = mode==='sell' ? 'trove-seller.html' : 'trove-account.html'; },650);
+function showErr(m){const e=$('authErr');e.textContent=m;e.style.display='block';}
+function notImplemented(){showErr('Social sign-in is coming soon — use your email for now.');}
+
+async function signIn(){
+  const btn=$('submitBtn'); $('authErr').style.display='none';
+
+  // No backend reachable → keep the prototype clickable (demo behaviour).
+  if(!(await TroveAPI.health())){ window.location.href = mode==='sell' ? 'trove-seller.html' : 'trove-account.html'; return; }
+
+  const email=$('email').value.trim(), pass=$('pass').value, name=$('name').value.trim();
+  if(!email||!pass) return showErr('Enter your email and password.');
+  if(registering&&!name) return showErr('Enter your name.');
+
+  const label=btn.textContent;
+  btn.textContent='One moment…'; btn.style.opacity='.7'; btn.disabled=true;
+  try{
+    if(registering){
+      const body={email,password:pass,name,role:mode==='sell'?'seller':'buyer'};
+      if(mode==='sell') body.shopName=$('shopName').value.trim()||name;
+      await TroveAPI.api('/api/auth/register',{method:'POST',body});
+    }else{
+      await TroveAPI.api('/api/auth/login',{method:'POST',body:{email,password:pass}});
+    }
+    let dest = mode==='sell' ? 'trove-seller.html' : 'trove-account.html';
+    try{ const me=await TroveAPI.me(); if(me&&me.shop) dest='trove-seller.html'; }catch(_){}
+    window.location.href=dest;
+  }catch(e){
+    btn.textContent=label; btn.style.opacity='1'; btn.disabled=false;
+    showErr(e.message||'Could not sign you in.');
+  }
 }
 </script>
 </body>

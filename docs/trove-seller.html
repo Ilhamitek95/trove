@@ -237,7 +237,7 @@
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
     </nav>
-    <div class="foot">Signed in as Mara · <a href="trove-login.html">Sign out</a></div>
+    <div class="foot">Signed in as <span id="sellerName">…</span> · <a href="trove-login.html" id="signOutLink">Sign out</a></div>
   </aside>
 
   <!-- MAIN -->
@@ -356,29 +356,15 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="config.js"></script>
+<script src="api.js"></script>
 <script>
 /* ---------------- STATE ---------------- */
-const SHOP={name:'Kiln & Clay', loc:'Lisbon, Portugal', color:'#A98B7D', bio:"Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point."};
-let stripeConnected=false;
-
-let products=[
-  {id:1,name:'Reeded Stoneware Mug',cat:'Ceramics',price:64,compare:null,stock:38,status:'live',seed:'mug7',sales:214},
-  {id:2,name:'Glazed Serving Bowl',cat:'Ceramics',price:128,compare:null,stock:12,status:'live',seed:'bowl9',sales:97},
-  {id:3,name:'Speckled Dinner Plate · Set of 2',cat:'Ceramics',price:96,compare:120,stock:24,status:'live',seed:'plate3',sales:142},
-  {id:4,name:'Matte Pour-Over Set',cat:'Home',price:185,compare:null,stock:7,status:'live',seed:'pour2',sales:61},
-  {id:5,name:'Stoneware Vase · Tall',cat:'Home',price:140,compare:null,stock:0,status:'live',seed:'vase5',sales:88},
-  {id:6,name:'Glazed Spoon Rest',cat:'Home',price:34,compare:null,stock:52,status:'draft',seed:'spoon1',sales:0},
-  {id:7,name:'Ribbed Tumbler · Set of 4',cat:'Ceramics',price:110,compare:null,stock:18,status:'live',seed:'tumb4',sales:73},
-  {id:8,name:'Hand-Thrown Planter',cat:'Home',price:78,compare:null,stock:5,status:'draft',seed:'plant6',sales:0},
-];
-let orders=[
-  {id:'TRV-2841',cust:'A. Haddad',date:'9 Jun',items:'Reeded Mug ×2',total:128,status:'new'},
-  {id:'TRV-2839',cust:'L. Okafor',date:'8 Jun',items:'Serving Bowl ×1',total:128,status:'new'},
-  {id:'TRV-2835',cust:'S. Rahimi',date:'7 Jun',items:'Dinner Plate Set, Spoon Rest',total:130,status:'fulfilled'},
-  {id:'TRV-2830',cust:'J. Meyer',date:'5 Jun',items:'Pour-Over Set ×1',total:185,status:'shipped'},
-  {id:'TRV-2826',cust:'N. Costa',date:'3 Jun',items:'Ribbed Tumbler Set ×1',total:110,status:'shipped'},
-];
-const WEEKS=[820,640,910,1180,760,1340,1020,1460,1240,1680,1390,2010];
+let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#A98B7D',bio:'',stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
+let products=[];
+let orders=[];
+let ME=null;
+const FEE=0.08;
 let editingId=null, drawerStatus='live';
 
 /* ---------------- HELPERS ---------------- */
@@ -390,44 +376,93 @@ function aed(n){return 'AED '+Math.round(n).toLocaleString();}
 let toastT;
 function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
+/* ---------------- API GLUE ---------------- */
+function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'shipped'; }
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null}; }
+function applyShop(s){
+  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D'};
+  storeColor=SHOP.color;
+  $('sideShop').textContent=SHOP.name;
+  $('sideAv').textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();
+  $('sideAv').style.background=SHOP.color;
+  $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
+}
+function fillStoreForm(){
+  if($('sfName'))$('sfName').value=SHOP.name||'';
+  if($('sfTag'))$('sfTag').value='';
+  if($('sfLoc'))$('sfLoc').value=SHOP.loc||'';
+  if($('sfBio'))$('sfBio').value=SHOP.bio||'';
+}
+async function reloadProducts(){
+  try{ const {products:ps}=await TroveAPI.api('/api/seller/products'); products=(ps||[]).map(mapProduct); }catch(_){ products=[]; }
+  renderProducts(); renderOverview();
+}
+async function reloadOrders(){
+  try{
+    const {items}=await TroveAPI.api('/api/seller/orders');
+    const byOrder={};
+    (items||[]).forEach(it=>{
+      const o=byOrder[it.public_id]||(byOrder[it.public_id]={id:it.public_id,cust:it.email||'—',date:it.created_at,status:it.order_status,total:0,names:[]});
+      o.total+=(it.price_cents*it.qty)/100;
+      o.names.push((it.name_snapshot||'Item')+(it.qty>1?' ×'+it.qty:''));
+    });
+    orders=Object.values(byOrder).map(o=>({id:o.id,cust:o.cust,date:o.date,status:o.status,total:o.total,items:o.names.join(', ')}));
+  }catch(_){ orders=[]; }
+  renderOrders(); renderOverview();
+}
+async function refreshStripeStatus(){
+  try{ const s=await TroveAPI.api('/api/seller/connect/status'); SHOP.stripeStatus={connected:!!s.connected,chargesEnabled:!!s.chargesEnabled,payoutsEnabled:!!s.payoutsEnabled,accountId:s.accountId}; }catch(_){}
+}
+async function openStripeDashboard(){
+  try{ const {url}=await TroveAPI.api('/api/seller/connect/login-link',{method:'POST'}); window.open(url,'_blank'); }catch(e){ toast(e.message||'Could not open Stripe'); }
+}
+
 /* ---------------- OVERVIEW ---------------- */
 function renderOverview(){
-  const rev=WEEKS.slice(-4).reduce((a,b)=>a+b,0);
-  const liveCount=products.filter(p=>p.status==='live').length;
-  const pending=orders.filter(o=>o.status!=='shipped').reduce((s,o)=>s+o.total,0)*0.92;
-  $('stRev').textContent=aed(rev);
+  const live=products.filter(p=>p.status==='live').length;
+  const drafts=products.filter(p=>p.status==='draft').length;
+  const revenue=orders.filter(o=>o.status==='paid'||o.status==='fulfilled').reduce((s,o)=>s+o.total,0);
+  const net=revenue*(1-FEE);
+  const sc=SHOP.stripeStatus;
+  $('stRev').textContent=aed(revenue);
   $('stOrders').textContent=orders.length;
-  $('stProducts').textContent=liveCount;
-  $('stPayout').textContent=aed(pending);
-  $('stPayoutSub').textContent=stripeConnected?'via Stripe · Fri':'connect Stripe';
-  $('chartTot').textContent=aed(WEEKS.reduce((a,b)=>a+b,0));
-  $('poAvail').textContent=aed(pending);
-  $('poDate').textContent=stripeConnected?'Fri, 13 Jun':'—';
-  // banner
-  $('ovBanner').innerHTML = stripeConnected ? '' :
+  $('stProducts').textContent=live;
+  $('stPayout').textContent=aed(net);
+  $('stPayoutSub').textContent=sc.chargesEnabled?'after 8% fee':'connect Stripe';
+  const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
+  if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
+  if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
+  if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
+  $('ovBanner').innerHTML = sc.chargesEnabled ? '' :
     `<div class="banner"><div class="bi">S</div>
-      <div><h4>Connect Stripe to get paid</h4><p>You're making sales — connect a Stripe account to receive your payouts.</p></div>
+      <div><h4>Connect Stripe to get paid</h4><p>Connect a Stripe account to receive payouts for your sales.</p></div>
       <button class="btn btn-stripe" onclick="go('payments')">Connect with Stripe</button></div>`;
-  // chart
-  const max=Math.max(...WEEKS);
-  $('bars').innerHTML=WEEKS.map(v=>`<div class="bar" style="height:${(v/max*100)}%"><span class="tip">${aed(v)}</span></div>`).join('');
-  $('blabels').innerHTML=WEEKS.map((v,i)=>`<span>${i%2?'':'W'+(i+1)}</span>`).join('');
-  // recent orders
-  $('ovOrders').innerHTML=`<tbody>${orders.slice(0,4).map(o=>`<tr>
-    <td style="font-weight:700">${o.id}</td><td>${o.cust}</td><td style="color:var(--muted)">${o.items}</td>
-    <td style="font-family:Cormorant;font-size:17px;font-weight:600">${aed(o.total)}</td>
-    <td style="text-align:right"><span class="order-pill ${o.status}">${o.status}</span></td></tr>`).join('')}</tbody>`;
+  // no time-series data yet → friendly placeholder instead of a fake chart
+  $('chartTot').textContent=aed(revenue);
+  const bars=$('bars'); bars.style.alignItems='center'; bars.style.justifyContent='center';
+  bars.innerHTML='<span style="color:var(--muted);font-size:13px;font-weight:600">Sales analytics are coming soon</span>';
+  $('blabels').innerHTML='';
+  $('poAvail').textContent=aed(net);
+  $('poDate').textContent=sc.payoutsEnabled?'On your Stripe schedule':'—';
+  $('ovOrders').innerHTML = orders.length
+    ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
+        <td style="font-weight:700">${o.id}</td><td>${o.cust}</td><td style="color:var(--muted)">${o.items}</td>
+        <td style="font-family:Cormorant;font-size:17px;font-weight:600">${aed(o.total)}</td>
+        <td style="text-align:right"><span class="order-pill ${pillClass(o.status)}">${o.status}</span></td></tr>`).join('')}</tbody>`
+    : `<tbody><tr><td style="color:var(--muted);padding:18px;font-weight:600">No orders yet.</td></tr></tbody>`;
 }
 
 /* ---------------- PRODUCTS ---------------- */
 function renderProducts(){
   $('prodCount').textContent=products.length;
-  $('orderPill').textContent=orders.filter(o=>o.status==='new').length;
+  $('orderPill').textContent=orders.filter(o=>o.status==='paid').length;
+  if(!products.length){ $('prodTable').innerHTML=`<tbody><tr><td style="padding:30px 16px;color:var(--muted);font-weight:600">No products yet — add your first piece with the button above.</td></tr></tbody>`; return; }
   $('prodTable').innerHTML=`
     <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
     <tbody>${products.map(p=>`<tr>
       <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div>
-        <div><div class="pn">${p.name}</div><div class="ps">${p.sales} sold</div></div></div></td>
+        <div><div class="pn">${p.name}</div><div class="ps">${p.stock} in stock</div></div></div></td>
       <td style="color:var(--muted);font-weight:600">${p.cat}</td>
       <td><span class="price-edit" onclick="editPrice(${p.id},this)">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
       <td><input class="stock-input" type="number" value="${p.stock}" onchange="setStock(${p.id},this.value)">${p.stock===0?' <span style="color:var(--coral-deep);font-size:11px;font-weight:700">Out</span>':''}</td>
@@ -443,10 +478,23 @@ function editPrice(id,el){
     onblur="savePrice(${id},this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
   setTimeout(()=>{const i=$('pe'+id);if(i){i.focus();i.select();}},10);
 }
-function savePrice(id,val){const p=products.find(x=>x.id===id);const v=parseFloat(val);if(!isNaN(v)&&v>0){p.price=v;toast(`${p.name} → ${aed(v)}`);}renderProducts();}
-function setStock(id,val){const p=products.find(x=>x.id===id);p.stock=Math.max(0,parseInt(val)||0);renderProducts();}
-function cycleStatus(id){const p=products.find(x=>x.id===id);const order=['live','draft','hidden'];p.status=order[(order.indexOf(p.status)+1)%3];renderProducts();renderOverview();toast(`${p.name} is now ${p.status}`);}
-function delProduct(id){const p=products.find(x=>x.id===id);if(confirm(`Delete "${p.name}"? This can't be undone.`)){products=products.filter(x=>x.id!==id);renderProducts();renderOverview();toast('Product deleted');}}
+async function savePrice(id,val){const v=parseFloat(val);const p=products.find(x=>x.id===id);
+  if(isNaN(v)||v<=0){renderProducts();return;}
+  try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{price:v}}); toast(`${p.name} → ${aed(v)}`); }catch(e){ toast(e.message); }
+  await reloadProducts();
+}
+async function setStock(id,val){const stock=Math.max(0,parseInt(val)||0);
+  try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{stock}}); }catch(e){ toast(e.message); }
+  await reloadProducts();
+}
+async function cycleStatus(id){const p=products.find(x=>x.id===id);const order=['live','draft','hidden'];const status=order[(order.indexOf(p.status)+1)%3];
+  try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{status}}); toast(`${p.name} is now ${status}`); }catch(e){ toast(e.message); }
+  await reloadProducts();
+}
+async function delProduct(id){const p=products.find(x=>x.id===id);if(!confirm(`Delete "${p.name}"? This can't be undone.`))return;
+  try{ await TroveAPI.api('/api/seller/products/'+id,{method:'DELETE'}); toast('Product deleted'); }catch(e){ toast(e.message); }
+  await reloadProducts();
+}
 
 /* drawer */
 function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSave').textContent='Add product';
@@ -460,79 +508,70 @@ function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>
 function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;}
 function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*0.92);}
 $('dPrice').addEventListener('input',updateFee);
-$('drawerSave').onclick=()=>{
+$('drawerSave').onclick=async()=>{
   const name=$('dName').value.trim(); const price=parseFloat($('dPrice').value);
   if(!name){toast('Give your product a name');return;}
   if(isNaN(price)||price<=0){toast('Set a price above 0');return;}
-  const data={name,desc:$('dDesc').value.trim(),cat:$('dCat').value,price,
-    compare:parseFloat($('dCompare').value)||null,stock:parseInt($('dStock').value)||0,status:drawerStatus};
-  if(editingId){Object.assign(products.find(x=>x.id===editingId),data);toast('Changes saved');}
-  else{products.unshift({id:Date.now(),seed:'new'+Math.floor(Math.random()*999),sales:0,...data});toast('Product added');}
-  closeDrawer();renderProducts();renderOverview();
+  const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
+    compareAt:parseFloat($('dCompare').value)||null,stock:parseInt($('dStock').value)||0,status:drawerStatus};
+  try{
+    if(editingId) await TroveAPI.api('/api/seller/products/'+editingId,{method:'PATCH',body});
+    else { body.imageSeed='new'+Math.floor(Math.random()*9999); await TroveAPI.api('/api/seller/products',{method:'POST',body}); }
+    toast(editingId?'Changes saved':'Product added');
+    closeDrawer(); await reloadProducts();
+  }catch(e){ toast(e.message||'Could not save product'); }
 };
 function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
 function closeDrawer(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
 
-/* ---------------- ORDERS ---------------- */
+/* ---------------- ORDERS (read-only; status comes from payment + fulfilment) ---------------- */
 function renderOrders(){
-  $('orderTable').innerHTML=`<thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr></thead>
+  if(!orders.length){ $('orderTable').innerHTML=`<tbody><tr><td style="padding:26px 16px;color:var(--muted);font-weight:600">No orders yet. When a shopper buys one of your pieces, it'll appear here.</td></tr></tbody>`; return; }
+  $('orderTable').innerHTML=`<thead><tr><th>Order</th><th>Customer</th><th>Items</th><th>Date</th><th>Total</th><th>Status</th></tr></thead>
   <tbody>${orders.map(o=>`<tr>
-    <td style="font-weight:700">${o.id}</td><td>${o.cust}</td><td style="color:var(--muted)">${o.items}</td><td style="color:var(--muted)">${o.date}</td>
+    <td style="font-weight:700">${o.id}</td><td>${o.cust}</td><td style="color:var(--muted)">${o.items}</td><td style="color:var(--muted)">${fmtDate(o.date)}</td>
     <td style="font-family:Cormorant;font-size:17px;font-weight:600">${aed(o.total)}</td>
-    <td><span class="order-pill ${o.status}">${o.status}</span></td>
-    <td style="text-align:right">${o.status==='new'?`<button class="btn btn-dark btn-sm" onclick="fulfill('${o.id}')">Fulfil</button>`:o.status==='fulfilled'?`<button class="btn btn-ghost btn-sm" onclick="ship('${o.id}')">Mark shipped</button>`:'<span style="color:var(--muted);font-size:12px;font-weight:600">Complete</span>'}</td>
+    <td><span class="order-pill ${pillClass(o.status)}">${o.status}</span></td>
   </tr>`).join('')}</tbody>`;
 }
-function fulfill(id){orders.find(o=>o.id===id).status='fulfilled';renderOrders();renderOverview();renderProducts();toast('Order marked fulfilled');}
-function ship(id){orders.find(o=>o.id===id).status='shipped';renderOrders();renderOverview();toast('Order marked shipped — customer notified');}
 
-/* ---------------- PAYMENTS / STRIPE ---------------- */
+/* ---------------- PAYMENTS / STRIPE CONNECT ---------------- */
 function renderPayments(){
-  const v=$('view-payments');
-  if(!stripeConnected){
+  const v=$('view-payments'); const sc=SHOP.stripeStatus;
+  if(!sc.chargesEnabled){
     v.innerHTML=`<div class="card stripe-connect">
       <div class="mark serif">S</div>
-      <h2>Connect Stripe to get paid</h2>
-      <p>Trove uses Stripe to send your payouts securely. Connect an existing account or create one in a couple of minutes.</p>
+      <h2>${sc.connected?'Finish connecting Stripe':'Connect Stripe to get paid'}</h2>
+      <p>Trove uses Stripe to send your payouts securely. ${sc.connected?'Your onboarding isn’t finished yet — pick up where you left off.':'Connect an existing account or create one in a couple of minutes.'}</p>
       <div class="connect-pts">
-        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div><h5>Weekly payouts</h5><span>Every Friday</span></div>
+        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div><h5>Direct payouts</h5><span>To your bank</span></div>
         <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg></div><h5>Secure</h5><span>Stripe-hosted</span></div>
         <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h5>Flat 8%</h5><span>No hidden fees</span></div>
       </div>
-      <button class="btn btn-stripe" id="connectBtn" style="padding:15px 34px" onclick="connectStripe()">Connect with Stripe</button>
-      <div class="demo-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Simulated Connect flow — no real credentials are collected in this prototype.</div>
+      <button class="btn btn-stripe" id="connectBtn" style="padding:15px 34px" onclick="connectStripe()">${sc.connected?'Continue onboarding':'Connect with Stripe'}</button>
+      <div class="demo-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>You'll be taken to Stripe's secure onboarding.</div>
     </div>`;
   } else {
-    const monthly=WEEKS.slice(-4).reduce((a,b)=>a+b,0);
-    const fee=monthly*0.08, net=monthly-fee, pending=orders.filter(o=>o.status!=='shipped').reduce((s,o)=>s+o.total,0)*0.92;
+    const acct=sc.accountId?('•••• '+String(sc.accountId).slice(-6)):'—';
     v.innerHTML=`
       <div class="connected-head"><div class="dot serif">S</div>
-        <div><h4>Stripe connected</h4><p>acct_1Q8••••2fK · payouts active</p></div>
-        <button class="btn btn-ghost btn-sm" onclick="disconnectStripe()">Disconnect</button></div>
-      <div class="pay-grid">
-        <div class="card balance"><div class="lbl" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Available balance</div>
-          <div class="big">${aed(pending)}</div>
-          <div style="font-size:13px;color:var(--muted);font-weight:600">Next payout Fri, 13 Jun → •••• 4242</div>
-          <button class="btn btn-dark btn-sm" style="margin-top:16px" onclick="toast('Payout requested (demo)')">Pay out now</button></div>
-        <div class="card"><div class="lbl" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px">This month</div>
-          <div class="fee-row"><span class="muted">Gross sales</span><span>${aed(monthly)}</span></div>
-          <div class="fee-row"><span class="muted">Trove fee · 8%</span><span>−${aed(fee)}</span></div>
-          <div class="fee-row"><span class="muted">Stripe processing</span><span>−${aed(monthly*0.029+orders.length*1.1)}</span></div>
-          <div class="fee-row"><span>Your net</span><span>${aed(net-(monthly*0.029+orders.length*1.1))}</span></div></div>
+        <div><h4>Stripe connected</h4><p>${sc.payoutsEnabled?'Payouts active':'Payouts pending verification'}</p></div>
+        <button class="btn btn-ghost btn-sm" onclick="openStripeDashboard()">Open Stripe dashboard ↗</button></div>
+      <div class="card">
+        <div class="lbl" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px">Your Stripe account</div>
+        <div class="fee-row"><span class="muted">Account</span><span>${acct}</span></div>
+        <div class="fee-row"><span class="muted">Accept charges</span><span>${sc.chargesEnabled?'Enabled':'Pending'}</span></div>
+        <div class="fee-row"><span class="muted">Payouts</span><span>${sc.payoutsEnabled?'Enabled':'Pending'}</span></div>
+        <div class="fee-row"><span>Platform fee</span><span>8% per sale</span></div>
       </div>
-      <div class="card" style="padding:6px 0"><div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">Recent payouts</h3></div>
-        <table class="tbl"><tbody>
-          <tr><td style="font-weight:600">6 Jun 2026</td><td style="color:var(--muted)">Weekly payout</td><td style="text-align:right;font-family:Cormorant;font-size:17px;font-weight:600">${aed(1280)}</td><td style="text-align:right"><span class="order-pill shipped">paid</span></td></tr>
-          <tr><td style="font-weight:600">30 May 2026</td><td style="color:var(--muted)">Weekly payout</td><td style="text-align:right;font-family:Cormorant;font-size:17px;font-weight:600">${aed(1610)}</td><td style="text-align:right"><span class="order-pill shipped">paid</span></td></tr>
-          <tr><td style="font-weight:600">23 May 2026</td><td style="color:var(--muted)">Weekly payout</td><td style="text-align:right;font-family:Cormorant;font-size:17px;font-weight:600">${aed(940)}</td><td style="text-align:right"><span class="order-pill shipped">paid</span></td></tr>
-        </tbody></table></div>`;
+      <p style="color:var(--muted);font-size:13px;font-weight:600;margin-top:14px">Your balance, payout schedule and statements live in your Stripe dashboard.</p>`;
   }
 }
-function connectStripe(){
-  const b=$('connectBtn'); b.textContent='Connecting to Stripe…'; b.style.opacity='.7'; b.disabled=true;
-  setTimeout(()=>{stripeConnected=true;$('sideStatus').textContent='Live · Stripe connected';renderPayments();renderOverview();toast('Stripe connected — you can now receive payouts');},1300);
+async function connectStripe(){
+  const b=$('connectBtn'); if(b){b.textContent='Connecting to Stripe…';b.style.opacity='.7';b.disabled=true;}
+  try{ const {url}=await TroveAPI.api('/api/seller/connect',{method:'POST'}); window.location=url; }
+  catch(e){ toast(e.message||'Could not start Stripe onboarding'); if(b){b.textContent='Connect with Stripe';b.style.opacity='1';b.disabled=false;} }
 }
-function disconnectStripe(){if(confirm('Disconnect Stripe? Payouts will pause until you reconnect.')){stripeConnected=false;$('sideStatus').textContent='Live shop';renderPayments();renderOverview();toast('Stripe disconnected');}}
 
 /* ---------------- STOREFRONT ---------------- */
 const PALETTE=['#A98B7D','#D8C5BE','#C3D1C7','#B9D0E0','#F5C68A','#F4CFE0','#262321'];
@@ -548,7 +587,12 @@ function updatePreview(){
   $('sideAv').textContent=($('sfName').value||'Y')[0];$('sideAv').style.background=storeColor;
 }
 ['sfName','sfLoc','sfBio'].forEach(id=>$(id).addEventListener('input',updatePreview));
-function saveStore(){SHOP.name=$('sfName').value;SHOP.color=storeColor;$('sideShop').textContent=SHOP.name;renderProducts();toast('Storefront saved');}
+async function saveStore(){
+  const body={name:$('sfName').value.trim(),bio:$('sfBio').value.trim(),location:$('sfLoc').value.trim(),color:storeColor};
+  if(!body.name){toast('Your shop needs a name');return;}
+  try{ const {shop}=await TroveAPI.api('/api/seller/me',{method:'PATCH',body}); applyShop(shop); renderProducts(); toast('Storefront saved'); }
+  catch(e){ toast(e.message||'Could not save'); }
+}
 
 /* ---------------- ROUTER ---------------- */
 const TITLES={overview:['Overview','Tuesday, 9 June'],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],payments:['Payments','Payouts & Stripe'],storefront:['Storefront','How shoppers see you']};
@@ -566,9 +610,25 @@ function go(v){
   window.scrollTo(0,0);
 }
 
-/* init */
-$('sideAv').style.background=SHOP.color;
-renderOverview(); renderProducts(); go('overview');
+/* ---------------- BOOT ---------------- */
+async function boot(){
+  let session=null;
+  try{ session=await TroveAPI.me(); }catch(_){}
+  if(!session||!session.user){ location.href='trove-login.html'; return; }
+  if(!session.shop){ location.href='trove-account.html'; return; }   // signed in but no shop → not a seller
+  ME=session.user;
+  $('sellerName').textContent=(ME.name||'there').split(' ')[0];
+  const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='trove-login.html';};
+  try{ const {shop}=await TroveAPI.api('/api/seller/me'); applyShop(shop); }catch(_){}
+  await refreshStripeStatus();
+  $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
+  await Promise.all([reloadProducts(), reloadOrders()]);
+  fillStoreForm();
+  const params=new URLSearchParams(location.search);
+  if(params.get('connect')){ await refreshStripeStatus(); go('payments'); }
+  else go('overview');
+}
+boot();
 </script>
 </body>
 </html>
