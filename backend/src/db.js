@@ -99,4 +99,38 @@ CREATE INDEX IF NOT EXISTS idx_items_order ON order_items(order_id);
 CREATE INDEX IF NOT EXISTS idx_items_shop ON order_items(shop_id);
 `);
 
+/* ---- additive migrations (safe to run on an existing database) ---- */
+function addColumn(table, col, def) {
+  try { db.exec(`ALTER TABLE ${table} ADD COLUMN ${col} ${def}`); }
+  catch (e) { if (!/duplicate column name/i.test(e.message)) throw e; }
+}
+// How each shop is paid: 'managed' (Trove collects, then pays out weekly by bank
+// transfer) or 'connect' (seller's own Stripe account, paid per sale). The bank
+// fields are used by the weekly managed-payout run.
+addColumn('shops', 'payout_type',         "TEXT NOT NULL DEFAULT 'managed'");
+addColumn('shops', 'payout_bank_name',    "TEXT DEFAULT ''");
+addColumn('shops', 'payout_account_name', "TEXT DEFAULT ''");
+addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");
+// Buyer service fee captured per order (delivery lives in shipping_cents).
+addColumn('orders', 'service_fee_cents',  'INTEGER NOT NULL DEFAULT 0');
+// Set when a managed sale has been swept into a weekly payout batch.
+addColumn('order_items', 'payout_id',     'INTEGER');
+
+db.exec(`
+CREATE TABLE IF NOT EXISTS payouts (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  shop_id       INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  amount_cents  INTEGER NOT NULL,                 -- net paid to the shop (after the platform fee)
+  gross_cents   INTEGER NOT NULL DEFAULT 0,       -- shop sales before the fee
+  fee_cents     INTEGER NOT NULL DEFAULT 0,       -- Trove's cut
+  item_count    INTEGER NOT NULL DEFAULT 0,
+  status        TEXT NOT NULL DEFAULT 'pending',  -- pending | paid
+  bank_snapshot TEXT,                             -- bank details captured at run time
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_payouts_shop ON payouts(shop_id);
+CREATE INDEX IF NOT EXISTS idx_items_payout ON order_items(payout_id);
+`);
+
 module.exports = db;

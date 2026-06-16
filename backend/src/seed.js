@@ -5,10 +5,11 @@ const { hashPassword } = require('./middleware');
 
 const c = (aed) => Math.round(aed * 100);
 
-db.exec('DELETE FROM order_items; DELETE FROM orders; DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;');
+db.exec('DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;');
 
 const mkUser = db.prepare('INSERT INTO users (email,password_hash,name,role) VALUES (?,?,?,?)');
-const mkShop = db.prepare('INSERT INTO shops (user_id,name,slug,bio,location,color,is_house) VALUES (?,?,?,?,?,?,?)');
+const mkShop = db.prepare(`INSERT INTO shops (user_id,name,slug,bio,location,color,is_house,payout_type,payout_bank_name,payout_account_name,payout_iban)
+  VALUES (?,?,?,?,?,?,?,?,?,?,?)`);
 const mkProd = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed) VALUES (?,?,?,?,?,?,?,?,?)`);
 const pw = hashPassword('demo1234');
 
@@ -18,29 +19,34 @@ db.prepare('INSERT INTO addresses (user_id,label,name,line,city,is_default) VALU
   .run(layla, 'Home', 'Layla Hassan', 'Apt 1204, Marina Gate 2', 'Dubai Marina, Dubai');
 
 // A seller (+ their shop) in one step. House brand owner is role 'admin'.
-function shop(email, ownerName, shopName, slug, bio, location, color, isHouse) {
+function shop(email, ownerName, shopName, slug, bio, location, color, isHouse, payout = {}) {
   const uid = mkUser.run(email, pw, ownerName, isHouse ? 'admin' : 'seller').lastInsertRowid;
-  return mkShop.run(uid, shopName, slug, bio, location, color, isHouse ? 1 : 0).lastInsertRowid;
+  return mkShop.run(uid, shopName, slug, bio, location, color, isHouse ? 1 : 0,
+    payout.type || 'managed', payout.bankName || '', payout.accountName || '', payout.iban || '').lastInsertRowid;
 }
 
 const house = shop('hello@trove.com', 'Trove', 'trove label', 'trove-label',
   'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.',
-  'In-house · Dubai', '#262321', true);
+  'In-house · Dubai', '#262321', true,
+  { type: 'managed', bankName: 'Emirates NBD', accountName: 'Trove Marketplace FZ-LLC', iban: 'AE600260001015079130500' });
 const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay',
   "Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.",
-  'Lisbon, Portugal', '#A98B7D', false);
+  'Lisbon, Portugal', '#A98B7D', false,
+  { type: 'managed', bankName: 'Mashreq Bank', accountName: 'Mara Ceramics Studio', iban: 'AE930330000010101010101' });
 const loom = shop('hello@northboundloom.com', 'Northbound Loom', 'Northbound Loom', 'northbound-loom',
   'Heavyweight knitwear and woven goods from a family workshop running since 1978.',
-  'Reykjavík, Iceland', '#B9D0E0', false);
+  'Reykjavík, Iceland', '#B9D0E0', false, { type: 'connect' });
 const ember = shop('hello@embergoods.com', 'Ember Goods', 'Ember Goods', 'ember-goods',
   'Leather and brass made the slow way, in a workshop in the medina.',
-  'Marrakech, Morocco', '#F5C68A', false);
+  'Marrakech, Morocco', '#F5C68A', false,
+  { type: 'managed', bankName: 'Abu Dhabi Commercial Bank', accountName: 'Ember Goods Trading LLC', iban: 'AE120350000004567890123' });
 const fern = shop('hello@fernapothecary.com', 'Fern Apothecary', 'Fern Apothecary', 'fern-apothecary',
   'Plant-based skincare and home scent, formulated in tiny batches.',
-  'Portland, USA', '#C7D9AC', false);
+  'Portland, USA', '#C7D9AC', false,
+  { type: 'managed', bankName: 'Dubai Islamic Bank', accountName: 'Fern Apothecary FZE', iban: 'AE980030001234567890123' });
 const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.', 'folio-paper',
   'Stationery, notebooks and desk goods for people who still write things down.',
-  'Kyoto, Japan', '#F4CFE0', false);
+  'Kyoto, Japan', '#F4CFE0', false, { type: 'connect' });
 
 const products = [
   [kiln,  'Reeded Stoneware Mug',     'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.', 'Ceramics',    c(64),  null,   38,  'live', 'mug7'],
@@ -62,5 +68,18 @@ const products = [
 ];
 for (const p of products) mkProd.run(...p);
 
-console.log('Seeded: 7 users, 6 shops, %d products.', products.length);
+// A demo PAID order (normally created by checkout) so the managed payout flow
+// has something to settle: a Kiln & Clay mug + an Ember wallet — both managed shops.
+const mug = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='mug7'").get();
+const wallet = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='wallet3'").get();
+const demoSub = mug.price_cents + wallet.price_cents;
+const demoDelivery = demoSub >= 50000 ? 0 : 2500;
+const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,status)
+  VALUES (?,?,?,?,?,?,?, 'aed','paid')`).run('TRV-SEED01', layla, 'layla@email.com', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900).lastInsertRowid;
+const mkItem = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,?,?)');
+mkItem.run(demoOrder, mug.id, mug.shop_id, mug.name, mug.price_cents, 1);
+mkItem.run(demoOrder, wallet.id, wallet.shop_id, wallet.name, wallet.price_cents, 1);
+
+console.log('Seeded: 7 users, 6 shops, %d products, 1 demo paid order.', products.length);
+console.log('Payouts: Kiln, Ember, Fern + house = Trove-managed (weekly); Northbound Loom + Folio = connect-your-own.');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

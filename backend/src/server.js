@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 4242;
 const isProd = process.env.NODE_ENV === 'production';
 const crossSite = process.env.CROSS_SITE === '1';   // set ONLY when the frontend lives on a different domain than this API
-const FEE_PCT = Number(process.env.PLATFORM_FEE_PERCENT || 8);
+const fees = require('./fees');
 
 // CLIENT_URL = this site's public URL (used for Stripe Connect return links).
 // For split hosting you may list several allowed origins, comma-separated.
@@ -52,16 +52,19 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
 
       // Pay out each shop: subtotal for that shop minus the platform fee.
       const groups = db.prepare(`
-        SELECT oi.shop_id, s.stripe_account_id, s.charges_enabled, SUM(oi.price_cents * oi.qty) AS cents
+        SELECT oi.shop_id, s.stripe_account_id, s.charges_enabled, s.payout_type, SUM(oi.price_cents * oi.qty) AS cents
         FROM order_items oi JOIN shops s ON s.id = oi.shop_id
         WHERE oi.order_id = ? GROUP BY oi.shop_id`).all(orderId);
 
       for (const g of groups) {
-        const fee = Math.round((g.cents * FEE_PCT) / 100);
-        const payout = g.cents - fee;
-        if (g.stripe_account_id && g.charges_enabled && payout > 0) {
+        const { net } = fees.split(g.cents);
+        // 'connect' shops are paid instantly via a Stripe Transfer. 'managed'
+        // shops accrue to their balance and are paid by Trove in the weekly run
+        // (POST /api/admin/payouts/run) — so there is nothing to transfer here.
+        const connectReady = g.payout_type === 'connect' && g.stripe_account_id && g.charges_enabled;
+        if (connectReady && net > 0) {
           stripe.transfers.create({
-            amount: payout,
+            amount: net,
             currency: order.currency,
             destination: g.stripe_account_id,
             transfer_group: `order_${orderId}`,
@@ -69,9 +72,10 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
           }).then((tr) => {
             db.prepare('UPDATE order_items SET transfer_id=? WHERE order_id=? AND shop_id=?').run(tr.id, orderId, g.shop_id);
           }).catch((e) => console.error('Transfer failed for shop', g.shop_id, e.message));
-        } else {
-          console.warn(`Shop ${g.shop_id} not ready for payout — funds held on platform.`);
+        } else if (g.payout_type === 'connect') {
+          console.warn(`Shop ${g.shop_id} (connect) not onboarded — funds held on platform.`);
         }
+        // managed: intentionally no-op; settled by the weekly payout run.
       }
     }
   }
@@ -110,10 +114,19 @@ app.use(session({
 
 /* ---------------- Routes ---------------- */
 app.get('/api/health', (_req, res) => res.json({ ok: true, stripe: !!stripe }));
+// Public money rules, so the storefront shows the same fees the server charges.
+app.get('/api/config', (_req, res) => res.json({
+  currency: process.env.CURRENCY || 'aed',
+  serviceFeeCents: fees.SERVICE_FEE_CENTS,
+  deliveryFeeCents: fees.DELIVERY_FEE_CENTS,
+  freeDeliveryThresholdCents: fees.FREE_DELIVERY_THRESHOLD_CENTS,
+  platformFeePercent: fees.PLATFORM_FEE_PERCENT,
+}));
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/products', require('./routes/products.routes'));
 app.use('/api/shops', require('./routes/shops.routes'));
 app.use('/api/seller', require('./routes/seller.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/checkout', require('./routes/checkout.routes'));
 app.use('/api/account', require('./routes/account.routes'));
 

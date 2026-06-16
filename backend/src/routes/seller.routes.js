@@ -3,6 +3,7 @@ const express = require('express');
 const db = require('../db');
 const { requireSeller } = require('../middleware');
 const { requireStripe } = require('../stripe');
+const fees = require('../fees');
 
 const router = express.Router();
 const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
@@ -58,6 +59,47 @@ router.get('/orders', requireSeller, (req, res) => {
     WHERE oi.shop_id = ? AND o.status != 'pending'
     ORDER BY o.created_at DESC`).all(req.shop.id);
   res.json({ items });
+});
+
+/* ---------------- Payout method & earnings ---------------- */
+// Choose how this shop is paid; for 'managed' shops, store the bank details
+// Trove pays out to each week.
+router.patch('/payout', requireSeller, (req, res) => {
+  const { payoutType, bankName, accountName, iban } = req.body || {};
+  if (payoutType && !['managed', 'connect'].includes(payoutType))
+    return res.status(400).json({ error: 'payoutType must be "managed" or "connect"' });
+  db.prepare(`UPDATE shops SET
+      payout_type         = COALESCE(?, payout_type),
+      payout_bank_name    = COALESCE(?, payout_bank_name),
+      payout_account_name = COALESCE(?, payout_account_name),
+      payout_iban         = COALESCE(?, payout_iban)
+    WHERE id = ?`)
+    .run(payoutType || null, bankName ?? null, accountName ?? null, iban ?? null, req.shop.id);
+  res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
+});
+
+// Earnings: the unsettled balance Trove owes a managed shop, plus payout history.
+// (Connect shops are paid per sale by Stripe, so their pending balance is zero.)
+router.get('/payouts', requireSeller, (req, res) => {
+  const managed = req.shop.payout_type === 'managed';
+  const out = managed
+    ? db.prepare(`SELECT COALESCE(SUM(oi.price_cents * oi.qty),0) AS gross, COUNT(oi.id) AS items
+         FROM order_items oi JOIN orders o ON o.id = oi.order_id
+         WHERE oi.shop_id=? AND oi.payout_id IS NULL AND oi.transfer_id IS NULL
+           AND o.status IN ('paid','fulfilled')`).get(req.shop.id)
+    : { gross: 0, items: 0 };
+  const { fee, net } = fees.split(out.gross);
+  const history = db.prepare(`
+    SELECT id, amount_cents, gross_cents, fee_cents, item_count, status, created_at, paid_at
+    FROM payouts WHERE shop_id=? ORDER BY created_at DESC, id DESC`).all(req.shop.id);
+  const paidTotal = db.prepare("SELECT COALESCE(SUM(amount_cents),0) AS t FROM payouts WHERE shop_id=? AND status='paid'").get(req.shop.id).t;
+  res.json({
+    payoutType: req.shop.payout_type,
+    feePercent: fees.PLATFORM_FEE_PERCENT,
+    pending: { grossCents: out.gross, feeCents: fee, netCents: net, itemCount: out.items },
+    paidTotalCents: paidTotal,
+    history,
+  });
 });
 
 /* ---------------- Stripe Connect (Express) ---------------- */

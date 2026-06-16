@@ -3,6 +3,7 @@ const express = require('express');
 const crypto = require('crypto');
 const db = require('../db');
 const { requireStripe } = require('../stripe');
+const { SERVICE_FEE_CENTS, deliveryFor } = require('../fees');
 
 const router = express.Router();
 const CURRENCY = () => process.env.CURRENCY || 'aed';
@@ -28,7 +29,6 @@ router.post('/', async (req, res, next) => {
     // Resolve products + recompute everything from the DB.
     const get = db.prepare(`SELECT p.*, s.id AS shop_id, s.is_house FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=? AND p.status='live'`);
     const lines = [];
-    const byShop = {};
     let subtotal = 0;
     for (const it of items) {
       const p = get.get(it.productId);
@@ -38,19 +38,18 @@ router.post('/', async (req, res, next) => {
       const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: p.price_cents, qty };
       lines.push(line);
       subtotal += p.price_cents * qty;
-      (byShop[p.shop_id] = byShop[p.shop_id] || { is_house: p.is_house, cents: 0 }).cents += p.price_cents * qty;
     }
 
-    // Shipping: AED 15 per non-house shop, free over AED 200.
-    const nonHouseShops = Object.values(byShop).filter((g) => !g.is_house).length;
-    const shipping = subtotal >= 20000 ? 0 : nonHouseShops * 1500;
-    const total = subtotal + shipping;
+    // Buyer fees: a flat service fee plus delivery (delivery free over the threshold).
+    const serviceFee = SERVICE_FEE_CENTS;
+    const delivery = deliveryFor(subtotal);
+    const total = subtotal + serviceFee + delivery;
 
     // Persist a pending order + items in one transaction.
     const pid = publicId();
     const orderId = db.transaction(() => {
-      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,total_cents,currency,shipping_json,status)
-        VALUES (?,?,?,?,?,?,?,?, 'pending')`).run(pid, req.session.userId || null, buyerEmail, subtotal, shipping, total, CURRENCY(), JSON.stringify(address || null));
+      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status)
+        VALUES (?,?,?,?,?,?,?,?,?, 'pending')`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null));
       const oid = info.lastInsertRowid;
       const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,?,?)');
       for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty);
