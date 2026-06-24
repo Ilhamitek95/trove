@@ -120,6 +120,17 @@
   .oline .nm{font-family:'Cormorant';font-size:17px;font-weight:600;line-height:1.1}
   .oline .qt{font-size:12px;color:var(--muted);font-weight:600}
   .oline .pr{margin-left:auto;font-weight:600;font-size:14px}
+  /* per-shop shipment tracking */
+  .ship{border:1px solid var(--line-soft);border-radius:14px;padding:16px 18px;margin-bottom:14px;background:var(--cream-2)}
+  .ship:last-child{margin-bottom:0}
+  .ship-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+  .ship-hd .oc-shop{margin:0}
+  .ship-note{font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:12px}
+  .ship-track{font-size:12.5px;font-weight:700;text-align:center;margin-top:6px;color:var(--char)}
+  .ship-track a{color:var(--coral-deep)}
+  .ship-items{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
+  .ship-items .oline{margin-bottom:10px}
+  .ship-items .oline:last-child{margin-bottom:0}
   .oc-foot{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
 
   /* product grid (wishlist) */
@@ -378,17 +389,59 @@ let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add(
 /* ---------- ORDERS ---------- */
 const ORDER_STATUS={paid:['Processing','processing'],fulfilled:['On the way','shipped'],cancelled:['Cancelled','processing'],failed:['Payment failed','processing']};
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+/* ---------- shipment tracking ---------- */
+const SHIP_FLOW=['processing','shipped','out_for_delivery','delivered'];
+const SHIP_STEP={processing:'Processing',shipped:'Shipped',out_for_delivery:'Out for delivery',delivered:'Delivered'};
+const SHIP_PILL={processing:'processing',shipped:'shipped',out_for_delivery:'shipped',delivered:'delivered',cancelled:'processing'};
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function shipTracker(status){
+  if(status==='cancelled') return `<div class="ship-note" style="color:var(--coral-deep)">This parcel was cancelled.</div>`;
+  const cur=Math.max(0,SHIP_FLOW.indexOf(status)), delivered=status==='delivered';
+  return `<div class="progress">`+SHIP_FLOW.map((s,i)=>{
+    const done=i<cur||delivered, now=i===cur&&!delivered;
+    return `<div class="pstep ${done?'done':now?'now':''}"><div class="pline"></div><div class="dot">${done?'✓':now?'●':''}</div><div class="pl">${SHIP_STEP[s]}</div></div>`;
+  }).join('')+`</div>`;
+}
+// Roll the per-shop shipment statuses up into one headline label for the order.
+function orderStatusLabel(o){
+  const sh=o.shipments||[];
+  if(!sh.length) return ORDER_STATUS[o.status]||['Processing','processing'];
+  if(sh.every(s=>s.status==='delivered')) return ['Delivered','delivered'];
+  if(sh.every(s=>s.status==='cancelled')) return ['Cancelled','processing'];
+  if(sh.some(s=>s.status==='delivered')) return ['Partly delivered','shipped'];
+  if(sh.some(s=>s.status==='shipped'||s.status==='out_for_delivery')) return ['On the way','shipped'];
+  return ['Processing','processing'];
+}
 function renderOrders(){
   if(!orders.length){ $('ordersList').innerHTML=`<div class="empty-state"><div class="big">No orders yet</div><p>When you buy something it'll appear here, ready to track.</p><a class="btn btn-coral" href="trove.html">Start shopping</a></div>`; return; }
   $('ordersList').innerHTML=orders.map(o=>{
-    const [label,cls]=ORDER_STATUS[o.status]||['Processing','processing'];
-    const groups={};
-    (o.items||[]).forEach(it=>{(groups[it.shop.name]=groups[it.shop.name]||{color:it.shop.color,items:[]}).items.push(it);});
-    const lines=Object.entries(groups).map(([name,g])=>
-      `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
-      g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#A98B7D')}"></div></div>
-        <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div></div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
-    ).join('');
+    const [label,cls]=orderStatusLabel(o);
+    const sh=o.shipments||[];
+    let body;
+    if(sh.length){
+      body=sh.map(s=>{
+        const color=(s.shop&&s.shop.color)||'#A98B7D';
+        const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div></div>
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div></div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
+        const last=(s.timeline||[]).slice(-1)[0];
+        const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
+        return `<div class="ship">
+          <div class="ship-hd"><span class="oc-shop"><span class="gem"></span>${s.shop?s.shop.name:'Shop'}</span><span class="opill ${SHIP_PILL[s.status]||'processing'}">${s.statusLabel}</span></div>
+          ${shipTracker(s.status)}
+          ${last?`<div class="ship-note">${esc(last.note||last.label)}${last.at?' · '+fmtDate(last.at):''}</div>`:''}
+          ${tn}
+          <div class="ship-items">${items}</div>
+        </div>`;
+      }).join('');
+    } else {
+      const groups={};
+      (o.items||[]).forEach(it=>{(groups[it.shop.name]=groups[it.shop.name]||{color:it.shop.color,items:[]}).items.push(it);});
+      body=Object.entries(groups).map(([name,g])=>
+        `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
+        g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#A98B7D')}"></div></div>
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div></div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
+      ).join('');
+    }
     return `<div class="order-card">
       <div class="oc-head">
         <div class="h"><span class="k">Order</span><span class="v">${o.id}</span></div>
@@ -396,7 +449,7 @@ function renderOrders(){
         <div class="h"><span class="k">Total</span><span class="v tot">${aed(o.total)}</span></div>
         <div class="stat"><span class="opill ${cls}">${label}</span></div>
       </div>
-      <div class="oc-body">${lines}</div>
+      <div class="oc-body">${body}</div>
       <div class="oc-foot">
         <button class="btn btn-ghost btn-sm" onclick="toast('Reorder is coming soon')">Buy again</button>
         <button class="btn btn-ghost btn-sm" onclick="toast('Invoices are coming soon')">Invoice</button>
@@ -408,8 +461,16 @@ function renderOverview(){
   const hello=document.querySelector('#view-overview .hello'); if(hello)hello.innerHTML=`Hello, <em>${first}</em>.`;
   $('oActive').textContent=orders.filter(o=>o.status!=='cancelled').length;
   const latest=orders[0], track=document.querySelector('#view-overview .track');
-  if(latest){ if($('trackId'))$('trackId').textContent=latest.id; }
-  else if(track){ track.style.display='none'; }
+  if(latest&&track){
+    track.style.display='';
+    const [lbl,cls]=orderStatusLabel(latest);
+    const sh=latest.shipments||[];
+    // Headline progress = the least-advanced parcel, so "on the way" never overstates.
+    const overall=sh.length?SHIP_FLOW[Math.min(...sh.map(s=>{const i=SHIP_FLOW.indexOf(s.status);return i<0?0:i;}))]:'processing';
+    track.innerHTML=`<div class="th"><div><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">${latest.id}</div></div><span class="opill ${cls}">${lbl}</span></div>`
+      + shipTracker(overall)
+      + `<div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">${sh.length>1?sh.length+' parcels, tracked separately — ':''}<a href="#" onclick="go('orders');return false" style="color:var(--coral-deep);font-weight:700">view details →</a></div>`;
+  } else if(track){ track.style.display='none'; }
 }
 
 /* ---------- WISHLIST ---------- */

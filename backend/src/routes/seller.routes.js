@@ -4,9 +4,12 @@ const db = require('../db');
 const { requireSeller } = require('../middleware');
 const { requireStripe } = require('../stripe');
 const fees = require('../fees');
+const shipments = require('../shipments');
 
 const router = express.Router();
 const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
+// The buyer's delivery address is snapshotted as JSON on the order at checkout.
+function parseShip(json) { try { return json ? JSON.parse(json) : null; } catch (_) { return null; } }
 
 /* ---------------- Shop profile ---------------- */
 router.get('/me', requireSeller, (req, res) => res.json({ shop: req.shop }));
@@ -51,14 +54,43 @@ router.delete('/products/:id', requireSeller, (req, res) => {
   res.json({ ok: true });
 });
 
-/* ---------------- Orders for this shop ---------------- */
+/* ---------------- Orders & shipment tracking ---------------- */
 router.get('/orders', requireSeller, (req, res) => {
-  const items = db.prepare(`
-    SELECT oi.*, o.public_id, o.status AS order_status, o.created_at, o.email
-    FROM order_items oi JOIN orders o ON o.id = oi.order_id
-    WHERE oi.shop_id = ? AND o.status != 'pending'
-    ORDER BY o.created_at DESC`).all(req.shop.id);
-  res.json({ items });
+  const rows = db.prepare(`
+    SELECT sh.*, o.public_id, o.email, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
+           s.name AS shop_name, s.color, s.is_house
+    FROM shipments sh
+    JOIN orders o ON o.id = sh.order_id
+    JOIN shops  s ON s.id = sh.shop_id
+    WHERE sh.shop_id = ?
+    ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
+  res.json({ orders: rows.map((r) => ({
+    ...shipments.shape(r),
+    order: { publicId: r.public_id, email: r.email, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
+  })) });
+});
+
+// Advance a shipment's tracking: status + courier + tracking number.
+router.patch('/shipments/:id', requireSeller, (req, res) => {
+  const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
+  if (!sh) return res.status(404).json({ error: 'Shipment not found' });
+  const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
+  if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
+  db.transaction(() => {
+    db.prepare(`UPDATE shipments SET status=COALESCE(?,status), carrier=COALESCE(?,carrier),
+        tracking_number=COALESCE(?,tracking_number), tracking_url=COALESCE(?,tracking_url), updated_at=datetime('now')
+      WHERE id=?`).run(status || null, carrier ?? null, trackingNumber ?? null, trackingUrl ?? null, sh.id);
+    if (status && status !== sh.status) {
+      db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
+        .run(sh.id, status, note || shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number));
+      if (status === 'delivered') {
+        const left = db.prepare("SELECT COUNT(*) AS c FROM shipments WHERE order_id=? AND status!='delivered'").get(sh.order_id).c;
+        if (!left) db.prepare("UPDATE orders SET status='fulfilled' WHERE id=?").run(sh.order_id);
+      }
+    }
+  })();
+  const row = db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id);
+  res.json({ shipment: shipments.shape(row) });
 });
 
 /* ---------------- Payout method & earnings ---------------- */

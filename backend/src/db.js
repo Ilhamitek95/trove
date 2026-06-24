@@ -131,6 +131,28 @@ CREATE TABLE IF NOT EXISTS payouts (
 );
 CREATE INDEX IF NOT EXISTS idx_payouts_shop ON payouts(shop_id);
 CREATE INDEX IF NOT EXISTS idx_items_payout ON order_items(payout_id);
+
+CREATE TABLE IF NOT EXISTS shipments (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id        INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  shop_id         INTEGER NOT NULL REFERENCES shops(id),
+  status          TEXT NOT NULL DEFAULT 'processing', -- processing | shipped | out_for_delivery | delivered | cancelled
+  carrier         TEXT DEFAULT '',
+  tracking_number TEXT DEFAULT '',
+  tracking_url    TEXT DEFAULT '',
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS shipment_events (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  shipment_id INTEGER NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
+  status      TEXT NOT NULL,
+  note        TEXT DEFAULT '',
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_shipments_order ON shipments(order_id);
+CREATE INDEX IF NOT EXISTS idx_shipments_shop ON shipments(shop_id);
+CREATE INDEX IF NOT EXISTS idx_shipevents_ship ON shipment_events(shipment_id);
 `);
 
 module.exports = db;

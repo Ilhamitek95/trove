@@ -48,6 +48,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req,
         for (const it of db.prepare('SELECT * FROM order_items WHERE order_id=?').all(orderId)) {
           db.prepare('UPDATE products SET stock = MAX(0, stock - ?) WHERE id=?').run(it.qty, it.product_id);
         }
+        // One shipment per shop, so each seller fulfils and tracks their own items.
+        for (const { shop_id } of db.prepare('SELECT DISTINCT shop_id FROM order_items WHERE order_id=?').all(orderId)) {
+          const exists = db.prepare('SELECT id FROM shipments WHERE order_id=? AND shop_id=?').get(orderId, shop_id);
+          if (!exists) {
+            const r = db.prepare("INSERT INTO shipments (order_id, shop_id, status) VALUES (?,?, 'processing')").run(orderId, shop_id);
+            db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'processing', 'Order received — preparing your items')").run(r.lastInsertRowid);
+          }
+        }
       })();
 
       // Pay out each shop: subtotal for that shop minus the platform fee.

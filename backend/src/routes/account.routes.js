@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAuth } = require('../middleware');
+const shipments = require('../shipments');
 
 const router = express.Router();
 
@@ -9,6 +10,7 @@ const router = express.Router();
 router.get('/orders', requireAuth, (req, res) => {
   const orders = db.prepare("SELECT * FROM orders WHERE buyer_id=? AND status!='pending' ORDER BY created_at DESC").all(req.user.id);
   const itemsStmt = db.prepare(`SELECT oi.*, s.name AS shop_name, s.color, s.is_house FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
+  const shipStmt = db.prepare(`SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);
   res.json({
     orders: orders.map((o) => ({
       id: o.public_id,
@@ -19,6 +21,7 @@ router.get('/orders', requireAuth, (req, res) => {
         name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100,
         shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
       })),
+      shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),
     })),
   });
 });

@@ -49,12 +49,22 @@
     catch (e) { if (e.status === 401) return null; throw e; }
   }
 
+  // The marketplace fee rules (service fee, delivery, free-delivery threshold).
+  // Cached; falls back to sensible defaults if the backend isn't reachable.
+  let _config = null;
+  async function config() {
+    if (_config) return _config;
+    try { _config = await api('/api/config'); }
+    catch (_) { _config = { currency: 'aed', serviceFeeCents: 900, deliveryFeeCents: 2500, freeDeliveryThresholdCents: 50000, platformFeePercent: 10 }; }
+    return _config;
+  }
+
   async function logout() { try { await api('/api/auth/logout', { method: 'POST' }); } catch (_) {} }
 
   window.TroveAPI = {
     base: API_BASE,
     paymentsEnabled: !!CFG.STRIPE_PUBLISHABLE_KEY,
     stripeKey: CFG.STRIPE_PUBLISHABLE_KEY || '',
-    api, health, me, logout,
+    api, health, me, logout, config,
   };
 })();

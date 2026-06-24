@@ -5,7 +5,7 @@ const { hashPassword } = require('./middleware');
 
 const c = (aed) => Math.round(aed * 100);
 
-db.exec('DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;');
+db.exec('DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;');
 
 const mkUser = db.prepare('INSERT INTO users (email,password_hash,name,role) VALUES (?,?,?,?)');
 const mkShop = db.prepare(`INSERT INTO shops (user_id,name,slug,bio,location,color,is_house,payout_type,payout_bank_name,payout_account_name,payout_iban)
@@ -74,12 +74,23 @@ const mug = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHER
 const wallet = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='wallet3'").get();
 const demoSub = mug.price_cents + wallet.price_cents;
 const demoDelivery = demoSub >= 50000 ? 0 : 2500;
-const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,status)
-  VALUES (?,?,?,?,?,?,?, 'aed','paid')`).run('TRV-SEED01', layla, 'layla@email.com', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900).lastInsertRowid;
+const demoShip = JSON.stringify({ name: 'Layla Hassan', line: 'Apt 1204, Marina Gate 2', city: 'Dubai Marina, Dubai', country: 'United Arab Emirates', phone: '+971 50 123 4567' });
+const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status)
+  VALUES (?,?,?,?,?,?,?, 'aed', ?, 'paid')`).run('TRV-SEED01', layla, 'layla@email.com', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900, demoShip).lastInsertRowid;
 const mkItem = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,?,?)');
 mkItem.run(demoOrder, mug.id, mug.shop_id, mug.name, mug.price_cents, 1);
 mkItem.run(demoOrder, wallet.id, wallet.shop_id, wallet.name, wallet.price_cents, 1);
 
-console.log('Seeded: 7 users, 6 shops, %d products, 1 demo paid order.', products.length);
+// Shipments for the demo order so tracking shows on both sides:
+// Kiln already shipped with a tracking number, Ember still processing.
+const mkShip = db.prepare("INSERT INTO shipments (order_id,shop_id,status,carrier,tracking_number) VALUES (?,?,?,?,?)");
+const mkEv = db.prepare("INSERT INTO shipment_events (shipment_id,status,note,created_at) VALUES (?,?,?,datetime('now',?))");
+const kilnShip = mkShip.run(demoOrder, mug.shop_id, 'shipped', 'Trove Express', 'TRVX-4471902').lastInsertRowid;
+mkEv.run(kilnShip, 'processing', 'Order received — preparing your items', '-2 days');
+mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Trove Express) · TRVX-4471902', '-1 day');
+const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '').lastInsertRowid;
+mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-2 days');
+
+console.log('Seeded: 7 users, 6 shops, %d products, 1 demo paid order (2 shipments).', products.length);
 console.log('Payouts: Kiln, Ember, Fern + house = Trove-managed (weekly); Northbound Loom + Folio = connect-your-own.');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

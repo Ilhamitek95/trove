@@ -391,7 +391,7 @@
 <body>
 
 <!-- HEADER -->
-<div class="promo"><div class="wrap">Complimentary trove-fulfilled shipping over AED 200</div></div>
+<div class="promo"><div class="wrap">Free delivery on orders over AED 500</div></div>
 <header class="top">
   <div class="wrap nav">
     <a href="#" class="brand" onclick="go('home');return false">trove</a>
@@ -698,8 +698,10 @@
   <div class="dbody" id="cartBody"></div>
   <div class="dfoot" id="cartFoot" style="display:none">
     <div class="drow"><span>Subtotal</span><span id="cartSubtotal"></span></div>
-    <div class="drow"><span>Shipping</span><span id="cartShip">Calculated at checkout</span></div>
+    <div class="drow"><span>Service fee</span><span id="cartService"></span></div>
+    <div class="drow"><span>Delivery</span><span id="cartShip"></span></div>
     <div class="drow total"><span>Total</span><span id="cartTotal"></span></div>
+    <div class="note" id="cartFreeNote" style="display:none"></div>
     <div class="note" id="cartVendorNote">Items ship from their individual shops.</div>
     <button class="checkout" onclick="startCheckout()">Checkout</button>
   </div>
@@ -766,6 +768,7 @@ let PRODUCTS = [
 let state={view:'home',cat:'all',houseOnly:false,min:0,max:9999,q:''};
 let cart=[];
 let ME=null, LIVE=false;
+let FEES={serviceFeeCents:900,deliveryFeeCents:2500,freeDeliveryThresholdCents:50000};
 let SAVED_ADDR=[
   {label:'Home',name:'Layla Hassan',line:'Apt 1204, Marina Gate 2',city:'Dubai Marina, Dubai'},
   {label:'Work',name:'Layla Hassan',line:'Level 14, Boulevard Plaza Tower 1',city:'Downtown Dubai, Dubai'},
@@ -790,6 +793,11 @@ function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'�
  * real order on the API and takes payment with Stripe's card form. */
 const CFG = window.TROVE_CONFIG || {};
 const paymentsLive = () => LIVE && TroveAPI.paymentsEnabled;
+function feeBreakdown(subAed){
+  const service=FEES.serviceFeeCents/100, freeThresh=FEES.freeDeliveryThresholdCents/100;
+  const delivery=subAed>=freeThresh?0:FEES.deliveryFeeCents/100;
+  return {service,delivery,freeThresh,remaining:Math.max(0,freeThresh-subAed),total:subAed+service+delivery};
+}
 let stripeJs=null, stripeElements=null, payElement=null, payIntent=null;
 
 function resetPayment(){payIntent=null;stripeElements=null;payElement=null;}
@@ -989,7 +997,13 @@ function renderCart(){
   body.innerHTML=html;
   const subtotal=cart.reduce((s,c)=>{const p=PRODUCTS.find(x=>x.id===c.pid);return s+p.price*c.qty;},0);
   const shopCount=Object.keys(groups).length;
-  $('cartSubtotal').textContent=aed(subtotal); $('cartTotal').textContent=aed(subtotal);
+  const fb=feeBreakdown(subtotal);
+  $('cartSubtotal').textContent=aed(subtotal);
+  $('cartService').textContent=aed(fb.service);
+  $('cartShip').textContent=fb.delivery===0?'Free':aed(fb.delivery);
+  $('cartTotal').textContent=aed(fb.total);
+  const fn=$('cartFreeNote'); fn.style.display='block';
+  fn.textContent=fb.remaining>0?`Add ${aed(fb.remaining)} more for free delivery.`:'You’ve unlocked free delivery.';
   $('cartVendorNote').textContent=shopCount>1?`Your order spans ${shopCount} shops — each ships separately, tracked together in one place.`:'Ships from one shop, tracked in one place.';
   $('cartFoot').style.display='block';
 }
@@ -1031,11 +1045,9 @@ function renderCheckout(){
     items.forEach(({p,qty})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
-  const shopShip=Object.keys(groups).filter(v=>!VENDORS[v].house).length*15;
-  const ship=sub>=200?0:shopShip;
-  const total=sub+ship;
-  $('coTotals').innerHTML=`<div class="row"><span>Subtotal</span><span>${aed(sub)}</span></div><div class="row"><span>Shipping</span><span>${ship===0?'Free':aed(ship)}</span></div><div class="row grand"><span>Total</span><span>${aed(total)}</span></div>`;
-  $('coPlaceTot').textContent=aed(total);
+  const fb=feeBreakdown(sub);
+  $('coTotals').innerHTML=`<div class="row"><span>Subtotal</span><span>${aed(sub)}</span></div><div class="row"><span>Service fee</span><span>${aed(fb.service)}</span></div><div class="row"><span>Delivery</span><span>${fb.delivery===0?'Free':aed(fb.delivery)}</span></div><div class="row grand"><span>Total</span><span>${aed(fb.total)}</span></div>`;
+  $('coPlaceTot').textContent=aed(fb.total);
 }
 function showConfirmation(orderId){
   const groups=cartGroups();
@@ -1111,8 +1123,11 @@ async function loadAuth(){
   }
 }
 async function signOut(){await TroveAPI.logout();location.href='trove.html';}
+async function loadFees(){
+  try{ const c=await TroveAPI.config(); if(c)FEES=c; }catch(_){}
+}
 async function boot(){
-  await Promise.all([loadCatalog(),loadAuth()]);
+  await Promise.all([loadCatalog(),loadAuth(),loadFees()]);
   renderHome(); buildCatFilters(); updateCartCount();
 }
 boot();
