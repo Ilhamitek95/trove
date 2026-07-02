@@ -48,6 +48,14 @@ const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.',
   'Stationery, notebooks and desk goods for people who still write things down.',
   'Kyoto, Japan', '#F4CFE0', false, { type: 'connect' });
 
+// A shop still waiting for approval, so the super-admin review queue has
+// something to demo. Hidden from the storefront until approved.
+const sable = shop('nadia@sableandstone.com', 'Nadia', 'Sable & Stone', 'sable-and-stone',
+  'Minimal jewellery in recycled silver and unpolished stone, made to order.',
+  'Muscat, Oman', '#B8AFA6', false, { type: 'managed' });
+db.prepare("UPDATE shops SET status='pending' WHERE id=?").run(sable);
+mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Accessories', c(240), null, 8, 'live', 'ring1');
+
 const products = [
   [kiln,  'Reeded Stoneware Mug',     'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.', 'Ceramics',    c(64),  null,   38,  'live', 'mug7'],
   [house, 'The Everyday Tee',         'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.',         'Apparel',     c(95),  null,   120, 'live', 'tee4'],
@@ -99,6 +107,6 @@ mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Trove Express) · TRVX-447
 const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '').lastInsertRowid;
 mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-2 days');
 
-console.log('Seeded: 7 users, 6 shops, %d products, 1 demo paid order (2 shipments).', products.length);
+console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments).', products.length + 1);
 console.log('Payouts: Kiln, Ember, Fern + house = Trove-managed (weekly); Northbound Loom + Folio = connect-your-own.');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

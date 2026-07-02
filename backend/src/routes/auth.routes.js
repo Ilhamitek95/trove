@@ -16,12 +16,13 @@ router.post('/register', (req, res) => {
     .run(email, hashPassword(password), name, role);
   const userId = info.lastInsertRowid;
 
-  // Sellers get a shop scaffold immediately.
+  // Sellers get a shop scaffold immediately — but it starts 'pending' and only
+  // appears on the storefront once the super admin approves it.
   if (role === 'seller' || role === 'both') {
     const base = slugify(shopName || name);
     let slug = base, n = 1;
     while (db.prepare('SELECT 1 FROM shops WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
-    db.prepare('INSERT INTO shops (user_id, name, slug) VALUES (?,?,?)').run(userId, shopName || `${name}'s shop`, slug);
+    db.prepare("INSERT INTO shops (user_id, name, slug, status) VALUES (?,?,?,'pending')").run(userId, shopName || `${name}'s shop`, slug);
   }
 
   req.session.userId = userId;

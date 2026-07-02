@@ -301,6 +301,7 @@
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
       <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
+      <a class="mitem" id="adminPanelLink" style="display:none" href="trove-admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Super admin ↗</a>
     </nav>
     <div class="foot">Signed in as <span id="sellerName">…</span> · <a href="trove-login.html" id="signOutLink">Sign out</a></div>
   </aside>
@@ -476,7 +477,7 @@ function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'ship
 function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
-  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',
+  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',status:s.status||'approved',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.payout_iban||''}};
   storeColor=SHOP.color;
@@ -526,7 +527,7 @@ function renderOverview(){
   if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
-  $('ovBanner').innerHTML = bannerHTML(managed, sc);
+  $('ovBanner').innerHTML = reviewBannerHTML() + bannerHTML(managed, sc);
   // no time-series data yet → friendly placeholder instead of a fake chart
   $('chartTot').textContent=aed(revenue);
   const bars=$('bars'); bars.style.alignItems='center'; bars.style.justifyContent='center';
@@ -722,6 +723,18 @@ async function advanceShip(id,status){
 }
 
 /* ---------------- PAYMENTS — payout method, balance, bank ---------------- */
+// Shop review status — new shops are hidden from shoppers until Trove approves them.
+function reviewBannerHTML(){
+  const st=SHOP.status;
+  if(!st||st==='approved') return '';
+  const msg={
+    pending:['Your shop is being reviewed','Trove checks every new shop before it goes live. You can add products and set up payouts in the meantime — shoppers will see your shop as soon as it\'s approved.'],
+    rejected:['Your shop wasn\'t approved','Your shop isn\'t visible to shoppers right now. Get in touch with Trove if you think this is a mistake.'],
+    suspended:['Your shop is suspended','Your shop is temporarily hidden from shoppers. Get in touch with Trove to resolve this.'],
+  }[st]||['Your shop is under review',''];
+  return `<div class="banner"><div class="bi" style="background:${st==='pending'?'var(--taupe)':'var(--coral-deep)'}">!</div>
+    <div><h4>${msg[0]}</h4><p>${msg[1]}</p></div></div>`;
+}
 function bannerHTML(managed, sc){
   if(managed){
     return (SHOP.bank && SHOP.bank.iban) ? '' :
@@ -983,7 +996,7 @@ async function boot(){
   await refreshStripeStatus();
   await reloadPayouts();
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
-  if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; }
+  if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
   await Promise.all([reloadProducts(), reloadOrders()]);
   fillStoreForm();
   const params=new URLSearchParams(location.search);

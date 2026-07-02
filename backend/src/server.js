@@ -15,6 +15,28 @@ if (process.env.SEED_DEMO === '1' && !db.prepare('SELECT 1 FROM users LIMIT 1').
   require('./seed');
 }
 
+// Super admin bootstrap: ADMIN_EMAIL (+ ADMIN_PASSWORD for first creation)
+// guarantees the platform owner's account exists with the admin role. If the
+// account already exists it is promoted, never re-passworded — change the
+// password by changing it in the app, not the env.
+if (process.env.ADMIN_EMAIL) {
+  const email = process.env.ADMIN_EMAIL.trim().toLowerCase();
+  const existing = db.prepare('SELECT * FROM users WHERE email=?').get(email);
+  if (existing) {
+    if (existing.role !== 'admin') {
+      db.prepare("UPDATE users SET role='admin' WHERE id=?").run(existing.id);
+      console.log(`admin bootstrap: promoted ${email} to admin`);
+    }
+  } else if (process.env.ADMIN_PASSWORD) {
+    const { hashPassword } = require('./middleware');
+    db.prepare("INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?, 'admin')")
+      .run(email, hashPassword(process.env.ADMIN_PASSWORD), process.env.ADMIN_NAME || 'Trove Admin');
+    console.log(`admin bootstrap: created admin account ${email}`);
+  } else {
+    console.warn('admin bootstrap: ADMIN_EMAIL set but account missing and no ADMIN_PASSWORD to create it');
+  }
+}
+
 const app = express();
 const PORT = process.env.PORT || 4242;
 const isProd = process.env.NODE_ENV === 'production';

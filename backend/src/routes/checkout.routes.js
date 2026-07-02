@@ -27,7 +27,7 @@ router.post('/', async (req, res, next) => {
     if (!buyerEmail) return res.status(400).json({ error: 'Email is required' });
 
     // Resolve products + recompute everything from the DB.
-    const get = db.prepare(`SELECT p.*, s.id AS shop_id, s.is_house FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=? AND p.status='live'`);
+    const get = db.prepare(`SELECT p.*, s.id AS shop_id, s.is_house FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=? AND p.status='live' AND s.status='approved'`);
     const lines = [];
     let subtotal = 0;
     for (const it of items) {

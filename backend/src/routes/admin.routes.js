@@ -18,6 +18,71 @@ const fees = require('../fees');
 
 const router = express.Router();
 
+/* ---------------- Marketplace overview ---------------- */
+
+// GET /api/admin/stats → the numbers on the admin overview.
+router.get('/stats', requireAdmin, (_req, res) => {
+  const shopRows = db.prepare('SELECT status, COUNT(*) AS c FROM shops GROUP BY status').all();
+  const shops = { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 };
+  for (const r of shopRows) { shops[r.status] = r.c; shops.total += r.c; }
+  const orders = db.prepare("SELECT COUNT(*) AS c FROM orders WHERE status IN ('paid','fulfilled')").get().c;
+  const gmv = db.prepare("SELECT COALESCE(SUM(total_cents),0) AS c FROM orders WHERE status IN ('paid','fulfilled')").get().c;
+  const buyers = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role='buyer'").get().c;
+  const products = db.prepare("SELECT COUNT(*) AS c FROM products WHERE status='live'").get().c;
+  res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products });
+});
+
+// GET /api/admin/shops → every shop with its owner, catalogue and sales.
+router.get('/shops', requireAdmin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT s.*, u.email AS owner_email, u.name AS owner_name,
+      (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id) AS product_count,
+      (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id AND p.status='live') AS live_count,
+      (SELECT COALESCE(SUM(oi.price_cents * oi.qty),0) FROM order_items oi
+         JOIN orders o ON o.id = oi.order_id
+         WHERE oi.shop_id = s.id AND o.status IN ('paid','fulfilled')) AS sales_cents
+    FROM shops s JOIN users u ON u.id = s.user_id
+    ORDER BY CASE s.status WHEN 'pending' THEN 0 ELSE 1 END, s.created_at DESC`).all();
+  res.json({ shops: rows.map((s) => ({
+    id: s.id, name: s.name, slug: s.slug, status: s.status,
+    owner: { name: s.owner_name, email: s.owner_email },
+    location: s.location, bio: s.bio, color: s.color, image: s.image || null, isHouse: !!s.is_house,
+    payoutType: s.payout_type, hasBank: !!s.payout_iban, stripeConnected: !!s.stripe_account_id,
+    products: s.product_count, liveProducts: s.live_count, salesCents: s.sales_cents,
+    createdAt: s.created_at,
+  })) });
+});
+
+// PATCH /api/admin/shops/:id { status } → the approval workflow.
+// pending → approved/rejected; approved ↔ suspended; anything can be re-reviewed.
+router.patch('/shops/:id', requireAdmin, (req, res) => {
+  const { status } = req.body || {};
+  if (!['pending', 'approved', 'rejected', 'suspended'].includes(status))
+    return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
+  const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
+  res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
+});
+
+// GET /api/admin/orders → recent orders across the whole marketplace.
+router.get('/orders', requireAdmin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT o.*, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count,
+      (SELECT GROUP_CONCAT(DISTINCT s.name) FROM order_items oi JOIN shops s ON s.id = oi.shop_id
+        WHERE oi.order_id = o.id) AS shop_names
+    FROM orders o
+    ORDER BY o.created_at DESC, o.id DESC LIMIT 200`).all();
+  res.json({ orders: rows.map((o) => ({
+    publicId: o.public_id, email: o.email, status: o.status,
+    totalCents: o.total_cents, itemCount: o.item_count,
+    shops: o.shop_names ? o.shop_names.split(',') : [],
+    createdAt: o.created_at,
+  })) });
+});
+
+/* ---------------- Weekly managed payouts ---------------- */
+
 const OUTSTANDING = `
   SELECT s.id AS shop_id, s.name, s.slug,
          s.payout_bank_name, s.payout_account_name, s.payout_iban,

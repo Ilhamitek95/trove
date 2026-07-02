@@ -195,7 +195,11 @@ async function signIn(){
       await TroveAPI.api('/api/auth/login',{method:'POST',body:{email,password:pass}});
     }
     let dest = mode==='sell' ? 'trove-seller.html' : 'trove-account.html';
-    try{ const me=await TroveAPI.me(); if(me&&me.shop) dest='trove-seller.html'; }catch(_){}
+    try{
+      const me=await TroveAPI.me();
+      if(me&&me.user&&me.user.role==='admin'&&!me.shop) dest='trove-admin.html'; // platform owner → admin panel
+      else if(me&&me.shop) dest='trove-seller.html';
+    }catch(_){}
     window.location.href=dest;
   }catch(e){
     btn.textContent=label; btn.style.opacity='1'; btn.disabled=false;

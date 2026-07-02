@@ -24,7 +24,7 @@ function shape(p) {
 const BASE = `
   SELECT p.*, s.name AS shop_name, s.slug, s.location, s.color, s.image AS shop_image, s.is_house
   FROM products p JOIN shops s ON s.id = p.shop_id
-  WHERE p.status = 'live'
+  WHERE p.status = 'live' AND s.status = 'approved'
 `;
 
 // GET /api/products?q=&category=&house=1&shop=slug

@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>trove · super admin</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rose:#D8C5BE; --coral:#E2836A; --coral-deep:#C5664B; --cream:#FBF6F1;
+    --sage:#C3D1C7; --char:#262321; --taupe:#A98B7D; --paper:#FFFDFB;
+    --rose-tint:#F1E7E1; --line:rgba(38,35,33,.1); --line-soft:rgba(38,35,33,.06);
+    --muted:#8C7B72; --ink-80:rgba(38,35,33,.78); --green:#7A9B7E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
+  h1,h2,h3{font-family:'Cormorant',Georgia,serif;font-weight:600}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  a{color:inherit;text-decoration:none}
+
+  .shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+  .side{background:var(--paper);border-right:1px solid var(--line);padding:26px 0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .logo{font-family:'Cormorant';font-size:26px;font-weight:600;padding:0 24px 4px}
+  .logo span{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--coral-deep);font-family:'Quicksand';font-weight:700;vertical-align:super;margin-left:6px}
+  .who{margin:16px 16px 20px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;display:flex;align-items:center;gap:11px}
+  .who .av{width:38px;height:38px;border-radius:11px;background:var(--char);color:var(--cream);display:grid;place-items:center;font-family:'Cormorant';font-size:19px;font-weight:600;flex-shrink:0}
+  .who .nm{font-weight:700;font-size:13.5px;line-height:1.2}
+  .who .rl{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--coral-deep);font-weight:700}
+  .mitem{display:flex;align-items:center;gap:11px;padding:11px 24px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border-left:3px solid transparent}
+  .mitem svg{width:17px;height:17px;stroke-width:1.7}
+  .mitem.on{color:var(--char);background:var(--rose-tint);border-left-color:var(--coral)}
+  .mitem .badge{margin-left:auto;background:var(--coral);color:#fff;font-size:10.5px;font-weight:700;min-width:19px;height:19px;border-radius:999px;display:grid;place-items:center;padding:0 6px}
+  .mitem .badge.zero{background:var(--rose-tint);color:var(--muted)}
+  .sfoot{margin-top:auto;padding:14px 24px;font-size:12.5px;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:9px}
+  .sfoot a{cursor:pointer}
+  .sfoot a:hover{color:var(--char)}
+
+  main{padding:30px 38px 60px;max-width:1150px}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--line)}
+  .top h1{font-size:32px;font-weight:600}
+  .top .sub{font-size:13px;color:var(--muted);font-weight:600;margin-top:2px}
+  .view{display:none}
+  .view.active{display:block}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+  .stat .k{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .stat .v{font-family:'Cormorant';font-size:30px;font-weight:600;margin-top:6px}
+  .stat .n{font-size:11.5px;color:var(--muted);font-weight:600}
+  .stat.hot{border-color:var(--coral);background:#FDF3EF}
+  .stat.hot .v{color:var(--coral-deep)}
+
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}
+  .card h3{font-size:21px;margin-bottom:4px}
+  .card .hint{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:14px}
+
+  .tbl{width:100%;border-collapse:collapse;font-size:13px}
+  .tbl th{text-align:left;font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:10px 10px;border-bottom:1px solid var(--line)}
+  .tbl td{padding:12px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .tbl tr:last-child td{border-bottom:none}
+
+  .shoprow{display:flex;align-items:center;gap:12px;min-width:200px}
+  .shoprow .tile{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:20px;font-weight:600;overflow:hidden}
+  .shoprow .nm{font-weight:700;font-size:13.5px}
+  .shoprow .sl{font-size:11.5px;color:var(--muted);font-weight:600}
+  .house-tag{font-size:9px;letter-spacing:.1em;background:var(--char);color:var(--cream);padding:2px 7px;border-radius:999px;font-weight:700;margin-left:6px;vertical-align:middle}
+
+  .pill{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:4px 10px;border-radius:999px;display:inline-block}
+  .pill.pending{background:#FBE9E2;color:var(--coral-deep)}
+  .pill.approved{background:#E5EEE6;color:#4C7A52}
+  .pill.rejected{background:#F0E9E6;color:#9C6B5B}
+  .pill.suspended{background:#EDEAE7;color:var(--muted)}
+  .pill.paid{background:#E3ECF4;color:#4A6C8C}
+  .pill.fulfilled{background:#E5EEE6;color:#4C7A52}
+  .pill.cancelled,.pill.failed{background:#EDEAE7;color:var(--muted)}
+
+  .btn{display:inline-flex;align-items:center;gap:7px;border-radius:999px;font-weight:700;font-size:12px;padding:8px 15px;transition:.15s;letter-spacing:.02em}
+  .btn-coral{background:var(--coral);color:#fff}
+  .btn-coral:hover{background:var(--coral-deep)}
+  .btn-green{background:var(--green);color:#fff}
+  .btn-green:hover{filter:brightness(.94)}
+  .btn-ghost{border:1px solid var(--line);background:var(--paper)}
+  .btn-ghost:hover{border-color:var(--char)}
+  .btn-dark{background:var(--char);color:var(--cream)}
+  .actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+
+  .empty{color:var(--muted);font-weight:600;font-size:13.5px;padding:14px 0}
+  .toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);background:var(--char);color:var(--cream);padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:60}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .gate{display:grid;place-items:center;min-height:100vh;color:var(--muted);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="gate" id="gate">Checking access…</div>
+
+<div class="shell" id="shell" style="display:none">
+  <aside class="side">
+    <div class="logo">trove<span>admin</span></div>
+    <div class="who"><div class="av" id="whoAv">T</div><div><div class="nm" id="whoName">—</div><div class="rl">Super admin</div></div></div>
+    <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+    <a class="mitem" data-v="shops" onclick="go('shops')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Shops<span class="badge zero" id="pendBadge">0</span></a>
+    <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6 5 2H2"/></svg>Orders</a>
+    <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Trove payouts</a>
+    <div class="sfoot">
+      <a href="trove.html" target="_blank">View storefront ↗</a>
+      <a onclick="signOut()">Sign out</a>
+    </div>
+  </aside>
+  <main>
+    <div class="top"><div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub"></div></div></div>
+
+    <div class="view active" id="view-overview">
+      <div class="cards" id="statCards"></div>
+      <div class="card">
+        <h3>Waiting for your review</h3>
+        <div class="hint">New shops stay hidden from shoppers until you approve them.</div>
+        <div id="pendingList"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-shops">
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>All shops</h3><div class="hint">Approve, reject or suspend any shop — only approved shops appear on the storefront.</div></div>
+        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="shopsTable"></table></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-orders">
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>All orders</h3><div class="hint">Every order across the marketplace, newest first.</div></div>
+        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="ordersTable"></table></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-payouts">
+      <div id="payoutsWrap"></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, BATCHES=[];
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function aed(n){return 'AED '+Math.round(n).toLocaleString();}
+function money(c){const n=(c||0)/100;return Number.isInteger(n)?aed(n):'AED '+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
+function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
+function tile(s){
+  if(s.image) return `<div class="tile" style="background:center/cover no-repeat url('${esc(s.image)}')"></div>`;
+  const c=s.color||'#A98B7D';
+  return `<div class="tile" style="background:linear-gradient(150deg,${shade(c,14)},${c} 55%,${shade(c,-14)})">${esc((s.name||'?')[0])}</div>`;
+}
+
+/* ---------------- navigation ---------------- */
+const TITLES={overview:['Overview','The whole marketplace at a glance'],shops:['Shops','Approve and manage every shop'],orders:['Orders','Everything shoppers have bought'],payouts:['Trove payouts','Pay your managed sellers']};
+function go(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  $('view-'+v).classList.add('active');
+  document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
+  $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
+}
+
+/* ---------------- data ---------------- */
+async function reload(){
+  const [stats,shops,orders]=await Promise.all([
+    TroveAPI.api('/api/admin/stats'),
+    TroveAPI.api('/api/admin/shops'),
+    TroveAPI.api('/api/admin/orders'),
+  ]);
+  STATS=stats;SHOPS=shops.shops;ORDERS=orders.orders;
+  renderOverview();renderShops();renderOrders();
+  reloadPayouts();
+}
+async function reloadPayouts(){
+  try{ PREVIEW=await TroveAPI.api('/api/admin/payouts/preview'); }catch(_){ PREVIEW={shops:[],totalNetCents:0,feePercent:10}; }
+  try{ BATCHES=(await TroveAPI.api('/api/admin/payouts')).payouts; }catch(_){ BATCHES=[]; }
+  renderPayouts();
+}
+
+/* ---------------- overview ---------------- */
+function renderOverview(){
+  const s=STATS;
+  $('statCards').innerHTML=`
+    <div class="stat ${s.shops.pending?'hot':''}"><div class="k">Pending approval</div><div class="v">${s.shops.pending}</div><div class="n">new shop${s.shops.pending===1?'':'s'} waiting</div></div>
+    <div class="stat"><div class="k">Live shops</div><div class="v">${s.shops.approved}</div><div class="n">of ${s.shops.total} total</div></div>
+    <div class="stat"><div class="k">Orders</div><div class="v">${s.orders}</div><div class="n">paid &amp; fulfilled</div></div>
+    <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">gross, incl. fees</div></div>
+    <div class="stat"><div class="k">Buyers</div><div class="v">${s.buyers}</div><div class="n">registered</div></div>
+    <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>`;
+  const b=$('pendBadge');const n=s.shops.pending;b.textContent=n;b.classList.toggle('zero',!n);
+  const pend=SHOPS.filter(x=>x.status==='pending');
+  $('pendingList').innerHTML=pend.length?`<table class="tbl">${pend.map(shopRowHTML).join('')}</table>`
+    :`<div class="empty">Nothing waiting — every shop has been reviewed.</div>`;
+}
+
+/* ---------------- shops ---------------- */
+function shopActions(s){
+  if(s.status==='pending') return `<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setShopStatus(${s.id},'rejected',true)">Reject</button>`;
+  if(s.status==='approved') return s.isHouse?'':`<button class="btn btn-ghost" onclick="setShopStatus(${s.id},'suspended',true)">Suspend</button>`;
+  return `<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setShopStatus(${s.id},'pending')">Back to review</button>`;
+}
+function shopRowHTML(s){
+  return `<tr>
+    <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div></div></div></td>
+    <td style="color:var(--muted)">${esc(s.location||'—')}</td>
+    <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
+    <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(s.salesCents)}</td>
+    <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Weekly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--coral-deep)">· no bank</span>':''}</td>
+    <td><span class="pill ${s.status}">${s.status}</span></td>
+    <td><div class="actions">${shopActions(s)}</div></td>
+  </tr>`;
+}
+function renderShops(){
+  $('shopsTable').innerHTML=`<thead><tr><th>Shop</th><th>Location</th><th>Products</th><th>Sales</th><th>Payout</th><th>Status</th><th></th></tr></thead>
+    <tbody>${SHOPS.map(shopRowHTML).join('')}</tbody>`;
+}
+async function setShopStatus(id,status,confirmFirst){
+  const s=SHOPS.find(x=>x.id===id);
+  if(confirmFirst&&!confirm(`${status==='rejected'?'Reject':'Suspend'} "${s?s.name:'this shop'}"? It disappears from the storefront immediately.`))return;
+  try{
+    await TroveAPI.api('/api/admin/shops/'+id,{method:'PATCH',body:{status}});
+    toast(`${s?s.name:'Shop'} → ${status}`);
+    await reload();
+  }catch(e){ toast(e.message||'Could not update the shop'); }
+}
+
+/* ---------------- orders ---------------- */
+function renderOrders(){
+  $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Shops</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th></tr></thead>
+    <tbody>${ORDERS.length?ORDERS.map(o=>`<tr>
+      <td style="font-weight:700">${esc(o.publicId)}</td>
+      <td style="color:var(--muted)">${esc(o.email)}</td>
+      <td>${o.shops.map(esc).join(', ')}</td>
+      <td>${o.itemCount}</td>
+      <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(o.totalCents)}</td>
+      <td><span class="pill ${o.status}">${o.status}</span></td>
+      <td style="color:var(--muted)">${fmtDate(o.createdAt)}</td>
+    </tr>`).join(''):`<tr><td colspan="7" class="empty">No orders yet.</td></tr>`}</tbody>`;
+}
+
+/* ---------------- payouts ---------------- */
+function renderPayouts(){
+  const owed=PREVIEW.shops||[];
+  $('payoutsWrap').innerHTML=`
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <div><h3>This week's payouts</h3>
+          <div class="hint" style="margin:0">${owed.length} shop${owed.length===1?'':'s'} to pay · ${money(PREVIEW.totalNetCents)} total</div></div>
+        <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runPayouts()">Run weekly payout</button>
+      </div>
+      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Shop</th><th>Pay to</th><th>Sales</th><th>Fee</th><th>To pay</th></tr></thead>
+        <tbody>${owed.map(s=>`<tr>
+          <td style="font-weight:700">${esc(s.name)}</td>
+          <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}`:'<span style="color:var(--coral-deep);font-weight:700">no bank details</span>'}</td>
+          <td>${money(s.grossCents)}</td>
+          <td style="color:var(--muted)">−${money(s.feeCents)}</td>
+          <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(s.netCents)}</td>
+        </tr>`).join('')}</tbody></table>`
+       :`<div class="empty" style="margin-top:8px">Nothing outstanding — every managed sale has been settled.</div>`}
+    </div>
+    <div class="card" style="padding:0">
+      <div style="padding:20px 22px 4px"><h3>All payout batches</h3></div>
+      ${BATCHES.length?`<div style="padding:0 10px 10px"><table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+        <tbody>${BATCHES.map(b=>`<tr>
+          <td style="font-weight:700">${fmtDate(b.createdAt)}</td>
+          <td>${esc(b.shopName)}</td>
+          <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(b.amountCents)}</td>
+          <td><span class="pill ${b.status==='paid'?'approved':'pending'}">${b.status}</span></td>
+          <td style="text-align:right">${b.status==='pending'?`<button class="btn btn-ghost" onclick="markPaid(${b.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">${fmtDate(b.paidAt)}</span>`}</td>
+        </tr>`).join('')}</tbody></table></div>`
+       :`<div class="empty" style="padding:8px 22px 22px">No payout batches yet.</div>`}
+    </div>`;
+}
+async function runPayouts(){
+  if(!confirm("Run this week's payout? This locks the listed sales into payout batches so they can't be paid twice."))return;
+  try{ const r=await TroveAPI.api('/api/admin/payouts/run',{method:'POST'}); toast(`Created ${r.count} payout${r.count===1?'':'s'}`); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not run payouts'); }
+}
+async function markPaid(id){
+  try{ await TroveAPI.api('/api/admin/payouts/'+id+'/paid',{method:'POST'}); toast('Marked as paid'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not mark as paid'); }
+}
+
+/* ---------------- boot ---------------- */
+async function signOut(){ await TroveAPI.logout(); window.location.href='trove-login.html'; }
+(async function boot(){
+  let me=null;
+  try{ me=await TroveAPI.me(); }catch(_){}
+  if(!me||!me.user||me.user.role!=='admin'){ window.location.href='trove-login.html'; return; }
+  ME=me.user;
+  $('whoName').textContent=ME.name;
+  $('whoAv').textContent=(ME.name||'T')[0].toUpperCase();
+  $('gate').style.display='none';$('shell').style.display='grid';
+  try{ await reload(); }catch(e){ toast(e.message||'Could not load the marketplace data'); }
+})();
+</script>
+</body>
+</html>

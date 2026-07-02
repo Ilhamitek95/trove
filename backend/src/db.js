@@ -110,6 +110,10 @@ function addColumn(table, col, def) {
 addColumn('shops', 'payout_type',         "TEXT NOT NULL DEFAULT 'managed'");
 // Seller-uploaded shop photo (public URL path under /uploads; '' = colour tile).
 addColumn('shops', 'image',               "TEXT DEFAULT ''");
+// Marketplace curation: new shops are 'pending' until the super admin approves
+// them. Only 'approved' shops appear on the storefront or can be bought from.
+// Default 'approved' so shops that existed before this feature stay live.
+addColumn('shops', 'status',              "TEXT NOT NULL DEFAULT 'approved'");
 addColumn('shops', 'payout_bank_name',    "TEXT DEFAULT ''");
 addColumn('shops', 'payout_account_name', "TEXT DEFAULT ''");
 addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");

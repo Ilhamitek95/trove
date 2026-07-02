@@ -25,6 +25,7 @@ router.get('/', (_req, res) => {
     SELECT s.*, COUNT(p.id) AS product_count
     FROM shops s
     LEFT JOIN products p ON p.shop_id = s.id AND p.status = 'live'
+    WHERE s.status = 'approved'
     GROUP BY s.id
     ORDER BY s.is_house DESC, s.created_at ASC
   `).all();
@@ -33,7 +34,7 @@ router.get('/', (_req, res) => {
 
 // GET /api/shops/:slug → one shop profile
 router.get('/:slug', (req, res) => {
-  const s = db.prepare('SELECT * FROM shops WHERE slug = ?').get(req.params.slug);
+  const s = db.prepare("SELECT * FROM shops WHERE slug = ? AND status = 'approved'").get(req.params.slug);
   if (!s) return res.status(404).json({ error: 'Shop not found' });
   const { c } = db.prepare("SELECT COUNT(*) AS c FROM products WHERE shop_id = ? AND status = 'live'").get(s.id);
   res.json({ shop: shape({ ...s, product_count: c }) });
