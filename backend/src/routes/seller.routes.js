@@ -105,10 +105,11 @@ router.patch('/shipments/:id', requireSeller, (req, res) => {
     if (status && status !== sh.status) {
       db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
         .run(sh.id, status, note || shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number));
-      if (status === 'delivered') {
-        const left = db.prepare("SELECT COUNT(*) AS c FROM shipments WHERE order_id=? AND status!='delivered'").get(sh.order_id).c;
-        if (!left) db.prepare("UPDATE orders SET status='fulfilled' WHERE id=?").run(sh.order_id);
-      }
+      // Re-derive the order status in BOTH directions, so undoing a delivered
+      // parcel also takes the order back from fulfilled to paid.
+      const left = db.prepare("SELECT COUNT(*) AS c FROM shipments WHERE order_id=? AND status!='delivered'").get(sh.order_id).c;
+      if (!left) db.prepare("UPDATE orders SET status='fulfilled' WHERE id=? AND status='paid'").run(sh.order_id);
+      else db.prepare("UPDATE orders SET status='paid' WHERE id=? AND status='fulfilled'").run(sh.order_id);
     }
   })();
   const row = db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id);

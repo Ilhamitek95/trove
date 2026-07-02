@@ -682,9 +682,15 @@ function renderOrders(){
     </div>`;
   }).join('');
 }
+// One step back from each status — so a mis-click is never final.
+const SHIP_PREV={shipped:'processing',out_for_delivery:'shipped',delivered:'out_for_delivery'};
+function undoBtn(s){
+  if(!SHIP_PREV[s.status])return'';
+  return `<button class="btn btn-ghost btn-sm" onclick="undoShip(${s.id},'${s.status}')" title="Step back if you clicked too soon">↩ Undo</button>`;
+}
 function shipActions(s){
   if(s.status==='cancelled') return `<div class="sc-act" style="color:var(--muted)">This shipment was cancelled.</div>`;
-  if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}</div>`;
+  if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${undoBtn(s)}</div>`;
   const [ns,label]=SHIP_NEXT[s.status]||[];
   const track=`<div class="sc-track">
       <div class="field" style="margin:0"><label>Courier</label><input id="ship-carrier-${s.id}" value="${esc(s.carrier)}" placeholder="e.g. Trove Express"></div>
@@ -694,7 +700,15 @@ function shipActions(s){
   return track+`<div class="sc-act">
       ${ns?`<button class="btn btn-coral btn-sm" onclick="advanceShip(${s.id},'${ns}')">${label}</button>`:''}
       <button class="btn btn-ghost btn-sm" onclick="advanceShip(${s.id},'${s.status}')">Save tracking</button>
+      ${undoBtn(s)}
     </div>`;
+}
+// Step a shipment back one stage; the correction is logged on the timeline.
+async function undoShip(id,cur){
+  const prev=SHIP_PREV[cur]; if(!prev)return;
+  const lbl=(SHIP_STEPS.find(x=>x[0]===prev)||[])[1]||prev;
+  try{ await TroveAPI.api('/api/seller/shipments/'+id,{method:'PATCH',body:{status:prev,note:'Status corrected by the shop'}}); toast('Moved back to '+lbl); await reloadOrders(); }
+  catch(e){ toast(e.message||'Could not undo'); }
 }
 // Advance a shipment (or just save its courier/tracking/link when status is unchanged).
 async function advanceShip(id,status){
