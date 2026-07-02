@@ -114,7 +114,7 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(express.json());
+app.use(express.json({ limit: '6mb' })); // roomy enough for base64 image uploads
 app.use(session({
   store: new SqliteStore(),
   secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
@@ -154,6 +154,9 @@ app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
  * first-party and there's one URL to deploy. "/" → docs/index.html.        */
 const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
 app.use(express.static(DOCS_DIR, { extensions: ['html'] }));
+
+// Seller-uploaded images (shop photos). Kept on the persistent disk in prod.
+app.use('/uploads', express.static(require('./uploads').UPLOADS_DIR, { maxAge: '30d', immutable: true }));
 
 /* ---------------- Errors ---------------- */
 app.use((err, _req, res, _next) => {

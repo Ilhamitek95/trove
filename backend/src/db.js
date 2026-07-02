@@ -108,6 +108,8 @@ function addColumn(table, col, def) {
 // transfer) or 'connect' (seller's own Stripe account, paid per sale). The bank
 // fields are used by the weekly managed-payout run.
 addColumn('shops', 'payout_type',         "TEXT NOT NULL DEFAULT 'managed'");
+// Seller-uploaded shop photo (public URL path under /uploads; '' = colour tile).
+addColumn('shops', 'image',               "TEXT DEFAULT ''");
 addColumn('shops', 'payout_bank_name',    "TEXT DEFAULT ''");
 addColumn('shops', 'payout_account_name', "TEXT DEFAULT ''");
 addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");

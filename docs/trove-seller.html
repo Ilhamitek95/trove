@@ -367,6 +367,17 @@
         <div class="store-grid">
           <div class="card">
             <h3 style="font-size:22px;font-weight:600;margin-bottom:20px">Shop details</h3>
+            <div class="field"><label>Shop photo</label>
+              <div style="display:flex;align-items:center;gap:14px">
+                <div id="sfPhotoPrev" style="width:64px;height:64px;border-radius:16px;overflow:hidden;flex-shrink:0;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:26px;font-weight:600"></div>
+                <div>
+                  <input type="file" id="sfPhotoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadShopPhoto(this.files[0]);this.value=''">
+                  <button class="btn btn-ghost btn-sm" onclick="$('sfPhotoFile').click()">Upload photo</button>
+                  <button class="btn btn-ghost btn-sm" id="sfPhotoRemove" onclick="removeShopPhoto()" style="display:none">Remove</button>
+                  <div class="hint" style="margin-top:6px">JPG, PNG or WebP — shown on your shop page and shop cards. Without one, your accent colour is used.</div>
+                </div>
+              </div>
+            </div>
             <div class="field"><label>Shop name</label><input id="sfName" value="Kiln & Clay"></div>
             <div class="field"><label>Tagline</label><input id="sfTag" value="Small-batch stoneware, thrown by hand"></div>
             <div class="field"><label>Location</label><input id="sfLoc" value="Lisbon, Portugal"></div>
@@ -465,13 +476,13 @@ function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'ship
 function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
-  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',
+  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.payout_iban||''}};
   storeColor=SHOP.color;
   $('sideShop').textContent=SHOP.name;
-  $('sideAv').textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();
-  $('sideAv').style.background=SHOP.color;
+  if(SHOP.image){$('sideAv').style.background=`center/cover no-repeat url("${SHOP.image}")`;$('sideAv').textContent='';}
+  else{$('sideAv').textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();$('sideAv').style.background=SHOP.color;}
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
 }
 function fillStoreForm(){
@@ -878,13 +889,49 @@ function renderStore(){
   $('sfColors').innerHTML=PALETTE.map(c=>`<div class="csw ${c===storeColor?'on':''}" style="background:${c}" onclick="storeColor='${c}';renderStore();updatePreview()"></div>`).join('');
   updatePreview();
 }
+// A tile shows the shop photo when there is one, else the accent colour + initial.
+function photoTile(el,letter){
+  if(SHOP.image){el.style.background=`center/cover no-repeat url("${SHOP.image}")`;el.textContent='';}
+  else{el.style.background=storeColor;el.textContent=letter;}
+}
 function updatePreview(){
-  $('pvCover').style=grad(storeColor);$('pvAv').style.background=storeColor;
-  $('pvName').textContent=$('sfName').value||'Your shop';$('pvAv').textContent=($('sfName').value||'Y')[0];
+  const letter=($('sfName').value||'Y')[0];
+  if(SHOP.image){$('pvCover').style=`position:absolute;inset:0;background:center/cover no-repeat url("${SHOP.image}")`;}
+  else{$('pvCover').style='position:absolute;inset:0;'+grad(storeColor);}
+  photoTile($('pvAv'),letter);
+  $('pvName').textContent=$('sfName').value||'Your shop';
   $('pvLoc').textContent=$('sfLoc').value;$('pvBio').textContent=$('sfBio').value;
-  $('sideAv').textContent=($('sfName').value||'Y')[0];$('sideAv').style.background=storeColor;
+  photoTile($('sideAv'),letter);
+  photoTile($('sfPhotoPrev'),letter);
+  $('sfPhotoRemove').style.display=SHOP.image?'inline-flex':'none';
 }
 ['sfName','sfLoc','sfBio'].forEach(id=>$(id).addEventListener('input',updatePreview));
+
+/* shop photo upload — downsized in the browser, sent as a data URL */
+function uploadShopPhoto(file){
+  if(!file)return;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('Use a JPG, PNG or WebP image');return;}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const im=new Image();
+    im.onload=async()=>{
+      const MAX=1200, sc=Math.min(1,MAX/Math.max(im.width,im.height));
+      const cv=document.createElement('canvas');cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      try{
+        const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:cv.toDataURL('image/jpeg',0.85)}});
+        applyShop(shop);updatePreview();toast('Shop photo updated');
+      }catch(e){toast(e.message||'Could not upload the photo');}
+    };
+    im.onerror=()=>toast('That file could not be read as an image');
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+async function removeShopPhoto(){
+  try{ const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:null}}); applyShop(shop);updatePreview();toast('Back to your accent colour'); }
+  catch(e){ toast(e.message||'Could not remove the photo'); }
+}
 async function saveStore(){
   const body={name:$('sfName').value.trim(),bio:$('sfBio').value.trim(),location:$('sfLoc').value.trim(),color:storeColor};
   if(!body.name){toast('Your shop needs a name');return;}

@@ -17,12 +17,12 @@ function shape(p) {
     personalization: p.personalization_enabled
       ? { required: !!p.personalization_required, prompt: p.personalization_prompt || '', maxLen: p.personalization_char_limit || 256 }
       : null,
-    shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, isHouse: !!p.is_house },
+    shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, image: p.shop_image || null, isHouse: !!p.is_house },
   };
 }
 
 const BASE = `
-  SELECT p.*, s.name AS shop_name, s.slug, s.location, s.color, s.is_house
+  SELECT p.*, s.name AS shop_name, s.slug, s.location, s.color, s.image AS shop_image, s.is_house
   FROM products p JOIN shops s ON s.id = p.shop_id
   WHERE p.status = 'live'
 `;

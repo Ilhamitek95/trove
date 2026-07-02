@@ -21,6 +21,9 @@ services:
         value: production
       - key: DB_PATH
         value: /var/data/trove.db
+      # Seller-uploaded images — also on the disk so they survive deploys.
+      - key: UPLOADS_DIR
+        value: /var/data/uploads
       # Fills an empty database with the demo catalogue on first boot.
       # Harmless to leave on: it does nothing once any account exists.
       - key: SEED_DEMO

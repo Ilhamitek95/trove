@@ -12,6 +12,9 @@ node_modules/
 *.db-wal
 *.sqlite
 
+# user-uploaded images (live on the persistent disk in production)
+backend/uploads/
+
 # logs
 *.log
 npm-debug.log*

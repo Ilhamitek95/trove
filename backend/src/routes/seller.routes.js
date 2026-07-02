@@ -5,6 +5,7 @@ const { requireSeller } = require('../middleware');
 const { requireStripe } = require('../stripe');
 const fees = require('../fees');
 const shipments = require('../shipments');
+const uploads = require('../uploads');
 
 const router = express.Router();
 const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
@@ -19,6 +20,19 @@ router.patch('/me', requireSeller, (req, res) => {
   db.prepare('UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color) WHERE id=?')
     .run(name, bio, location, color, req.shop.id);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
+});
+
+// Upload (or remove) the shop's photo. Body: { image: <data URL> } to set,
+// { image: null } to go back to the colour tile. The old file is cleaned up.
+router.post('/me/image', requireSeller, (req, res, next) => {
+  try {
+    const { image } = req.body || {};
+    let url = '';
+    if (image) url = uploads.saveDataUrl(image, 'shops', `shop-${req.shop.id}`);
+    uploads.removeByUrl(req.shop.image);
+    db.prepare('UPDATE shops SET image=? WHERE id=?').run(url, req.shop.id);
+    res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
+  } catch (e) { next(e); }
 });
 
 /* ---------------- Products ---------------- */
