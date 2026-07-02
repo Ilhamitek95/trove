@@ -422,7 +422,7 @@ function renderOrders(){
       body=sh.map(s=>{
         const color=(s.shop&&s.shop.color)||'#A98B7D';
         const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div></div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div></div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
         const last=(s.timeline||[]).slice(-1)[0];
         const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
         return `<div class="ship">
@@ -439,7 +439,7 @@ function renderOrders(){
       body=Object.entries(groups).map(([name,g])=>
         `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
         g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#A98B7D')}"></div></div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div></div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
       ).join('');
     }
     return `<div class="order-card">

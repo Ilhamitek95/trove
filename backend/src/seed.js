@@ -68,6 +68,14 @@ const products = [
 ];
 for (const p of products) mkProd.run(...p);
 
+// Etsy-style personalisation on a few pieces so the option is visible end to end:
+// the mug requires it (monogram), the wallet and notebook offer it optionally.
+const setPerso = db.prepare(`UPDATE products SET personalization_enabled=1, personalization_required=?,
+  personalization_prompt=?, personalization_char_limit=? WHERE image_seed=?`);
+setPerso.run(1, 'Initials to stamp on the base (up to 3 letters)', 3, 'mug7');
+setPerso.run(0, 'Add a monogram — up to 4 letters, embossed by hand', 4, 'wallet3');
+setPerso.run(0, 'A word or name for the cover, foil-pressed (max 20 characters)', 20, 'note2');
+
 // A demo PAID order (normally created by checkout) so the managed payout flow
 // has something to settle: a Kiln & Clay mug + an Ember wallet — both managed shops.
 const mug = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='mug7'").get();
@@ -77,9 +85,9 @@ const demoDelivery = demoSub >= 50000 ? 0 : 2500;
 const demoShip = JSON.stringify({ name: 'Layla Hassan', line: 'Apt 1204, Marina Gate 2', city: 'Dubai Marina, Dubai', country: 'United Arab Emirates', phone: '+971 50 123 4567' });
 const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status)
   VALUES (?,?,?,?,?,?,?, 'aed', ?, 'paid')`).run('TRV-SEED01', layla, 'layla@email.com', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900, demoShip).lastInsertRowid;
-const mkItem = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,?,?)');
-mkItem.run(demoOrder, mug.id, mug.shop_id, mug.name, mug.price_cents, 1);
-mkItem.run(demoOrder, wallet.id, wallet.shop_id, wallet.name, wallet.price_cents, 1);
+const mkItem = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization) VALUES (?,?,?,?,?,?,?)');
+mkItem.run(demoOrder, mug.id, mug.shop_id, mug.name, mug.price_cents, 1, 'LH');
+mkItem.run(demoOrder, wallet.id, wallet.shop_id, wallet.name, wallet.price_cents, 1, '');
 
 // Shipments for the demo order so tracking shows on both sides:
 // Kiln already shipped with a tracking number, Ember still processing.

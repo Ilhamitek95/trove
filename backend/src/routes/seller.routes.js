@@ -28,11 +28,15 @@ router.get('/products', requireSeller, (req, res) => {
   res.json({ products: db.prepare('SELECT * FROM products WHERE shop_id=? ORDER BY created_at DESC').all(req.shop.id) });
 });
 
+// Personalisation settings arrive as { enabled, required, prompt, maxLen }.
+const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.prompt || '').slice(0, 300), Math.min(1024, Math.max(1, parseInt(p.maxLen) || 256))] : [0, 0, '', 256];
+
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new' } = req.body || {};
+  const { name, description = '', category = 'Home', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
-  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed)
-    VALUES (?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed);
+  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,
+      personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed, ...persoCols(personalization));
   res.status(201).json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(info.lastInsertRowid) });
 });
 
@@ -45,6 +49,10 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     .run(b.name, b.description, b.category, toCents(b.price),
          b.compareAt === undefined ? p.compare_at_cents : toCents(b.compareAt),
          b.stock, b.status, p.id);
+  if (b.personalization !== undefined) {
+    db.prepare(`UPDATE products SET personalization_enabled=?, personalization_required=?, personalization_prompt=?, personalization_char_limit=? WHERE id=?`)
+      .run(...persoCols(b.personalization), p.id);
+  }
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });
 

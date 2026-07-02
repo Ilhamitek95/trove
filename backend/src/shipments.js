@@ -17,7 +17,7 @@ const LABELS = {
   cancelled: 'Cancelled',
 };
 
-const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.price_cents, p.image_seed FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND oi.shop_id=?');
+const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, p.image_seed FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND oi.shop_id=?');
 const eventsStmt = db.prepare('SELECT status, note, created_at FROM shipment_events WHERE shipment_id=? ORDER BY id ASC');
 
 // Shape a shipment row (optionally joined with shop name/color/is_house) for the API.
@@ -34,7 +34,7 @@ function shape(s) {
     updatedAt: s.updated_at,
     shop: { id: s.shop_id, name: s.shop_name, color: s.color, isHouse: !!s.is_house },
     itemTotal: items.reduce((t, i) => t + i.price_cents * i.qty, 0) / 100,
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, seed: i.image_seed || '' })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, seed: i.image_seed || '', personalization: i.personalization || '' })),
     timeline: eventsStmt.all(s.id).map((e) => ({ status: e.status, label: LABELS[e.status] || e.status, note: e.note, at: e.created_at })),
   };
 }

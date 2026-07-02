@@ -35,7 +35,15 @@ router.post('/', async (req, res, next) => {
       const qty = Math.max(1, parseInt(it.qty) || 1);
       if (!p) return res.status(400).json({ error: `Product ${it.productId} is unavailable` });
       if (p.stock < qty) return res.status(409).json({ error: `${p.name} is out of stock` });
-      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: p.price_cents, qty };
+      // Personalisation: only kept when the product allows it; required means the
+      // order can't go through without it (mirrors Etsy's listing personalisation).
+      let perso = '';
+      if (p.personalization_enabled) {
+        perso = String(it.personalization || '').trim().slice(0, p.personalization_char_limit || 256);
+        if (p.personalization_required && !perso)
+          return res.status(400).json({ error: `${p.name} needs your personalisation text before checkout` });
+      }
+      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: p.price_cents, qty, personalization: perso };
       lines.push(line);
       subtotal += p.price_cents * qty;
     }
@@ -51,8 +59,8 @@ router.post('/', async (req, res, next) => {
       const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status)
         VALUES (?,?,?,?,?,?,?,?,?, 'pending')`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null));
       const oid = info.lastInsertRowid;
-      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,?,?)');
-      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty);
+      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization) VALUES (?,?,?,?,?,?,?)');
+      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization);
       return oid;
     })();
 

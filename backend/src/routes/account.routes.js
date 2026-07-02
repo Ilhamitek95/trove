@@ -18,7 +18,7 @@ router.get('/orders', requireAuth, (req, res) => {
       total: o.total_cents / 100,
       createdAt: o.created_at,
       items: itemsStmt.all(o.id).map((i) => ({
-        name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100,
+        name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
         shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
       })),
       shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),

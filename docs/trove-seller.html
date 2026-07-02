@@ -414,6 +414,18 @@
         <div class="seg" id="dStatusSeg"><button data-s="live" class="on" onclick="setSeg(this)">Live</button><button data-s="draft" onclick="setSeg(this)">Draft</button></div>
       </div>
     </div>
+    <div class="field" style="margin-top:2px"><label>Personalisation</label>
+      <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin:4px 0 2px"><input type="checkbox" id="dPerso" onchange="togglePerso()"> Let buyers add a personal touch (a name, initials, a date…)</label>
+    </div>
+    <div id="dPersoFields" style="display:none">
+      <div class="field"><label>What should the buyer tell you?</label><input id="dPersoPrompt" placeholder="e.g. Initials to stamp on the base (up to 3 letters)"></div>
+      <div class="ftwo">
+        <div class="field"><label>Max characters</label><input id="dPersoLimit" type="number" placeholder="256"></div>
+        <div class="field"><label>Buyer must fill it in?</label>
+          <div class="seg" id="dPersoReq"><button data-r="0" class="on" onclick="setPersoReq(this)">Optional</button><button data-r="1" onclick="setPersoReq(this)">Required</button></div>
+        </div>
+      </div>
+    </div>
     <div class="hint">Trove takes a flat 10% per sale. On a AED <span id="dFeeBase">0</span> item you keep <b>AED <span id="dFeeKeep">0</span></b>.</div>
   </div>
   <div class="dfoot">
@@ -450,7 +462,8 @@ function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clea
 /* ---------------- API GLUE ---------------- */
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'shipped'; }
-function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null}; }
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,
+  perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
@@ -563,13 +576,20 @@ async function delProduct(id){const p=products.find(x=>x.id===id);if(!confirm(`D
 }
 
 /* drawer */
+function togglePerso(){$('dPersoFields').style.display=$('dPerso').checked?'block':'none';}
+function setPersoReq(btn){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+function setPersoReqVal(r){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.toggle('on',b.dataset.r===String(r?1:0)));}
+function fillPerso(per){const on=!!(per&&per.enabled);$('dPerso').checked=on;togglePerso();
+  $('dPersoPrompt').value=per?per.prompt||'':'';$('dPersoLimit').value=per&&per.maxLen?per.maxLen:'';setPersoReqVal(per?per.required:0);}
+function readPerso(){return {enabled:$('dPerso').checked,required:document.querySelector('#dPersoReq button.on').dataset.r==='1',
+  prompt:$('dPersoPrompt').value.trim(),maxLen:parseInt($('dPersoLimit').value)||256};}
 function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSave').textContent='Add product';
   $('dName').value='';$('dDesc').value='';$('dCat').value='Ceramics';$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
-  setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
+  fillPerso(null);setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSave').textContent='Save changes';
   $('dName').value=p.name;$('dDesc').value=p.desc||'';$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
-  setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
+  fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;}
 function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;}
 function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*0.90);}
@@ -579,7 +599,8 @@ $('drawerSave').onclick=async()=>{
   if(!name){toast('Give your product a name');return;}
   if(isNaN(price)||price<=0){toast('Set a price above 0');return;}
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
-    compareAt:parseFloat($('dCompare').value)||null,stock:parseInt($('dStock').value)||0,status:drawerStatus};
+    compareAt:parseFloat($('dCompare').value)||null,stock:parseInt($('dStock').value)||0,status:drawerStatus,
+    personalization:readPerso()};
   try{
     if(editingId) await TroveAPI.api('/api/seller/products/'+editingId,{method:'PATCH',body});
     else { body.imageSeed='new'+Math.floor(Math.random()*9999); await TroveAPI.api('/api/seller/products',{method:'POST',body}); }
@@ -621,7 +642,8 @@ function renderOrders(){
     const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
     const items=(o.items||[]).map(i=>`<div class="sc-li">
         <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#A98B7D')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div></div>
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
+          ${i.personalization?`<div class="q" style="color:var(--coral-deep);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
         <div class="pr">${aed(i.price*i.qty)}</div>
       </div>`).join('');
     return `<div class="card ship-card">

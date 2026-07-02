@@ -590,6 +590,12 @@
         <p class="desc" id="pdpDesc"></p>
         <div class="lbl">Colour</div>
         <div class="swatches" id="pdpSwatches"></div>
+        <div id="pdpPerso" style="display:none;margin:18px 0 4px">
+          <div class="lbl" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:10px;letter-spacing:.08em;background:var(--rose-tint);color:var(--coral-deep);padding:3px 8px;border-radius:999px;font-weight:700"></span></div>
+          <div id="pdpPersoPrompt" style="font-size:13px;color:var(--muted);font-weight:500;margin:2px 0 8px"></div>
+          <textarea id="pdpPersoText" rows="2" maxlength="256" oninput="persoCount()" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;resize:vertical" placeholder="Type it exactly as you'd like it"></textarea>
+          <div id="pdpPersoCount" style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:right;margin-top:4px"></div>
+        </div>
         <div class="buyrow">
           <button class="btn btn-dark" id="pdpAdd">Add to cart</button>
           <button class="btn btn-ghost">Save</button>
@@ -785,6 +791,7 @@ function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&
 function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
 function img(seed){return `https://picsum.photos/seed/trv${seed}/640/780`;}
 function aed(n){return 'AED '+n.toLocaleString();}
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function vColor(v){return VENDORS[v].color;}
 function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
 
@@ -823,7 +830,7 @@ function checkoutPayload(){
   }
   return {
     email:$('coEmail').value.trim(),
-    items:cart.map(c=>({productId:c.pid,qty:c.qty})),
+    items:cart.map(c=>({productId:c.pid,qty:c.qty,personalization:c.note||''})),
     address,
   };
 }
@@ -955,8 +962,23 @@ function openPDP(id){
   $('pdpDesc').textContent=p.desc;
   const sw=['#262321','#A98B7D','#D8C5BE','#C3D1C7'];
   $('pdpSwatches').innerHTML=sw.map((c,i)=>`<div class="sw ${i===0?'on':''}" style="background:${c}" onclick="document.querySelectorAll('.sw').forEach(e=>e.classList.remove('on'));this.classList.add('on')"></div>`).join('');
+  // Etsy-style personalisation: sellers switch it on per piece; buyers type
+  // their text here and it travels with the order to the seller.
+  const per=p.perso; $('pdpPerso').style.display=per?'block':'none';
+  if(per){
+    $('pdpPersoTag').textContent=per.required?'Required':'Optional';
+    $('pdpPersoPrompt').textContent=per.prompt||'Tell the maker what you’d like added.';
+    const ta=$('pdpPersoText'); ta.value=''; ta.maxLength=per.maxLen||256; persoCount();
+  }
   const addBtn=$('pdpAdd'); addBtn.textContent='Add to cart'; addBtn.className='btn btn-dark';
-  addBtn.onclick=()=>addToCart(p.id,addBtn);
+  addBtn.onclick=()=>{
+    let note='';
+    if(per){
+      note=$('pdpPersoText').value.trim();
+      if(per.required&&!note){toast('Add your personalisation first — the maker needs it.');$('pdpPersoText').focus();return;}
+    }
+    addToCart(p.id,addBtn,note);
+  };
   $('pdpSav').style.background=V.color; $('pdpSav').textContent=V.name[0];
   $('pdpSoldName').textContent=V.name;
   $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
@@ -965,30 +987,37 @@ function openPDP(id){
 function swapMain(seed,el){$('pdpImg').src=img(seed);document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 
 /* CART */
-function addToCart(id,btn){
-  const ex=cart.find(c=>c.pid===id);
-  if(ex)ex.qty++; else cart.push({pid:id,qty:1});
+function persoCount(){const ta=$('pdpPersoText');$('pdpPersoCount').textContent=`${ta.value.length} / ${ta.maxLength}`;}
+function addToCart(id,btn,note){
+  const p=PRODUCTS.find(x=>x.id===id);
+  // A required personalisation can only be typed on the product page.
+  if(p.perso&&p.perso.required&&note===undefined){openPDP(id);toast('This piece is personalised — add your text first');return;}
+  note=(note||'').trim();
+  // Same product + same note = one line; a different note is its own line.
+  const ex=cart.find(c=>c.pid===id&&(c.note||'')===note);
+  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note});
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
-  const p=PRODUCTS.find(x=>x.id===id); toast(`${p.name} added to your trove`);
+  toast(`${p.name} added to your trove`);
 }
-function changeQty(id,d){const c=cart.find(x=>x.pid===id);if(!c)return;c.qty+=d;if(c.qty<=0)cart=cart.filter(x=>x.pid!==id);updateCartCount();renderCart();}
-function removeItem(id){cart=cart.filter(x=>x.pid!==id);updateCartCount();renderCart();}
+function changeQty(i,d){const c=cart[i];if(!c)return;c.qty+=d;if(c.qty<=0)cart.splice(i,1);updateCartCount();renderCart();}
+function removeItem(i){cart.splice(i,1);updateCartCount();renderCart();}
 function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);resetPayment();}
 function renderCart(){
   const body=$('cartBody');
   if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">Your trove is empty</div><p style="font-weight:400">Pieces you add will gather here, grouped by shop.</p></div>`;$('cartFoot').style.display='none';return;}
   const groups={};
-  cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p});});
+  cart.forEach((c,idx)=>{const p=PRODUCTS.find(x=>x.id===c.pid);(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p,idx});});
   let html='';
   Object.entries(groups).forEach(([v,items])=>{
     const V=VENDORS[v];
     html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
-    items.forEach(({p,qty})=>{
+    items.forEach(({p,qty,note,idx})=>{
       html+=`<div class="citem">
         <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
-          <div class="qrow"><button class="qbtn" onclick="changeQty(${p.id},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${p.id},1)">+</button><span class="rm" onclick="removeItem(${p.id})">Remove</span></div>
+          ${note?`<div class="v" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
+          <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
         </div>
         <div class="cp">${aed(p.price*qty)}</div></div>`;
     });
@@ -1042,7 +1071,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
+    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -1094,7 +1123,7 @@ async function loadCatalog(){
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,bio:s.bio,prods:s.productCount,since:s.since,rating:null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:null,reviews:0,desc:p.description,seed:p.imageSeed};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:null,reviews:0,desc:p.description,seed:p.imageSeed,perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}

@@ -14,6 +14,9 @@ function shape(p) {
     compareAt: p.compare_at_cents ? p.compare_at_cents / 100 : null,
     stock: p.stock,
     imageSeed: p.image_seed,
+    personalization: p.personalization_enabled
+      ? { required: !!p.personalization_required, prompt: p.personalization_prompt || '', maxLen: p.personalization_char_limit || 256 }
+      : null,
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, isHouse: !!p.is_house },
   };
 }

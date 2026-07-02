@@ -115,6 +115,13 @@ addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");
 addColumn('orders', 'service_fee_cents',  'INTEGER NOT NULL DEFAULT 0');
 // Set when a managed sale has been swept into a weekly payout batch.
 addColumn('order_items', 'payout_id',     'INTEGER');
+// Etsy-style order personalisation: the seller switches it on per product and
+// writes the prompt the buyer sees; the buyer's text is stored on the line item.
+addColumn('products', 'personalization_enabled',  'INTEGER NOT NULL DEFAULT 0');
+addColumn('products', 'personalization_required', 'INTEGER NOT NULL DEFAULT 0');
+addColumn('products', 'personalization_prompt',   "TEXT DEFAULT ''");
+addColumn('products', 'personalization_char_limit', 'INTEGER NOT NULL DEFAULT 256');
+addColumn('order_items', 'personalization', "TEXT DEFAULT ''");
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS payouts (
