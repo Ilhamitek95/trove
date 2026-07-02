@@ -1,0 +1,32 @@
+# Render Blueprint — deploys the whole marketplace (API + storefront) as one
+# web service. In the Render dashboard: New + → Blueprint → pick this repo.
+#
+# The Starter plan + disk keeps the SQLite database on persistent storage so
+# accounts, products and orders survive deploys and restarts.
+services:
+  - type: web
+    name: trove
+    runtime: node
+    plan: starter
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: trove-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DB_PATH
+        value: /var/data/trove.db
+      # Fills an empty database with the demo catalogue on first boot.
+      # Harmless to leave on: it does nothing once any account exists.
+      - key: SEED_DEMO
+        value: "1"
+      - key: SESSION_SECRET
+        generateValue: true
+      # Stripe keys are added later in the dashboard (Environment tab):
+      #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+      # (the publishable pk_ key goes in docs/config.js, not here)

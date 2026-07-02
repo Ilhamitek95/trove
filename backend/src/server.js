@@ -8,6 +8,13 @@ const db = require('./db');
 const SqliteStore = require('./session-store');
 const { stripe } = require('./stripe');
 
+// First-boot demo seed: SEED_DEMO=1 populates an EMPTY database with the demo
+// catalogue. It never touches a database that already has users, so it is safe
+// to leave on — once real accounts exist it does nothing.
+if (process.env.SEED_DEMO === '1' && !db.prepare('SELECT 1 FROM users LIMIT 1').get()) {
+  require('./seed');
+}
+
 const app = express();
 const PORT = process.env.PORT || 4242;
 const isProd = process.env.NODE_ENV === 'production';
@@ -16,7 +23,8 @@ const fees = require('./fees');
 
 // CLIENT_URL = this site's public URL (used for Stripe Connect return links).
 // For split hosting you may list several allowed origins, comma-separated.
-const CLIENT_URL = process.env.CLIENT_URL || `http://localhost:${PORT}`;
+// RENDER_EXTERNAL_URL is set automatically by Render, so no config is needed there.
+const CLIENT_URL = process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
 const ALLOWED_ORIGINS = CLIENT_URL.split(',').map((s) => s.trim()).filter(Boolean);
 
 // Behind a hosting proxy (Render/Railway/Fly) so secure cookies are honoured.
