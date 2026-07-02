@@ -222,7 +222,8 @@ async function submitApp(){
     window.scrollTo(0,0);
   }catch(e){
     btn.textContent=label;btn.disabled=false;btn.style.opacity='1';
-    if(e.status===409){showErr('An account with this email already exists — you can sign in instead.');toStep(1);}
+    // Switch step BEFORE showing the error — toStep clears the banner.
+    if(e.status===409){toStep(1);showErr('An account with this email already exists — you can sign in with it instead, or use a different email.');}
     else showErr(e.message||'Something went wrong — please try again.');
   }
 }
