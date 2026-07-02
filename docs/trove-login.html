@@ -110,9 +110,9 @@
       <p class="lede" id="aLede">Your account, orders, and saved finds.</p>
 
       <div class="field" id="nameField" style="display:none"><label>Your name</label><input id="name" placeholder="Your full name"></div>
-      <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@email.com" value="layla@email.com"></div>
+      <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@email.com"></div>
       <div class="field"><div class="fl"><label>Password</label><a href="#" onclick="return false">Forgot?</a></div>
-        <input id="pass" type="password" placeholder="••••••••" value="demo1234"></div>
+        <input id="pass" type="password" placeholder="••••••••"></div>
       <div class="field" id="shopField" style="display:none"><label>Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
       <div id="authErr" style="display:none;color:var(--coral-deep);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
@@ -125,7 +125,7 @@
       </div>
 
       <div class="swap" id="swap">New to trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
-      <div class="demo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Demo — sign in with the prefilled account (password demo1234).</div>
+      <div class="demo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Trove is in early preview — payments aren't switched on just yet.</div>
     </div>
   </div>
 </div>
@@ -138,10 +138,10 @@ let mode='shop', registering=false;
 const COPY={
   shop:{eyebrow:'Welcome back',title:'Beautiful things, <em>gathered</em>.',text:'Sign in to pick up where you left off — your saved finds, your shops, your trove.',
         quote:'"The nicest corner of the internet to actually buy something."',cite:'— a happy shopper',
-        aTitle:'Sign in to shop',aLede:'Your account, orders, and saved finds.',email:'layla@email.com'},
+        aTitle:'Sign in to shop',aLede:'Your account, orders, and saved finds.'},
   sell:{eyebrow:'For sellers',title:'Your shop, <em>beautifully</em> run.',text:'Sign in to manage products, orders and payouts from your trove dashboard.',
         quote:'"Listing took ten minutes. The first sale came the same week."',cite:'— a trove maker',
-        aTitle:'Sign in to your shop',aLede:'Manage products, orders and payments.',email:'mara@kilnandclay.com'}
+        aTitle:'Sign in to your shop',aLede:'Manage products, orders and payments.'}
 };
 function setMode(m){
   mode=m; registering=false;
@@ -155,7 +155,6 @@ function setMode(m){
   document.getElementById('bQuote').innerHTML=`${c.quote}<cite>${c.cite}</cite>`;
   document.getElementById('aTitle').textContent=c.aTitle;
   document.getElementById('aLede').textContent=c.aLede;
-  document.getElementById('email').value=c.email;
   document.getElementById('submitBtn').classList.toggle('seller',m==='sell');
   updateRegisterUI();
 }

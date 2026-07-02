@@ -37,6 +37,29 @@ if (process.env.ADMIN_EMAIL) {
   }
 }
 
+// Demo-account lockdown: on a public deployment set DEMO_PASSWORD to replace
+// the seeded accounts' well-known "demo1234" password (re-applied every boot,
+// so changing the env changes the password). The house account also loses its
+// admin role — on a live site the only admin should be the ADMIN_EMAIL owner.
+// Real customer accounts are never touched. Leave unset in local dev.
+if (process.env.DEMO_PASSWORD) {
+  const { hashPassword } = require('./middleware');
+  const DEMO_EMAILS = [
+    'layla@email.com', 'hello@trove.com', 'mara@kilnandclay.com',
+    'hello@northboundloom.com', 'hello@embergoods.com',
+    'hello@fernapothecary.com', 'hello@foliopaper.com', 'nadia@sableandstone.com',
+  ];
+  const hash = hashPassword(process.env.DEMO_PASSWORD);
+  const rotate = db.prepare('UPDATE users SET password_hash=? WHERE email=?');
+  let rotated = 0;
+  for (const email of DEMO_EMAILS) rotated += rotate.run(hash, email).changes;
+  let demoted = 0;
+  if ((process.env.ADMIN_EMAIL || '').trim().toLowerCase() !== 'hello@trove.com') {
+    demoted = db.prepare("UPDATE users SET role='seller' WHERE email='hello@trove.com' AND role='admin'").run().changes;
+  }
+  if (rotated) console.log(`demo lockdown: rotated ${rotated} demo password(s)${demoted ? ', house account demoted to seller' : ''}`);
+}
+
 const app = express();
 const PORT = process.env.PORT || 4242;
 const isProd = process.env.NODE_ENV === 'production';
