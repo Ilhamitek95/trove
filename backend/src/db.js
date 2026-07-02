@@ -114,6 +114,11 @@ addColumn('shops', 'image',               "TEXT DEFAULT ''");
 // them. Only 'approved' shops appear on the storefront or can be bought from.
 // Default 'approved' so shops that existed before this feature stay live.
 addColumn('shops', 'status',              "TEXT NOT NULL DEFAULT 'approved'");
+// Seller application details, filled in when applying to open a shop and
+// shown to the super admin in the review queue.
+addColumn('shops', 'category',            "TEXT DEFAULT ''");   // main category they sell in
+addColumn('shops', 'pitch_products',      "TEXT DEFAULT ''");   // what they plan to sell
+addColumn('shops', 'pitch_links',         "TEXT DEFAULT ''");   // website / instagram
 addColumn('shops', 'payout_bank_name',    "TEXT DEFAULT ''");
 addColumn('shops', 'payout_account_name', "TEXT DEFAULT ''");
 addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");

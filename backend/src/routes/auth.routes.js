@@ -6,7 +6,9 @@ const { hashPassword, verifyPassword, publicUser, requireAuth } = require('../mi
 const router = express.Router();
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
-// POST /api/auth/register  { email, password, name, role?, shopName? }
+// POST /api/auth/register
+// { email, password, name, role?, shopName?,
+//   about?, location?, category?, plannedProducts?, links? }  ← seller application
 router.post('/register', (req, res) => {
   const { email, password, name, role = 'buyer', shopName } = req.body || {};
   if (!email || !password || !name) return res.status(400).json({ error: 'email, password and name are required' });
@@ -17,12 +19,18 @@ router.post('/register', (req, res) => {
   const userId = info.lastInsertRowid;
 
   // Sellers get a shop scaffold immediately — but it starts 'pending' and only
-  // appears on the storefront once the super admin approves it.
+  // appears on the storefront once the super admin approves it. The application
+  // details (story, planned products, links) are stored for the review queue.
   if (role === 'seller' || role === 'both') {
     const base = slugify(shopName || name);
     let slug = base, n = 1;
     while (db.prepare('SELECT 1 FROM shops WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
-    db.prepare("INSERT INTO shops (user_id, name, slug, status) VALUES (?,?,?,'pending')").run(userId, shopName || `${name}'s shop`, slug);
+    const clean = (v, max) => String(v || '').trim().slice(0, max);
+    db.prepare(`INSERT INTO shops (user_id, name, slug, status, bio, location, category, pitch_products, pitch_links)
+      VALUES (?,?,?,'pending',?,?,?,?,?)`)
+      .run(userId, shopName || `${name}'s shop`, slug,
+        clean(req.body.about, 2000), clean(req.body.location, 120),
+        clean(req.body.category, 40), clean(req.body.plannedProducts, 2000), clean(req.body.links, 300));
   }
 
   req.session.userId = userId;

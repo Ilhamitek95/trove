@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>trove · open your shop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --rose:#D8C5BE; --coral:#E2836A; --coral-deep:#C5664B; --cream:#FBF6F1;
+    --sage:#C3D1C7; --char:#262321; --taupe:#A98B7D; --paper:#FFFDFB;
+    --rose-tint:#F1E7E1; --line:rgba(38,35,33,.12); --muted:#8C7B72; --ink-80:rgba(38,35,33,.78);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500;min-height:100vh}
+  ::selection{background:var(--coral);color:#fff}
+  a{color:inherit}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  h1,h2,h3{font-family:'Cormorant',Georgia,serif;font-weight:500}
+
+  .shell{display:grid;grid-template-columns:minmax(340px,44%) 1fr;min-height:100vh}
+  @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
+
+  /* left brand panel */
+  .brandside{background:var(--char);padding:56px 60px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .brandside .logo{font-family:'Cormorant';font-size:38px;font-weight:600;color:var(--cream)}
+  .brandside .logo a{text-decoration:none}
+  .bmid{margin-top:12vh;max-width:30ch}
+  .bmid .eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--coral);font-weight:700;display:block;margin-bottom:18px}
+  .bmid h1{font-size:clamp(36px,3.6vw,54px);line-height:1.04;font-weight:400;color:var(--cream)}
+  .bmid h1 em{font-style:italic;color:var(--coral)}
+  .bmid p{font-size:15px;color:rgba(251,246,241,.75);font-weight:400;margin-top:18px;line-height:1.65}
+  .bsteps{margin-top:46px;display:flex;flex-direction:column;gap:18px}
+  .bstep{display:flex;gap:14px;align-items:flex-start;color:rgba(251,246,241,.55);transition:color .3s}
+  .bstep .n{width:26px;height:26px;border-radius:50%;border:1px solid rgba(251,246,241,.3);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;transition:.3s}
+  .bstep .t{font-size:14px;font-weight:600;padding-top:3px}
+  .bstep.on{color:var(--cream)}
+  .bstep.on .n{background:var(--coral);border-color:var(--coral);color:#fff}
+  .bstep.done{color:rgba(251,246,241,.8)}
+  .bstep.done .n{background:rgba(251,246,241,.15);border-color:transparent}
+  .deco{position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;border-radius:50%;background:rgba(251,246,241,.07);pointer-events:none}
+
+  /* right form panel */
+  .formside{display:flex;align-items:center;justify-content:center;padding:44px 28px}
+  .form{width:100%;max-width:480px}
+  .crumbs{display:flex;gap:8px;margin-bottom:26px}
+  .crumbs .c{height:4px;flex:1;border-radius:999px;background:var(--rose-tint);transition:.3s}
+  .crumbs .c.on{background:var(--coral)}
+  .form h2{font-size:32px;font-weight:500;line-height:1.05}
+  .form .lede{font-size:14px;color:var(--muted);font-weight:500;margin:8px 0 26px;line-height:1.55}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .field label .opt{color:var(--taupe);text-transform:none;letter-spacing:0;font-weight:600}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
+  .field textarea{resize:vertical;min-height:104px;line-height:1.55}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--char)}
+  .field .help{font-size:12px;color:var(--muted);font-weight:500;margin-top:6px;line-height:1.5}
+  .field .count{float:right}
+  .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.ftwo{grid-template-columns:1fr}}
+  .err{display:none;background:#FBE9E2;color:var(--coral-deep);font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
+
+  .btnrow{display:flex;gap:12px;margin-top:24px;align-items:center}
+  .next{flex:1;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s}
+  .next:hover{background:#3a352f}
+  .next.coral{background:var(--coral-deep)}
+  .next.coral:hover{background:var(--coral)}
+  .back{padding:15px 22px;border-radius:999px;border:1px solid var(--line);font-weight:600;font-size:13.5px}
+  .back:hover{border-color:var(--char)}
+  .signin{font-size:13px;color:var(--muted);font-weight:600;text-align:center;margin-top:20px}
+  .signin a{color:var(--coral-deep);font-weight:700}
+
+  /* success */
+  .done-mark{width:74px;height:74px;border-radius:50%;background:var(--sage);display:grid;place-items:center;font-size:32px;margin-bottom:22px}
+  .done h2{font-size:36px}
+  .done p{font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.65;margin:14px 0 8px}
+  .done .what{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
+  .done .what b{display:block;font-size:13.5px;margin-bottom:4px}
+  .done .what span{font-size:13px;color:var(--muted);font-weight:500;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="brandside">
+    <div class="logo"><a href="trove.html">trove</a></div>
+    <div class="bmid">
+      <span class="eyebrow">Open your shop</span>
+      <h1>Tell us what you <em>make</em>.</h1>
+      <p>Trove is curated — every shop is reviewed by a real person before it goes live. The more you tell us, the faster we can say yes.</p>
+      <div class="bsteps">
+        <div class="bstep on" id="bs1"><span class="n">1</span><span class="t">About you</span></div>
+        <div class="bstep" id="bs2"><span class="n">2</span><span class="t">Your shop</span></div>
+        <div class="bstep" id="bs3"><span class="n">3</span><span class="t">What you'll sell</span></div>
+      </div>
+    </div>
+    <div class="deco"></div>
+  </aside>
+
+  <div class="formside">
+    <div class="form" id="form">
+      <div class="crumbs"><div class="c on" id="c1"></div><div class="c" id="c2"></div><div class="c" id="c3"></div></div>
+      <div class="err" id="err"></div>
+
+      <!-- STEP 1 -->
+      <div id="step1">
+        <h2>First, about you.</h2>
+        <p class="lede">This creates your seller account — you'll use it to sign in and run your shop.</p>
+        <div class="field"><label>Your name</label><input id="fName" placeholder="Your full name" autocomplete="name"></div>
+        <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
+        <div class="field"><label>Password</label><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+          <div class="help">You can sign in and prepare your shop while your application is reviewed.</div></div>
+        <div class="btnrow"><button class="next" onclick="toStep(2)">Continue →</button></div>
+        <div class="signin">Already selling on trove? <a href="trove-login.html">Sign in</a></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="step2" style="display:none">
+        <h2>Now, your shop.</h2>
+        <p class="lede">This is what our curation team reads first — tell us who you are and what you do.</p>
+        <div class="field"><label>Shop name</label><input id="fShop" placeholder="e.g. Kiln &amp; Clay"></div>
+        <div class="ftwo">
+          <div class="field"><label>What do you mainly make?</label>
+            <select id="fCat"><option>Ceramics</option><option>Home</option><option>Apparel</option><option>Beauty</option><option>Stationery</option><option>Accessories</option><option>Other</option></select></div>
+          <div class="field"><label>Where are you based?</label><input id="fLoc" placeholder="City, Country"></div>
+        </div>
+        <div class="field"><label>About you &amp; your craft <span class="count" id="aboutCount"></span></label>
+          <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you make, and how do you make it? What makes your work special? Write it like you'd tell a friend."></textarea>
+          <div class="help">A few honest sentences are perfect — this also becomes your shop's public story.</div></div>
+        <div class="btnrow"><button class="back" onclick="toStep(1)">← Back</button><button class="next" onclick="toStep(3)">Continue →</button></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="step3" style="display:none">
+        <h2>What will you sell?</h2>
+        <p class="lede">List the pieces you're planning to sell on trove — rough ideas are fine.</p>
+        <div class="field"><label>Planned products</label>
+          <textarea id="fProducts" maxlength="2000" placeholder="One per line, e.g.&#10;Hand-thrown stoneware mugs — AED 60–80&#10;Speckled serving bowls&#10;Small-batch glazed planters"></textarea>
+          <div class="help">Prices and details can change later — we just want a feel for your range.</div></div>
+        <div class="field"><label>Website or Instagram <span class="opt">· optional</span></label>
+          <input id="fLinks" placeholder="e.g. instagram.com/yourshop or yourshop.com">
+          <div class="help">Somewhere we can see your work speeds up approval.</div></div>
+        <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next coral" id="submitBtn" onclick="submitApp()">Submit application</button></div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="stepDone" style="display:none" class="done">
+        <div class="done-mark">🎉</div>
+        <h2>Application received.</h2>
+        <p>Thanks <b id="doneName"></b> — <b id="doneShop"></b> is now with our curation team. Every shop on trove is reviewed by a real person, usually within a day or two.</p>
+        <div class="what"><b>While you wait</b><span>You're signed in already. You can set up your storefront, add your first products and enter your payout details — everything goes live the moment you're approved.</span></div>
+        <div class="btnrow"><button class="next" onclick="location.href='trove-seller.html'">Set up your shop →</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let step=1;
+
+function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';window.scrollTo(0,0);}
+function hideErr(){$('err').style.display='none';}
+function countAbout(){const v=$('fAbout').value;$('aboutCount').textContent=v.length?v.length+' / 2000':'';}
+
+function validate(target){
+  // validate only when moving FORWARD
+  if(target>1&&step===1&&target>step){
+    if(!$('fName').value.trim())return 'Please tell us your name.';
+    const em=$('fEmail').value.trim();
+    if(!em||!/^\S+@\S+\.\S+$/.test(em))return 'That email doesn’t look right — mind checking it?';
+    if($('fPass').value.length<8)return 'Your password needs at least 8 characters.';
+  }
+  if(target>2&&step===2&&target>step){
+    if(!$('fShop').value.trim())return 'Give your shop a name — you can change it later.';
+    if(!$('fLoc').value.trim())return 'Tell us where you’re based.';
+    if($('fAbout').value.trim().length<30)return 'Tell us a little more about you and your craft — a few sentences helps us say yes faster.';
+  }
+  return null;
+}
+
+function toStep(target){
+  hideErr();
+  const bad=validate(target);
+  if(bad){showErr(bad);return;}
+  step=target;
+  [1,2,3].forEach(i=>{
+    $('step'+i).style.display=i===target?'block':'none';
+    $('c'+i).classList.toggle('on',i<=target);
+    const bs=$('bs'+i);bs.classList.toggle('on',i===target);bs.classList.toggle('done',i<target);
+  });
+  window.scrollTo(0,0);
+}
+
+async function submitApp(){
+  hideErr();
+  if(!$('fProducts').value.trim()){showErr('List at least one thing you’re planning to sell.');return;}
+  const btn=$('submitBtn');const label=btn.textContent;
+  btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
+  try{
+    await TroveAPI.api('/api/auth/register',{method:'POST',body:{
+      role:'seller',
+      name:$('fName').value.trim(),
+      email:$('fEmail').value.trim(),
+      password:$('fPass').value,
+      shopName:$('fShop').value.trim(),
+      category:$('fCat').value,
+      location:$('fLoc').value.trim(),
+      about:$('fAbout').value.trim(),
+      plannedProducts:$('fProducts').value.trim(),
+      links:$('fLinks').value.trim(),
+    }});
+    $('doneName').textContent=$('fName').value.trim().split(' ')[0];
+    $('doneShop').textContent=$('fShop').value.trim();
+    ['step1','step2','step3'].forEach(id=>$(id).style.display='none');
+    document.querySelector('.crumbs').style.display='none';
+    ['bs1','bs2','bs3'].forEach(id=>{$(id).classList.add('done');$(id).classList.remove('on');});
+    $('stepDone').style.display='block';
+    window.scrollTo(0,0);
+  }catch(e){
+    btn.textContent=label;btn.disabled=false;btn.style.opacity='1';
+    if(e.status===409){showErr('An account with this email already exists — you can sign in instead.');toStep(1);}
+    else showErr(e.message||'Something went wrong — please try again.');
+  }
+}
+</script>
+</body>
+</html>

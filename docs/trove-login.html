@@ -159,14 +159,19 @@ function setMode(m){
   document.getElementById('submitBtn').classList.toggle('seller',m==='sell');
   updateRegisterUI();
 }
-function toggleRegister(){registering=!registering;updateRegisterUI();}
+// Sellers apply through the dedicated application page (trove-apply.html) so
+// the curation team gets their full story; buyers still register inline here.
+function toggleRegister(){
+  if(mode==='sell'&&!registering){window.location.href='trove-apply.html';return;}
+  registering=!registering;updateRegisterUI();
+}
 function updateRegisterUI(){
   const c=COPY[mode];
-  document.getElementById('submitBtn').textContent=registering?(mode==='sell'?'Create your shop':'Create account'):'Sign in';
-  document.getElementById('aTitle').textContent=registering?(mode==='sell'?'Open your shop':'Create your account'):c.aTitle;
+  document.getElementById('submitBtn').textContent=registering?'Create account':'Sign in';
+  document.getElementById('aTitle').textContent=registering?'Create your account':c.aTitle;
   document.getElementById('swap').innerHTML=registering
     ? `Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>`
-    : (mode==='sell'?`Not selling yet? <a href="#" onclick="toggleRegister();return false">Open a shop</a>`:`New to trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
+    : (mode==='sell'?`Not selling yet? <a href="trove-apply.html">Apply to open a shop</a>`:`New to trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
   $('nameField').style.display=registering?'block':'none';
   $('shopField').style.display=(registering&&mode==='sell')?'block':'none';
   $('authErr').style.display='none';

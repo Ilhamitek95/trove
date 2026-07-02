@@ -47,6 +47,7 @@ router.get('/shops', requireAdmin, (_req, res) => {
     id: s.id, name: s.name, slug: s.slug, status: s.status,
     owner: { name: s.owner_name, email: s.owner_email },
     location: s.location, bio: s.bio, color: s.color, image: s.image || null, isHouse: !!s.is_house,
+    category: s.category || '', pitchProducts: s.pitch_products || '', pitchLinks: s.pitch_links || '',
     payoutType: s.payout_type, hasBank: !!s.payout_iban, stripeConnected: !!s.stripe_account_id,
     products: s.product_count, liveProducts: s.live_count, salesCents: s.sales_cents,
     createdAt: s.created_at,

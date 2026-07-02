@@ -51,9 +51,11 @@ const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.',
 // A shop still waiting for approval, so the super-admin review queue has
 // something to demo. Hidden from the storefront until approved.
 const sable = shop('nadia@sableandstone.com', 'Nadia', 'Sable & Stone', 'sable-and-stone',
-  'Minimal jewellery in recycled silver and unpolished stone, made to order.',
+  "I'm Nadia, a self-taught silversmith working from a small studio in Muscat. Everything is made to order in recycled silver — I cut and set each stone by hand, so no two pieces ever match. I've sold at local markets for three years and want to reach people who value slow-made jewellery.",
   'Muscat, Oman', '#B8AFA6', false, { type: 'managed' });
-db.prepare("UPDATE shops SET status='pending' WHERE id=?").run(sable);
+db.prepare(`UPDATE shops SET status='pending', category='Accessories',
+  pitch_products='Raw stone signet rings — AED 220–260\nHammered silver stacking bands\nDesert stone pendants on silk cord\nOne-off statement cuffs (small batches of 5)',
+  pitch_links='instagram.com/sableandstone.mct' WHERE id=?`).run(sable);
 mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Accessories', c(240), null, 8, 'live', 'ring1');
 
 const products = [

@@ -200,8 +200,40 @@ function renderOverview(){
     <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>`;
   const b=$('pendBadge');const n=s.shops.pending;b.textContent=n;b.classList.toggle('zero',!n);
   const pend=SHOPS.filter(x=>x.status==='pending');
-  $('pendingList').innerHTML=pend.length?`<table class="tbl">${pend.map(shopRowHTML).join('')}</table>`
+  $('pendingList').innerHTML=pend.length?pend.map(applicationCardHTML).join('')
     :`<div class="empty">Nothing waiting — every shop has been reviewed.</div>`;
+}
+
+/* A full seller application, so approval is an informed decision. */
+function multiline(s){return esc(s).replace(/\n/g,'<br>');}
+function linkify(s){
+  return esc(s).split(/[\s,]+/).filter(Boolean).map(u=>{
+    const href=/^https?:\/\//i.test(u)?u:'https://'+u;
+    return `<a href="${href}" target="_blank" rel="noopener noreferrer" style="color:var(--coral-deep);font-weight:700;text-decoration:underline">${u} ↗</a>`;
+  }).join(' · ');
+}
+function applicationCardHTML(s){
+  return `<div style="border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;background:var(--cream)">
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="shoprow" style="flex:1;min-width:230px">${tile(s)}
+        <div><div class="nm" style="font-size:16px">${esc(s.name)}</div>
+        <div class="sl">${esc(s.owner.name)} · ${esc(s.owner.email)}</div></div></div>
+      <div style="font-size:12px;color:var(--muted);font-weight:600">Applied ${fmtDate(s.createdAt)}</div>
+      <div class="actions">${shopActions(s)}</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px">
+      ${s.category?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">${esc(s.category)}</span>`:''}
+      ${s.location?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">📍 ${esc(s.location)}</span>`:''}
+      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Weekly payout'}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+      <div><div style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px">Their story</div>
+        <div style="font-size:13px;line-height:1.6;font-weight:500">${s.bio?multiline(s.bio):'<span style="color:var(--muted)">Nothing written yet.</span>'}</div></div>
+      <div><div style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px">Planning to sell</div>
+        <div style="font-size:13px;line-height:1.6;font-weight:500">${s.pitchProducts?multiline(s.pitchProducts):'<span style="color:var(--muted)">Not provided.</span>'}</div></div>
+    </div>
+    ${s.pitchLinks?`<div style="margin-top:12px;font-size:12.5px"><span style="letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;font-size:10px">See their work&nbsp;&nbsp;</span>${linkify(s.pitchLinks)}</div>`:''}
+  </div>`;
 }
 
 /* ---------------- shops ---------------- */
