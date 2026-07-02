@@ -308,7 +308,7 @@
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub">Tuesday, 9 June</div></div>
+      <div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub">Welcome back</div></div>
       <div class="tact" id="topActions"></div>
     </div>
     <div class="content">
@@ -442,7 +442,7 @@ function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&
 function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
 function img(seed){return `https://picsum.photos/seed/trv${seed}/200/250`;}
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
-function money(c){return aed((c||0)/100);}
+function money(c){const n=(c||0)/100; return Number.isInteger(n)?aed(n):'AED '+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 let toastT;
 function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
@@ -871,7 +871,8 @@ async function saveStore(){
 }
 
 /* ---------------- ROUTER ---------------- */
-const TITLES={overview:['Overview','Tuesday, 9 June'],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
+const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
