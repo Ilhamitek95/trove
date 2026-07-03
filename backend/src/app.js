@@ -142,6 +142,14 @@ function createApp() {
       const acct = event.data.object;
       db.prepare('UPDATE shops SET charges_enabled=?, payouts_enabled=? WHERE stripe_account_id=?')
         .run(acct.charges_enabled ? 1 : 0, acct.payouts_enabled ? 1 : 0, acct.id);
+      // Graduation completes here: an admin verified the license and created
+      // the Custom account; once Stripe enables payouts (and Rail B is on),
+      // the supplier moves to the Connect rail.
+      if (require('./config').railBEnabled() && acct.payouts_enabled) {
+        const flipped = db.prepare(`UPDATE shops SET tier='connect', connect_queue=0
+          WHERE stripe_account_id=? AND tier='consignment' AND license_verified_at IS NOT NULL`).run(acct.id).changes;
+        if (flipped) console.log(`graduation: ${acct.id} is now on the Connect rail`);
+      }
     }
 
     res.json({ received: true });

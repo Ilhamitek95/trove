@@ -119,6 +119,17 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       settling = false;
     }
   }, { timezone: 'Asia/Dubai' });
+
+  // Nightly cap scan — flags consignment suppliers whose trailing-30-day paid
+  // settlements crossed the graduation threshold (banner + admin queue).
+  cron.schedule('0 2 * * *', () => {
+    try {
+      const n = require('./graduation').scanCaps();
+      if (n) console.log(`graduation scan: flagged ${n} supplier(s)`);
+    } catch (e) {
+      console.error('graduation scan failed:', e);
+    }
+  }, { timezone: 'Asia/Dubai' });
 }
 
 app.listen(PORT, () => {

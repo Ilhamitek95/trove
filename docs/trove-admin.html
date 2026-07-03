@@ -148,7 +148,7 @@
 <script src="api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, SETTLEMENTS=[], BATCHES=[];
+let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, SETTLEMENTS=[], BATCHES=[], GRAD={queue:[],railBEnabled:false};
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
@@ -186,6 +186,7 @@ async function reloadPayouts(){
   try{ PREVIEW=await TroveAPI.api('/api/admin/settlements/preview'); }catch(_){ PREVIEW={eligible:[],excluded:[],totalNetCents:0}; }
   try{ SETTLEMENTS=(await TroveAPI.api('/api/admin/settlements')).settlements; }catch(_){ SETTLEMENTS=[]; }
   try{ BATCHES=(await TroveAPI.api('/api/admin/payouts')).payouts; }catch(_){ BATCHES=[]; }
+  try{ GRAD=await TroveAPI.api('/api/admin/graduation'); }catch(_){ GRAD={queue:[],railBEnabled:false}; }
   renderPayouts();
 }
 
@@ -350,6 +351,22 @@ function renderPayouts(){
         </div>`).join('')}</div>`
        :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
     </div>
+    <div class="card" style="padding:0">
+      <div style="padding:20px 22px 4px"><h3>Graduation queue</h3>
+        <div class="hint">Suppliers over the trailing-30-day cap, plus licensed direct entries. Verify the license, then approve to create their direct-payout account.${GRAD.railBEnabled?'':' <strong>Rail B is OFF (RAIL_B_ENABLED)</strong> — approvals are held until it\'s switched on.'}</div></div>
+      ${GRAD.queue.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Supplier</th><th>30-day paid</th><th>License</th><th>Status</th><th></th></tr></thead>
+        <tbody>${GRAD.queue.map(g=>`<tr>
+          <td style="font-weight:700">${esc(g.name)}<div style="font-size:11.5px;color:var(--muted)">${esc(g.owner.email)}${g.directEntry?' · applied with license':''}</div></td>
+          <td>${money(g.paid30Cents)}</td>
+          <td style="color:var(--muted)">${g.licenseNumber?esc(g.licenseNumber):'—'}${g.hasLicenseImage?` · <a href="${TroveAPI.base}/api/admin/shops/${g.shopId}/license-image" target="_blank" rel="noopener">image</a>`:''}</td>
+          <td>${g.licenseVerifiedAt?'<span class="pill approved">license verified</span>':g.licenseNumber?'<span class="pill pending">awaiting check</span>':'<span class="pill pending">no license yet</span>'}</td>
+          <td style="text-align:right">
+            ${!g.licenseVerifiedAt&&g.licenseNumber?`<button class="btn btn-ghost" onclick="verifyLicense(${g.shopId})">Verify license</button>`:''}
+            ${g.licenseVerifiedAt?`<button class="btn btn-coral" ${GRAD.railBEnabled?'':'disabled style="opacity:.45;cursor:default" title="Rail B is off"'} onclick="approveGraduation(${g.shopId})">${g.stripeAccountId?'Re-send onboarding':'Approve → Stripe'}</button>`:''}
+          </td>
+        </tr>`).join('')}</tbody></table></div>`
+       :`<div class="empty" style="padding:8px 22px 22px">Nobody is waiting to graduate.</div>`}
+    </div>
     ${BATCHES.length?`<div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>Legacy payout batches</h3><div class="hint">From before the settlement ledger.</div></div>
       <div style="padding:0 10px 10px"><table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
@@ -378,6 +395,18 @@ async function markSettlementPaid(id){
 async function markLegacyPaid(id){
   try{ await TroveAPI.api('/api/admin/payouts/'+id+'/paid',{method:'POST'}); toast('Marked as paid'); reloadPayouts(); }
   catch(e){ toast(e.message||'Could not mark as paid'); }
+}
+async function verifyLicense(shopId){
+  if(!confirm('Confirm you have checked this license against the Invest in Dubai / DED registry?'))return;
+  try{ await TroveAPI.api('/api/admin/graduation/'+shopId+'/verify-license',{method:'POST'}); toast('License verified'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not verify'); }
+}
+async function approveGraduation(shopId){
+  try{
+    const r=await TroveAPI.api('/api/admin/graduation/'+shopId+'/approve',{method:'POST'});
+    prompt('Send this Stripe onboarding link to the supplier (Ctrl+C):', r.onboardingUrl);
+    reloadPayouts();
+  }catch(e){ toast(e.message||'Could not approve'); }
 }
 
 /* ---------------- boot ---------------- */

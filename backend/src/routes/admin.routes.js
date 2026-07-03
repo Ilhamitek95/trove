@@ -95,6 +95,62 @@ router.get('/orders', requireAdmin, (_req, res) => {
   })) });
 });
 
+/* ---------------- Graduation to the Connect rail (Rail B) ---------------- */
+
+const graduation = require('../graduation');
+const cfg = require('../config');
+
+// GET /api/admin/graduation → cap-flagged suppliers + licensed direct entries.
+router.get('/graduation', requireAdmin, (_req, res) => {
+  res.json({ queue: graduation.queue(), railBEnabled: cfg.railBEnabled(), thresholdCents: cfg.graduationThresholdCents() });
+});
+
+// POST /api/admin/graduation/:shopId/verify-license → a human checked the license.
+router.post('/graduation/:shopId/verify-license', requireAdmin, (req, res) => {
+  const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.shopId);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  if (!shop.license_number) return res.status(400).json({ error: 'This shop has no license number on file' });
+  db.prepare("UPDATE shops SET license_verified_at=datetime('now') WHERE id=?").run(shop.id);
+  res.json({ ok: true });
+});
+
+// POST /api/admin/graduation/:shopId/approve → create the Stripe Connect
+// CUSTOM account (UAE platforms cannot use Express/Standard) and return the
+// hosted onboarding link. The tier flips in the account.updated webhook once
+// Stripe enables payouts — never before.
+router.post('/graduation/:shopId/approve', requireAdmin, async (req, res, next) => {
+  try {
+    if (!cfg.railBEnabled()) return res.status(409).json({ error: 'Rail B is not enabled (RAIL_B_ENABLED)' });
+    const shop = db.prepare('SELECT s.*, u.email AS owner_email FROM shops s JOIN users u ON u.id=s.user_id WHERE s.id=?').get(req.params.shopId);
+    if (!shop) return res.status(404).json({ error: 'Shop not found' });
+    if (!shop.license_verified_at) return res.status(409).json({ error: 'Verify the license first' });
+
+    const stripe = require('../stripe').requireStripe();
+    let acctId = shop.stripe_account_id;
+    if (!acctId) {
+      const acct = await stripe.accounts.create({
+        type: 'custom',
+        country: 'AE',
+        email: shop.owner_email,
+        business_type: 'company',
+        company: { name: shop.name, registration_number: shop.license_number },
+        business_profile: { name: shop.name },
+        capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
+      });
+      acctId = acct.id;
+      db.prepare('UPDATE shops SET stripe_account_id=? WHERE id=?').run(acctId, shop.id);
+    }
+    const CLIENT = process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:4242';
+    const link = await stripe.accountLinks.create({
+      account: acctId,
+      refresh_url: `${CLIENT}/trove-seller.html?connect=refresh`,
+      return_url: `${CLIENT}/trove-seller.html?connect=done`,
+      type: 'account_onboarding',
+    });
+    res.json({ ok: true, accountId: acctId, onboardingUrl: link.url });
+  } catch (e) { next(e); }
+});
+
 /* ---------------- Refunds (whole order, admin-triggered) ----------------
  * Trove is the seller of record, so refunds are Trove's to make. Stripe is
  * refunded FIRST — if that fails nothing local changes. Then: refunded_at is

@@ -60,19 +60,40 @@ router.post('/', async (req, res, next) => {
     const delivery = deliveryFor(subtotal);
     const total = subtotal + serviceFee + delivery;
 
+    // Rail B routing: an order whose items ALL belong to one fully-onboarded
+    // connect-tier shop becomes a destination charge (never on_behalf_of —
+    // unsupported for UAE platforms). Mixed carts and everything else stay on
+    // the consignment rail; connect-tier leftovers in a mixed cart are paid
+    // by Transfer in the webhook.
+    const cfg = require('../config');
+    let rail = 'consignment';
+    let destShop = null;
+    const shopIds = [...new Set(lines.map((l) => l.shop_id))];
+    if (cfg.railBEnabled() && shopIds.length === 1) {
+      const s = db.prepare('SELECT * FROM shops WHERE id=?').get(shopIds[0]);
+      if (s && s.tier === 'connect' && s.stripe_account_id && s.charges_enabled) {
+        rail = 'connect';
+        destShop = s;
+      }
+    }
+
     // Persist a pending order + items in one transaction.
     const pid = publicId();
     const orderId = db.transaction(() => {
       const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
-        VALUES (?,?,?,?,?,?,?,?,?, 'pending', 'consignment')`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null));
+        VALUES (?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null), rail);
       const oid = info.lastInsertRowid;
       const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization) VALUES (?,?,?,?,?,?,?)');
       for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization);
       return oid;
     })();
 
-    // One PaymentIntent on the platform; sellers are paid via transfers in the webhook.
+    // One PaymentIntent on Trove's account. On the connect rail the charge is
+    // routed to the supplier's account with Trove's cut as the application
+    // fee: the margin on the goods PLUS the buyer fees (service + delivery),
+    // which are always Trove revenue.
     const stripe = requireStripe();
+    const { split } = require('../fees');
     const intent = await stripe.paymentIntents.create({
       amount: total,
       currency: CURRENCY(),
@@ -80,6 +101,10 @@ router.post('/', async (req, res, next) => {
       transfer_group: `order_${orderId}`,
       metadata: { order_id: String(orderId), public_id: pid },
       receipt_email: buyerEmail,
+      ...(destShop ? {
+        transfer_data: { destination: destShop.stripe_account_id },
+        application_fee_amount: split(subtotal).fee + serviceFee + delivery,
+      } : {}),
     });
     db.prepare('UPDATE orders SET stripe_payment_intent_id=? WHERE id=?').run(intent.id, orderId);
 

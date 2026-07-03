@@ -481,6 +481,7 @@ function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',status:s.status||'approved',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
+    tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''}};
   storeColor=SHOP.color;
   $('sideShop').textContent=SHOP.name;
@@ -511,9 +512,6 @@ async function reloadOrders(){
 async function refreshStripeStatus(){
   try{ const s=await TroveAPI.api('/api/seller/connect/status'); SHOP.stripeStatus={connected:!!s.connected,chargesEnabled:!!s.chargesEnabled,payoutsEnabled:!!s.payoutsEnabled,accountId:s.accountId}; }catch(_){}
 }
-async function openStripeDashboard(){
-  try{ const {url}=await TroveAPI.api('/api/seller/connect/login-link',{method:'POST'}); window.open(url,'_blank'); }catch(e){ toast(e.message||'Could not open Stripe'); }
-}
 
 /* ---------------- OVERVIEW ---------------- */
 function renderOverview(){
@@ -532,7 +530,7 @@ function renderOverview(){
   if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
-  $('ovBanner').innerHTML = reviewBannerHTML() + bannerHTML(managed, sc);
+  $('ovBanner').innerHTML = reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
   // no time-series data yet → friendly placeholder instead of a fake chart
   $('chartTot').textContent=aed(revenue);
   const bars=$('bars'); bars.style.alignItems='center'; bars.style.justifyContent='center';
@@ -739,6 +737,16 @@ function reviewBannerHTML(){
   return `<div class="banner"><div class="bi" style="background:${st==='pending'?'var(--taupe)':'var(--coral-deep)'}">!</div>
     <div><h4>${msg[0]}</h4><p>${msg[1]}</p></div></div>`;
 }
+function graduationBannerHTML(){
+  if(SHOP.tier==='connect'||(!SHOP.graduationFlagged&&!SHOP.connectQueue)) return '';
+  if(SHOP.connectQueue&&SHOP.licenseVerified) return '';
+  const flagged=!!SHOP.graduationFlagged;
+  return `<div class="banner"><div class="bi" style="background:var(--sage,#C3D1C7)">↑</div>
+    <div><h4>${flagged?'Your shop has outgrown the starter tier':'Direct payouts are on the way'}</h4>
+    <p>${flagged
+      ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader license you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--coral-deep)">Apply for an e-Trader license ↗</a>'
+      :'You applied with a trade license. Once the Trove team verifies it, we\'ll set up direct per-sale payouts for you — no action needed.'}</p></div></div>`;
+}
 function bannerHTML(managed, sc){
   if(managed){
     return (SETTLE.payoutSetupComplete || (SHOP.bank && SHOP.bank.iban)) ? '' :
@@ -793,30 +801,26 @@ function renderConnectUI(sc){
   if(!sc.chargesEnabled){
     return `<div class="card stripe-connect">
       <div class="mark serif">S</div>
-      <h2>${sc.connected?'Finish connecting Stripe':'Connect Stripe to get paid'}</h2>
-      <p>With this option you're paid directly to your own Stripe account on every sale. ${sc.connected?'Your onboarding isn’t finished yet — pick up where you left off.':'Connect an existing account or create one in a couple of minutes.'}</p>
-      <div class="connect-pts">
-        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div><h5>Direct payouts</h5><span>To your bank</span></div>
-        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg></div><h5>Secure</h5><span>Stripe-hosted</span></div>
-        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h5>Flat ${feePct()}%</h5><span>No hidden fees</span></div>
-      </div>
-      <button class="btn btn-stripe" id="connectBtn" style="padding:15px 34px" onclick="connectStripe()">${sc.connected?'Continue onboarding':'Connect with Stripe'}</button>
-      <div class="demo-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>You'll be taken to Stripe's secure onboarding.</div>
+      <h2>${sc.connected?'Finish your Stripe onboarding':'Direct payouts are being set up'}</h2>
+      <p>${sc.connected
+        ?'Your direct-payout account exists but onboarding isn’t finished — pick up where you left off.'
+        :'The Trove team creates your direct-payout account once your license is verified. We\'ll let you know when it\'s ready.'}</p>
+      ${sc.connected?`<button class="btn btn-stripe" id="connectBtn" style="padding:15px 34px" onclick="connectStripe()">Continue onboarding</button>
+      <div class="demo-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>You'll be taken to Stripe's secure onboarding.</div>`:''}
     </div>`;
   }
   const acct=sc.accountId?('•••• '+String(sc.accountId).slice(-6)):'—';
   return `
     <div class="connected-head"><div class="dot serif">S</div>
-      <div><h4>Stripe connected</h4><p>${sc.payoutsEnabled?'Payouts active':'Payouts pending verification'}</p></div>
-      <button class="btn btn-ghost btn-sm" onclick="openStripeDashboard()">Open Stripe dashboard ↗</button></div>
+      <div><h4>Direct payouts active</h4><p>${sc.payoutsEnabled?'Paid per sale to your own account':'Payouts pending verification'}</p></div></div>
     <div class="card">
-      <div class="up">Your Stripe account</div>
+      <div class="up">Your payout account</div>
       <div class="fee-row"><span class="muted">Account</span><span>${acct}</span></div>
       <div class="fee-row"><span class="muted">Accept charges</span><span>${sc.chargesEnabled?'Enabled':'Pending'}</span></div>
       <div class="fee-row"><span class="muted">Payouts</span><span>${sc.payoutsEnabled?'Enabled':'Pending'}</span></div>
       <div class="fee-row"><span>Trove margin</span><span>${feePct()}% per sale</span></div>
     </div>
-    <p style="color:var(--muted);font-size:13px;font-weight:600;margin-top:14px">Your balance, payout schedule and statements live in your Stripe dashboard.</p>`;
+    <p style="color:var(--muted);font-size:13px;font-weight:600;margin-top:14px">You're paid per sale, minus Trove's margin and the buyer fees, straight to your bank via Stripe.</p>`;
 }
 
 async function reloadPayouts(){
@@ -945,9 +949,9 @@ async function markSettlementPaid(id){
   catch(e){ toast(e.message||'Could not update'); }
 }
 async function connectStripe(){
-  const b=$('connectBtn'); if(b){b.textContent='Connecting to Stripe…';b.style.opacity='.7';b.disabled=true;}
-  try{ const {url}=await TroveAPI.api('/api/seller/connect',{method:'POST'}); window.location=url; }
-  catch(e){ toast(e.message||'Could not start Stripe onboarding'); if(b){b.textContent='Connect with Stripe';b.style.opacity='1';b.disabled=false;} }
+  const b=$('connectBtn'); if(b){b.textContent='Opening Stripe…';b.style.opacity='.7';b.disabled=true;}
+  try{ const {url}=await TroveAPI.api('/api/seller/connect/onboarding-link',{method:'POST'}); window.location=url; }
+  catch(e){ toast(e.message||'Could not open Stripe onboarding'); if(b){b.textContent='Continue onboarding';b.style.opacity='1';b.disabled=false;} }
 }
 
 /* ---------------- STOREFRONT ---------------- */

@@ -229,31 +229,12 @@ router.get('/purchase-notes/:id', requireSeller, (req, res) => {
   res.sendFile(require('path').resolve(note.html_path));
 });
 
-/* ---------------- Stripe Connect (Express) ---------------- */
-// POST /api/seller/connect -> creates/links a connected account, returns an onboarding URL.
-router.post('/connect', requireSeller, async (req, res, next) => {
-  try {
-    const stripe = requireStripe();
-    let acctId = req.shop.stripe_account_id;
-    if (!acctId) {
-      const acct = await stripe.accounts.create({
-        type: 'express',
-        email: req.user.email,
-        business_profile: { name: req.shop.name },
-        capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-      });
-      acctId = acct.id;
-      db.prepare('UPDATE shops SET stripe_account_id=? WHERE id=?').run(acctId, req.shop.id);
-    }
-    const link = await stripe.accountLinks.create({
-      account: acctId,
-      refresh_url: `${CLIENT()}/trove-seller.html?connect=refresh`,
-      return_url: `${CLIENT()}/trove-seller.html?connect=done`,
-      type: 'account_onboarding',
-    });
-    res.json({ url: link.url });
-  } catch (e) { next(e); }
-});
+/* ---------------- Stripe Connect (Rail B — admin-driven) ----------------
+ * Suppliers can't self-serve onto Stripe anymore: graduation is admin-driven
+ * (license verified → Custom account created by Trove). The endpoints left
+ * here let an approved shop finish or resume its hosted onboarding. Express
+ * accounts and login links are gone — UAE platforms use Custom accounts,
+ * which have neither. */
 
 // GET /api/seller/connect/status -> refreshes onboarding flags from Stripe.
 router.get('/connect/status', requireSeller, async (req, res, next) => {
@@ -267,12 +248,18 @@ router.get('/connect/status', requireSeller, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// POST /api/seller/connect/login-link -> one-time link into the Stripe Express dashboard.
-router.post('/connect/login-link', requireSeller, async (req, res, next) => {
+// POST /api/seller/connect/onboarding-link -> resume the hosted onboarding
+// for an account the admin already created via the graduation flow.
+router.post('/connect/onboarding-link', requireSeller, async (req, res, next) => {
   try {
-    if (!req.shop.stripe_account_id) return res.status(400).json({ error: 'Not connected yet' });
+    if (!req.shop.stripe_account_id) return res.status(409).json({ error: 'Trove sets up direct payouts after your license is verified — nothing to continue yet' });
     const stripe = requireStripe();
-    const link = await stripe.accounts.createLoginLink(req.shop.stripe_account_id);
+    const link = await stripe.accountLinks.create({
+      account: req.shop.stripe_account_id,
+      refresh_url: `${CLIENT()}/trove-seller.html?connect=refresh`,
+      return_url: `${CLIENT()}/trove-seller.html?connect=done`,
+      type: 'account_onboarding',
+    });
     res.json({ url: link.url });
   } catch (e) { next(e); }
 });
