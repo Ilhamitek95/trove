@@ -44,4 +44,24 @@ function removeByUrl(url) {
   try { fs.unlinkSync(path.join(UPLOADS_DIR, rel)); } catch (_) { /* already gone */ }
 }
 
-module.exports = { UPLOADS_DIR, saveDataUrl, removeByUrl };
+/**
+ * Like saveDataUrl but into the PRIVATE directory (license images, purchase
+ * notes) which is never statically served — these are streamed through
+ * authenticated endpoints only. Returns the absolute file path.
+ */
+function savePrivateDataUrl(dataUrl, folder, baseName) {
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) { const e = new Error('Upload a JPG, PNG or WebP image'); e.status = 400; throw e; }
+  const buf = Buffer.from(m[2], 'base64');
+  if (!buf.length || buf.length > MAX_BYTES) { const e = new Error('Image must be under 4MB'); e.status = 400; throw e; }
+  const type = TYPES[m[1]];
+  if (!type.magic(buf)) { const e = new Error('That file is not a valid image'); e.status = 400; throw e; }
+  const privateRoot = process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
+  const dir = path.join(privateRoot, folder);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `${baseName}-${Date.now()}.${type.ext}`);
+  fs.writeFileSync(file, buf);
+  return file;
+}
+
+module.exports = { UPLOADS_DIR, saveDataUrl, removeByUrl, savePrivateDataUrl };

@@ -139,6 +139,16 @@
         <div class="field"><label>About you &amp; your craft <span class="count" id="aboutCount"></span></label>
           <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you make, and how do you make it? What makes your work special? Write it like you'd tell a friend."></textarea>
           <div class="help">A few honest sentences are perfect — this also becomes your shop's public story.</div></div>
+        <div class="field"><label>Do you have a UAE trade license?</label>
+          <select id="fLic" onchange="toggleLic()"><option value="no">Not yet — it's just me making things</option><option value="yes">Yes — I have a trade or e-Trader license</option></select>
+          <div class="help">You don't need one: Trove buys your pieces from you and resells them, so you can sell without a license. If you do have one, tell us — it unlocks direct per-sale payouts later.</div></div>
+        <div id="licWrap" style="display:none">
+          <div class="ftwo">
+            <div class="field"><label>License number</label><input id="fLicNo" placeholder="e.g. CN-1234567"></div>
+            <div class="field"><label>License photo <span class="opt">· optional</span></label><input id="fLicImg" type="file" accept="image/jpeg,image/png,image/webp">
+              <div class="help">A clear photo or screenshot (JPG/PNG).</div></div>
+          </div>
+        </div>
         <div class="btnrow"><button class="back" onclick="toStep(1)">← Back</button><button class="next" onclick="toStep(3)">Continue →</button></div>
       </div>
 
@@ -173,7 +183,7 @@
         <div class="done-mark">🎉</div>
         <h2>Application received.</h2>
         <p>Thanks <b id="doneName"></b> — <b id="doneShop"></b> is now with our curation team. Every shop on trove is reviewed by a real person, usually within a day or two.</p>
-        <div class="what"><b>While you wait</b><span>You're signed in already. You can set up your storefront, add your first products and enter your payout details — everything goes live the moment you're approved.</span></div>
+        <div class="what"><b>While you wait</b><span>You're signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you're approved.</span></div>
         <div class="btnrow"><button class="next" onclick="location.href='trove-seller.html'">Set up your shop →</button></div>
       </div>
     </div>
@@ -234,8 +244,30 @@ function validate(target){
     if(!$('fShop').value.trim())return 'Give your shop a name — you can change it later.';
     if(!$('fLoc').value.trim())return 'Tell us where you’re based.';
     if($('fAbout').value.trim().length<30)return 'Tell us a little more about you and your craft — a few sentences helps us say yes faster.';
+    if($('fLic').value==='yes'&&!$('fLicNo').value.trim())return 'Add your license number — or switch back to “Not yet”.';
   }
   return null;
+}
+
+function toggleLic(){ $('licWrap').style.display=$('fLic').value==='yes'?'block':'none'; }
+
+// Downscale the license photo to a compact JPEG data URL (same pattern as
+// shop photos) so it fits comfortably in the JSON payload.
+function licenseDataUrl(){
+  return new Promise((resolve)=>{
+    const f=$('fLicImg')&&$('fLicImg').files&&$('fLicImg').files[0];
+    if($('fLic').value!=='yes'||!f)return resolve('');
+    const img=new Image();
+    img.onload=()=>{
+      const scale=Math.min(1,1600/Math.max(img.width,img.height));
+      const c=document.createElement('canvas');
+      c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      resolve(c.toDataURL('image/jpeg',0.85));
+    };
+    img.onerror=()=>resolve('');
+    img.src=URL.createObjectURL(f);
+  });
 }
 
 function toStep(target){
@@ -259,6 +291,7 @@ async function submitApp(){
   const btn=$('submitBtn');const label=btn.textContent;
   btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
   try{
+    const licenseImage=await licenseDataUrl();
     await TroveAPI.api('/api/auth/register',{method:'POST',body:{
       role:'seller',
       name:$('fName').value.trim(),
@@ -276,6 +309,8 @@ async function submitApp(){
       instagram:$('fInsta').value.trim(),
       links:$('fLinks').value.trim(),
       phone:$('fPhone').value.trim(),
+      licenseNumber:$('fLic').value==='yes'?$('fLicNo').value.trim():'',
+      licenseImage,
     }});
     $('doneName').textContent=$('fName').value.trim().split(' ')[0];
     $('doneShop').textContent=$('fShop').value.trim();

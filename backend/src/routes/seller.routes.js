@@ -12,8 +12,15 @@ const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
 // The buyer's delivery address is snapshotted as JSON on the order at checkout.
 function parseShip(json) { try { return json ? JSON.parse(json) : null; } catch (_) { return null; } }
 
+// Never let encrypted blobs or plaintext bank numbers leave the API — the UI
+// only ever needs the masked IBAN.
+function publicShop(shop) {
+  const { iban_encrypted, payout_iban, ...safe } = shop;
+  return safe;
+}
+
 /* ---------------- Shop profile ---------------- */
-router.get('/me', requireSeller, (req, res) => res.json({ shop: req.shop }));
+router.get('/me', requireSeller, (req, res) => res.json({ shop: publicShop(req.shop) }));
 
 router.patch('/me', requireSeller, (req, res) => {
   const { name, bio, location, color } = req.body || {};
@@ -24,7 +31,7 @@ router.patch('/me', requireSeller, (req, res) => {
   }
   db.prepare('UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color) WHERE id=?')
     .run(name, bio, location, color, req.shop.id);
-  res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
+  res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
 // Upload (or remove) the shop's photo. Body: { image: <data URL> } to set,
@@ -36,7 +43,7 @@ router.post('/me/image', requireSeller, (req, res, next) => {
     if (image) url = uploads.saveDataUrl(image, 'shops', `shop-${req.shop.id}`);
     uploads.removeByUrl(req.shop.image);
     db.prepare('UPDATE shops SET image=? WHERE id=?').run(url, req.shop.id);
-    res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
+    res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
   } catch (e) { next(e); }
 });
 
@@ -137,21 +144,52 @@ router.patch('/shipments/:id', requireSeller, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-/* ---------------- Payout method & earnings ---------------- */
-// Choose how this shop is paid; for 'managed' shops, store the bank details
-// Trove pays out to each week.
-router.patch('/payout', requireSeller, (req, res) => {
-  const { payoutType, bankName, accountName, iban } = req.body || {};
-  if (payoutType && !['managed', 'connect'].includes(payoutType))
-    return res.status(400).json({ error: 'payoutType must be "managed" or "connect"' });
-  db.prepare(`UPDATE shops SET
-      payout_type         = COALESCE(?, payout_type),
-      payout_bank_name    = COALESCE(?, payout_bank_name),
-      payout_account_name = COALESCE(?, payout_account_name),
-      payout_iban         = COALESCE(?, payout_iban)
-    WHERE id = ?`)
-    .run(payoutType || null, bankName ?? null, accountName ?? null, iban ?? null, req.shop.id);
-  res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
+/* ---------------- Payout setup (consignment suppliers) ---------------- */
+// The old free-form bank endpoint is gone: payout details now arrive as one
+// verified package — Emirates ID last-4, IBAN in the supplier's own name
+// (encrypted at rest), and acceptance of the Seller Agreement.
+router.patch('/payout', requireSeller, (_req, res) => {
+  res.status(410).json({ error: 'This endpoint has been replaced by POST /api/seller/payout-setup' });
+});
+
+router.post('/payout-setup', requireSeller, (req, res, next) => {
+  try {
+    const pcrypto = require('../crypto');
+    const cfg = require('../config');
+    const b = req.body || {};
+
+    const last4 = String(b.emiratesIdLast4 || '').trim();
+    if (!/^\d{4}$/.test(last4)) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
+    const expiry = String(b.emiratesIdExpiry || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry) || expiry <= new Date().toISOString().slice(0, 10))
+      return res.status(400).json({ error: 'Your Emirates ID expiry date must be in the future' });
+    const issue = String(b.emiratesIdIssue || '').trim();
+    if (issue && !/^\d{4}-\d{2}-\d{2}$/.test(issue)) return res.status(400).json({ error: 'Emirates ID issue date must be YYYY-MM-DD' });
+
+    const iban = String(b.iban || '').replace(/\s+/g, '').toUpperCase();
+    if (!/^AE\d{21}$/.test(iban)) return res.status(400).json({ error: 'Enter a valid UAE IBAN (AE followed by 21 digits)' });
+    const accountName = String(b.accountName || '').trim().slice(0, 120);
+    const bankName = String(b.bankName || '').trim().slice(0, 120);
+    if (!accountName || !bankName) return res.status(400).json({ error: 'Bank name and the account holder name are required' });
+
+    if (b.acceptAgreement !== true) return res.status(400).json({ error: 'You need to accept the Seller Agreement' });
+    if (!pcrypto.hasKey()) return res.status(503).json({ error: 'Payout setup is temporarily unavailable (encryption key not configured)' });
+
+    // Hash the exact agreement text being accepted.
+    const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);
+    const agreementHash = pcrypto.sha256(require('fs').readFileSync(file, 'utf8'));
+
+    db.prepare(`UPDATE shops SET
+        emirates_id_last4=?, emirates_id_issue=?, emirates_id_expiry=?,
+        payout_bank_name=?, payout_account_name=?,
+        iban_encrypted=?, iban_masked=?, payout_iban='',
+        agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=?
+      WHERE id=?`)
+      .run(last4, issue, expiry, bankName, accountName,
+        pcrypto.encrypt(iban), pcrypto.maskIban(iban),
+        cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+    res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
+  } catch (e) { next(e); }
 });
 
 // Supplier money view: pending (return window still open), payable (next

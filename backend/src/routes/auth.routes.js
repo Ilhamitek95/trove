@@ -66,14 +66,28 @@ router.post('/register', (req, res) => {
       if (!v) return '';
       return /instagram\.com/i.test(v) ? v.replace(/^https?:\/\//i, '') : `instagram.com/${v}`;
     })();
-    db.prepare(`INSERT INTO shops (user_id, name, slug, status, bio, location, category, pitch_products, pitch_links,
-        pitch_instagram, pitch_experience, pitch_maker, pitch_channels, pitch_capacity, pitch_phone)
-      VALUES (?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,?)`)
+    // Direct entry for licensed makers: a UAE trade / e-Trader license number
+    // queues the shop for the Connect rail (activated when RAIL_B_ENABLED and
+    // an admin has verified the license) — they onboard on consignment
+    // meanwhile, so nothing blocks them from selling.
+    const licenseNumber = clean(req.body.licenseNumber, 60);
+    const info = db.prepare(`INSERT INTO shops (user_id, name, slug, status, bio, location, category, pitch_products, pitch_links,
+        pitch_instagram, pitch_experience, pitch_maker, pitch_channels, pitch_capacity, pitch_phone, license_number, connect_queue)
+      VALUES (?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(userId, shopName || `${name}'s shop`, slug,
         clean(req.body.about, 2000), clean(req.body.location, 120),
         clean(req.body.category, 40), clean(req.body.plannedProducts, 2000), clean(req.body.links, 300),
         ig, clean(req.body.experience, 60), clean(req.body.maker, 80),
-        clean(req.body.channels, 120), clean(req.body.capacity, 40), clean(req.body.phone, 40));
+        clean(req.body.channels, 120), clean(req.body.capacity, 40), clean(req.body.phone, 40),
+        licenseNumber, licenseNumber ? 1 : 0);
+    // License image is saved AFTER the inserts so a failed application never
+    // leaves an orphan file; a bad image must not sink the application either.
+    if (licenseNumber && req.body.licenseImage) {
+      try {
+        const file = require('../uploads').savePrivateDataUrl(req.body.licenseImage, 'licenses', `license-${info.lastInsertRowid}`);
+        db.prepare('UPDATE shops SET license_image=? WHERE id=?').run(file, info.lastInsertRowid);
+      } catch (e) { console.warn('license image rejected:', e.message); }
+    }
   }
 
   req.session.userId = userId;

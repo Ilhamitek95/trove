@@ -48,10 +48,21 @@ router.get('/shops', requireAdmin, (_req, res) => {
     pitchInstagram: s.pitch_instagram || '', pitchExperience: s.pitch_experience || '',
     pitchMaker: s.pitch_maker || '', pitchChannels: s.pitch_channels || '',
     pitchCapacity: s.pitch_capacity || '', pitchPhone: s.pitch_phone || '',
-    payoutType: s.payout_type, hasBank: !!s.payout_iban, stripeConnected: !!s.stripe_account_id,
+    tier: s.tier, hasBank: !!(s.iban_encrypted || s.payout_iban), stripeConnected: !!s.stripe_account_id,
+    payoutSetupComplete: !!(s.iban_encrypted && s.agreement_accepted_at),
+    licenseNumber: s.license_number || '', hasLicenseImage: !!s.license_image,
+    licenseVerifiedAt: s.license_verified_at || null,
+    graduationFlaggedAt: s.graduation_flagged_at || null, connectQueue: !!s.connect_queue,
     products: s.product_count, liveProducts: s.live_count, salesCents: s.sales_cents,
     createdAt: s.created_at,
   })) });
+});
+
+// GET /api/admin/shops/:id/license-image → stream a privately stored license.
+router.get('/shops/:id/license-image', requireAdmin, (req, res) => {
+  const shop = db.prepare('SELECT license_image FROM shops WHERE id=?').get(req.params.id);
+  if (!shop || !shop.license_image) return res.status(404).json({ error: 'No license image' });
+  res.sendFile(require('path').resolve(shop.license_image));
 });
 
 // PATCH /api/admin/shops/:id { status } → the approval workflow.

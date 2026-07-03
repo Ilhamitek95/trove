@@ -184,6 +184,14 @@ function createApp() {
     vatRegistered: require('./config').vatRegistered(),
     serviceAreas: require('./service-area').SERVICE_AREAS,
   }));
+  // The seller agreement, served with its hash so acceptance is verifiable.
+  app.get('/api/legal/seller-agreement', (_req, res) => {
+    const fs = require('fs');
+    const file = path.join(__dirname, '..', 'legal', `seller-agreement-${require('./config').AGREEMENT_VERSION}.md`);
+    const markdown = fs.readFileSync(file, 'utf8');
+    res.json({ version: require('./config').AGREEMENT_VERSION, markdown, sha256: require('./crypto').sha256(markdown) });
+  });
+
   app.use('/api/auth', require('./routes/auth.routes'));
   app.use('/api/products', require('./routes/products.routes'));
   app.use('/api/shops', require('./routes/shops.routes'));

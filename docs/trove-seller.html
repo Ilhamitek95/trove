@@ -480,7 +480,8 @@ function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',status:s.status||'approved',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
-    bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.payout_iban||s.iban_masked||''}};
+    agreementVersion:s.agreement_version||'',
+    bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''}};
   storeColor=SHOP.color;
   $('sideShop').textContent=SHOP.name;
   if(SHOP.image){$('sideAv').style.background=`center/cover no-repeat url("${SHOP.image}")`;$('sideAv').textContent='';}
@@ -771,14 +772,7 @@ function consignmentPayoutUI(){
         <div class="fee-row"><span class="muted">Purchase price</span><span>your list price − ${s.commissionPercent}%</span></div>
         ${hasBank?'':`<div class="warn">Add your bank details so Trove can pay you →</div>`}
       </div>
-      <div class="card">
-        <div class="up">Where Trove sends your money</div>
-        <div class="field"><label>Account holder name</label><input id="bkName" value="${esc(b.accountName)}" placeholder="As shown on your bank account"></div>
-        <div class="field"><label>Bank</label><input id="bkBank" value="${esc(b.name)}" placeholder="e.g. Emirates NBD"></div>
-        <div class="field"><label>IBAN</label><input id="bkIban" value="${esc(b.iban)}" placeholder="AE…"></div>
-        <button class="btn btn-dark" onclick="saveBank()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save bank details</button>
-        <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you each Tuesday once the buyer's 7-day return window has closed.</div>
-      </div>
+      ${payoutSetupCard()}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">Settlement history</h3></div>
@@ -828,15 +822,66 @@ function renderConnectUI(sc){
 async function reloadPayouts(){
   try{ SETTLE=await TroveAPI.api('/api/seller/settlements'); }catch(_){}
 }
-async function saveBank(){
-  const body={ accountName:$('bkName').value.trim(), bankName:$('bkBank').value.trim(), iban:$('bkIban').value.trim().replace(/\s+/g,'') };
-  if(!body.iban){ toast('Enter your IBAN'); return; }
+let PAYOUT_EDIT=false;
+function payoutSetupCard(){
+  const s=SETTLE, b=SHOP.bank||{};
+  if(s.payoutSetupComplete && !PAYOUT_EDIT){
+    return `<div class="card">
+      <div class="up">Payout details</div>
+      <div class="fee-row"><span class="muted">Bank</span><span>${esc(b.name||'')}</span></div>
+      <div class="fee-row"><span class="muted">Account holder</span><span>${esc(b.accountName||'')}</span></div>
+      <div class="fee-row"><span class="muted">IBAN</span><span>${esc(b.iban||'')}</span></div>
+      <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}</span></div>
+      <button class="btn btn-ghost" onclick="PAYOUT_EDIT=true;renderPayments()">Update details</button>
+      <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you each Tuesday once the buyer's 7-day return window has closed.</div>
+    </div>`;
+  }
+  return `<div class="card">
+    <div class="up">Payout setup</div>
+    <div class="ftwo">
+      <div class="field"><label>Emirates ID · last 4 digits</label><input id="psEid" maxlength="4" inputmode="numeric" placeholder="1234"></div>
+      <div class="field"><label>Emirates ID expiry</label><input id="psExp" type="date"></div>
+    </div>
+    <div class="field"><label>Account holder name — must be your own account</label><input id="bkName" value="${esc(b.accountName||'')}" placeholder="As shown on your bank account"></div>
+    <div class="field"><label>Bank</label><input id="bkBank" value="${esc(b.name||'')}" placeholder="e.g. Emirates NBD"></div>
+    <div class="field"><label>IBAN</label><input id="bkIban" placeholder="AE followed by 21 digits"></div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:10px 0;cursor:pointer"><input type="checkbox" id="psAgree" style="margin-top:2px;accent-color:var(--coral)">
+      <span>I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--coral-deep)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus ${s.commissionPercent}% and pays me weekly after the 7-day return window.</span></label>
+    <button class="btn btn-dark" onclick="savePayoutSetup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save payout details</button>
+  </div>`;
+}
+async function savePayoutSetup(){
+  const body={
+    emiratesIdLast4:$('psEid').value.trim(),
+    emiratesIdExpiry:$('psExp').value,
+    accountName:$('bkName').value.trim(),
+    bankName:$('bkBank').value.trim(),
+    iban:$('bkIban').value.trim(),
+    acceptAgreement:$('psAgree').checked,
+  };
+  if(!body.acceptAgreement){ toast('Tick the Seller Agreement box to continue'); return; }
   try{
-    const {shop}=await TroveAPI.api('/api/seller/payout',{method:'PATCH',body});
-    SHOP.bank={ name:shop.payout_bank_name, accountName:shop.payout_account_name, iban:shop.payout_iban||shop.iban_masked||'' };
+    const {shop}=await TroveAPI.api('/api/seller/payout-setup',{method:'POST',body});
+    SHOP.bank={ name:shop.payout_bank_name, accountName:shop.payout_account_name, iban:shop.iban_masked||'' };
+    SHOP.agreementVersion=shop.agreement_version||'v1';
+    PAYOUT_EDIT=false;
     await reloadPayouts();
-    toast('Bank details saved'); renderPayments(); renderOverview();
+    toast('Payout setup complete — you\'re in the weekly settlement runs');
+    renderPayments(); renderOverview();
   }catch(e){ toast(e.message||'Could not save'); }
+}
+async function showAgreement(){
+  try{
+    const a=await TroveAPI.api('/api/legal/seller-agreement');
+    let el=$('agreeModal');
+    if(!el){ el=document.createElement('div'); el.id='agreeModal'; document.body.appendChild(el); }
+    el.innerHTML=`<div style="position:fixed;inset:0;background:rgba(38,35,33,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" onclick="$('agreeModal').style.display='none'">
+      <div style="background:#FBF6F1;max-width:640px;max-height:80vh;overflow:auto;border-radius:14px;padding:28px" onclick="event.stopPropagation()">
+        <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.65;font-weight:500">${esc(a.markdown)}</div>
+        <button class="btn btn-dark" style="margin-top:14px" onclick="$('agreeModal').style.display='none'">Close</button>
+      </div></div>`;
+    el.style.display='block';
+  }catch(e){ toast('Could not load the agreement'); }
 }
 
 /* ---------------- ADMIN — weekly settlement run (house/admin only) ---------------- */
