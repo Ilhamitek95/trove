@@ -503,20 +503,24 @@ let editAddrId=null;
 function openAddr(id){
   editAddrId=id||null; const a=id?addresses.find(x=>x.id===id):{};
   $('drawerTitle').textContent=id?'Edit address':'Add address';
+  // Split a stored "Area, Emirate" city back into its two fields.
+  const isAD=/abu dhabi/i.test(a.city||''); const emirate=isAD?'Abu Dhabi':'Dubai';
+  const area=(a.city||'').replace(/,?\s*(abu dhabi|dubai)\s*$/i,'').trim();
   $('drawerBody').innerHTML=`
     <div class="field"><label>Label</label><input id="aLabel" value="${a.label||''}" placeholder="Home, Work…"></div>
-    <div class="field"><label>Full name</label><input id="aName" value="${a.name||'Layla Hassan'}"></div>
+    <div class="field"><label>Full name</label><input id="aName" value="${a.name||(ME&&ME.name)||''}" placeholder="Recipient's name"></div>
     <div class="field"><label>Address</label><input id="aLine" value="${a.line||''}" placeholder="Street, building, apt"></div>
-    <div class="field"><label>City / Area</label><input id="aCity" value="${a.city||''}"></div>
-    <div class="field"><label>Country</label><input id="aCountry" value="${a.country||'United Arab Emirates'}"></div>
+    <div class="field"><label>Area</label><input id="aCity" value="${area}" placeholder="e.g. Dubai Marina, Khalifa City"></div>
+    <div class="field"><label>Emirate</label><select id="aEmirate"><option${emirate==='Dubai'?' selected':''}>Dubai</option><option${emirate==='Abu Dhabi'?' selected':''}>Abu Dhabi</option></select>
+      <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">We currently deliver in Dubai &amp; Abu Dhabi only.</div></div>
     <div class="field"><label>Phone</label><input id="aPhone" value="${a.phone||''}"></div>`;
   $('drawerSave').onclick=saveAddr; openDrawer();
 }
 async function saveAddr(){
-  const data={label:$('aLabel').value||'Address',name:$('aName').value.trim(),line:$('aLine').value.trim(),city:$('aCity').value.trim(),country:$('aCountry').value.trim(),phone:$('aPhone').value.trim()};
+  const emirate=$('aEmirate').value, areaV=$('aCity').value.trim();
+  const data={label:$('aLabel').value||'Address',name:$('aName').value.trim(),line:$('aLine').value.trim(),city:areaV?`${areaV}, ${emirate}`:emirate,country:'United Arab Emirates',phone:$('aPhone').value.trim()};
   if(!data.name){toast('Add a name');return;}
   if(!data.line){toast('Add a street address');return;}
-  if(!data.city){toast('Add a city');return;}
   try{
     if(editAddrId) await TroveAPI.api('/api/account/addresses/'+editAddrId,{method:'PATCH',body:data});
     else await TroveAPI.api('/api/account/addresses',{method:'POST',body:{...data,isDefault:addresses.length===0}});

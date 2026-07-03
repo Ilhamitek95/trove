@@ -4,6 +4,9 @@ const crypto = require('crypto');
 const db = require('../db');
 const { requireStripe } = require('../stripe');
 const { SERVICE_FEE_CENTS, deliveryFor } = require('../fees');
+const { SERVICE_AREAS, isServiceable } = require('../service-area');
+
+const OUT_OF_AREA = `We currently deliver in ${SERVICE_AREAS.join(' and ')} only`;
 
 const router = express.Router();
 const CURRENCY = () => process.env.CURRENCY || 'aed';
@@ -23,6 +26,10 @@ router.post('/', async (req, res, next) => {
   try {
     const { items, email, address } = req.body || {};
     if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Cart is empty' });
+    // The address can arrive later via /checkout/update (the payment form
+    // mounts before the form is filled) — but if one is given, it must be
+    // inside the service area.
+    if (address && !isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
     const buyerEmail = email || (req.session.userId && db.prepare('SELECT email FROM users WHERE id=?').get(req.session.userId)?.email);
     if (!buyerEmail) return res.status(400).json({ error: 'Email is required' });
 
@@ -83,6 +90,28 @@ router.post('/', async (req, res, next) => {
       currency: CURRENCY(),
     });
   } catch (e) { next(e); }
+});
+
+/**
+ * POST /api/checkout/update  { orderId, clientSecret, email?, address }
+ * Called at Place-order time: the PaymentIntent (and order row) are created
+ * when the payment form mounts, usually before the buyer has typed their
+ * address — this writes the final contact + delivery details onto the still-
+ * pending order. The client secret proves the order belongs to the caller.
+ */
+router.post('/update', (req, res) => {
+  const { orderId, clientSecret, email, address } = req.body || {};
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String(orderId || ''));
+  if (!order || order.status !== 'pending') return res.status(404).json({ error: 'Order not found' });
+  if (!order.stripe_payment_intent_id
+    || !String(clientSecret || '').startsWith(order.stripe_payment_intent_id + '_secret'))
+    return res.status(403).json({ error: 'Not your order' });
+  if (!address || !String(address.name || '').trim() || !String(address.line || '').trim())
+    return res.status(400).json({ error: 'A delivery name and address are required' });
+  if (!isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
+  db.prepare('UPDATE orders SET email=COALESCE(?,email), shipping_json=? WHERE id=?')
+    .run(email || null, JSON.stringify(address), order.id);
+  res.json({ ok: true });
 });
 
 /**

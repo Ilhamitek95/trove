@@ -402,7 +402,7 @@
 <body>
 
 <!-- HEADER -->
-<div class="promo"><div class="wrap">Free delivery on orders over AED 500</div></div>
+<div class="promo"><div class="wrap">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 500</div></div>
 <header class="top">
   <div class="wrap nav">
     <a href="#" class="brand" onclick="go('home');return false">trove</a>
@@ -770,11 +770,11 @@
 /* ---------------- DATA ---------------- */
 let VENDORS = {
   trove:  {name:'trove label', house:true, loc:'In-house · Dubai', color:'#262321', bio:'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.', rating:'4.9', prods:48, since:'2024'},
-  kiln:   {name:'Kiln & Clay', loc:'Lisbon, Portugal', color:'#A98B7D', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
-  loom:   {name:'Northbound Loom', loc:'Reykjavík, Iceland', color:'#B9D0E0', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
-  ember:  {name:'Ember Goods', loc:'Marrakech, Morocco', color:'#F5C68A', bio:'Leather and brass made the slow way, in a workshop in the medina.', rating:'5.0', prods:54, since:'2023'},
-  fern:   {name:'Fern Apothecary', loc:'Portland, USA', color:'#C7D9AC', bio:'Plant-based skincare and home scent, formulated in tiny batches.', rating:'4.9', prods:41, since:'2021'},
-  paper:  {name:'Folio Paper Co.', loc:'Kyoto, Japan', color:'#F4CFE0', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:'4.8', prods:73, since:'2022'},
+  kiln:   {name:'Kiln & Clay', loc:'Alserkal Avenue, Dubai', color:'#A98B7D', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
+  loom:   {name:'Northbound Loom', loc:'Al Quoz, Dubai', color:'#B9D0E0', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
+  ember:  {name:'Ember Goods', loc:'Deira, Dubai', color:'#F5C68A', bio:'Leather and brass made the slow way, in our Deira workshop.', rating:'5.0', prods:54, since:'2023'},
+  fern:   {name:'Fern Apothecary', loc:'Masdar City, Abu Dhabi', color:'#C7D9AC', bio:'Plant-based skincare and home scent, formulated in tiny batches.', rating:'4.9', prods:41, since:'2021'},
+  paper:  {name:'Folio Paper Co.', loc:'Al Zahiyah, Abu Dhabi', color:'#F4CFE0', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:'4.8', prods:73, since:'2022'},
 };
 const CATS = [
   {name:'Home', color:'#C3D1C7', ct:'2,140'},
@@ -857,8 +857,8 @@ function checkoutPayload(){
   let address=null;
   if(coNewAddr){
     const g=id=>($(id)?$(id).value.trim():'');
-    const line=g('coNewLine');
-    if(line) address={name:g('coNewName'),line,city:g('coNewCity'),country:g('coNewCountry')};
+    const line=g('coNewLine'), emirate=g('coNewEmirate')||'Dubai', area=g('coNewCity');
+    if(line) address={name:g('coNewName'),line,city:area?`${area}, ${emirate}`:emirate,emirate,country:'United Arab Emirates'};
   }else if(SAVED_ADDR[coAddr]){
     const a=SAVED_ADDR[coAddr]; address={name:a.name,line:a.line,city:a.city};
   }
@@ -1141,14 +1141,19 @@ async function ensureGuestAccount(){
 function selAddr(i){coAddr=i;coNewAddr=false;renderCheckout();}
 function newAddr(){coNewAddr=true;coAddr=-1;renderCheckout();}
 function selCard(i){coCard=i;renderCheckout();}
+const inServiceArea=city=>/(dubai|abu dhabi)/i.test(city||'');
 function renderCheckout(){
   const groups=cartGroups();
-  // addresses
-  $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>`<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" onclick="selAddr(${i})"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span></div></div>`).join('')
+  // addresses — saved ones outside Dubai/Abu Dhabi can't be delivered to
+  $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>{
+    const ok=inServiceArea(a.city);
+    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span>${ok?'':'<br><span style="color:var(--coral-deep);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
+  }).join('')
     +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
-  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>City / Area</label><input id="coNewCity"></div><div class="co-field"><label>Country</label><input id="coNewCountry" value="United Arab Emirates"></div></div></div>`:'';
+  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
   // delivery grouped by shop
-  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('');
+  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('')
+    +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">Trove currently delivers across Dubai &amp; Abu Dhabi.</div>`;
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
     $('coPaySaved').innerHTML=`<div id="payment-element" style="margin:6px 0 4px"></div><div id="payStatus" style="font-size:13px;color:var(--muted);min-height:18px;margin-top:6px"></div>`;
@@ -1184,11 +1189,28 @@ function showConfirmation(orderId){
   showView('confirm');window.scrollTo(0,0);
 }
 async function placeOrder(){
+  // Contact + delivery details must be complete and inside the service area.
+  if(LIVE){
+    if(!/^\S+@\S+\.\S+$/.test($('coEmail').value.trim())){toast('Enter your email so we can send your receipt');window.scrollTo(0,0);return;}
+    const a=checkoutPayload().address;
+    if(!a||!a.name||!a.line){toast('Add your delivery name and address');return;}
+    if(!inServiceArea(a.emirate||a.city)){toast('We deliver in Dubai and Abu Dhabi only');return;}
+  }
   if(!(await ensureGuestAccount()))return;
   if(paymentsLive()){
     if(!payIntent||!stripeElements){toast('The payment form is still loading — one moment');return;}
     const btn=document.querySelector('.co-place');
     btn.disabled=true;btn.style.opacity=.6;
+    // Write the final email + address onto the order before taking payment —
+    // the order was opened when the payment form mounted, before these fields
+    // were filled in.
+    try{
+      await TroveAPI.api('/api/checkout/update',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),address:checkoutPayload().address}});
+    }catch(e){
+      btn.disabled=false;btn.style.opacity=1;
+      $('payStatus').textContent=e.message||'Could not save your delivery details — please try again.';
+      return;
+    }
     const {error}=await stripeJs.confirmPayment({
       elements:stripeElements,
       confirmParams:{return_url:location.href.split('#')[0]},

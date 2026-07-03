@@ -60,6 +60,28 @@ if (process.env.DEMO_PASSWORD) {
   if (rotated) console.log(`demo lockdown: rotated ${rotated} demo password(s)${demoted ? ', house account demoted to seller' : ''}`);
 }
 
+// One-time data fix: Trove now operates in Dubai & Abu Dhabi only, so the
+// seeded demo shops move from their original international locations to the
+// two emirates. Keyed on slug + exact old value, so a location a seller has
+// since edited is never touched. (Fresh seeds already use the new values.)
+{
+  const MOVES = [
+    ['kiln-and-clay',   'Lisbon, Portugal',   'Alserkal Avenue, Dubai'],
+    ['northbound-loom', 'Reykjavík, Iceland', 'Al Quoz, Dubai'],
+    ['ember-goods',     'Marrakech, Morocco', 'Deira, Dubai'],
+    ['fern-apothecary', 'Portland, USA',      'Masdar City, Abu Dhabi'],
+    ['folio-paper',     'Kyoto, Japan',       'Al Zahiyah, Abu Dhabi'],
+    ['sable-and-stone', 'Muscat, Oman',       'Khalifa City, Abu Dhabi'],
+  ];
+  const move = db.prepare('UPDATE shops SET location=? WHERE slug=? AND location=?');
+  let moved = 0;
+  for (const [slug, from, to] of MOVES) moved += move.run(to, slug, from).changes;
+  // Matching bio touch-ups where the old city was written into the story.
+  moved += db.prepare(`UPDATE shops SET bio=REPLACE(bio,'in a workshop in the medina','in our Deira workshop') WHERE slug='ember-goods' AND bio LIKE '%in a workshop in the medina%'`).run().changes;
+  moved += db.prepare(`UPDATE shops SET bio=REPLACE(bio,'a small studio in Muscat','a small studio in Khalifa City, Abu Dhabi') WHERE slug='sable-and-stone' AND bio LIKE '%a small studio in Muscat%'`).run().changes;
+  if (moved) console.log(`service area: relocated ${moved} demo shop field(s) to Dubai/Abu Dhabi`);
+}
+
 const app = express();
 const PORT = process.env.PORT || 4242;
 const isProd = process.env.NODE_ENV === 'production';
@@ -182,6 +204,7 @@ app.get('/api/config', (_req, res) => res.json({
   deliveryFeeCents: fees.DELIVERY_FEE_CENTS,
   freeDeliveryThresholdCents: fees.FREE_DELIVERY_THRESHOLD_CENTS,
   platformFeePercent: fees.PLATFORM_FEE_PERCENT,
+  serviceAreas: require('./service-area').SERVICE_AREAS,
 }));
 app.use('/api/auth', require('./routes/auth.routes'));
 app.use('/api/products', require('./routes/products.routes'));

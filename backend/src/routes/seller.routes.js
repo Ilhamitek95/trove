@@ -17,6 +17,11 @@ router.get('/me', requireSeller, (req, res) => res.json({ shop: req.shop }));
 
 router.patch('/me', requireSeller, (req, res) => {
   const { name, bio, location, color } = req.body || {};
+  if (location != null) {
+    const { SERVICE_AREAS, isServiceable } = require('../service-area');
+    if (!isServiceable(location))
+      return res.status(400).json({ error: `Trove shops are based in ${SERVICE_AREAS.join(' and ')} only` });
+  }
   db.prepare('UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color) WHERE id=?')
     .run(name, bio, location, color, req.shop.id);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });

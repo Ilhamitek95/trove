@@ -31,33 +31,33 @@ const house = shop('hello@trove.com', 'Trove', 'trove label', 'trove-label',
   { type: 'managed', bankName: 'Emirates NBD', accountName: 'Trove Marketplace FZ-LLC', iban: 'AE600260001015079130500' });
 const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay',
   "Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.",
-  'Lisbon, Portugal', '#A98B7D', false,
+  'Alserkal Avenue, Dubai', '#A98B7D', false,
   { type: 'managed', bankName: 'Mashreq Bank', accountName: 'Mara Ceramics Studio', iban: 'AE930330000010101010101' });
 const loom = shop('hello@northboundloom.com', 'Northbound Loom', 'Northbound Loom', 'northbound-loom',
   'Heavyweight knitwear and woven goods from a family workshop running since 1978.',
-  'Reykjavík, Iceland', '#B9D0E0', false, { type: 'connect' });
+  'Al Quoz, Dubai', '#B9D0E0', false, { type: 'connect' });
 const ember = shop('hello@embergoods.com', 'Ember Goods', 'Ember Goods', 'ember-goods',
-  'Leather and brass made the slow way, in a workshop in the medina.',
-  'Marrakech, Morocco', '#F5C68A', false,
+  'Leather and brass made the slow way, in our Deira workshop.',
+  'Deira, Dubai', '#F5C68A', false,
   { type: 'managed', bankName: 'Abu Dhabi Commercial Bank', accountName: 'Ember Goods Trading LLC', iban: 'AE120350000004567890123' });
 const fern = shop('hello@fernapothecary.com', 'Fern Apothecary', 'Fern Apothecary', 'fern-apothecary',
   'Plant-based skincare and home scent, formulated in tiny batches.',
-  'Portland, USA', '#C7D9AC', false,
+  'Masdar City, Abu Dhabi', '#C7D9AC', false,
   { type: 'managed', bankName: 'Dubai Islamic Bank', accountName: 'Fern Apothecary FZE', iban: 'AE980030001234567890123' });
 const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.', 'folio-paper',
   'Stationery, notebooks and desk goods for people who still write things down.',
-  'Kyoto, Japan', '#F4CFE0', false, { type: 'connect' });
+  'Al Zahiyah, Abu Dhabi', '#F4CFE0', false, { type: 'connect' });
 
 // A shop still waiting for approval, so the super-admin review queue has
 // something to demo. Hidden from the storefront until approved.
 const sable = shop('nadia@sableandstone.com', 'Nadia', 'Sable & Stone', 'sable-and-stone',
-  "I'm Nadia, a self-taught silversmith working from a small studio in Muscat. Everything is made to order in recycled silver — I cut and set each stone by hand, so no two pieces ever match. I've sold at local markets for three years and want to reach people who value slow-made jewellery.",
-  'Muscat, Oman', '#B8AFA6', false, { type: 'managed' });
+  "I'm Nadia, a self-taught silversmith working from a small studio in Khalifa City, Abu Dhabi. Everything is made to order in recycled silver — I cut and set each stone by hand, so no two pieces ever match. I've sold at local markets for three years and want to reach people who value slow-made jewellery.",
+  'Khalifa City, Abu Dhabi', '#B8AFA6', false, { type: 'managed' });
 db.prepare(`UPDATE shops SET status='pending', category='Accessories',
   pitch_products='Raw stone signet rings — AED 220–260\nHammered silver stacking bands\nDesert stone pendants on silk cord\nOne-off statement cuffs (small batches of 5)',
-  pitch_instagram='instagram.com/sableandstone.mct', pitch_links='sableandstone.com',
+  pitch_instagram='instagram.com/sableandstone.uae', pitch_links='sableandstone.com',
   pitch_experience='3+ years', pitch_maker='I make everything myself',
-  pitch_channels='Markets & pop-ups', pitch_capacity='10–30', pitch_phone='+968 91 234 567'
+  pitch_channels='Markets & pop-ups', pitch_capacity='10–30', pitch_phone='+971 50 234 5678'
   WHERE id=?`).run(sable);
 mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Accessories', c(240), null, 8, 'live', 'ring1');
 

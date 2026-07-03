@@ -381,7 +381,8 @@
             </div>
             <div class="field"><label>Shop name</label><input id="sfName" value="Kiln & Clay"></div>
             <div class="field"><label>Tagline</label><input id="sfTag" value="Small-batch stoneware, thrown by hand"></div>
-            <div class="field"><label>Location</label><input id="sfLoc" value="Lisbon, Portugal"></div>
+            <div class="field"><label>Area</label><input id="sfLoc" placeholder="e.g. Alserkal Avenue, Al Quoz"></div>
+            <div class="field"><label>Emirate</label><select id="sfEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
             <div class="field"><label>About</label><textarea id="sfBio">Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.</textarea></div>
             <div class="field"><label>Shop accent</label><div class="color-row" id="sfColors"></div></div>
             <button class="btn btn-dark" onclick="saveStore()" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save changes</button>
@@ -489,9 +490,13 @@ function applyShop(s){
 function fillStoreForm(){
   if($('sfName'))$('sfName').value=SHOP.name||'';
   if($('sfTag'))$('sfTag').value='';
-  if($('sfLoc'))$('sfLoc').value=SHOP.loc||'';
+  // Location is stored as "Area, Emirate" — split it back into the two fields.
+  const isAD=/abu dhabi/i.test(SHOP.loc||'');
+  if($('sfEmirate'))$('sfEmirate').value=isAD?'Abu Dhabi':'Dubai';
+  if($('sfLoc'))$('sfLoc').value=(SHOP.loc||'').replace(/,?\s*(abu dhabi|dubai)(,\s*uae)?\s*$/i,'').trim();
   if($('sfBio'))$('sfBio').value=SHOP.bio||'';
 }
+function composedLoc(){const a=$('sfLoc').value.trim();return a?`${a}, ${$('sfEmirate').value}`:$('sfEmirate').value;}
 async function reloadProducts(){
   try{ const {products:ps}=await TroveAPI.api('/api/seller/products'); products=(ps||[]).map(mapProduct); }catch(_){ products=[]; }
   renderProducts(); renderOverview();
@@ -927,12 +932,13 @@ function updatePreview(){
   else{$('pvCover').style='position:absolute;inset:0;'+grad(storeColor);}
   photoTile($('pvAv'),letter);
   $('pvName').textContent=$('sfName').value||'Your shop';
-  $('pvLoc').textContent=$('sfLoc').value;$('pvBio').textContent=$('sfBio').value;
+  $('pvLoc').textContent=composedLoc();$('pvBio').textContent=$('sfBio').value;
   photoTile($('sideAv'),letter);
   photoTile($('sfPhotoPrev'),letter);
   $('sfPhotoRemove').style.display=SHOP.image?'inline-flex':'none';
 }
 ['sfName','sfLoc','sfBio'].forEach(id=>$(id).addEventListener('input',updatePreview));
+$('sfEmirate').addEventListener('change',updatePreview);
 
 /* shop photo upload — downsized in the browser, sent as a data URL */
 function uploadShopPhoto(file){
@@ -960,7 +966,7 @@ async function removeShopPhoto(){
   catch(e){ toast(e.message||'Could not remove the photo'); }
 }
 async function saveStore(){
-  const body={name:$('sfName').value.trim(),bio:$('sfBio').value.trim(),location:$('sfLoc').value.trim(),color:storeColor};
+  const body={name:$('sfName').value.trim(),bio:$('sfBio').value.trim(),location:composedLoc(),color:storeColor};
   if(!body.name){toast('Your shop needs a name');return;}
   try{ const {shop}=await TroveAPI.api('/api/seller/me',{method:'PATCH',body}); applyShop(shop); renderProducts(); toast('Storefront saved'); }
   catch(e){ toast(e.message||'Could not save'); }
