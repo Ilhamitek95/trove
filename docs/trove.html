@@ -650,7 +650,15 @@
       <div>
         <div class="co-step">
           <div class="sh"><span class="num">1</span><h3>Contact</h3></div>
-          <div class="co-field"><label>Email</label><input id="coEmail" value="layla@email.com"></div>
+          <div class="co-field"><label>Email</label><input id="coEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
+          <div id="coAcctBox" style="display:none">
+            <label style="display:flex;gap:9px;align-items:center;font-size:13.5px;font-weight:600;cursor:pointer;margin-top:2px">
+              <input type="checkbox" id="coAcctChk" onchange="toggleCoAcct()" style="width:16px;height:16px;accent-color:var(--coral-deep,#C5664B)">
+              Create an account to track this order <span style="color:var(--muted);font-weight:500">· optional</span></label>
+            <div class="co-field" id="coAcctPassWrap" style="display:none;margin-top:10px"><label>Choose a password</label>
+              <input id="coAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+            <div id="coAcctErr" style="display:none;background:#FBE9E2;color:#C5664B;font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45"></div>
+          </div>
         </div>
         <div class="co-step">
           <div class="sh"><span class="num">2</span><h3>Shipping address</h3></div>
@@ -689,7 +697,7 @@
     <div class="ordid" id="confOrdId"></div>
     <div class="ship-card" id="confShip"></div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a class="btn btn-dark" href="trove-account.html#orders">Track your order</a>
+      <a class="btn btn-dark" id="confTrack" href="trove-account.html#orders">Track your order</a>
       <button class="btn btn-ghost" onclick="go('home')">Continue shopping</button>
     </div>
   </div>
@@ -838,6 +846,10 @@ function checkoutPayload(){
 async function mountPaymentElement(){
   const status=$('payStatus');
   try{
+    if(!payIntent&&!/^\S+@\S+\.\S+$/.test($('coEmail').value.trim())){
+      status.textContent='Enter your email above to load the payment form.';
+      return; // retried by the coEmail change listener below
+    }
     await loadStripeJs();
     if(!stripeJs) stripeJs=window.Stripe(TroveAPI.stripeKey);
     if(!payIntent){
@@ -852,6 +864,9 @@ async function mountPaymentElement(){
     status.textContent='';
   }catch(e){ status.textContent=e.message; }
 }
+document.addEventListener('change',e=>{
+  if(e.target&&e.target.id==='coEmail'&&paymentsLive()&&!payIntent)mountPaymentElement();
+});
 
 /* product card */
 function productCard(p){
@@ -1048,7 +1063,43 @@ document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.re
 
 /* CHECKOUT */
 function cartGroups(){const g={};cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);(g[p.vendor]=g[p.vendor]||[]).push({...c,p});});return g;}
-function startCheckout(){if(!cart.length){toast('Your trove is empty');return;}closeCart();renderCheckout();showView('checkout');window.scrollTo(0,0);}
+function startCheckout(){
+  if(!cart.length){toast('Your trove is empty');return;}
+  // Guests check out with their own details — no demo addresses, and an
+  // optional "create an account" offer (only when a real backend is live).
+  if(LIVE&&!ME){SAVED_ADDR=[];coNewAddr=true;coAddr=-1;}
+  $('coAcctBox').style.display=(LIVE&&!ME)?'block':'none';
+  closeCart();renderCheckout();showView('checkout');window.scrollTo(0,0);
+}
+function toggleCoAcct(){
+  $('coAcctPassWrap').style.display=$('coAcctChk').checked?'block':'none';
+  coAcctError('');
+}
+function coAcctError(m){const e=$('coAcctErr');e.textContent=m;e.style.display=m?'block':'none';}
+/* If the guest asked for an account, create it (and attach the in-flight
+ * order) before taking payment. Returns false when the order must not proceed. */
+async function ensureGuestAccount(){
+  if(ME||!LIVE||!$('coAcctChk').checked)return true;
+  coAcctError('');
+  const email=$('coEmail').value.trim();
+  const pw=$('coAcctPw').value;
+  if(!/^\S+@\S+\.\S+$/.test(email)){coAcctError('Enter your email above first — that becomes your account.');return false;}
+  if(pw.length<8){coAcctError('Your password needs at least 8 characters.');return false;}
+  const name=($('coNewName')&&$('coNewName').value.trim())||email.split('@')[0];
+  try{
+    await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    if(payIntent){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret}});}catch(_){/* order stays a guest order */}}
+    ME={name,email};
+    loadAuth(); // refresh the header with the real session
+    toast('Account created — welcome to trove');
+    return true;
+  }catch(e){
+    coAcctError(e.status===409
+      ?'This email already has an account — sign in to use it, or untick the box to check out as a guest.'
+      :(e.message||'Could not create the account — please try again.'));
+    return false;
+  }
+}
 function selAddr(i){coAddr=i;coNewAddr=false;renderCheckout();}
 function newAddr(){coNewAddr=true;coAddr=-1;renderCheckout();}
 function selCard(i){coCard=i;renderCheckout();}
@@ -1083,6 +1134,7 @@ function renderCheckout(){
 function showConfirmation(orderId){
   const groups=cartGroups();
   const n=Object.keys(groups).length;
+  $('confTrack').style.display=(LIVE&&!ME)?'none':''; // guests have no account to track in
   $('confOrdId').textContent='Order '+orderId;
   $('confShip').innerHTML=`<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
@@ -1091,6 +1143,7 @@ function showConfirmation(orderId){
   showView('confirm');window.scrollTo(0,0);
 }
 async function placeOrder(){
+  if(!(await ensureGuestAccount()))return;
   if(paymentsLive()){
     if(!payIntent||!stripeElements){toast('The payment form is still loading — one moment');return;}
     const btn=document.querySelector('.co-place');

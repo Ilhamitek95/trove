@@ -85,4 +85,22 @@ router.post('/', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+/**
+ * POST /api/checkout/claim  { orderId, clientSecret }
+ * A guest who creates an account mid-checkout attaches the order they just
+ * opened to it. Possession of the Stripe client secret proves the order is
+ * theirs — the public order id alone is guessable, the secret is not.
+ */
+router.post('/claim', (req, res) => {
+  if (!req.session.userId) return res.status(401).json({ error: 'Sign in required' });
+  const { orderId, clientSecret } = req.body || {};
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String(orderId || ''));
+  if (!order || order.buyer_id != null) return res.status(404).json({ error: 'Order not found' });
+  if (!order.stripe_payment_intent_id
+    || !String(clientSecret || '').startsWith(order.stripe_payment_intent_id + '_secret'))
+    return res.status(403).json({ error: 'Not your order' });
+  db.prepare('UPDATE orders SET buyer_id=? WHERE id=?').run(req.session.userId, order.id);
+  res.json({ ok: true });
+});
+
 module.exports = router;
