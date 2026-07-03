@@ -17,10 +17,10 @@ const publicId = () => 'TRV-' + crypto.randomBytes(2).toString('hex').toUpperCas
  * body: { items:[{productId, qty}], email, address:{...} }
  *
  * The server is the source of truth for prices — it never trusts amounts from the
- * client. It groups the cart by shop (for the multi-vendor split), creates a
- * pending order, and opens ONE PaymentIntent on the platform account. The payout
- * to each shop happens on `payment_intent.succeeded` in the webhook (separate
- * charges and transfers), tagged with a shared transfer_group.
+ * client. It creates a pending order and opens ONE PaymentIntent on Trove's own
+ * Stripe account. On `payment_intent.succeeded` the webhook records Trove's
+ * purchase from each supplier on the consignment ledger (settled weekly);
+ * connect-tier shops (Rail B, feature-flagged) are paid per sale instead.
  */
 router.post('/', async (req, res, next) => {
   try {
@@ -63,8 +63,8 @@ router.post('/', async (req, res, next) => {
     // Persist a pending order + items in one transaction.
     const pid = publicId();
     const orderId = db.transaction(() => {
-      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status)
-        VALUES (?,?,?,?,?,?,?,?,?, 'pending')`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null));
+      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
+        VALUES (?,?,?,?,?,?,?,?,?, 'pending', 'consignment')`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null));
       const oid = info.lastInsertRowid;
       const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization) VALUES (?,?,?,?,?,?,?)');
       for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization);
