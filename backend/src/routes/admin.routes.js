@@ -151,6 +151,28 @@ router.post('/graduation/:shopId/approve', requireAdmin, async (req, res, next) 
   } catch (e) { next(e); }
 });
 
+/* ---------------- VAT (quarterly, by rail) ----------------
+ * Prices are VAT-inclusive; vat_amount_cents is captured at payment time
+ * (consignment: 5/105 of the full charge — Trove is the seller; connect:
+ * 5/105 of the margin only). No filing integration — just correct numbers. */
+router.get('/vat-report', requireAdmin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT strftime('%Y', title_transferred_at) || '-Q' ||
+           ((CAST(strftime('%m', title_transferred_at) AS INTEGER) + 2) / 3) AS quarter,
+           rail,
+           COUNT(*) AS orders,
+           SUM(total_cents) AS gross_cents,
+           SUM(vat_amount_cents) AS vat_cents
+    FROM orders
+    WHERE status IN ('paid','fulfilled') AND vat_amount_cents > 0 AND title_transferred_at IS NOT NULL
+    GROUP BY quarter, rail
+    ORDER BY quarter DESC, rail`).all();
+  res.json({
+    vatRegistered: cfg.vatRegistered(),
+    rows: rows.map((r) => ({ quarter: r.quarter, rail: r.rail, orders: r.orders, grossCents: r.gross_cents, vatCents: r.vat_cents })),
+  });
+});
+
 /* ---------------- Refunds (whole order, admin-triggered) ----------------
  * Trove is the seller of record, so refunds are Trove's to make. Stripe is
  * refunded FIRST — if that fails nothing local changes. Then: refunded_at is

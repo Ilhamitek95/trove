@@ -148,7 +148,7 @@
 <script src="api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, SETTLEMENTS=[], BATCHES=[], GRAD={queue:[],railBEnabled:false};
+let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, SETTLEMENTS=[], BATCHES=[], GRAD={queue:[],railBEnabled:false}, VAT={vatRegistered:false,rows:[]};
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
@@ -187,6 +187,7 @@ async function reloadPayouts(){
   try{ SETTLEMENTS=(await TroveAPI.api('/api/admin/settlements')).settlements; }catch(_){ SETTLEMENTS=[]; }
   try{ BATCHES=(await TroveAPI.api('/api/admin/payouts')).payouts; }catch(_){ BATCHES=[]; }
   try{ GRAD=await TroveAPI.api('/api/admin/graduation'); }catch(_){ GRAD={queue:[],railBEnabled:false}; }
+  try{ VAT=await TroveAPI.api('/api/admin/vat-report'); }catch(_){ VAT={vatRegistered:false,rows:[]}; }
   renderPayouts();
 }
 
@@ -350,6 +351,19 @@ function renderPayouts(){
             </tr>`).join('')}</tbody></table>
         </div>`).join('')}</div>`
        :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
+    </div>
+    <div class="card" style="padding:0">
+      <div style="padding:20px 22px 4px"><h3>VAT by quarter</h3>
+        <div class="hint">${VAT.vatRegistered?'5% captured on every order (prices are VAT-inclusive).':'VAT capture is off (VAT_REGISTERED=false) — numbers appear here once Trove is registered.'}</div></div>
+      ${VAT.rows.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Quarter</th><th>Rail</th><th>Orders</th><th>Gross</th><th>VAT (5/105)</th></tr></thead>
+        <tbody>${VAT.rows.map(r=>`<tr>
+          <td style="font-weight:700">${esc(r.quarter)}</td>
+          <td style="color:var(--muted)">${esc(r.rail)}</td>
+          <td>${r.orders}</td>
+          <td>${money(r.grossCents)}</td>
+          <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(r.vatCents)}</td>
+        </tr>`).join('')}</tbody></table></div>`
+       :`<div class="empty" style="padding:8px 22px 22px">No VAT captured yet.</div>`}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>Graduation queue</h3>
