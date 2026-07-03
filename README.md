@@ -1,9 +1,10 @@
 # trove
 
 A curated multi-vendor marketplace — independent shops plus an own house label
-(*trove label*). Shoppers browse and buy; sellers run a shop and get paid via
-Stripe; one customer payment is split across the shops in a cart, minus the
-platform fee.
+(*trove label*). Shoppers buy from Trove; Trove **purchases each sold piece
+from its supplier** (list price minus a 20% margin) and settles with suppliers
+weekly by bank transfer once the buyer's return window closes. See
+[Payment architecture: two rails](#payment-architecture-two-rails).
 
 ```
 trove/
@@ -14,7 +15,7 @@ trove/
 **This is now a working app, not just a prototype.** The pages talk to the
 backend for real: sign-up / sign-in, a real product database, a cart that checks
 out through Stripe, buyer orders & addresses, and a seller dashboard with product
-management and Stripe Connect payouts.
+management, delivery tracking and weekly supplier settlements.
 
 The backend serves the storefront from the **same address** (“single-origin”), so
 there is **one thing to run and one thing to deploy**, and logins just work.
@@ -95,7 +96,9 @@ git branch -M main && git push -u origin main
    | `STRIPE_WEBHOOK_SECRET` | set in step 5 |
    | `CLIENT_URL` | your Render URL, e.g. `https://trove.onrender.com` |
    | `DB_PATH` | `/var/data/trove.db` (only if you added the disk) |
-   | `PLATFORM_FEE_PERCENT` | `8` |
+   | `PRIVATE_DIR` | `/var/data/private` (purchase notes + license images) |
+   | `PAYOUT_ENC_KEY` | 64 hex chars — encrypts supplier IBANs (see `.env.example`) |
+   | `COMMISSION_PERCENT` | `20` |
    | `CURRENCY` | `aed` |
 5. Click **Create Web Service**. When it's live you'll have a URL like
    `https://trove.onrender.com`.
@@ -133,9 +136,12 @@ the DNS instructions at your registrar. Then update `CLIENT_URL` to the new doma
 
 ## Good to know
 
-- **Money flow.** One PaymentIntent is charged on checkout; when Stripe confirms it,
-  the webhook pays each shop their share via a Stripe Transfer, keeping your 8% fee.
-  See `backend/README.md` for the full detail and API reference.
+- **Money flow.** One PaymentIntent is charged on Trove's own Stripe account at
+  checkout; when Stripe confirms it, Trove has purchased the goods from its
+  suppliers (title transfers) and their purchase price accrues on the supplier
+  ledger for the weekly settlement run. See
+  [Payment architecture: two rails](#payment-architecture-two-rails) and
+  `backend/README.md` for the full detail and API reference.
 - **Prices are server-trusted.** The backend recomputes every price from the
   database at checkout — the browser can't change what it's charged.
 - **Still local-only (no backend yet):** saved/wishlist items, “following” shops,

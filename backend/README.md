@@ -1,8 +1,10 @@
 # trove — backend
 
-API for the trove multi-vendor marketplace: accounts & sessions, a products/orders
-database, and **Stripe Connect** payouts that split one customer payment across
-multiple shops, minus your platform fee.
+API for the trove multi-vendor marketplace: accounts & sessions, a
+products/orders database, delivery tracking, and the **consignment purchase
+model** — Trove buys each sold piece from its supplier and settles weekly
+after the return window. (A feature-flagged Stripe Connect rail exists for
+licensed sellers — see the root README's “Payment architecture: two rails”.)
 
 Stack: Node + Express + SQLite (`better-sqlite3`) + Stripe. SQLite keeps it
 zero-config for development; the schema maps cleanly onto Postgres for production.
@@ -38,20 +40,27 @@ stripe listen --forward-to localhost:4242/api/stripe/webhook
 
 ---
 
-## How the money flows (separate charges & transfers)
+## How the money flows (purchase and resale)
 
-1. **Onboarding** — a seller hits `POST /api/seller/connect`; we create a Stripe
-   **Express** account and return a hosted onboarding link. Stripe collects their
-   identity and bank details — those never touch your servers.
+1. **Supplier setup** — an approved supplier completes payout setup in the
+   dashboard: Emirates ID last-4, an IBAN in their own name (AES-256-GCM
+   encrypted at rest, masked everywhere), and acceptance of the Seller
+   Agreement. No Stripe account, no trade license needed.
 2. **Checkout** — `POST /api/checkout` recomputes every price from the DB (the
-   client is never trusted), groups the cart by shop, saves a `pending` order, and
-   opens **one** PaymentIntent on the platform tagged with `transfer_group=order_<id>`.
-   The client confirms it with Stripe.js.
-3. **Payout** — on the `payment_intent.succeeded` webhook we mark the order paid,
-   decrement stock, and create a **Transfer** to each shop's connected account for
-   that shop's subtotal minus `PLATFORM_FEE_PERCENT`. Your fee (and Stripe's
-   processing fee) stay on the platform. This is why a cart spanning three shops
-   "just works" — one charge in, three transfers out.
+   client is never trusted), saves a `pending` order, and opens **one**
+   PaymentIntent on Trove's own Stripe account. The client confirms it with
+   Stripe.js.
+3. **Purchase** — on the `payment_intent.succeeded` webhook (idempotent by
+   event id) the order is marked paid and **Trove purchases the goods**: title
+   transfers, and each supplier's purchase price (their subtotal minus
+   `COMMISSION_PERCENT`) is credited on the `seller_balances` ledger. A courier
+   pickup is booked per shop.
+4. **Settlement** — once a parcel is delivered and its 7-day return window has
+   closed, the credit becomes payable. Every Tuesday the settlement run drafts
+   one bank transfer per supplier (reference “Purchase of handmade goods —
+   PO #…”); the admin exports the bank CSV, sends the transfers, and marks the
+   run paid — which also generates a self-billed purchase note per supplier.
+   Refunds reverse the purchase and net against the next run.
 
 ---
 

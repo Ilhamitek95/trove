@@ -439,7 +439,7 @@
         </div>
       </div>
     </div>
-    <div class="hint">Trove takes a flat 10% per sale. On a AED <span id="dFeeBase">0</span> item you keep <b>AED <span id="dFeeKeep">0</span></b>.</div>
+    <div class="hint">Trove buys at your list price minus <span id="dFeePct">20</span>%. On a AED <span id="dFeeBase">0</span> item your purchase price is <b>AED <span id="dFeeKeep">0</span></b>.</div>
   </div>
   <div class="dfoot">
     <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
@@ -607,7 +607,7 @@ function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;}
 function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;}
-function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*0.90);}
+function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeePct').textContent=feePct();$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*(1-feePct()/100));}
 $('dPrice').addEventListener('input',updateFee);
 $('drawerSave').onclick=async()=>{
   const name=$('dName').value.trim(); const price=parseFloat($('dPrice').value);

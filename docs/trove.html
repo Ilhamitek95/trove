@@ -514,14 +514,14 @@
         <div>
           <span class="eyebrow">Sell on trove</span>
           <h2>Turn your craft into a <em>shopfront</em>.</h2>
-          <p>List in minutes and reach shoppers who came to discover. We handle payments, shipping and storefront design — you keep your brand and 92% of every sale.</p>
+          <p>List in minutes and reach shoppers who came to discover. Trove buys every piece you sell at 80% of your list price, resells it, and takes care of delivery and the storefront — you keep your brand and your craft.</p>
           <button class="btn btn-dark" onclick="go('sell')">Start selling</button>
         </div>
         <div class="steps">
           <div class="step"><span class="nm">i</span><div><h4>Open your shop</h4><p>Claim your handle and style your storefront in minutes.</p></div></div>
           <div class="step"><span class="nm">ii</span><div><h4>List your pieces</h4><p>Bulk-upload or add one at a time, beautifully.</p></div></div>
           <div class="step"><span class="nm">iii</span><div><h4>Get discovered</h4><p>Land in curated collections and the weekly edit.</p></div></div>
-          <div class="step"><span class="nm">iv</span><div><h4>Ship &amp; get paid</h4><p>Print trove labels or let us fulfil. Weekly payouts.</p></div></div>
+          <div class="step"><span class="nm">iv</span><div><h4>Hand off &amp; get paid</h4><p>Our courier collects from you. Weekly settlements, straight to your bank.</p></div></div>
         </div>
       </div>
     </div>
@@ -631,7 +631,7 @@
     <div class="wrap" style="text-align:center;max-width:760px">
       <span class="eyebrow">Sell on trove</span>
       <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0">Your shop, in the company of <em style="font-style:italic;color:var(--coral-deep)">good</em> shops.</h1>
-      <p style="font-size:17px;color:var(--ink-80);max-width:48ch;margin:24px auto 32px;font-weight:400">Join independent makers reaching shoppers who came to discover something worth keeping. No listing fees — a flat 10% when you sell.</p>
+      <p style="font-size:17px;color:var(--ink-80);max-width:48ch;margin:24px auto 32px;font-weight:400">Join independent makers reaching shoppers who came to discover something worth keeping. No listing fees, no license needed — Trove buys your pieces at 80% of your list price when they sell.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-coral" onclick="location.href='trove-apply.html'">Apply to open your shop</button>
         <button class="btn btn-ghost" onclick="go('home')">← Back to shopping</button>
@@ -645,7 +645,7 @@
           <div class="step"><span class="nm">i</span><div><h4>Open your shop</h4><p>Claim your handle and style your storefront in under ten minutes.</p></div></div>
           <div class="step"><span class="nm">ii</span><div><h4>List your pieces</h4><p>Bulk-upload or add one at a time — we generate clean product pages.</p></div></div>
           <div class="step"><span class="nm">iii</span><div><h4>Get discovered</h4><p>Land in curated collections, search and the weekly trove edit.</p></div></div>
-          <div class="step"><span class="nm">iv</span><div><h4>Ship &amp; get paid</h4><p>Print trove labels or let us fulfil. Payouts land weekly.</p></div></div>
+          <div class="step"><span class="nm">iv</span><div><h4>Hand off &amp; get paid</h4><p>Our courier collects from you. Settlements land weekly.</p></div></div>
         </div>
       </div>
     </div>
@@ -689,7 +689,7 @@
         <div class="co-step">
           <div class="sh"><span class="num">4</span><h3>Payment</h3></div>
           <div id="coPaySaved"></div>
-          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="payNote">Payments are processed by Stripe and split to each shop automatically. In this prototype no charge is made.</span></div>
+          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="payNote">Payments are processed securely by Stripe. Trove is the seller of record for your whole order. In this prototype no charge is made.</span></div>
         </div>
       </div>
       <div>
@@ -758,7 +758,7 @@
       <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Trove fulfilment</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
-    <div class="fbot"><span>© 2026 trove marketplace · Dubai, UAE</span><span>Privacy · Terms · Seller agreement</span></div>
+    <div class="fbot"><span>© 2026 trove marketplace · Dubai, UAE</span><span>Privacy · Terms · <a href="seller-agreement.html" style="color:inherit">Seller agreement</a></span></div>
   </div>
 </footer>
 
@@ -1157,7 +1157,7 @@ function renderCheckout(){
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
     $('coPaySaved').innerHTML=`<div id="payment-element" style="margin:6px 0 4px"></div><div id="payStatus" style="font-size:13px;color:var(--muted);min-height:18px;margin-top:6px"></div>`;
-    $('payNote').textContent='Payments are processed securely by Stripe and split to each shop automatically.';
+    $('payNote').textContent='Payments are processed securely by Stripe. Trove is the seller of record for your whole order.';
     mountPaymentElement();
   }else{
     $('coPaySaved').innerHTML=SAVED_CARDS.map((c,i)=>`<div class="saved-opt ${coCard===i?'on':''}" onclick="selCard(${i})"><div class="radio"></div><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></div>`).join('');

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seller Agreement — trove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#FBF6F1;--charcoal:#262321;--coral:#E2836A;--coral-deep:#C5664B;--muted:#8a8078;--line:#eee4da}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--cream);color:var(--charcoal);font-family:'Quicksand',sans-serif;line-height:1.7}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 22px 80px}
+  a.back{color:var(--coral-deep);text-decoration:none;font-weight:600;font-size:14px}
+  h1{font-family:'Cormorant',serif;font-weight:600;font-size:42px;margin:18px 0 6px}
+  .sub{color:var(--muted);font-weight:600;font-size:13.5px;margin-bottom:28px}
+  #doc h2{font-family:'Cormorant',serif;font-weight:600;font-size:26px;margin:30px 0 10px}
+  #doc p,#doc li{font-size:15px;font-weight:500;margin:10px 0}
+  #doc ul{padding-left:22px}
+  #doc strong{font-weight:700}
+  .hash{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="trove.html">← back to trove</a>
+  <h1>Seller Agreement</h1>
+  <div class="sub" id="sub">Loading…</div>
+  <div id="doc"></div>
+  <div class="hash" id="hash"></div>
+</div>
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script>
+// Tiny markdown renderer — headings, bold, bullets, paragraphs. Enough for
+// the agreement; anything fancier belongs in the document itself.
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function md(src){
+  const out=[];let list=null;
+  const flush=()=>{if(list){out.push('<ul>'+list.join('')+'</ul>');list=null;}};
+  for(const raw of src.split(/\r?\n/)){
+    const line=raw.trim();
+    const inline=(t)=>esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/“|”/g,'"');
+    if(!line){flush();continue;}
+    if(line.startsWith('## ')){flush();out.push('<h2>'+inline(line.slice(3))+'</h2>');}
+    else if(line.startsWith('# ')){flush();/* page already has the H1 */}
+    else if(line.startsWith('- ')){(list=list||[]).push('<li>'+inline(line.slice(2))+'</li>');}
+    else{flush();out.push('<p>'+inline(line)+'</p>');}
+  }
+  flush();return out.join('');
+}
+(async function(){
+  try{
+    const a=await TroveAPI.api('/api/legal/seller-agreement');
+    document.getElementById('sub').textContent='Version '+a.version+' · plain English, on purpose';
+    document.getElementById('doc').innerHTML=md(a.markdown);
+    document.getElementById('hash').textContent='Document integrity (SHA-256): '+a.sha256;
+  }catch(e){
+    document.getElementById('sub').textContent='The agreement couldn\'t be loaded right now — please try again shortly.';
+  }
+})();
+</script>
+</body>
+</html>
