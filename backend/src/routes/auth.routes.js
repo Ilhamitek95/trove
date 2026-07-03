@@ -18,10 +18,12 @@ router.post('/register', (req, res) => {
   const wantsShop = role === 'seller' || role === 'both';
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!existing && !password) return res.status(400).json({ error: 'email, password and name are required' });
-  // Instagram is required to apply — validated up front so a failed
-  // application never leaves behind an account without a shop.
+  // Instagram and WhatsApp are required to apply — validated up front so a
+  // failed application never leaves behind an account without a shop.
   if (wantsShop && !String(req.body.instagram || '').trim())
     return res.status(400).json({ error: 'Instagram is required for a shop application' });
+  if (wantsShop && !String(req.body.phone || '').trim())
+    return res.status(400).json({ error: 'A WhatsApp number is required for a shop application' });
 
   let userId;
   if (existing) {

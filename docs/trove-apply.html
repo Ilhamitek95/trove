@@ -159,8 +159,9 @@
         <div class="ftwo">
           <div class="field"><label>Website <span class="opt">· optional</span></label>
             <input id="fLinks" placeholder="yourshop.com"></div>
-          <div class="field"><label>WhatsApp <span class="opt">· optional</span></label>
-            <input id="fPhone" placeholder="+971 50 123 4567"></div>
+          <div class="field"><label>WhatsApp</label>
+            <input id="fPhone" placeholder="+971 50 123 4567">
+            <div class="help">So our curation team can reach you about your application.</div></div>
         </div>
         <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next coral" id="submitBtn" onclick="submitApp()">Submit application</button></div>
       </div>
@@ -252,6 +253,7 @@ async function submitApp(){
   hideErr();
   if(!$('fProducts').value.trim()){showErr('List at least one thing you’re planning to sell.');return;}
   if(!$('fInsta').value.trim()){showErr('Share your Instagram — it’s how our curation team sees your work.');return;}
+  if(!$('fPhone').value.trim()){showErr('Add your WhatsApp number so our curation team can reach you.');return;}
   const btn=$('submitBtn');const label=btn.textContent;
   btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
   try{
