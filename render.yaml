@@ -24,12 +24,22 @@ services:
       # Seller-uploaded images — also on the disk so they survive deploys.
       - key: UPLOADS_DIR
         value: /var/data/uploads
+      # Private documents (self-billed purchase notes, license images) — on
+      # the disk but NEVER statically served; streamed via authed endpoints.
+      - key: PRIVATE_DIR
+        value: /var/data/private
       # Fills an empty database with the demo catalogue on first boot.
       # Harmless to leave on: it does nothing once any account exists.
       - key: SEED_DEMO
         value: "1"
       - key: SESSION_SECRET
         generateValue: true
-      # Stripe keys are added later in the dashboard (Environment tab):
-      #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
-      # (the publishable pk_ key goes in docs/config.js, not here)
+      # Added later in the dashboard (Environment tab):
+      #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET  (pk_ key goes in docs/config.js)
+      #   PAYOUT_ENC_KEY   64 hex chars — REQUIRED before suppliers can complete
+      #                    payout setup or settlement CSVs can be exported.
+      #                    Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      #   RAIL_B_ENABLED   leave unset/0 until the Stripe Connect rail is cleared
+      #   VAT_REGISTERED   set to 1 once Trove is VAT-registered
+      #   GRADUATION_THRESHOLD_AED, COMMISSION_PERCENT  (defaults 12000 / 20)
+      #   QUIQUP_API_KEY, QUIQUP_API_URL, QUIQUP_WEBHOOK_SECRET  (courier; mock until set)

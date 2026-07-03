@@ -134,6 +134,79 @@ the DNS instructions at your registrar. Then update `CLIENT_URL` to the new doma
 
 ---
 
+## Payment architecture: two rails
+
+Trove deliberately runs on a **purchase-and-resale** model, never as a payment
+processor for its sellers.
+
+**Rail A — Consignment (the default, and the only rail at launch).** Trove is
+the merchant of record. Buyers pay Trove's own Stripe account (a standard
+PaymentIntent — no Connect). At the moment a payment succeeds, **Trove
+purchases the sold goods from the supplier** at list price minus
+`COMMISSION_PERCENT` (20%): title transfers, and the purchase price is
+credited to the supplier's ledger. Suppliers onboard with an Emirates ID
+last-4, an IBAN in their own name (encrypted at rest) and the Seller
+Agreement — no trade license, no Stripe account.
+
+**Rail B — Connect (feature-flagged: `RAIL_B_ENABLED`, default off).**
+Suppliers whose trailing-30-day *paid* settlements reach
+`GRADUATION_THRESHOLD_AED` (AED 12,000) are invited — not forced — to obtain a
+UAE e-Trader license. After an admin verifies the license, Trove creates a
+Stripe Connect **Custom** account for them (UAE platforms cannot use
+Express/Standard accounts or `on_behalf_of`), and once Stripe enables payouts
+their orders route as **destination charges**: the charge lands on the
+supplier's account and Trove keeps `application_fee_amount` = margin + buyer
+fees. Connect orders bypass the consignment ledger entirely. Sellers who
+already hold a license can declare it at application time; they sell on
+consignment and sit in the graduation queue until the flag turns on.
+
+**The settlement eligibility rule** (one query in `backend/src/settlement.js`,
+everything derives from it): *a supplier credit is payable when its parcel is
+delivered, its 7-day return window closed before the run start, the order was
+never refunded, and the supplier completed payout setup.*
+
+```
+sale (payment succeeds)
+  └─ credit_sale on the ledger ..... "pending" while the parcel is undelivered
+                                      or inside the 7-day return window
+       └─ eligible ................. window closed, order not refunded
+            └─ Tuesday run ......... settlement DRAFT (one bank line per supplier,
+                                      reference "Purchase of handmade goods — PO #n")
+                 └─ exported ....... bank CSV (the only place an IBAN is decrypted)
+                      └─ paid ...... negative payout row + self-billed purchase note
+
+refund (any time) ─ debit_refund only if the credit was already in a settlement;
+                    it nets against the supplier's NEXT run — negative balances
+                    carry forward, never clawed back mid-cycle. An unsettled
+                    credit simply becomes permanently ineligible.
+```
+
+Known deviations & properties, on purpose:
+
+- **Mixed carts** (a connect-tier shop plus others) stay on the platform
+  charge; the connect shop's share moves by Transfer in the webhook. A
+  destination charge is only used when the whole order belongs to one
+  fully-onboarded connect shop.
+- **The cap lags real sales** by up to ~2 weeks (return window + weekly
+  cadence) because it counts *paid settlements* — that is the point: it
+  measures money actually moved.
+- **Cancelling a shipment outside the refund flow** strands its credit as
+  never-eligible; the admin refund is the sanctioned path.
+- **Prohibited goods:** nothing ingestible or applied to skin can be listed
+  (server-enforced 422) — a reseller of record must not carry that liability.
+- A CI test (`backend/test/copy-guardrails.test.js`) fails the build if any
+  copy drifts back into collecting-money-for-sellers language.
+
+Env vars: `COMMISSION_PERCENT` (20) · `PAYOUT_ENC_KEY` (64 hex, required for
+payout setup + CSV export) · `PRIVATE_DIR` · `RAIL_B_ENABLED` (0) ·
+`VAT_REGISTERED` (0) · `GRADUATION_THRESHOLD_AED` (12000) · `QUIQUP_API_KEY` /
+`QUIQUP_API_URL` / `QUIQUP_WEBHOOK_SECRET` (courier — the built-in mock runs
+until these are set) · `CRON_DISABLED`.
+
+Run the test suite with `cd backend && npm test`.
+
+---
+
 ## Good to know
 
 - **Money flow.** One PaymentIntent is charged on Trove's own Stripe account at
