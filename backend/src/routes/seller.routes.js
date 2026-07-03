@@ -104,27 +104,37 @@ router.get('/orders', requireSeller, (req, res) => {
 });
 
 // Advance a shipment's tracking: status + courier + tracking number.
-router.patch('/shipments/:id', requireSeller, (req, res) => {
-  const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
-  if (!sh) return res.status(404).json({ error: 'Shipment not found' });
-  const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
-  if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
-  db.transaction(() => {
-    db.prepare(`UPDATE shipments SET status=COALESCE(?,status), carrier=COALESCE(?,carrier),
-        tracking_number=COALESCE(?,tracking_number), tracking_url=COALESCE(?,tracking_url), updated_at=datetime('now')
-      WHERE id=?`).run(status || null, carrier ?? null, trackingNumber ?? null, trackingUrl ?? null, sh.id);
-    if (status && status !== sh.status) {
-      db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
-        .run(sh.id, status, note || shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number));
-      // Re-derive the order status in BOTH directions, so undoing a delivered
-      // parcel also takes the order back from fulfilled to paid.
-      const left = db.prepare("SELECT COUNT(*) AS c FROM shipments WHERE order_id=? AND status!='delivered'").get(sh.order_id).c;
-      if (!left) db.prepare("UPDATE orders SET status='fulfilled' WHERE id=? AND status='paid'").run(sh.order_id);
-      else db.prepare("UPDATE orders SET status='paid' WHERE id=? AND status='fulfilled'").run(sh.order_id);
-    }
-  })();
-  const row = db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id);
-  res.json({ shipment: shipments.shape(row) });
+// 'delivered' goes through the shared markDelivered funnel (same path as the
+// courier webhook) so the 7-day return-window clock is stamped exactly once;
+// stepping BACK from delivered is blocked once the credit is in a settlement.
+router.patch('/shipments/:id', requireSeller, (req, res, next) => {
+  try {
+    const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
+    if (!sh) return res.status(404).json({ error: 'Shipment not found' });
+    const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
+    if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
+
+    const undoingDelivery = sh.status === 'delivered' && status && status !== 'delivered';
+    if (undoingDelivery) shipments.assertUndoable(sh); // 409 once settled
+
+    db.transaction(() => {
+      db.prepare(`UPDATE shipments SET status=COALESCE(?,status), carrier=COALESCE(?,carrier),
+          tracking_number=COALESCE(?,tracking_number), tracking_url=COALESCE(?,tracking_url), updated_at=datetime('now')
+        WHERE id=?`).run(status === 'delivered' ? null : (status || null), carrier ?? null, trackingNumber ?? null, trackingUrl ?? null, sh.id);
+      if (undoingDelivery) {
+        db.prepare('UPDATE shipments SET delivered_at=NULL, return_window_ends_at=NULL WHERE id=?').run(sh.id);
+      }
+      if (status && status !== sh.status && status !== 'delivered') {
+        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
+          .run(sh.id, status, note || shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number));
+        shipments.deriveOrderStatus(sh.order_id);
+      }
+    })();
+    if (status === 'delivered') shipments.markDelivered(sh.id, 'seller');
+
+    const row = db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id);
+    res.json({ shipment: shipments.shape(row) });
+  } catch (e) { next(e); }
 });
 
 /* ---------------- Payout method & earnings ---------------- */

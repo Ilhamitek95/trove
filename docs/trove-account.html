@@ -451,6 +451,9 @@ function renderOrders(){
       </div>
       <div class="oc-body">${body}</div>
       <div class="oc-foot">
+        ${o.refundedAt?`<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`
+          : o.returnWindowEndsAt && new Date(o.returnWindowEndsAt.replace(' ','T')+'Z') > new Date()
+            ? `<span class="ship-note" style="margin:0">Free returns until ${fmtDate(o.returnWindowEndsAt)}</span>` : ''}
         <button class="btn btn-ghost btn-sm" onclick="toast('Reorder is coming soon')">Buy again</button>
         <button class="btn btn-ghost btn-sm" onclick="toast('Invoices are coming soon')">Invoice</button>
       </div></div>`;

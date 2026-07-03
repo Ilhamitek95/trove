@@ -102,6 +102,16 @@ function createApp() {
           return true;
         })();
 
+        if (applied) {
+          // Book the courier pickup for every shipment of this order —
+          // outside the transaction (network IO), failure never blocks the
+          // payment and the seller stepper still works by hand.
+          const delivery = require('./delivery');
+          for (const sh of db.prepare('SELECT id FROM shipments WHERE order_id=?').all(orderId)) {
+            delivery.bookPickup(sh.id).catch((e) => console.error('Pickup booking failed for shipment', sh.id, e.message));
+          }
+        }
+
         if (applied && order.rail !== 'connect') {
           // Rail B leftover: a mixed cart can contain a connect-tier shop's
           // items; those are paid per sale via a Transfer (never from the
@@ -181,6 +191,7 @@ function createApp() {
   app.use('/api/admin', require('./routes/admin.routes'));
   app.use('/api/checkout', require('./routes/checkout.routes'));
   app.use('/api/account', require('./routes/account.routes'));
+  app.use('/api/delivery', require('./routes/delivery.routes'));
 
   // Unknown /api/* path → JSON 404 (so the SPA fallback below never swallows API calls).
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));

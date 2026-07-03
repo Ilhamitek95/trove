@@ -18,6 +18,9 @@ router.get('/orders', requireAuth, (req, res) => {
       status: o.status,
       total: o.total_cents / 100,
       createdAt: o.created_at,
+      deliveredAt: o.delivered_at || null,
+      returnWindowEndsAt: o.return_window_ends_at || null,
+      refundedAt: o.refunded_at || null,
       items: itemsStmt.all(o.id).map((i) => ({
         name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
         shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
