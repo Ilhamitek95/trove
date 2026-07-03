@@ -284,16 +284,25 @@ async function setShopStatus(id,status,confirmFirst){
 
 /* ---------------- orders ---------------- */
 function renderOrders(){
-  $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Shops</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th></tr></thead>
+  $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Shops</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
     <tbody>${ORDERS.length?ORDERS.map(o=>`<tr>
       <td style="font-weight:700">${esc(o.publicId)}</td>
       <td style="color:var(--muted)">${esc(o.email)}</td>
       <td>${o.shops.map(esc).join(', ')}</td>
       <td>${o.itemCount}</td>
       <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(o.totalCents)}</td>
-      <td><span class="pill ${o.status}">${o.status}</span></td>
+      <td>${o.refundedAt?`<span class="pill rejected">refunded</span>`:`<span class="pill ${o.status}">${o.status}</span>`}</td>
       <td style="color:var(--muted)">${fmtDate(o.createdAt)}</td>
-    </tr>`).join(''):`<tr><td colspan="7" class="empty">No orders yet.</td></tr>`}</tbody>`;
+      <td style="text-align:right">${!o.refundedAt&&['paid','fulfilled'].includes(o.status)?`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`:''}</td>
+    </tr>`).join(''):`<tr><td colspan="8" class="empty">No orders yet.</td></tr>`}</tbody>`;
+}
+async function refundOrder(publicId){
+  if(!confirm(`Refund ${publicId} in full? The buyer gets their money back, return pickups are booked for parcels on the move, and any already-settled supplier purchase nets against their next run.`))return;
+  try{
+    await TroveAPI.api('/api/admin/orders/'+publicId+'/refund',{method:'POST'});
+    toast(`${publicId} refunded`);
+    await reload();
+  }catch(e){ toast(e.message||'Could not refund'); }
 }
 
 /* ---------------- settlements (supplier purchases) ---------------- */

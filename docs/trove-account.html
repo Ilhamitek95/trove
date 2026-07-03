@@ -404,6 +404,7 @@ function shipTracker(status){
 }
 // Roll the per-shop shipment statuses up into one headline label for the order.
 function orderStatusLabel(o){
+  if(o.refundedAt) return ['Refunded','processing'];
   const sh=o.shipments||[];
   if(!sh.length) return ORDER_STATUS[o.status]||['Processing','processing'];
   if(sh.every(s=>s.status==='delivered')) return ['Delivered','delivered'];

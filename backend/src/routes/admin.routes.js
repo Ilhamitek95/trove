@@ -79,7 +79,66 @@ router.get('/orders', requireAdmin, (_req, res) => {
     totalCents: o.total_cents, itemCount: o.item_count,
     shops: o.shop_names ? o.shop_names.split(',') : [],
     createdAt: o.created_at,
+    refundedAt: o.refunded_at || null,
+    rail: o.rail,
   })) });
+});
+
+/* ---------------- Refunds (whole order, admin-triggered) ----------------
+ * Trove is the seller of record, so refunds are Trove's to make. Stripe is
+ * refunded FIRST — if that fails nothing local changes. Then: refunded_at is
+ * stamped (which permanently excludes the order's credits from settlement),
+ * and any credit that was ALREADY swept into a settlement is mirrored with a
+ * debit_refund so it nets against the supplier's next run (an unswept credit
+ * needs no debit — the supplier was never paid for it). Parcels on the move
+ * get a reverse pickup; unshipped ones are cancelled.                       */
+router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => {
+  try {
+    const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(req.params.publicId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    if (order.refunded_at) return res.status(409).json({ error: 'Order already refunded' });
+    if (!['paid', 'fulfilled'].includes(order.status)) return res.status(409).json({ error: 'Only paid orders can be refunded' });
+    if (!order.stripe_payment_intent_id) return res.status(409).json({ error: 'No card payment to refund' });
+
+    const stripe = require('../stripe').requireStripe();
+    await stripe.refunds.create({
+      payment_intent: order.stripe_payment_intent_id,
+      ...(order.rail === 'connect' ? { reverse_transfer: true, refund_application_fee: true } : {}),
+    });
+
+    db.transaction(() => {
+      db.prepare("UPDATE orders SET refunded_at=datetime('now') WHERE id=?").run(order.id);
+      if (order.rail !== 'connect') {
+        const swept = db.prepare(`SELECT * FROM seller_balances
+          WHERE order_id=? AND type='credit_sale' AND settlement_id IS NOT NULL`).all(order.id);
+        for (const c of swept) {
+          db.prepare(`INSERT INTO seller_balances (shop_id, order_id, type, amount_cents)
+            VALUES (?,?, 'debit_refund', ?)`).run(c.shop_id, order.id, -c.amount_cents);
+        }
+      }
+    })();
+
+    // Logistics, best-effort after the money is sorted.
+    const delivery = require('../delivery');
+    for (const sh of db.prepare('SELECT * FROM shipments WHERE order_id=?').all(order.id)) {
+      if (['shipped', 'out_for_delivery', 'delivered'].includes(sh.status)) {
+        delivery.bookReversePickup(sh.id).then((r) => {
+          db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
+            .run(sh.id, sh.status, `Return pickup booked${r && r.ref ? ' · ' + r.ref : ''}`);
+        }).catch((e) => console.error('Reverse pickup failed for shipment', sh.id, e.message));
+      } else if (sh.status === 'processing') {
+        db.prepare("UPDATE shipments SET status='cancelled', updated_at=datetime('now') WHERE id=?").run(sh.id);
+        db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'cancelled', 'Order refunded — do not ship')").run(sh.id);
+      }
+    }
+    const transferred = db.prepare('SELECT DISTINCT transfer_id FROM order_items WHERE order_id=? AND transfer_id IS NOT NULL').all(order.id);
+    if (transferred.length) {
+      console.warn(`refund ${order.public_id}: reverse these Stripe Transfers by hand:`, transferred.map((t) => t.transfer_id).join(', '));
+    }
+
+    const fresh = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
+    res.json({ ok: true, order: { publicId: fresh.public_id, refundedAt: fresh.refunded_at } });
+  } catch (e) { next(e); }
 });
 
 /* ---------------- Weekly settlements (consignment purchases) ----------------
