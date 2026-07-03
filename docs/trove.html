@@ -350,6 +350,17 @@
   .co-field input,.co-field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none}
   .co-field input:focus{border-color:var(--char)}
   .co-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  /* the "create an account" offer, shown to guests at checkout + confirmation */
+  .acct-offer{background:#EFF4F0;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-top:4px}
+  .acct-offer .ao-check{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14.5px;font-weight:700;flex-wrap:wrap}
+  .acct-offer .ao-check input{width:17px;height:17px;accent-color:var(--coral-deep);flex-shrink:0;cursor:pointer}
+  .acct-offer .ao-pill{background:var(--coral-deep);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+  .acct-offer .ao-perks{list-style:none;margin:10px 0 2px;padding:0;display:flex;flex-direction:column;gap:6px}
+  .acct-offer .ao-perks li{font-size:13px;font-weight:500;color:var(--ink-80);display:flex;gap:8px;align-items:flex-start}
+  .acct-offer .ao-perks li::before{content:'✓';color:var(--coral-deep);font-weight:800;flex-shrink:0}
+  .acct-offer .ao-guest{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px}
+  .acct-offer .ao-guest a{color:var(--muted);text-decoration:underline;cursor:pointer}
+  .acct-offer .ao-err{display:none;background:#FBE9E2;color:var(--coral-deep);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45}
   .saved-opt{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.14s}
   .saved-opt:hover{border-color:var(--rose)}
   .saved-opt.on{border-color:var(--char);background:var(--rose-tint)}
@@ -652,12 +663,18 @@
           <div class="sh"><span class="num">1</span><h3>Contact</h3></div>
           <div class="co-field"><label>Email</label><input id="coEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
           <div id="coAcctBox" style="display:none">
-            <label style="display:flex;gap:9px;align-items:center;font-size:13.5px;font-weight:600;cursor:pointer;margin-top:2px">
-              <input type="checkbox" id="coAcctChk" onchange="toggleCoAcct()" style="width:16px;height:16px;accent-color:var(--coral-deep,#C5664B)">
-              Create an account to track this order <span style="color:var(--muted);font-weight:500">· optional</span></label>
-            <div class="co-field" id="coAcctPassWrap" style="display:none;margin-top:10px"><label>Choose a password</label>
-              <input id="coAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
-            <div id="coAcctErr" style="display:none;background:#FBE9E2;color:#C5664B;font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45"></div>
+            <div class="acct-offer">
+              <label class="ao-check"><input type="checkbox" id="coAcctChk" checked onchange="toggleCoAcct()">Create your trove account<span class="ao-pill">Recommended</span></label>
+              <ul class="ao-perks">
+                <li>Track every parcel as it ships, shop by shop</li>
+                <li>Faster checkout next time — your address is saved</li>
+                <li>All your orders in one place</li>
+              </ul>
+              <div class="co-field" id="coAcctPassWrap" style="margin:10px 0 0"><label>Choose a password</label>
+                <input id="coAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+              <div id="coAcctErr" class="ao-err"></div>
+              <div class="ao-guest" id="coAcctGuestLink">No thanks — <a onclick="guestInstead()">check out as a guest</a></div>
+            </div>
           </div>
         </div>
         <div class="co-step">
@@ -696,6 +713,14 @@
     <p class="lede">Your order is in. A receipt is on its way to your email.</p>
     <div class="ordid" id="confOrdId"></div>
     <div class="ship-card" id="confShip"></div>
+    <div class="acct-offer" id="confAcct" style="display:none;max-width:430px;margin:0 auto 26px;text-align:left">
+      <b style="font-size:15.5px">Don’t lose track of this order.</b>
+      <p style="font-size:13px;font-weight:500;color:var(--ink-80);margin:6px 0 12px;line-height:1.55">Create your free account now — this order attaches to it automatically, and next time checkout takes seconds.</p>
+      <div class="co-field"><label>Email</label><input id="confAcctEmail" type="email" autocomplete="email"></div>
+      <div class="co-field"><label>Choose a password</label><input id="confAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+      <button class="btn btn-dark" style="width:100%;justify-content:center" onclick="confCreateAccount()">Create my account</button>
+      <div id="confAcctErr" class="ao-err"></div>
+    </div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <a class="btn btn-dark" id="confTrack" href="trove-account.html#orders">Track your order</a>
       <button class="btn btn-ghost" onclick="go('home')">Continue shopping</button>
@@ -814,6 +839,7 @@ function feeBreakdown(subAed){
   return {service,delivery,freeThresh,remaining:Math.max(0,freeThresh-subAed),total:subAed+service+delivery};
 }
 let stripeJs=null, stripeElements=null, payElement=null, payIntent=null;
+let lastOrder=null; // {orderId?, clientSecret?, email, name} — for the post-purchase account offer
 
 function resetPayment(){payIntent=null;stripeElements=null;payElement=null;}
 
@@ -1072,10 +1098,20 @@ function startCheckout(){
   closeCart();renderCheckout();showView('checkout');window.scrollTo(0,0);
 }
 function toggleCoAcct(){
-  $('coAcctPassWrap').style.display=$('coAcctChk').checked?'block':'none';
+  const on=$('coAcctChk').checked;
+  $('coAcctPassWrap').style.display=on?'block':'none';
+  $('coAcctGuestLink').style.display=on?'block':'none';
   coAcctError('');
 }
+function guestInstead(){$('coAcctChk').checked=false;toggleCoAcct();toast('No problem — checking out as a guest');}
 function coAcctError(m){const e=$('coAcctErr');e.textContent=m;e.style.display=m?'block':'none';}
+/* Save the address they typed at checkout to the fresh account, so the
+ * "faster next time" promise is actually true. Best-effort. */
+async function saveCheckoutAddress(){
+  const a=checkoutPayload().address;
+  if(a&&a.name&&a.line&&a.city)
+    await TroveAPI.api('/api/account/addresses',{method:'POST',body:{label:'Home',name:a.name,line:a.line,city:a.city,country:a.country||'United Arab Emirates',isDefault:true}});
+}
 /* If the guest asked for an account, create it (and attach the in-flight
  * order) before taking payment. Returns false when the order must not proceed. */
 async function ensureGuestAccount(){
@@ -1084,10 +1120,12 @@ async function ensureGuestAccount(){
   const email=$('coEmail').value.trim();
   const pw=$('coAcctPw').value;
   if(!/^\S+@\S+\.\S+$/.test(email)){coAcctError('Enter your email above first — that becomes your account.');return false;}
+  if(!pw){coAcctError('Choose a password to create your account — or pick “check out as a guest” below.');return false;}
   if(pw.length<8){coAcctError('Your password needs at least 8 characters.');return false;}
   const name=($('coNewName')&&$('coNewName').value.trim())||email.split('@')[0];
   try{
     await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    try{await saveCheckoutAddress();}catch(_){/* best effort */}
     if(payIntent){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret}});}catch(_){/* order stays a guest order */}}
     ME={name,email};
     loadAuth(); // refresh the header with the real session
@@ -1135,6 +1173,9 @@ function showConfirmation(orderId){
   const groups=cartGroups();
   const n=Object.keys(groups).length;
   $('confTrack').style.display=(LIVE&&!ME)?'none':''; // guests have no account to track in
+  // Second chance for guests: create the account right on the confirmation page.
+  $('confAcct').style.display=(LIVE&&!ME)?'block':'none';
+  if(LIVE&&!ME){$('confAcctEmail').value=(lastOrder&&lastOrder.email)||'';$('confAcctPw').value='';}
   $('confOrdId').textContent='Order '+orderId;
   $('confShip').innerHTML=`<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
@@ -1156,11 +1197,38 @@ async function placeOrder(){
     btn.disabled=false;btn.style.opacity=1;
     if(error){$('payStatus').textContent=error.message;return;}
     const id=payIntent.orderId;
+    lastOrder={orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
     resetPayment();
     showConfirmation(id);
     return;
   }
+  lastOrder={email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
   showConfirmation('TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10));
+}
+
+/* The confirmation-page account offer: same account, one field later. */
+async function confCreateAccount(){
+  const err=m=>{const e=$('confAcctErr');e.textContent=m;e.style.display=m?'block':'none';};
+  err('');
+  const email=$('confAcctEmail').value.trim();
+  const pw=$('confAcctPw').value;
+  if(!/^\S+@\S+\.\S+$/.test(email)){err('That email doesn’t look right — mind checking it?');return;}
+  if(pw.length<8){err('Your password needs at least 8 characters.');return;}
+  const name=(lastOrder&&lastOrder.name)||email.split('@')[0];
+  try{
+    await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    try{await saveCheckoutAddress();}catch(_){/* best effort */}
+    if(lastOrder&&lastOrder.clientSecret){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:lastOrder.orderId,clientSecret:lastOrder.clientSecret}});}catch(_){/* stays a guest order */}}
+    ME={name,email};
+    loadAuth();
+    $('confAcct').style.display='none';
+    $('confTrack').style.display='';
+    toast('Account created — this order is attached to it');
+  }catch(e){
+    err(e.status===409
+      ?'This email already has an account — sign in instead; your receipt keeps this order linked to your email.'
+      :(e.message||'Could not create the account — please try again.'));
+  }
 }
 
 let toastT;
