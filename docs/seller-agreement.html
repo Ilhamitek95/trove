@@ -32,22 +32,32 @@
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script>
-// Tiny markdown renderer — headings, bold, bullets, paragraphs. Enough for
-// the agreement; anything fancier belongs in the document itself.
+// Tiny markdown renderer — headings, bold, bullets, paragraphs. Works on
+// whole blocks (blank-line separated) so **bold** that wraps across source
+// lines still renders; wrapped bullet lines rejoin their bullet.
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function md(src){
-  const out=[];let list=null;
-  const flush=()=>{if(list){out.push('<ul>'+list.join('')+'</ul>');list=null;}};
-  for(const raw of src.split(/\r?\n/)){
-    const line=raw.trim();
-    const inline=(t)=>esc(t).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/“|”/g,'"');
-    if(!line){flush();continue;}
-    if(line.startsWith('## ')){flush();out.push('<h2>'+inline(line.slice(3))+'</h2>');}
-    else if(line.startsWith('# ')){flush();/* page already has the H1 */}
-    else if(line.startsWith('- ')){(list=list||[]).push('<li>'+inline(line.slice(2))+'</li>');}
-    else{flush();out.push('<p>'+inline(line)+'</p>');}
+  const inline=(t)=>esc(t).replace(/\*\*([\s\S]+?)\*\*/g,'<strong>$1</strong>');
+  const out=[];
+  for(const block of src.split(/\r?\n\s*\r?\n/)){
+    const text=block.trim();
+    if(!text)continue;
+    if(text.startsWith('## ')){out.push('<h2>'+inline(text.slice(3).replace(/\s+/g,' '))+'</h2>');continue;}
+    if(text.startsWith('# '))continue; /* page already has the H1 */
+    if(/^- /m.test(text)){
+      // Split into items on lines that START a bullet; wrapped lines rejoin.
+      const items=[];
+      for(const line of text.split(/\r?\n/)){
+        if(line.trimStart().startsWith('- '))items.push(line.trim().slice(2));
+        else if(items.length)items[items.length-1]+=' '+line.trim();
+        else items.push(line.trim());
+      }
+      out.push('<ul>'+items.map(i=>'<li>'+inline(i)+'</li>').join('')+'</ul>');
+      continue;
+    }
+    out.push('<p>'+inline(text.replace(/\s+/g,' '))+'</p>');
   }
-  flush();return out.join('');
+  return out.join('');
 }
 (async function(){
   try{

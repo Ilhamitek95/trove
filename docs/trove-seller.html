@@ -874,19 +874,9 @@ async function savePayoutSetup(){
     renderPayments(); renderOverview();
   }catch(e){ toast(e.message||'Could not save'); }
 }
-async function showAgreement(){
-  try{
-    const a=await TroveAPI.api('/api/legal/seller-agreement');
-    let el=$('agreeModal');
-    if(!el){ el=document.createElement('div'); el.id='agreeModal'; document.body.appendChild(el); }
-    el.innerHTML=`<div style="position:fixed;inset:0;background:rgba(38,35,33,.45);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px" onclick="$('agreeModal').style.display='none'">
-      <div style="background:#FBF6F1;max-width:640px;max-height:80vh;overflow:auto;border-radius:14px;padding:28px" onclick="event.stopPropagation()">
-        <div style="white-space:pre-wrap;font-size:13.5px;line-height:1.65;font-weight:500">${esc(a.markdown)}</div>
-        <button class="btn btn-dark" style="margin-top:14px" onclick="$('agreeModal').style.display='none'">Close</button>
-      </div></div>`;
-    el.style.display='block';
-  }catch(e){ toast('Could not load the agreement'); }
-}
+// The nicely rendered agreement lives on its own page (shared with the
+// storefront footer link) — no raw-markdown modal here.
+function showAgreement(){ window.open('seller-agreement.html','_blank','noopener'); }
 
 /* ---------------- ADMIN — weekly settlement run (house/admin only) ---------------- */
 const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
