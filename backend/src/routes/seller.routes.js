@@ -53,6 +53,8 @@ const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.pr
 router.post('/products', requireSeller, (req, res) => {
   const { name, description = '', category = 'Home', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
+  const catErr = require('../categories').categoryError(category);
+  if (catErr) return res.status(422).json({ error: catErr.message });
   const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed, ...persoCols(personalization));
@@ -63,6 +65,10 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   const p = db.prepare('SELECT * FROM products WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   const b = req.body || {};
+  if (b.category != null) {
+    const catErr = require('../categories').categoryError(b.category);
+    if (catErr) return res.status(422).json({ error: catErr.message });
+  }
   db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
     price_cents=COALESCE(?,price_cents), compare_at_cents=?, stock=COALESCE(?,stock), status=COALESCE(?,status) WHERE id=?`)
     .run(b.name, b.description, b.category, toCents(b.price),

@@ -5,7 +5,10 @@ const { hashPassword } = require('./middleware');
 
 const c = (aed) => Math.round(aed * 100);
 
-db.exec('DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders; DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;');
+db.exec(`DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM purchase_notes;
+  DELETE FROM settlement_items; DELETE FROM seller_balances; DELETE FROM settlements;
+  DELETE FROM webhook_events; DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders;
+  DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;`);
 
 const mkUser = db.prepare('INSERT INTO users (email,password_hash,name,role) VALUES (?,?,?,?)');
 const mkShop = db.prepare(`INSERT INTO shops (user_id,name,slug,bio,location,color,is_house,payout_type,payout_bank_name,payout_account_name,payout_iban)
@@ -41,7 +44,7 @@ const ember = shop('hello@embergoods.com', 'Ember Goods', 'Ember Goods', 'ember-
   'Deira, Dubai', '#F5C68A', false,
   { type: 'managed', bankName: 'Abu Dhabi Commercial Bank', accountName: 'Ember Goods Trading LLC', iban: 'AE120350000004567890123' });
 const fern = shop('hello@fernapothecary.com', 'Fern Apothecary', 'Fern Apothecary', 'fern-apothecary',
-  'Plant-based skincare and home scent, formulated in tiny batches.',
+  'Small-batch home scent — candles, room mists and botanicals. Nothing we make is applied to the skin.',
   'Masdar City, Abu Dhabi', '#C7D9AC', false,
   { type: 'managed', bankName: 'Dubai Islamic Bank', accountName: 'Fern Apothecary FZE', iban: 'AE980030001234567890123' });
 const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.', 'folio-paper',
@@ -61,6 +64,29 @@ db.prepare(`UPDATE shops SET status='pending', category='Accessories',
   WHERE id=?`).run(sable);
 mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Accessories', c(240), null, 8, 'live', 'ring1');
 
+/* ---- Two-rail supplier setup ----
+ * Approved consignment suppliers arrive with payout setup already complete
+ * (Emirates ID last-4, IBAN, seller agreement) so the settlement flow works
+ * out of the box. IBANs are encrypted when PAYOUT_ENC_KEY is present;
+ * otherwise they stay in payout_iban and the boot sweep in server.js encrypts
+ * them on the first keyed start. Loom & Folio keep their old "own Stripe"
+ * choice as tier 'connect' (no Stripe account attached — demo only, their
+ * sales credit nobody until Rail B onboarding exists).
+ */
+const pcrypto = require('./crypto');
+db.exec(`UPDATE shops SET tier='connect' WHERE payout_type='connect'`);
+const stampSetup = db.prepare(`UPDATE shops SET
+  emirates_id_last4=?, emirates_id_issue='2023-05-01', emirates_id_expiry='2033-05-01',
+  iban_masked=?, iban_encrypted=?, payout_iban=?,
+  agreement_version='v1', agreement_accepted_at=datetime('now','-21 days'), agreement_hash=''
+  WHERE id=?`);
+const SUPPLIER_IDS = { [house]: '1201', [kiln]: '4417', [ember]: '7830', [fern]: '2954' };
+for (const [shopId, last4] of Object.entries(SUPPLIER_IDS)) {
+  const s = db.prepare('SELECT payout_iban FROM shops WHERE id=?').get(shopId);
+  const enc = pcrypto.hasKey() ? pcrypto.encrypt(s.payout_iban) : null;
+  stampSetup.run(last4, pcrypto.maskIban(s.payout_iban), enc, enc ? '' : s.payout_iban, shopId);
+}
+
 const products = [
   [kiln,  'Reeded Stoneware Mug',     'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.', 'Ceramics',    c(64),  null,   38,  'live', 'mug7'],
   [house, 'The Everyday Tee',         'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.',         'Apparel',     c(95),  null,   120, 'live', 'tee4'],
@@ -72,11 +98,11 @@ const products = [
   [kiln,  'Glazed Serving Bowl',      'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.',      'Ceramics',    c(128), null,   12,  'live', 'bowl9'],
   [loom,  'Merino Watch Cap',         'Ribbed merino beanie, double-folded. Itch-free and packs flat.',                        'Apparel',     c(110), null,   44,  'live', 'cap2'],
   [ember, 'Folded Leather Wallet',    'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.',          'Accessories', c(195), null,   33,  'live', 'wallet3'],
-  [fern,  'Botanical Hand Balm',      'Shea and calendula for working hands. Sinks in fast, no greasy film.',                  'Beauty',      c(54),  null,   110, 'live', 'balm5'],
+  [fern,  'Botanical Room Mist',      'Fig leaf and green stems in a fine-mist bottle — one spray resets a room.',            'Home',        c(54),  null,   110, 'live', 'mist5'],
   [house, 'Glazed Ceramic Planter',   'House-label planter with drainage and matching saucer, in three sizes.',               'Home',        c(76),  c(95),  44,  'live', 'planter4'],
   [paper, 'Weighted Brass Clip',      "A weighted brass clip that keeps the page you're on, open.",                            'Stationery',  c(38),  null,   75,  'live', 'clip1'],
   [loom,  'Hand-Knotted Wool Throw',  'Chunky undyed throw, fringed by hand. The one everyone fights over.',                   'Home',        c(360), null,   9,   'live', 'throw7'],
-  [fern,  'Olive & Sea Salt Soap',    'Cold-process bar, cured six weeks. Gentle enough for face and hands.',                  'Beauty',      c(32),  null,   140, 'live', 'soap3'],
+  [fern,  'Fig & Vetiver Wax Melts',  'Six unscented-wick-free melts for the burner. The slow way to scent a room.',           'Home',        c(32),  null,   140, 'live', 'melt3'],
   [house, 'Combed Cotton Socks · 3',  "House-label combed-cotton socks, reinforced heel and toe. The ones you'll look for.",   'Apparel',     c(58),  null,   88,  'live', 'socks2'],
 ];
 for (const p of products) mkProd.run(...p);
@@ -96,22 +122,35 @@ const wallet = db.prepare("SELECT id, price_cents, shop_id, name FROM products W
 const demoSub = mug.price_cents + wallet.price_cents;
 const demoDelivery = demoSub >= 50000 ? 0 : 2500;
 const demoShip = JSON.stringify({ name: 'Layla Hassan', line: 'Apt 1204, Marina Gate 2', city: 'Dubai Marina, Dubai', country: 'United Arab Emirates', phone: '+971 50 123 4567' });
-const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status)
-  VALUES (?,?,?,?,?,?,?, 'aed', ?, 'paid')`).run('TRV-SEED01', layla, 'layla@email.com', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900, demoShip).lastInsertRowid;
+const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail,title_transferred_at)
+  VALUES (?,?,?,?,?,?,?, 'aed', ?, 'paid', 'consignment', datetime('now','-12 days'))`).run('TRV-SEED01', layla, 'layla@email.com', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900, demoShip).lastInsertRowid;
 const mkItem = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization) VALUES (?,?,?,?,?,?,?)');
 mkItem.run(demoOrder, mug.id, mug.shop_id, mug.name, mug.price_cents, 1, 'LH');
 mkItem.run(demoOrder, wallet.id, wallet.shop_id, wallet.name, wallet.price_cents, 1, '');
 
-// Shipments for the demo order so tracking shows on both sides:
-// Kiln already shipped with a tracking number, Ember still processing.
-const mkShip = db.prepare("INSERT INTO shipments (order_id,shop_id,status,carrier,tracking_number) VALUES (?,?,?,?,?)");
+// Supplier ledger credits for the demo purchase (normally written by the
+// payment webhook): Trove bought each supplier's items at list minus margin.
+const fees = require('./fees');
+const mkCredit = db.prepare(`INSERT INTO seller_balances (shop_id,order_id,type,amount_cents,created_at)
+  VALUES (?,?, 'credit_sale', ?, datetime('now','-12 days'))`);
+mkCredit.run(mug.shop_id, demoOrder, fees.split(mug.price_cents).net);
+mkCredit.run(wallet.shop_id, demoOrder, fees.split(wallet.price_cents).net);
+
+// Shipments for the demo order so tracking shows on both sides. Kiln's parcel
+// was delivered 9 days ago — its 7-day return window has closed, so the next
+// settlement run has an eligible credit out of the box. Ember still processing.
+const mkShip = db.prepare("INSERT INTO shipments (order_id,shop_id,status,carrier,tracking_number,delivered_at,return_window_ends_at) VALUES (?,?,?,?,?,?,?)");
 const mkEv = db.prepare("INSERT INTO shipment_events (shipment_id,status,note,created_at) VALUES (?,?,?,datetime('now',?))");
-const kilnShip = mkShip.run(demoOrder, mug.shop_id, 'shipped', 'Trove Express', 'TRVX-4471902').lastInsertRowid;
-mkEv.run(kilnShip, 'processing', 'Order received — preparing your items', '-2 days');
-mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Trove Express) · TRVX-4471902', '-1 day');
-const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '').lastInsertRowid;
-mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-2 days');
+const kilnShip = mkShip.run(demoOrder, mug.shop_id, 'delivered', 'Quiqup', 'TRVX-4471902',
+  db.prepare("SELECT datetime('now','-9 days') AS t").get().t,
+  db.prepare("SELECT datetime('now','-2 days') AS t").get().t).lastInsertRowid;
+mkEv.run(kilnShip, 'processing', 'Order received — preparing your items', '-12 days');
+mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Quiqup) · TRVX-4471902', '-10 days');
+mkEv.run(kilnShip, 'delivered', 'Delivered (confirmed by courier)', '-9 days');
+const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '', null, null).lastInsertRowid;
+mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-12 days');
 
 console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments).', products.length + 1);
-console.log('Payouts: Kiln, Ember, Fern + house = Trove-managed (weekly); Northbound Loom + Folio = connect-your-own.');
+console.log('Suppliers: house, Kiln, Ember, Fern = consignment (weekly settlement, payout setup complete); Loom + Folio = connect tier (Rail B, no Stripe account attached).');
+console.log('Kiln has one settlement-eligible credit (delivered 9 days ago, window closed).');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

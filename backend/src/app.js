@@ -132,7 +132,10 @@ function createApp() {
     serviceFeeCents: fees.SERVICE_FEE_CENTS,
     deliveryFeeCents: fees.DELIVERY_FEE_CENTS,
     freeDeliveryThresholdCents: fees.FREE_DELIVERY_THRESHOLD_CENTS,
-    platformFeePercent: fees.PLATFORM_FEE_PERCENT,
+    commissionPercent: fees.COMMISSION_PERCENT,
+    platformFeePercent: fees.PLATFORM_FEE_PERCENT, // deprecated alias of commissionPercent
+    railBEnabled: require('./config').railBEnabled(),
+    vatRegistered: require('./config').vatRegistered(),
     serviceAreas: require('./service-area').SERVICE_AREAS,
   }));
   app.use('/api/auth', require('./routes/auth.routes'));

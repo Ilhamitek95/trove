@@ -55,7 +55,7 @@
   async function config() {
     if (_config) return _config;
     try { _config = await api('/api/config'); }
-    catch (_) { _config = { currency: 'aed', serviceFeeCents: 900, deliveryFeeCents: 2500, freeDeliveryThresholdCents: 50000, platformFeePercent: 10 }; }
+    catch (_) { _config = { currency: 'aed', serviceFeeCents: 900, deliveryFeeCents: 2500, freeDeliveryThresholdCents: 50000, commissionPercent: 20, platformFeePercent: 20 }; }
     return _config;
   }
 

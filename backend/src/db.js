@@ -179,4 +179,8 @@ CREATE INDEX IF NOT EXISTS idx_shipments_shop ON shipments(shop_id);
 CREATE INDEX IF NOT EXISTS idx_shipevents_ship ON shipment_events(shipment_id);
 `);
 
+// Versioned migrations run last, so they always see the full baseline schema
+// (fresh databases included). See src/migrations/index.js.
+require('./migrations').run(db);
+
 module.exports = db;

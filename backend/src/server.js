@@ -76,6 +76,23 @@ if (process.env.DEMO_PASSWORD) {
   if (moved) console.log(`service area: relocated ${moved} demo shop field(s) to Dubai/Abu Dhabi`);
 }
 
+// Bank-detail encryption sweep: once PAYOUT_ENC_KEY is set, any IBAN still
+// stored in plaintext (pre-encryption rows, or a seed run without the key) is
+// encrypted and masked, and the plaintext column cleared. Runs every boot and
+// is a no-op once everything is swept. NOT a run-once migration on purpose —
+// a keyless boot must not mark it done.
+{
+  const pcrypto = require('./crypto');
+  if (pcrypto.hasKey()) {
+    const rows = db.prepare("SELECT id, payout_iban FROM shops WHERE payout_iban != '' AND iban_encrypted IS NULL").all();
+    const sweep = db.prepare("UPDATE shops SET iban_encrypted=?, iban_masked=?, payout_iban='' WHERE id=?");
+    for (const r of rows) sweep.run(pcrypto.encrypt(r.payout_iban), pcrypto.maskIban(r.payout_iban), r.id);
+    if (rows.length) console.log(`payout crypto: encrypted ${rows.length} stored IBAN(s)`);
+  } else if (db.prepare("SELECT 1 FROM shops WHERE payout_iban != '' LIMIT 1").get()) {
+    console.warn('payout crypto: PAYOUT_ENC_KEY not set — supplier IBANs remain in plaintext until it is');
+  }
+}
+
 const { createApp } = require('./app');
 const { getStripe } = require('./stripe');
 
