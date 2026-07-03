@@ -154,28 +154,41 @@ router.patch('/payout', requireSeller, (req, res) => {
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id) });
 });
 
-// Earnings: the unsettled balance Trove owes a managed shop, plus payout history.
-// (Connect shops are paid per sale by Stripe, so their pending balance is zero.)
-router.get('/payouts', requireSeller, (req, res) => {
-  const managed = req.shop.payout_type === 'managed';
-  const out = managed
-    ? db.prepare(`SELECT COALESCE(SUM(oi.price_cents * oi.qty),0) AS gross, COUNT(oi.id) AS items
-         FROM order_items oi JOIN orders o ON o.id = oi.order_id
-         WHERE oi.shop_id=? AND oi.payout_id IS NULL AND oi.transfer_id IS NULL
-           AND o.status IN ('paid','fulfilled')`).get(req.shop.id)
-    : { gross: 0, items: 0 };
-  const { fee, net } = fees.split(out.gross);
+// Supplier money view: pending (return window still open), payable (next
+// settlement run — may be negative after refunds), settled to date, and the
+// settlement history with purchase-note downloads. Every figure derives from
+// the single eligibility rule in src/settlement.js.
+router.get('/settlements', requireSeller, (req, res) => {
+  const settlement = require('../settlement');
+  const bal = settlement.balances(req.shop.id);
   const history = db.prepare(`
-    SELECT id, amount_cents, gross_cents, fee_cents, item_count, status, created_at, paid_at
-    FROM payouts WHERE shop_id=? ORDER BY created_at DESC, id DESC`).all(req.shop.id);
-  const paidTotal = db.prepare("SELECT COALESCE(SUM(amount_cents),0) AS t FROM payouts WHERE shop_id=? AND status='paid'").get(req.shop.id).t;
+    SELECT si.id, si.amount_cents, si.credit_cents, si.debit_cents, si.item_count,
+           si.bank_reference, st.run_date, st.status, st.paid_at,
+           (SELECT pn.id FROM purchase_notes pn WHERE pn.settlement_item_id = si.id ORDER BY pn.id DESC LIMIT 1) AS note_id
+    FROM settlement_items si JOIN settlements st ON st.id = si.settlement_id
+    WHERE si.shop_id=? ORDER BY si.id DESC`).all(req.shop.id);
+  const legacyPaid = db.prepare("SELECT COALESCE(SUM(amount_cents),0) AS t FROM payouts WHERE shop_id=? AND status='paid'").get(req.shop.id).t;
   res.json({
-    payoutType: req.shop.payout_type,
-    feePercent: fees.PLATFORM_FEE_PERCENT,
-    pending: { grossCents: out.gross, feeCents: fee, netCents: net, itemCount: out.items },
-    paidTotalCents: paidTotal,
-    history,
+    tier: req.shop.tier,
+    commissionPercent: fees.COMMISSION_PERCENT,
+    payoutSetupComplete: settlement.payoutSetupComplete(req.shop),
+    pendingCents: bal.pendingCents,
+    payableCents: bal.payableCents,
+    settledCents: bal.settledCents + legacyPaid,
+    history: history.map((h) => ({
+      id: h.id, runDate: h.run_date, status: h.status, paidAt: h.paid_at,
+      amountCents: h.amount_cents, creditCents: h.credit_cents, debitCents: h.debit_cents,
+      itemCount: h.item_count, bankReference: h.bank_reference,
+      purchaseNoteId: h.note_id || null,
+    })),
   });
+});
+
+// GET /api/seller/purchase-notes/:id → a supplier downloads their own note.
+router.get('/purchase-notes/:id', requireSeller, (req, res) => {
+  const note = db.prepare('SELECT * FROM purchase_notes WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
+  if (!note) return res.status(404).json({ error: 'Not found' });
+  res.sendFile(require('path').resolve(note.html_path));
 });
 
 /* ---------------- Stripe Connect (Express) ---------------- */

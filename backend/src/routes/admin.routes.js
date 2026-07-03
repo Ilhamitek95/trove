@@ -1,20 +1,17 @@
 'use strict';
 /**
- * Admin — the weekly payout run for MANAGED shops.
+ * Admin — marketplace oversight and the weekly settlement run.
  *
- * Managed shops don't connect their own Stripe; Trove collects their sales and
- * pays them out by bank transfer on a weekly cadence. These endpoints show what
- * is owed, batch it into payout records (locking those sales so they're never
- * paid twice), and let the admin mark a batch as sent once the transfer is done.
- *
- * A sale is "owed to a managed shop" when its order is paid, it has NOT already
- * been transferred via Stripe Connect (transfer_id IS NULL), and it has NOT yet
- * been swept into a payout batch (payout_id IS NULL).
+ * On the consignment rail Trove purchases each sold item from its supplier
+ * (list price minus the purchase margin) and resells it to the buyer. What
+ * Trove owes suppliers accrues on the seller_balances ledger; once a parcel
+ * is delivered and its 7-day return window closes, the credit becomes payable
+ * and the weekly settlement run (src/settlement.js) batches it into a bank
+ * transfer with self-billed purchase documentation.
  */
 const express = require('express');
 const db = require('../db');
 const { requireAdmin } = require('../middleware');
-const fees = require('../fees');
 
 const router = express.Router();
 
@@ -85,73 +82,72 @@ router.get('/orders', requireAdmin, (_req, res) => {
   })) });
 });
 
-/* ---------------- Weekly managed payouts ---------------- */
+/* ---------------- Weekly settlements (consignment purchases) ----------------
+ * The old order_items sweep (payouts/preview + payouts/run) is retired: money
+ * owed to suppliers now lives on the seller_balances ledger and is settled by
+ * src/settlement.js. Old payout batches stay readable below for history.    */
 
-const OUTSTANDING = `
-  SELECT s.id AS shop_id, s.name, s.slug,
-         s.payout_bank_name, s.payout_account_name, s.payout_iban,
-         SUM(oi.price_cents * oi.qty) AS gross, COUNT(oi.id) AS item_count
-  FROM order_items oi
-  JOIN orders o ON o.id = oi.order_id
-  JOIN shops  s ON s.id = oi.shop_id
-  WHERE s.payout_type = 'managed'
-    AND oi.payout_id IS NULL
-    AND oi.transfer_id IS NULL
-    AND o.status IN ('paid', 'fulfilled')
-  GROUP BY s.id
-  HAVING gross > 0`;
+const settlement = require('../settlement');
 
-function withSplit(row) {
-  const { fee, net } = fees.split(row.gross);
-  return {
-    shopId: row.shop_id,
-    name: row.name,
-    slug: row.slug,
-    bank: { name: row.payout_bank_name, accountName: row.payout_account_name, iban: row.payout_iban },
-    grossCents: row.gross,
-    feeCents: fee,
-    netCents: net,
-    itemCount: row.item_count,
-  };
-}
-
-// GET /api/admin/payouts/preview → who is owed what this period, before running.
-router.get('/payouts/preview', requireAdmin, (_req, res) => {
-  const shops = db.prepare(OUTSTANDING).all().map(withSplit);
-  res.json({
-    shops,
-    totalNetCents: shops.reduce((s, r) => s + r.netCents, 0),
-    feePercent: fees.PLATFORM_FEE_PERCENT,
-  });
+// GET /api/admin/settlements/preview → what the next run would pay, and who
+// is held back (payout setup incomplete / netted negative → carry forward).
+router.get('/settlements/preview', requireAdmin, (_req, res) => {
+  res.json(settlement.preview());
 });
 
-// POST /api/admin/payouts/run → batch each shop's outstanding balance into a
-// payout record and lock the underlying sales to it. Idempotent: a second run
-// with nothing new outstanding simply creates nothing.
-router.post('/payouts/run', requireAdmin, (_req, res) => {
-  const created = db.transaction(() => {
-    const out = [];
-    for (const r of db.prepare(OUTSTANDING).all().map(withSplit)) {
-      const itemIds = db.prepare(`
-        SELECT oi.id FROM order_items oi JOIN orders o ON o.id = oi.order_id
-        WHERE oi.shop_id = ? AND oi.payout_id IS NULL AND oi.transfer_id IS NULL
-          AND o.status IN ('paid', 'fulfilled')`).all(r.shopId).map((x) => x.id);
-      if (!itemIds.length) continue;
-      const info = db.prepare(`INSERT INTO payouts
-          (shop_id, amount_cents, gross_cents, fee_cents, item_count, status, bank_snapshot)
-        VALUES (?,?,?,?,?, 'pending', ?)`)
-        .run(r.shopId, r.netCents, r.grossCents, r.feeCents, r.itemCount, JSON.stringify(r.bank));
-      const pid = info.lastInsertRowid;
-      const mark = db.prepare('UPDATE order_items SET payout_id=? WHERE id=?');
-      for (const id of itemIds) mark.run(pid, id);
-      out.push({ payoutId: pid, ...r });
-    }
-    return out;
-  })();
-  res.json({ created, count: created.length });
+// POST /api/admin/settlements/run { runDate? } → create the draft settlement.
+router.post('/settlements/run', requireAdmin, (req, res) => {
+  const result = settlement.run(req.body?.runDate);
+  if (!result) return res.json({ created: false });
+  res.status(201).json({ created: true, ...result });
 });
 
-// GET /api/admin/payouts → full batch history.
+// GET /api/admin/settlements → run history with per-supplier items.
+router.get('/settlements', requireAdmin, (_req, res) => {
+  const sts = db.prepare('SELECT * FROM settlements ORDER BY id DESC').all();
+  const itemsStmt = db.prepare(`SELECT si.*, s.name AS shop_name, s.slug AS shop_slug,
+      (SELECT pn.id FROM purchase_notes pn WHERE pn.settlement_item_id = si.id ORDER BY pn.id DESC LIMIT 1) AS note_id
+    FROM settlement_items si JOIN shops s ON s.id=si.shop_id WHERE si.settlement_id=? ORDER BY si.id`);
+  res.json({ settlements: sts.map((st) => ({
+    id: st.id, runDate: st.run_date, status: st.status, totalCents: st.total_cents,
+    createdAt: st.created_at, exportedAt: st.exported_at, paidAt: st.paid_at,
+    items: itemsStmt.all(st.id).map((i) => ({
+      id: i.id, shopId: i.shop_id, shopName: i.shop_name, shopSlug: i.shop_slug,
+      amountCents: i.amount_cents, creditCents: i.credit_cents, debitCents: i.debit_cents,
+      itemCount: i.item_count, bankReference: i.bank_reference,
+      bank: i.bank_snapshot ? JSON.parse(i.bank_snapshot) : null,
+      purchaseNoteId: i.note_id || null,
+    })),
+  })) });
+});
+
+// GET /api/admin/settlements/:id/export.csv → the bank-upload file. IBANs are
+// decrypted here and only here, straight into the response.
+router.get('/settlements/:id/export.csv', requireAdmin, (req, res, next) => {
+  try {
+    const csv = settlement.exportCsv(Number(req.params.id));
+    res.type('text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="trove-settlement-${req.params.id}.csv"`);
+    res.send(csv);
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/settlements/:id/paid → after the bank transfers went out.
+router.post('/settlements/:id/paid', requireAdmin, (req, res, next) => {
+  try {
+    const st = settlement.markPaid(Number(req.params.id));
+    res.json({ ok: true, settlement: { id: st.id, status: st.status, paidAt: st.paid_at } });
+  } catch (e) { next(e); }
+});
+
+// GET /api/admin/purchase-notes/:id → stream a self-billed purchase note.
+router.get('/purchase-notes/:id', requireAdmin, (req, res) => {
+  const note = db.prepare('SELECT * FROM purchase_notes WHERE id=?').get(req.params.id);
+  if (!note) return res.status(404).json({ error: 'Not found' });
+  res.sendFile(require('path').resolve(note.html_path));
+});
+
+// GET /api/admin/payouts → LEGACY batch history (pre-ledger weekly payouts).
 router.get('/payouts', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
     SELECT p.*, s.name AS shop_name, s.slug AS shop_slug

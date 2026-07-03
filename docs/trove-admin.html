@@ -148,7 +148,7 @@
 <script src="api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, BATCHES=[];
+let ME=null, STATS=null, SHOPS=[], ORDERS=[], PREVIEW=null, SETTLEMENTS=[], BATCHES=[];
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
@@ -183,7 +183,8 @@ async function reload(){
   reloadPayouts();
 }
 async function reloadPayouts(){
-  try{ PREVIEW=await TroveAPI.api('/api/admin/payouts/preview'); }catch(_){ PREVIEW={shops:[],totalNetCents:0,feePercent:10}; }
+  try{ PREVIEW=await TroveAPI.api('/api/admin/settlements/preview'); }catch(_){ PREVIEW={eligible:[],excluded:[],totalNetCents:0}; }
+  try{ SETTLEMENTS=(await TroveAPI.api('/api/admin/settlements')).settlements; }catch(_){ SETTLEMENTS=[]; }
   try{ BATCHES=(await TroveAPI.api('/api/admin/payouts')).payouts; }catch(_){ BATCHES=[]; }
   renderPayouts();
 }
@@ -295,45 +296,77 @@ function renderOrders(){
     </tr>`).join(''):`<tr><td colspan="7" class="empty">No orders yet.</td></tr>`}</tbody>`;
 }
 
-/* ---------------- payouts ---------------- */
+/* ---------------- settlements (supplier purchases) ---------------- */
+const SETTLE_PILL={draft:'pending',exported:'pending',paid:'approved'};
+const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
 function renderPayouts(){
-  const owed=PREVIEW.shops||[];
+  const owed=PREVIEW.eligible||[], held=PREVIEW.excluded||[];
   $('payoutsWrap').innerHTML=`
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
-        <div><h3>This week's payouts</h3>
-          <div class="hint" style="margin:0">${owed.length} shop${owed.length===1?'':'s'} to pay · ${money(PREVIEW.totalNetCents)} total</div></div>
-        <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runPayouts()">Run weekly payout</button>
+        <div><h3>Next settlement run</h3>
+          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 7-day return window has closed</div></div>
+        <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()">Run settlement</button>
       </div>
-      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Shop</th><th>Pay to</th><th>Sales</th><th>Fee</th><th>To pay</th></tr></thead>
+      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th></tr></thead>
         <tbody>${owed.map(s=>`<tr>
           <td style="font-weight:700">${esc(s.name)}</td>
           <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}`:'<span style="color:var(--coral-deep);font-weight:700">no bank details</span>'}</td>
-          <td>${money(s.grossCents)}</td>
-          <td style="color:var(--muted)">−${money(s.feeCents)}</td>
+          <td>${money(s.creditCents)}</td>
+          <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
           <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(s.netCents)}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div class="empty" style="margin-top:8px">Nothing outstanding — every managed sale has been settled.</div>`}
+       :`<div class="empty" style="margin-top:8px">Nothing payable — no purchase has cleared its return window since the last run.</div>`}
+      ${held.length?`<div class="hint" style="margin:12px 2px 0">Held back: ${held.map(h=>`<strong>${esc(h.name)}</strong> (${money(h.netCents)} — ${EXCLUDE_REASON[h.reason]||h.reason})`).join(' · ')}</div>`:''}
     </div>
     <div class="card" style="padding:0">
-      <div style="padding:20px 22px 4px"><h3>All payout batches</h3></div>
-      ${BATCHES.length?`<div style="padding:0 10px 10px"><table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+      <div style="padding:20px 22px 4px"><h3>Settlement history</h3></div>
+      ${SETTLEMENTS.length?`<div style="padding:0 10px 10px">${SETTLEMENTS.map(st=>`
+        <div style="padding:12px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <strong>Run ${st.runDate}</strong>
+            <span class="pill ${SETTLE_PILL[st.status]||'pending'}">${st.status}</span>
+            <span style="font-family:'Cormorant';font-size:17px;font-weight:600">${money(st.totalCents)}</span>
+            <span style="flex:1"></span>
+            <a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(reloadPayouts,1200)">Download bank CSV</a>
+            ${st.status!=='paid'?`<button class="btn btn-coral" onclick="markSettlementPaid(${st.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">paid ${fmtDate(st.paidAt)}</span>`}
+          </div>
+          <table class="tbl" style="margin-top:10px"><thead><tr><th>Supplier</th><th>Reference</th><th>Amount</th><th></th></tr></thead>
+            <tbody>${st.items.map(i=>`<tr>
+              <td style="font-weight:700">${esc(i.shopName)}</td>
+              <td style="color:var(--muted);font-size:12px">${esc(i.bankReference)}</td>
+              <td style="font-family:'Cormorant';font-size:15px;font-weight:600">${money(i.amountCents)}</td>
+              <td style="text-align:right">${i.purchaseNoteId?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
+            </tr>`).join('')}</tbody></table>
+        </div>`).join('')}</div>`
+       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
+    </div>
+    ${BATCHES.length?`<div class="card" style="padding:0">
+      <div style="padding:20px 22px 4px"><h3>Legacy payout batches</h3><div class="hint">From before the settlement ledger.</div></div>
+      <div style="padding:0 10px 10px"><table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
         <tbody>${BATCHES.map(b=>`<tr>
           <td style="font-weight:700">${fmtDate(b.createdAt)}</td>
           <td>${esc(b.shopName)}</td>
           <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(b.amountCents)}</td>
           <td><span class="pill ${b.status==='paid'?'approved':'pending'}">${b.status}</span></td>
-          <td style="text-align:right">${b.status==='pending'?`<button class="btn btn-ghost" onclick="markPaid(${b.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">${fmtDate(b.paidAt)}</span>`}</td>
-        </tr>`).join('')}</tbody></table></div>`
-       :`<div class="empty" style="padding:8px 22px 22px">No payout batches yet.</div>`}
-    </div>`;
+          <td style="text-align:right">${b.status==='pending'?`<button class="btn btn-ghost" onclick="markLegacyPaid(${b.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">${fmtDate(b.paidAt)}</span>`}</td>
+        </tr>`).join('')}</tbody></table></div>
+    </div>`:''}`;
 }
-async function runPayouts(){
-  if(!confirm("Run this week's payout? This locks the listed sales into payout batches so they can't be paid twice."))return;
-  try{ const r=await TroveAPI.api('/api/admin/payouts/run',{method:'POST'}); toast(`Created ${r.count} payout${r.count===1?'':'s'}`); reloadPayouts(); }
-  catch(e){ toast(e.message||'Could not run payouts'); }
+async function runSettlement(){
+  if(!confirm('Run the settlement now? This sweeps every purchase whose return window has closed into a draft for review.'))return;
+  try{
+    const r=await TroveAPI.api('/api/admin/settlements/run',{method:'POST',body:{}});
+    toast(r.created?`Settlement drafted — ${r.items.length} supplier${r.items.length===1?'':'s'}, ${money(r.totalCents)}`:'Nothing payable right now');
+    reloadPayouts();
+  }catch(e){ toast(e.message||'Could not run the settlement'); }
 }
-async function markPaid(id){
+async function markSettlementPaid(id){
+  if(!confirm('Mark this settlement as paid? Do this after the bank transfers have gone out — it writes the payout ledger and generates the purchase notes.'))return;
+  try{ await TroveAPI.api('/api/admin/settlements/'+id+'/paid',{method:'POST'}); toast('Settlement marked paid'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not mark as paid'); }
+}
+async function markLegacyPaid(id){
   try{ await TroveAPI.api('/api/admin/payouts/'+id+'/paid',{method:'POST'}); toast('Marked as paid'); reloadPayouts(); }
   catch(e){ toast(e.message||'Could not mark as paid'); }
 }

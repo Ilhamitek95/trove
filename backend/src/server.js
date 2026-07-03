@@ -99,6 +99,28 @@ const { getStripe } = require('./stripe');
 const app = createApp();
 const PORT = process.env.PORT || 4242;
 
+/* ---------------- Scheduled jobs (single process, guarded) ---------------- */
+if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
+  const cron = require('node-cron');
+  let settling = false;
+  // Weekly settlement run — Tuesdays 06:00 Dubai time. Creates the DRAFT only;
+  // an admin reviews, exports the bank CSV, and marks it paid in the panel.
+  cron.schedule('0 6 * * 2', () => {
+    if (settling) return;
+    settling = true;
+    try {
+      const result = require('./settlement').run();
+      console.log(result
+        ? `weekly settlement #${result.settlementId}: ${result.items.length} supplier(s), AED ${(result.totalCents / 100).toFixed(2)}`
+        : 'weekly settlement: nothing payable this week');
+    } catch (e) {
+      console.error('weekly settlement failed:', e);
+    } finally {
+      settling = false;
+    }
+  }, { timezone: 'Asia/Dubai' });
+}
+
 app.listen(PORT, () => {
   console.log(`trove running on http://localhost:${PORT}`);
   console.log(`  • storefront: http://localhost:${PORT}/trove.html`);

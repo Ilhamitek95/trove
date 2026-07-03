@@ -457,8 +457,8 @@ let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#A98B7D',bio:'',payoutT
 let products=[];
 let orders=[];
 let ME=null;
-let PAYOUTS={payoutType:'managed',feePercent:10,pending:{grossCents:0,feeCents:0,netCents:0,itemCount:0},paidTotalCents:0,history:[]};
-const FEE=0.10;
+let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[]};
+const feePct=()=>SETTLE.commissionPercent||20;
 let editingId=null, drawerStatus='live';
 
 /* ---------------- HELPERS ---------------- */
@@ -480,7 +480,7 @@ function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',status:s.status||'approved',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
-    bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.payout_iban||''}};
+    bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.payout_iban||s.iban_masked||''}};
   storeColor=SHOP.color;
   $('sideShop').textContent=SHOP.name;
   if(SHOP.image){$('sideAv').style.background=`center/cover no-repeat url("${SHOP.image}")`;$('sideAv').textContent='';}
@@ -520,14 +520,13 @@ function renderOverview(){
   const drafts=products.filter(p=>p.status==='draft').length;
   const revenue=orders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+(o.itemTotal||0),0);
   const sc=SHOP.stripeStatus;
-  const managed=(PAYOUTS.payoutType||SHOP.payoutType)==='managed';
-  const feePct=PAYOUTS.feePercent||10;
-  const net=managed ? (PAYOUTS.pending.netCents/100) : revenue*(1-FEE);
+  const managed=SETTLE.tier!=='connect';
+  const net=managed ? (SETTLE.payableCents/100) : revenue*(1-feePct()/100);
   $('stRev').textContent=aed(revenue);
   $('stOrders').textContent=new Set(orders.map(o=>o.order&&o.order.publicId)).size;
   $('stProducts').textContent=live;
   $('stPayout').textContent=aed(net);
-  $('stPayoutSub').textContent=managed ? ('after '+feePct+'% fee') : (sc.chargesEnabled?('after '+feePct+'% fee'):'connect Stripe');
+  $('stPayoutSub').textContent=managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
   if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
@@ -539,8 +538,8 @@ function renderOverview(){
   bars.innerHTML='<span style="color:var(--muted);font-size:13px;font-weight:600">Sales analytics are coming soon</span>';
   $('blabels').innerHTML='';
   $('poAvail').textContent=aed(net);
-  $('poDate').textContent=managed ? 'Weekly · by Trove' : (sc.payoutsEnabled?'On your Stripe schedule':'—');
-  if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Trove' : 'Your Stripe schedule';
+  $('poDate').textContent=managed ? 'Tuesdays · by Trove' : (sc.payoutsEnabled?'On your Stripe schedule':'—');
+  if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Tuesdays' : 'Your Stripe schedule';
   $('ovOrders').innerHTML = orders.length
     ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
         <td style="font-weight:700">${o.order?o.order.publicId:''}</td><td>${esc(o.order&&o.order.email)}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
@@ -653,9 +652,8 @@ function shipAddress(o){
 function renderOrders(){
   const wrap=$('orderList');
   if(!orders.length){ wrap.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">No orders yet. When a shopper buys one of your pieces, it'll appear here ready to fulfil.</div>`; return; }
-  const feePct=(PAYOUTS&&PAYOUTS.feePercent)||10;
   wrap.innerHTML=orders.map(o=>{
-    const gross=o.itemTotal||0, fee=gross*feePct/100, net=gross-fee;
+    const gross=o.itemTotal||0, fee=gross*feePct()/100, net=gross-fee;
     const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
     const items=(o.items||[]).map(i=>`<div class="sc-li">
         <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#A98B7D')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
@@ -676,9 +674,9 @@ function renderOrders(){
       <div class="sc-sec-label">${units} item${units===1?'':'s'} in this parcel</div>
       <div>${items}</div>
       <div class="sc-earn">
-        <div class="e"><span class="k">Item total</span><span class="val">${aed(gross)}</span></div>
-        <div class="e"><span class="k">Trove fee (${feePct}%)</span><span class="val">−${aed(fee)}</span></div>
-        <div class="e net"><span class="k">You receive</span><span class="val">${aed(net)}</span></div>
+        <div class="e"><span class="k">List price total</span><span class="val">${aed(gross)}</span></div>
+        <div class="e"><span class="k">Trove margin (${feePct()}%)</span><span class="val">−${aed(fee)}</span></div>
+        <div class="e net"><span class="k">Your purchase price</span><span class="val">${aed(net)}</span></div>
       </div>
       <div class="sc-divider"></div>
       <div class="sc-sec-label">Fulfilment</div>
@@ -742,46 +740,35 @@ function reviewBannerHTML(){
 }
 function bannerHTML(managed, sc){
   if(managed){
-    return (SHOP.bank && SHOP.bank.iban) ? '' :
+    return (SETTLE.payoutSetupComplete || (SHOP.bank && SHOP.bank.iban)) ? '' :
       `<div class="banner"><div class="bi" style="background:var(--coral)">T</div>
-        <div><h4>Add your bank details</h4><p>Tell Trove where to send your weekly payouts.</p></div>
-        <button class="btn btn-coral" onclick="go('payments')">Add bank details</button></div>`;
+        <div><h4>Finish your payout setup</h4><p>Add your bank details so Trove can pay for the pieces it buys from you — until then you're left out of the weekly settlement run.</p></div>
+        <button class="btn btn-coral" onclick="go('payments')">Set up payouts</button></div>`;
   }
   return sc.chargesEnabled ? '' :
     `<div class="banner"><div class="bi">S</div>
-      <div><h4>Connect Stripe to get paid</h4><p>Connect a Stripe account to receive payouts for your sales.</p></div>
-      <button class="btn btn-stripe" onclick="go('payments')">Connect with Stripe</button></div>`;
+      <div><h4>Finish your Stripe onboarding</h4><p>Your shop is on the direct rail — finish Stripe onboarding to receive per-sale payouts.</p></div>
+      <button class="btn btn-stripe" onclick="go('payments')">Continue setup</button></div>`;
 }
 
 function renderPayments(){
   const v=$('view-payments');
-  const type=PAYOUTS.payoutType||SHOP.payoutType||'managed';
-  const choose=`
-    <div class="pay-choose">
-      <div class="opt ${type==='managed'?'on':''}" onclick="setPayoutType('managed')">
-        <div class="hd"><span class="dot"></span><h4>Trove pays me weekly</h4></div>
-        <p>Trove collects your sales and sends the money straight to your bank every week. No Stripe account, no business setup — just your bank details.</p>
-        <div class="tag">Simplest · recommended</div>
-      </div>
-      <div class="opt ${type==='connect'?'on':''}" onclick="setPayoutType('connect')">
-        <div class="hd"><span class="dot"></span><h4>Connect my own Stripe</h4></div>
-        <p>Link your own Stripe account and get paid automatically on every sale. Best if you already run your own business.</p>
-        <div class="tag">Instant per-sale payouts</div>
-      </div>
-    </div>`;
-  v.innerHTML = choose + (type==='managed' ? managedPayoutUI() : renderConnectUI(SHOP.stripeStatus));
+  v.innerHTML = SETTLE.tier==='connect' ? renderConnectUI(SHOP.stripeStatus) : consignmentPayoutUI();
 }
 
-function managedPayoutUI(){
-  const p=PAYOUTS, pend=p.pending||{netCents:0,itemCount:0}, b=SHOP.bank||{}, hasBank=!!b.iban, hist=p.history||[];
+const SETTLE_STATUS_PILL=(st)=>st==='paid'?'fulfilled':'new';
+function consignmentPayoutUI(){
+  const s=SETTLE, b=SHOP.bank||{}, hasBank=!!(b.iban)||s.payoutSetupComplete, hist=s.history||[];
   return `
     <div class="pay-grid2">
       <div class="card">
-        <div class="up">Your balance</div>
-        <div class="bal">${money(pend.netCents)}</div>
-        <div class="bal-sub">${pend.itemCount?`${pend.itemCount} sale${pend.itemCount===1?'':'s'} waiting · `:''}after ${p.feePercent||10}% Trove fee</div>
-        <div class="fee-row"><span class="muted">Next payout</span><span>Weekly · by Trove</span></div>
-        <div class="fee-row"><span class="muted">Paid out so far</span><span>${money(p.paidTotalCents)}</span></div>
+        <div class="up">Your money</div>
+        <div class="bal">${money(s.payableCents)}</div>
+        <div class="bal-sub">${s.payableCents<0?'refunds carried forward — nets against your next purchases':'ready for the next settlement run'}</div>
+        <div class="fee-row"><span class="muted">In the 7-day return window</span><span>${money(s.pendingCents)}</span></div>
+        <div class="fee-row"><span class="muted">Settled to date</span><span>${money(s.settledCents)}</span></div>
+        <div class="fee-row"><span class="muted">Settlement runs</span><span>Tuesdays · by Trove</span></div>
+        <div class="fee-row"><span class="muted">Purchase price</span><span>your list price − ${s.commissionPercent}%</span></div>
         ${hasBank?'':`<div class="warn">Add your bank details so Trove can pay you →</div>`}
       </div>
       <div class="card">
@@ -790,18 +777,21 @@ function managedPayoutUI(){
         <div class="field"><label>Bank</label><input id="bkBank" value="${esc(b.name)}" placeholder="e.g. Emirates NBD"></div>
         <div class="field"><label>IBAN</label><input id="bkIban" value="${esc(b.iban)}" placeholder="AE…"></div>
         <button class="btn btn-dark" onclick="saveBank()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save bank details</button>
+        <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you each Tuesday once the buyer's 7-day return window has closed.</div>
       </div>
     </div>
     <div class="card" style="padding:0">
-      <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">Payout history</h3></div>
-      ${hist.length?`<table class="tbl"><thead><tr><th>Date</th><th>Sales</th><th>Amount</th><th>Status</th></tr></thead>
+      <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">Settlement history</h3></div>
+      ${hist.length?`<table class="tbl"><thead><tr><th>Run</th><th>Purchases</th><th>Refund adj.</th><th>Amount</th><th>Status</th><th></th></tr></thead>
         <tbody>${hist.map(h=>`<tr>
-          <td style="font-weight:700">${fmtDate(h.created_at)}</td>
-          <td style="color:var(--muted)">${h.item_count} item${h.item_count===1?'':'s'}</td>
-          <td style="font-family:Cormorant;font-size:17px;font-weight:600">${money(h.amount_cents)}</td>
-          <td><span class="order-pill ${h.status==='paid'?'fulfilled':'new'}">${h.status==='paid'?'paid':'pending'}</span></td>
+          <td style="font-weight:700">${fmtDate(h.runDate)}</td>
+          <td style="color:var(--muted)">${h.itemCount} order${h.itemCount===1?'':'s'} · ${money(h.creditCents)}</td>
+          <td style="color:var(--muted)">${h.debitCents?money(h.debitCents):'—'}</td>
+          <td style="font-family:Cormorant;font-size:17px;font-weight:600">${money(h.amountCents)}</td>
+          <td><span class="order-pill ${SETTLE_STATUS_PILL(h.status)}">${h.status==='paid'?'paid':'processing'}</span></td>
+          <td style="text-align:right">${h.purchaseNoteId?`<a class="btn btn-ghost btn-sm" href="${TroveAPI.base}/api/seller/purchase-notes/${h.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No payouts yet. Your first weekly payout from Trove will appear here.</div>`}
+       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlements yet. Once a delivered order clears its 7-day return window, it lands in the next Tuesday run.</div>`}
     </div>`;
 }
 
@@ -814,7 +804,7 @@ function renderConnectUI(sc){
       <div class="connect-pts">
         <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div><h5>Direct payouts</h5><span>To your bank</span></div>
         <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z"/></svg></div><h5>Secure</h5><span>Stripe-hosted</span></div>
-        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h5>Flat ${PAYOUTS.feePercent||10}%</h5><span>No hidden fees</span></div>
+        <div class="cp"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h5>Flat ${feePct()}%</h5><span>No hidden fees</span></div>
       </div>
       <button class="btn btn-stripe" id="connectBtn" style="padding:15px 34px" onclick="connectStripe()">${sc.connected?'Continue onboarding':'Connect with Stripe'}</button>
       <div class="demo-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>You'll be taken to Stripe's secure onboarding.</div>
@@ -830,82 +820,83 @@ function renderConnectUI(sc){
       <div class="fee-row"><span class="muted">Account</span><span>${acct}</span></div>
       <div class="fee-row"><span class="muted">Accept charges</span><span>${sc.chargesEnabled?'Enabled':'Pending'}</span></div>
       <div class="fee-row"><span class="muted">Payouts</span><span>${sc.payoutsEnabled?'Enabled':'Pending'}</span></div>
-      <div class="fee-row"><span>Platform fee</span><span>${PAYOUTS.feePercent||10}% per sale</span></div>
+      <div class="fee-row"><span>Trove margin</span><span>${feePct()}% per sale</span></div>
     </div>
     <p style="color:var(--muted);font-size:13px;font-weight:600;margin-top:14px">Your balance, payout schedule and statements live in your Stripe dashboard.</p>`;
 }
 
 async function reloadPayouts(){
-  try{ PAYOUTS=await TroveAPI.api('/api/seller/payouts'); }catch(_){}
-}
-async function setPayoutType(t){
-  if((PAYOUTS.payoutType||SHOP.payoutType)===t) return;
-  try{
-    const {shop}=await TroveAPI.api('/api/seller/payout',{method:'PATCH',body:{payoutType:t}});
-    SHOP.payoutType=shop.payout_type;
-    await reloadPayouts();
-    toast(t==='managed'?'Trove will pay you weekly':'Switched to your own Stripe');
-    renderPayments(); renderOverview();
-  }catch(e){ toast(e.message||'Could not switch'); }
+  try{ SETTLE=await TroveAPI.api('/api/seller/settlements'); }catch(_){}
 }
 async function saveBank(){
   const body={ accountName:$('bkName').value.trim(), bankName:$('bkBank').value.trim(), iban:$('bkIban').value.trim().replace(/\s+/g,'') };
   if(!body.iban){ toast('Enter your IBAN'); return; }
   try{
     const {shop}=await TroveAPI.api('/api/seller/payout',{method:'PATCH',body});
-    SHOP.bank={ name:shop.payout_bank_name, accountName:shop.payout_account_name, iban:shop.payout_iban };
+    SHOP.bank={ name:shop.payout_bank_name, accountName:shop.payout_account_name, iban:shop.payout_iban||shop.iban_masked||'' };
+    await reloadPayouts();
     toast('Bank details saved'); renderPayments(); renderOverview();
   }catch(e){ toast(e.message||'Could not save'); }
 }
 
-/* ---------------- ADMIN — weekly payout run (house/admin only) ---------------- */
+/* ---------------- ADMIN — weekly settlement run (house/admin only) ---------------- */
+const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
 async function renderAdminPayouts(){
   const v=$('view-adminpayouts');
-  v.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600">Loading payouts…</div>`;
-  let preview={shops:[],totalNetCents:0,feePercent:10}, hist={payouts:[]};
-  try{ preview=await TroveAPI.api('/api/admin/payouts/preview'); }
-  catch(e){ v.innerHTML=`<div class="card" style="color:var(--coral-deep);font-weight:600">${e.message||'Could not load payouts'}</div>`; return; }
-  try{ hist=await TroveAPI.api('/api/admin/payouts'); }catch(_){}
-  const owed=preview.shops||[], batches=hist.payouts||[];
+  v.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600">Loading settlements…</div>`;
+  let preview={eligible:[],excluded:[],totalNetCents:0}, hist={settlements:[]};
+  try{ preview=await TroveAPI.api('/api/admin/settlements/preview'); }
+  catch(e){ v.innerHTML=`<div class="card" style="color:var(--coral-deep);font-weight:600">${e.message||'Could not load settlements'}</div>`; return; }
+  try{ hist=await TroveAPI.api('/api/admin/settlements'); }catch(_){}
+  const owed=preview.eligible||[], held=preview.excluded||[], runs=hist.settlements||[];
   const due=`
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
-        <div><h3 style="font-size:22px;font-weight:600">This week's payouts</h3>
-          <div style="font-size:13px;color:var(--muted);font-weight:600">${owed.length} shop${owed.length===1?'':'s'} to pay · ${money(preview.totalNetCents)} total</div></div>
-        <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runPayouts()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>Run weekly payout</button>
+        <div><h3 style="font-size:22px;font-weight:600">Next settlement run</h3>
+          <div style="font-size:13px;color:var(--muted);font-weight:600">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(preview.totalNetCents)} total</div></div>
+        <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>Run settlement</button>
       </div>
-      ${owed.length?`<table class="tbl" style="margin-top:16px"><thead><tr><th>Shop</th><th>Pay to</th><th>Sales</th><th>Fee</th><th>To pay</th></tr></thead>
+      ${owed.length?`<table class="tbl" style="margin-top:16px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th></tr></thead>
         <tbody>${owed.map(s=>`<tr>
-          <td style="font-weight:700">${s.name}</td>
-          <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${s.bank.name||''} · ${s.bank.iban}`:'<span style="color:var(--coral-deep);font-weight:700">no bank details</span>'}</td>
-          <td>${money(s.grossCents)}</td>
-          <td style="color:var(--muted)">−${money(s.feeCents)}</td>
+          <td style="font-weight:700">${esc(s.name)}</td>
+          <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}`:'<span style="color:var(--coral-deep);font-weight:700">no bank details</span>'}</td>
+          <td>${money(s.creditCents)}</td>
+          <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
           <td style="font-family:Cormorant;font-size:17px;font-weight:600">${money(s.netCents)}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">Nothing outstanding — every managed sale has been settled.</div>`}
+       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">Nothing payable — no purchase has cleared its 7-day return window since the last run.</div>`}
+      ${held.length?`<div style="margin-top:12px;font-size:12.5px;color:var(--muted);font-weight:600">Held back: ${held.map(h=>`${esc(h.name)} (${money(h.netCents)} — ${EXCLUDE_REASON[h.reason]||h.reason})`).join(' · ')}</div>`:''}
     </div>`;
   const history=`
     <div class="card" style="padding:0;margin-top:18px">
-      <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">All payout batches</h3></div>
-      ${batches.length?`<table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-        <tbody>${batches.map(b=>`<tr>
-          <td style="font-weight:700">${fmtDate(b.createdAt)}</td>
-          <td>${b.shopName}</td>
-          <td style="font-family:Cormorant;font-size:17px;font-weight:600">${money(b.amountCents)}</td>
-          <td><span class="order-pill ${b.status==='paid'?'fulfilled':'new'}">${b.status}</span></td>
-          <td style="text-align:right">${b.status==='pending'?`<button class="btn btn-ghost btn-sm" onclick="markPaid(${b.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">${fmtDate(b.paidAt)}</span>`}</td>
-        </tr>`).join('')}</tbody></table>`
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No payout batches yet.</div>`}
+      <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">Settlement history</h3></div>
+      ${runs.length?runs.map(st=>`
+        <div style="padding:14px 22px;border-bottom:1px solid var(--line)">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <strong>Run ${st.runDate}</strong>
+            <span class="order-pill ${st.status==='paid'?'fulfilled':'new'}">${st.status}</span>
+            <span style="font-family:Cormorant;font-size:17px;font-weight:600">${money(st.totalCents)}</span>
+            <span style="flex:1"></span>
+            <a class="btn btn-ghost btn-sm" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(renderAdminPayouts,1200)">Bank CSV</a>
+            ${st.status!=='paid'?`<button class="btn btn-coral btn-sm" onclick="markSettlementPaid(${st.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">paid ${fmtDate(st.paidAt)}</span>`}
+          </div>
+          <div style="margin-top:8px;font-size:13px;color:var(--muted);font-weight:600">${st.items.map(i=>`${esc(i.shopName)} · ${money(i.amountCents)}${i.purchaseNoteId?` · <a href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">note</a>`:''}`).join(' &nbsp;—&nbsp; ')}</div>
+        </div>`).join('')
+       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
     </div>`;
-  v.innerHTML = `<div class="sec-head" style="margin-bottom:14px"><span class="n">Pay your Trove-managed sellers: run the batch, send the bank transfers, then mark each as paid.</span></div>` + due + history;
+  v.innerHTML = `<div class="sec-head" style="margin-bottom:14px"><span class="n">Pay your consignment suppliers: run the settlement, upload the bank CSV to the bank, send the transfers, then mark it paid.</span></div>` + due + history;
 }
-async function runPayouts(){
-  if(!confirm("Run this week's payout? This locks the listed sales into payout batches so they can't be paid twice."))return;
-  try{ const r=await TroveAPI.api('/api/admin/payouts/run',{method:'POST'}); toast(`Created ${r.count} payout${r.count===1?'':'s'}`); renderAdminPayouts(); }
-  catch(e){ toast(e.message||'Could not run payouts'); }
+async function runSettlement(){
+  if(!confirm('Run the settlement now? This sweeps every purchase whose return window has closed into a draft for review.'))return;
+  try{
+    const r=await TroveAPI.api('/api/admin/settlements/run',{method:'POST',body:{}});
+    toast(r.created?`Settlement drafted — ${money(r.totalCents)}`:'Nothing payable right now');
+    renderAdminPayouts();
+  }catch(e){ toast(e.message||'Could not run the settlement'); }
 }
-async function markPaid(id){
-  try{ await TroveAPI.api('/api/admin/payouts/'+id+'/paid',{method:'POST'}); toast('Marked as paid'); renderAdminPayouts(); }
+async function markSettlementPaid(id){
+  if(!confirm('Mark this settlement as paid? Do this after the bank transfers have gone out — it writes the payout ledger and generates the purchase notes.'))return;
+  try{ await TroveAPI.api('/api/admin/settlements/'+id+'/paid',{method:'POST'}); toast('Settlement marked paid'); renderAdminPayouts(); }
   catch(e){ toast(e.message||'Could not update'); }
 }
 async function connectStripe(){
