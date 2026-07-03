@@ -128,6 +128,12 @@
             <select id="fCat"><option>Ceramics</option><option>Home</option><option>Apparel</option><option>Beauty</option><option>Stationery</option><option>Accessories</option><option>Other</option></select></div>
           <div class="field"><label>Where are you based?</label><input id="fLoc" placeholder="City, Country"></div>
         </div>
+        <div class="ftwo">
+          <div class="field"><label>How long have you been making?</label>
+            <select id="fExp"><option>Just starting out</option><option>Under a year</option><option>1–3 years</option><option>3+ years</option></select></div>
+          <div class="field"><label>Who makes your products?</label>
+            <select id="fMaker"><option>I make everything myself</option><option>Me and a small team</option><option>I design, a workshop produces</option></select></div>
+        </div>
         <div class="field"><label>About you &amp; your craft <span class="count" id="aboutCount"></span></label>
           <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you make, and how do you make it? What makes your work special? Write it like you'd tell a friend."></textarea>
           <div class="help">A few honest sentences are perfect — this also becomes your shop's public story.</div></div>
@@ -141,9 +147,21 @@
         <div class="field"><label>Planned products</label>
           <textarea id="fProducts" maxlength="2000" placeholder="One per line, e.g.&#10;Hand-thrown stoneware mugs — AED 60–80&#10;Speckled serving bowls&#10;Small-batch glazed planters"></textarea>
           <div class="help">Prices and details can change later — we just want a feel for your range.</div></div>
-        <div class="field"><label>Website or Instagram <span class="opt">· optional</span></label>
-          <input id="fLinks" placeholder="e.g. instagram.com/yourshop or yourshop.com">
-          <div class="help">Somewhere we can see your work speeds up approval.</div></div>
+        <div class="ftwo">
+          <div class="field"><label>Where do you sell today?</label>
+            <select id="fChannels"><option>Not selling yet</option><option>Instagram / WhatsApp</option><option>Markets &amp; pop-ups</option><option>My own website</option><option>Etsy or another marketplace</option></select></div>
+          <div class="field"><label>Orders you could handle monthly</label>
+            <select id="fCap"><option>Up to 10</option><option>10–30</option><option>30–100</option><option>100+</option></select></div>
+        </div>
+        <div class="field"><label>Instagram</label>
+          <input id="fInsta" placeholder="@yourshop or instagram.com/yourshop">
+          <div class="help">Required — it's the fastest way for our curation team to see your work.</div></div>
+        <div class="ftwo">
+          <div class="field"><label>Website <span class="opt">· optional</span></label>
+            <input id="fLinks" placeholder="yourshop.com"></div>
+          <div class="field"><label>WhatsApp <span class="opt">· optional</span></label>
+            <input id="fPhone" placeholder="+971 50 123 4567"></div>
+        </div>
         <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next coral" id="submitBtn" onclick="submitApp()">Submit application</button></div>
       </div>
 
@@ -233,6 +251,7 @@ function toStep(target){
 async function submitApp(){
   hideErr();
   if(!$('fProducts').value.trim()){showErr('List at least one thing you’re planning to sell.');return;}
+  if(!$('fInsta').value.trim()){showErr('Share your Instagram — it’s how our curation team sees your work.');return;}
   const btn=$('submitBtn');const label=btn.textContent;
   btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
   try{
@@ -245,8 +264,14 @@ async function submitApp(){
       category:$('fCat').value,
       location:$('fLoc').value.trim(),
       about:$('fAbout').value.trim(),
+      experience:$('fExp').value,
+      maker:$('fMaker').value,
       plannedProducts:$('fProducts').value.trim(),
+      channels:$('fChannels').value,
+      capacity:$('fCap').value,
+      instagram:$('fInsta').value.trim(),
       links:$('fLinks').value.trim(),
+      phone:$('fPhone').value.trim(),
     }});
     $('doneName').textContent=$('fName').value.trim().split(' ')[0];
     $('doneShop').textContent=$('fShop').value.trim();

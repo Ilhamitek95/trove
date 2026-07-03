@@ -226,13 +226,27 @@ function applicationCardHTML(s){
       ${s.location?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">📍 ${esc(s.location)}</span>`:''}
       <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Weekly payout'}</span>
     </div>
+    ${applicationFactsHTML(s)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
       <div><div style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px">Their story</div>
         <div style="font-size:13px;line-height:1.6;font-weight:500">${s.bio?multiline(s.bio):'<span style="color:var(--muted)">Nothing written yet.</span>'}</div></div>
       <div><div style="font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:5px">Planning to sell</div>
         <div style="font-size:13px;line-height:1.6;font-weight:500">${s.pitchProducts?multiline(s.pitchProducts):'<span style="color:var(--muted)">Not provided.</span>'}</div></div>
     </div>
-    ${s.pitchLinks?`<div style="margin-top:12px;font-size:12.5px"><span style="letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;font-size:10px">See their work&nbsp;&nbsp;</span>${linkify(s.pitchLinks)}</div>`:''}
+    ${(s.pitchInstagram||s.pitchLinks)?`<div style="margin-top:12px;font-size:12.5px"><span style="letter-spacing:.13em;text-transform:uppercase;color:var(--muted);font-weight:700;font-size:10px">See their work&nbsp;&nbsp;</span>${linkify([s.pitchInstagram,s.pitchLinks].filter(Boolean).join(' '))}</div>`:''}
+  </div>`;
+}
+
+/* The structured application answers (experience, capacity…) as a fact grid. */
+function applicationFactsHTML(s){
+  const facts=[
+    ['Experience',s.pitchExperience],['Made by',s.pitchMaker],
+    ['Sells today',s.pitchChannels],['Monthly capacity',s.pitchCapacity],
+    ['WhatsApp',s.pitchPhone],
+  ].filter(f=>f[1]);
+  if(!facts.length)return '';
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;margin-top:10px;padding:12px 14px;background:var(--paper);border:1px solid var(--line);border-radius:12px">
+    ${facts.map(([k,v])=>`<div style="font-size:12.5px"><span style="letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;font-size:9.5px;display:block">${k}</span><b>${esc(v)}</b></div>`).join('')}
   </div>`;
 }
 

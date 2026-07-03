@@ -118,7 +118,13 @@ addColumn('shops', 'status',              "TEXT NOT NULL DEFAULT 'approved'");
 // shown to the super admin in the review queue.
 addColumn('shops', 'category',            "TEXT DEFAULT ''");   // main category they sell in
 addColumn('shops', 'pitch_products',      "TEXT DEFAULT ''");   // what they plan to sell
-addColumn('shops', 'pitch_links',         "TEXT DEFAULT ''");   // website / instagram
+addColumn('shops', 'pitch_links',         "TEXT DEFAULT ''");   // website (optional)
+addColumn('shops', 'pitch_instagram',     "TEXT DEFAULT ''");   // instagram (required to apply)
+addColumn('shops', 'pitch_experience',    "TEXT DEFAULT ''");   // how long they've been making
+addColumn('shops', 'pitch_maker',         "TEXT DEFAULT ''");   // who makes the products
+addColumn('shops', 'pitch_channels',      "TEXT DEFAULT ''");   // where they sell today
+addColumn('shops', 'pitch_capacity',      "TEXT DEFAULT ''");   // orders/month they can handle
+addColumn('shops', 'pitch_phone',         "TEXT DEFAULT ''");   // WhatsApp for the curation team
 addColumn('shops', 'payout_bank_name',    "TEXT DEFAULT ''");
 addColumn('shops', 'payout_account_name', "TEXT DEFAULT ''");
 addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");

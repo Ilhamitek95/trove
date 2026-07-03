@@ -55,7 +55,10 @@ const sable = shop('nadia@sableandstone.com', 'Nadia', 'Sable & Stone', 'sable-a
   'Muscat, Oman', '#B8AFA6', false, { type: 'managed' });
 db.prepare(`UPDATE shops SET status='pending', category='Accessories',
   pitch_products='Raw stone signet rings — AED 220–260\nHammered silver stacking bands\nDesert stone pendants on silk cord\nOne-off statement cuffs (small batches of 5)',
-  pitch_links='instagram.com/sableandstone.mct' WHERE id=?`).run(sable);
+  pitch_instagram='instagram.com/sableandstone.mct', pitch_links='sableandstone.com',
+  pitch_experience='3+ years', pitch_maker='I make everything myself',
+  pitch_channels='Markets & pop-ups', pitch_capacity='10–30', pitch_phone='+968 91 234 567'
+  WHERE id=?`).run(sable);
 mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Accessories', c(240), null, 8, 'live', 'ring1');
 
 const products = [

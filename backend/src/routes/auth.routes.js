@@ -18,6 +18,10 @@ router.post('/register', (req, res) => {
   const wantsShop = role === 'seller' || role === 'both';
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!existing && !password) return res.status(400).json({ error: 'email, password and name are required' });
+  // Instagram is required to apply — validated up front so a failed
+  // application never leaves behind an account without a shop.
+  if (wantsShop && !String(req.body.instagram || '').trim())
+    return res.status(400).json({ error: 'Instagram is required for a shop application' });
 
   let userId;
   if (existing) {
@@ -47,11 +51,21 @@ router.post('/register', (req, res) => {
     let slug = base, n = 1;
     while (db.prepare('SELECT 1 FROM shops WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
     const clean = (v, max) => String(v || '').trim().slice(0, max);
-    db.prepare(`INSERT INTO shops (user_id, name, slug, status, bio, location, category, pitch_products, pitch_links)
-      VALUES (?,?,?,'pending',?,?,?,?,?)`)
+    // Normalise the Instagram field to "instagram.com/handle" whether they
+    // typed @handle, a bare handle, or a full URL.
+    const ig = (() => {
+      let v = clean(req.body.instagram, 120).replace(/^@/, '');
+      if (!v) return '';
+      return /instagram\.com/i.test(v) ? v.replace(/^https?:\/\//i, '') : `instagram.com/${v}`;
+    })();
+    db.prepare(`INSERT INTO shops (user_id, name, slug, status, bio, location, category, pitch_products, pitch_links,
+        pitch_instagram, pitch_experience, pitch_maker, pitch_channels, pitch_capacity, pitch_phone)
+      VALUES (?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,?)`)
       .run(userId, shopName || `${name}'s shop`, slug,
         clean(req.body.about, 2000), clean(req.body.location, 120),
-        clean(req.body.category, 40), clean(req.body.plannedProducts, 2000), clean(req.body.links, 300));
+        clean(req.body.category, 40), clean(req.body.plannedProducts, 2000), clean(req.body.links, 300),
+        ig, clean(req.body.experience, 60), clean(req.body.maker, 80),
+        clean(req.body.channels, 120), clean(req.body.capacity, 40), clean(req.body.phone, 40));
   }
 
   req.session.userId = userId;
