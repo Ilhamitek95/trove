@@ -61,6 +61,8 @@
   .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media(max-width:480px){.ftwo{grid-template-columns:1fr}}
   .err{display:none;background:#FBE9E2;color:var(--coral-deep);font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
+  .note{display:none;background:#EBF1EC;color:#4A5A4E;font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
+  .note a{color:var(--coral-deep)}
 
   .btnrow{display:flex;gap:12px;margin-top:24px;align-items:center}
   .next{flex:1;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s}
@@ -107,10 +109,11 @@
       <div id="step1">
         <h2>First, about you.</h2>
         <p class="lede">This creates your seller account — you'll use it to sign in and run your shop.</p>
+        <div class="note" id="signedNote">You're signed in as <b id="signedWho"></b> — your shop will be added to this account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
         <div class="field"><label>Your name</label><input id="fName" placeholder="Your full name" autocomplete="name"></div>
         <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
-        <div class="field"><label>Password</label><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
-          <div class="help">You can sign in and prepare your shop while your application is reviewed.</div></div>
+        <div class="field" id="passField"><label>Password</label><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+          <div class="help">You can sign in and prepare your shop while your application is reviewed. Already shopping on trove? Use your existing email and password — we'll add the shop to your account.</div></div>
         <div class="btnrow"><button class="next" onclick="toStep(2)">Continue →</button></div>
         <div class="signin">Already selling on trove? <a href="trove-login.html">Sign in</a></div>
       </div>
@@ -161,6 +164,38 @@
 <script>
 const $=id=>document.getElementById(id);
 let step=1;
+let SIGNED_IN=false;
+
+// Signed-in visitors apply with the account they already have: prefill and
+// lock the email, skip the password (the session proves it's their account).
+(async()=>{
+  try{
+    const me=await TroveAPI.me();
+    if(!me||!me.user)return;
+    if(me.shop){location.href='trove-seller.html';return;} // already runs a shop
+    SIGNED_IN=true;
+    $('fName').value=$('fName').value||me.user.name||'';
+    $('fEmail').value=me.user.email||'';
+    $('fEmail').readOnly=true;$('fEmail').style.background='var(--rose-tint)';
+    $('passField').style.display='none';
+    $('signedWho').textContent=me.user.email;
+    $('signedNote').style.display='block';
+  }catch(_){}
+})();
+
+async function signOutApply(){
+  await TroveAPI.logout();
+  location.reload();
+}
+
+// Enter in a text input moves the wizard forward (textareas keep Enter for newlines).
+document.querySelectorAll('#step1 input,#step2 input,#step3 input').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    if(step===1)toStep(2);else if(step===2)toStep(3);else submitApp();
+  });
+});
 
 function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';window.scrollTo(0,0);}
 function hideErr(){$('err').style.display='none';}
@@ -172,7 +207,7 @@ function validate(target){
     if(!$('fName').value.trim())return 'Please tell us your name.';
     const em=$('fEmail').value.trim();
     if(!em||!/^\S+@\S+\.\S+$/.test(em))return 'That email doesn’t look right — mind checking it?';
-    if($('fPass').value.length<8)return 'Your password needs at least 8 characters.';
+    if(!SIGNED_IN&&$('fPass').value.length<8)return 'Your password needs at least 8 characters.';
   }
   if(target>2&&step===2&&target>step){
     if(!$('fShop').value.trim())return 'Give your shop a name — you can change it later.';
@@ -223,7 +258,9 @@ async function submitApp(){
   }catch(e){
     btn.textContent=label;btn.disabled=false;btn.style.opacity='1';
     // Switch step BEFORE showing the error — toStep clears the banner.
-    if(e.status===409){toStep(1);showErr('An account with this email already exists — you can sign in with it instead, or use a different email.');}
+    const code=e.data&&e.data.code;
+    if(e.status===409&&code==='already_has_shop'){toStep(1);showErr('This account already runs a shop on trove — sign in to manage it.');}
+    else if(e.status===409){toStep(1);showErr('An account with this email already exists. To add your shop to it, use that account’s password here — or apply with a different email.');}
     else showErr(e.message||'Something went wrong — please try again.');
   }
 }

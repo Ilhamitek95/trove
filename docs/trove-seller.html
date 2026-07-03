@@ -988,7 +988,7 @@ async function boot(){
   let session=null;
   try{ session=await TroveAPI.me(); }catch(_){}
   if(!session||!session.user){ location.href='trove-login.html'; return; }
-  if(!session.shop){ location.href='trove-account.html'; return; }   // signed in but no shop → not a seller
+  if(!session.shop){ location.href=session.user.role==='admin'?'trove-admin.html':'trove-apply.html'; return; }   // no shop yet → apply (platform owner → admin panel)
   ME=session.user;
   $('sellerName').textContent=(ME.name||'there').split(' ')[0];
   const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='trove-login.html';};

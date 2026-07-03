@@ -9,19 +9,40 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
 // POST /api/auth/register
 // { email, password, name, role?, shopName?,
 //   about?, location?, category?, plannedProducts?, links? }  ← seller application
+// A seller application with an email that already has an account attaches the
+// shop to THAT account (existing buyers can become sellers) — allowed when the
+// applicant is signed in as the account, or the submitted password matches it.
 router.post('/register', (req, res) => {
   const { email, password, name, role = 'buyer', shopName } = req.body || {};
-  if (!email || !password || !name) return res.status(400).json({ error: 'email, password and name are required' });
-  if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) return res.status(409).json({ error: 'An account with this email already exists' });
+  if (!email || !name) return res.status(400).json({ error: 'email and name are required' });
+  const wantsShop = role === 'seller' || role === 'both';
+  const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  if (!existing && !password) return res.status(400).json({ error: 'email, password and name are required' });
 
-  const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
-    .run(email, hashPassword(password), name, role);
-  const userId = info.lastInsertRowid;
+  let userId;
+  if (existing) {
+    if (!wantsShop) return res.status(409).json({ error: 'An account with this email already exists' });
+    const ownsAccount = req.session.userId === existing.id
+      || (password && verifyPassword(password, existing.password_hash));
+    if (!ownsAccount) {
+      return res.status(409).json({ code: 'exists_wrong_password', error: 'An account with this email already exists' });
+    }
+    if (db.prepare('SELECT 1 FROM shops WHERE user_id = ?').get(existing.id)) {
+      return res.status(409).json({ code: 'already_has_shop', error: 'This account already has a shop' });
+    }
+    userId = existing.id;
+    // Buyers become sellers; an admin keeps admin (requireAdmin depends on it).
+    if (existing.role === 'buyer') db.prepare("UPDATE users SET role = 'seller' WHERE id = ?").run(userId);
+  } else {
+    const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
+      .run(email, hashPassword(password), name, role);
+    userId = info.lastInsertRowid;
+  }
 
   // Sellers get a shop scaffold immediately — but it starts 'pending' and only
   // appears on the storefront once the super admin approves it. The application
   // details (story, planned products, links) are stored for the review queue.
-  if (role === 'seller' || role === 'both') {
+  if (wantsShop) {
     const base = slugify(shopName || name);
     let slug = base, n = 1;
     while (db.prepare('SELECT 1 FROM shops WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
