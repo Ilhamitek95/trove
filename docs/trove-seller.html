@@ -163,6 +163,15 @@
   .tagbox .tg button:hover{background:var(--coral);color:#fff}
   .tagbox input{border:0;outline:0;background:none;flex:1;min-width:130px;font:inherit;font-size:13.5px;padding:4px 2px}
   #dTagAI.thinking{opacity:.55;pointer-events:none}
+  .tagsug{display:none;margin-top:11px;padding:12px 13px;background:rgba(195,209,199,.16);border:1px solid rgba(195,209,199,.7);border-radius:12px}
+  .tagsug.show{display:block}
+  .tagsug .lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:12px;margin-bottom:9px}
+  .tagsug .lbl a{color:var(--coral-deep);cursor:pointer;text-transform:none;letter-spacing:.02em;font-size:12.5px}
+  .tagsug .lbl a:hover{text-decoration:underline}
+  .tagsug .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .sugchip{display:inline-flex;align-items:center;gap:7px;border:1.5px dashed rgba(169,139,125,.6);background:var(--paper);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--char);cursor:pointer;transition:.15s;font-family:inherit}
+  .sugchip:hover{border-style:solid;border-color:var(--coral);color:var(--coral-deep)}
+  .sugchip b{font-weight:800;color:var(--coral-deep)}
   .field{margin-bottom:20px}
   .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px}
   .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
@@ -430,6 +439,10 @@
         <div class="hint" style="margin:0">Up to 12 — materials, style, what it's for. They power search.</div>
         <button class="btn btn-ghost btn-sm" id="dTagAI" style="display:none;white-space:nowrap" onclick="aiSuggestTags()">✨ Write tags for me</button>
       </div>
+      <div class="tagsug" id="dTagSug">
+        <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a onclick="addAllSuggested()">Add all</a><a onclick="dismissSuggestions()">Dismiss</a></div>
+        <div class="chips" id="dTagSugChips"></div>
+      </div>
     </div>
     <div class="ftwo">
       <div class="field"><label>Price (AED)</label><input id="dPrice" type="number" placeholder="0"></div>
@@ -606,7 +619,7 @@ async function delProduct(id){const p=products.find(x=>x.id===id);if(!confirm(`D
 }
 
 /* drawer — tags */
-let drawerTags=[];
+let drawerTags=[], suggestedTags=[];
 function renderDrawerTags(){
   const box=$('dTagBox'), input=$('dTagIn');
   box.querySelectorAll('.tg').forEach(el=>el.remove());
@@ -618,7 +631,24 @@ function renderDrawerTags(){
     chip.appendChild(x);box.insertBefore(chip,input);
   });
   input.placeholder=drawerTags.length?'Add another…':'Type a tag, press Enter';
+  renderSuggestions();
 }
+/* Claude's suggestions wait as tap-to-add chips — nothing is added for you.
+   A removed tag drops back into the suggestion pile if Claude offered it. */
+function renderSuggestions(){
+  const left=suggestedTags.filter(t=>!drawerTags.includes(t));
+  $('dTagSug').classList.toggle('show',left.length>0);
+  const box=$('dTagSugChips');box.innerHTML='';
+  left.forEach(t=>{
+    const b=document.createElement('button');b.type='button';b.className='sugchip';
+    const plus=document.createElement('b');plus.textContent='+';b.appendChild(plus);
+    b.appendChild(document.createTextNode(t));
+    b.onclick=()=>addDrawerTag(t);
+    box.appendChild(b);
+  });
+}
+function addAllSuggested(){suggestedTags.filter(t=>!drawerTags.includes(t)).forEach(t=>addDrawerTag(t));}
+function dismissSuggestions(){suggestedTags=[];renderSuggestions();}
 function addDrawerTag(raw){
   const t=String(raw||'').toLowerCase().replace(/\s+/g,' ').trim().slice(0,28).trim();
   if(!t)return;
@@ -639,8 +669,9 @@ async function aiSuggestTags(){
   try{
     const {tags}=await TroveAPI.api('/api/seller/products/suggest-tags',{method:'POST',
       body:{name,description:$('dDesc').value.trim(),category:$('dCat').value}});
-    (tags||[]).forEach(addDrawerTag);
-    toast(tags&&tags.length?'Tags written — remove any that don’t fit':'No suggestions this time');
+    suggestedTags=(tags||[]).filter(t=>!drawerTags.includes(t));
+    renderSuggestions();
+    toast(suggestedTags.length?'Tap the suggestions you like — or add them all':'No new suggestions this time');
   }catch(e){toast(e.message||'Could not write tags right now');}
   finally{btn.classList.remove('thinking');btn.textContent=was;}
 }
@@ -655,12 +686,12 @@ function readPerso(){return {enabled:$('dPerso').checked,required:document.query
   prompt:$('dPersoPrompt').value.trim(),maxLen:parseInt($('dPersoLimit').value)||256};}
 function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSave').textContent='Add product';
   $('dName').value='';$('dDesc').value='';$('dCat').value='Ceramics';$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
-  drawerTags=[];renderDrawerTags();$('dTagIn').value='';
+  drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   fillPerso(null);setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSave').textContent='Save changes';
   $('dName').value=p.name;$('dDesc').value=p.desc||'';$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
-  drawerTags=(p.tags||[]).slice();renderDrawerTags();$('dTagIn').value='';
+  drawerTags=(p.tags||[]).slice();suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;}
 function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;}
