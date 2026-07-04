@@ -67,3 +67,28 @@ test('no money-transmission language anywhere in the product', () => {
   }
   assert.deepEqual(violations, [], `Banned money-transmission phrasing found:\n${violations.join('\n')}`);
 });
+
+// Sustainability claims Trove can't substantiate — greenwashing is a consumer-
+// protection problem, so the build fails if the copy drifts back into it.
+const BANNED_CLAIMS = [
+  ['carbon-neutral', /carbon[- ]?neutral/i],   // copy-ok: the list itself
+  ['carbon-free', /carbon[- ]?free/i],         // copy-ok: the list itself
+  ['climate-neutral', /climate[- ]?neutral/i], // copy-ok: the list itself
+  ['net zero', /\bnet[- ]?zero\b/i],           // copy-ok: the list itself
+];
+
+test('no unverifiable sustainability claims anywhere in the product', () => {
+  const violations = [];
+  for (const file of targetFiles()) {
+    const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/);
+    lines.forEach((line, i) => {
+      if (line.includes('copy-ok:')) return;
+      for (const [label, re] of BANNED_CLAIMS) {
+        if (re.test(line)) {
+          violations.push(`${path.relative(ROOT, file)}:${i + 1} [${label}] ${line.trim().slice(0, 140)}`);
+        }
+      }
+    });
+  }
+  assert.deepEqual(violations, [], `Unverifiable sustainability claims found:\n${violations.join('\n')}`);
+});
