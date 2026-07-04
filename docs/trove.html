@@ -232,6 +232,10 @@
   .pdp .stars{margin-bottom:18px}
   .pdp .pricerow .price{font-size:26px;font-weight:600}
   .pdp .desc{color:var(--ink-80);font-size:16px;line-height:1.75;margin:22px 0 28px;max-width:50ch;font-weight:400}
+  .ptags{display:flex;flex-wrap:wrap;gap:8px;margin:-14px 0 26px}
+  .ptags:empty{display:none}
+  .ptag{border:1px solid var(--line);background:var(--cream);color:var(--ink-80);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.18s}
+  .ptag:hover{border-color:var(--coral);color:var(--coral-deep);background:var(--rose-tint)}
   .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px}
   .swatches{display:flex;gap:12px;margin-bottom:30px}
   .sw{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
@@ -599,6 +603,7 @@
         <div class="stars" id="pdpStars"></div>
         <div class="pricerow"><span class="price" id="pdpPrice"></span></div>
         <p class="desc" id="pdpDesc"></p>
+        <div class="ptags" id="pdpTags"></div>
         <div class="lbl">Colour</div>
         <div class="swatches" id="pdpSwatches"></div>
         <div id="pdpPerso" style="display:none;margin:18px 0 4px">
@@ -959,7 +964,7 @@ function filteredProducts(){
   let list=PRODUCTS.filter(p=>{
     const catMatch=state.cat==='all'||(state.cat==='House'?VENDORS[p.vendor].house:p.cat===state.cat);
     return catMatch&&(!state.houseOnly||VENDORS[p.vendor].house)&&p.price>=state.min&&p.price<=state.max
-      &&(!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name).toLowerCase().includes(q));
+      &&(!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q));
   });
   const s=$('sortSel').value;
   if(s==='low')list.sort((a,b)=>a.price-b.price);
@@ -1002,6 +1007,9 @@ function openPDP(id){
   $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} reviews</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
+  // Tags double as one-tap searches — “stoneware” finds everything stoneware.
+  $('pdpTags').innerHTML='';
+  (p.tags||[]).forEach(t=>{const b=document.createElement('button');b.className='ptag';b.textContent=t;b.onclick=()=>searchTag(t);$('pdpTags').appendChild(b);});
   const sw=['#262321','#A98B7D','#D8C5BE','#C3D1C7'];
   $('pdpSwatches').innerHTML=sw.map((c,i)=>`<div class="sw ${i===0?'on':''}" style="background:${c}" onclick="document.querySelectorAll('.sw').forEach(e=>e.classList.remove('on'));this.classList.add('on')"></div>`).join('');
   // Etsy-style personalisation: sellers switch it on per piece; buyers type
@@ -1084,6 +1092,7 @@ function closeCart(){$('scrim').classList.remove('open');$('drawer').classList.r
 
 /* SEARCH + ACCOUNT MENU */
 function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.min=0;state.max=9999;buildCatFilters();renderShop();showView('shop');window.scrollTo(0,0);}
+function searchTag(t){const si=$('searchInput');if(si)si.value=t;runSearch(t);}
 function toggleAcct(e){e.stopPropagation();$('acctMenu').classList.toggle('open');}
 document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.remove('open');});
 
@@ -1268,7 +1277,7 @@ async function loadCatalog(){
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:null,reviews:0,desc:p.description,seed:p.imageSeed,perso:p.personalization||null};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:null,reviews:0,desc:p.description,seed:p.imageSeed,tags:p.tags||[],perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}

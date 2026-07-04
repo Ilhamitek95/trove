@@ -139,6 +139,10 @@ addColumn('products', 'personalization_required', 'INTEGER NOT NULL DEFAULT 0');
 addColumn('products', 'personalization_prompt',   "TEXT DEFAULT ''");
 addColumn('products', 'personalization_char_limit', 'INTEGER NOT NULL DEFAULT 256');
 addColumn('order_items', 'personalization', "TEXT DEFAULT ''");
+// Shopper search tags, a JSON array of short lowercase phrases. Sellers type
+// them (or let Claude write them) in the product drawer; /api/products?q=
+// matches against them.
+addColumn('products', 'tags', "TEXT DEFAULT '[]'");
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS payouts (

@@ -56,16 +56,35 @@ router.get('/products', requireSeller, (req, res) => {
 
 // Personalisation settings arrive as { enabled, required, prompt, maxLen }.
 const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.prompt || '').slice(0, 300), Math.min(1024, Math.max(1, parseInt(p.maxLen) || 256))] : [0, 0, '', 256];
+const { normalizeTags } = require('../tags');
 
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization } = req.body || {};
+  const { name, description = '', category = 'Home', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
   const catErr = require('../categories').categoryError(category);
   if (catErr) return res.status(422).json({ error: catErr.message });
-  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,
+  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed, ...persoCols(personalization));
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed,
+      JSON.stringify(normalizeTags(tags)), ...persoCols(personalization));
   res.status(201).json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(info.lastInsertRowid) });
+});
+
+// Claude writes shopper search tags from the product's name and story.
+// Needs ANTHROPIC_API_KEY on the server; the dashboard hides the button
+// when /api/config says aiTagsEnabled is false.
+router.post('/products/suggest-tags', requireSeller, async (req, res) => {
+  const ai = require('../ai');
+  if (!ai.enabled()) return res.status(503).json({ error: 'AI tag suggestions are not switched on yet' });
+  const { name, description = '', category = '' } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'Give the product a name first' });
+  try {
+    const tags = await ai.suggestTags({ name: String(name).slice(0, 200), description: String(description).slice(0, 2000), category: String(category).slice(0, 60), shopName: req.shop.name });
+    res.json({ tags });
+  } catch (e) {
+    console.error('suggest-tags failed:', e.message);
+    res.status(502).json({ error: 'Tag suggestions are unavailable right now — try again in a moment' });
+  }
 });
 
 router.patch('/products/:id', requireSeller, (req, res) => {
@@ -84,6 +103,9 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   if (b.personalization !== undefined) {
     db.prepare(`UPDATE products SET personalization_enabled=?, personalization_required=?, personalization_prompt=?, personalization_char_limit=? WHERE id=?`)
       .run(...persoCols(b.personalization), p.id);
+  }
+  if (b.tags !== undefined) {
+    db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
   }
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });

@@ -156,6 +156,13 @@
   .drawer .dbody{flex:1;overflow-y:auto;padding:24px 28px}
   .drawer .dfoot{padding:18px 28px;border-top:1px solid var(--line);display:flex;gap:12px;background:var(--paper)}
   .drawer .dfoot .btn{flex:1;justify-content:center;padding:14px}
+  .tagbox{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:text;min-height:46px}
+  .tagbox:focus-within{border-color:var(--taupe)}
+  .tagbox .tg{display:inline-flex;align-items:center;gap:7px;background:rgba(195,209,199,.35);border:1px solid rgba(195,209,199,.9);border-radius:99px;padding:5px 7px 5px 12px;font-size:13px;font-weight:600;color:var(--char)}
+  .tagbox .tg button{border:0;background:rgba(38,35,33,.08);color:var(--char);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
+  .tagbox .tg button:hover{background:var(--coral);color:#fff}
+  .tagbox input{border:0;outline:0;background:none;flex:1;min-width:130px;font:inherit;font-size:13.5px;padding:4px 2px}
+  #dTagAI.thinking{opacity:.55;pointer-events:none}
   .field{margin-bottom:20px}
   .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:8px}
   .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
@@ -417,6 +424,13 @@
     <div class="field"><label>Product name</label><input id="dName" placeholder="e.g. Reeded Stoneware Mug"></div>
     <div class="field"><label>Description</label><textarea id="dDesc" placeholder="What makes it special?"></textarea></div>
     <div class="field"><label>Category</label><select id="dCat"><option>Ceramics</option><option>Home</option><option>Apparel</option><option>Textiles</option><option>Art</option><option>Woodwork</option><option>Jewelry</option><option>Stationery</option><option>Accessories</option></select></div>
+    <div class="field"><label>Tags</label>
+      <div class="tagbox" id="dTagBox" onclick="$('dTagIn').focus()"><input id="dTagIn" placeholder="Type a tag, press Enter"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
+        <div class="hint" style="margin:0">Up to 12 — materials, style, what it's for. They power search.</div>
+        <button class="btn btn-ghost btn-sm" id="dTagAI" style="display:none;white-space:nowrap" onclick="aiSuggestTags()">✨ Write tags for me</button>
+      </div>
+    </div>
     <div class="ftwo">
       <div class="field"><label>Price (AED)</label><input id="dPrice" type="number" placeholder="0"></div>
       <div class="field"><label>Compare-at (optional)</label><input id="dCompare" type="number" placeholder="—"></div>
@@ -475,7 +489,8 @@ function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clea
 /* ---------------- API GLUE ---------------- */
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'shipped'; }
-function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,
+function parseTagsCol(s){ try{const v=JSON.parse(s||'[]');return Array.isArray(v)?v:[];}catch(_){return[];} }
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,tags:parseTagsCol(p.tags),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',status:s.status||'approved',
@@ -590,6 +605,46 @@ async function delProduct(id){const p=products.find(x=>x.id===id);if(!confirm(`D
   await reloadProducts();
 }
 
+/* drawer — tags */
+let drawerTags=[];
+function renderDrawerTags(){
+  const box=$('dTagBox'), input=$('dTagIn');
+  box.querySelectorAll('.tg').forEach(el=>el.remove());
+  drawerTags.forEach((t,i)=>{
+    const chip=document.createElement('span');chip.className='tg';
+    chip.appendChild(document.createTextNode(t));
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+    x.onclick=(e)=>{e.stopPropagation();drawerTags.splice(i,1);renderDrawerTags();};
+    chip.appendChild(x);box.insertBefore(chip,input);
+  });
+  input.placeholder=drawerTags.length?'Add another…':'Type a tag, press Enter';
+}
+function addDrawerTag(raw){
+  const t=String(raw||'').toLowerCase().replace(/\s+/g,' ').trim().slice(0,28).trim();
+  if(!t)return;
+  if(drawerTags.length>=12){toast('12 tags is the limit — remove one first');return;}
+  if(!drawerTags.includes(t))drawerTags.push(t);
+  renderDrawerTags();
+}
+$('dTagIn').addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'||e.key===','){e.preventDefault();addDrawerTag(e.target.value);e.target.value='';}
+  else if(e.key==='Backspace'&&!e.target.value&&drawerTags.length){drawerTags.pop();renderDrawerTags();}
+});
+$('dTagIn').addEventListener('blur',(e)=>{if(e.target.value.trim()){addDrawerTag(e.target.value);e.target.value='';}});
+async function aiSuggestTags(){
+  const name=$('dName').value.trim();
+  if(!name){toast('Give the product a name first — Claude works from it');$('dName').focus();return;}
+  const btn=$('dTagAI'), was=btn.textContent;
+  btn.classList.add('thinking');btn.textContent='Thinking…';
+  try{
+    const {tags}=await TroveAPI.api('/api/seller/products/suggest-tags',{method:'POST',
+      body:{name,description:$('dDesc').value.trim(),category:$('dCat').value}});
+    (tags||[]).forEach(addDrawerTag);
+    toast(tags&&tags.length?'Tags written — remove any that don’t fit':'No suggestions this time');
+  }catch(e){toast(e.message||'Could not write tags right now');}
+  finally{btn.classList.remove('thinking');btn.textContent=was;}
+}
+
 /* drawer */
 function togglePerso(){$('dPersoFields').style.display=$('dPerso').checked?'block':'none';}
 function setPersoReq(btn){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
@@ -600,10 +655,12 @@ function readPerso(){return {enabled:$('dPerso').checked,required:document.query
   prompt:$('dPersoPrompt').value.trim(),maxLen:parseInt($('dPersoLimit').value)||256};}
 function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSave').textContent='Add product';
   $('dName').value='';$('dDesc').value='';$('dCat').value='Ceramics';$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
+  drawerTags=[];renderDrawerTags();$('dTagIn').value='';
   fillPerso(null);setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSave').textContent='Save changes';
   $('dName').value=p.name;$('dDesc').value=p.desc||'';$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
+  drawerTags=(p.tags||[]).slice();renderDrawerTags();$('dTagIn').value='';
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;}
 function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;}
@@ -613,9 +670,10 @@ $('drawerSave').onclick=async()=>{
   const name=$('dName').value.trim(); const price=parseFloat($('dPrice').value);
   if(!name){toast('Give your product a name');return;}
   if(isNaN(price)||price<=0){toast('Set a price above 0');return;}
+  if($('dTagIn').value.trim()){addDrawerTag($('dTagIn').value);$('dTagIn').value='';}   // catch a half-typed tag
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
     compareAt:parseFloat($('dCompare').value)||null,stock:parseInt($('dStock').value)||0,status:drawerStatus,
-    personalization:readPerso()};
+    tags:drawerTags,personalization:readPerso()};
   try{
     if(editingId) await TroveAPI.api('/api/seller/products/'+editingId,{method:'PATCH',body});
     else { body.imageSeed='new'+Math.floor(Math.random()*9999); await TroveAPI.api('/api/seller/products',{method:'POST',body}); }
@@ -1034,6 +1092,8 @@ async function boot(){
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
   if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
   await Promise.all([reloadProducts(), reloadOrders()]);
+  // Claude-written tag suggestions: only show the button when the server has a key.
+  TroveAPI.config().then(c=>{ if(c&&c.aiTagsEnabled)$('dTagAI').style.display=''; }).catch(()=>{});
   fillStoreForm();
   const params=new URLSearchParams(location.search);
   if(params.get('connect')){ await refreshStripeStatus(); go('payments'); }

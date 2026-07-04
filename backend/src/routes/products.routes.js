@@ -1,6 +1,7 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
+const { parseTags } = require('../tags');
 
 const router = express.Router();
 
@@ -10,6 +11,7 @@ function shape(p) {
     name: p.name,
     description: p.description,
     category: p.category,
+    tags: parseTags(p.tags),
     price: p.price_cents / 100,
     compareAt: p.compare_at_cents ? p.compare_at_cents / 100 : null,
     stock: p.stock,
@@ -34,7 +36,7 @@ router.get('/', (req, res) => {
   if (category && category !== 'all') { sql += ' AND p.category = ?'; args.push(category); }
   if (house === '1') { sql += ' AND s.is_house = 1'; }
   if (shop) { sql += ' AND s.slug = ?'; args.push(shop); }
-  if (q) { sql += ' AND (p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ?)'; const like = `%${q}%`; args.push(like, like, like); }
+  if (q) { sql += ' AND (p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ? OR p.tags LIKE ?)'; const like = `%${q}%`; args.push(like, like, like, like); }
   sql += ' ORDER BY p.created_at DESC';
   res.json({ products: db.prepare(sql).all(...args).map(shape) });
 });

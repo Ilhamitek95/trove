@@ -191,6 +191,7 @@ function createApp() {
     railBEnabled: require('./config').railBEnabled(),
     vatRegistered: require('./config').vatRegistered(),
     serviceAreas: require('./service-area').SERVICE_AREAS,
+    aiTagsEnabled: require('./ai').enabled(),
   }));
   // The seller agreement, served with its hash so acceptance is verifiable.
   app.get('/api/legal/seller-agreement', (_req, res) => {

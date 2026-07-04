@@ -107,6 +107,12 @@ const products = [
 ];
 for (const p of products) mkProd.run(...p);
 
+// Search tags — shared with the 003 migration so live databases that were
+// seeded before tags existed get the same backfill.
+const { SEED_TAGS } = require('./migrations/003-seed-product-tags');
+const setTags = db.prepare('UPDATE products SET tags=? WHERE image_seed=?');
+for (const [seed, tags] of Object.entries(SEED_TAGS)) setTags.run(JSON.stringify(tags), seed);
+
 // Etsy-style personalisation on a few pieces so the option is visible end to end:
 // the mug requires it (monogram), the wallet and notebook offer it optionally.
 const setPerso = db.prepare(`UPDATE products SET personalization_enabled=1, personalization_required=?,

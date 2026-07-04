@@ -43,3 +43,5 @@ services:
       #   VAT_REGISTERED   set to 1 once Trove is VAT-registered
       #   GRADUATION_THRESHOLD_AED, COMMISSION_PERCENT  (defaults 12000 / 20)
       #   QUIQUP_API_KEY, QUIQUP_API_URL, QUIQUP_WEBHOOK_SECRET  (courier; mock until set)
+      #   ANTHROPIC_API_KEY  switches on Claude-written tag suggestions in the
+      #                      seller dashboard (console.anthropic.com → API keys)
