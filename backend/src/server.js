@@ -99,6 +99,12 @@ const { getStripe } = require('./stripe');
 const app = createApp();
 const PORT = process.env.PORT || 4242;
 
+// Search-trend hygiene: the log is a rolling 90-day signal, trimmed each boot.
+try {
+  const purged = require('./trends').purgeOld();
+  if (purged) console.log(`search log: purged ${purged} entr${purged === 1 ? 'y' : 'ies'} older than 90 days`);
+} catch (e) { console.error('search log purge failed:', e.message); }
+
 /* ---------------- Scheduled jobs (single process, guarded) ---------------- */
 if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
   const cron = require('node-cron');

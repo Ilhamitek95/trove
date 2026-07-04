@@ -29,6 +29,13 @@ router.get('/stats', requireAdmin, (_req, res) => {
   res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products });
 });
 
+// GET /api/admin/search-trends → what shoppers typed in the last 30 days.
+// avgResults near 0 flags demand the catalogue isn't meeting yet.
+router.get('/search-trends', requireAdmin, (req, res) => {
+  const days = Math.min(90, Math.max(1, parseInt(req.query.days) || 30));
+  res.json({ days, terms: require('../trends').topSearchTerms(days, 40) });
+});
+
 // GET /api/admin/shops → every shop with its owner, catalogue and sales.
 router.get('/shops', requireAdmin, (_req, res) => {
   const rows = db.prepare(`

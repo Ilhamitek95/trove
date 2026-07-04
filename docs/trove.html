@@ -1091,7 +1091,11 @@ function openCart(){renderCart();$('scrim').classList.add('open');$('drawer').cl
 function closeCart(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
 
 /* SEARCH + ACCOUNT MENU */
-function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.min=0;state.max=9999;buildCatFilters();renderShop();showView('shop');window.scrollTo(0,0);}
+function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.min=0;state.max=9999;buildCatFilters();renderShop();showView('shop');window.scrollTo(0,0);
+  // Report the search (anonymously — just the words + hit count) so trending
+  // terms can steer the AI tag writer. Tag taps run through here too.
+  if(state.q&&LIVE){try{TroveAPI.api('/api/search-log',{method:'POST',body:{q:state.q,results:filteredProducts().length}}).catch(()=>{});}catch(_){}}
+}
 function searchTag(t){const si=$('searchInput');if(si)si.value=t;runSearch(t);}
 function toggleAcct(e){e.stopPropagation();$('acctMenu').classList.toggle('open');}
 document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.remove('open');});

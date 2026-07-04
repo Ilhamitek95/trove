@@ -38,7 +38,9 @@ router.get('/', (req, res) => {
   if (shop) { sql += ' AND s.slug = ?'; args.push(shop); }
   if (q) { sql += ' AND (p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ? OR p.tags LIKE ?)'; const like = `%${q}%`; args.push(like, like, like, like); }
   sql += ' ORDER BY p.created_at DESC';
-  res.json({ products: db.prepare(sql).all(...args).map(shape) });
+  const rows = db.prepare(sql).all(...args);
+  if (q) require('../trends').logSearch(q, rows.length);   // server-side searches count toward trends too
+  res.json({ products: rows.map(shape) });
 });
 
 // GET /api/products/:id

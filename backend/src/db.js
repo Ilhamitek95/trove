@@ -181,6 +181,16 @@ CREATE TABLE IF NOT EXISTS shipment_events (
 CREATE INDEX IF NOT EXISTS idx_shipments_order ON shipments(order_id);
 CREATE INDEX IF NOT EXISTS idx_shipments_shop ON shipments(shop_id);
 CREATE INDEX IF NOT EXISTS idx_shipevents_ship ON shipment_events(shipment_id);
+
+-- Anonymous shopper search log (query text only, no user ids). Feeds the
+-- trending-terms context the AI tag writer uses. See src/trends.js.
+CREATE TABLE IF NOT EXISTS search_log (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  q          TEXT NOT NULL,
+  results    INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_search_log_time ON search_log(created_at);
 `);
 
 // Versioned migrations run last, so they always see the full baseline schema

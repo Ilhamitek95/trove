@@ -193,6 +193,13 @@ function createApp() {
     serviceAreas: require('./service-area').SERVICE_AREAS,
     aiTagsEnabled: require('./ai').enabled(),
   }));
+  // Storefront search beacon — the shop page filters locally, so it reports
+  // each search here. Anonymous by design: query text and hit count only.
+  app.post('/api/search-log', (req, res) => {
+    const { q, results } = req.body || {};
+    require('./trends').logSearch(q, results);
+    res.status(204).end();
+  });
   // The seller agreement, served with its hash so acceptance is verifiable.
   app.get('/api/legal/seller-agreement', (_req, res) => {
     const fs = require('fs');
