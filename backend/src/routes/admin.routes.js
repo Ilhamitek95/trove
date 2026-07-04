@@ -36,6 +36,33 @@ router.get('/search-trends', requireAdmin, (req, res) => {
   res.json({ days, terms: require('../trends').topSearchTerms(days, 40) });
 });
 
+/* ---------------- Review moderation ---------------- */
+
+// GET /api/admin/reviews → newest first, hidden ones included.
+router.get('/reviews', requireAdmin, (_req, res) => {
+  const reviews = require('../reviews');
+  const rows = db.prepare(`
+    SELECT r.*, u.name AS buyer_name, u.email AS buyer_email, p.name AS product_name, s.name AS shop_name
+    FROM reviews r
+    JOIN users u ON u.id = r.buyer_id
+    JOIN shops s ON s.id = r.shop_id
+    LEFT JOIN products p ON p.id = r.product_id
+    ORDER BY r.created_at DESC LIMIT 200`).all();
+  res.json({ reviews: rows.map((r) => ({
+    ...reviews.shape(r),
+    buyerEmail: r.buyer_email, shopName: r.shop_name, status: r.status,
+  })) });
+});
+
+// PATCH /api/admin/reviews/:id {status} → hide a review (or publish it again).
+router.patch('/reviews/:id', requireAdmin, (req, res) => {
+  const { status } = req.body || {};
+  if (!['published', 'hidden'].includes(status)) return res.status(400).json({ error: 'status must be published or hidden' });
+  const r = db.prepare('UPDATE reviews SET status=? WHERE id=?').run(status, req.params.id);
+  if (!r.changes) return res.status(404).json({ error: 'Not found' });
+  res.json({ ok: true });
+});
+
 /* ---------------- Catalogue moderation ---------------- */
 const { parseTags, normalizeTags } = require('../tags');
 

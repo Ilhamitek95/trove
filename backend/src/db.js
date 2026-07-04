@@ -182,6 +182,27 @@ CREATE INDEX IF NOT EXISTS idx_shipments_order ON shipments(order_id);
 CREATE INDEX IF NOT EXISTS idx_shipments_shop ON shipments(shop_id);
 CREATE INDEX IF NOT EXISTS idx_shipevents_ship ON shipment_events(shipment_id);
 
+-- Ratings & reviews — verified purchases only (see src/reviews.js).
+-- product_id NULL = a review of the shop itself. Photos live in images
+-- as a JSON array of /uploads URLs. Admin hides via status='hidden'.
+CREATE TABLE IF NOT EXISTS reviews (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  buyer_id   INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  shop_id    INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  product_id INTEGER REFERENCES products(id) ON DELETE CASCADE,
+  order_id   INTEGER REFERENCES orders(id),
+  rating     INTEGER NOT NULL,
+  body       TEXT DEFAULT '',
+  images     TEXT DEFAULT '[]',
+  status     TEXT NOT NULL DEFAULT 'published',  -- published | hidden
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_one_per_product ON reviews(buyer_id, product_id) WHERE product_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_one_per_shop ON reviews(buyer_id, shop_id) WHERE product_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_reviews_product ON reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_shop ON reviews(shop_id);
+
 -- Anonymous shopper search log (query text only, no user ids). Feeds the
 -- trending-terms context the AI tag writer uses. See src/trends.js.
 CREATE TABLE IF NOT EXISTS search_log (

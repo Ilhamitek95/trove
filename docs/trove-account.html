@@ -218,6 +218,45 @@
   .iact:hover{background:var(--rose-tint);color:var(--char)}
 
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;z-index:130;opacity:0;transition:.32s;box-shadow:var(--shadow)}
+
+  /* ratings & reviews */
+  .rev-nudge{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:20px}
+  .rev-nudge h3{font-family:'Cormorant',serif;font-size:22px;font-weight:600;margin-bottom:2px}
+  .rev-nudge .sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:14px}
+  .rev-row{display:flex;align-items:center;gap:13px;padding:10px 0;border-top:1px solid var(--line-soft,rgba(38,35,33,.06))}
+  .rev-row .im{width:46px;height:56px;border-radius:10px;position:relative;overflow:hidden;flex-shrink:0}
+  .rev-row .im img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .rev-row .nm{font-weight:700;font-size:13.5px}
+  .rev-row .sl{font-size:12px;color:var(--muted);font-weight:600}
+  .rev-row .btn{margin-left:auto;white-space:nowrap}
+  .myrev{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:20px}
+  .myrev h3{font-family:'Cormorant',serif;font-size:22px;font-weight:600;margin-bottom:12px}
+  .myrev .r{padding:13px 0;border-top:1px solid var(--line-soft,rgba(38,35,33,.06))}
+  .myrev .rh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .myrev .rstars{color:var(--coral);letter-spacing:2px;font-size:14px}
+  .myrev .rt{font-weight:700;font-size:13.5px}
+  .myrev .rw{font-size:12px;color:var(--muted);font-weight:600;margin-left:auto}
+  .myrev p{font-size:13px;color:var(--ink-80,rgba(38,35,33,.78));font-weight:500;margin-top:5px;line-height:1.6}
+  .myrev .racts{margin-top:7px;display:flex;gap:14px;font-size:12.5px;font-weight:700}
+  .myrev .racts a{cursor:pointer;color:var(--coral-deep)}
+  .myrev .rimgs{display:flex;gap:7px;margin-top:8px}
+  .myrev .rimgs img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  .rev-scrim{position:fixed;inset:0;background:rgba(38,35,33,.38);z-index:120;display:none;place-items:center;padding:20px}
+  .rev-scrim.open{display:grid}
+  .rev-modal{background:var(--paper);border-radius:20px;padding:26px 28px;width:540px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 30px 70px rgba(38,35,33,.28)}
+  .rev-modal h3{font-family:'Cormorant',serif;font-size:24px;font-weight:600}
+  .rev-modal .sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:16px}
+  .starpick{display:flex;gap:6px;margin:6px 0 16px}
+  .starpick button{font-size:31px;line-height:1;color:#DCCFC6;cursor:pointer;transition:.12s;background:none;border:none;padding:2px}
+  .starpick button.on{color:var(--coral)}
+  .starpick button:hover{transform:scale(1.12)}
+  .rev-modal textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:#fff;color:var(--char);outline:none;resize:vertical;min-height:96px}
+  .rev-photos{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
+  .rev-photos .ph{width:74px;height:74px;border-radius:10px;position:relative;overflow:hidden;border:1px solid var(--line)}
+  .rev-photos .ph img{width:100%;height:100%;object-fit:cover}
+  .rev-photos .ph button{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:rgba(38,35,33,.65);color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
+  .rev-photos .addph{width:74px;height:74px;border-radius:10px;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--muted);cursor:pointer;font-size:22px;background:none}
+  .rev-photos .addph:hover{border-color:var(--coral);color:var(--coral-deep)}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   @media(max-width:920px){
@@ -291,7 +330,7 @@
       </div>
 
       <!-- ORDERS -->
-      <div class="view" id="view-orders"><div id="ordersList"></div></div>
+      <div class="view" id="view-orders"><div id="reviewNudge"></div><div id="ordersList"></div><div id="myReviews"></div></div>
 
       <!-- WISHLIST -->
       <div class="view" id="view-wishlist"><div id="wishWrap"></div></div>
@@ -357,6 +396,23 @@
   <div class="dbody" id="drawerBody"></div>
   <div class="dfoot"><button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button><button class="btn btn-coral" id="drawerSave">Save</button></div>
 </aside>
+
+<div class="rev-scrim" id="revScrim" onclick="if(event.target===this)closeReview()">
+  <div class="rev-modal">
+    <h3 id="rvTitle">Rate &amp; review</h3>
+    <div class="sub" id="rvSub"></div>
+    <div class="starpick" id="rvStars"></div>
+    <textarea id="rvBody" maxlength="2000" placeholder="What was it like — the quality, the details, the unboxing? (optional)"></textarea>
+    <div class="rev-photos" id="rvPhotos"></div>
+    <input type="file" id="rvFile" accept="image/*" multiple style="display:none" onchange="revAddFiles(this.files)">
+    <div style="display:flex;gap:10px;align-items:center;margin-top:20px">
+      <a id="rvDelete" style="display:none;cursor:pointer;color:var(--coral-deep);font-size:13px;font-weight:700" onclick="deleteReview()">Remove review</a>
+      <span style="flex:1"></span>
+      <button class="btn btn-ghost" onclick="closeReview()">Cancel</button>
+      <button class="btn btn-coral" id="rvSave" onclick="saveReview()">Share review</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -577,6 +633,125 @@ function saveDetails(){
 function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
 function closeDrawer(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
 
+/* ---------- RATINGS & REVIEWS ---------- */
+let reviewables={products:[],shops:[]}, myReviews=[];
+let rvTarget=null, rvRating=0, rvImages=[];   // images: /uploads URLs or data URLs
+const rstars=r=>'★★★★★'.slice(0,Math.round(+r))+'☆☆☆☆☆'.slice(0,5-Math.round(+r));
+async function reloadReviews(){
+  try{ reviewables=await TroveAPI.api('/api/account/reviewables'); }catch(_){ reviewables={products:[],shops:[]}; }
+  try{ myReviews=(await TroveAPI.api('/api/account/reviews')).reviews||[]; }catch(_){ myReviews=[]; }
+  renderReviewNudge(); renderMyReviews();
+}
+function renderReviewNudge(){
+  const w=$('reviewNudge'); if(!w)return;
+  const n=reviewables.products.length+reviewables.shops.length;
+  if(!n){w.innerHTML='';return;}
+  w.innerHTML=`<div class="rev-nudge">
+    <h3>Share what you thought</h3>
+    <div class="sub">Reviews are from verified buyers only — yours helps the next shopper and the maker alike.</div>
+    ${reviewables.products.map(p=>`<div class="rev-row">
+      <div class="im"><div style="position:absolute;inset:0;${grad(p.color||'#A98B7D')}"></div><img src="${img(p.imageSeed)}" onerror="this.style.display='none'"></div>
+      <div><div class="nm">${esc(p.name)}</div><div class="sl">${esc(p.shopName)}</div></div>
+      <button class="btn btn-ghost btn-sm" onclick='openReview({productId:${p.id},name:${JSON.stringify(p.name)},sub:${JSON.stringify(p.shopName)}})'>☆ Rate &amp; review</button>
+    </div>`).join('')}
+    ${reviewables.shops.map(s=>`<div class="rev-row">
+      <div class="im"><div style="position:absolute;inset:0;${grad(s.color||'#A98B7D')}"></div></div>
+      <div><div class="nm">${esc(s.name)}</div><div class="sl">The shop — packaging, communication, care</div></div>
+      <button class="btn btn-ghost btn-sm" onclick='openReview({shopId:${s.id},name:${JSON.stringify(s.name)},sub:"Shop review"})'>☆ Rate the shop</button>
+    </div>`).join('')}
+  </div>`;
+}
+function renderMyReviews(){
+  const w=$('myReviews'); if(!w)return;
+  if(!myReviews.length){w.innerHTML='';return;}
+  w.innerHTML=`<div class="myrev"><h3>Your reviews</h3>
+    ${myReviews.map(r=>`<div class="r">
+      <div class="rh"><span class="rstars">${rstars(r.rating)}</span>
+        <span class="rt">${esc(r.productName||r.shopName)}</span>
+        ${r.productId?`<span style="font-size:11.5px;color:var(--muted);font-weight:600">${esc(r.shopName)}</span>`:'<span style="font-size:11.5px;color:var(--muted);font-weight:600">Shop review</span>'}
+        ${r.status==='hidden'?'<span style="font-size:10.5px;font-weight:700;color:var(--coral-deep);background:var(--rose-tint,#F1E7E1);border-radius:999px;padding:3px 9px">hidden by trove</span>':''}
+        <span class="rw">${fmtDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
+      ${r.body?`<p>${esc(r.body)}</p>`:''}
+      ${r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}">`).join('')}</div>`:''}
+      <div class="racts"><a onclick='editReview(${r.id})'>Edit</a><a onclick='confirmDeleteReview(${r.id})' style="color:var(--muted)">Remove</a></div>
+    </div>`).join('')}</div>`;
+}
+function renderRvStars(){
+  $('rvStars').innerHTML=[1,2,3,4,5].map(i=>`<button type="button" class="${i<=rvRating?'on':''}" onclick="rvRating=${i};renderRvStars()" title="${i} star${i===1?'':'s'}">${i<=rvRating?'★':'☆'}</button>`).join('');
+}
+function renderRvPhotos(){
+  const w=$('rvPhotos');w.innerHTML='';
+  rvImages.forEach((u,i)=>{
+    const d=document.createElement('div');d.className='ph';
+    const im=document.createElement('img');im.src=u;d.appendChild(im);
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.onclick=()=>{rvImages.splice(i,1);renderRvPhotos();};
+    d.appendChild(x);w.appendChild(d);
+  });
+  if(rvImages.length<3){
+    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';
+    b.onclick=()=>$('rvFile').click();w.appendChild(b);
+  }
+}
+// Downsize photos in the browser (max 1200px JPEG) so uploads stay light.
+function revAddFiles(files){
+  [...files].slice(0,3-rvImages.length).forEach(f=>{
+    const rd=new FileReader();
+    rd.onload=()=>{const im=new Image();im.onload=()=>{
+      const s=Math.min(1,1200/Math.max(im.width,im.height));
+      const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      rvImages.push(c.toDataURL('image/jpeg',.85));renderRvPhotos();
+    };im.src=rd.result;};
+    rd.readAsDataURL(f);
+  });
+  $('rvFile').value='';
+}
+function openReview(target){
+  rvTarget=target;
+  const existing=target.productId
+    ? myReviews.find(r=>r.productId===target.productId)
+    : myReviews.find(r=>!r.productId&&r.shopId===target.shopId);
+  rvRating=existing?existing.rating:0;
+  rvImages=existing?existing.images.slice():[];
+  $('rvBody').value=existing?existing.body:'';
+  $('rvTitle').textContent=(existing?'Edit your review':'Rate & review');
+  $('rvSub').textContent=target.name+(target.sub?' · '+target.sub:'');
+  $('rvDelete').style.display=existing?'':'none';
+  rvTarget.existingId=existing?existing.id:null;
+  renderRvStars();renderRvPhotos();
+  $('revScrim').classList.add('open');
+}
+function editReview(id){
+  const r=myReviews.find(x=>x.id===id);if(!r)return;
+  openReview(r.productId?{productId:r.productId,name:r.productName,sub:r.shopName}:{shopId:r.shopId,name:r.shopName,sub:'Shop review'});
+}
+function closeReview(){$('revScrim').classList.remove('open');rvTarget=null;}
+async function saveReview(){
+  if(!rvTarget)return;
+  if(!rvRating){toast('Tap a star rating first');return;}
+  const btn=$('rvSave'),was=btn.textContent;btn.textContent='Sharing…';btn.disabled=true;
+  try{
+    await TroveAPI.api('/api/account/reviews',{method:'POST',body:{
+      productId:rvTarget.productId||null,shopId:rvTarget.shopId||null,
+      rating:rvRating,body:$('rvBody').value.trim(),images:rvImages}});
+    closeReview();toast('Thank you — your review is live');
+    await reloadReviews();
+  }catch(e){toast(e.message||'Could not save your review');}
+  finally{btn.textContent=was;btn.disabled=false;}
+}
+async function deleteReview(){
+  if(!rvTarget||!rvTarget.existingId)return;
+  if(!confirm('Remove this review?'))return;
+  try{await TroveAPI.api('/api/account/reviews/'+rvTarget.existingId,{method:'DELETE'});closeReview();toast('Review removed');await reloadReviews();}
+  catch(e){toast(e.message||'Could not remove it');}
+}
+async function confirmDeleteReview(id){
+  if(!confirm('Remove this review?'))return;
+  try{await TroveAPI.api('/api/account/reviews/'+id,{method:'DELETE'});toast('Review removed');await reloadReviews();}
+  catch(e){toast(e.message||'Could not remove it');}
+}
+document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&$('revScrim').classList.contains('open'))closeReview();});
+
 /* ---------- ROUTER ---------- */
 const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, reorder and review'],wishlist:['Saved items','Your wishlist'],addresses:['Addresses','Where we ship'],payments:['Payment methods','Cards & checkout'],following:['Following','Shops you love'],details:['My details','Profile & preferences']};
 function go(v){
@@ -611,7 +786,7 @@ async function boot(){
   try{ session=await TroveAPI.me(); }catch(_){}
   if(!session||!session.user){ location.href='trove-login.html'; return; }
   ME=session.user; initUser();
-  await Promise.all([reloadOrders(), reloadAddresses()]);
+  await Promise.all([reloadOrders(), reloadAddresses(), reloadReviews()]);
   renderWishlist(); renderFollowing(); renderOverview();
   const _sec=(location.hash||'').replace('#','');
   if(['orders','wishlist','addresses','payments','following','details'].includes(_sec))go(_sec); else go('overview');

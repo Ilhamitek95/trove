@@ -232,6 +232,16 @@
   .pdp .stars{margin-bottom:18px}
   .pdp .pricerow .price{font-size:26px;font-weight:600}
   .pdp .desc{color:var(--ink-80);font-size:16px;line-height:1.75;margin:22px 0 28px;max-width:50ch;font-weight:400}
+  .rev-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+  .rev{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+  .rev .rhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .rev .rstars{color:var(--coral);font-size:15px;letter-spacing:2px}
+  .rev .rwho{font-weight:700;font-size:13.5px}
+  .rev .rwhen{font-size:12px;color:var(--muted);font-weight:600;margin-left:auto}
+  .rev .rprod{font-size:11.5px;color:var(--coral-deep);font-weight:700;margin-bottom:6px}
+  .rev p{font-size:14px;line-height:1.7;color:var(--ink-80);font-weight:400}
+  .rev .rimgs{display:flex;gap:8px;margin-top:12px}
+  .rev .rimgs img{width:74px;height:74px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}
   .ptags{display:flex;flex-wrap:wrap;gap:8px;margin:-14px 0 26px}
   .ptags:empty{display:none}
   .ptag{border:1px solid var(--line);background:var(--cream);color:var(--ink-80);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.18s}
@@ -580,9 +590,13 @@
       <div><b id="vSince"></b><span>On trove</span></div>
     </div>
   </div>
-  <div class="wrap" style="padding:56px 32px 100px">
+  <div class="wrap" style="padding:56px 32px 40px">
     <div class="band-head left"><div><span class="eyebrow">From this shop</span><h2 style="font-size:38px">The collection</h2></div></div>
     <div class="pgrid" id="vendorProducts"></div>
+  </div>
+  <div class="wrap" id="vendorReviews" style="display:none;padding:0 32px 100px">
+    <div class="band-head left" style="margin-bottom:22px"><div><span class="eyebrow">From verified buyers</span><h2 style="font-size:36px" id="vRevHead">What buyers say</h2></div></div>
+    <div class="rev-list" id="vRevList"></div>
   </div>
 </div>
 
@@ -627,6 +641,10 @@
         </div>
       </div>
     </div>
+  </div>
+  <div class="wrap" id="pdpReviews" style="display:none;padding-bottom:90px">
+    <div class="band-head left" style="margin-bottom:22px"><div><span class="eyebrow">From verified buyers</span><h2 style="font-size:36px" id="pdpRevHead">Reviews</h2></div></div>
+    <div class="rev-list" id="pdpRevList"></div>
   </div>
 </div>
 
@@ -991,6 +1009,7 @@ function openVendor(key){
   $('vProds').textContent=v.prods; $('vRate').textContent=v.rating?v.rating+'★':'—'; $('vSince').textContent=v.since||'—';
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
+  loadShopReviews(key);
   showView('vendor'); window.scrollTo(0,0);
 }
 
@@ -1004,7 +1023,7 @@ function openPDP(id){
   $('pdpVendorLink').innerHTML=`${V.name}`;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
-  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} reviews</span>`:'';
+  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} review${p.reviews===1?'':'s'}</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
   // Tags double as one-tap searches — “stoneware” finds everything stoneware.
@@ -1033,9 +1052,43 @@ function openPDP(id){
   else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=V.name[0];}
   $('pdpSoldName').textContent=V.name;
   $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
+  loadProductReviews(p.id);
   showView('pdp'); window.scrollTo(0,0);
 }
 function swapMain(seed,el){$('pdpImg').src=img(seed);document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+
+/* Verified-buyer reviews, shown on the product page and the shop page. */
+function revDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?'':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+function reviewCardHTML(r){
+  return `<div class="rev">
+    ${r.productName?`<div class="rprod">${esc(r.productName)}</div>`:''}
+    <div class="rhead"><span class="rstars">${stars(r.rating)}</span><span class="rwho">${esc(r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
+    ${r.body?`<p>${esc(r.body)}</p>`:''}
+    ${r.images&&r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}" alt="Buyer photo" loading="lazy" onclick="window.open('${esc(u)}','_blank')">`).join('')}</div>`:''}
+  </div>`;
+}
+async function loadProductReviews(id){
+  const wrap=$('pdpReviews'); wrap.style.display='none';
+  if(!LIVE)return;
+  try{
+    const {summary,reviews}=await TroveAPI.api('/api/products/'+id+'/reviews');
+    if(!reviews.length)return;
+    $('pdpRevHead').innerHTML=`${summary.avg} <span style="color:var(--coral);font-size:26px;letter-spacing:3px;vertical-align:2px">${stars(summary.avg)}</span> <span style="font-size:17px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${summary.count} review${summary.count===1?'':'s'}</span>`;
+    $('pdpRevList').innerHTML=reviews.map(reviewCardHTML).join('');
+    wrap.style.display='';
+  }catch(_){}
+}
+async function loadShopReviews(slug){
+  const wrap=$('vendorReviews'); wrap.style.display='none';
+  if(!LIVE)return;
+  try{
+    const {summary,reviews}=await TroveAPI.api('/api/shops/'+slug+'/reviews');
+    if(!reviews.length)return;
+    $('vRevHead').innerHTML=`What buyers say <span style="font-size:18px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${summary.avg}★ from ${summary.count} review${summary.count===1?'':'s'}</span>`;
+    $('vRevList').innerHTML=reviews.map(reviewCardHTML).join('');
+    wrap.style.display='';
+  }catch(_){}
+}
 
 /* CART */
 function persoCount(){const ta=$('pdpPersoText');$('pdpPersoCount').textContent=`${ta.value.length} / ${ta.maxLength}`;}
@@ -1278,10 +1331,10 @@ async function loadCatalog(){
   try{
     const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
     VENDORS={};
-    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:null};});
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0};});
     PRODUCTS=pRes.products.map(p=>{
-      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:null,reviews:0,desc:p.description,seed:p.imageSeed,tags:p.tags||[],perso:p.personalization||null};
+      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,tags:p.tags||[],perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}

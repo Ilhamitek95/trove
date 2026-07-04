@@ -12,6 +12,7 @@ function shape(p) {
     description: p.description,
     category: p.category,
     tags: parseTags(p.tags),
+    rating: p.rating_count ? { avg: p.avg_rating, count: p.rating_count } : null,
     price: p.price_cents / 100,
     compareAt: p.compare_at_cents ? p.compare_at_cents / 100 : null,
     stock: p.stock,
@@ -24,8 +25,12 @@ function shape(p) {
 }
 
 const BASE = `
-  SELECT p.*, s.name AS shop_name, s.slug, s.location, s.color, s.image AS shop_image, s.is_house
+  SELECT p.*, s.name AS shop_name, s.slug, s.location, s.color, s.image AS shop_image, s.is_house,
+         rv.avg_rating, rv.rating_count
   FROM products p JOIN shops s ON s.id = p.shop_id
+  LEFT JOIN (SELECT product_id, ROUND(AVG(rating),1) AS avg_rating, COUNT(*) AS rating_count
+             FROM reviews WHERE product_id IS NOT NULL AND status = 'published'
+             GROUP BY product_id) rv ON rv.product_id = p.id
   WHERE p.status = 'live' AND s.status = 'approved'
 `;
 
@@ -48,6 +53,14 @@ router.get('/:id', (req, res) => {
   const p = db.prepare(BASE + ' AND p.id = ?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   res.json({ product: shape(p) });
+});
+
+// GET /api/products/:id/reviews → published reviews, newest first.
+router.get('/:id/reviews', (req, res) => {
+  const p = db.prepare(BASE + ' AND p.id = ?').get(req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  const reviews = require('../reviews');
+  res.json({ summary: reviews.productSummary(p.id), reviews: reviews.forProduct(p.id) });
 });
 
 module.exports = router;

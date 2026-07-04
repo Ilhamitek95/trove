@@ -5,7 +5,7 @@ const { hashPassword } = require('./middleware');
 
 const c = (aed) => Math.round(aed * 100);
 
-db.exec(`DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM purchase_notes;
+db.exec(`DELETE FROM reviews; DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM purchase_notes;
   DELETE FROM settlement_items; DELETE FROM seller_balances; DELETE FROM settlements;
   DELETE FROM webhook_events; DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders;
   DELETE FROM products; DELETE FROM addresses; DELETE FROM shops; DELETE FROM users;`);
@@ -155,6 +155,15 @@ mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Quiqup) · TRVX-4471902', 
 mkEv.run(kilnShip, 'delivered', 'Delivered (confirmed by courier)', '-9 days');
 const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '', null, null).lastInsertRowid;
 mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-12 days');
+
+// Layla's delivered mug earns the catalogue its first reviews — one for the
+// piece, one for the shop — so ratings render on the storefront out of the box.
+const mkReview = db.prepare(`INSERT INTO reviews (buyer_id,shop_id,product_id,order_id,rating,body,created_at,updated_at)
+  VALUES (?,?,?,?,?,?,datetime('now','-8 days'),datetime('now','-8 days'))`);
+mkReview.run(layla, mug.shop_id, mug.id, demoOrder, 5,
+  'The glaze is even lovelier in person — mine pours slightly wide at the lip and I’ve used it every morning since. The stamped initials came out beautifully.');
+mkReview.run(layla, mug.shop_id, null, demoOrder, 5,
+  'Carefully wrapped, arrived two days early, and Mara answered my personalisation question within the hour.');
 
 console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments).', products.length + 1);
 console.log('Suppliers: house, Kiln, Ember, Fern = consignment (weekly settlement, payout setup complete); Loom + Folio = connect tier (Rail B, no Stripe account attached).');
