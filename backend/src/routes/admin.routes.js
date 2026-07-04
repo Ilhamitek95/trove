@@ -36,6 +36,58 @@ router.get('/search-trends', requireAdmin, (req, res) => {
   res.json({ days, terms: require('../trends').topSearchTerms(days, 40) });
 });
 
+/* ---------------- Catalogue moderation ---------------- */
+const { parseTags, normalizeTags } = require('../tags');
+
+// GET /api/admin/products → every product in every shop, any status.
+router.get('/products', requireAdmin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT p.*, s.name AS shop_name, s.slug, s.color, s.image AS shop_image, s.is_house, s.status AS shop_status
+    FROM products p JOIN shops s ON s.id = p.shop_id
+    ORDER BY p.created_at DESC`).all();
+  res.json({ products: rows.map((p) => ({
+    id: p.id, name: p.name, description: p.description, category: p.category,
+    priceCents: p.price_cents, stock: p.stock, status: p.status,
+    imageSeed: p.image_seed, tags: parseTags(p.tags), createdAt: p.created_at,
+    shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, color: p.color, image: p.shop_image, isHouse: !!p.is_house, status: p.shop_status },
+  })) });
+});
+
+// PATCH /api/admin/products/:id — moderation: pull a piece off the storefront
+// (status → hidden) or fix its discovery data (category, tags).
+router.patch('/products/:id', requireAdmin, (req, res) => {
+  const p = db.prepare('SELECT * FROM products WHERE id=?').get(req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  const b = req.body || {};
+  if (b.status !== undefined && !['live', 'draft', 'hidden'].includes(b.status))
+    return res.status(400).json({ error: 'status must be live, draft or hidden' });
+  if (b.category != null) {
+    const catErr = require('../categories').categoryError(b.category);
+    if (catErr) return res.status(422).json({ error: catErr.message });
+  }
+  db.prepare('UPDATE products SET status=COALESCE(?,status), category=COALESCE(?,category) WHERE id=?')
+    .run(b.status, b.category, p.id);
+  if (b.tags !== undefined)
+    db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
+  res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
+});
+
+// POST /api/admin/products/:id/suggest-tags — the same Claude tag writer
+// sellers get, so the curation team can fix discovery on any listing.
+router.post('/products/:id/suggest-tags', requireAdmin, async (req, res) => {
+  const ai = require('../ai');
+  if (!ai.enabled()) return res.status(503).json({ error: 'AI tag suggestions are not switched on yet' });
+  const p = db.prepare('SELECT p.*, s.name AS shop_name FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=?').get(req.params.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  try {
+    const tags = await ai.suggestTags({ name: p.name, description: p.description, category: p.category, shopName: p.shop_name });
+    res.json({ tags });
+  } catch (e) {
+    console.error('admin suggest-tags failed:', e.message);
+    res.status(502).json({ error: 'Tag suggestions are unavailable right now — try again in a moment' });
+  }
+});
+
 // GET /api/admin/shops → every shop with its owner, catalogue and sales.
 router.get('/shops', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
