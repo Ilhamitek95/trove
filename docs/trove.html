@@ -103,14 +103,20 @@
   .link-more:hover{color:var(--coral-deep)}
 
   /* categories */
-  .cat-rail{display:grid;grid-template-columns:repeat(6,1fr);gap:18px}
+  .cat-rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px}
   .cat{cursor:pointer;text-align:center}
-  .cat .tile{aspect-ratio:1;border-radius:16px;overflow:hidden;position:relative;margin-bottom:14px;transition:transform .3s}
+  .cat .tile{aspect-ratio:1;border-radius:18px;overflow:hidden;position:relative;margin-bottom:14px;transition:transform .35s,box-shadow .35s;display:grid;place-items:center}
   .cat .tile .grad{position:absolute;inset:0}
-  .cat .tile img{position:absolute;inset:0;filter:saturate(.85);mix-blend-mode:multiply;opacity:.9}
-  .cat:hover .tile{transform:translateY(-5px)}
-  .cat .name{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1.1}
+  .cat .tile .blob{position:absolute;width:66%;aspect-ratio:1;border-radius:46% 54% 52% 48%/48% 46% 54% 52%;background:rgba(251,246,241,.55);transition:transform .45s}
+  .cat .tile svg{position:relative;z-index:2;color:var(--char);transition:transform .35s;width:42px;height:42px}
+  .cat:hover .tile{transform:translateY(-6px);box-shadow:var(--shadow)}
+  .cat:hover .tile .blob{transform:scale(1.14) rotate(10deg)}
+  .cat:hover .tile svg{transform:rotate(-5deg) scale(1.08)}
+  .cat .name{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1.1;transition:color .25s}
+  .cat:hover .name{color:var(--coral-deep)}
   .cat .ct{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:1px}
+  .cat .ct i{font-style:normal;display:inline-block;opacity:0;transform:translateX(-5px);transition:.25s;color:var(--coral-deep)}
+  .cat:hover .ct i{opacity:1;transform:none}
 
   /* product grid + card */
   .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
@@ -836,6 +842,14 @@ const CATS = [
   {name:'Stationery', color:'#F5C68A', ct:'780'},
   {name:'Accessories', color:'#D8C5BE', ct:'1,540'},
 ];
+const CAT_ICON={
+  Home:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.3 11h5.4l.8 5.8a3.9 3.9 0 0 1-7 0z"/><path d="M12 11V5.2"/><path d="M12 7.8C10.4 7.5 9.3 6.3 9 4.6c1.7.3 2.8 1.5 3 3.2Z"/><path d="M12 6.4c1.3-.25 2.2-1.2 2.4-2.6-1.4.2-2.2 1.2-2.4 2.6Z"/></svg>',
+  Apparel:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.6 4 8l2 2.6 2.2-1.4v9.3h7.6V9.2l2.2 1.4L20 8l-3.2-2.4h-2.1a2.7 2.7 0 0 1-5.4 0z"/></svg>',
+  Ceramics:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10h9.5v5a4 4 0 0 1-4 4H9.5a4 4 0 0 1-4-4z"/><path d="M15 11.2h1.6a2.4 2.4 0 0 1 0 4.8H15"/><path d="M8.2 7c0-1 .9-1.2.9-2.4M11.6 7c0-1 .9-1.2.9-2.4"/></svg>',
+  Beauty:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8.6" y="10.2" width="6.8" height="8.8" rx="2"/><path d="M10.6 10.2V8.2h2.8v2"/><path d="M12 8.2V5.4"/><path d="M12 6.6c1.5-.2 2.5-1.2 2.7-2.9-1.6.2-2.5 1.3-2.7 2.9Z"/></svg>',
+  Stationery:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4.6" width="11.5" height="14.8" rx="1.6"/><path d="M9.2 4.6v14.8"/><path d="M11.8 9.2h3.4M11.8 12.2h3.4"/></svg>',
+  Accessories:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 9.2h10.8l-1 10.3H7.6z"/><path d="M9.6 9.2V7.6a2.4 2.4 0 0 1 4.8 0v1.6"/></svg>',
+};
 const P = (id,name,vendor,price,was,cat,rating,reviews,desc,seed)=>({id,name,vendor,price,was,cat,rating,reviews,desc,seed});
 let PRODUCTS = [
   P(1,'Reeded Stoneware Mug','kiln',64,null,'Ceramics','4.9',214,'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.','mug7'),
@@ -967,9 +981,11 @@ function productCard(p){
 
 /* HOME */
 function renderHome(){
-  $('catRail').innerHTML=CATS.map(c=>`<div class="cat" onclick="go('shop','${c.name}')">
-    <div class="tile"><div class="grad" style="${grad(c.color)}"></div></div>
-    <div class="name">${c.name}</div><div class="ct">${LIVE?PRODUCTS.filter(p=>p.cat===c.name).length:c.ct}</div></div>`).join('');
+  $('catRail').innerHTML=CATS.filter(c=>!LIVE||PRODUCTS.some(p=>p.cat===c.name)).map(c=>{
+    const n=LIVE?PRODUCTS.filter(p=>p.cat===c.name).length:c.ct;
+    return `<div class="cat" onclick="go('shop','${c.name}')">
+    <div class="tile"><div class="grad" style="${grad(c.color)}"></div><span class="blob"></span>${CAT_ICON[c.name]||''}</div>
+    <div class="name">${c.name}</div><div class="ct">${n} ${n===1?'piece':'pieces'} <i>→</i></div></div>`;}).join('');
 
   $('trendingGrid').innerHTML=PRODUCTS.slice(0,8).map(productCard).join('');
 
