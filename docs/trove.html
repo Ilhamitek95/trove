@@ -422,10 +422,9 @@
     <a href="#" class="brand" onclick="go('home');return false">trove</a>
     <nav class="links">
       <a href="#" onclick="go('shop','all');return false">Shop all</a>
-      <a href="#" onclick="go('shop','Home');return false">Home</a>
-      <a href="#" onclick="go('shop','Apparel');return false">Apparel</a>
       <a href="#" onclick="go('shop','House');return false">trove label</a>
-      <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Shops</a>
+      <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Our shops</a>
+      <a href="#" onclick="go('sell');return false">Sell on trove</a>
     </nav>
     <div class="right">
       <div class="search">
@@ -467,15 +466,41 @@
           <a class="txt-link" href="#" onclick="go('sell');return false">Open a shop →</a>
         </div>
       </div>
-      <div class="hero-img" id="heroImg"></div>
+      <div class="hero-img" onclick="go('shop','House')" style="cursor:pointer" title="Shop the trove label collection">
+        <svg viewBox="0 0 500 600" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;display:block" aria-hidden="true">
+          <rect width="500" height="600" fill="#FBF6F1"/>
+          <path d="M250 80 C 340 70, 430 140, 425 245 C 420 350, 350 420, 250 430 C 150 440, 70 360, 75 255 C 80 150, 160 90, 250 80 Z" fill="#D8C5BE"/>
+          <path d="M120 340 C 200 330, 280 390, 275 470 C 270 550, 195 610, 105 600 C 15 590, -40 520, -20 440 C -5 375, 45 350, 120 340 Z" fill="#C3D1C7"/>
+          <path d="M410 455 C 460 445, 505 480, 500 530 C 495 580, 450 605, 405 595 C 360 585, 340 545, 355 505 C 366 475, 380 461, 410 455 Z" fill="#F5C68A" opacity=".85"/>
+          <path d="M390 60 C 450 55, 505 105, 500 165 C 495 225, 440 265, 380 255 C 320 245, 285 195, 300 135 C 312 88, 340 65, 390 60 Z" fill="#E2836A" opacity=".92"/>
+          <g fill="none" stroke="#262321" stroke-width="2.2" stroke-linecap="round">
+            <path d="M250 560 C 245 480, 260 420, 250 340 C 243 280, 255 240, 250 196"/>
+            <path d="M250 470 C 220 460, 205 435, 208 410 C 235 415, 250 440, 250 470 Z"/>
+            <path d="M251 400 C 281 390, 296 365, 293 340 C 266 345, 251 370, 251 400 Z"/>
+            <path d="M250 320 C 224 312, 210 290, 212 268 C 236 272, 250 294, 250 320 Z"/>
+            <path d="M250 340 C 285 330, 310 305, 318 275"/>
+          </g>
+          <g transform="translate(250 172)">
+            <g fill="#E2836A"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
+            <circle r="6" fill="#262321"/>
+          </g>
+          <g transform="translate(320 264) scale(.62)">
+            <g fill="#F4CFE0"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
+            <circle r="6" fill="#262321"/>
+          </g>
+          <g fill="#262321" opacity=".55"><circle cx="150" cy="160" r="3"/><circle cx="360" cy="330" r="3"/><circle cx="180" cy="540" r="3"/><circle cx="440" cy="250" r="3"/></g>
+        </svg>
+        <div class="hero-tag"><div class="d" style="background:#262321"></div>
+          <div><div class="l">Our house label</div><div class="n">trove label →</div></div></div>
+      </div>
     </div>
   </section>
 
   <div class="marquee"><div class="wrap">
-    <span><b>340</b> independent shops</span>
-    <span><b>12,000</b> considered pieces</span>
-    <span><b>4.9</b> average rating</span>
+    <span><b>Handpicked</b> independent shops</span>
+    <span><b>Small-batch</b> pieces made to last</span>
     <span><b>2–4 day</b> delivery, Dubai &amp; Abu Dhabi</span>
+    <span><b>30-day</b> free returns</span>
   </div></div>
 
   <section class="band">
@@ -505,7 +530,7 @@
           <div class="pts">
             <div><b>1 yr</b><span>Guarantee</span></div>
             <div><b>100%</b><span>Traceable</span></div>
-            <div><b>Neutral</b><span>Shipping</span></div>
+            <div><b>Fair</b><span>Prices</span></div>
           </div>
           <button class="btn btn-coral" onclick="go('shop','House')">Shop trove label</button>
         </div>
@@ -938,14 +963,6 @@ function productCard(p){
 
 /* HOME */
 function renderHome(){
-  const hp=PRODUCTS[6]; // weekender, house label, charcoal
-  $('heroImg').innerHTML=`<div class="grad" style="${grad(vColor(hp.vendor))}"></div>
-    <img src="${img(hp.seed)}" alt="" onerror="this.style.display='none'">
-    <div class="hero-tag"><div class="d" style="background:${vColor(hp.vendor)}"></div>
-      <div><div class="l">trove label</div><div class="n">${hp.name}</div></div></div>`;
-  $('heroImg').style.cursor='pointer';
-  $('heroImg').onclick=()=>openPDP(hp.id);
-
   $('catRail').innerHTML=CATS.map(c=>`<div class="cat" onclick="go('shop','${c.name}')">
     <div class="tile"><div class="grad" style="${grad(c.color)}"></div></div>
     <div class="name">${c.name}</div><div class="ct">${LIVE?PRODUCTS.filter(p=>p.cat===c.name).length:c.ct}</div></div>`).join('');
