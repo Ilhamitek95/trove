@@ -84,10 +84,12 @@
   .hero-tag .d{width:34px;height:34px;border-radius:9px;background:var(--char)}
   .hero-tag .l{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
   .hero-tag .n{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1}
-  .marquee{margin-top:42px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:20px 0}
-  .marquee .wrap{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap}
-  .marquee span{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:10px}
-  .marquee span b{font-family:'Cormorant';font-size:22px;font-weight:600;color:var(--char);letter-spacing:0;text-transform:none}
+  .marquee{margin-top:42px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:26px 0}
+  .marquee .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
+  .marquee .mk{display:flex;align-items:center;justify-content:center;gap:13px}
+  .marquee .mk .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--char)}
+  .marquee .mk .tx b{display:block;font-family:'Cormorant';font-size:20px;font-weight:600;color:var(--char);line-height:1.1}
+  .marquee .mk .tx span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
 
   /* ---------- SECTION ---------- */
   section.band{padding:88px 0}
@@ -318,6 +320,8 @@
     .house .gallery{grid-template-columns:1fr 1fr 1fr 1fr}
     .house .gallery .g{min-height:120px}
     .pgrid{grid-template-columns:repeat(2,1fr)}
+    .marquee .wrap{grid-template-columns:1fr 1fr;gap:18px}
+    .marquee .mk{justify-content:flex-start}
     .cat-rail{grid-template-columns:repeat(3,1fr)}
     .vgrid{grid-template-columns:1fr}
     .browse-layout{grid-template-columns:1fr}
@@ -497,10 +501,10 @@
   </section>
 
   <div class="marquee"><div class="wrap">
-    <span><b>Handpicked</b> independent shops</span>
-    <span><b>Small-batch</b> pieces made to last</span>
-    <span><b>2–4 day</b> delivery</span>
-    <span><b>30-day</b> free returns</span>
+    <div class="mk"><div class="ic" style="background:#D8C5BE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b>Handpicked shops</b><span>Vetted by hand</span></div></div>
+    <div class="mk"><div class="ic" style="background:#C3D1C7"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b>Small-batch pieces</b><span>Made to last</span></div></div>
+    <div class="mk"><div class="ic" style="background:#F5C68A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b>2–4 day delivery</b><span>Dubai &amp; Abu Dhabi</span></div></div>
+    <div class="mk"><div class="ic" style="background:#F4CFE0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b>30-day returns</b><span>Free on every order</span></div></div>
   </div></div>
 
   <section class="band">
