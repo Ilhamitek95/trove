@@ -13,7 +13,9 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
 // shop to THAT account (existing buyers can become sellers) — allowed when the
 // applicant is signed in as the account, or the submitted password matches it.
 router.post('/register', (req, res) => {
-  const { email, password, name, role = 'buyer', shopName } = req.body || {};
+  const { password, name, role = 'buyer', shopName } = req.body || {};
+  // Emails are identities, not prose: match and store them case-insensitively.
+  const email = String(req.body?.email || '').trim().toLowerCase();
   if (!email || !name) return res.status(400).json({ error: 'email and name are required' });
   const wantsShop = role === 'seller' || role === 'both';
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
@@ -96,8 +98,9 @@ router.post('/register', (req, res) => {
 
 // POST /api/auth/login  { email, password }
 router.post('/login', (req, res) => {
-  const { email, password } = req.body || {};
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email || '');
+  const { password } = req.body || {};
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user || !verifyPassword(password || '', user.password_hash)) {
     return res.status(401).json({ error: 'Wrong email or password' });
   }
