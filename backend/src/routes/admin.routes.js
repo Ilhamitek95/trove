@@ -138,6 +138,7 @@ router.get('/shops', requireAdmin, (_req, res) => {
     payoutSetupComplete: !!(s.iban_encrypted && s.agreement_accepted_at),
     licenseNumber: s.license_number || '', hasLicenseImage: !!s.license_image,
     licenseVerifiedAt: s.license_verified_at || null,
+    sellerAddress: s.seller_address || '', eidFront: !!s.eid_front_file, eidBack: !!s.eid_back_file,
     graduationFlaggedAt: s.graduation_flagged_at || null, connectQueue: !!s.connect_queue,
     products: s.product_count, liveProducts: s.live_count, salesCents: s.sales_cents,
     createdAt: s.created_at,
@@ -149,6 +150,20 @@ router.get('/shops/:id/license-image', requireAdmin, (req, res) => {
   const shop = db.prepare('SELECT license_image FROM shops WHERE id=?').get(req.params.id);
   if (!shop || !shop.license_image) return res.status(404).json({ error: 'No license image' });
   res.sendFile(require('path').resolve(shop.license_image));
+});
+
+// GET /api/admin/shops/:id/eid/front|back → decrypt and stream an Emirates ID
+// photo. Admin-only, never cached; the file on disk is AES-256-GCM encrypted.
+router.get('/shops/:id/eid/:side', requireAdmin, (req, res, next) => {
+  try {
+    const side = req.params.side === 'front' ? 'front' : req.params.side === 'back' ? 'back' : null;
+    if (!side) return res.status(400).json({ error: 'side must be front or back' });
+    const shop = db.prepare(`SELECT eid_${side}_file AS f, eid_${side}_mime AS m FROM shops WHERE id=?`).get(req.params.id);
+    if (!shop || !shop.f) return res.status(404).json({ error: 'No Emirates ID image on file' });
+    const buf = require('../uploads').readEncryptedPrivate(shop.f);
+    res.set({ 'Content-Type': shop.m || 'image/jpeg', 'Cache-Control': 'no-store, private' });
+    res.send(buf);
+  } catch (e) { next(e); }
 });
 
 // PATCH /api/admin/shops/:id { status } → the approval workflow.

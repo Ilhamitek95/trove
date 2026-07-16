@@ -64,4 +64,40 @@ function savePrivateDataUrl(dataUrl, folder, baseName) {
   return file;
 }
 
-module.exports = { UPLOADS_DIR, saveDataUrl, removeByUrl, savePrivateDataUrl };
+/**
+ * Like savePrivateDataUrl, but the file is AES-256-GCM encrypted at rest
+ * (Emirates ID images — government documents get the same treatment as
+ * IBANs). Returns { file, mime } where `file` is RELATIVE to the private
+ * root, safe to store in the DB. Requires PAYOUT_ENC_KEY.
+ */
+function saveEncryptedPrivate(dataUrl, folder, baseName) {
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
+  if (!m) { const e = new Error('Upload a JPG, PNG or WebP image'); e.status = 400; throw e; }
+  const buf = Buffer.from(m[2], 'base64');
+  if (!buf.length || buf.length > MAX_BYTES) { const e = new Error('Image must be under 4MB'); e.status = 400; throw e; }
+  const type = TYPES[m[1]];
+  if (!type.magic(buf)) { const e = new Error('That file is not a valid image'); e.status = 400; throw e; }
+  const privateRoot = process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
+  const dir = path.join(privateRoot, folder);
+  fs.mkdirSync(dir, { recursive: true });
+  const rel = path.join(folder, `${baseName}-${Date.now()}.enc`);
+  fs.writeFileSync(path.join(privateRoot, rel), require('./crypto').encryptBuffer(buf));
+  return { file: rel, mime: m[1] };
+}
+
+/** Read + decrypt a file previously saved by saveEncryptedPrivate. */
+function readEncryptedPrivate(relPath) {
+  const privateRoot = process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
+  const safe = String(relPath).replace(/\.\./g, '');
+  return require('./crypto').decryptBuffer(fs.readFileSync(path.join(privateRoot, safe)));
+}
+
+/** Best-effort delete of an encrypted private file (when replaced). */
+function removeEncryptedPrivate(relPath) {
+  if (!relPath) return;
+  const privateRoot = process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
+  try { fs.unlinkSync(path.join(privateRoot, String(relPath).replace(/\.\./g, ''))); } catch (_) { /* already gone */ }
+}
+
+module.exports = { UPLOADS_DIR, saveDataUrl, removeByUrl, savePrivateDataUrl,
+  saveEncryptedPrivate, readEncryptedPrivate, removeEncryptedPrivate };

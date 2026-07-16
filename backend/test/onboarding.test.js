@@ -21,16 +21,22 @@ after(async () => { await ctx.close(); });
 test('the seller agreement is served with a verifiable hash', async () => {
   const res = await ctx.api('GET', '/api/legal/seller-agreement');
   assert.equal(res.status, 200);
-  assert.equal(res.data.version, 'v1');
+  assert.equal(res.data.version, 'v2');
   assert.match(res.data.markdown, /Trove purchases that piece from you/);
+  assert.match(res.data.markdown, /accountable for the goods you supply/);
   assert.equal(res.data.sha256, require('../src/crypto').sha256(res.data.markdown));
 });
+
+// The magic-byte check is all the validator reads, so a stub JPEG body works.
+const TINY_JPEG = 'data:image/jpeg;base64,' +
+  Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF, 0xE0]), Buffer.alloc(64, 7)]).toString('base64');
 
 test('payout-setup validation: last4, expiry, IBAN, agreement', async () => {
   const good = {
     emiratesIdLast4: '4417', emiratesIdExpiry: '2033-05-01',
     iban: 'AE07 0331 2345 6789 0123 456', bankName: 'Test Bank', accountName: 'Maker LLC',
     acceptAgreement: true,
+    eidFront: TINY_JPEG, eidBack: TINY_JPEG, address: 'Apt 4, Sunrise Building, Al Quoz, Dubai',
   };
   for (const [patch, msg] of [
     [{ emiratesIdLast4: '12' }, /Emirates ID/],
@@ -54,7 +60,7 @@ test('payout-setup validation: last4, expiry, IBAN, agreement', async () => {
   assert.ok(shop.iban_encrypted);
   assert.equal(shop.payout_iban, '');
   assert.equal(shop.emirates_id_last4, '4417');
-  assert.equal(shop.agreement_version, 'v1');
+  assert.equal(shop.agreement_version, 'v2');
   assert.ok(shop.agreement_accepted_at);
   assert.ok(shop.agreement_hash);
   assert.equal(require('../src/crypto').decrypt(shop.iban_encrypted), 'AE070331234567890123456');

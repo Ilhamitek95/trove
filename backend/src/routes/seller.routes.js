@@ -15,7 +15,11 @@ function parseShip(json) { try { return json ? JSON.parse(json) : null; } catch 
 // Never let encrypted blobs or plaintext bank numbers leave the API — the UI
 // only ever needs the masked IBAN.
 function publicShop(shop) {
-  const { iban_encrypted, payout_iban, ...safe } = shop;
+  const { iban_encrypted, payout_iban, eid_front_file, eid_front_mime, eid_back_file, eid_back_mime, ...safe } = shop;
+  // Sellers see whether their ID photos are on file, never the storage paths.
+  safe.eidFrontProvided = !!eid_front_file;
+  safe.eidBackProvided = !!eid_back_file;
+  safe.needsIdVerification = !shop.connect_queue && !shop.license_verified_at;
   return safe;
 }
 
@@ -197,6 +201,30 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
     if (b.acceptAgreement !== true) return res.status(400).json({ error: 'You need to accept the Seller Agreement' });
     if (!pcrypto.hasKey()) return res.status(503).json({ error: 'Payout setup is temporarily unavailable (encryption key not configured)' });
 
+    // Identity verification — suppliers selling WITHOUT a trade/e-Trader
+    // license must have Emirates ID photos + a home address on file. Photos
+    // are encrypted at rest under PRIVATE_DIR; only admins can view them.
+    const needsId = !req.shop.connect_queue && !req.shop.license_verified_at;
+    const address = String(b.address || '').trim().slice(0, 240);
+    if (needsId) {
+      if (!address && !req.shop.seller_address)
+        return res.status(400).json({ error: 'Your home address is required — Trove verifies the identity of sellers without a trade license' });
+      if (!b.eidFront && !req.shop.eid_front_file)
+        return res.status(400).json({ error: 'Add a photo of the front of your Emirates ID' });
+      if (!b.eidBack && !req.shop.eid_back_file)
+        return res.status(400).json({ error: 'Add a photo of the back of your Emirates ID' });
+    }
+    if (address) {
+      const { SERVICE_AREAS, isServiceable } = require('../service-area');
+      if (address.length < 10 || !isServiceable(address))
+        return res.status(400).json({ error: `Enter your full home address in ${SERVICE_AREAS.join(' or ')}` });
+    }
+
+    const uploads = require('../uploads');
+    let front = null, back = null;
+    if (b.eidFront) front = uploads.saveEncryptedPrivate(b.eidFront, 'ids', `shop-${req.shop.id}-front`);
+    if (b.eidBack) back = uploads.saveEncryptedPrivate(b.eidBack, 'ids', `shop-${req.shop.id}-back`);
+
     // Hash the exact agreement text being accepted.
     const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);
     const agreementHash = pcrypto.sha256(require('fs').readFileSync(file, 'utf8'));
@@ -210,6 +238,15 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
       .run(last4, issue, expiry, bankName, accountName,
         pcrypto.encrypt(iban), pcrypto.maskIban(iban),
         cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+    if (address) db.prepare('UPDATE shops SET seller_address=? WHERE id=?').run(address, req.shop.id);
+    if (front) {
+      uploads.removeEncryptedPrivate(req.shop.eid_front_file);
+      db.prepare('UPDATE shops SET eid_front_file=?, eid_front_mime=? WHERE id=?').run(front.file, front.mime, req.shop.id);
+    }
+    if (back) {
+      uploads.removeEncryptedPrivate(req.shop.eid_back_file);
+      db.prepare('UPDATE shops SET eid_back_file=?, eid_back_mime=? WHERE id=?').run(back.file, back.mime, req.shop.id);
+    }
     res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
   } catch (e) { next(e); }
 });

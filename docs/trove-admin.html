@@ -328,6 +328,18 @@ function shopActions(s){
   if(s.status==='approved') return s.isHouse?'':`<button class="btn btn-ghost" onclick="setShopStatus(${s.id},'suspended',true)">Suspend</button>`;
   return `<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setShopStatus(${s.id},'pending')">Back to review</button>`;
 }
+// Identity column: licensed sellers show their license state; unlicensed
+// (consignment) sellers must have Emirates ID photos + a home address on file.
+function idCellHTML(s){
+  if(s.isHouse) return '<span style="color:var(--muted)">—</span>';
+  if(s.connectQueue||s.licenseVerifiedAt)
+    return s.licenseVerifiedAt?'<span class="pill approved">license ✓</span>':'<span class="pill pending">license</span>';
+  if(s.eidFront&&s.eidBack)
+    return `<span class="pill approved">EID ✓</span>
+      <div class="sl" style="margin-top:3px"><a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/front" target="_blank" rel="noopener">front</a> · <a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/back" target="_blank" rel="noopener">back</a></div>
+      ${s.sellerAddress?`<div class="sl" style="max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(s.sellerAddress)}">${esc(s.sellerAddress)}</div>`:''}`;
+  return '<span class="pill pending" style="color:var(--coral-deep)">ID missing</span>';
+}
 function shopRowHTML(s){
   return `<tr>
     <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div></div></div></td>
@@ -335,12 +347,13 @@ function shopRowHTML(s){
     <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
     <td style="font-family:'Cormorant';font-size:16px;font-weight:600">${money(s.salesCents)}</td>
     <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Weekly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--coral-deep)">· no bank</span>':''}</td>
+    <td>${idCellHTML(s)}</td>
     <td><span class="pill ${s.status}">${s.status}</span></td>
     <td><div class="actions">${shopActions(s)}</div></td>
   </tr>`;
 }
 function renderShops(){
-  $('shopsTable').innerHTML=`<thead><tr><th>Shop</th><th>Location</th><th>Products</th><th>Sales</th><th>Payout</th><th>Status</th><th></th></tr></thead>
+  $('shopsTable').innerHTML=`<thead><tr><th>Shop</th><th>Location</th><th>Products</th><th>Sales</th><th>Payout</th><th>Identity</th><th>Status</th><th></th></tr></thead>
     <tbody>${SHOPS.map(shopRowHTML).join('')}</tbody>`;
 }
 async function setShopStatus(id,status,confirmFirst){

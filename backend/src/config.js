@@ -11,7 +11,7 @@
  */
 const on = (v) => v === '1' || v === 'true';
 
-const AGREEMENT_VERSION = 'v1';
+const AGREEMENT_VERSION = 'v2';
 const RETURN_WINDOW_DAYS = 7;
 
 module.exports = {

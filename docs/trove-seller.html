@@ -544,6 +544,8 @@ function applyShop(s){
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,
+    needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
+    eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''}};
   storeColor=SHOP.color;
   $('sideShop').textContent=SHOP.name;
@@ -958,6 +960,8 @@ function payoutSetupCard(){
       <div class="fee-row"><span class="muted">Bank</span><span>${esc(b.name||'')}</span></div>
       <div class="fee-row"><span class="muted">Account holder</span><span>${esc(b.accountName||'')}</span></div>
       <div class="fee-row"><span class="muted">IBAN</span><span>${esc(b.iban||'')}</span></div>
+      ${SHOP.needsId?`<div class="fee-row"><span class="muted">Emirates ID</span><span>${SHOP.eidFront&&SHOP.eidBack?'On file ✓':'<b style="color:var(--coral-deep)">Missing — update your details</b>'}</span></div>
+      <div class="fee-row"><span class="muted">Home address</span><span>${SHOP.sellerAddress?esc(SHOP.sellerAddress):'<b style="color:var(--coral-deep)">Missing</b>'}</span></div>`:''}
       <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}</span></div>
       <button class="btn btn-ghost" onclick="PAYOUT_EDIT=true;renderPayments()">Update details</button>
       <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you each Tuesday once the buyer's 7-day return window has closed.</div>
@@ -972,10 +976,48 @@ function payoutSetupCard(){
     <div class="field"><label>Account holder name — must be your own account</label><input id="bkName" value="${esc(b.accountName||'')}" placeholder="As shown on your bank account"></div>
     <div class="field"><label>Bank</label><input id="bkBank" value="${esc(b.name||'')}" placeholder="e.g. Emirates NBD"></div>
     <div class="field"><label>IBAN</label><input id="bkIban" placeholder="AE followed by 21 digits"></div>
+    ${SHOP.needsId?`
+    <div class="up" style="margin-top:18px">Identity verification</div>
+    <div class="demo-note" style="margin:6px 0 12px">You sell under Trove's consignment model without a trade license, so Trove keeps a copy of your Emirates ID and your home address on record. The photos are stored encrypted and only Trove's admin can view them.</div>
+    <input type="file" id="psEidFrontFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="pickIdPhoto('front',this.files[0]);this.value=''">
+    <input type="file" id="psEidBackFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="pickIdPhoto('back',this.files[0]);this.value=''">
+    <div class="ftwo">
+      <div class="field"><label>Emirates ID — front</label>
+        <button class="btn btn-ghost btn-sm" id="psEidFrontBtn" onclick="$('psEidFrontFile').click()">${SHOP.eidFront?'On file ✓ — replace':'Add photo'}</button></div>
+      <div class="field"><label>Emirates ID — back</label>
+        <button class="btn btn-ghost btn-sm" id="psEidBackBtn" onclick="$('psEidBackFile').click()">${SHOP.eidBack?'On file ✓ — replace':'Add photo'}</button></div>
+    </div>
+    <div class="field"><label>Home address — villa/apartment, building, street</label><input id="psAddrLine" placeholder="e.g. Apt 402, Marina Heights, Al Sufouh Rd">
+      ${SHOP.sellerAddress?`<div class="demo-note" style="margin-top:5px">On file: ${esc(SHOP.sellerAddress)} — leave empty to keep it.</div>`:''}</div>
+    <div class="ftwo">
+      <div class="field"><label>Area</label><input id="psAddrArea" placeholder="e.g. Al Quoz"></div>
+      <div class="field"><label>Emirate</label><select id="psAddrEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
+    </div>`:''}
     <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:10px 0;cursor:pointer"><input type="checkbox" id="psAgree" style="margin-top:2px;accent-color:var(--coral)">
       <span>I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--coral-deep)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus ${s.commissionPercent}% and pays me weekly after the 7-day return window.</span></label>
     <button class="btn btn-dark" onclick="savePayoutSetup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save payout details</button>
   </div>`;
+}
+/* Emirates ID photos: picked → downsized in the browser (≤1600px JPEG) and
+   held until Save; the server stores them encrypted, admin-eyes-only. */
+let PSU_ID={front:null,back:null};
+function pickIdPhoto(side,file){
+  if(!file)return;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('Use a JPG, PNG or WebP image');return;}
+  const rd=new FileReader();
+  rd.onload=()=>{
+    const im=new Image();
+    im.onload=()=>{
+      const MAX=1600, sc=Math.min(1,MAX/Math.max(im.width,im.height));
+      const cv=document.createElement('canvas');cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);
+      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
+      PSU_ID[side]=cv.toDataURL('image/jpeg',0.9);
+      $(side==='front'?'psEidFrontBtn':'psEidBackBtn').textContent='Photo added ✓ — change';
+    };
+    im.onerror=()=>toast('That file could not be read as an image');
+    im.src=rd.result;
+  };
+  rd.readAsDataURL(file);
 }
 async function savePayoutSetup(){
   const body={
@@ -986,11 +1028,22 @@ async function savePayoutSetup(){
     iban:$('bkIban').value.trim(),
     acceptAgreement:$('psAgree').checked,
   };
+  if(SHOP.needsId){
+    if(PSU_ID.front)body.eidFront=PSU_ID.front;
+    if(PSU_ID.back)body.eidBack=PSU_ID.back;
+    if(!body.eidFront&&!SHOP.eidFront){toast('Add a photo of the front of your Emirates ID');return;}
+    if(!body.eidBack&&!SHOP.eidBack){toast('Add a photo of the back of your Emirates ID');return;}
+    const line=$('psAddrLine').value.trim(),area=$('psAddrArea').value.trim();
+    if(line||area){
+      if(!line||!area){toast('Enter your full home address — street line and area');return;}
+      body.address=`${line}, ${area}, ${$('psAddrEmirate').value}`;
+    }else if(!SHOP.sellerAddress){toast('Enter your home address');return;}
+  }
   if(!body.acceptAgreement){ toast('Tick the Seller Agreement box to continue'); return; }
   try{
     const {shop}=await TroveAPI.api('/api/seller/payout-setup',{method:'POST',body});
-    SHOP.bank={ name:shop.payout_bank_name, accountName:shop.payout_account_name, iban:shop.iban_masked||'' };
-    SHOP.agreementVersion=shop.agreement_version||'v1';
+    applyShop(shop);
+    PSU_ID={front:null,back:null};
     PAYOUT_EDIT=false;
     await reloadPayouts();
     toast('Payout setup complete — you\'re in the weekly settlement runs');

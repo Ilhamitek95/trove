@@ -48,6 +48,26 @@ function decrypt(blob) {
   return Buffer.concat([d.update(ct), d.final()]).toString('utf8');
 }
 
+// Binary variants for encrypted files (Emirates ID images): same AES-256-GCM
+// envelope as encrypt/decrypt, but buffer in / buffer out, no base64 step.
+function encryptBuffer(buf) {
+  const k = requireKey();
+  const iv = nodeCrypto.randomBytes(12);
+  const cipher = nodeCrypto.createCipheriv('aes-256-gcm', k, iv);
+  const ct = Buffer.concat([cipher.update(buf), cipher.final()]);
+  return Buffer.concat([iv, cipher.getAuthTag(), ct]);
+}
+
+function decryptBuffer(raw) {
+  const k = requireKey();
+  const iv = raw.subarray(0, 12);
+  const tag = raw.subarray(12, 28);
+  const ct = raw.subarray(28);
+  const d = nodeCrypto.createDecipheriv('aes-256-gcm', k, iv);
+  d.setAuthTag(tag);
+  return Buffer.concat([d.update(ct), d.final()]);
+}
+
 // 'AE07 0331 2345 6789 0123 456' → 'AE·· ···· 3456' — country code + last 4.
 function maskIban(iban) {
   const clean = String(iban).replace(/\s+/g, '').toUpperCase();
@@ -57,4 +77,4 @@ function maskIban(iban) {
 
 const sha256 = (text) => nodeCrypto.createHash('sha256').update(text).digest('hex');
 
-module.exports = { hasKey, encrypt, decrypt, maskIban, sha256 };
+module.exports = { hasKey, encrypt, decrypt, encryptBuffer, decryptBuffer, maskIban, sha256 };
