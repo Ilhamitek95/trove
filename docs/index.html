@@ -4,8 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>trove</title>
-<link rel="canonical" href="./trove.html">
-<meta http-equiv="refresh" content="0; url=./trove.html">
+<!-- Unreachable in normal operation: the server serves the storefront at "/"
+     and 301s /index.html there. Kept only as a belt-and-braces fallback for
+     static hosting without the Express server. -->
+<link rel="canonical" href="/">
+<meta http-equiv="refresh" content="0; url=/">
 <style>
   html,body{height:100%;margin:0;background:#FDF7F5;color:#292727;
     font-family:Georgia,'Cormorant',serif;display:grid;place-items:center}
@@ -13,7 +16,7 @@
 </style>
 </head>
 <body>
-  <p>Opening <a href="./trove.html">trove</a>…</p>
-  <script>location.replace('./trove.html');</script>
+  <p>Opening <a href="/">trove</a>…</p>
+  <script>if(location.pathname!=='/')location.replace('/');</script>
 </body>
 </html>

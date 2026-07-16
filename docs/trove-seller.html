@@ -1102,7 +1102,7 @@ function go(v){
   // top actions
   const ta=$('topActions');
   if(v==='products')ta.innerHTML=`<button class="btn btn-coral" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add product</button>`;
-  else if(v==='overview')ta.innerHTML=`<a class="btn btn-ghost" href="trove.html" target="_blank">View storefront ↗</a>`;
+  else if(v==='overview')ta.innerHTML=`<a class="btn btn-ghost" href="/" target="_blank">View storefront ↗</a>`;
   else ta.innerHTML='';
   if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='adminpayouts')renderAdminPayouts();
   window.scrollTo(0,0);

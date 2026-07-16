@@ -272,7 +272,7 @@
 <div class="app">
   <!-- SIDEBAR -->
   <aside class="side">
-    <a class="logo serif" href="trove.html">trove</a>
+    <a class="logo serif" href="/">trove</a>
     <div class="user-card">
       <div class="av" id="uAv">L</div>
       <div class="nm" id="uName">Layla</div>
@@ -288,7 +288,7 @@
       <a class="mitem" data-v="details" onclick="go('details')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My details</a>
     </nav>
     <div class="foot">
-      <a href="trove.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Continue shopping</a>
+      <a href="/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Continue shopping</a>
       <a href="trove-login.html" id="signOutLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</a>
     </div>
   </aside>
@@ -297,7 +297,7 @@
   <div class="main">
     <div class="topbar">
       <div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub">Welcome back</div></div>
-      <a class="btn btn-ghost" href="trove.html">Continue shopping →</a>
+      <a class="btn btn-ghost" href="/">Continue shopping →</a>
     </div>
     <div class="content">
 
@@ -470,7 +470,7 @@ function orderStatusLabel(o){
   return ['Processing','processing'];
 }
 function renderOrders(){
-  if(!orders.length){ $('ordersList').innerHTML=`<div class="empty-state"><div class="big">No orders yet</div><p>When you buy something it'll appear here, ready to track.</p><a class="btn btn-coral" href="trove.html">Start shopping</a></div>`; return; }
+  if(!orders.length){ $('ordersList').innerHTML=`<div class="empty-state"><div class="big">No orders yet</div><p>When you buy something it'll appear here, ready to track.</p><a class="btn btn-coral" href="/">Start shopping</a></div>`; return; }
   $('ordersList').innerHTML=orders.map(o=>{
     const [label,cls]=orderStatusLabel(o);
     const sh=o.shipments||[];
@@ -536,7 +536,7 @@ function renderOverview(){
 /* ---------- WISHLIST ---------- */
 function renderWishlist(){
   $('wishPill').textContent=wishlist.length; $('oSaved').textContent=wishlist.length;
-  if(!wishlist.length){$('wishWrap').innerHTML=`<div class="empty-state"><div class="big">Nothing saved yet</div><p>Tap the heart on anything you love and it'll wait for you here.</p><a class="btn btn-coral" href="trove.html">Discover the trove</a></div>`;return;}
+  if(!wishlist.length){$('wishWrap').innerHTML=`<div class="empty-state"><div class="big">Nothing saved yet</div><p>Tap the heart on anything you love and it'll wait for you here.</p><a class="btn btn-coral" href="/">Discover the trove</a></div>`;return;}
   $('wishWrap').innerHTML=`<div class="pgrid">${wishlist.map((w,i)=>{
     const V=VENDORS[w.v];
     return `<div class="pcard">
@@ -616,7 +616,7 @@ function renderFollowing(){
   $('followList').innerHTML=list.map(k=>{const V=VENDORS[k],on=following[k];
     return `<div class="follow-row"><div class="fav" style="${grad(V.color)}">${V.name[0]}</div>
       <div><div class="fn">${V.name}</div><div class="fl">${V.loc}</div></div>
-      <div class="facts"><a class="btn btn-ghost btn-sm" href="trove.html">Visit shop</a>
+      <div class="facts"><a class="btn btn-ghost btn-sm" href="/">Visit shop</a>
         <button class="followbtn ${on?'on':''}" onclick="toggleFollow('${k}')">${on?'Following':'Follow'}</button></div></div>`;
   }).join('');
 }

@@ -1405,7 +1405,7 @@ async function loadAuth(){
     $('authLabel').textContent='Sign in';
   }
 }
-async function signOut(){await TroveAPI.logout();location.href='trove.html';}
+async function signOut(){await TroveAPI.logout();location.href='/';}
 async function loadFees(){
   try{ const c=await TroveAPI.config(); if(c)FEES=c; }catch(_){}
 }

@@ -222,12 +222,24 @@ function createApp() {
 
   /* ---------------- Static storefront (single-origin) ----------------
    * Serves docs/ from the same origin as the API, so session cookies are
-   * first-party and there's one URL to deploy. "/" → docs/index.html.        */
+   * first-party and there's one URL to deploy. "/" serves the storefront
+   * directly; the old /trove.html (and friends) 301 to the clean root so
+   * bookmarks and indexed links keep working.                               */
   const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
-  app.use(express.static(DOCS_DIR, { extensions: ['html'] }));
+  for (const legacy of ['/trove.html', '/trove', '/index.html', '/index']) {
+    app.get(legacy, (_req, res) => res.redirect(301, '/'));
+  }
+  app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'] }));
 
   // Seller-uploaded images (shop photos). Kept on the persistent disk in prod.
   app.use('/uploads', express.static(require('./uploads').UPLOADS_DIR, { maxAge: '30d', immutable: true }));
+
+  // Anything left is a miss: branded 404 page for browsers, JSON for the rest
+  // (unknown /api/* paths never reach here — they get their JSON 404 above).
+  app.use((req, res) => {
+    if (req.accepts('html')) return res.status(404).sendFile(path.join(DOCS_DIR, '404.html'));
+    res.status(404).json({ error: 'Not found' });
+  });
 
   /* ---------------- Errors ---------------- */
   app.use((err, _req, res, _next) => {

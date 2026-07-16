@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found — trove</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @font-face{font-family:'Dream Avenue';src:url('fonts/DreamAvenue.woff2') format('woff2');font-display:swap}
+  :root{
+    --font-display:'Dream Avenue','Cormorant',Georgia,serif;
+    --rose:#DBC7BD; --coral:#F19A82; --coral-deep:#A85138; --coral-hover:#E98B70;
+    --cream:#FDF7F5; --sage:#CAD5CC; --char:#292727; --peach:#FCC998;
+    --muted:#7E6F67; --ink-80:rgba(41,39,39,.78);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:var(--cream);color:var(--char);font-family:'Quicksand',system-ui,sans-serif;
+       font-weight:500;line-height:1.6;display:grid;place-items:center;padding:32px;-webkit-font-smoothing:antialiased}
+  ::selection{background:var(--coral);color:var(--char)}
+  .card{max-width:520px;text-align:center}
+  .art{width:200px;height:150px;margin:0 auto 30px;display:block}
+  .eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--coral-deep);font-weight:700}
+  h1{font-family:var(--font-display);font-weight:400;font-size:clamp(38px,6vw,56px);line-height:1.05;margin:16px 0 14px}
+  h1 em{font-style:italic;color:var(--coral-deep)}
+  p{color:var(--ink-80);max-width:42ch;margin:0 auto 30px}
+  .ctas{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;
+       font-size:13.5px;letter-spacing:.05em;text-decoration:none;transition:.2s}
+  .btn-coral{background:var(--coral);color:var(--char)}
+  .btn-coral:hover{background:var(--coral-hover);transform:translateY(-2px)}
+  .quiet{font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rose);padding-bottom:2px}
+  .quiet:hover{color:var(--char)}
+</style>
+</head>
+<body>
+<main class="card">
+  <svg class="art" viewBox="0 0 200 150" aria-hidden="true">
+    <ellipse cx="128" cy="70" rx="58" ry="52" fill="#DBC7BD"/>
+    <ellipse cx="62" cy="98" rx="44" ry="40" fill="#CAD5CC"/>
+    <ellipse cx="162" cy="118" rx="26" ry="22" fill="#FCC998" opacity=".85"/>
+    <g fill="none" stroke="#292727" stroke-width="2" stroke-linecap="round">
+      <path d="M100 138 C 97 106, 104 84, 100 52"/>
+      <path d="M100 100 C 86 96, 79 85, 80 74 C 92 76, 100 87, 100 100 Z"/>
+      <path d="M100.5 76 C 114 72, 121 61, 119 50 C 107 52, 100.5 63, 100.5 76 Z"/>
+    </g>
+    <g transform="translate(100 40)">
+      <g fill="#F19A82"><ellipse cx="0" cy="-9" rx="4.5" ry="9"/><ellipse cx="0" cy="-9" rx="4.5" ry="9" transform="rotate(72)"/><ellipse cx="0" cy="-9" rx="4.5" ry="9" transform="rotate(144)"/><ellipse cx="0" cy="-9" rx="4.5" ry="9" transform="rotate(216)"/><ellipse cx="0" cy="-9" rx="4.5" ry="9" transform="rotate(288)"/></g>
+      <circle r="3.6" fill="#292727"/>
+    </g>
+    <g fill="#292727" opacity=".5"><circle cx="42" cy="46" r="2.2"/><circle cx="170" cy="52" r="2.2"/><circle cx="36" cy="128" r="2.2"/></g>
+  </svg>
+  <span class="eyebrow">404 · Page not found</span>
+  <h1>This page has <em>wandered off</em></h1>
+  <p>The link may be old, or the piece may have found a new home. Everything worth keeping is still in the trove.</p>
+  <div class="ctas">
+    <a class="btn btn-coral" href="/">Back to the trove</a>
+    <a class="quiet" href="/#vendors">Meet our makers</a>
+  </div>
+</main>
+</body>
+</html>
