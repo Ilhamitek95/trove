@@ -6,37 +6,42 @@
 <title>trove — a curated marketplace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Dream Avenue substitute: Cormorant (delicate high-contrast serif) · Quicksand per brief -->
+<!-- Display: Dream Avenue (licensed, via @font-face below; Cormorant is the graceful fallback) · Body: Quicksand -->
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* Dream Avenue is licensed (not on Google Fonts). Drop the file at docs/fonts/DreamAvenue.woff2
+     and it takes over automatically; until then the Cormorant fallback serves. */
+  @font-face{font-family:'Dream Avenue';src:url('fonts/DreamAvenue.woff2') format('woff2');font-display:swap}
   :root{
-    /* brand palette from the brief */
-    --rose:#D8C5BE;        /* primary dusty rose */
-    --coral:#E2836A;       /* primary coral */
-    --coral-deep:#C5664B;  /* legible coral for text */
-    --cream:#FBF6F1;       /* off-white */
-    --sage:#C3D1C7;        /* muted green */
-    --char:#262321;        /* near-black */
-    --taupe:#A98B7D;       /* secondary */
-    --peach:#F5C68A;
-    --blush:#F4CFE0;
-    --moss:#C7D9AC;
-    --sky:#B9D0E0;
+    --font-display:'Dream Avenue','Cormorant',Georgia,serif;
+    /* brand palette — 2026 brand book */
+    --rose:#DBC7BD;        /* Clay Beige */
+    --coral:#F19A82;       /* Orange — CTAs, highlights */
+    --coral-deep:#A85138;  /* derived deep Orange, AA-legible for small text */
+    --coral-hover:#E98B70; /* Orange hover, keeps Charcoal text AA */
+    --cream:#FDF7F5;       /* Cream — default background */
+    --sage:#CAD5CC;        /* Sage Green */
+    --char:#292727;        /* Charcoal */
+    --taupe:#BD9C8C;       /* Tan (secondary) */
+    --peach:#FCC998;       /* Pastel Orange (secondary) */
+    --blush:#F8D7E4;       /* Pink (secondary) */
+    --moss:#CFDBBE;        /* Light Green (secondary) */
+    --sky:#BED3DF;         /* Light Blue (secondary) */
     /* derived */
-    --paper:#FFFDFB;
-    --rose-tint:#F1E7E1;
-    --line:rgba(38,35,33,.10);
-    --line-soft:rgba(38,35,33,.07);
-    --muted:#8C7B72;
-    --ink-80:rgba(38,35,33,.78);
+    --paper:#FFFCFA;
+    --rose-tint:#F2E9E4;
+    --line:rgba(41,39,39,.10);
+    --line-soft:rgba(41,39,39,.07);
+    --muted:#7E6F67;
+    --ink-80:rgba(41,39,39,.78);
     --r:18px;
-    --shadow:0 18px 50px -28px rgba(38,35,33,.30);
+    --shadow:0 18px 50px -28px rgba(41,39,39,.30);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
        -webkit-font-smoothing:antialiased;line-height:1.6;font-weight:500;letter-spacing:.005em}
-  ::selection{background:var(--coral);color:#fff}
+  ::selection{background:var(--coral);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   img{display:block;width:100%;height:100%;object-fit:cover}
@@ -44,13 +49,14 @@
   .serif{font-family:'Cormorant',Georgia,serif}
   .eyebrow{font-family:'Quicksand';font-weight:600;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--coral-deep)}
   h1,h2,h3,h4{font-family:'Cormorant',Georgia,serif;font-weight:500;letter-spacing:.002em}
+  .hero h1,.band-head h2,.house h2,#view-sell h1{font-family:var(--font-display)}
 
   /* ---------- HEADER ---------- */
   .promo{background:var(--char);color:var(--cream)}
-  .promo .wrap{display:flex;justify-content:center;align-items:center;height:38px;font-size:11.5px;letter-spacing:.22em;text-transform:uppercase;font-weight:500}
-  header.top{position:sticky;top:0;z-index:60;background:rgba(251,246,241,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
+  .promo .wrap{display:flex;justify-content:center;align-items:center;height:38px;font-size:12.5px;letter-spacing:.06em;font-weight:600}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(253,247,245,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
   .nav{display:flex;align-items:center;gap:34px;height:84px}
-  .brand{font-family:'Cormorant';font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
+  .brand{font-family:var(--font-display);font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
   .nav .links{display:flex;gap:30px;margin-left:14px;font-size:13.5px;font-weight:600;letter-spacing:.04em}
   .nav .links a{padding:4px 0;color:var(--ink-80);position:relative}
   .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
@@ -62,7 +68,7 @@
   .search input{border:none;outline:none;background:none;flex:1;font-family:inherit;font-size:13px;color:var(--char)}
   .icon-btn{position:relative;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;color:var(--char);transition:background .15s}
   .icon-btn:hover{background:var(--rose-tint)}
-  .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--coral);color:#fff;border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
+  .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--coral);color:var(--char);border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
   .cart-count.hide{display:none}
 
   .view{display:none}
@@ -80,7 +86,7 @@
   .hero-img{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:5/6;background:var(--rose)}
   .hero-img .grad{position:absolute;inset:0}
   .hero-img img{position:absolute;inset:0;filter:saturate(.92)}
-  .hero-tag{position:absolute;left:22px;bottom:22px;background:rgba(251,246,241,.92);backdrop-filter:blur(6px);border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+  .hero-tag{position:absolute;left:22px;bottom:22px;background:rgba(253,247,245,.92);backdrop-filter:blur(6px);border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
   .hero-tag .d{width:34px;height:34px;border-radius:9px;background:var(--char)}
   .hero-tag .l{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
   .hero-tag .n{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1}
@@ -107,7 +113,7 @@
   .cat{cursor:pointer;text-align:center}
   .cat .tile{aspect-ratio:1;border-radius:18px;overflow:hidden;position:relative;margin-bottom:14px;transition:transform .35s,box-shadow .35s;display:grid;place-items:center}
   .cat .tile .grad{position:absolute;inset:0}
-  .cat .tile .blob{position:absolute;width:66%;aspect-ratio:1;border-radius:46% 54% 52% 48%/48% 46% 54% 52%;background:rgba(251,246,241,.55);transition:transform .45s}
+  .cat .tile .blob{position:absolute;width:66%;aspect-ratio:1;border-radius:46% 54% 52% 48%/48% 46% 54% 52%;background:rgba(253,247,245,.55);transition:transform .45s}
   .cat .tile svg{position:relative;z-index:2;color:var(--char);transition:transform .35s;width:42px;height:42px}
   .cat:hover .tile{transform:translateY(-6px);box-shadow:var(--shadow)}
   .cat:hover .tile .blob{transform:scale(1.14) rotate(10deg)}
@@ -125,11 +131,11 @@
   .card .ph .grad{position:absolute;inset:0}
   .card .ph img{position:absolute;inset:0;filter:saturate(.9);transition:transform .6s}
   .card:hover .ph img{transform:scale(1.04)}
-  .card .ph .sale{position:absolute;top:14px;left:14px;background:var(--coral);color:#fff;font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
-  .card .add{position:absolute;left:14px;right:14px;bottom:14px;padding:12px;border-radius:11px;background:rgba(251,246,241,.94);backdrop-filter:blur(6px);color:var(--char);font-weight:600;font-size:13px;letter-spacing:.04em;opacity:0;transform:translateY(8px);transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .card .ph .sale{position:absolute;top:14px;left:14px;background:var(--coral);color:var(--char);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
+  .card .add{position:absolute;left:14px;right:14px;bottom:14px;padding:12px;border-radius:11px;background:rgba(253,247,245,.94);backdrop-filter:blur(6px);color:var(--char);font-weight:600;font-size:13px;letter-spacing:.04em;opacity:0;transform:translateY(8px);transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
   .card:hover .add{opacity:1;transform:none}
   .card .add:hover{background:var(--char);color:var(--cream)}
-  .card .add.added{background:var(--coral);color:#fff;opacity:1;transform:none}
+  .card .add.added{background:var(--coral);color:var(--char);opacity:1;transform:none}
   .card .vrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe);font-weight:600;display:flex;align-items:center;gap:6px}
   .card .vrow.house{color:var(--coral-deep)}
   .card .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px}
@@ -162,7 +168,7 @@
   .vcard:hover .cover{transform:translateY(-4px)}
   .vcard .cover .grad{position:absolute;inset:0}
   .vcard .cover img{position:absolute;inset:0;filter:saturate(.85);opacity:.92}
-  .vcard .av{width:68px;height:68px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:'Cormorant';font-size:30px;color:#fff;font-weight:600}
+  .vcard .av{width:68px;height:68px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:'Cormorant';font-size:30px;color:var(--cream);font-weight:600}
   .vcard h3{font-size:24px;font-weight:600;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
   .vcard .loc{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:2px}
   .vcard p{font-size:14px;color:var(--ink-80);margin:14px auto 0;max-width:34ch;font-weight:400}
@@ -177,7 +183,7 @@
   .sell h2 em{font-style:italic;color:var(--coral-deep)}
   .sell p{color:var(--char);opacity:.82;max-width:42ch;margin-bottom:30px;font-weight:400;font-size:16px}
   .steps{display:flex;flex-direction:column}
-  .step{display:flex;gap:22px;padding:20px 0;border-bottom:1px solid rgba(38,35,33,.13)}
+  .step{display:flex;gap:22px;padding:20px 0;border-bottom:1px solid rgba(41,39,39,.13)}
   .step:last-child{border:none}
   .step .nm{font-family:'Cormorant';font-size:30px;font-weight:500;color:var(--cream);line-height:1;width:42px;flex-shrink:0}
   .step h4{font-size:21px;font-weight:600;margin-bottom:2px}
@@ -186,9 +192,9 @@
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
   .btn-dark{background:var(--char);color:var(--cream)}
-  .btn-dark:hover{background:#3a352f;transform:translateY(-2px)}
-  .btn-coral{background:var(--coral);color:#fff}
-  .btn-coral:hover{background:var(--coral-deep);transform:translateY(-2px)}
+  .btn-dark:hover{background:#3B3737;transform:translateY(-2px)}
+  .btn-coral{background:var(--coral);color:var(--char)}
+  .btn-coral:hover{background:var(--coral-hover);transform:translateY(-2px)}
   .btn-ghost{border:1px solid var(--char);color:var(--char)}
   .btn-ghost:hover{background:var(--char);color:var(--cream)}
   .txt-link{font-size:13.5px;font-weight:600;letter-spacing:.05em;border-bottom:1px solid var(--coral);padding-bottom:3px}
@@ -217,7 +223,7 @@
   .vhero img{position:absolute;inset:0;filter:saturate(.85);opacity:.85}
   .vhero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,var(--cream))}
   .vhead{position:relative;text-align:center;margin-top:-90px;z-index:5}
-  .vhead .lav{width:104px;height:104px;border-radius:50%;border:5px solid var(--cream);margin:0 auto 18px;display:grid;place-items:center;font-family:'Cormorant';font-size:46px;color:#fff;font-weight:600}
+  .vhead .lav{width:104px;height:104px;border-radius:50%;border:5px solid var(--cream);margin:0 auto 18px;display:grid;place-items:center;font-family:'Cormorant';font-size:46px;color:var(--cream);font-weight:600}
   .vhead h1{font-size:clamp(38px,5vw,56px);font-weight:400;display:flex;align-items:center;justify-content:center;gap:12px}
   .vhead .loc{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:6px}
   .vhead p{font-size:16px;color:var(--ink-80);max-width:56ch;margin:18px auto 0;font-weight:400}
@@ -265,13 +271,13 @@
   .ship b{display:block;font-weight:700;color:var(--char);margin-bottom:2px;font-family:'Quicksand';font-size:13px;letter-spacing:.02em}
   .sold-card{margin-top:18px;border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:.2s}
   .sold-card:hover{border-color:var(--coral)}
-  .sold-card .sav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:22px;font-weight:600}
+  .sold-card .sav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:22px;font-weight:600}
   .sold-card .st{flex:1}
   .sold-card .st .l{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
   .sold-card .st .nm{font-family:'Cormorant';font-size:22px;font-weight:600;display:flex;align-items:center;gap:7px;line-height:1.1;margin-top:2px}
 
   /* ---------- CART ---------- */
-  .scrim{position:fixed;inset:0;background:rgba(38,35,33,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
+  .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
   .scrim.open{opacity:1;visibility:visible}
   .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:92vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .4s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
   .drawer.open{transform:none}
@@ -301,11 +307,11 @@
   .drow.total{font-family:'Cormorant';font-size:26px;font-weight:600;color:var(--char);margin-top:8px}
   .dfoot .note{font-size:12px;color:var(--muted);margin:12px 0 16px;font-weight:500;line-height:1.5}
   .checkout{width:100%;padding:17px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.05em}
-  .checkout:hover{background:#3a352f}
+  .checkout:hover{background:#3B3737}
 
   /* ---------- FOOTER ---------- */
   footer{background:var(--rose);color:var(--char);padding:80px 0 36px;margin-top:40px}
-  .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:54px;border-bottom:1px solid rgba(38,35,33,.13)}
+  .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:54px;border-bottom:1px solid rgba(41,39,39,.13)}
   footer .brand{font-size:44px;margin-bottom:18px;display:block}
   footer p.blurb{font-size:14.5px;max-width:32ch;line-height:1.65;opacity:.78;font-weight:400}
   footer h5{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:18px;opacity:.55}
@@ -344,14 +350,14 @@
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 
   /* supplemental tokens */
-  :root{--cream-2:#F6EFE8;--green:#5E7E63;--green-bg:#E4ECE5}
+  :root{--cream-2:#F8F0EA;--green:#5E7E63;--green-bg:#E4ECE5}
 
   /* account menu */
   .acct-wrap{position:relative}
   .acct-menu{position:absolute;right:0;top:52px;width:252px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:8px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:.18s;z-index:80}
   .acct-menu.open{opacity:1;visibility:visible;transform:none}
   .acct-menu .am-head{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--line-soft);margin-bottom:6px}
-  .acct-menu .am-av{width:40px;height:40px;border-radius:50%;background:var(--coral);color:#fff;display:grid;place-items:center;font-family:'Cormorant';font-size:20px;font-weight:600}
+  .acct-menu .am-av{width:40px;height:40px;border-radius:50%;background:var(--coral);color:var(--char);display:grid;place-items:center;font-family:'Cormorant';font-size:20px;font-weight:600}
   .acct-menu .am-n{font-family:'Cormorant';font-size:18px;font-weight:600;line-height:1}
   .acct-menu .am-e{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
   .acct-menu a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--ink-80)}
@@ -375,16 +381,16 @@
   .co-field input:focus{border-color:var(--char)}
   .co-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   /* the "create an account" offer, shown to guests at checkout + confirmation */
-  .acct-offer{background:#EFF4F0;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-top:4px}
+  .acct-offer{background:#F0F4F1;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-top:4px}
   .acct-offer .ao-check{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14.5px;font-weight:700;flex-wrap:wrap}
   .acct-offer .ao-check input{width:17px;height:17px;accent-color:var(--coral-deep);flex-shrink:0;cursor:pointer}
-  .acct-offer .ao-pill{background:var(--coral-deep);color:#fff;font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+  .acct-offer .ao-pill{background:var(--coral-deep);color:var(--cream);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
   .acct-offer .ao-perks{list-style:none;margin:10px 0 2px;padding:0;display:flex;flex-direction:column;gap:6px}
   .acct-offer .ao-perks li{font-size:13px;font-weight:500;color:var(--ink-80);display:flex;gap:8px;align-items:flex-start}
   .acct-offer .ao-perks li::before{content:'✓';color:var(--coral-deep);font-weight:800;flex-shrink:0}
   .acct-offer .ao-guest{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px}
   .acct-offer .ao-guest a{color:var(--muted);text-decoration:underline;cursor:pointer}
-  .acct-offer .ao-err{display:none;background:#FBE9E2;color:var(--coral-deep);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45}
+  .acct-offer .ao-err{display:none;background:#FCEBE4;color:var(--coral-deep);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45}
   .saved-opt{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.14s}
   .saved-opt:hover{border-color:var(--rose)}
   .saved-opt.on{border-color:var(--char);background:var(--rose-tint)}
@@ -405,7 +411,7 @@
   .co-tot .row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-80);font-weight:500;margin-bottom:9px}
   .co-tot .row.grand{font-family:'Cormorant';font-size:24px;font-weight:600;color:var(--char);margin-top:8px;padding-top:12px;border-top:1px solid var(--line-soft)}
   .co-place{width:100%;padding:16px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;margin-top:18px;transition:.18s}
-  .co-place:hover{background:#3a352f}
+  .co-place:hover{background:#3B3737}
   .co-secure{font-size:11.5px;color:var(--muted);font-weight:500;text-align:center;margin-top:12px;display:flex;gap:6px;align-items:center;justify-content:center}
   .stripe-note{display:flex;gap:11px;align-items:flex-start;background:var(--rose-tint);border-radius:12px;padding:13px 15px;font-size:12px;color:var(--ink-80);font-weight:500;line-height:1.5;margin-top:6px}
   .stripe-note svg{flex-shrink:0;color:var(--coral-deep);margin-top:1px}
@@ -420,7 +426,7 @@
   .confirm .ship-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:30px 0}
   .confirm .ship-card .sg{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
   .confirm .ship-card .sg:last-child{border:none}
-  .confirm .ship-card .sg .d{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-weight:600;flex-shrink:0}
+  .confirm .ship-card .sg .d{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-weight:600;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -432,7 +438,7 @@
     <a href="#" class="brand" onclick="go('home');return false">trove</a>
     <nav class="links">
       <a href="#" onclick="go('shop','all');return false">Shop all</a>
-      <a href="#" onclick="go('shop','House');return false">trove label</a>
+      <a href="#" onclick="go('shop','House');return false">Trove Collection</a>
       <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Our shops</a>
       <a href="#" onclick="go('sell');return false">Sell on trove</a>
     </nav>
@@ -468,22 +474,22 @@
   <section class="hero">
     <div class="wrap">
       <div class="lead">
-        <span class="eyebrow">A curated marketplace</span>
-        <h1>Beautiful things,<br><em>gathered</em> with care.</h1>
-        <p>Independent makers and our own house label, brought together in one quiet, considered place. Find something worth keeping.</p>
+        <span class="eyebrow">Thoughtfully gathered</span>
+        <h1>Curated<br>for <em>Living</em></h1>
+        <p>Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
         <div class="ctas">
           <button class="btn btn-dark" onclick="go('shop','all')">Explore the trove</button>
           <a class="txt-link" href="#" onclick="go('sell');return false">Open a shop →</a>
         </div>
       </div>
-      <div class="hero-img" onclick="go('shop','House')" style="cursor:pointer" title="Shop the trove label collection">
+      <div class="hero-img" onclick="go('shop','House')" style="cursor:pointer" title="Shop the Trove Collection">
         <svg viewBox="0 0 500 600" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;display:block" aria-hidden="true">
-          <rect width="500" height="600" fill="#FBF6F1"/>
-          <path d="M250 80 C 340 70, 430 140, 425 245 C 420 350, 350 420, 250 430 C 150 440, 70 360, 75 255 C 80 150, 160 90, 250 80 Z" fill="#D8C5BE"/>
-          <path d="M120 340 C 200 330, 280 390, 275 470 C 270 550, 195 610, 105 600 C 15 590, -40 520, -20 440 C -5 375, 45 350, 120 340 Z" fill="#C3D1C7"/>
-          <path d="M410 455 C 460 445, 505 480, 500 530 C 495 580, 450 605, 405 595 C 360 585, 340 545, 355 505 C 366 475, 380 461, 410 455 Z" fill="#F5C68A" opacity=".85"/>
-          <path d="M390 60 C 450 55, 505 105, 500 165 C 495 225, 440 265, 380 255 C 320 245, 285 195, 300 135 C 312 88, 340 65, 390 60 Z" fill="#E2836A" opacity=".92"/>
-          <g fill="none" stroke="#262321" stroke-width="2.2" stroke-linecap="round">
+          <rect width="500" height="600" fill="#FDF7F5"/>
+          <path d="M250 80 C 340 70, 430 140, 425 245 C 420 350, 350 420, 250 430 C 150 440, 70 360, 75 255 C 80 150, 160 90, 250 80 Z" fill="#DBC7BD"/>
+          <path d="M120 340 C 200 330, 280 390, 275 470 C 270 550, 195 610, 105 600 C 15 590, -40 520, -20 440 C -5 375, 45 350, 120 340 Z" fill="#CAD5CC"/>
+          <path d="M410 455 C 460 445, 505 480, 500 530 C 495 580, 450 605, 405 595 C 360 585, 340 545, 355 505 C 366 475, 380 461, 410 455 Z" fill="#FCC998" opacity=".85"/>
+          <path d="M390 60 C 450 55, 505 105, 500 165 C 495 225, 440 265, 380 255 C 320 245, 285 195, 300 135 C 312 88, 340 65, 390 60 Z" fill="#F19A82" opacity=".92"/>
+          <g fill="none" stroke="#292727" stroke-width="2.2" stroke-linecap="round">
             <path d="M250 560 C 245 480, 260 420, 250 340 C 243 280, 255 240, 250 196"/>
             <path d="M250 470 C 220 460, 205 435, 208 410 C 235 415, 250 440, 250 470 Z"/>
             <path d="M251 400 C 281 390, 296 365, 293 340 C 266 345, 251 370, 251 400 Z"/>
@@ -491,26 +497,26 @@
             <path d="M250 340 C 285 330, 310 305, 318 275"/>
           </g>
           <g transform="translate(250 172)">
-            <g fill="#E2836A"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
-            <circle r="6" fill="#262321"/>
+            <g fill="#F19A82"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
+            <circle r="6" fill="#292727"/>
           </g>
           <g transform="translate(320 264) scale(.62)">
-            <g fill="#F4CFE0"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
-            <circle r="6" fill="#262321"/>
+            <g fill="#F8D7E4"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
+            <circle r="6" fill="#292727"/>
           </g>
-          <g fill="#262321" opacity=".55"><circle cx="150" cy="160" r="3"/><circle cx="360" cy="330" r="3"/><circle cx="180" cy="540" r="3"/><circle cx="440" cy="250" r="3"/></g>
+          <g fill="#292727" opacity=".55"><circle cx="150" cy="160" r="3"/><circle cx="360" cy="330" r="3"/><circle cx="180" cy="540" r="3"/><circle cx="440" cy="250" r="3"/></g>
         </svg>
-        <div class="hero-tag"><div class="d" style="background:#262321"></div>
-          <div><div class="l">Our house label</div><div class="n">trove label →</div></div></div>
+        <div class="hero-tag"><div class="d" style="background:#292727"></div>
+          <div><div class="l">Our own line</div><div class="n">Trove Collection →</div></div></div>
       </div>
     </div>
   </section>
 
   <div class="marquee"><div class="wrap">
-    <div class="mk"><div class="ic" style="background:#D8C5BE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b>Handpicked shops</b><span>Vetted by hand</span></div></div>
-    <div class="mk"><div class="ic" style="background:#C3D1C7"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b>Small-batch pieces</b><span>Made to last</span></div></div>
-    <div class="mk"><div class="ic" style="background:#F5C68A"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b>2–4 day delivery</b><span>Dubai &amp; Abu Dhabi</span></div></div>
-    <div class="mk"><div class="ic" style="background:#F4CFE0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b>30-day returns</b><span>Free on every order</span></div></div>
+    <div class="mk"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b>Handpicked shops</b><span>Vetted by hand</span></div></div>
+    <div class="mk"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b>Small-batch pieces</b><span>Made to last</span></div></div>
+    <div class="mk"><div class="ic" style="background:#FCC998"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b>2–4 day delivery</b><span>Dubai &amp; Abu Dhabi</span></div></div>
+    <div class="mk"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b>30-day returns</b><span>Free on every order</span></div></div>
   </div></div>
 
   <section class="band">
@@ -534,15 +540,15 @@
     <div class="wrap">
       <div class="house">
         <div class="copy">
-          <span class="eyebrow">The house label</span>
-          <h2>trove label.<br><em>Our own, made well.</em></h2>
-          <p>Designed in-house and produced with makers we trust — the standard we hold the whole marketplace to. Honest materials, fair prices.</p>
+          <span class="eyebrow">Designed by trove</span>
+          <h2>Trove Collection.<br><em>Our own, made well.</em></h2>
+          <p>Timeless pieces designed to become part of your everyday home. Designed in-house, made with makers we trust, priced honestly.</p>
           <div class="pts">
             <div><b>1 yr</b><span>Guarantee</span></div>
             <div><b>100%</b><span>Traceable</span></div>
             <div><b>Fair</b><span>Prices</span></div>
           </div>
-          <button class="btn btn-coral" onclick="go('shop','House')">Shop trove label</button>
+          <button class="btn btn-coral" onclick="go('shop','House')">Shop the Collection</button>
         </div>
         <div class="gallery" id="houseGallery"></div>
       </div>
@@ -551,8 +557,8 @@
 
   <section class="band" id="vendors">
     <div class="wrap">
-      <div class="band-head"><span class="eyebrow">Meet the makers</span><h2>Shops we're loving</h2>
-        <p>Every shop is vetted by hand before it joins the trove.</p></div>
+      <div class="band-head"><span class="eyebrow">The Trove Marketplace</span><h2>Meet the makers</h2>
+        <p>Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.</p></div>
       <div class="vgrid" id="vendorGrid"></div>
     </div>
   </section>
@@ -587,7 +593,7 @@
     <aside class="filters">
       <div class="fgroup"><h4>Category</h4><div id="catFilters"></div></div>
       <div class="fgroup"><h4>Seller</h4>
-        <label class="fitem"><input type="checkbox" onchange="setHouseFilter(this.checked)"> trove label only</label>
+        <label class="fitem"><input type="checkbox" onchange="setHouseFilter(this.checked)"> Trove Collection only</label>
       </div>
       <div class="fgroup" style="border:none"><h4>Price</h4>
         <label class="fitem"><input type="radio" name="pr" onchange="setPrice(0,9999)" checked> Any price</label>
@@ -810,13 +816,13 @@
     <div class="fgrid">
       <div>
         <span class="brand serif">trove</span>
-        <p class="blurb">A curated marketplace of independent shops and our own house label. Find beautiful things. Keep them.</p>
+        <p class="blurb">Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
       </div>
-      <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li><a href="#" onclick="go('shop','House');return false">trove label</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li><li><a href="#">Gift cards</a></li></ul></div>
+      <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li><a href="#" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li><li><a href="#">Gift cards</a></li></ul></div>
       <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Trove fulfilment</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
-    <div class="fbot"><span>© 2026 trove marketplace · Dubai, UAE</span><span>Privacy · Terms · <a href="seller-agreement.html" style="color:inherit">Seller agreement</a></span></div>
+    <div class="fbot"><span>© 2026 trove · Dubai, UAE</span><span>Privacy · Terms · <a href="seller-agreement.html" style="color:inherit">Seller agreement</a></span></div>
   </div>
 </footer>
 
@@ -827,20 +833,20 @@
 <script>
 /* ---------------- DATA ---------------- */
 let VENDORS = {
-  trove:  {name:'trove label', house:true, loc:'In-house · Dubai', color:'#262321', bio:'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.', rating:'4.9', prods:48, since:'2024'},
-  kiln:   {name:'Kiln & Clay', loc:'Alserkal Avenue, Dubai', color:'#A98B7D', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
-  loom:   {name:'Northbound Loom', loc:'Al Quoz, Dubai', color:'#B9D0E0', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
-  ember:  {name:'Ember Goods', loc:'Deira, Dubai', color:'#F5C68A', bio:'Leather and brass made the slow way, in our Deira workshop.', rating:'5.0', prods:54, since:'2023'},
-  fern:   {name:'Fern Apothecary', loc:'Masdar City, Abu Dhabi', color:'#C7D9AC', bio:'Plant-based skincare and home scent, formulated in tiny batches.', rating:'4.9', prods:41, since:'2021'},
-  paper:  {name:'Folio Paper Co.', loc:'Al Zahiyah, Abu Dhabi', color:'#F4CFE0', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:'4.8', prods:73, since:'2022'},
+  trove:  {name:'Trove Collection', house:true, loc:'In-house · Dubai', color:'#292727', bio:'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.', rating:'4.9', prods:48, since:'2024'},
+  kiln:   {name:'Kiln & Clay', loc:'Alserkal Avenue, Dubai', color:'#BD9C8C', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
+  loom:   {name:'Northbound Loom', loc:'Al Quoz, Dubai', color:'#BED3DF', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
+  ember:  {name:'Ember Goods', loc:'Deira, Dubai', color:'#FCC998', bio:'Leather and brass made the slow way, in our Deira workshop.', rating:'5.0', prods:54, since:'2023'},
+  fern:   {name:'Fern Apothecary', loc:'Masdar City, Abu Dhabi', color:'#CFDBBE', bio:'Plant-based skincare and home scent, formulated in tiny batches.', rating:'4.9', prods:41, since:'2021'},
+  paper:  {name:'Folio Paper Co.', loc:'Al Zahiyah, Abu Dhabi', color:'#F8D7E4', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:'4.8', prods:73, since:'2022'},
 };
 const CATS = [
-  {name:'Home', color:'#C3D1C7', ct:'2,140'},
-  {name:'Apparel', color:'#B9D0E0', ct:'1,860'},
-  {name:'Ceramics', color:'#A98B7D', ct:'940'},
-  {name:'Beauty', color:'#F4CFE0', ct:'1,120'},
-  {name:'Stationery', color:'#F5C68A', ct:'780'},
-  {name:'Accessories', color:'#D8C5BE', ct:'1,540'},
+  {name:'Home', color:'#CAD5CC', ct:'2,140'},
+  {name:'Apparel', color:'#BED3DF', ct:'1,860'},
+  {name:'Ceramics', color:'#BD9C8C', ct:'940'},
+  {name:'Beauty', color:'#F8D7E4', ct:'1,120'},
+  {name:'Stationery', color:'#FCC998', ct:'780'},
+  {name:'Accessories', color:'#DBC7BD', ct:'1,540'},
 ];
 const CAT_ICON={
   Home:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.3 11h5.4l.8 5.8a3.9 3.9 0 0 1-7 0z"/><path d="M12 11V5.2"/><path d="M12 7.8C10.4 7.5 9.3 6.3 9 4.6c1.7.3 2.8 1.5 3 3.2Z"/><path d="M12 6.4c1.3-.25 2.2-1.2 2.4-2.6-1.4.2-2.2 1.2-2.4 2.6Z"/></svg>',
@@ -991,7 +997,7 @@ function renderHome(){
 
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
   $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#262321')}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>`).join('');
 
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
   $('vendorGrid').innerHTML=vs.map(([k,v])=>`<article class="vcard" onclick="openVendor('${k}')">
@@ -1030,7 +1036,7 @@ function filteredProducts(){
 function renderShop(){
   const list=filteredProducts(), shops=new Set(list.map(p=>p.vendor));
   $('resCount').textContent=list.length; $('shopCount').textContent=shops.size;
-  $('browseTitle').textContent=state.q?`“${state.q}”`:(state.cat==='all'?'Shop all':(state.cat==='House'?'trove label':state.cat));
+  $('browseTitle').textContent=state.q?`“${state.q}”`:(state.cat==='all'?'Shop all':(state.cat==='House'?'Trove Collection':state.cat));
   $('crumbCat').textContent=state.q?'Search':(state.cat==='all'?'All':state.cat);
   $('shopGrid').innerHTML=list.length?list.map(productCard).join(''):'<p style="color:var(--muted);padding:40px 0;font-weight:400">No pieces match these filters yet. Try widening your price range.</p>';
 }
@@ -1066,7 +1072,7 @@ function openPDP(id){
   // Tags double as one-tap searches — “stoneware” finds everything stoneware.
   $('pdpTags').innerHTML='';
   (p.tags||[]).forEach(t=>{const b=document.createElement('button');b.className='ptag';b.textContent=t;b.onclick=()=>searchTag(t);$('pdpTags').appendChild(b);});
-  const sw=['#262321','#A98B7D','#D8C5BE','#C3D1C7'];
+  const sw=['#292727','#BD9C8C','#DBC7BD','#CAD5CC'];
   $('pdpSwatches').innerHTML=sw.map((c,i)=>`<div class="sw ${i===0?'on':''}" style="background:${c}" onclick="document.querySelectorAll('.sw').forEach(e=>e.classList.remove('on'));this.classList.add('on')"></div>`).join('');
   // Etsy-style personalisation: sellers switch it on per piece; buyers type
   // their text here and it travels with the order to the seller.

@@ -9,20 +9,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --rose:#D8C5BE; --coral:#E2836A; --coral-deep:#C5664B; --cream:#FBF6F1;
-    --sage:#C3D1C7; --char:#262321; --taupe:#A98B7D; --peach:#F5C68A;
-    --blush:#F4CFE0; --moss:#C7D9AC; --sky:#B9D0E0;
-    --paper:#FFFDFB; --rose-tint:#F1E7E1; --cream-2:#F6EFE8;
-    --line:rgba(38,35,33,.10); --line-soft:rgba(38,35,33,.06);
-    --muted:#8C7B72; --ink-80:rgba(38,35,33,.78);
+    --rose:#DBC7BD; --coral:#F19A82; --coral-deep:#A85138; --coral-hover:#E98B70; --cream:#FDF7F5;
+    --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --peach:#FCC998;
+    --blush:#F8D7E4; --moss:#CFDBBE; --sky:#BED3DF;
+    --paper:#FFFCFA; --rose-tint:#F2E9E4; --cream-2:#F8F0EA;
+    --line:rgba(41,39,39,.10); --line-soft:rgba(41,39,39,.06);
+    --muted:#7E6F67; --ink-80:rgba(41,39,39,.78);
     --green:#5E7E63; --green-bg:#E4ECE5;
     --stripe:#635BFF;
-    --r:16px; --shadow:0 16px 44px -28px rgba(38,35,33,.30);
+    --r:16px; --shadow:0 16px 44px -28px rgba(41,39,39,.30);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
        -webkit-font-smoothing:antialiased;font-weight:500;line-height:1.5}
-  ::selection{background:var(--coral);color:#fff}
+  ::selection{background:var(--coral);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   img{display:block;width:100%;height:100%;object-fit:cover}
@@ -39,7 +39,7 @@
   .side .logo .t{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--coral-deep);font-weight:700}
   .shop-switch{margin:22px 0 14px;padding:12px;border:1px solid var(--line);border-radius:13px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:.15s}
   .shop-switch:hover{border-color:var(--rose)}
-  .shop-switch .av{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:19px;font-weight:600;flex-shrink:0}
+  .shop-switch .av{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:19px;font-weight:600;flex-shrink:0}
   .shop-switch .nm{font-family:'Cormorant';font-size:18px;font-weight:600;line-height:1.05}
   .shop-switch .st{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:1px}
   .shop-switch .ch{margin-left:auto;color:var(--muted)}
@@ -49,13 +49,13 @@
   .mitem.on{background:var(--rose-tint);color:var(--char)}
   .mitem.on::before{content:"";position:absolute;left:-18px;top:9px;bottom:9px;width:3px;background:var(--coral);border-radius:0 3px 3px 0}
   .mitem svg{width:18px;height:18px;stroke-width:1.7}
-  .mitem .pill{margin-left:auto;background:var(--coral);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
+  .mitem .pill{margin-left:auto;background:var(--coral);color:var(--char);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
   .side .foot{margin-top:auto;padding:14px 10px 2px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-weight:600}
   .side .foot a:hover{color:var(--coral-deep)}
 
   /* ---------- MAIN ---------- */
   .main{display:flex;flex-direction:column;min-width:0}
-  .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 36px;border-bottom:1px solid var(--line-soft);background:rgba(251,246,241,.8);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 36px;border-bottom:1px solid var(--line-soft);background:rgba(253,247,245,.8);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20}
   .topbar h1{font-size:30px;font-weight:500}
   .topbar .sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
   .topbar .tact{display:flex;align-items:center;gap:12px}
@@ -69,9 +69,9 @@
   .btn{display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:999px;font-weight:600;font-size:13px;letter-spacing:.03em;transition:.18s}
   .btn svg{width:15px;height:15px}
   .btn-dark{background:var(--char);color:var(--cream)}
-  .btn-dark:hover{background:#3a352f}
-  .btn-coral{background:var(--coral);color:#fff}
-  .btn-coral:hover{background:var(--coral-deep)}
+  .btn-dark:hover{background:#3B3737}
+  .btn-coral{background:var(--coral);color:var(--char)}
+  .btn-coral:hover{background:var(--coral-hover)}
   .btn-ghost{border:1px solid var(--line);color:var(--char);background:var(--paper)}
   .btn-ghost:hover{border-color:var(--char)}
   .btn-stripe{background:var(--stripe);color:#fff}
@@ -89,7 +89,7 @@
   /* connect banner */
   .banner{display:flex;align-items:center;gap:18px;background:var(--char);color:var(--cream);border-radius:var(--r);padding:20px 24px;margin-bottom:24px}
   .banner .bi{width:42px;height:42px;border-radius:11px;background:var(--stripe);display:grid;place-items:center;flex-shrink:0;font-weight:700;font-size:18px}
-  .banner h4{font-family:'Cormorant';font-size:22px;font-weight:600;color:#fff}
+  .banner h4{font-family:'Cormorant';font-size:22px;font-weight:600;color:var(--cream)}
   .banner p{font-size:13px;opacity:.8;margin-top:2px}
   .banner .btn{margin-left:auto;flex-shrink:0}
 
@@ -101,7 +101,7 @@
   .bars{display:flex;align-items:flex-end;gap:8px;height:150px}
   .bar{flex:1;background:var(--rose);border-radius:6px 6px 0 0;transition:.2s;position:relative;cursor:pointer;min-height:4px}
   .bar:hover{background:var(--coral)}
-  .bar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--char);color:#fff;font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;margin-bottom:6px}
+  .bar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--char);color:var(--cream);font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;margin-bottom:6px}
   .bar:hover .tip{opacity:1}
   .blabels{display:flex;gap:8px;margin-top:8px}
   .blabels span{flex:1;text-align:center;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em}
@@ -138,16 +138,16 @@
   .iact.del:hover{background:#F6E2DB;color:var(--coral-deep)}
 
   .order-pill{font-size:11px;font-weight:700;letter-spacing:.04em;padding:5px 12px;border-radius:999px}
-  .order-pill.new{background:var(--coral);color:#fff}
+  .order-pill.new{background:var(--coral);color:var(--char)}
   .order-pill.fulfilled{background:var(--green-bg);color:var(--green)}
-  .order-pill.shipped{background:var(--sky);color:#33617e}
+  .order-pill.shipped{background:var(--sky);color:#2E5871}
 
   /* section headers within views */
   .sec-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
   .sec-head .n{font-size:13px;color:var(--muted);font-weight:600}
 
   /* ---------- DRAWER (add/edit product) ---------- */
-  .scrim{position:fixed;inset:0;background:rgba(38,35,33,.4);z-index:90;opacity:0;visibility:hidden;transition:.3s}
+  .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.3s}
   .scrim.open{opacity:1;visibility:visible}
   .drawer{position:fixed;top:0;right:0;height:100%;width:480px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
   .drawer.open{transform:none}
@@ -156,11 +156,11 @@
   .drawer .dbody{flex:1;overflow-y:auto;padding:24px 28px}
   .drawer .dfoot{padding:18px 28px;border-top:1px solid var(--line);display:flex;gap:12px;background:var(--paper)}
   .drawer .dfoot .btn{flex:1;justify-content:center;padding:14px}
-  .tagbox{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:text;min-height:46px}
+  .tagbox{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--paper);cursor:text;min-height:46px}
   .tagbox:focus-within{border-color:var(--taupe)}
   .tagbox .tg{display:inline-flex;align-items:center;gap:7px;background:rgba(195,209,199,.35);border:1px solid rgba(195,209,199,.9);border-radius:99px;padding:5px 7px 5px 12px;font-size:13px;font-weight:600;color:var(--char)}
-  .tagbox .tg button{border:0;background:rgba(38,35,33,.08);color:var(--char);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
-  .tagbox .tg button:hover{background:var(--coral);color:#fff}
+  .tagbox .tg button{border:0;background:rgba(41,39,39,.08);color:var(--char);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
+  .tagbox .tg button:hover{background:var(--coral);color:var(--char)}
   .tagbox input{border:0;outline:0;background:none;flex:1;min-width:130px;font:inherit;font-size:13.5px;padding:4px 2px}
   #dTagAI.thinking{opacity:.55;pointer-events:none}
   .tagsug{display:none;margin-top:11px;padding:12px 13px;background:rgba(195,209,199,.16);border:1px solid rgba(195,209,199,.7);border-radius:12px}
@@ -218,7 +218,7 @@
   .pv-card{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;background:var(--paper)}
   .pv-cover{height:96px;position:relative}
   .pv-cover .grad{position:absolute;inset:0}
-  .pv-av{width:60px;height:60px;border-radius:50%;border:4px solid var(--paper);margin:-30px auto 0;position:relative;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:26px;font-weight:600}
+  .pv-av{width:60px;height:60px;border-radius:50%;border:4px solid var(--paper);margin:-30px auto 0;position:relative;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:26px;font-weight:600}
   .pv-body{text-align:center;padding:6px 20px 24px}
   .pv-body h3{font-size:24px;font-weight:600;margin-top:10px}
   .pv-body .loc{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:3px}
@@ -281,8 +281,8 @@
   .sc-steps{display:flex;margin:6px 2px 14px}
   .sc-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
   .sc-step .d{width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted);z-index:2}
-  .sc-step.done .d{background:var(--green);border-color:var(--green);color:#fff}
-  .sc-step.now .d{background:var(--coral);border-color:var(--coral);color:#fff}
+  .sc-step.done .d{background:var(--green);border-color:var(--green);color:var(--cream)}
+  .sc-step.now .d{background:var(--coral);border-color:var(--coral);color:var(--char)}
   .sc-step .l{font-size:10.5px;font-weight:700;margin-top:7px;color:var(--muted);text-align:center}
   .sc-step.done .l,.sc-step.now .l{color:var(--char)}
   .sc-step .ln{position:absolute;top:10px;left:50%;width:100%;height:2px;background:var(--line);z-index:1}
@@ -386,7 +386,7 @@
             <h3 style="font-size:22px;font-weight:600;margin-bottom:20px">Shop details</h3>
             <div class="field"><label>Shop photo</label>
               <div style="display:flex;align-items:center;gap:14px">
-                <div id="sfPhotoPrev" style="width:64px;height:64px;border-radius:16px;overflow:hidden;flex-shrink:0;display:grid;place-items:center;color:#fff;font-family:'Cormorant';font-size:26px;font-weight:600"></div>
+                <div id="sfPhotoPrev" style="width:64px;height:64px;border-radius:16px;overflow:hidden;flex-shrink:0;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:26px;font-weight:600"></div>
                 <div>
                   <input type="file" id="sfPhotoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadShopPhoto(this.files[0]);this.value=''">
                   <button class="btn btn-ghost btn-sm" onclick="$('sfPhotoFile').click()">Upload photo</button>
@@ -480,7 +480,7 @@
 <script src="api.js"></script>
 <script>
 /* ---------------- STATE ---------------- */
-let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#A98B7D',bio:'',payoutType:'managed',bank:{name:'',accountName:'',iban:''},stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
+let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',payoutType:'managed',bank:{name:'',accountName:'',iban:''},stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
 let products=[];
 let orders=[];
 let ME=null;
@@ -506,7 +506,7 @@ function parseTagsCol(s){ try{const v=JSON.parse(s||'[]');return Array.isArray(v
 function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,tags:parseTagsCol(p.tags),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
-  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#A98B7D',image:s.image||'',status:s.status||'approved',
+  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,
@@ -744,7 +744,7 @@ function renderOrders(){
     const gross=o.itemTotal||0, fee=gross*feePct()/100, net=gross-fee;
     const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
     const items=(o.items||[]).map(i=>`<div class="sc-li">
-        <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#A98B7D')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
+        <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
         <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
           ${i.personalization?`<div class="q" style="color:var(--coral-deep);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
         <div class="pr">${aed(i.price*i.qty)}</div>
@@ -830,7 +830,7 @@ function graduationBannerHTML(){
   if(SHOP.tier==='connect'||(!SHOP.graduationFlagged&&!SHOP.connectQueue)) return '';
   if(SHOP.connectQueue&&SHOP.licenseVerified) return '';
   const flagged=!!SHOP.graduationFlagged;
-  return `<div class="banner"><div class="bi" style="background:var(--sage,#C3D1C7)">↑</div>
+  return `<div class="banner"><div class="bi" style="background:var(--sage,#CAD5CC)">↑</div>
     <div><h4>${flagged?'Your shop has outgrown the starter tier':'Direct payouts are on the way'}</h4>
     <p>${flagged
       ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader license you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--coral-deep)">Apply for an e-Trader license ↗</a>'
@@ -1034,7 +1034,7 @@ async function connectStripe(){
 }
 
 /* ---------------- STOREFRONT ---------------- */
-const PALETTE=['#A98B7D','#D8C5BE','#C3D1C7','#B9D0E0','#F5C68A','#F4CFE0','#262321'];
+const PALETTE=['#BD9C8C','#DBC7BD','#CAD5CC','#BED3DF','#FCC998','#F8D7E4','#292727'];
 let storeColor=SHOP.color;
 function renderStore(){
   $('sfColors').innerHTML=PALETTE.map(c=>`<div class="csw ${c===storeColor?'on':''}" style="background:${c}" onclick="storeColor='${c}';renderStore();updatePreview()"></div>`).join('');

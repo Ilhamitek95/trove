@@ -28,28 +28,28 @@ function shop(email, ownerName, shopName, slug, bio, location, color, isHouse, p
     payout.type || 'managed', payout.bankName || '', payout.accountName || '', payout.iban || '').lastInsertRowid;
 }
 
-const house = shop('hello@trove.com', 'Trove', 'trove label', 'trove-label',
+const house = shop('hello@trove.com', 'Trove', 'Trove Collection', 'trove-label',
   'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.',
-  'In-house · Dubai', '#262321', true,
+  'In-house · Dubai', '#292727', true,
   { type: 'managed', bankName: 'Emirates NBD', accountName: 'Trove Marketplace FZ-LLC', iban: 'AE600260001015079130500' });
 const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay',
   "Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.",
-  'Alserkal Avenue, Dubai', '#A98B7D', false,
+  'Alserkal Avenue, Dubai', '#BD9C8C', false,
   { type: 'managed', bankName: 'Mashreq Bank', accountName: 'Mara Ceramics Studio', iban: 'AE930330000010101010101' });
 const loom = shop('hello@northboundloom.com', 'Northbound Loom', 'Northbound Loom', 'northbound-loom',
   'Heavyweight knitwear and woven goods from a family workshop running since 1978.',
-  'Al Quoz, Dubai', '#B9D0E0', false, { type: 'connect' });
+  'Al Quoz, Dubai', '#BED3DF', false, { type: 'connect' });
 const ember = shop('hello@embergoods.com', 'Ember Goods', 'Ember Goods', 'ember-goods',
   'Leather and brass made the slow way, in our Deira workshop.',
-  'Deira, Dubai', '#F5C68A', false,
+  'Deira, Dubai', '#FCC998', false,
   { type: 'managed', bankName: 'Abu Dhabi Commercial Bank', accountName: 'Ember Goods Trading LLC', iban: 'AE120350000004567890123' });
 const fern = shop('hello@fernapothecary.com', 'Fern Apothecary', 'Fern Apothecary', 'fern-apothecary',
   'Small-batch home scent — candles, room mists and botanicals. Nothing we make is applied to the skin.',
-  'Masdar City, Abu Dhabi', '#C7D9AC', false,
+  'Masdar City, Abu Dhabi', '#CFDBBE', false,
   { type: 'managed', bankName: 'Dubai Islamic Bank', accountName: 'Fern Apothecary FZE', iban: 'AE980030001234567890123' });
 const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.', 'folio-paper',
   'Stationery, notebooks and desk goods for people who still write things down.',
-  'Al Zahiyah, Abu Dhabi', '#F4CFE0', false, { type: 'connect' });
+  'Al Zahiyah, Abu Dhabi', '#F8D7E4', false, { type: 'connect' });
 
 // A shop still waiting for approval, so the super-admin review queue has
 // something to demo. Hidden from the storefront until approved.

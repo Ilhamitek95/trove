@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS shops (
   bio                TEXT DEFAULT '',
   location           TEXT DEFAULT '',
   color              TEXT DEFAULT '#A98B7D',
-  is_house           INTEGER NOT NULL DEFAULT 0,  -- 1 = the trove label house brand
+  is_house           INTEGER NOT NULL DEFAULT 0,  -- 1 = the Trove Collection house line
   stripe_account_id  TEXT,                        -- Stripe Connect (Express) account
   charges_enabled    INTEGER NOT NULL DEFAULT 0,
   payouts_enabled    INTEGER NOT NULL DEFAULT 0,
