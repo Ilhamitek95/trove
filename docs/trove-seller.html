@@ -149,6 +149,24 @@
   /* ---------- DRAWER (add/edit product) ---------- */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.3s}
   .scrim.open{opacity:1;visibility:visible}
+
+  /* shop-photo cropper */
+  .crop-modal{position:fixed;inset:0;z-index:120;display:grid;place-items:center;padding:18px;opacity:0;visibility:hidden;transition:.25s}
+  .crop-modal.open{opacity:1;visibility:visible}
+  .crop-modal .cm-back{position:absolute;inset:0;background:rgba(41,39,39,.45)}
+  .cm-card{position:relative;background:var(--cream);border-radius:20px;box-shadow:var(--shadow);padding:22px;width:min(580px,94vw)}
+  .cm-card h3{font-size:22px;margin-bottom:2px}
+  .cm-card .cm-sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:14px}
+  .cm-stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:var(--char);cursor:grab;touch-action:none}
+  .cm-stage.dragging{cursor:grabbing}
+  .cm-stage canvas{width:100%;height:100%;display:block}
+  .cm-grid{position:absolute;inset:0;pointer-events:none;opacity:.4;
+    background:linear-gradient(to right,transparent calc(33.33% - .5px),rgba(253,247,245,.55) calc(33.33% - .5px),rgba(253,247,245,.55) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(253,247,245,.55) calc(66.66% - .5px),rgba(253,247,245,.55) calc(66.66% + .5px),transparent calc(66.66% + .5px)),
+               linear-gradient(to bottom,transparent calc(33.33% - .5px),rgba(253,247,245,.55) calc(33.33% - .5px),rgba(253,247,245,.55) calc(33.33% + .5px),transparent calc(33.33% + .5px),transparent calc(66.66% - .5px),rgba(253,247,245,.55) calc(66.66% - .5px),rgba(253,247,245,.55) calc(66.66% + .5px),transparent calc(66.66% + .5px))}
+  .cm-zoom{display:flex;align-items:center;gap:12px;margin:16px 2px 4px}
+  .cm-zoom label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .cm-zoom input[type=range]{flex:1;accent-color:var(--coral)}
+  .cm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
   .drawer{position:fixed;top:0;right:0;height:100%;width:480px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
   .drawer.open{transform:none}
   .drawer .dhead{padding:24px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
@@ -388,8 +406,9 @@
               <div style="display:flex;align-items:center;gap:14px">
                 <div id="sfPhotoPrev" style="width:64px;height:64px;border-radius:16px;overflow:hidden;flex-shrink:0;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:26px;font-weight:600"></div>
                 <div>
-                  <input type="file" id="sfPhotoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="uploadShopPhoto(this.files[0]);this.value=''">
+                  <input type="file" id="sfPhotoFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="openCropFile(this.files[0]);this.value=''">
                   <button class="btn btn-ghost btn-sm" onclick="$('sfPhotoFile').click()">Upload photo</button>
+                  <button class="btn btn-ghost btn-sm" id="sfPhotoCrop" onclick="recropExisting()" style="display:none">Adjust framing</button>
                   <button class="btn btn-ghost btn-sm" id="sfPhotoRemove" onclick="removeShopPhoto()" style="display:none">Remove</button>
                   <div class="hint" style="margin-top:6px">JPG, PNG or WebP — shown on your shop page and shop cards. Without one, your accent colour is used.</div>
                 </div>
@@ -420,6 +439,21 @@
 
 <!-- PRODUCT DRAWER -->
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+
+<!-- shop-photo cropper -->
+<div class="crop-modal" id="cropModal">
+  <div class="cm-back" onclick="closeCrop()"></div>
+  <div class="cm-card">
+    <h3 class="serif">Frame your shop photo</h3>
+    <div class="cm-sub">Drag to position, slide to zoom — this framing shows on your shop page, cards and avatar.</div>
+    <div class="cm-stage" id="cmStage"><canvas id="cmCanvas"></canvas><div class="cm-grid"></div></div>
+    <div class="cm-zoom"><label for="cmZoom">Zoom</label><input type="range" id="cmZoom" min="100" max="300" value="100"></div>
+    <div class="cm-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeCrop()">Cancel</button>
+      <button class="btn btn-coral btn-sm" id="cmApply" onclick="applyCrop()">Use this framing</button>
+    </div>
+  </div>
+</div>
 <aside class="drawer" id="drawer">
   <div class="dhead"><h3 id="drawerTitle">Add product</h3>
     <button class="iact" onclick="closeDrawer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
@@ -1054,31 +1088,92 @@ function updatePreview(){
   $('pvLoc').textContent=composedLoc();$('pvBio').textContent=$('sfBio').value;
   photoTile($('sideAv'),letter);
   photoTile($('sfPhotoPrev'),letter);
+  $('sfPhotoCrop').style.display=SHOP.image?'inline-flex':'none';
   $('sfPhotoRemove').style.display=SHOP.image?'inline-flex':'none';
 }
 ['sfName','sfLoc','sfBio'].forEach(id=>$(id).addEventListener('input',updatePreview));
 $('sfEmirate').addEventListener('change',updatePreview);
 
-/* shop photo upload — downsized in the browser, sent as a data URL */
-function uploadShopPhoto(file){
+/* shop photo — picked (or existing) images go through the cropper first:
+   drag to pan, slider to zoom, fixed 16:10 frame, then uploaded as a data URL */
+const CROP={img:null,zoom:1,ox:0,oy:0};       // ox/oy: image offset from centre, in stage-canvas px
+const CROP_W=1200, CROP_H=750;                // uploaded size (16:10)
+
+function openCropFile(file){
   if(!file)return;
   if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('Use a JPG, PNG or WebP image');return;}
   const rd=new FileReader();
-  rd.onload=()=>{
-    const im=new Image();
-    im.onload=async()=>{
-      const MAX=1200, sc=Math.min(1,MAX/Math.max(im.width,im.height));
-      const cv=document.createElement('canvas');cv.width=Math.round(im.width*sc);cv.height=Math.round(im.height*sc);
-      cv.getContext('2d').drawImage(im,0,0,cv.width,cv.height);
-      try{
-        const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:cv.toDataURL('image/jpeg',0.85)}});
-        applyShop(shop);updatePreview();toast('Shop photo updated');
-      }catch(e){toast(e.message||'Could not upload the photo');}
-    };
-    im.onerror=()=>toast('That file could not be read as an image');
-    im.src=rd.result;
-  };
+  rd.onload=()=>startCrop(rd.result);
   rd.readAsDataURL(file);
+}
+function recropExisting(){ if(SHOP.image) startCrop(SHOP.image); }
+function startCrop(src){
+  const im=new Image();
+  im.onload=()=>{
+    CROP.img=im;CROP.zoom=1;CROP.ox=0;CROP.oy=0;$('cmZoom').value=100;
+    $('cropModal').classList.add('open');document.body.style.overflow='hidden';
+    requestAnimationFrame(()=>{sizeCropCanvas();drawCrop();});
+  };
+  im.onerror=()=>toast('That file could not be read as an image');
+  im.src=src;
+}
+function closeCrop(){CROP.img=null;$('cropModal').classList.remove('open');document.body.style.overflow='';}
+function sizeCropCanvas(){
+  const w=$('cmStage').getBoundingClientRect().width, dpr=window.devicePixelRatio||1;
+  const cv=$('cmCanvas');cv.width=Math.round(w*dpr);cv.height=Math.round(w*10/16*dpr);
+}
+// image is drawn cover-fit × zoom, centred + offset; offsets clamp so the frame never shows gaps
+function cropGeom(cw,ch,ox,oy){
+  const im=CROP.img, s=Math.max(cw/im.width,ch/im.height)*CROP.zoom;
+  const dw=im.width*s, dh=im.height*s;
+  const mx=(dw-cw)/2, my=(dh-ch)/2;
+  const cx=Math.max(-mx,Math.min(mx,ox)), cy=Math.max(-my,Math.min(my,oy));
+  return {dx:(cw-dw)/2+cx,dy:(ch-dh)/2+cy,dw,dh,cx,cy};
+}
+function drawCrop(){
+  if(!CROP.img)return;
+  const cv=$('cmCanvas'),ctx=cv.getContext('2d');
+  const g=cropGeom(cv.width,cv.height,CROP.ox,CROP.oy);
+  CROP.ox=g.cx;CROP.oy=g.cy;                 // keep state inside the clamp
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.drawImage(CROP.img,g.dx,g.dy,g.dw,g.dh);
+}
+$('cmZoom').addEventListener('input',e=>{
+  const nz=e.target.value/100, k=nz/CROP.zoom;
+  CROP.zoom=nz;CROP.ox*=k;CROP.oy*=k;        // zoom about the frame centre
+  drawCrop();
+});
+(()=>{                                        // drag to pan
+  const st=$('cmStage');let drag=null;
+  st.addEventListener('pointerdown',e=>{
+    if(!CROP.img)return;
+    drag={x:e.clientX,y:e.clientY,ox:CROP.ox,oy:CROP.oy};
+    st.classList.add('dragging');st.setPointerCapture(e.pointerId);
+  });
+  st.addEventListener('pointermove',e=>{
+    if(!drag)return;
+    const dpr=window.devicePixelRatio||1;
+    CROP.ox=drag.ox+(e.clientX-drag.x)*dpr;
+    CROP.oy=drag.oy+(e.clientY-drag.y)*dpr;
+    drawCrop();
+  });
+  const end=()=>{drag=null;st.classList.remove('dragging');};
+  st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);
+  window.addEventListener('resize',()=>{if($('cropModal').classList.contains('open')){sizeCropCanvas();drawCrop();}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cropModal').classList.contains('open'))closeCrop();});
+})();
+async function applyCrop(){
+  if(!CROP.img)return;
+  const cv=$('cmCanvas'), k=CROP_W/cv.width;
+  const out=document.createElement('canvas');out.width=CROP_W;out.height=CROP_H;
+  const g=cropGeom(CROP_W,CROP_H,CROP.ox*k,CROP.oy*k);
+  out.getContext('2d').drawImage(CROP.img,g.dx,g.dy,g.dw,g.dh);
+  const btn=$('cmApply'),label=btn.textContent;btn.textContent='Uploading…';btn.disabled=true;
+  try{
+    const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:out.toDataURL('image/jpeg',0.85)}});
+    applyShop(shop);updatePreview();closeCrop();toast('Shop photo updated');
+  }catch(e){toast(e.message||'Could not upload the photo');}
+  btn.textContent=label;btn.disabled=false;
 }
 async function removeShopPhoto(){
   try{ const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:null}}); applyShop(shop);updatePreview();toast('Back to your accent colour'); }
