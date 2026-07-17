@@ -627,7 +627,7 @@ function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
-    tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,
+    tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''}};
@@ -1058,6 +1058,7 @@ function consignmentPayoutUI(){
       </div>
       ${payoutSetupCard()}
     </div>
+    ${licenseCardHTML()}
     <div class="card" style="padding:0">
       <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">Settlement history</h3></div>
       ${hist.length?`<table class="tbl"><thead><tr><th>Run</th><th>Purchases</th><th>Refund adj.</th><th>Amount</th><th>Status</th><th></th></tr></thead>
@@ -1101,6 +1102,40 @@ function renderConnectUI(sc){
 
 async function reloadPayouts(){
   try{ SETTLE=await TroveAPI.api('/api/seller/settlements'); }catch(_){}
+}
+let LICENSE_EDIT=false;
+function licenseCardHTML(){
+  const num=SHOP.licenseNumber, verified=!!SHOP.licenseVerified;
+  if(num&&!LICENSE_EDIT){
+    return `<div class="card" style="margin-bottom:18px">
+      <div class="up">Trade licence</div>
+      <div class="fee-row"><span class="muted">Licence number</span><span>${esc(num)}</span></div>
+      <div class="fee-row"><span class="muted">Status</span><span>${verified?'Verified by Trove ✓':'Awaiting Trove’s check'}</span></div>
+      <div class="demo-note" style="margin-top:10px">${verified
+        ?'Your licence is verified — no Emirates-ID checks needed, and you’re first in line for direct per-sale payouts when they launch.'
+        :'Trove checks every licence by hand — you’ll see “Verified” here once that’s done. No Emirates-ID photos needed in the meantime.'}</div>
+      <button class="btn btn-ghost" style="margin-top:12px" onclick="LICENSE_EDIT=true;renderPayments()">Update number</button>
+    </div>`;
+  }
+  return `<div class="card" style="margin-bottom:18px">
+    <div class="up">Trade licence${num?'':' · optional'}</div>
+    <p style="font-size:13.5px;color:var(--muted);font-weight:600;margin:4px 0 12px">${num
+      ?'Changing the number means Trove checks it again before it counts as verified.'
+      :'Got a UAE trade or e-Trader licence? Add the number — you skip Emirates-ID verification and you’re first in line for direct per-sale payouts.'}</p>
+    <div class="field"><label>Licence number</label><input id="licNoInput" value="${esc(num||'')}" placeholder="e.g. CN-1234567"></div>
+    <div id="licErr" style="display:none;color:var(--coral-deep);font-size:13px;font-weight:600;margin-bottom:8px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-dark" onclick="saveLicenseNumber()">Save licence</button>
+      ${num?`<button class="btn btn-ghost" onclick="LICENSE_EDIT=false;renderPayments()">Cancel</button>`:''}
+    </div>
+  </div>`;
+}
+async function saveLicenseNumber(){
+  const err=$('licErr'); err.style.display='none';
+  try{
+    const {shop}=await TroveAPI.api('/api/seller/me/license',{method:'POST',body:{licenseNumber:$('licNoInput').value}});
+    LICENSE_EDIT=false; applyShop(shop); toast('Licence saved — Trove will check it shortly'); renderPayments();
+  }catch(e){ err.textContent=e.message||'Could not save your licence'; err.style.display='block'; }
 }
 let PAYOUT_EDIT=false;
 function payoutSetupCard(){

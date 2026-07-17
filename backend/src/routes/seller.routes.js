@@ -38,6 +38,20 @@ router.patch('/me', requireSeller, (req, res) => {
   res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
+// A seller who gets a trade / e-Trader license after applying records it
+// here — until now licenses could only enter via the application wizard.
+// Every change resets verification so Trove re-checks the new number, and
+// connect_queue puts the shop in the admin graduation queue for that check.
+router.post('/me/license', requireSeller, (req, res) => {
+  const num = String((req.body || {}).licenseNumber || '').trim().slice(0, 60);
+  if (num.length < 4) return res.status(400).json({ error: 'Enter your license number as it appears on the document' });
+  if (num !== req.shop.license_number) {
+    db.prepare('UPDATE shops SET license_number=?, connect_queue=1, license_verified_at=NULL WHERE id=?')
+      .run(num, req.shop.id);
+  }
+  res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
+});
+
 // Upload (or remove) the shop's photo. Body: { image: <data URL> } to set,
 // { image: null } to go back to the colour tile. The old file is cleaned up.
 router.post('/me/image', requireSeller, (req, res, next) => {
