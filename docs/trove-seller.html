@@ -167,7 +167,7 @@
   .cm-zoom label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .cm-zoom input[type=range]{flex:1;accent-color:var(--coral)}
   .cm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:480px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:520px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
   .drawer.open{transform:none}
   .drawer .dhead{padding:24px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
   .drawer .dhead h3{font-size:26px;font-weight:500}
@@ -203,6 +203,42 @@
   .seg{display:flex;gap:8px}
   .seg button{flex:1;padding:11px;border:1px solid var(--line);border-radius:11px;font-size:12.5px;font-weight:600;background:var(--paper);transition:.15s}
   .seg button.on{border-color:var(--char);background:var(--char);color:var(--cream)}
+
+  /* drawer — guided add/edit flow */
+  .dhead .dsub{font-size:12px;color:var(--muted);font-weight:500;margin-top:3px}
+  .dsec{border-top:1px solid var(--line-soft);margin-top:22px;padding-top:20px}
+  .dsec-h{display:flex;align-items:center;gap:10px;margin-bottom:15px}
+  .dsec-h .n{width:21px;height:21px;border-radius:50%;background:var(--rose-tint);color:var(--coral-deep);font-size:11px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+  .dsec-h h4{font-family:'Cormorant';font-size:19px;font-weight:600}
+  .dsec-h .oh{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-left:auto}
+  .dprev-card{display:flex;gap:14px;align-items:center;border:1px solid var(--line);background:var(--paper);border-radius:14px;padding:12px}
+  .dprev-img{width:74px;height:90px;border-radius:10px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
+  .dprev-img .grad{position:absolute;inset:0}
+  .dprev-sale{position:absolute;top:6px;left:6px;background:var(--coral);color:var(--char);font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:3px 7px;border-radius:99px;display:none}
+  .dprev-sale.show{display:inline-block}
+  .dprev-cat{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .dprev-name{font-family:'Cormorant';font-size:20px;font-weight:600;line-height:1.15;margin:2px 0 5px;overflow-wrap:break-word}
+  .dprev-name.empty{color:var(--muted);font-weight:500;font-style:italic}
+  .dprev-price{font-size:13.5px;font-weight:700}
+  .dprev-price s{color:var(--muted);font-weight:500;font-size:12px;margin-left:7px}
+  .dprev-note{font-size:11px;color:var(--muted);font-weight:500;margin-top:7px}
+  .mny{position:relative}
+  .mny::before{content:'AED';position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:10.5px;font-weight:700;color:var(--muted);letter-spacing:.03em}
+  .mny input{padding-left:50px}
+  .ferr{display:none;font-size:11.5px;color:var(--coral-deep);font-weight:600;margin-top:6px}
+  .field.bad .ferr{display:block}
+  .field.bad input,.field.bad textarea,.field.bad select{border-color:var(--coral-deep)}
+  .dfee{display:block;background:rgba(202,213,204,.18);border:1px solid rgba(202,213,204,.7);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.55}
+  .perso-card{border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:14px 16px}
+  .perso-card .pc-top{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer}
+  .perso-card #dPersoFields{margin-top:16px}
+  .dfoot .dmain{display:flex;flex:1;gap:12px}
+  .dfoot .dconfirm{display:none;flex:1;align-items:center;gap:10px}
+  .dfoot.confirming .dconfirm{display:flex}
+  .dfoot.confirming .dmain{display:none}
+  .dconfirm span{font-size:13px;font-weight:600;flex:1}
+  .dconfirm .btn{flex:0 0 auto}
+  #drawerSave[disabled]{opacity:.6;pointer-events:none}
 
   /* ---------- PAYMENTS ---------- */
   .stripe-connect{text-align:center;max-width:560px;margin:30px auto;padding:48px 40px}
@@ -455,56 +491,88 @@
   </div>
 </div>
 <aside class="drawer" id="drawer">
-  <div class="dhead"><h3 id="drawerTitle">Add product</h3>
+  <div class="dhead"><div><h3 id="drawerTitle">Add product</h3><div class="dsub" id="drawerSub">Takes about a minute — you can always save it as a draft.</div></div>
     <button class="iact" onclick="closeDrawer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="dbody">
-    <div class="img-pick">
-      <div class="pv"><div class="grad" id="dImg"></div></div>
-      <div><button class="btn btn-ghost btn-sm" onclick="toast('Image upload is mocked in this prototype')">Upload image</button>
-        <div class="hint" style="margin-top:8px">JPG or PNG, at least 1000×1250px.</div></div>
-    </div>
-    <div class="field"><label>Product name</label><input id="dName" placeholder="e.g. Reeded Stoneware Mug"></div>
-    <div class="field"><label>Description</label><textarea id="dDesc" placeholder="What makes it special?"></textarea></div>
-    <div class="field"><label>Category</label><select id="dCat"><option>Ceramics</option><option>Home</option><option>Apparel</option><option>Textiles</option><option>Art</option><option>Woodwork</option><option>Jewelry</option><option>Stationery</option><option>Accessories</option></select></div>
-    <div class="field"><label>Tags</label>
-      <div class="tagbox" id="dTagBox" onclick="$('dTagIn').focus()"><input id="dTagIn" placeholder="Type a tag, press Enter"></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
-        <div class="hint" style="margin:0">Up to 12 — materials, style, what it's for. They power search.</div>
-        <button class="btn btn-ghost btn-sm" id="dTagAI" style="display:none;white-space:nowrap" onclick="aiSuggestTags()">✨ Write tags for me</button>
-      </div>
-      <div class="tagsug" id="dTagSug">
-        <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a onclick="addAllSuggested()">Add all</a><a onclick="dismissSuggestions()">Dismiss</a></div>
-        <div class="chips" id="dTagSugChips"></div>
+    <div class="dprev-card">
+      <div class="dprev-img"><div class="grad" id="dImg"></div><span class="dprev-sale" id="dpvSale">Sale</span></div>
+      <div style="min-width:0">
+        <div class="dprev-cat" id="dpvCat">Ceramics</div>
+        <div class="dprev-name empty" id="dpvName">Your product name</div>
+        <div class="dprev-price"><span id="dpvPrice">AED 0</span><s id="dpvCompare" style="display:none"></s></div>
       </div>
     </div>
-    <div class="ftwo">
-      <div class="field"><label>Price (AED)</label><input id="dPrice" type="number" placeholder="0"></div>
-      <div class="field"><label>Compare-at (optional)</label><input id="dCompare" type="number" placeholder="—"></div>
+    <div class="dprev-note">Live preview — roughly how it appears in your shop. A colour tile stands in for a photo for now.</div>
+
+    <div class="dsec">
+      <div class="dsec-h"><span class="n">1</span><h4>What you're selling</h4></div>
+      <div class="field"><label for="dName">Product name</label><input id="dName" placeholder="e.g. Reeded Stoneware Mug">
+        <div class="ferr"></div></div>
+      <div class="field"><label for="dDesc">Description</label><textarea id="dDesc" placeholder="e.g. Hand-thrown in our Al Quoz studio, satin glaze, holds 300 ml."></textarea>
+        <div class="hint">What it's made of, how big it is, what makes it special — two or three sentences is plenty.</div></div>
+      <div class="field" style="margin-bottom:4px"><label for="dCat">Category</label><select id="dCat" onchange="updateDrawerPreview()"><option>Ceramics</option><option>Home</option><option>Apparel</option><option>Textiles</option><option>Art</option><option>Woodwork</option><option>Jewelry</option><option>Stationery</option><option>Accessories</option></select></div>
     </div>
-    <div class="ftwo">
-      <div class="field"><label>Stock</label><input id="dStock" type="number" placeholder="0"></div>
-      <div class="field"><label>Status</label>
-        <div class="seg" id="dStatusSeg"><button data-s="live" class="on" onclick="setSeg(this)">Live</button><button data-s="draft" onclick="setSeg(this)">Draft</button></div>
-      </div>
-    </div>
-    <div class="field" style="margin-top:2px"><label>Personalisation</label>
-      <label style="display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer;margin:4px 0 2px"><input type="checkbox" id="dPerso" onchange="togglePerso()"> Let buyers add a personal touch (a name, initials, a date…)</label>
-    </div>
-    <div id="dPersoFields" style="display:none">
-      <div class="field"><label>What should the buyer tell you?</label><input id="dPersoPrompt" placeholder="e.g. Initials to stamp on the base (up to 3 letters)"></div>
-      <div class="ftwo">
-        <div class="field"><label>Max characters</label><input id="dPersoLimit" type="number" placeholder="256"></div>
-        <div class="field"><label>Buyer must fill it in?</label>
-          <div class="seg" id="dPersoReq"><button data-r="0" class="on" onclick="setPersoReq(this)">Optional</button><button data-r="1" onclick="setPersoReq(this)">Required</button></div>
+
+    <div class="dsec">
+      <div class="dsec-h"><span class="n">2</span><h4>Help shoppers find it</h4></div>
+      <div class="field" style="margin-bottom:4px"><label>Tags</label>
+        <div class="tagbox" id="dTagBox" onclick="$('dTagIn').focus()"><input id="dTagIn" placeholder="Type a tag, press Enter"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
+          <div class="hint" style="margin:0">Up to 12 — materials, style, what it's for. They power search.</div>
+          <button class="btn btn-ghost btn-sm" id="dTagAI" style="display:none;white-space:nowrap" onclick="aiSuggestTags()">✨ Write tags for me</button>
+        </div>
+        <div class="tagsug" id="dTagSug">
+          <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a onclick="addAllSuggested()">Add all</a><a onclick="dismissSuggestions()">Dismiss</a></div>
+          <div class="chips" id="dTagSugChips"></div>
         </div>
       </div>
     </div>
-    <div class="hint">Trove buys at your list price minus <span id="dFeePct">20</span>%. On a AED <span id="dFeeBase">0</span> item your purchase price is <b>AED <span id="dFeeKeep">0</span></b>.</div>
+
+    <div class="dsec">
+      <div class="dsec-h"><span class="n">3</span><h4>Price &amp; stock</h4></div>
+      <div class="ftwo">
+        <div class="field"><label for="dPrice">Your price</label><div class="mny"><input id="dPrice" type="number" min="0" placeholder="0"></div>
+          <div class="ferr"></div></div>
+        <div class="field"><label for="dCompare">Was-price</label><div class="mny"><input id="dCompare" type="number" min="0" placeholder="—"></div>
+          <div class="ferr"></div></div>
+      </div>
+      <div class="hint" style="margin:-10px 0 18px">Fill the was-price only for a genuine markdown — it shows crossed out next to your price, with a Sale badge.</div>
+      <div class="field"><label for="dStock">Stock</label><input id="dStock" type="number" min="0" placeholder="0">
+        <div class="hint">How many you can sell right now — 0 shows as sold out.</div></div>
+      <div class="dfee">Trove buys at your list price minus <span id="dFeePct">20</span>%.&nbsp;On a AED <span id="dFeeBase">0</span> item your purchase price is&nbsp;<b>AED <span id="dFeeKeep">0</span></b>.</div>
+    </div>
+
+    <div class="dsec">
+      <div class="dsec-h"><span class="n">4</span><h4>Finishing touches</h4><span class="oh">optional</span></div>
+      <div class="perso-card">
+        <label class="pc-top"><input type="checkbox" id="dPerso" onchange="togglePerso()"> Let buyers add a personal touch (a name, initials, a date…)</label>
+        <div id="dPersoFields" style="display:none">
+          <div class="field"><label for="dPersoPrompt">What should the buyer tell you?</label><input id="dPersoPrompt" placeholder="e.g. Initials to stamp on the base (up to 3 letters)"></div>
+          <div class="ftwo">
+            <div class="field" style="margin-bottom:0"><label for="dPersoLimit">Max characters</label><input id="dPersoLimit" type="number" placeholder="256"></div>
+            <div class="field" style="margin-bottom:0"><label>Buyer must fill it in?</label>
+              <div class="seg" id="dPersoReq"><button data-r="0" class="on" onclick="setPersoReq(this)">Optional</button><button data-r="1" onclick="setPersoReq(this)">Required</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin:18px 0 0"><label>Visibility</label>
+        <div class="seg" id="dStatusSeg"><button data-s="live" class="on" onclick="setSeg(this)">Live</button><button data-s="draft" onclick="setSeg(this)">Draft</button></div>
+        <div class="hint" id="dStatusHint">Shoppers can see and buy it as soon as you save.</div>
+      </div>
+    </div>
   </div>
-  <div class="dfoot">
-    <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
-    <button class="btn btn-coral" id="drawerSave">Add product</button>
+  <div class="dfoot" id="dFoot">
+    <div class="dmain">
+      <button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button>
+      <button class="btn btn-coral" id="drawerSave">Add product</button>
+    </div>
+    <div class="dconfirm">
+      <span>Discard what you've typed?</span>
+      <button class="btn btn-ghost btn-sm" type="button" onclick="hideDiscard()">Keep editing</button>
+      <button class="btn btn-coral btn-sm" type="button" onclick="closeDrawer(true)">Discard</button>
+    </div>
   </div>
 </aside>
 
@@ -520,7 +588,7 @@ let orders=[];
 let ME=null;
 let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[]};
 const feePct=()=>SETTLE.commissionPercent||20;
-let editingId=null, drawerStatus='live';
+let editingId=null, drawerStatus='live', drawerDirty=false;
 
 /* ---------------- HELPERS ---------------- */
 const $=id=>document.getElementById(id);
@@ -667,6 +735,7 @@ function renderDrawerTags(){
     chip.appendChild(x);box.insertBefore(chip,input);
   });
   input.placeholder=drawerTags.length?'Add another…':'Type a tag, press Enter';
+  drawerDirty=true;   // chip added/removed counts as an edit (openAdd/openEdit reset this after prefilling)
   renderSuggestions();
 }
 /* Claude's suggestions wait as tap-to-add chips — nothing is added for you.
@@ -720,36 +789,74 @@ function fillPerso(per){const on=!!(per&&per.enabled);$('dPerso').checked=on;tog
   $('dPersoPrompt').value=per?per.prompt||'':'';$('dPersoLimit').value=per&&per.maxLen?per.maxLen:'';setPersoReqVal(per?per.required:0);}
 function readPerso(){return {enabled:$('dPerso').checked,required:document.querySelector('#dPersoReq button.on').dataset.r==='1',
   prompt:$('dPersoPrompt').value.trim(),maxLen:parseInt($('dPersoLimit').value)||256};}
-function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSave').textContent='Add product';
+/* live preview + inline validation */
+function updateDrawerPreview(){   // NB: distinct name — updatePreview() further down is the storefront-settings preview
+  const name=$('dName').value.trim();
+  $('dpvName').textContent=name||'Your product name';
+  $('dpvName').classList.toggle('empty',!name);
+  $('dpvCat').textContent=$('dCat').value;
+  const v=parseFloat($('dPrice').value)||0, c=parseFloat($('dCompare').value)||0;
+  $('dpvPrice').textContent=money(Math.round(v*100));
+  const sale=v>0&&c>v;
+  $('dpvSale').classList.toggle('show',sale);
+  $('dpvCompare').style.display=sale?'inline':'none';
+  if(sale)$('dpvCompare').textContent=money(Math.round(c*100));
+}
+function clearFieldErrors(){document.querySelectorAll('#drawer .field.bad').forEach(f=>f.classList.remove('bad'));}
+function fieldError(inputId,msg){const f=$(inputId).closest('.field');f.classList.add('bad');const e=f.querySelector('.ferr');if(e)e.textContent=msg;}
+
+function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSub').textContent='Takes about a minute — you can always save it as a draft.';$('drawerSave').textContent='Add product';
   $('dName').value='';$('dDesc').value='';$('dCat').value='Ceramics';$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
   drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
-  fillPerso(null);setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
+  fillPerso(null);setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
-  $('drawerTitle').textContent='Edit product';$('drawerSave').textContent='Save changes';
+  $('drawerTitle').textContent='Edit product';$('drawerSub').textContent='Tweak anything — nothing changes until you save.';$('drawerSave').textContent='Save changes';
   $('dName').value=p.name;$('dDesc').value=p.desc||'';$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
   drawerTags=(p.tags||[]).slice();suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
-  fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();openDrawer();}
-function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;}
-function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;}
+  fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
+const STATUS_HINT={live:'Shoppers can see and buy it as soon as you save.',draft:'Only you can see it — finish it and go live whenever you like.'};
+function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=STATUS_HINT[drawerStatus];drawerDirty=true;}
+function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;$('dStatusHint').textContent=STATUS_HINT[s];}
 function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeePct').textContent=feePct();$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*(1-feePct()/100));}
-$('dPrice').addEventListener('input',updateFee);
+$('dPrice').addEventListener('input',()=>{updateFee();updateDrawerPreview();});
+$('dCompare').addEventListener('input',updateDrawerPreview);
+$('dName').addEventListener('input',updateDrawerPreview);
+/* any edit marks the drawer dirty and clears that field's error */
+$('drawer').addEventListener('input',(e)=>{drawerDirty=true;const f=e.target.closest('.field');if(f)f.classList.remove('bad');});
+$('drawer').addEventListener('change',()=>{drawerDirty=true;});
 $('drawerSave').onclick=async()=>{
-  const name=$('dName').value.trim(); const price=parseFloat($('dPrice').value);
-  if(!name){toast('Give your product a name');return;}
-  if(isNaN(price)||price<=0){toast('Set a price above 0');return;}
+  clearFieldErrors();
+  const name=$('dName').value.trim();
+  const price=parseFloat($('dPrice').value);
+  const compareRaw=$('dCompare').value.trim();
+  const compare=compareRaw===''?null:parseFloat(compareRaw);
+  let bad=false;
+  if(!name){fieldError('dName','Every piece needs a name.');bad=true;}
+  if(isNaN(price)||price<=0){fieldError('dPrice','Set a price above 0.');bad=true;}
+  if(compare!==null&&(isNaN(compare)||compare<=price)){fieldError('dCompare','A was-price only works above your price — or leave it empty.');bad=true;}
+  if(bad){const f=document.querySelector('#drawer .field.bad');f.scrollIntoView({behavior:'smooth',block:'center'});const inp=f.querySelector('input,textarea,select');if(inp)inp.focus({preventScroll:true});return;}
   if($('dTagIn').value.trim()){addDrawerTag($('dTagIn').value);$('dTagIn').value='';}   // catch a half-typed tag
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
-    compareAt:parseFloat($('dCompare').value)||null,stock:parseInt($('dStock').value)||0,status:drawerStatus,
+    compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
     tags:drawerTags,personalization:readPerso()};
+  const btn=$('drawerSave'), was=btn.textContent;
+  btn.disabled=true;btn.textContent=editingId?'Saving…':'Adding…';
   try{
     if(editingId) await TroveAPI.api('/api/seller/products/'+editingId,{method:'PATCH',body});
     else { body.imageSeed='new'+Math.floor(Math.random()*9999); await TroveAPI.api('/api/seller/products',{method:'POST',body}); }
-    toast(editingId?'Changes saved':'Product added');
-    closeDrawer(); await reloadProducts();
+    toast(editingId?'Changes saved':(drawerStatus==='draft'?'Saved as a draft — go live whenever you like':'Added — it\'s live in your shop'));
+    drawerDirty=false; closeDrawer(true); await reloadProducts();
   }catch(e){ toast(e.message||'Could not save product'); }
+  finally{ btn.disabled=false;btn.textContent=was; }
 };
+function showDiscard(){$('dFoot').classList.add('confirming');}
+function hideDiscard(){$('dFoot').classList.remove('confirming');}
 function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
-function closeDrawer(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
+function closeDrawer(force){
+  if(!force&&drawerDirty){showDiscard();return;}   // don't silently lose typed work
+  hideDiscard();drawerDirty=false;
+  $('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
+document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&$('drawer').classList.contains('open')&&!$('cropModal').classList.contains('open'))closeDrawer();});
 
 /* ---------------- ORDERS — per-shop shipments you fulfil & track ---------------- */
 const SHIP_NEXT={processing:['shipped','Mark as shipped'],shipped:['out_for_delivery','Out for delivery'],out_for_delivery:['delivered','Mark as delivered']};
