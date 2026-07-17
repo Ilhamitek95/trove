@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --font-display:'Italiana','Cormorant',Georgia,serif;
@@ -67,6 +68,8 @@
   .social{display:flex;gap:10px}
   .social button{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
   .social button:hover{border-color:var(--char)}
+  .social button.on{border-color:var(--char);background:var(--char);color:var(--cream)}
+  .social .gwrap{flex:1;display:flex;justify-content:center;align-items:center;min-height:44px}
   .swap{text-align:center;font-size:13.5px;color:var(--muted);font-weight:500;margin-top:24px}
   .swap a{color:var(--char);font-weight:700;text-decoration:none;border-bottom:1px solid var(--coral);padding-bottom:1px}
   .demo{text-align:center;font-size:11px;color:var(--muted);font-weight:500;margin-top:22px;display:flex;gap:7px;align-items:center;justify-content:center}
@@ -111,7 +114,8 @@
       <p class="lede" id="aLede">Your account, orders, and saved finds.</p>
 
       <div class="field" id="nameField" style="display:none"><label>Your name</label><input id="name" placeholder="Your full name"></div>
-      <div class="field"><label>Email</label><input id="email" type="email" placeholder="you@email.com"></div>
+      <div class="field" id="mobileField" style="display:none"><label>UAE mobile</label><input id="mobile" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
+      <div class="field" id="emailField"><label id="emailLabel">Email</label><input id="email" type="email" placeholder="you@email.com"></div>
       <div class="field"><div class="fl"><label>Password</label><a href="#" onclick="return false">Forgot?</a></div>
         <input id="pass" type="password" placeholder="••••••••"></div>
       <div class="field" id="shopField" style="display:none"><label>Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
@@ -121,8 +125,8 @@
 
       <div class="or">or</div>
       <div class="social">
-        <button onclick="notImplemented()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22 12c0-.7-.06-1.4-.18-2H12v3.8h5.6a4.8 4.8 0 0 1-2 3.2v2.6h3.3c1.9-1.8 3-4.4 3-7.6z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.3-2.6c-.9.6-2 1-3.3 1-2.5 0-4.7-1.7-5.4-4H3.2v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.2A10 10 0 0 0 2 12c0 1.6.4 3.2 1.2 4.6z"/><path fill="#EA4335" d="M12 6c1.5 0 2.8.5 3.8 1.5l2.9-2.9A10 10 0 0 0 3.2 7.4L6.6 10c.7-2.3 2.9-4 5.4-4z"/></svg>Google</button>
-        <button onclick="notImplemented()"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.6 12.6c0-2 1.6-3 1.7-3-1-1.4-2.4-1.6-2.9-1.6-1.2-.1-2.4.7-3 .7s-1.6-.7-2.6-.7c-1.3 0-2.6.8-3.2 2-1.4 2.4-.4 6 1 8 .6 1 1.4 2 2.4 2s1.3-.6 2.5-.6 1.5.6 2.6.6 1.7-1 2.3-2c.7-1 1-2 1-2.1-.1 0-1.9-.8-1.9-2.9zM15.7 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.8.5-2.4 1.2-.5.6-1 1.5-.8 2.4.9 0 1.8-.5 2.4-1.1z"/></svg>Apple</button>
+        <div class="gwrap" id="gWrap"><div id="gBtn"></div></div>
+        <button id="phoneBtn" onclick="togglePhone()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg><span id="phoneBtnLabel">UAE mobile</span></button>
       </div>
 
       <div class="swap" id="swap">New to trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
@@ -174,10 +178,28 @@ function updateRegisterUI(){
     : (mode==='sell'?`Not selling yet? <a href="/apply">Apply to open a shop</a>`:`New to trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
   $('nameField').style.display=registering?'block':'none';
   $('shopField').style.display=(registering&&mode==='sell')?'block':'none';
+  // Phone mode: the mobile number is the identifier. Email stays visible while
+  // registering (order updates and receipts go there).
+  $('mobileField').style.display=phoneMode?'block':'none';
+  $('emailField').style.display=(!phoneMode||registering)?'block':'none';
+  $('emailLabel').textContent=(phoneMode&&registering)?'Email (for order updates)':'Email';
   $('authErr').style.display='none';
 }
 function showErr(m){const e=$('authErr');e.textContent=m;e.style.display='block';}
-function notImplemented(){showErr('Social sign-in is coming soon — use your email for now.');}
+
+/* ---- UAE mobile sign-in (phone + password) ---- */
+let phoneMode=false;
+function togglePhone(){
+  phoneMode=!phoneMode;
+  $('phoneBtn').classList.toggle('on',phoneMode);
+  $('phoneBtnLabel').textContent=phoneMode?'Use email instead':'UAE mobile';
+  updateRegisterUI();
+  if(phoneMode)$('mobile').focus();
+}
+function validUAEMobile(v){
+  const d=String(v||'').replace(/[\s().-]/g,'').replace(/^\+/,'');
+  return /^(971|0)?5\d{8}$/.test(d);
+}
 
 async function signIn(){
   const btn=$('submitBtn'); $('authErr').style.display='none';
@@ -185,8 +207,10 @@ async function signIn(){
   // No backend reachable → keep the prototype clickable (demo behaviour).
   if(!(await TroveAPI.health())){ window.location.href = mode==='sell' ? '/sell' : '/account'; return; }
 
-  const email=$('email').value.trim(), pass=$('pass').value, name=$('name').value.trim();
-  if(!email||!pass) return showErr('Enter your email and password.');
+  const email=$('email').value.trim(), pass=$('pass').value, name=$('name').value.trim(), mob=$('mobile').value.trim();
+  if(phoneMode&&!validUAEMobile(mob)) return showErr('Enter a UAE mobile number, like 050 123 4567.');
+  if(!pass) return showErr(phoneMode?'Enter your mobile number and password.':'Enter your email and password.');
+  if((!phoneMode||registering)&&!email) return showErr(phoneMode?'Enter your email too — order updates go there.':'Enter your email and password.');
   if(registering&&!name) return showErr('Enter your name.');
 
   const label=btn.textContent;
@@ -195,22 +219,50 @@ async function signIn(){
     if(registering){
       const body={email,password:pass,name,role:mode==='sell'?'seller':'buyer'};
       if(mode==='sell') body.shopName=$('shopName').value.trim()||name;
+      if(phoneMode) body.mobile=mob;
       await TroveAPI.api('/api/auth/register',{method:'POST',body});
     }else{
-      await TroveAPI.api('/api/auth/login',{method:'POST',body:{email,password:pass}});
+      const body=phoneMode?{identifier:mob,password:pass}:{email,password:pass};
+      await TroveAPI.api('/api/auth/login',{method:'POST',body});
     }
-    let dest = mode==='sell' ? '/sell' : '/account';
-    try{
-      const me=await TroveAPI.me();
-      if(me&&me.user&&me.user.role==='admin'&&!me.shop) dest='/admin'; // platform owner → admin panel
-      else if(me&&me.shop) dest='/sell';
-    }catch(_){}
-    window.location.href=dest;
+    window.location.href=await postAuthDest();
   }catch(e){
     btn.textContent=label; btn.style.opacity='1'; btn.disabled=false;
     showErr(e.message||'Could not sign you in.');
   }
 }
+
+async function postAuthDest(){
+  let dest = mode==='sell' ? '/sell' : '/account';
+  try{
+    const me=await TroveAPI.me();
+    if(me&&me.user&&me.user.role==='admin'&&!me.shop) dest='/admin'; // platform owner → admin panel
+    else if(me&&me.shop) dest='/sell';
+  }catch(_){}
+  return dest;
+}
+
+/* ---- Sign in with Google (Google Identity Services) ----
+   The button only appears when the server has GOOGLE_CLIENT_ID configured. */
+async function onGoogleCredential(resp){
+  $('authErr').style.display='none';
+  try{
+    await TroveAPI.api('/api/auth/google',{method:'POST',body:{credential:resp.credential}});
+    window.location.href=await postAuthDest();
+  }catch(e){ showErr(e.message||"Google sign-in didn't work — please try again."); }
+}
+(async function initGoogle(){
+  let clientId=null;
+  try{
+    if(await TroveAPI.health()){ const cfg=await TroveAPI.config(); clientId=cfg&&cfg.googleClientId; }
+  }catch(_){}
+  if(!clientId){ $('gWrap').style.display='none'; return; }
+  (function ready(){
+    if(!(window.google&&google.accounts&&google.accounts.id)) return setTimeout(ready,150);
+    google.accounts.id.initialize({client_id:clientId,callback:onGoogleCredential});
+    google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'signin_with',width:180});
+  })();
+})();
 </script>
 </body>
 </html>

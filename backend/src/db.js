@@ -128,6 +128,9 @@ addColumn('shops', 'pitch_phone',         "TEXT DEFAULT ''");   // WhatsApp for 
 addColumn('shops', 'payout_bank_name',    "TEXT DEFAULT ''");
 addColumn('shops', 'payout_account_name', "TEXT DEFAULT ''");
 addColumn('shops', 'payout_iban',         "TEXT DEFAULT ''");
+// Optional UAE mobile (canonical +9715XXXXXXXX) — a second way to sign in.
+addColumn('users', 'phone',               'TEXT');
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone) WHERE phone IS NOT NULL');
 // Buyer service fee captured per order (delivery lives in shipping_cents).
 addColumn('orders', 'service_fee_cents',  'INTEGER NOT NULL DEFAULT 0');
 // Set when a managed sale has been swept into a weekly payout batch.

@@ -192,6 +192,7 @@ function createApp() {
     vatRegistered: require('./config').vatRegistered(),
     serviceAreas: require('./service-area').SERVICE_AREAS,
     aiTagsEnabled: require('./ai').enabled(),
+    googleClientId: require('./google-auth').clientId(),
   }));
   // Storefront search beacon — the shop page filters locally, so it reports
   // each search here. Anonymous by design: query text and hit count only.

@@ -45,3 +45,5 @@ services:
       #   QUIQUP_API_KEY, QUIQUP_API_URL, QUIQUP_WEBHOOK_SECRET  (courier; mock until set)
       #   ANTHROPIC_API_KEY  switches on Claude-written tag suggestions in the
       #                      seller dashboard (console.anthropic.com → API keys)
+      #   GOOGLE_CLIENT_ID   switches on Sign in with Google on the login page
+      #                      (GCP project "Trove" → Google Auth Platform → Clients)

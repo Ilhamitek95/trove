@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../db');
 const { hashPassword, verifyPassword, publicUser, requireAuth } = require('../middleware');
+const { normalizeUAEMobile } = require('../phone');
 
 const router = express.Router();
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -20,6 +21,16 @@ router.post('/register', (req, res) => {
   const wantsShop = role === 'seller' || role === 'both';
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!existing && !password) return res.status(400).json({ error: 'email, password and name are required' });
+  // Optional UAE mobile — becomes a second way to sign in. ("mobile" here;
+  // "phone" is already the seller application's WhatsApp field.)
+  let mobile = null;
+  if (String(req.body?.mobile || '').trim()) {
+    mobile = normalizeUAEMobile(req.body.mobile);
+    if (!mobile) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });
+    const taken = db.prepare('SELECT id FROM users WHERE phone = ?').get(mobile);
+    if (taken && (!existing || taken.id !== existing.id))
+      return res.status(409).json({ error: 'An account with this mobile number already exists' });
+  }
   // Instagram and WhatsApp are required to apply — validated up front so a
   // failed application never leaves behind an account without a shop.
   if (wantsShop && !String(req.body.instagram || '').trim())
@@ -48,8 +59,8 @@ router.post('/register', (req, res) => {
     // Buyers become sellers; an admin keeps admin (requireAdmin depends on it).
     if (existing.role === 'buyer') db.prepare("UPDATE users SET role = 'seller' WHERE id = ?").run(userId);
   } else {
-    const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
-      .run(email, hashPassword(password), name, role);
+    const info = db.prepare('INSERT INTO users (email, password_hash, name, role, phone) VALUES (?,?,?,?,?)')
+      .run(email, hashPassword(password), name, role, mobile);
     userId = info.lastInsertRowid;
   }
 
@@ -96,16 +107,48 @@ router.post('/register', (req, res) => {
   res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
 });
 
-// POST /api/auth/login  { email, password }
+// POST /api/auth/login  { email | identifier, password }
+// The identifier may be an email address or a UAE mobile number.
 router.post('/login', (req, res) => {
   const { password } = req.body || {};
-  const email = String(req.body?.email || '').trim().toLowerCase();
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  const rawId = String(req.body?.identifier ?? req.body?.email ?? '').trim();
+  let user, wrong = 'Wrong email or password';
+  if (rawId.includes('@')) {
+    user = db.prepare('SELECT * FROM users WHERE email = ?').get(rawId.toLowerCase());
+  } else {
+    wrong = 'Wrong mobile number or password';
+    const mobile = normalizeUAEMobile(rawId);
+    user = mobile ? db.prepare('SELECT * FROM users WHERE phone = ?').get(mobile) : undefined;
+  }
   if (!user || !verifyPassword(password || '', user.password_hash)) {
-    return res.status(401).json({ error: 'Wrong email or password' });
+    return res.status(401).json({ error: wrong });
   }
   req.session.userId = user.id;
   res.json({ user: publicUser(user) });
+});
+
+// POST /api/auth/google  { credential } — a Google Identity Services ID token.
+// An existing account with that (verified) Google email signs straight in;
+// otherwise a buyer account is created. Google-created accounts get a random
+// unusable password — their owner signs in with Google.
+router.post('/google', async (req, res) => {
+  const google = require('../google-auth');
+  if (!google.enabled()) return res.status(503).json({ error: 'Google sign-in is not switched on yet' });
+  try {
+    const g = await google.verifyIdToken(req.body?.credential);
+    if (!g) return res.status(401).json({ error: 'Google could not confirm that sign-in — please try again' });
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(g.email);
+    if (!user) {
+      const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
+        .run(g.email, hashPassword(require('crypto').randomBytes(32).toString('hex')), g.name, 'buyer');
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
+    }
+    req.session.userId = user.id;
+    res.json({ user: publicUser(user) });
+  } catch (e) {
+    console.error('google sign-in failed:', e.message);
+    res.status(502).json({ error: 'Google sign-in is unavailable right now — try again in a moment' });
+  }
 });
 
 router.post('/logout', (req, res) => {
