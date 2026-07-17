@@ -311,6 +311,22 @@
   @media(max-width:760px){.pay-choose,.pay-grid2{grid-template-columns:1fr}}
   /* per-shop shipment cards (Orders view) */
   .ship-card{margin-bottom:18px}
+  /* orders — filter chips + collapsed rows */
+  .ofilters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .ochip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-size:12.5px;font-weight:600;color:var(--char);cursor:pointer;transition:.15s;font-family:inherit}
+  .ochip:hover{border-color:var(--taupe)}
+  .ochip b{font-size:10.5px;background:var(--rose-tint);color:var(--coral-deep);border-radius:99px;padding:2px 8px;font-weight:800}
+  .ochip.on{border-color:var(--char);background:var(--char);color:var(--cream)}
+  .ochip.on b{background:rgba(253,247,245,.18);color:var(--cream)}
+  .ship-row{display:flex;align-items:center;gap:14px;padding:14px 20px;margin-bottom:12px;cursor:pointer;transition:.15s}
+  .ship-row:hover{border-color:var(--taupe)}
+  .ship-row .order-pill{flex-shrink:0}
+  .ship-row .sr-id{font-family:'Cormorant';font-size:18px;font-weight:600;line-height:1.1}
+  .sr-sub{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sr-perso{color:var(--coral-deep);font-weight:800}
+  .sr-date{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0}
+  .chev{color:var(--muted);flex-shrink:0}
+  .sc-head{cursor:pointer}
   .sc-head{display:flex;align-items:flex-start;gap:26px;flex-wrap:wrap;margin-bottom:16px}
   .sc-head .sc-id{font-weight:700;font-size:15px;margin-top:2px}
   .sc-head .sc-sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:3px}
@@ -880,42 +896,70 @@ function shipAddress(o){
   if(!a) return `<div class="v" style="color:var(--muted)">No delivery address on file.</div>`;
   return `<div class="v">${a.name?`<div class="nm">${esc(a.name)}</div>`:''}${a.line?esc(a.line)+'<br>':''}${esc(a.city||'')}${a.country?'<br>'+esc(a.country):''}${a.phone?`<br><span style="color:var(--muted)">${esc(a.phone)}</span>`:''}</div>`;
 }
+/* Orders list — filter chips + collapsible cards keep a busy week scannable. */
+let orderFilter='all';
+const expandedShips=new Set(), seenShips=new Set();
+const ORDER_FILTER_LABELS=[['all','All'],['action','Needs action'],['transit','In transit'],['done','Delivered']];
+function shipFilterKey(s){return s.status==='processing'?'action':(s.status==='shipped'||s.status==='out_for_delivery')?'transit':s.status==='delivered'?'done':'other';}
+function setOrderFilter(f){orderFilter=f;renderOrders();}
+function toggleShip(id){if(expandedShips.has(id))expandedShips.delete(id);else expandedShips.add(id);renderOrders();}
+function shipRowHTML(o){
+  const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
+  const perso=(o.items||[]).some(i=>i.personalization);
+  const name=(o.order&&o.order.ship&&o.order.ship.name)||(o.order&&o.order.email)||'—';
+  return `<div class="card ship-row" onclick="toggleShip(${o.id})">
+      <span class="order-pill ${shipPill(o.status)}">${o.statusLabel}</span>
+      <div style="min-width:0"><div class="sr-id">${o.order?o.order.publicId:''}</div>
+        <div class="sr-sub">${esc(name)} · ${units} item${units===1?'':'s'} · ${aed(o.itemTotal||0)}${perso?' · <span class="sr-perso">✎ personalised</span>':''}</div></div>
+      <span class="sr-date">${fmtDate(o.order?o.order.createdAt:o.createdAt)}</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+    </div>`;
+}
+function shipCardHTML(o){
+  const gross=o.itemTotal||0, fee=gross*feePct()/100, net=gross-fee;
+  const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
+  const items=(o.items||[]).map(i=>`<div class="sc-li">
+      <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
+      <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
+        ${i.personalization?`<div class="q" style="color:var(--coral-deep);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
+      <div class="pr">${aed(i.price*i.qty)}</div>
+    </div>`).join('');
+  return `<div class="card ship-card">
+    <div class="sc-head" onclick="toggleShip(${o.id})" title="Collapse">
+      <div><div class="up" style="margin:0">Order</div><div class="sc-id">${o.order?o.order.publicId:''}</div><div class="sc-sub">Placed ${fmtDateTime(o.order?o.order.createdAt:o.createdAt)}</div></div>
+      <span class="order-pill ${shipPill(o.status)}" style="margin-left:auto">${o.statusLabel}</span>
+      <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+    </div>
+    <div class="sc-cols">
+      <div class="sc-info"><div class="up">Customer</div><div class="v"><div class="nm">${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</div>${esc(o.order&&o.order.email)}</div></div>
+      <div class="sc-info"><div class="up">Ship to</div>${shipAddress(o)}</div>
+    </div>
+    <div class="sc-divider"></div>
+    <div class="sc-sec-label">${units} item${units===1?'':'s'} in this parcel</div>
+    <div>${items}</div>
+    <div class="sc-earn">
+      <div class="e"><span class="k">List price total</span><span class="val">${aed(gross)}</span></div>
+      <div class="e"><span class="k">Trove margin (${feePct()}%)</span><span class="val">−${aed(fee)}</span></div>
+      <div class="e net"><span class="k">Your purchase price</span><span class="val">${aed(net)}</span></div>
+    </div>
+    <div class="sc-divider"></div>
+    <div class="sc-sec-label">Fulfilment</div>
+    ${shipStepper(o.status)}
+    ${shipTimeline(o.timeline)}
+    ${shipActions(o)}
+  </div>`;
+}
 function renderOrders(){
   const wrap=$('orderList');
   if(!orders.length){ wrap.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">No orders yet. When a shopper buys one of your pieces, it'll appear here ready to fulfil.</div>`; return; }
-  wrap.innerHTML=orders.map(o=>{
-    const gross=o.itemTotal||0, fee=gross*feePct()/100, net=gross-fee;
-    const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
-    const items=(o.items||[]).map(i=>`<div class="sc-li">
-        <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
-          ${i.personalization?`<div class="q" style="color:var(--coral-deep);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
-        <div class="pr">${aed(i.price*i.qty)}</div>
-      </div>`).join('');
-    return `<div class="card ship-card">
-      <div class="sc-head">
-        <div><div class="up" style="margin:0">Order</div><div class="sc-id">${o.order?o.order.publicId:''}</div><div class="sc-sub">Placed ${fmtDateTime(o.order?o.order.createdAt:o.createdAt)}</div></div>
-        <span class="order-pill ${shipPill(o.status)}" style="margin-left:auto">${o.statusLabel}</span>
-      </div>
-      <div class="sc-cols">
-        <div class="sc-info"><div class="up">Customer</div><div class="v"><div class="nm">${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</div>${esc(o.order&&o.order.email)}</div></div>
-        <div class="sc-info"><div class="up">Ship to</div>${shipAddress(o)}</div>
-      </div>
-      <div class="sc-divider"></div>
-      <div class="sc-sec-label">${units} item${units===1?'':'s'} in this parcel</div>
-      <div>${items}</div>
-      <div class="sc-earn">
-        <div class="e"><span class="k">List price total</span><span class="val">${aed(gross)}</span></div>
-        <div class="e"><span class="k">Trove margin (${feePct()}%)</span><span class="val">−${aed(fee)}</span></div>
-        <div class="e net"><span class="k">Your purchase price</span><span class="val">${aed(net)}</span></div>
-      </div>
-      <div class="sc-divider"></div>
-      <div class="sc-sec-label">Fulfilment</div>
-      ${shipStepper(o.status)}
-      ${shipTimeline(o.timeline)}
-      ${shipActions(o)}
-    </div>`;
-  }).join('');
+  // First sight of a parcel: open it if it needs action (or if the list is tiny). Collapse choices then stick for the session.
+  orders.forEach(o=>{ if(!seenShips.has(o.id)){ seenShips.add(o.id); if(shipFilterKey(o)==='action'||orders.length<=2) expandedShips.add(o.id); } });
+  const counts={all:orders.length,action:0,transit:0,done:0};
+  orders.forEach(o=>{ const k=shipFilterKey(o); if(counts[k]!=null)counts[k]++; });
+  const chips=`<div class="ofilters">`+ORDER_FILTER_LABELS.map(([k,l])=>`<button class="ochip ${orderFilter===k?'on':''}" onclick="setOrderFilter('${k}')">${l}<b>${counts[k]}</b></button>`).join('')+`</div>`;
+  const list=orders.filter(o=>orderFilter==='all'||shipFilterKey(o)===orderFilter);
+  const EMPTY={action:'Nothing waiting on you — every parcel is on its way or delivered.',transit:'No parcels in transit right now.',done:'No delivered orders yet.'};
+  wrap.innerHTML=chips+(list.length?list.map(o=>expandedShips.has(o.id)?shipCardHTML(o):shipRowHTML(o)).join(''):`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">${EMPTY[orderFilter]||''}</div>`);
 }
 // One step back from each status — so a mis-click is never final.
 const SHIP_PREV={shipped:'processing',out_for_delivery:'shipped',delivered:'out_for_delivery'};
