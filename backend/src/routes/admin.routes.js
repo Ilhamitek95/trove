@@ -26,7 +26,13 @@ router.get('/stats', requireAdmin, (_req, res) => {
   const gmv = db.prepare("SELECT COALESCE(SUM(total_cents),0) AS c FROM orders WHERE status IN ('paid','fulfilled')").get().c;
   const buyers = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role='buyer'").get().c;
   const products = db.prepare("SELECT COUNT(*) AS c FROM products WHERE status='live'").get().c;
-  res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products });
+  // Licensed sellers: applied with a trade/e-Trader license (connect_queue)
+  // or later admin-verified. Rejected applications don't count.
+  const lic = db.prepare(`SELECT COUNT(*) AS total,
+      COALESCE(SUM(CASE WHEN license_verified_at IS NOT NULL THEN 1 ELSE 0 END),0) AS verified
+    FROM shops WHERE (connect_queue=1 OR license_verified_at IS NOT NULL) AND status!='rejected'`).get();
+  res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products,
+    licensed: { total: lic.total, verified: lic.verified, awaiting: lic.total - lic.verified } });
 });
 
 // GET /api/admin/search-trends → what shoppers typed in the last 30 days.

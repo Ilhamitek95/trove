@@ -269,7 +269,8 @@ function renderOverview(){
     <div class="stat"><div class="k">Orders</div><div class="v">${s.orders}</div><div class="n">paid &amp; fulfilled</div></div>
     <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">gross, incl. fees</div></div>
     <div class="stat"><div class="k">Buyers</div><div class="v">${s.buyers}</div><div class="n">registered</div></div>
-    <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>`;
+    <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>
+    <div class="stat ${s.licensed&&s.licensed.awaiting?'hot':''}"><div class="k">Licensed sellers</div><div class="v">${s.licensed?s.licensed.total:0}</div><div class="n">${s.licensed&&s.licensed.total?`${s.licensed.verified} verified · ${s.licensed.awaiting} awaiting check`:'none yet — makers sell license-free'}</div></div>`;
   const b=$('pendBadge');const n=s.shops.pending;b.textContent=n;b.classList.toggle('zero',!n);
   const pend=SHOPS.filter(x=>x.status==='pending');
   $('pendingList').innerHTML=pend.length?pend.map(applicationCardHTML).join('')
