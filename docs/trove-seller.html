@@ -387,9 +387,9 @@
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
       <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
-      <a class="mitem" id="adminPanelLink" style="display:none" href="trove-admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Super admin ↗</a>
+      <a class="mitem" id="adminPanelLink" style="display:none" href="/admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Super admin ↗</a>
     </nav>
-    <div class="foot">Signed in as <span id="sellerName">…</span> · <a href="trove-login.html" id="signOutLink">Sign out</a></div>
+    <div class="foot">Signed in as <span id="sellerName">…</span> · <a href="/login" id="signOutLink">Sign out</a></div>
   </aside>
 
   <!-- MAIN -->
@@ -1203,7 +1203,7 @@ async function savePayoutSetup(){
 }
 // The nicely rendered agreement lives on its own page (shared with the
 // storefront footer link) — no raw-markdown modal here.
-function showAgreement(){ window.open('seller-agreement.html','_blank','noopener'); }
+function showAgreement(){ window.open('/seller-agreement','_blank','noopener'); }
 
 /* ---------------- ADMIN — weekly settlement run (house/admin only) ---------------- */
 const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
@@ -1411,11 +1411,11 @@ function go(v){
 async function boot(){
   let session=null;
   try{ session=await TroveAPI.me(); }catch(_){}
-  if(!session||!session.user){ location.href='trove-login.html'; return; }
-  if(!session.shop){ location.href=session.user.role==='admin'?'trove-admin.html':'trove-apply.html'; return; }   // no shop yet → apply (platform owner → admin panel)
+  if(!session||!session.user){ location.href='/login'; return; }
+  if(!session.shop){ location.href=session.user.role==='admin'?'/admin':'/apply'; return; }   // no shop yet → apply (platform owner → admin panel)
   ME=session.user;
   $('sellerName').textContent=(ME.name||'there').split(' ')[0];
-  const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='trove-login.html';};
+  const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='/login';};
   try{ const {shop}=await TroveAPI.api('/api/seller/me'); applyShop(shop); }catch(_){}
   await refreshStripeStatus();
   await reloadPayouts();

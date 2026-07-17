@@ -140,6 +140,6 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
 
 app.listen(PORT, () => {
   console.log(`trove running on http://localhost:${PORT}`);
-  console.log(`  • storefront: http://localhost:${PORT}/trove.html`);
+  console.log(`  • storefront: http://localhost:${PORT}/`);
   console.log(`  • API:        http://localhost:${PORT}/api/health   (stripe ${getStripe() ? 'configured' : 'OFF'})`);
 });

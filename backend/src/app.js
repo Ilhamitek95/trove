@@ -229,6 +229,29 @@ function createApp() {
   for (const legacy of ['/trove.html', '/trove', '/index.html', '/index']) {
     app.get(legacy, (_req, res) => res.redirect(301, '/'));
   }
+
+  // Every page has one clean canonical address; the raw filename (and its
+  // extensionless variant) 301s there, keeping the query string intact so
+  // old bookmarks and Stripe return links keep working.
+  const PAGES = {
+    '/login': 'trove-login.html',
+    '/account': 'trove-account.html',
+    '/sell': 'trove-seller.html',
+    '/apply': 'trove-apply.html',
+    '/admin': 'trove-admin.html',
+    '/seller-agreement': 'seller-agreement.html',
+  };
+  for (const [clean, file] of Object.entries(PAGES)) {
+    app.get(clean, (_req, res) => res.sendFile(path.join(DOCS_DIR, file)));
+    for (const legacy of ['/' + file, '/' + file.replace(/\.html$/, '')]) {
+      if (legacy === clean) continue;
+      app.get(legacy, (req, res) => {
+        const q = req.originalUrl.indexOf('?');
+        res.redirect(301, clean + (q === -1 ? '' : req.originalUrl.slice(q)));
+      });
+    }
+  }
+
   app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'] }));
 
   // Seller-uploaded images (shop photos). Kept on the persistent disk in prod.

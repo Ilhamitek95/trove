@@ -444,18 +444,18 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
         <input id="searchInput" placeholder="Search the trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
       </div>
-      <a class="icon-btn" title="Saved" href="trove-account.html#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
+      <a class="icon-btn" title="Saved" href="/account#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
       <div class="acct-wrap">
         <button class="icon-btn" title="Account" onclick="toggleAcct(event)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
         <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
           <div class="am-head"><div class="am-av" id="amAv">·</div><div><div class="am-n" id="amName">Welcome</div><div class="am-e" id="amEmail">Sign in to your account</div></div></div>
-          <a href="trove-account.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
-          <a href="trove-account.html#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
-          <a href="trove-account.html#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
-          <a href="trove-account.html#following"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Following</a>
+          <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
+          <a href="/account#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
+          <a href="/account#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
+          <a href="/account#following"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Following</a>
           <div class="am-div"></div>
-          <a class="sell" href="trove-seller.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on trove ↗</a>
-          <a href="trove-login.html" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
+          <a class="sell" href="/sell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on trove ↗</a>
+          <a href="/login" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
         </div>
       </div>
       <button class="icon-btn" title="Cart" onclick="openCart()">
@@ -694,7 +694,7 @@
       <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0">Your shop, in the company of <em style="font-style:italic;color:var(--coral-deep)">good</em> shops.</h1>
       <p style="font-size:17px;color:var(--ink-80);max-width:48ch;margin:24px auto 32px;font-weight:400">Join independent makers reaching shoppers who came to discover something worth keeping. No listing fees, no license needed — Trove buys your pieces at 80% of your list price when they sell.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-coral" onclick="location.href='trove-apply.html'">Apply to open your shop</button>
+        <button class="btn btn-coral" onclick="location.href='/apply'">Apply to open your shop</button>
         <button class="btn btn-ghost" onclick="go('home')">← Back to shopping</button>
       </div>
     </div>
@@ -783,7 +783,7 @@
       <div id="confAcctErr" class="ao-err"></div>
     </div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <a class="btn btn-dark" id="confTrack" href="trove-account.html#orders">Track your order</a>
+      <a class="btn btn-dark" id="confTrack" href="/account#orders">Track your order</a>
       <button class="btn btn-ghost" onclick="go('home')">Continue shopping</button>
     </div>
   </div>
@@ -819,7 +819,7 @@
       <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Trove fulfilment</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
-    <div class="fbot"><span>© 2026 trove · Dubai, UAE</span><span>Privacy · Terms · <a href="seller-agreement.html" style="color:inherit">Seller agreement</a></span></div>
+    <div class="fbot"><span>© 2026 trove · Dubai, UAE</span><span>Privacy · Terms · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
   </div>
 </footer>
 

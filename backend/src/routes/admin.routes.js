@@ -244,8 +244,8 @@ router.post('/graduation/:shopId/approve', requireAdmin, async (req, res, next) 
     const CLIENT = process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || 'http://localhost:4242';
     const link = await stripe.accountLinks.create({
       account: acctId,
-      refresh_url: `${CLIENT}/trove-seller.html?connect=refresh`,
-      return_url: `${CLIENT}/trove-seller.html?connect=done`,
+      refresh_url: `${CLIENT}/sell?connect=refresh`,
+      return_url: `${CLIENT}/sell?connect=done`,
       type: 'account_onboarding',
     });
     res.json({ ok: true, accountId: acctId, onboardingUrl: link.url });

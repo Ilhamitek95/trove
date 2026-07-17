@@ -116,7 +116,7 @@
         <div class="field" id="passField"><label>Password</label><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
           <div class="help">You can sign in and prepare your shop while your application is reviewed. Already shopping on trove? Use your existing email and password — we'll add the shop to your account.</div></div>
         <div class="btnrow"><button class="next" onclick="toStep(2)">Continue →</button></div>
-        <div class="signin">Already selling on trove? <a href="trove-login.html">Sign in</a></div>
+        <div class="signin">Already selling on trove? <a href="/login">Sign in</a></div>
       </div>
 
       <!-- STEP 2 -->
@@ -185,7 +185,7 @@
         <h2>Application received.</h2>
         <p>Thanks <b id="doneName"></b> — <b id="doneShop"></b> is now with our curation team. Every shop on trove is reviewed by a real person, usually within a day or two.</p>
         <div class="what"><b>While you wait</b><span>You're signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you're approved.</span></div>
-        <div class="btnrow"><button class="next" onclick="location.href='trove-seller.html'">Set up your shop →</button></div>
+        <div class="btnrow"><button class="next" onclick="location.href='/sell'">Set up your shop →</button></div>
       </div>
     </div>
   </div>
@@ -204,7 +204,7 @@ let SIGNED_IN=false;
   try{
     const me=await TroveAPI.me();
     if(!me||!me.user)return;
-    if(me.shop){location.href='trove-seller.html';return;} // already runs a shop
+    if(me.shop){location.href='/sell';return;} // already runs a shop
     SIGNED_IN=true;
     $('fName').value=$('fName').value||me.user.name||'';
     $('fEmail').value=me.user.email||'';

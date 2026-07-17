@@ -649,11 +649,11 @@ async function approveGraduation(shopId){
 }
 
 /* ---------------- boot ---------------- */
-async function signOut(){ await TroveAPI.logout(); window.location.href='trove-login.html'; }
+async function signOut(){ await TroveAPI.logout(); window.location.href='/login'; }
 (async function boot(){
   let me=null;
   try{ me=await TroveAPI.me(); }catch(_){}
-  if(!me||!me.user||me.user.role!=='admin'){ window.location.href='trove-login.html'; return; }
+  if(!me||!me.user||me.user.role!=='admin'){ window.location.href='/login'; return; }
   ME=me.user;
   $('whoName').textContent=ME.name;
   $('whoAv').textContent=(ME.name||'T')[0].toUpperCase();

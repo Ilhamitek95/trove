@@ -315,8 +315,8 @@ router.post('/connect/onboarding-link', requireSeller, async (req, res, next) =>
     const stripe = requireStripe();
     const link = await stripe.accountLinks.create({
       account: req.shop.stripe_account_id,
-      refresh_url: `${CLIENT()}/trove-seller.html?connect=refresh`,
-      return_url: `${CLIENT()}/trove-seller.html?connect=done`,
+      refresh_url: `${CLIENT()}/sell?connect=refresh`,
+      return_url: `${CLIENT()}/sell?connect=done`,
       type: 'account_onboarding',
     });
     res.json({ url: link.url });
