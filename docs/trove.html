@@ -376,6 +376,13 @@
   .co-field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
   .co-field input,.co-field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none}
   .co-field input:focus{border-color:var(--char)}
+  .pw{position:relative}
+  .pw input{padding-right:48px}
+  .pweye{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:var(--muted);transition:.15s}
+  .pweye:hover{color:var(--char);background:rgba(41,39,39,.06)}
+  .pweye .eye-off{display:none}
+  .pweye.off .eye-on{display:none}
+  .pweye.off .eye-off{display:block}
   .co-two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   /* the "create an account" offer, shown to guests at checkout + confirmation */
   .acct-offer{background:#F0F4F1;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-top:4px}
@@ -732,7 +739,8 @@
                 <li>All your orders in one place</li>
               </ul>
               <div class="co-field" id="coAcctPassWrap" style="margin:10px 0 0"><label>Choose a password</label>
-                <input id="coAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+                <div class="pw"><input id="coAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+                  <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('coAcctPw',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
               <div id="coAcctErr" class="ao-err"></div>
               <div class="ao-guest" id="coAcctGuestLink">No thanks — <a onclick="guestInstead()">check out as a guest</a></div>
             </div>
@@ -778,7 +786,9 @@
       <b style="font-size:15.5px">Don’t lose track of this order.</b>
       <p style="font-size:13px;font-weight:500;color:var(--ink-80);margin:6px 0 12px;line-height:1.55">Create your free account now — this order attaches to it automatically, and next time checkout takes seconds.</p>
       <div class="co-field"><label>Email</label><input id="confAcctEmail" type="email" autocomplete="email"></div>
-      <div class="co-field"><label>Choose a password</label><input id="confAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+      <div class="co-field"><label>Choose a password</label>
+        <div class="pw"><input id="confAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+          <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('confAcctPw',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
       <button class="btn btn-dark" style="width:100%;justify-content:center" onclick="confCreateAccount()">Create my account</button>
       <div id="confAcctErr" class="ao-err"></div>
     </div>
@@ -1210,6 +1220,12 @@ function toggleCoAcct(){
   coAcctError('');
 }
 function guestInstead(){$('coAcctChk').checked=false;toggleCoAcct();toast('No problem — checking out as a guest');}
+function togglePw(id,btn){
+  const i=$(id), show=i.type==='password';
+  i.type=show?'text':'password';
+  btn.classList.toggle('off',show);
+  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+}
 function coAcctError(m){const e=$('coAcctErr');e.textContent=m;e.style.display=m?'block':'none';}
 /* Save the address they typed at checkout to the fresh account, so the
  * "faster next time" promise is actually true. Best-effort. */

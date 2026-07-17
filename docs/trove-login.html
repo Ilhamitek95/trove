@@ -59,6 +59,13 @@
   .field .fl{display:flex;justify-content:space-between;align-items:center}
   .field .fl a{font-size:11.5px;color:var(--coral-deep);font-weight:600;text-decoration:none}
   .field .fl a:hover{text-decoration:underline}
+  .pw{position:relative}
+  .pw input{padding-right:48px}
+  .pweye{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:var(--muted);transition:.15s}
+  .pweye:hover{color:var(--char);background:rgba(41,39,39,.06)}
+  .pweye .eye-off{display:none}
+  .pweye.off .eye-on{display:none}
+  .pweye.off .eye-off{display:block}
   .submit{width:100%;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:8px}
   .submit:hover{background:#3B3737}
   .submit.seller{background:var(--coral-deep)}
@@ -117,7 +124,8 @@
       <div class="field" id="mobileField" style="display:none"><label>UAE mobile</label><input id="mobile" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
       <div class="field" id="emailField"><label id="emailLabel">Email</label><input id="email" type="email" placeholder="you@email.com"></div>
       <div class="field"><div class="fl"><label>Password</label><a href="#" onclick="return false">Forgot?</a></div>
-        <input id="pass" type="password" placeholder="••••••••"></div>
+        <div class="pw"><input id="pass" type="password" placeholder="••••••••">
+          <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('pass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
       <div class="field" id="shopField" style="display:none"><label>Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
       <div id="authErr" style="display:none;color:var(--coral-deep);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
@@ -186,6 +194,13 @@ function updateRegisterUI(){
   $('authErr').style.display='none';
 }
 function showErr(m){const e=$('authErr');e.textContent=m;e.style.display='block';}
+
+function togglePw(id,btn){
+  const i=document.getElementById(id), show=i.type==='password';
+  i.type=show?'text':'password';
+  btn.classList.toggle('off',show);
+  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+}
 
 /* ---- UAE mobile sign-in (phone + password) ---- */
 let phoneMode=false;

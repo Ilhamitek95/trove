@@ -57,6 +57,13 @@
   .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
   .field textarea{resize:vertical;min-height:104px;line-height:1.55}
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--char)}
+  .pw{position:relative}
+  .pw input{padding-right:48px}
+  .pweye{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:34px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:9px;color:var(--muted);transition:.15s}
+  .pweye:hover{color:var(--char);background:rgba(41,39,39,.06)}
+  .pweye .eye-off{display:none}
+  .pweye.off .eye-on{display:none}
+  .pweye.off .eye-off{display:block}
   .field .help{font-size:12px;color:var(--muted);font-weight:500;margin-top:6px;line-height:1.5}
   .field .count{float:right}
   .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -113,7 +120,9 @@
         <div class="note" id="signedNote">You're signed in as <b id="signedWho"></b> — your shop will be added to this account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
         <div class="field"><label>Your name</label><input id="fName" placeholder="Your full name" autocomplete="name"></div>
         <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
-        <div class="field" id="passField"><label>Password</label><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+        <div class="field" id="passField"><label>Password</label>
+          <div class="pw"><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+            <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('fPass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div>
           <div class="help">You can sign in and prepare your shop while your application is reviewed. Already shopping on trove? Use your existing email and password — we'll add the shop to your account.</div></div>
         <div class="btnrow"><button class="next" onclick="toStep(2)">Continue →</button></div>
         <div class="signin">Already selling on trove? <a href="/login">Sign in</a></div>
@@ -229,6 +238,12 @@ document.querySelectorAll('#step1 input,#step2 input,#step3 input').forEach(el=>
   });
 });
 
+function togglePw(id,btn){
+  const i=$(id), show=i.type==='password';
+  i.type=show?'text':'password';
+  btn.classList.toggle('off',show);
+  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+}
 function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';window.scrollTo(0,0);}
 function hideErr(){$('err').style.display='none';}
 function countAbout(){const v=$('fAbout').value;$('aboutCount').textContent=v.length?v.length+' / 2000':'';}
