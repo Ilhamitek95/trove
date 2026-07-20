@@ -457,7 +457,7 @@
 <body>
 
 <!-- HEADER -->
-<div class="promo"><div class="wrap">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 500</div></div>
+<div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 500</div></div>
 <header class="top">
   <div class="wrap nav">
     <a href="#" class="brand" onclick="go('home');return false">trove</a>
@@ -880,13 +880,13 @@
     <div class="fgrid">
       <div>
         <span class="brand serif">trove</span>
-        <p class="blurb">Thoughtfully chosen homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
+        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully chosen homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
       </div>
       <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li><a href="#" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li><li><a href="#">Gift cards</a></li></ul></div>
       <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Trove fulfilment</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
-    <div class="fbot"><span>© 2026 trove · Dubai, UAE</span><span>Privacy · Terms · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
+    <div class="fbot"><span data-cms="site.footer.legal">© 2026 trove · Dubai, UAE</span><span>Privacy · Terms · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
   </div>
 </footer>
 
@@ -1592,14 +1592,16 @@ async function loadFees(){
   try{ const c=await TroveAPI.config(); if(c)FEES=c; }catch(_){}
 }
 /* ---------------- SITE CONTENT (admin-editable copy) ----------------
- * /api/content serves the homepage + sell-page copy: built-in defaults with
- * any admin overrides layered on top (edited in /admin → Site content).
+ * /api/content serves the storefront copy: built-in defaults with any admin
+ * overrides layered on top (edited in /admin → Site content).
  * Headings may carry two tokens: *word* → <em>, | → <br>. Everything is
- * escaped before those tokens are applied, so content stays text-only. */
+ * escaped before those tokens are applied, so content stays text-only.
+ * No LIVE gate here — this runs concurrently with loadCatalog (which sets
+ * LIVE), so checking it would race and always skip. Demo mode is handled by
+ * the catch: no backend → the fetch fails → the HTML defaults stay. */
 let CONTENT=null;
 async function loadContent(){
-  if(!LIVE)return;
-  try{ CONTENT=await TroveAPI.api('/api/content'); }catch(_){ CONTENT=null; }
+  try{ const c=await TroveAPI.api('/api/content'); CONTENT=(c&&c.home)?c:null; }catch(_){ CONTENT=null; }
 }
 const cmsGet=p=>p.split('.').reduce((o,k)=>(o==null?undefined:o[k]),CONTENT);
 const cmsRich=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\|/g,'<br>');

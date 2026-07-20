@@ -145,6 +145,9 @@
   .cmspick .pk{display:inline-flex;align-items:center;gap:7px;background:var(--rose-tint);border-radius:999px;padding:5px 7px 5px 13px;font-size:12px;font-weight:700}
   .cmspick .pk button{border:0;background:var(--char);color:var(--cream);border-radius:50%;width:17px;height:17px;line-height:1;font-size:10px;cursor:pointer;padding:0}
   .cmsbadge{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;background:var(--rose-tint);color:var(--coral-deep);border-radius:999px;padding:4px 10px}
+  .cmsbadge.dirty{background:var(--sage);color:var(--char)}
+  .rprev{font-family:'Cormorant',Georgia,serif;font-size:20px;line-height:1.15;color:var(--char);margin-top:7px;padding:8px 12px;background:var(--paper);border:1px dashed var(--line);border-radius:10px}
+  .rprev em{font-style:italic;color:var(--coral-deep)}
 </style>
 </head>
 <body>
@@ -277,7 +280,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],shops:['Shops','Approve and manage every shop'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],sitecontent:['Site content','Edit the homepage and Sell-on-Trove copy'],payouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],shops:['Shops','Approve and manage every shop'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar and footer'],payouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -601,8 +604,9 @@ async function setReviewStatus(id,status,confirmFirst){
 }
 
 /* ---------------- site content (homepage + sell copy CMS) ---------------- */
-let CMS=null, CMS_EDIT={};
+let CMS=null, CMS_EDIT={}, CMS_DIRTY={};
 const CMS_SPEC=[
+  {key:'site.promo',label:'Storefront — Announcement bar',fields:[['text','Bar text']]},
   {key:'home.hero',label:'Homepage — Hero',fields:[['eyebrow','Eyebrow'],['h1','Big heading','rich'],['lead','Intro paragraph','area'],['ctaShop','Dark button label'],['ctaSell','Text link label'],['tagLine','Hero tag — small line'],['tagName','Hero tag — name']]},
   {key:'home.marquee',label:'Homepage — Highlights strip',list:{field:'items',fixed:true,label:'Highlight',item:[['head','Heading'],['sub','Small line']]}},
   {key:'home.browse',label:'Homepage — Browse by',fields:[['eyebrow','Eyebrow'],['heading','Heading']]},
@@ -614,6 +618,7 @@ const CMS_SPEC=[
   {key:'sell.steps',label:'Sell page — How it works',fields:[['eyebrow','Eyebrow'],['heading','Heading']],list:{field:'items',label:'Step',min:2,max:6,item:[['title','Step title'],['text','Step text','area']]}},
   {key:'sell.faq',label:'Sell page — Questions',fields:[['eyebrow','Eyebrow'],['heading','Heading']],list:{field:'items',label:'Question',min:1,max:12,item:[['q','Question'],['a','Answer','area']]}},
   {key:'sell.closing',label:'Sell page — Closing card',fields:[['eyebrow','Eyebrow'],['heading','Heading','rich'],['text','Text','area'],['cta','Button label']]},
+  {key:'site.footer',label:'Storefront — Footer',fields:[['blurb','About blurb','area'],['legal','Bottom line']]},
 ];
 const cmsClone=v=>JSON.parse(JSON.stringify(v));
 function cmsInitEdit(){ CMS_EDIT={}; for(const s of CMS_SPEC) CMS_EDIT[s.key]=cmsClone(CMS.overrides[s.key]||CMS.defaults[s.key]); }
@@ -622,12 +627,21 @@ function cmsSet(key,path,val){
   for(let i=0;i<parts.length-1;i++)o=o[parts[i]];
   o[parts[parts.length-1]]=val;
 }
+const cmsRichPrev=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\|/g,'<br>');
+function cmsPrevUpdate(inp){const p=inp.parentElement.querySelector('.rprev');if(p)p.innerHTML=cmsRichPrev(inp.value);}
+function cmsDirty(key){
+  if(CMS_DIRTY[key])return;
+  CMS_DIRTY[key]=true;
+  const b=document.getElementById('dirty-'+key); if(b)b.hidden=false;
+}
 function cmsField(key,path,label,kind,val){
   const hint=kind==='rich'?' <i style="font-weight:500;text-transform:none;letter-spacing:0">— *word* = italic accent, | = line break</i>':'';
+  const on=`oninput="cmsSet('${key}','${path}',this.value);cmsDirty('${key}')${kind==='rich'?`;cmsPrevUpdate(this)`:''}"`;
   const inp=kind==='area'
-    ?`<textarea oninput="cmsSet('${key}','${path}',this.value)">${esc(val)}</textarea>`
-    :`<input value="${esc(val)}" oninput="cmsSet('${key}','${path}',this.value)">`;
-  return `<div class="cmsf"><span class="flab">${label}${hint}</span>${inp}</div>`;
+    ?`<textarea ${on}>${esc(val)}</textarea>`
+    :`<input value="${esc(val)}" ${on}>`;
+  const prev=kind==='rich'?`<div class="rprev">${cmsRichPrev(val)}</div>`:'';
+  return `<div class="cmsf"><span class="flab">${label}${hint}</span>${inp}${prev}</div>`;
 }
 function cmsListHTML(spec){
   const key=spec.key,L=spec.list,arr=CMS_EDIT[key][L.field];
@@ -645,12 +659,12 @@ function cmsListHTML(spec){
   const add=!L.fixed&&arr.length<L.max?`<button class="btn btn-ghost" onclick="cmsAdd('${key}','${L.field}')">+ Add ${L.label.toLowerCase()}</button>`:'';
   return rows+add;
 }
-function cmsMove(key,field,i,d){const a=CMS_EDIT[key][field];const [x]=a.splice(i,1);a.splice(i+d,0,x);renderCms();}
-function cmsRemove(key,field,i){CMS_EDIT[key][field].splice(i,1);renderCms();}
+function cmsMove(key,field,i,d){const a=CMS_EDIT[key][field];const [x]=a.splice(i,1);a.splice(i+d,0,x);cmsDirty(key);renderCms();}
+function cmsRemove(key,field,i){CMS_EDIT[key][field].splice(i,1);cmsDirty(key);renderCms();}
 function cmsAdd(key,field){
   const L=CMS_SPEC.find(s=>s.key===key).list;
   CMS_EDIT[key][field].push(L.item?Object.fromEntries(L.item.map(([f])=>[f,''])):'');
-  renderCms();
+  cmsDirty(key);renderCms();
 }
 function cmsWeeklyHTML(){
   const ids=CMS_EDIT['home.weekly'].productIds;
@@ -663,17 +677,20 @@ function cmsWeeklyHTML(){
     ${ids.length<8&&opts?`<div style="display:flex;gap:8px"><select id="cmsPickSel" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsPickAdd()">Add</button></div>`:''}
   </div>`;
 }
-function cmsPickAdd(){const v=parseInt($('cmsPickSel').value);if(v&&!CMS_EDIT['home.weekly'].productIds.includes(v))CMS_EDIT['home.weekly'].productIds.push(v);renderCms();}
-function cmsPickRemove(i){CMS_EDIT['home.weekly'].productIds.splice(i,1);renderCms();}
+function cmsPickAdd(){const v=parseInt($('cmsPickSel').value);if(v&&!CMS_EDIT['home.weekly'].productIds.includes(v))CMS_EDIT['home.weekly'].productIds.push(v);cmsDirty('home.weekly');renderCms();}
+function cmsPickRemove(i){CMS_EDIT['home.weekly'].productIds.splice(i,1);cmsDirty('home.weekly');renderCms();}
 function renderCms(){
   const w=$('cmsWrap'); if(!w)return;
   if(!CMS){w.innerHTML='<div class="empty">Could not load the site content — refresh to try again.</div>';return;}
   w.innerHTML=CMS_SPEC.map(spec=>{
     const overridden=!!CMS.overrides[spec.key];
+    const page=spec.key.startsWith('sell.')?'/sell':'/';
     const fields=(spec.fields||[]).map(([f,lab,kind])=>cmsField(spec.key,f,lab,kind,CMS_EDIT[spec.key][f])).join('');
     return `<div class="cmscard">
       <div class="chead"><h3>${spec.label}</h3>${overridden?'<span class="cmsbadge">customised</span>':''}
+        <span class="cmsbadge dirty" id="dirty-${spec.key}" ${CMS_DIRTY[spec.key]?'':'hidden'}>unsaved</span>
         <div class="actions">
+          <a class="btn btn-ghost" href="${page}" target="_blank" rel="noopener">See it on the site ↗</a>
           ${overridden?`<button class="btn btn-ghost" onclick="cmsReset('${spec.key}')">Reset to original</button>`:''}
           <button class="btn btn-coral" onclick="cmsSave('${spec.key}')">Save</button>
         </div></div>
@@ -685,6 +702,7 @@ async function cmsSave(key){
   try{
     await TroveAPI.api('/api/admin/content/'+key,{method:'PUT',body:CMS_EDIT[key]});
     CMS.overrides[key]=cmsClone(CMS_EDIT[key]);
+    delete CMS_DIRTY[key];
     toast('Saved — live on the storefront');
     renderCms();
   }catch(e){ toast(e.message||'Could not save that section'); }
@@ -695,6 +713,7 @@ async function cmsReset(key){
     await TroveAPI.api('/api/admin/content/'+key,{method:'DELETE'});
     delete CMS.overrides[key];
     CMS_EDIT[key]=cmsClone(CMS.defaults[key]);
+    delete CMS_DIRTY[key];
     toast('Back to the original copy');
     renderCms();
   }catch(e){ toast(e.message||'Could not reset that section'); }

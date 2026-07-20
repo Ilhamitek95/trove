@@ -1,7 +1,7 @@
 'use strict';
 /**
- * Site content — the admin-editable copy on the storefront homepage and the
- * Sell-on-Trove page.
+ * Site content — the admin-editable copy on the storefront: the homepage, the
+ * Sell-on-Trove page, and the sitewide chrome (announcement bar, footer).
  *
  * DEFAULTS below mirror the copy that ships inside docs/trove.html (which
  * still renders on its own in demo mode). The admin panel saves whole
@@ -20,6 +20,13 @@ const db = require('./db');
 const { copyViolation } = require('./copy-rules');
 
 const DEFAULTS = {
+  'site.promo': {
+    text: 'Delivering across Dubai & Abu Dhabi · Free delivery on orders over AED 500',
+  },
+  'site.footer': {
+    blurb: 'Thoughtfully chosen homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.',
+    legal: '© 2026 trove · Dubai, UAE',
+  },
   'home.hero': {
     eyebrow: 'Thoughtfully gathered',
     h1: 'Curated|for *Living*',
@@ -116,7 +123,7 @@ const SECTIONS = Object.keys(DEFAULTS);
 /* ---- validation -------------------------------------------------------- */
 
 // Long-form fields get more room than labels and headings.
-const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a']);
+const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a', 'blurb']);
 const MAX_SHORT = 200;
 const MAX_LONG = 1200;
 

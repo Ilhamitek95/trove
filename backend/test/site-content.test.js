@@ -26,6 +26,22 @@ test('public content serves the built-in defaults', async () => {
   assert.equal(r.data.home.hero.h1, 'Curated|for *Living*');
   assert.equal(r.data.sell.faq.items.length, 7);
   assert.deepEqual(r.data.home.weekly.productIds, []);
+  assert.match(r.data.site.promo.text, /Free delivery/);
+  assert.match(r.data.site.footer.legal, /© 2026 trove/);
+});
+
+test('the sitewide chrome (announcement bar + footer) is editable', async () => {
+  const def = (await ctx.api('GET', '/api/admin/content', { cookie: adminCookie })).data.defaults;
+  const promo = { ...def['site.promo'], text: 'Eid delivery slots are open · Free delivery over AED 500' };
+  assert.equal((await ctx.api('PUT', '/api/admin/content/site.promo', { cookie: adminCookie, body: promo })).status, 200);
+  const footer = { ...def['site.footer'], legal: '© 2026 trove LLC · Dubai, UAE' };
+  assert.equal((await ctx.api('PUT', '/api/admin/content/site.footer', { cookie: adminCookie, body: footer })).status, 200);
+  const pub = await ctx.api('GET', '/api/content');
+  assert.match(pub.data.site.promo.text, /Eid delivery/);
+  assert.equal(pub.data.site.footer.legal, '© 2026 trove LLC · Dubai, UAE');
+  assert.match(pub.data.site.footer.blurb, /Thoughtfully chosen/, 'untouched field keeps its default');
+  await ctx.api('DELETE', '/api/admin/content/site.promo', { cookie: adminCookie });
+  await ctx.api('DELETE', '/api/admin/content/site.footer', { cookie: adminCookie });
 });
 
 test('editing is admin-only', async () => {
