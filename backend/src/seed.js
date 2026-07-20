@@ -29,7 +29,7 @@ function shop(email, ownerName, shopName, slug, bio, location, color, isHouse, p
 }
 
 const house = shop('hello@trove.com', 'Trove', 'Trove Collection', 'trove-label',
-  'Our own line — designed in-house, made with vetted partners, priced honestly. The standard we hold the marketplace to.',
+  'Our own line — curated by us, made by makers we trust, priced honestly. The standard we hold the marketplace to.',
   'In-house · Dubai', '#292727', true,
   { type: 'managed', bankName: 'Emirates NBD', accountName: 'Trove Marketplace FZ-LLC', iban: 'AE600260001015079130500' });
 const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay',
