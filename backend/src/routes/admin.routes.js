@@ -53,7 +53,7 @@ router.get('/reviews', requireAdmin, (_req, res) => {
     JOIN users u ON u.id = r.buyer_id
     JOIN shops s ON s.id = r.shop_id
     LEFT JOIN products p ON p.id = r.product_id
-    ORDER BY r.created_at DESC LIMIT 200`).all();
+    ORDER BY r.created_at DESC LIMIT 500`).all();
   res.json({ reviews: rows.map((r) => ({
     ...reviews.shape(r),
     buyerEmail: r.buyer_email, shopName: r.shop_name, status: r.status,

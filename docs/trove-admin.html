@@ -113,6 +113,19 @@
   .toast{position:fixed;bottom:26px;left:50%;transform:translate(-50%,20px);background:var(--char);color:var(--cream);padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:60}
   .toast.show{opacity:1;transform:translate(-50%,0)}
   .gate{display:grid;place-items:center;min-height:100vh;color:var(--muted);font-weight:600}
+  /* reviews filter bar */
+  .revbar{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;padding:12px 22px 4px}
+  .rchips{display:flex;gap:6px;flex-wrap:wrap}
+  .rchip{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;color:var(--muted);white-space:nowrap;transition:.15s}
+  .rchip:hover{border-color:var(--taupe);color:var(--char)}
+  .rchip.on{background:var(--char);border-color:var(--char);color:var(--cream)}
+  .rchip .n{opacity:.65;font-weight:800;margin-left:4px}
+  .revbar select,.revbar input{font:inherit;font-size:12.5px;font-weight:600;padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:var(--paper);outline:none;color:var(--char)}
+  .revbar input{min-width:200px;flex:1;max-width:290px}
+  .rcount{font-size:11.5px;color:var(--muted);font-weight:700;margin-left:auto;white-space:nowrap}
+  /* long review bodies clamp to 3 lines; tap to expand */
+  .rbody{font-size:12.5px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+  .rbody.open{-webkit-line-clamp:unset}
 </style>
 </head>
 <body>
@@ -178,6 +191,13 @@
     <div class="view" id="view-reviews">
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px"><h3>Ratings &amp; reviews</h3><div class="hint">Every review, verified buyers only. Hide anything abusive or off-topic — hidden reviews vanish from the storefront and its ratings, and the buyer sees why in their account.</div></div>
+        <div class="revbar">
+          <div class="rchips" id="revStatusChips"></div>
+          <div class="rchips" id="revStarChips"></div>
+          <select id="revShopSel" onchange="renderReviews()"><option value="all">All shops</option></select>
+          <input id="revSearch" placeholder="Search review text, buyer, product…" oninput="renderReviews()">
+          <span class="rcount" id="revCount"></span>
+        </div>
         <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="reviewsTable"></table></div>
       </div>
     </div>
@@ -493,12 +513,44 @@ async function saveTagModal(){
 
 /* ---------------- reviews (moderation) ---------------- */
 const rstars=r=>'★★★★★'.slice(0,Math.round(+r))+'☆☆☆☆☆'.slice(0,5-Math.round(+r));
+/* Filters. Chip counts respect every OTHER active filter (same idea as the
+   storefront's category counts), so a chip always promises what a tap gives. */
+let RF={status:'all',stars:0,photos:false};
+function setRevFilter(k,v){
+  if(k==='status')RF.status=v;
+  else if(k==='stars')RF.stars=RF.stars===v?0:v;   // tap again to clear
+  else if(k==='photos')RF.photos=!RF.photos;
+  renderReviews();
+}
+function revMatches(r,skip){
+  if(skip!=='status'&&RF.status!=='all'&&r.status!==RF.status)return false;
+  if(skip!=='stars'&&RF.stars&&Math.round(r.rating)!==RF.stars)return false;
+  if(skip!=='photos'&&RF.photos&&!(r.images&&r.images.length))return false;
+  const shop=$('revShopSel').value;
+  if(shop!=='all'&&r.shopName!==shop)return false;
+  const q=($('revSearch').value||'').toLowerCase().trim();
+  if(q&&!((r.body||'')+' '+r.buyer+' '+r.buyerEmail+' '+(r.productName||'')+' '+r.shopName).toLowerCase().includes(q))return false;
+  return true;
+}
+function renderRevBar(){
+  const sel=$('revShopSel'),cur=sel.value||'all';
+  const shops=[...new Set(REVIEWS.map(r=>r.shopName))].sort();
+  sel.innerHTML='<option value="all">All shops</option>'+shops.map(s=>`<option value="${esc(s)}"${s===cur?' selected':''}>${esc(s)}</option>`).join('');
+  const cnt=(skip,test)=>REVIEWS.filter(r=>revMatches(r,skip)&&test(r)).length;
+  $('revStatusChips').innerHTML=[['all','All',()=>true],['published','Published',r=>r.status==='published'],['hidden','Hidden',r=>r.status==='hidden']]
+    .map(([v,lb,t])=>`<button class="rchip ${RF.status===v?'on':''}" onclick="setRevFilter('status','${v}')">${lb}<span class="n">${cnt('status',t)}</span></button>`).join('');
+  $('revStarChips').innerHTML=[5,4,3,2,1].map(s=>`<button class="rchip ${RF.stars===s?'on':''}" onclick="setRevFilter('stars',${s})">${s}★<span class="n">${cnt('stars',r=>Math.round(r.rating)===s)}</span></button>`).join('')
+    +`<button class="rchip ${RF.photos?'on':''}" onclick="setRevFilter('photos')" title="Only reviews with photos">📷<span class="n">${cnt('photos',r=>!!(r.images&&r.images.length))}</span></button>`;
+}
 function renderReviews(){
+  renderRevBar();
+  const list=REVIEWS.filter(r=>revMatches(r));
+  $('revCount').textContent=REVIEWS.length?`${list.length} of ${REVIEWS.length}`:'';
   $('reviewsTable').innerHTML=`<thead><tr><th>Rating</th><th>Of</th><th>Review</th><th>Buyer</th><th>When</th><th>Status</th><th></th></tr></thead>
-    <tbody>${REVIEWS.length?REVIEWS.map(r=>`<tr${r.status==='hidden'?' style="opacity:.55"':''}>
+    <tbody>${list.length?list.map(r=>`<tr${r.status==='hidden'?' style="opacity:.55"':''}>
       <td style="color:var(--coral);letter-spacing:2px;white-space:nowrap">${rstars(r.rating)}</td>
       <td><div style="font-weight:700;font-size:13px">${esc(r.productName||r.shopName)}</div><div style="font-size:11.5px;color:var(--muted);font-weight:600">${r.productName?esc(r.shopName):'shop review'}</div></td>
-      <td style="max-width:340px"><div style="font-size:12.5px;line-height:1.55">${esc(r.body||'—')}</div>
+      <td style="max-width:340px"><div class="rbody" onclick="this.classList.toggle('open')" title="Tap to expand">${esc(r.body||'—')}</div>
         ${r.images&&r.images.length?`<div style="display:flex;gap:5px;margin-top:6px">${r.images.map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:38px;height:38px;object-fit:cover;border-radius:7px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}</td>
       <td style="color:var(--muted)">${esc(r.buyer)}<div style="font-size:11px">${esc(r.buyerEmail)}</div></td>
       <td style="color:var(--muted);white-space:nowrap">${fmtDate(r.createdAt)}</td>
@@ -506,7 +558,7 @@ function renderReviews(){
       <td style="text-align:right">${r.status==='published'
         ?`<button class="btn btn-ghost" onclick="setReviewStatus(${r.id},'hidden',true)">Hide</button>`
         :`<button class="btn btn-green" onclick="setReviewStatus(${r.id},'published')">Publish</button>`}</td>
-    </tr>`).join(''):`<tr><td colspan="7" class="empty">No reviews yet — they appear once buyers rate their delivered orders.</td></tr>`}</tbody>`;
+    </tr>`).join(''):`<tr><td colspan="7" class="empty">${REVIEWS.length?'No reviews match these filters.':'No reviews yet — they appear once buyers rate their delivered orders.'}</td></tr>`}</tbody>`;
 }
 async function setReviewStatus(id,status,confirmFirst){
   if(confirmFirst&&!confirm('Hide this review? It disappears from the storefront and the shop’s rating immediately.'))return;
