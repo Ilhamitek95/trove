@@ -20,18 +20,9 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..', '..');
 
-const BANNED = [
-  ['on behalf of', /on behalf of/i],                             // copy-ok: the list itself
-  ["on sellers' behalf", /on sellers.{0,2}behalf/i],             // copy-ok: the list itself
-  ['remit', /\bremit/i],                                         // copy-ok: the list itself
-  ['transfer buyer funds', /transfer (?:the )?buyer(?:s'?)? funds/i], // copy-ok: the list itself
-  ['payment processing for sellers', /payment processing for sellers/i], // copy-ok: the list itself
-  ['we collect payments for', /we collect payments? for/i],      // copy-ok: the list itself
-  ['collects your sales', /collects? your sales/i],              // copy-ok: the list itself
-  ['split to each shop', /split (?:to|across) each shop/i],      // copy-ok: the list itself
-  ['collecting funds', /collect(?:ing|s)? (?:seller |sellers'? )?funds/i], // copy-ok: the list itself
-  ['we handle payments', /we handle payments/i],                 // copy-ok: the list itself
-];
+// The rules live in src/copy-rules.js, shared with the site-content CMS so
+// admin-edited copy obeys exactly what CI enforces on checked-in copy.
+const { BANNED_MONEY: BANNED, BANNED_CLAIMS } = require('../src/copy-rules');
 
 function* targetFiles() {
   const docs = path.join(ROOT, 'docs');
@@ -70,13 +61,7 @@ test('no money-transmission language anywhere in the product', () => {
 
 // Sustainability claims Trove can't substantiate — greenwashing is a consumer-
 // protection problem, so the build fails if the copy drifts back into it.
-const BANNED_CLAIMS = [
-  ['carbon-neutral', /carbon[- ]?neutral/i],   // copy-ok: the list itself
-  ['carbon-free', /carbon[- ]?free/i],         // copy-ok: the list itself
-  ['climate-neutral', /climate[- ]?neutral/i], // copy-ok: the list itself
-  ['net zero', /\bnet[- ]?zero\b/i],           // copy-ok: the list itself
-];
-
+// (BANNED_CLAIMS imported from src/copy-rules.js above.)
 test('no unverifiable sustainability claims anywhere in the product', () => {
   const violations = [];
   for (const file of targetFiles()) {

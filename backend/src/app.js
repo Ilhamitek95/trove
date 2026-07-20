@@ -206,6 +206,11 @@ function createApp() {
   app.get('/api/search/popular', (_req, res) => {
     res.json({ terms: require('./trends').popularSearches(30, 6) });
   });
+  // Storefront copy for the homepage + sell page — defaults with any
+  // admin-saved overrides layered on top. Edited in /admin → Site content.
+  app.get('/api/content', (_req, res) => {
+    res.json(require('./content').getPublic());
+  });
   // The seller agreement, served with its hash so acceptance is verifiable.
   app.get('/api/legal/seller-agreement', (_req, res) => {
     const fs = require('fs');

@@ -499,12 +499,12 @@
   <section class="hero">
     <div class="wrap">
       <div class="lead">
-        <span class="eyebrow">Thoughtfully gathered</span>
-        <h1>Curated<br>for <em>Living</em></h1>
-        <p>Discover thoughtfully chosen homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
+        <span class="eyebrow" data-cms="home.hero.eyebrow">Thoughtfully gathered</span>
+        <h1 data-cms-rich="home.hero.h1">Curated<br>for <em>Living</em></h1>
+        <p data-cms="home.hero.lead">Discover thoughtfully chosen homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
         <div class="ctas">
-          <button class="btn btn-dark" onclick="go('shop','all')">Explore the trove</button>
-          <a class="txt-link" href="#" onclick="go('sell');return false">Open a shop →</a>
+          <button class="btn btn-dark" data-cms="home.hero.ctaShop" onclick="go('shop','all')">Explore the trove</button>
+          <a class="txt-link" data-cms="home.hero.ctaSell" href="#" onclick="go('sell');return false">Open a shop →</a>
         </div>
       </div>
       <div class="hero-img" onclick="go('shop','House')" style="cursor:pointer" title="Shop the Trove Collection">
@@ -532,21 +532,21 @@
           <g fill="#292727" opacity=".55"><circle cx="150" cy="160" r="3"/><circle cx="360" cy="330" r="3"/><circle cx="180" cy="540" r="3"/><circle cx="440" cy="250" r="3"/></g>
         </svg>
         <div class="hero-tag"><div class="d" style="background:#292727"></div>
-          <div><div class="l">Our own line</div><div class="n">Trove Collection →</div></div></div>
+          <div><div class="l" data-cms="home.hero.tagLine">Our own line</div><div class="n" data-cms="home.hero.tagName">Trove Collection →</div></div></div>
       </div>
     </div>
   </section>
 
   <div class="marquee"><div class="wrap">
-    <div class="mk"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b>Handpicked shops</b><span>Vetted by hand</span></div></div>
-    <div class="mk"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b>Small-batch pieces</b><span>Made to last</span></div></div>
-    <div class="mk"><div class="ic" style="background:#FCC998"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b>2–4 day delivery</b><span>Dubai &amp; Abu Dhabi</span></div></div>
-    <div class="mk"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b>30-day returns</b><span>Free on every order</span></div></div>
+    <div class="mk"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.0.head">Handpicked shops</b><span data-cms="home.marquee.items.0.sub">Vetted by hand</span></div></div>
+    <div class="mk"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.1.head">Small-batch pieces</b><span data-cms="home.marquee.items.1.sub">Made to last</span></div></div>
+    <div class="mk"><div class="ic" style="background:#FCC998"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">2–4 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
+    <div class="mk"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b data-cms="home.marquee.items.3.head">30-day returns</b><span data-cms="home.marquee.items.3.sub">Free on every order</span></div></div>
   </div></div>
 
   <section class="band">
     <div class="wrap">
-      <div class="band-head"><span class="eyebrow">Browse by</span><h2>Where would you like to begin?</h2></div>
+      <div class="band-head"><span class="eyebrow" data-cms="home.browse.eyebrow">Browse by</span><h2 data-cms="home.browse.heading">Where would you like to begin?</h2></div>
       <div class="cat-rail" id="catRail"></div>
     </div>
   </section>
@@ -554,8 +554,8 @@
   <section class="band" style="padding-top:0">
     <div class="wrap">
       <div class="band-head left">
-        <div><span class="eyebrow">The weekly edit</span><h2>This week's finds</h2></div>
-        <a class="link-more" href="#" onclick="go('shop','all');return false">Shop everything →</a>
+        <div><span class="eyebrow" data-cms="home.weekly.eyebrow">The weekly edit</span><h2 data-cms="home.weekly.heading">This week's finds</h2></div>
+        <a class="link-more" data-cms="home.weekly.linkLabel" href="#" onclick="go('shop','all');return false">Shop everything →</a>
       </div>
       <div class="pgrid" id="trendingGrid"></div>
     </div>
@@ -565,15 +565,15 @@
     <div class="wrap">
       <div class="house">
         <div class="copy">
-          <span class="eyebrow">Curated by trove</span>
-          <h2>Trove Collection.<br><em>Our own, made well.</em></h2>
-          <p>Timeless pieces chosen to become part of your everyday home. Curated by us, made by makers we trust, priced honestly.</p>
+          <span class="eyebrow" data-cms="home.collection.eyebrow">Curated by trove</span>
+          <h2 data-cms-rich="home.collection.h2">Trove Collection.<br><em>Our own, made well.</em></h2>
+          <p data-cms="home.collection.intro">Timeless pieces chosen to become part of your everyday home. Curated by us, made by makers we trust, priced honestly.</p>
           <div class="pts">
-            <div><b>Authentic</b><span>Every piece is chosen by hand and made in small batches by real makers — each one comes out a little different, and that's the point.</span></div>
-            <div><b>Homely</b><span>Warm, everyday pieces made to be lived with — poured, thrown and stitched to make a house feel like home, not kept behind glass.</span></div>
-            <div><b>Made yours</b><span>Spot a personalisation box on a piece? That maker will add your name or a few words of your choosing — made just for you.</span></div>
+            <div><b data-cms="home.collection.points.0.title">Authentic</b><span data-cms="home.collection.points.0.text">Every piece is chosen by hand and made in small batches by real makers — each one comes out a little different, and that's the point.</span></div>
+            <div><b data-cms="home.collection.points.1.title">Homely</b><span data-cms="home.collection.points.1.text">Warm, everyday pieces made to be lived with — poured, thrown and stitched to make a house feel like home, not kept behind glass.</span></div>
+            <div><b data-cms="home.collection.points.2.title">Made yours</b><span data-cms="home.collection.points.2.text">Spot a personalisation box on a piece? That maker will add your name or a few words of your choosing — made just for you.</span></div>
           </div>
-          <button class="btn btn-coral" onclick="go('shop','House')">Shop the Collection</button>
+          <button class="btn btn-coral" data-cms="home.collection.cta" onclick="go('shop','House')">Shop the Collection</button>
         </div>
         <div class="gallery" id="houseGallery"></div>
       </div>
@@ -582,8 +582,8 @@
 
   <section class="band" id="vendors">
     <div class="wrap">
-      <div class="band-head"><span class="eyebrow">The Trove Marketplace</span><h2>Meet the makers</h2>
-        <p>Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.</p></div>
+      <div class="band-head"><span class="eyebrow" data-cms="home.makers.eyebrow">The Trove Marketplace</span><h2 data-cms="home.makers.heading">Meet the makers</h2>
+        <p data-cms="home.makers.intro">Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.</p></div>
       <div class="vgrid" id="vendorGrid"></div>
     </div>
   </section>
@@ -592,16 +592,16 @@
     <div class="wrap">
       <div class="sell">
         <div>
-          <span class="eyebrow">Sell on trove</span>
-          <h2>Make things at home? Give them a <em>shopfront</em>.</h2>
-          <p>No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price and takes care of delivery and the storefront — you keep your brand and your craft.</p>
-          <button class="btn btn-dark" onclick="go('sell')">See how it works</button>
+          <span class="eyebrow" data-cms="home.sellBand.eyebrow">Sell on trove</span>
+          <h2 data-cms-rich="home.sellBand.h2">Make things at home? Give them a <em>shopfront</em>.</h2>
+          <p data-cms="home.sellBand.intro">No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price and takes care of delivery and the storefront — you keep your brand and your craft.</p>
+          <button class="btn btn-dark" data-cms="home.sellBand.cta" onclick="go('sell')">See how it works</button>
         </div>
         <div class="steps">
-          <div class="step"><span class="nm">i</span><div><h4>Tell us about your craft</h4><p>A short, friendly form — a real person reads every application.</p></div></div>
-          <div class="step"><span class="nm">ii</span><div><h4>Add your pieces</h4><p>A name, a price, a few honest words — the form guides you.</p></div></div>
-          <div class="step"><span class="nm">iii</span><div><h4>Shoppers discover them</h4><p>Your work appears beside the other makers, in search and collections.</p></div></div>
-          <div class="step"><span class="nm">iv</span><div><h4>Sold? We come to you</h4><p>Our courier collects from your door. Weekly payouts, straight to your bank.</p></div></div>
+          <div class="step"><span class="nm">i</span><div><h4 data-cms="home.sellBand.steps.0.title">Tell us about your craft</h4><p data-cms="home.sellBand.steps.0.text">A short, friendly form — a real person reads every application.</p></div></div>
+          <div class="step"><span class="nm">ii</span><div><h4 data-cms="home.sellBand.steps.1.title">Add your pieces</h4><p data-cms="home.sellBand.steps.1.text">A name, a price, a few honest words — the form guides you.</p></div></div>
+          <div class="step"><span class="nm">iii</span><div><h4 data-cms="home.sellBand.steps.2.title">Shoppers discover them</h4><p data-cms="home.sellBand.steps.2.text">Your work appears beside the other makers, in search and collections.</p></div></div>
+          <div class="step"><span class="nm">iv</span><div><h4 data-cms="home.sellBand.steps.3.title">Sold? We come to you</h4><p data-cms="home.sellBand.steps.3.text">Our courier collects from your door. Weekly payouts, straight to your bank.</p></div></div>
         </div>
       </div>
     </div>
@@ -719,23 +719,23 @@
 <div class="view" id="view-sell">
   <section class="band" style="padding-bottom:0">
     <div class="wrap" style="text-align:center;max-width:760px">
-      <span class="eyebrow">Sell on trove</span>
-      <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0">You make the pieces.<br>We'll be the <em style="font-style:italic;color:var(--coral-deep)">shop</em>.</h1>
-      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:24px auto 30px;font-weight:400">If you make things at home — ceramics, candles, knits, art, anything crafted with care — trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.</p>
+      <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on trove</span>
+      <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:italic;color:var(--coral-deep)">shop</em>.</h1>
+      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:24px auto 30px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-coral" onclick="location.href='/apply'">Start your application</button>
-        <button class="btn btn-ghost" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
+        <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href='/apply'">Start your application</button>
+        <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
       </div>
-      <div class="sellfacts">
+      <div class="sellfacts" id="sellFacts">
         <span>Free to join</span><span>No trade licence needed</span><span>Courier collects from your door</span><span>A real person reviews every shop</span>
       </div>
     </div>
   </section>
   <section class="band" id="sellSteps">
     <div class="wrap" style="max-width:780px;margin:0 auto">
-      <div class="band-head"><span class="eyebrow">How it works</span><h2>From craft table to shopfront, in four steps.</h2></div>
+      <div class="band-head"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.steps.heading">From craft table to shopfront, in four steps.</h2></div>
       <div class="sell" style="background:var(--rose)">
-        <div class="steps" style="grid-column:1/-1">
+        <div class="steps" style="grid-column:1/-1" id="sellStepsList">
           <div class="step"><span class="nm">i</span><div><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div></div>
           <div class="step"><span class="nm">ii</span><div><h4>Add your pieces</h4><p>Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.</p></div></div>
           <div class="step"><span class="nm">iii</span><div><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div></div>
@@ -746,8 +746,8 @@
   </section>
   <section class="band" style="padding-top:0">
     <div class="wrap">
-      <div class="band-head"><span class="eyebrow">Good to know</span><h2>Your questions, answered honestly.</h2></div>
-      <div class="faqs">
+      <div class="band-head"><span class="eyebrow" data-cms="sell.faq.eyebrow">Good to know</span><h2 data-cms="sell.faq.heading">Your questions, answered honestly.</h2></div>
+      <div class="faqs" id="faqList">
         <details class="faq"><summary>I've never sold online before — is that okay?<span class="faq-tg">+</span></summary>
           <div class="faq-a">That's exactly who trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a trove shop.</div></details>
         <details class="faq"><summary>Do I need a trade licence?<span class="faq-tg">+</span></summary>
@@ -768,10 +768,10 @@
   <section class="band" style="padding-top:0">
     <div class="wrap" style="max-width:780px;margin:0 auto">
       <div class="sell" style="display:block;text-align:center">
-        <span class="eyebrow">Ready when you are</span>
-        <h2 style="margin:14px 0 12px">Give your craft a <em>shopfront</em>.</h2>
-        <p style="margin:0 auto 26px">The application takes about ten minutes, and you can sign in and prepare your shop while a real person reviews it.</p>
-        <button class="btn btn-dark" onclick="location.href='/apply'">Start your application</button>
+        <span class="eyebrow" data-cms="sell.closing.eyebrow">Ready when you are</span>
+        <h2 style="margin:14px 0 12px" data-cms-rich="sell.closing.heading">Give your craft a <em>shopfront</em>.</h2>
+        <p style="margin:0 auto 26px" data-cms="sell.closing.text">The application takes about ten minutes, and you can sign in and prepare your shop while a real person reviews it.</p>
+        <button class="btn btn-dark" data-cms="sell.closing.cta" onclick="location.href='/apply'">Start your application</button>
       </div>
     </div>
   </section>
@@ -1057,7 +1057,15 @@ function renderHome(){
     <div class="tile"><div class="grad" style="${grad(c.color)}"></div><span class="blob"></span>${CAT_ICON[c.name]||''}</div>
     <div class="name">${c.name}</div><div class="ct">${n} ${n===1?'piece':'pieces'} <i>→</i></div></div>`;}).join('');
 
-  $('trendingGrid').innerHTML=PRODUCTS.slice(0,8).map(productCard).join('');
+  // Weekly finds: admin-picked products when set, else the 8 newest pieces.
+  let weekly=PRODUCTS.slice(0,8);
+  const picks=cmsGet('home.weekly.productIds');
+  if(LIVE&&Array.isArray(picks)&&picks.length){
+    const byId={};PRODUCTS.forEach(p=>byId[p.id]=p);
+    const sel=picks.map(id=>byId[id]).filter(Boolean);
+    if(sel.length)weekly=sel;
+  }
+  $('trendingGrid').innerHTML=weekly.map(productCard).join('');
 
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
   $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
@@ -1583,9 +1591,33 @@ async function signOut(){await TroveAPI.logout();location.href='/';}
 async function loadFees(){
   try{ const c=await TroveAPI.config(); if(c)FEES=c; }catch(_){}
 }
+/* ---------------- SITE CONTENT (admin-editable copy) ----------------
+ * /api/content serves the homepage + sell-page copy: built-in defaults with
+ * any admin overrides layered on top (edited in /admin → Site content).
+ * Headings may carry two tokens: *word* → <em>, | → <br>. Everything is
+ * escaped before those tokens are applied, so content stays text-only. */
+let CONTENT=null;
+async function loadContent(){
+  if(!LIVE)return;
+  try{ CONTENT=await TroveAPI.api('/api/content'); }catch(_){ CONTENT=null; }
+}
+const cmsGet=p=>p.split('.').reduce((o,k)=>(o==null?undefined:o[k]),CONTENT);
+const cmsRich=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\|/g,'<br>');
+const romanNum=n=>['i','ii','iii','iv','v','vi'][n-1]||String(n);
+function applyContent(){
+  if(!CONTENT)return;
+  document.querySelectorAll('[data-cms]').forEach(el=>{const v=cmsGet(el.dataset.cms);if(typeof v==='string')el.textContent=v;});
+  document.querySelectorAll('[data-cms-rich]').forEach(el=>{const v=cmsGet(el.dataset.cmsRich);if(typeof v==='string')el.innerHTML=cmsRich(v);});
+  const facts=cmsGet('sell.hero.facts');
+  if(Array.isArray(facts))$('sellFacts').innerHTML=facts.map(f=>`<span>${esc(f)}</span>`).join('');
+  const steps=cmsGet('sell.steps.items');
+  if(Array.isArray(steps))$('sellStepsList').innerHTML=steps.map((s,i)=>`<div class="step"><span class="nm">${romanNum(i+1)}</span><div><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div></div>`).join('');
+  const faq=cmsGet('sell.faq.items');
+  if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
+}
 async function boot(){
-  await Promise.all([loadCatalog(),loadAuth(),loadFees()]);
-  renderHome(); buildCatFilters(); updateCartCount();
+  await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
+  applyContent(); renderHome(); buildCatFilters(); updateCartCount();
 }
 boot();
 </script>

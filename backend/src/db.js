@@ -215,6 +215,15 @@ CREATE TABLE IF NOT EXISTS search_log (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_search_log_time ON search_log(created_at);
+
+-- Admin-edited storefront copy (homepage + sell page). One row per section,
+-- value is the full section object as JSON; defaults live in src/content.js
+-- and a missing row means "use the default". See src/content.js.
+CREATE TABLE IF NOT EXISTS site_content (
+  section    TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `);
 
 // Versioned migrations run last, so they always see the full baseline schema

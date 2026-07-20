@@ -121,6 +121,41 @@ router.post('/products/:id/suggest-tags', requireAdmin, async (req, res) => {
   }
 });
 
+/* ---------------- Site content (homepage + sell page CMS) ---------------- */
+const content = require('../content');
+
+// GET /api/admin/content → the defaults and any saved overrides, so the
+// editor can show current values and mark which sections are customised.
+router.get('/content', requireAdmin, (_req, res) => {
+  res.json({ sections: content.SECTIONS, defaults: content.DEFAULTS, overrides: content.overrides() });
+});
+
+// PUT /api/admin/content/:section → validate + save a whole section.
+// Rejects banned money-transmission / greenwashing phrasing (422) so the
+// CMS obeys the same copy rules CI enforces on checked-in copy.
+router.put('/content/:section', requireAdmin, (req, res) => {
+  try {
+    const clean = content.save(req.params.section, req.body);
+    console.log(`site content: ${req.user.email} updated ${req.params.section}`);
+    res.json({ ok: true, section: req.params.section, value: clean });
+  } catch (e) {
+    if (e instanceof content.ContentError) return res.status(422).json({ error: e.message });
+    throw e;
+  }
+});
+
+// DELETE /api/admin/content/:section → back to the built-in default.
+router.delete('/content/:section', requireAdmin, (req, res) => {
+  try {
+    content.reset(req.params.section);
+    console.log(`site content: ${req.user.email} reset ${req.params.section}`);
+    res.json({ ok: true });
+  } catch (e) {
+    if (e instanceof content.ContentError) return res.status(422).json({ error: e.message });
+    throw e;
+  }
+});
+
 // GET /api/admin/shops → every shop with its owner, catalogue and sales.
 router.get('/shops', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
