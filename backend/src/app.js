@@ -201,6 +201,11 @@ function createApp() {
     require('./trends').logSearch(q, results);
     res.status(204).end();
   });
+  // Popular searches for the storefront's no-result page. Anonymous term
+  // text only, each re-checked against the live catalogue before serving.
+  app.get('/api/search/popular', (_req, res) => {
+    res.json({ terms: require('./trends').popularSearches(30, 6) });
+  });
   // The seller agreement, served with its hash so acceptance is verifiable.
   app.get('/api/legal/seller-agreement', (_req, res) => {
     const fs = require('fs');

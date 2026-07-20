@@ -218,6 +218,8 @@
   .noresult p{color:var(--muted);font-weight:500;font-size:15px;max-width:460px;margin:0 auto 24px;line-height:1.6}
   .nr-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
   .nr-rechead{grid-column:1/-1;text-align:center;padding:30px 0 0}
+  .pop-search{margin-top:28px}
+  .pop-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:12px}
   .sortbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:30px}
   .sortbar .n{font-size:13px;color:var(--muted);font-weight:500}
   .sortbar .n b{color:var(--char)}
@@ -1097,7 +1099,7 @@ function similarProducts(n){
 function emptyStateHTML(){
   const n=4;
   const btn=(fn,label,dark)=>`<button class="btn ${dark?'btn-dark':'btn-ghost'}" onclick="${fn}">${label}</button>`;
-  let head='',sub='',actions='',recs=[],recHead='You might like';
+  let head='',sub='',actions='',recs=[],recHead='You might like',pop='';
   if(state.q){
     const qMatches=PRODUCTS.filter(p=>matchesFilters(p,{cat:1,house:1,price:1}));
     if(qMatches.length){
@@ -1110,6 +1112,7 @@ function emptyStateHTML(){
       head=`Nothing turned up for “${esc(state.q)}”`;
       sub='Check the spelling, or try a broader word — the pieces below might be close to what you meant.';
       actions=btn("go('shop')",'Shop everything',1)+btn('clearSearch()','Clear the search');
+      pop='<div class="pop-search" id="popSearch"></div>';
       recs=similarProducts(n);
       if(recs.length)recHead='Close matches';
       else{recs=PRODUCTS.slice(0,n);sub='Check the spelling, or try a broader word — “ceramics”, “linen”, “brass”. Here are some favourites in the meantime.';}
@@ -1133,9 +1136,22 @@ function emptyStateHTML(){
       recs=[...PRODUCTS].sort((a,b)=>(+b.rating||0)-(+a.rating||0)).slice(0,n);
     }
   }
-  let html=`<div class="noresult"><div class="big">${head}</div><p>${sub}</p><div class="nr-actions">${actions}</div></div>`;
+  let html=`<div class="noresult"><div class="big">${head}</div><p>${sub}</p><div class="nr-actions">${actions}</div>${pop}</div>`;
   if(recs.length)html+=`<div class="nr-rechead"><span class="eyebrow">${recHead}</span></div>`+recs.map(productCard).join('');
   return html;
+}
+/* Popular searches, shown when a search finds nothing. Fetched once per
+ * visit; the server only serves terms that still find pieces, so tapping
+ * one always lands somewhere. Chips fire through POP_SHOWN (not inline
+ * strings) so quotes in a term can't break the handler. */
+let POP_TERMS=null, POP_SHOWN=[];
+async function fillPopularSearches(){
+  if(!LIVE||!$('popSearch'))return;
+  if(POP_TERMS===null){try{POP_TERMS=(await TroveAPI.api('/api/search/popular')).terms||[];}catch(_){POP_TERMS=[];}}
+  const box=$('popSearch'); if(!box)return; // view may have changed during the fetch
+  POP_SHOWN=POP_TERMS.filter(t=>t!==state.q.toLowerCase()).slice(0,6);
+  if(!POP_SHOWN.length)return;
+  box.innerHTML=`<span class="eyebrow">Popular right now</span><div class="pop-chips">${POP_SHOWN.map((t,i)=>`<button class="ptag" onclick="searchTag(POP_SHOWN[${i}])">${esc(t)}</button>`).join('')}</div>`;
 }
 function renderShop(){
   buildCatFilters();
@@ -1145,6 +1161,7 @@ function renderShop(){
   $('shopCrumb').innerHTML=crumbHTML();
   $('searchChip').innerHTML=state.q?`<span class="schip">Searching for <b>“${esc(state.q)}”</b><button onclick="clearSearch()" aria-label="Clear search">×</button></span>`:'';
   $('shopGrid').innerHTML=list.length?list.map(productCard).join(''):emptyStateHTML();
+  if(!list.length)fillPopularSearches();
 }
 
 /* VENDOR */

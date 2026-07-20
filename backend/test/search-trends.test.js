@@ -57,6 +57,32 @@ test('purgeOld trims entries older than 90 days', () => {
   assert.equal(db.prepare("SELECT COUNT(*) c FROM search_log WHERE q='ancient'").get().c, 0);
 });
 
+test('popular searches are public and only recommend terms that still find pieces', async () => {
+  const { logSearch } = require('../src/trends');
+  const { hashPassword } = require('../src/middleware');
+  const seller = db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('potter@test.local',?, 'Potter','seller')")
+    .run(hashPassword('testpass123')).lastInsertRowid;
+  const shopId = db.prepare("INSERT INTO shops (user_id,name,slug,status) VALUES (?,?,?,'approved')")
+    .run(seller, 'Test Pots', 'test-pots').lastInsertRowid;
+  db.prepare("INSERT INTO products (shop_id,name,category,price_cents,stock,status) VALUES (?,?,?,6400,5,'live')")
+    .run(shopId, 'Speckled Mug', 'Ceramics');
+  // "mug" finds a live piece; log it as a frequent search.
+  for (let i = 0; i < 4; i++) logSearch('mug', 1);
+  // Poison attempt: junk term with a fabricated hit count must never surface,
+  // because the serve-time catalogue check finds nothing for it.
+  for (let i = 0; i < 3; i++) logSearch('unicorn saddle', 50);
+  // Too short to recommend even if it found things.
+  logSearch('ox', 5);
+
+  const res = await ctx.api('GET', '/api/search/popular');
+  assert.equal(res.status, 200);
+  assert.ok(res.data.terms.includes('mug'), 'catalogue-matching term recommended');
+  assert.ok(!res.data.terms.includes('unicorn saddle'), 'fabricated counts cannot surface junk');
+  assert.ok(!res.data.terms.includes('ox'), 'too-short term excluded');
+  assert.ok(!res.data.terms.includes('lantern'), 'zero-result term excluded');
+  assert.ok(res.data.terms.length <= 6);
+});
+
 test('search trends are admin-only', async () => {
   let res = await ctx.api('GET', '/api/admin/search-trends');
   assert.equal(res.status, 401);
