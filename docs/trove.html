@@ -150,9 +150,9 @@
   .house h2{font-size:clamp(38px,4vw,56px);line-height:1.0;font-weight:400;margin:18px 0 18px}
   .house h2 em{font-style:italic}
   .house p{color:var(--char);opacity:.82;max-width:40ch;font-weight:400;font-size:16px;margin-bottom:30px}
-  .house .pts{display:flex;gap:40px;margin-bottom:36px}
-  .house .pts div b{font-family:'Cormorant';font-size:30px;font-weight:600;display:block;line-height:1}
-  .house .pts div span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--char);opacity:.6;font-weight:600}
+  .house .pts{display:flex;flex-direction:column;gap:16px;margin-bottom:36px}
+  .house .pts div b{font-family:'Cormorant';font-size:22px;font-weight:600;display:block;line-height:1.25}
+  .house .pts div span{font-size:13px;line-height:1.55;color:var(--char);opacity:.72;font-weight:500;max-width:44ch;display:block}
   .house .gallery{display:grid;grid-template-columns:1fr 1fr;gap:0}
   .house .gallery .g{position:relative;overflow:hidden;min-height:170px;cursor:pointer}
   .house .gallery .g .grad{position:absolute;inset:0}
@@ -565,13 +565,13 @@
     <div class="wrap">
       <div class="house">
         <div class="copy">
-          <span class="eyebrow">Designed by trove</span>
+          <span class="eyebrow">Curated by trove</span>
           <h2>Trove Collection.<br><em>Our own, made well.</em></h2>
-          <p>Timeless pieces designed to become part of your everyday home. Designed in-house, made with makers we trust, priced honestly.</p>
+          <p>Timeless pieces chosen to become part of your everyday home. Curated by us, made by makers we trust, priced honestly.</p>
           <div class="pts">
-            <div><b>1 yr</b><span>Guarantee</span></div>
-            <div><b>100%</b><span>Traceable</span></div>
-            <div><b>Fair</b><span>Prices</span></div>
+            <div><b>Authentic</b><span>Every piece is chosen by hand and made in small batches by real makers — each one comes out a little different, and that's the point.</span></div>
+            <div><b>Homely</b><span>Warm, everyday pieces made to be lived with — poured, thrown and stitched to make a house feel like home, not kept behind glass.</span></div>
+            <div><b>Made yours</b><span>Spot a personalisation box on a piece? That maker will add your name or a few words of your choosing — made just for you.</span></div>
           </div>
           <button class="btn btn-coral" onclick="go('shop','House')">Shop the Collection</button>
         </div>
