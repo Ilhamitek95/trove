@@ -7,7 +7,10 @@
  */
 const { normalizeTags } = require('./tags');
 
-const MODEL = 'claude-opus-4-8';
+// Haiku writes tags nearly as well as Opus at ~1/6 the cost (side-by-side
+// tested on live catalogue products, 2026-07-20). Override via AI_TAGS_MODEL
+// in the environment — no deploy needed to switch models.
+const MODEL = process.env.AI_TAGS_MODEL || 'claude-haiku-4-5';
 
 let _client = null;
 function client() {

@@ -45,5 +45,7 @@ services:
       #   QUIQUP_API_KEY, QUIQUP_API_URL, QUIQUP_WEBHOOK_SECRET  (courier; mock until set)
       #   ANTHROPIC_API_KEY  switches on Claude-written tag suggestions in the
       #                      seller dashboard (console.anthropic.com → API keys)
+      #   AI_TAGS_MODEL      Claude model for tag suggestions (default
+      #                      claude-haiku-4-5; e.g. claude-sonnet-5, claude-opus-4-8)
       #   GOOGLE_CLIENT_ID   switches on Sign in with Google on the login page
       #                      (GCP project "Trove" → Google Auth Platform → Clients)
