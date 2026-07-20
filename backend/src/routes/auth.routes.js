@@ -155,10 +155,26 @@ router.post('/logout', (req, res) => {
   req.session.destroy(() => res.json({ ok: true }));
 });
 
+// POST /api/auth/stop-impersonating → leave the admin's "shop view" and
+// become the admin again. Only a session that entered through
+// /api/admin/impersonate carries an impersonatorId, and the stored id must
+// still belong to an admin account for the switch back to happen.
+router.post('/stop-impersonating', (req, res) => {
+  const adminId = req.session.impersonatorId;
+  if (!adminId) return res.status(400).json({ error: 'Not in shop view' });
+  delete req.session.impersonatorId;
+  const admin = db.prepare('SELECT * FROM users WHERE id = ?').get(adminId);
+  if (!admin || admin.role !== 'admin') {
+    return req.session.destroy(() => res.status(403).json({ error: 'Admin account no longer exists' }));
+  }
+  req.session.userId = admin.id;
+  res.json({ user: publicUser(admin) });
+});
+
 // GET /api/auth/me  -> current user + whether they have a shop
 router.get('/me', requireAuth, (req, res) => {
   const shop = db.prepare('SELECT id, name, slug FROM shops WHERE user_id = ?').get(req.user.id);
-  res.json({ user: publicUser(req.user), shop: shop || null });
+  res.json({ user: publicUser(req.user), shop: shop || null, impersonating: !!req.session.impersonatorId });
 });
 
 module.exports = router;

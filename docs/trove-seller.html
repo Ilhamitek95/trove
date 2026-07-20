@@ -370,6 +370,14 @@
   .sc-act .sc-done{color:var(--green);font-weight:700;font-size:13.5px}
   .sc-act .sc-tn{color:var(--muted);font-weight:600;font-size:12.5px}
   @media(max-width:620px){.sc-track,.sc-cols{grid-template-columns:1fr}}
+  /* admin "shop view" bar — pinned so it's unmissable while impersonating */
+  .impbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;display:none;align-items:center;gap:14px;background:var(--char);color:var(--cream);border-radius:999px;padding:9px 11px 9px 20px;box-shadow:0 12px 34px rgba(41,39,39,.35);font-size:13px;font-weight:600;max-width:calc(100vw - 24px)}
+  .impbar.on{display:flex}
+  .impbar .lb{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .impbar b{font-weight:800}
+  .impbar button{border:0;border-radius:999px;background:var(--coral);color:var(--char);font:inherit;font-weight:800;padding:8px 16px;cursor:pointer;white-space:nowrap}
+  .impbar button:hover{background:var(--coral-hover)}
+  @media(max-width:620px){.impbar{gap:10px;padding-left:14px;font-size:12px}}
 </style>
 <div class="app">
   <!-- SIDEBAR -->
@@ -593,6 +601,12 @@
 </aside>
 
 <div class="toast" id="toast"></div>
+
+<div class="impbar" id="impBar" role="status">
+  <span aria-hidden="true">👁</span>
+  <span class="lb">Admin view — this is <b id="impShopName">the shop</b>'s dashboard</span>
+  <button type="button" onclick="returnToAdmin()">Return to admin</button>
+</div>
 
 <script src="config.js"></script>
 <script src="api.js"></script>
@@ -1443,6 +1457,11 @@ function go(v){
 }
 
 /* ---------------- BOOT ---------------- */
+// Ends the admin's "shop view" and goes back to the admin panel.
+async function returnToAdmin(){
+  try{ await TroveAPI.api('/api/auth/stop-impersonating',{method:'POST'}); location.href='/admin'; }
+  catch(e){ toast(e.message||'Could not return to the admin panel'); }
+}
 async function boot(){
   let session=null;
   try{ session=await TroveAPI.me(); }catch(_){}
@@ -1452,6 +1471,7 @@ async function boot(){
   $('sellerName').textContent=(ME.name||'there').split(' ')[0];
   const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='/login';};
   try{ const {shop}=await TroveAPI.api('/api/seller/me'); applyShop(shop); }catch(_){}
+  if(session.impersonating){ $('impShopName').textContent=SHOP.name||'the shop'; $('impBar').classList.add('on'); }
   await refreshStripeStatus();
   await reloadPayouts();
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';

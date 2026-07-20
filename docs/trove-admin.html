@@ -350,7 +350,7 @@ function shopRowHTML(s){
     <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Weekly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--coral-deep)">· no bank</span>':''}</td>
     <td>${idCellHTML(s)}</td>
     <td><span class="pill ${s.status}">${s.status}</span></td>
-    <td><div class="actions">${shopActions(s)}</div></td>
+    <td><div class="actions"><button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>${shopActions(s)}</div></td>
   </tr>`;
 }
 function renderShops(){
@@ -365,6 +365,14 @@ async function setShopStatus(id,status,confirmFirst){
     toast(`${s?s.name:'Shop'} → ${status}`);
     await reload();
   }catch(e){ toast(e.message||'Could not update the shop'); }
+}
+// "Shop view": become the shop owner for this session and open their
+// dashboard. The bar on /sell (or just coming back to /admin) ends it.
+async function viewAsShop(id){
+  try{
+    await TroveAPI.api('/api/admin/impersonate/'+id,{method:'POST'});
+    window.location.href='/sell';
+  }catch(e){ toast(e.message||'Could not open the shop view'); }
 }
 
 /* ---------------- search trends ---------------- */
@@ -654,6 +662,11 @@ async function signOut(){ await TroveAPI.logout(); window.location.href='/login'
 (async function boot(){
   let me=null;
   try{ me=await TroveAPI.me(); }catch(_){}
+  // Landing here mid "shop view" ends it: switch back to the admin account
+  // first, otherwise the role check below would bounce the admin to /login.
+  if(me&&me.impersonating){
+    try{ await TroveAPI.api('/api/auth/stop-impersonating',{method:'POST'}); me=await TroveAPI.me(); }catch(_){}
+  }
   if(!me||!me.user||me.user.role!=='admin'){ window.location.href='/login'; return; }
   ME=me.user;
   $('whoName').textContent=ME.name;

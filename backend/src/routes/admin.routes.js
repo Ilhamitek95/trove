@@ -11,7 +11,7 @@
  */
 const express = require('express');
 const db = require('../db');
-const { requireAdmin } = require('../middleware');
+const { requireAdmin, publicUser } = require('../middleware');
 
 const router = express.Router();
 
@@ -182,6 +182,20 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
+});
+
+// POST /api/admin/impersonate/:shopId → "shop view": switch this session to
+// the shop owner's account so the admin sees the seller dashboard exactly as
+// they do. The admin's own id stays on the session (impersonatorId), and
+// /api/auth/stop-impersonating is the way back — no re-login. While in shop
+// view the session genuinely IS the seller, so admin endpoints lock out.
+router.post('/impersonate/:shopId', requireAdmin, (req, res) => {
+  const shop = db.prepare('SELECT s.*, u.email AS owner_email FROM shops s JOIN users u ON u.id = s.user_id WHERE s.id=?').get(req.params.shopId);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  req.session.impersonatorId = req.user.id;
+  req.session.userId = shop.user_id;
+  console.log(`shop view: admin ${req.user.email} → ${shop.slug} (${shop.owner_email})`);
+  res.json({ ok: true, user: publicUser(db.prepare('SELECT * FROM users WHERE id=?').get(shop.user_id)), shop: { id: shop.id, name: shop.name, slug: shop.slug } });
 });
 
 // GET /api/admin/orders → recent orders across the whole marketplace.
