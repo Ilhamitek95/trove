@@ -282,6 +282,9 @@
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   .mtabs{display:none}
+  *{-webkit-tap-highlight-color:transparent}
+  .mtabs .mitem:active{transform:scale(.96)}
+  .drawer .dbody{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   @media(max-width:920px){
     .app{grid-template-columns:1fr}
     .side{display:none}

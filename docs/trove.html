@@ -42,6 +42,16 @@
   ::selection{background:var(--coral);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  /* touch feel: no grey tap flash; our own pressed states instead */
+  *{-webkit-tap-highlight-color:transparent}
+  .btn:active,.checkout:active,.co-place:active,.f-apply:active,.f-open-btn:active,.ptag:active,.pop-chips .ptag:active{transform:scale(.97)}
+  .icon-btn:active,.qbtn:active{background:var(--rose-tint)}
+  .card,.cat,.vcard{transition:transform .18s}
+  .card:active,.cat:active,.vcard:active{transform:scale(.98)}
+  .mn-link:active,.fitem:active{background:var(--rose-tint)}
+  @media(hover:none){.btn-dark:hover,.btn-coral:hover{transform:none}}
+  /* sheets keep their scroll to themselves — no page scrolling behind them */
+  .mnav,.filters,.drawer .dbody{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   img{display:block;width:100%;height:100%;object-fit:cover}
   .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
   .serif{font-family:'Cormorant',Georgia,serif}
@@ -84,8 +94,8 @@
   .mn-foot svg{width:17px;height:17px;stroke-width:1.7;opacity:.7}
 
   .view{display:none}
-  .view.active{display:block;animation:fade .5s ease}
-  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  .view.active{display:block;animation:fade .32s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
   /* ---------- HERO ---------- */
   .hero{padding:64px 0 30px}
@@ -425,6 +435,11 @@
     .faq summary{font-size:15.5px}
     .browse-head{padding:36px 0 4px}
     .browse-layout{padding:26px 26px 70px}
+    /* sortbar: count on its own line, Filter + sort share the row below */
+    .sortbar .n{flex-basis:100%}
+    .sortbar{margin-bottom:22px}
+    .vhero{height:210px}
+    .vhead .lav{width:88px;height:88px;font-size:38px}
     .vhead .vstats{gap:30px;flex-wrap:wrap}
     .pdp .gallery{grid-template-columns:1fr;gap:12px}
     .pdp .thumbs{flex-direction:row;order:2}
@@ -1155,7 +1170,7 @@ function productCard(p){
   return `<article class="card" onclick="openPDP(${p.id})">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${img(p.seed)}" alt="" loading="lazy" onerror="this.style.display='none'">
+      <img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
       ${p.was?`<span class="sale">Sale</span>`:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
     </div>
@@ -1188,11 +1203,11 @@ function renderHome(){
 
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
   $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>`).join('');
 
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
   $('vendorGrid').innerHTML=vs.map(([k,v])=>`<article class="vcard" onclick="openVendor('${k}')">
-    <div class="cover"><div class="grad" style="${grad(v.color)}"></div>${v.img?`<img src="${v.img}" alt="" style="object-fit:cover;width:100%;height:100%">`:''}</div>
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div>${v.img?`<img src="${v.img}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%">`:''}</div>
     <div class="av" style="${v.img?`background:center/cover no-repeat url('${v.img}')`:`background:${v.color}`}">${v.img?'':v.name[0]}</div>
     <h3>${v.name}</h3>
     <div class="loc">${v.loc}</div>
@@ -1275,7 +1290,7 @@ function crumbHTML(){
   return bits.join(sep);
 }
 function clearSearch(){state.q='';const si=$('searchInput');if(si)si.value='';renderShop();}
-function widenSearch(){state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();window.scrollTo(0,0);}
+function widenSearch(){state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();jumpTop();}
 function resetFilters(){state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();}
 // Forgiving lookalike match for a search that found nothing: whole words
 // first, then trimmed-down stems, so "mugs" still surfaces the mug and
@@ -1371,7 +1386,7 @@ function openVendor(key){
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
   loadShopReviews(key);
-  showView('vendor'); window.scrollTo(0,0);
+  showView('vendor'); jumpTop();
 }
 
 /* PDP */
@@ -1380,7 +1395,7 @@ function openPDP(id){
   $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   $('pdpImg').src=img(p.seed);
-  $('pdpThumbs').innerHTML=[p.seed,p.seed+'a',p.seed+'b'].map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain('${s}',this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(s)}" alt="" onerror="this.style.display='none'"></div>`).join('');
+  $('pdpThumbs').innerHTML=[p.seed,p.seed+'a',p.seed+'b'].map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain('${s}',this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(s)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>`).join('');
   $('pdpVendorLink').innerHTML=`${V.name}`;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
@@ -1414,7 +1429,7 @@ function openPDP(id){
   $('pdpSoldName').textContent=V.name;
   $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
   loadProductReviews(p.id);
-  showView('pdp'); window.scrollTo(0,0);
+  showView('pdp'); jumpTop();
 }
 function swapMain(seed,el){$('pdpImg').src=img(seed);document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 
@@ -1479,7 +1494,7 @@ function renderCart(){
     html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
     items.forEach(({p,qty,note,idx})=>{
       html+=`<div class="citem">
-        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" onerror="this.style.display='none'"></div>
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
           ${note?`<div class="v" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
           <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
@@ -1510,7 +1525,7 @@ function closeSheets(){$('mnav').classList.remove('open');$('filtersPanel').clas
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();closeCart();}});
 
 /* SEARCH + ACCOUNT MENU */
-function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');window.scrollTo(0,0);
+function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');jumpTop();
   // Report the search (anonymously — just the words + hit count) so trending
   // terms can steer the AI tag writer. Tag taps run through here too.
   if(state.q&&LIVE){try{TroveAPI.api('/api/search-log',{method:'POST',body:{q:state.q,results:filteredProducts().length}}).catch(()=>{});}catch(_){}}
@@ -1527,7 +1542,7 @@ function startCheckout(){
   // optional "create an account" offer (only when a real backend is live).
   if(LIVE&&!ME){SAVED_ADDR=[];coNewAddr=true;coAddr=-1;}
   $('coAcctBox').style.display=(LIVE&&!ME)?'block':'none';
-  closeCart();renderCheckout();showView('checkout');window.scrollTo(0,0);
+  closeCart();renderCheckout();showView('checkout');jumpTop();
 }
 function toggleCoAcct(){
   const on=$('coAcctChk').checked;
@@ -1607,7 +1622,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
+    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -1626,7 +1641,7 @@ function showConfirmation(orderId){
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
       return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · ${V.house?'arrives 2–4 days':'arrives 3–6 days'}</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
-  showView('confirm');window.scrollTo(0,0);
+  showView('confirm');jumpTop();
 }
 async function placeOrder(){
   // Contact + delivery details must be complete and inside the service area.
@@ -1711,7 +1726,11 @@ let toastT;
 function toast(m){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;}
-function go(v,cat){if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';renderShop();showView('shop');}else showView(v);window.scrollTo(0,0);}
+/* Jump straight to the top on view changes — html{scroll-behavior:smooth}
+ * would otherwise animate the scroll on every navigation, which reads as lag
+ * (worst on phones). Smooth stays for in-page anchors only. */
+function jumpTop(){try{window.scrollTo({top:0,left:0,behavior:'instant'});}catch(_){window.scrollTo(0,0);}}
+function go(v,cat){if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';renderShop();showView('shop');}else showView(v);jumpTop();}
 
 /* ---------------- BOOT: live data + auth, with demo fallback ---------------- */
 async function loadCatalog(){
