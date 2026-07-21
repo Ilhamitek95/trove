@@ -368,7 +368,9 @@
   footer a:hover{opacity:1;color:var(--coral-deep)}
   .fbot{padding-top:26px;display:flex;justify-content:space-between;font-size:12px;opacity:.6;flex-wrap:wrap;gap:12px;font-weight:500;letter-spacing:.04em}
 
-  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:15px 26px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:120;opacity:0;transition:.35s;box-shadow:var(--shadow);letter-spacing:.03em;max-width:calc(100vw - 36px);text-align:center}
+  /* pointer-events:none — the faded-out toast is still a fixed box over the
+     cart drawer's Checkout button on phones and was swallowing the tap */
+  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:15px 26px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:120;opacity:0;transition:.35s;box-shadow:var(--shadow);letter-spacing:.03em;max-width:calc(100vw - 36px);text-align:center;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   /* ---------- RESPONSIVE ---------- */
