@@ -623,6 +623,9 @@
         <label class="fitem"><input type="checkbox" id="fltHouse" onchange="setHouseFilter(this.checked)"> Trove Collection only</label>
         <select id="fltShop" class="fshop" onchange="setShopFilter(this.value)"><option value="all">All shops</option></select>
       </div>
+      <div class="fgroup"><h4>Offers</h4>
+        <label class="fitem"><input type="checkbox" id="fltSale" onchange="setSaleFilter(this.checked)"> On sale only</label>
+      </div>
       <div class="fgroup" style="border:none"><h4>Price</h4>
         <label class="fitem"><input type="radio" name="pr" data-pr="0-9999" onchange="setPrice(0,9999)" checked> Any price</label>
         <label class="fitem"><input type="radio" name="pr" data-pr="0-80" onchange="setPrice(0,80)"> Under AED 80</label>
@@ -942,7 +945,7 @@ let PRODUCTS = [
   P(16,'Combed Cotton Socks · 3','trove',58,null,'Apparel','4.8',377,'House-label combed-cotton socks, reinforced heel and toe. The ones you\'ll look for.','socks2'),
 ];
 
-let state={view:'home',cat:'all',houseOnly:false,shop:'all',min:0,max:9999,q:''};
+let state={view:'home',cat:'all',houseOnly:false,shop:'all',sale:false,min:0,max:9999,q:''};
 let cart=[];
 let ME=null, LIVE=false;
 let FEES={serviceFeeCents:900,deliveryFeeCents:2500,freeDeliveryThresholdCents:50000};
@@ -1093,9 +1096,10 @@ function matchesFilters(p,skip){
   const catOk=skip.cat||state.cat==='all'||(state.cat==='House'?VENDORS[p.vendor].house:p.cat===state.cat);
   const houseOk=skip.house||!state.houseOnly||VENDORS[p.vendor].house;
   const shopOk=skip.shop||state.shop==='all'||p.vendor===state.shop;
+  const saleOk=skip.sale||!state.sale||!!p.was; // same truthiness rule as the Sale badge
   const priceOk=skip.price||(p.price>=state.min&&p.price<=state.max);
   const qOk=skip.q||!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q);
-  return catOk&&houseOk&&shopOk&&priceOk&&qOk;
+  return catOk&&houseOk&&shopOk&&saleOk&&priceOk&&qOk;
 }
 function buildCatFilters(){
   const known=CATS.map(c=>c.name);
@@ -1114,6 +1118,7 @@ function buildCatFilters(){
 // definition not the house line, so picking one clears the other.
 function setHouseFilter(v){state.houseOnly=v;if(v)state.shop='all';syncFilterUI();renderShop();}
 function setShopFilter(v){state.shop=v;if(v!=='all')state.houseOnly=false;syncFilterUI();renderShop();}
+function setSaleFilter(v){state.sale=v;syncFilterUI();renderShop();}
 function setPrice(min,max){state.min=min;state.max=max;renderShop();}
 // Maker dropdown under the Trove Collection toggle: every non-house shop in
 // the catalogue (live data replaces VENDORS at boot, so options rebuild each
@@ -1134,6 +1139,7 @@ function buildShopFilter(){
 function syncFilterUI(){
   const h=$('fltHouse'); if(h)h.checked=state.houseOnly;
   const s=$('fltShop'); if(s)s.value=state.shop;
+  const sl=$('fltSale'); if(sl)sl.checked=state.sale;
   document.querySelectorAll('input[name="pr"]').forEach(r=>{r.checked=r.dataset.pr===state.min+'-'+state.max;});
 }
 function filteredProducts(){
@@ -1155,8 +1161,8 @@ function crumbHTML(){
   return bits.join(sep);
 }
 function clearSearch(){state.q='';const si=$('searchInput');if(si)si.value='';renderShop();}
-function widenSearch(){state.cat='all';state.houseOnly=false;state.shop='all';state.min=0;state.max=9999;syncFilterUI();renderShop();window.scrollTo(0,0);}
-function resetFilters(){state.houseOnly=false;state.shop='all';state.min=0;state.max=9999;syncFilterUI();renderShop();}
+function widenSearch(){state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();window.scrollTo(0,0);}
+function resetFilters(){state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();}
 // Forgiving lookalike match for a search that found nothing: whole words
 // first, then trimmed-down stems, so "mugs" still surfaces the mug and
 // "ceramick" still lands on ceramics.
@@ -1174,11 +1180,11 @@ function emptyStateHTML(){
   const btn=(fn,label,dark)=>`<button class="btn ${dark?'btn-dark':'btn-ghost'}" onclick="${fn}">${label}</button>`;
   let head='',sub='',actions='',recs=[],recHead='You might like',pop='';
   if(state.q){
-    const qMatches=PRODUCTS.filter(p=>matchesFilters(p,{cat:1,house:1,shop:1,price:1}));
+    const qMatches=PRODUCTS.filter(p=>matchesFilters(p,{cat:1,house:1,shop:1,sale:1,price:1}));
     if(qMatches.length){
       const one=qMatches.length===1;
       head=`Nothing here matches “${esc(state.q)}”`;
-      sub=`But ${one?'one piece does':qMatches.length+' pieces do'} elsewhere in the trove — your ${state.cat!=='all'?'category':'price or seller'} filter is hiding ${one?'it':'them'}.`;
+      sub=`But ${one?'one piece does':qMatches.length+' pieces do'} elsewhere in the trove — your ${state.cat!=='all'?'category':'price, seller or sale'} filter is hiding ${one?'it':'them'}.`;
       actions=btn('widenSearch()',one?'Show it':'Show all '+qMatches.length,1)+btn('clearSearch()','Clear the search');
       recs=qMatches.slice(0,n); recHead='Found elsewhere in the trove';
     }else{
@@ -1191,10 +1197,10 @@ function emptyStateHTML(){
       else{recs=PRODUCTS.slice(0,n);sub='Check the spelling, or try a broader word — “ceramics”, “linen”, “brass”. Here are some favourites in the meantime.';}
     }
   }else{
-    const inCat=state.cat!=='all'?PRODUCTS.filter(p=>matchesFilters(p,{house:1,shop:1,price:1})):[];
+    const inCat=state.cat!=='all'?PRODUCTS.filter(p=>matchesFilters(p,{house:1,shop:1,sale:1,price:1})):[];
     if(inCat.length){
-      head=`Nothing in ${esc(catLabel())} at this price`;
-      sub='Widen the price range or lift the seller filter and the pieces will reappear.';
+      head=`Nothing in ${esc(catLabel())} matches these filters`;
+      sub='Loosen the price, seller or sale filter and the pieces will reappear.';
       actions=btn('resetFilters()','Reset filters',1);
       recs=inCat.slice(0,n); recHead=`From ${esc(catLabel())}`;
     }else if(state.cat!=='all'){
@@ -1384,7 +1390,7 @@ function openCart(){renderCart();$('scrim').classList.add('open');$('drawer').cl
 function closeCart(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
 
 /* SEARCH + ACCOUNT MENU */
-function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');window.scrollTo(0,0);
+function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');window.scrollTo(0,0);
   // Report the search (anonymously — just the words + hit count) so trending
   // terms can steer the AI tag writer. Tag taps run through here too.
   if(state.q&&LIVE){try{TroveAPI.api('/api/search-log',{method:'POST',body:{q:state.q,results:filteredProducts().length}}).catch(()=>{});}catch(_){}}
