@@ -295,10 +295,16 @@
     /* sidebar becomes a sticky scrollable tab bar */
     .mtabs{display:flex;gap:8px;overflow-x:auto;padding:11px 24px;position:sticky;top:0;z-index:30;background:rgba(253,247,245,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft);-webkit-overflow-scrolling:touch;scrollbar-width:none}
     .mtabs::-webkit-scrollbar{display:none}
-    .mtabs .mitem{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:9px 15px;font-size:13px;background:var(--paper);white-space:nowrap;gap:8px}
+    .mtabs .mitem{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:10px 16px;font-size:13px;background:var(--paper);white-space:nowrap;gap:8px}
     .mtabs .mitem.on{background:var(--char);color:var(--cream);border-color:var(--char)}
     .mtabs .mitem.on::before{display:none}
     .mtabs .mitem svg{width:15px;height:15px}
+    /* edge fade + chevron: shows there are more tabs off-screen; JS toggles
+       at-start/at-end as the bar scrolls */
+    .mtabs::before{content:'';position:sticky;left:0;flex:0 0 20px;margin-right:-20px;align-self:stretch;background:linear-gradient(90deg,var(--cream) 15%,rgba(253,247,245,0));z-index:2;pointer-events:none;transition:opacity .2s}
+    .mtabs::after{content:'❯';position:sticky;right:0;flex:0 0 44px;margin-left:-44px;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;padding-right:3px;background:linear-gradient(270deg,var(--cream) 40%,rgba(253,247,245,0));color:var(--coral-deep);font-size:15px;z-index:2;pointer-events:none;transition:opacity .2s}
+    .mtabs.at-start::before{opacity:0}
+    .mtabs.at-end::after{opacity:0}
   }
   @media(max-width:920px){
     /* wide tables (products, orders digest, payout history) scroll inside their card */
@@ -1506,6 +1512,20 @@ function buildMobileTabs(){
     if(src.id)c.onclick=e=>{e.preventDefault();src.click();};
     bar.appendChild(c);
   });
+  bar.onscroll=updateTabFades;
+  window.addEventListener('resize',updateTabFades);
+  updateTabFades();
+}
+function updateTabFades(){
+  const b=$('mtabs'); if(!b)return;
+  const max=b.scrollWidth-b.clientWidth;
+  b.classList.toggle('at-start',b.scrollLeft<8);
+  b.classList.toggle('at-end',max<=8||b.scrollLeft>=max-8);
+}
+/* keep the active tab visible: center it in the bar on every view change */
+function revealActiveTab(){
+  const b=$('mtabs'); const on=b&&b.querySelector('.mitem.on'); if(!on)return;
+  b.scrollTo({left:Math.max(0,on.offsetLeft-(b.clientWidth-on.offsetWidth)/2),behavior:'smooth'});
 }
 const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
@@ -1513,6 +1533,7 @@ function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
   document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
+  revealActiveTab();
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
   // top actions
   const ta=$('topActions');
