@@ -82,12 +82,14 @@
   .track{margin-top:18px}
   .track .th{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px}
   .track .th .oid{font-family:'Cormorant';font-size:22px;font-weight:600}
-  .progress{display:flex;align-items:center;margin:8px 4px 6px}
+  /* flex-start, not center: a wrapped label ("Out for delivery" on phones)
+     makes its step taller, and centering pushed the other dots off the line */
+  .progress{display:flex;align-items:flex-start;margin:8px 4px 6px}
   .pstep{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
   .pstep .dot{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);border:2px solid var(--line);display:grid;place-items:center;color:var(--muted);z-index:2}
   .pstep.done .dot{background:var(--char);border-color:var(--char);color:var(--cream)}
   .pstep.now .dot{background:var(--coral);border-color:var(--coral);color:var(--char)}
-  .pstep .pl{font-size:11px;font-weight:600;margin-top:8px;color:var(--muted)}
+  .pstep .pl{font-size:11px;font-weight:600;margin-top:8px;color:var(--muted);text-align:center;line-height:1.35}
   .pstep.done .pl,.pstep.now .pl{color:var(--char)}
   .pline{position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--line);z-index:1}
   .pstep.done .pline{background:var(--char)}
