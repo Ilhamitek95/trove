@@ -6,6 +6,8 @@
 <title>trove — a curated marketplace</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://picsum.photos">
+<link rel="preconnect" href="https://fastly.picsum.photos">
 <!-- Display: Italiana (Google Fonts; Cormorant is the graceful fallback) · Body: Quicksand -->
 <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -788,7 +790,7 @@
     <div class="pdp">
       <div class="gallery">
         <div class="thumbs" id="pdpThumbs"></div>
-        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt=""></div>
+        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="imgRetry(this)"></div>
       </div>
       <div class="info">
         <a class="vlink" id="pdpVendorLink" href="#"></a>
@@ -1164,13 +1166,23 @@ document.addEventListener('change',e=>{
   if(e.target&&e.target.id==='coEmail'&&paymentsLive()&&!payIntent)mountPaymentElement();
 });
 
-/* product card */
-function productCard(p){
+/* A failed image gets two retries with a cache-buster before giving up —
+ * one flaky mobile-network request was hiding tiles for the whole visit. */
+function imgRetry(el){
+  const n=(+el.dataset.rt||0)+1;
+  if(n>2){el.style.display='none';return;}
+  el.dataset.rt=n;
+  const base=el.src.split(/[?#]/)[0];
+  setTimeout(()=>{el.src=`${base}?rt=${n}`;},700*n);
+}
+/* product card — eager===true only for above-the-fold uses (weekly finds);
+ * .map(productCard) passes an index as the 2nd arg, hence the strict check */
+function productCard(p,eager){
   const V=VENDORS[p.vendor], house=V.house;
   return `<article class="card" onclick="openPDP(${p.id})">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">
+      <img src="${img(p.seed)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async" onerror="imgRetry(this)">
       ${p.was?`<span class="sale">Sale</span>`:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
     </div>
@@ -1199,11 +1211,11 @@ function renderHome(){
     const sel=picks.map(id=>byId[id]).filter(Boolean);
     if(sel.length)weekly=sel;
   }
-  $('trendingGrid').innerHTML=weekly.map(productCard).join('');
+  $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true)).join('');
 
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
   $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="" decoding="async" onerror="imgRetry(this)"></div>`).join('');
 
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
   $('vendorGrid').innerHTML=vs.map(([k,v])=>`<article class="vcard" onclick="openVendor('${k}')">
@@ -1395,7 +1407,7 @@ function openPDP(id){
   $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   $('pdpImg').src=img(p.seed);
-  $('pdpThumbs').innerHTML=[p.seed,p.seed+'a',p.seed+'b'].map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain('${s}',this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(s)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>`).join('');
+  $('pdpThumbs').innerHTML=[p.seed,p.seed+'a',p.seed+'b'].map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain('${s}',this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
   $('pdpVendorLink').innerHTML=`${V.name}`;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
@@ -1494,7 +1506,7 @@ function renderCart(){
     html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
     items.forEach(({p,qty,note,idx})=>{
       html+=`<div class="citem">
-        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div>
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
           ${note?`<div class="v" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
           <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
@@ -1622,7 +1634,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
+    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
