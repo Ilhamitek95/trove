@@ -49,21 +49,10 @@ function createApp() {
       const order = db.prepare('SELECT * FROM orders WHERE id=?').get(orderId);
 
       if (order && order.status === 'pending') {
-        const cfg = require('./config');
-
-        // Per-shop groups, used inside the transaction (ledger credits) and
-        // after it (Rail B transfers for mixed carts).
-        const groups = db.prepare(`
-          SELECT oi.shop_id, s.stripe_account_id, s.charges_enabled, s.tier, SUM(oi.price_cents * oi.qty) AS cents
-          FROM order_items oi JOIN shops s ON s.id = oi.shop_id
-          WHERE oi.order_id = ? GROUP BY oi.shop_id`).all(orderId);
-
-        // VAT is captured per order once Trove is registered. Prices are
-        // VAT-inclusive: consignment rail owes 5/105 of the full amount
-        // charged (Trove is the seller); connect rail only of the margin.
-        const vat = !cfg.vatRegistered() ? 0
-          : order.rail === 'connect' ? cfg.vatFromGross(fees.split(order.subtotal_cents).fee)
-          : cfg.vatFromGross(order.total_cents);
+        // Paid effects live in src/paid-effects.js (shared with the demo-mode
+        // checkout). Per-shop groups feed the ledger credits and Rail B.
+        const pe = require('./paid-effects');
+        const groups = pe.perShopGroups(orderId);
 
         // ONE transaction for every database effect of this payment, with the
         // idempotency guard inside it: if the INSERT OR IGNORE of the event id
@@ -73,68 +62,13 @@ function createApp() {
         const applied = db.transaction(() => {
           const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type);
           if (!seen.changes) return false;
-
-          // Payment success is the moment Trove purchases the goods from its
-          // suppliers: title transfers now, and the buyer-facing order is paid.
-          db.prepare("UPDATE orders SET status='paid', title_transferred_at=datetime('now'), vat_amount_cents=? WHERE id=?").run(vat, orderId);
-          for (const it of db.prepare('SELECT * FROM order_items WHERE order_id=?').all(orderId)) {
-            db.prepare('UPDATE products SET stock = MAX(0, stock - ?) WHERE id=?').run(it.qty, it.product_id);
-          }
-          // One shipment per shop, so each supplier fulfils and tracks their own items.
-          for (const { shop_id } of db.prepare('SELECT DISTINCT shop_id FROM order_items WHERE order_id=?').all(orderId)) {
-            const exists = db.prepare('SELECT id FROM shipments WHERE order_id=? AND shop_id=?').get(orderId, shop_id);
-            if (!exists) {
-              const r = db.prepare("INSERT INTO shipments (order_id, shop_id, status) VALUES (?,?, 'processing')").run(orderId, shop_id);
-              db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'processing', 'Order received — preparing your items')").run(r.lastInsertRowid);
-            }
-          }
-          // Consignment ledger: record what Trove now owes each supplier —
-          // their list price minus the purchase margin. Connect-rail orders
-          // (destination charges) bypass the ledger entirely; the unique
-          // index on (order, shop) is a second line of defence against
-          // double credits.
-          if (order.rail !== 'connect') {
-            const credit = db.prepare("INSERT OR IGNORE INTO seller_balances (shop_id, order_id, type, amount_cents) VALUES (?,?, 'credit_sale', ?)");
-            for (const g of groups) {
-              if (g.tier === 'consignment') credit.run(g.shop_id, orderId, fees.split(g.cents).net);
-            }
-          }
+          pe.paidDbEffects(order, groups);
           return true;
         })();
 
-        if (applied) {
-          // Book the courier pickup for every shipment of this order —
-          // outside the transaction (network IO), failure never blocks the
-          // payment and the seller stepper still works by hand.
-          const delivery = require('./delivery');
-          for (const sh of db.prepare('SELECT id FROM shipments WHERE order_id=?').all(orderId)) {
-            delivery.bookPickup(sh.id).catch((e) => console.error('Pickup booking failed for shipment', sh.id, e.message));
-          }
-        }
-
-        if (applied && order.rail !== 'connect') {
-          // Rail B leftover: a mixed cart can contain a connect-tier shop's
-          // items; those are paid per sale via a Transfer (never from the
-          // consignment ledger). Only when the flag is on and the shop is
-          // fully onboarded.
-          for (const g of groups) {
-            if (g.tier !== 'connect') continue;
-            const { net } = fees.split(g.cents);
-            if (cfg.railBEnabled() && g.stripe_account_id && g.charges_enabled && net > 0) {
-              stripe.transfers.create({
-                amount: net,
-                currency: order.currency,
-                destination: g.stripe_account_id,
-                transfer_group: `order_${orderId}`,
-                metadata: { order_id: String(orderId), shop_id: String(g.shop_id) },
-              }).then((tr) => {
-                db.prepare('UPDATE order_items SET transfer_id=? WHERE order_id=? AND shop_id=?').run(tr.id, orderId, g.shop_id);
-              }).catch((e) => console.error('Transfer failed for shop', g.shop_id, e.message));
-            } else {
-              console.warn(`Shop ${g.shop_id} is connect-tier but not payable (flag ${cfg.railBEnabled() ? 'on' : 'off'}, onboarded ${!!(g.stripe_account_id && g.charges_enabled)}) — funds held on platform.`);
-            }
-          }
-        }
+        // Courier pickups + Rail B leftover transfers — outside the
+        // transaction (network IO), failure never blocks the payment.
+        if (applied) pe.paidPostEffects(order, groups, stripe);
       }
     }
 

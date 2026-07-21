@@ -1479,7 +1479,9 @@ function renderCheckout(){
     mountPaymentElement();
   }else{
     $('coPaySaved').innerHTML=SAVED_CARDS.map((c,i)=>`<div class="saved-opt ${coCard===i?'on':''}" onclick="selCard(${i})"><div class="radio"></div><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></div>`).join('');
-    $('payNote').textContent='Demo mode — card payments launch soon. No charge is made and no real order is placed.';
+    $('payNote').textContent=LIVE
+      ?'Demo mode — card payments launch soon. Nothing is charged; your order is recorded so you can track it in your account.'
+      :'Demo mode — card payments launch soon. No charge is made and no real order is placed.';
   }
   // summary
   let sub=0,html='';
@@ -1542,6 +1544,20 @@ async function placeOrder(){
     showConfirmation(id);
     return;
   }
+  if(LIVE){
+    // Demo-payments mode: the order is real (trackable, fulfilled, returnable)
+    // — only the card charge is skipped until Stripe goes live.
+    const btn=document.querySelector('.co-place');
+    btn.disabled=true;btn.style.opacity=.6;
+    try{
+      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
+      await TroveAPI.api('/api/checkout/demo-complete',{method:'POST',body:{orderId:data.orderId}});
+      lastOrder={orderId:data.orderId,demo:true,email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
+      showConfirmation(data.orderId);
+    }catch(e){toast(e.message||'Could not place the order — please try again');}
+    finally{btn.disabled=false;btn.style.opacity=1;}
+    return;
+  }
   lastOrder={email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
   showConfirmation('TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10));
 }
@@ -1558,7 +1574,7 @@ async function confCreateAccount(){
   try{
     await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
     try{await saveCheckoutAddress();}catch(_){/* best effort */}
-    if(lastOrder&&lastOrder.clientSecret){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:lastOrder.orderId,clientSecret:lastOrder.clientSecret}});}catch(_){/* stays a guest order */}}
+    if(lastOrder&&(lastOrder.clientSecret||lastOrder.demo)){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:lastOrder.orderId,clientSecret:lastOrder.clientSecret||''}});}catch(_){/* stays a guest order */}}
     ME={name,email};
     loadAuth();
     $('confAcct').style.display='none';

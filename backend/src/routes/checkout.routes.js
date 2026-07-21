@@ -60,6 +60,12 @@ router.post('/', async (req, res, next) => {
     const delivery = deliveryFor(subtotal);
     const total = subtotal + serviceFee + delivery;
 
+    // Demo-payments mode (no Stripe key yet): there is no payment form, so
+    // the full delivery details must arrive with this call — no later /update.
+    const stripeClient = require('../stripe').getStripe();
+    if (!stripeClient && (!address || !String(address.name || '').trim() || !String(address.line || '').trim()))
+      return res.status(400).json({ error: 'A delivery name and address are required' });
+
     // Rail B routing: an order whose items ALL belong to one fully-onboarded
     // connect-tier shop becomes a destination charge (never on_behalf_of —
     // unsupported for UAE platforms). Mixed carts and everything else stay on
@@ -87,6 +93,14 @@ router.post('/', async (req, res, next) => {
       for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization);
       return oid;
     })();
+
+    // Demo-payments mode: hand back the order for /checkout/demo-complete.
+    // The session stamp is the ownership proof (demo orders have no client
+    // secret) — only the session that opened the order can complete or claim it.
+    if (!stripeClient) {
+      req.session.pendingOrderId = orderId;
+      return res.json({ orderId: pid, demo: true, amount: total, currency: CURRENCY() });
+    }
 
     // One PaymentIntent on Trove's account. On the connect rail the charge is
     // routed to the supplier's account with Trove's cut as the application
@@ -143,18 +157,50 @@ router.post('/update', (req, res) => {
  * POST /api/checkout/claim  { orderId, clientSecret }
  * A guest who creates an account mid-checkout attaches the order they just
  * opened to it. Possession of the Stripe client secret proves the order is
- * theirs — the public order id alone is guessable, the secret is not.
+ * theirs — the public order id alone is guessable, the secret is not. Demo
+ * orders have no secret; there the session that opened the order is proof.
  */
 router.post('/claim', (req, res) => {
   if (!req.session.userId) return res.status(401).json({ error: 'Sign in required' });
   const { orderId, clientSecret } = req.body || {};
   const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String(orderId || ''));
   if (!order || order.buyer_id != null) return res.status(404).json({ error: 'Order not found' });
-  if (!order.stripe_payment_intent_id
-    || !String(clientSecret || '').startsWith(order.stripe_payment_intent_id + '_secret'))
-    return res.status(403).json({ error: 'Not your order' });
+  const secretOk = order.stripe_payment_intent_id
+    && String(clientSecret || '').startsWith(order.stripe_payment_intent_id + '_secret');
+  const sessionOk = req.session.pendingOrderId === order.id;
+  if (!secretOk && !sessionOk) return res.status(403).json({ error: 'Not your order' });
   db.prepare('UPDATE orders SET buyer_id=? WHERE id=?').run(req.session.userId, order.id);
   res.json({ ok: true });
+});
+
+/**
+ * POST /api/checkout/demo-complete  { orderId }
+ * Completes an order WITHOUT payment — exists ONLY while Stripe is not
+ * configured (the endpoint refuses once a key is set, so it dies by itself
+ * at go-live). Runs the exact same paid effects as the real webhook: stock,
+ * shipments, courier pickups, supplier ledger credits. Only the session
+ * that opened the order (or its signed-in owner) can complete it.
+ */
+router.post('/demo-complete', (req, res, next) => {
+  try {
+    if (require('../stripe').getStripe())
+      return res.status(409).json({ error: 'Card payments are live — orders complete through the payment form' });
+    const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String((req.body || {}).orderId || ''));
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const mine = req.session.pendingOrderId === order.id
+      || (order.buyer_id != null && order.buyer_id === req.session.userId);
+    if (!mine) return res.status(403).json({ error: 'Not your order' });
+    if (order.status !== 'pending') return res.status(409).json({ error: 'Order already completed' });
+
+    const pe = require('../paid-effects');
+    const groups = pe.perShopGroups(order.id);
+    db.transaction(() => pe.paidDbEffects(order, groups))();
+    pe.paidPostEffects(order, groups, null);
+    // The session stamp survives completion: the confirmation page's
+    // create-an-account offer still needs it to /claim the order.
+
+    res.json({ ok: true, orderId: order.public_id, demo: true });
+  } catch (e) { next(e); }
 });
 
 module.exports = router;
