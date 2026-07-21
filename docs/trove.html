@@ -371,7 +371,9 @@
     .marquee .mk{justify-content:flex-start}
     .cat-rail{grid-template-columns:repeat(3,1fr)}
     .vgrid{grid-template-columns:1fr}
-    .browse-layout{grid-template-columns:1fr;gap:0}
+    /* .browse-layout's own padding beats .wrap's (later in the sheet), so
+       the side padding must be restated here or the grid runs edge-to-edge */
+    .browse-layout{grid-template-columns:1fr;gap:0;padding:36px 26px 80px}
     .nav .links{display:none}
     .menu-btn{display:grid}
     .card .add{opacity:1;transform:none;position:static;margin-top:12px;background:var(--char);color:var(--cream)}
@@ -391,7 +393,7 @@
     footer{padding:56px 0 32px}
   }
   @media(max-width:560px){
-    .wrap{padding:0 20px}
+    .wrap{padding:0 26px}
     .pgrid,.cat-rail{grid-template-columns:1fr 1fr}
     .search{display:none}
     .search-btn{display:grid}
@@ -422,7 +424,7 @@
     .step .nm{width:30px;font-size:26px}
     .faq summary{font-size:15.5px}
     .browse-head{padding:36px 0 4px}
-    .browse-layout{padding:26px 0 70px}
+    .browse-layout{padding:26px 26px 70px}
     .vhead .vstats{gap:30px;flex-wrap:wrap}
     .pdp .gallery{grid-template-columns:1fr;gap:12px}
     .pdp .thumbs{flex-direction:row;order:2}
@@ -532,7 +534,8 @@
     .co-wrap{padding:26px 20px 70px}
   }
   @media(max-width:560px){
-    .confirm{padding:44px 20px 70px}
+    .confirm{padding:44px 26px 70px}
+    .co-wrap{padding-left:26px;padding-right:26px}
     .co-two{gap:10px}
     /* 16px inputs so iOS Safari doesn't zoom on focus */
     .co-field input,.co-field select{font-size:16px}
