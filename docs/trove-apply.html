@@ -68,6 +68,10 @@
   .field .count{float:right}
   .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   @media(max-width:480px){.ftwo{grid-template-columns:1fr}}
+  @media(max-width:560px){
+    .formside{padding:28px 20px calc(28px + env(safe-area-inset-bottom))}
+    .field input,.field select,.field textarea{font-size:16px}
+  }
   .err{display:none;background:#FCEBE4;color:var(--coral-deep);font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
   .note{display:none;background:#EBF1EC;color:#4A5A4E;font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
   .note a{color:var(--coral-deep)}
@@ -89,6 +93,10 @@
   .done .what{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
   .done .what b{display:block;font-size:13.5px;margin-bottom:4px}
   .done .what span{font-size:13px;color:var(--muted);font-weight:500;line-height:1.5}
+  /* re-asserted here: the same rule near the top of the sheet loses to the
+     .brandside base rule declared after it (cascade order), so phones were
+     getting the full dark brand panel above the form */
+  @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
 </style>
 </head>
 <body>

@@ -62,6 +62,31 @@
   .tbl td{padding:12px 10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
   .tbl tr:last-child td{border-bottom:none}
 
+  /* ---------- MOBILE ---------- */
+  .mtabs{display:none}
+  @media(max-width:920px){
+    .shell{grid-template-columns:minmax(0,1fr)}
+    .side{display:none}
+    main{padding:18px 20px 60px;max-width:none;min-width:0}
+    .top{flex-wrap:wrap;gap:10px;align-items:flex-start}
+    /* sidebar becomes a sticky scrollable tab bar */
+    .mtabs{display:flex;gap:8px;overflow-x:auto;padding:11px 20px;position:sticky;top:0;z-index:30;background:rgba(253,247,245,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft);-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:-18px -20px 18px}
+    .mtabs::-webkit-scrollbar{display:none}
+    .mtabs .mitem{flex:0 0 auto;border:1px solid var(--line);border-left-width:1px;border-radius:999px;padding:9px 15px;font-size:13px;background:var(--paper);white-space:nowrap;gap:8px;color:var(--muted)}
+    .mtabs .mitem.on{background:var(--char);color:var(--cream);border-color:var(--char)}
+    .mtabs .mitem svg{width:15px;height:15px}
+    /* wide tables scroll inside their card */
+    .card{overflow-x:auto}
+    .tbl{min-width:560px}
+    select{max-width:100%}
+    /* CMS editor: list add-rows wrap instead of poking past the edge */
+    .cmsf div{flex-wrap:wrap}
+    .cmsf input,.cmsf textarea{min-width:0}
+  }
+  @media(max-width:560px){
+    input,select,textarea{font-size:16px!important}
+  }
+
   .shoprow{display:flex;align-items:center;gap:12px;min-width:200px}
   .shoprow .tile{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:20px;font-weight:600;overflow:hidden}
   .shoprow .nm{font-weight:700;font-size:13.5px}
@@ -172,6 +197,7 @@
     </div>
   </aside>
   <main>
+    <nav class="mtabs" id="mtabs"></nav>
     <div class="top"><div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub"></div></div></div>
 
     <div class="view active" id="view-overview">
@@ -919,6 +945,18 @@ async function approveGraduation(shopId){
 }
 
 /* ---------------- boot ---------------- */
+/* mobile: the sidebar menu cloned into the scrollable tab bar (.mtabs). */
+function buildMobileTabs(){
+  const bar=$('mtabs'); if(!bar)return; bar.innerHTML='';
+  document.querySelectorAll('.side .mitem, .side .sfoot a').forEach(src=>{
+    const c=src.cloneNode(true);
+    c.removeAttribute('id');
+    c.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+    c.querySelectorAll('.badge').forEach(n=>n.remove());
+    c.classList.add('mitem');
+    bar.appendChild(c);
+  });
+}
 async function signOut(){ await TroveAPI.logout(); window.location.href='/login'; }
 (async function boot(){
   let me=null;
@@ -933,6 +971,7 @@ async function signOut(){ await TroveAPI.logout(); window.location.href='/login'
   $('whoName').textContent=ME.name;
   $('whoAv').textContent=(ME.name||'T')[0].toUpperCase();
   $('gate').style.display='none';$('shell').style.display='grid';
+  buildMobileTabs();
   try{ AI_TAGS=!!(await TroveAPI.config()).aiTagsEnabled; }catch(_){}
   try{ await reload(); }catch(e){ toast(e.message||'Could not load the marketplace data'); }
 })();

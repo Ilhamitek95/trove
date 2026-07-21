@@ -167,8 +167,8 @@
   .cm-zoom label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
   .cm-zoom input[type=range]{flex:1;accent-color:var(--coral)}
   .cm-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:12px}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:520px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
-  .drawer.open{transform:none}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:520px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(103%);visibility:hidden;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility .38s;display:flex;flex-direction:column}
+  .drawer.open{transform:none;visibility:visible}
   .drawer .dhead{padding:24px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
   .drawer .dhead h3{font-size:26px;font-weight:500}
   .drawer .dbody{flex:1;overflow-y:auto;padding:24px 28px}
@@ -281,12 +281,33 @@
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;z-index:130;opacity:0;transition:.32s;box-shadow:var(--shadow);letter-spacing:.02em}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
+  .mtabs{display:none}
   @media(max-width:920px){
     .app{grid-template-columns:1fr}
     .side{display:none}
     .grid-4{grid-template-columns:1fr 1fr}
     .ov-row,.pay-grid,.store-grid,.connect-pts{grid-template-columns:1fr}
     .content,.topbar{padding-left:20px;padding-right:20px}
+    .topbar{position:static;padding-top:16px;padding-bottom:14px;flex-wrap:wrap;gap:10px}
+    /* sidebar becomes a sticky scrollable tab bar */
+    .mtabs{display:flex;gap:8px;overflow-x:auto;padding:11px 20px;position:sticky;top:0;z-index:30;background:rgba(253,247,245,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line-soft);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    .mtabs::-webkit-scrollbar{display:none}
+    .mtabs .mitem{flex:0 0 auto;border:1px solid var(--line);border-radius:999px;padding:9px 15px;font-size:13px;background:var(--paper);white-space:nowrap;gap:8px}
+    .mtabs .mitem.on{background:var(--char);color:var(--cream);border-color:var(--char)}
+    .mtabs .mitem.on::before{display:none}
+    .mtabs .mitem svg{width:15px;height:15px}
+  }
+  @media(max-width:920px){
+    /* wide tables (products, orders digest, payout history) scroll inside their card */
+    .card{overflow-x:auto}
+    .tbl{min-width:560px}
+  }
+  @media(max-width:560px){
+    .content{padding-top:20px}
+    input,select,textarea{font-size:16px!important}
+    .drawer .dhead{padding:18px 20px}
+    .drawer .dbody{padding:20px}
+    .drawer .dfoot{padding:14px 20px calc(14px + env(safe-area-inset-bottom))}
   }
 </style>
 </head>
@@ -409,6 +430,7 @@
 
   <!-- MAIN -->
   <div class="main">
+    <nav class="mtabs" id="mtabs"></nav>
     <div class="topbar">
       <div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub">Welcome back</div></div>
       <div class="tact" id="topActions"></div>
@@ -1465,6 +1487,23 @@ async function saveStore(){
 }
 
 /* ---------------- ROUTER ---------------- */
+/* mobile: the sidebar menu cloned into the scrollable tab bar (.mtabs).
+ * Clones keep their inline onclick; items that rely on an id (sign out,
+ * admin links) pass the click through to the original. Rebuilt after the
+ * admin items are revealed in boot(). */
+function buildMobileTabs(){
+  const bar=$('mtabs'); if(!bar)return; bar.innerHTML='';
+  document.querySelectorAll('.side .mitem, .side .foot a').forEach(src=>{
+    if(src.style.display==='none')return;
+    const c=src.cloneNode(true);
+    c.removeAttribute('id'); c.removeAttribute('style');
+    c.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+    c.querySelectorAll('.pill,.badge').forEach(n=>n.remove());
+    c.classList.add('mitem');
+    if(src.id)c.onclick=e=>{e.preventDefault();src.click();};
+    bar.appendChild(c);
+  });
+}
 const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
@@ -1501,6 +1540,7 @@ async function boot(){
   await reloadPayouts();
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
   if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
+  buildMobileTabs();
   await Promise.all([reloadProducts(), reloadOrders()]);
   // Claude-written tag suggestions: only show the button when the server has a key.
   TroveAPI.config().then(c=>{ if(c&&c.aiTagsEnabled)$('dTagAI').style.display=''; }).catch(()=>{});
