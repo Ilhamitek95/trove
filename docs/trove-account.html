@@ -257,6 +257,9 @@
   .rev-photos .ph button{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:rgba(41,39,39,.65);color:var(--cream);border:none;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
   .rev-photos .addph{width:74px;height:74px;border-radius:10px;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--muted);cursor:pointer;font-size:22px;background:none}
   .rev-photos .addph:hover{border-color:var(--coral);color:var(--coral-deep)}
+  .rtfield{width:100%;font-family:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--paper);color:var(--char);margin-bottom:10px}
+  .rtmoney{margin-top:14px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.55;background:var(--cream-2,#F8F0EA);border-radius:10px;padding:11px 13px}
+  .rtmoney b{color:var(--char)}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   @media(max-width:920px){
@@ -414,6 +417,31 @@
   </div>
 </div>
 
+<div class="rev-scrim" id="retScrim" onclick="if(event.target===this)closeReturn()">
+  <div class="rev-modal">
+    <h3>Return this order</h3>
+    <div class="sub" id="rtSub"></div>
+    <select id="rtReason" class="rtfield">
+      <option value="">Why are you returning it?</option>
+      <option value="damaged">Arrived damaged</option>
+      <option value="not-as-described">Not as described</option>
+      <option value="wrong-item">Wrong item received</option>
+      <option value="changed-mind">Changed my mind</option>
+      <option value="other">Something else</option>
+    </select>
+    <textarea id="rtDetails" maxlength="1000" placeholder="Tell us what went wrong — a sentence or two is plenty."></textarea>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin:12px 0 6px">Photos of the item (at least one)</div>
+    <div class="rev-photos" id="rtPhotos"></div>
+    <input type="file" id="rtFile" accept="image/*" multiple style="display:none" onchange="retAddFiles(this.files)">
+    <div class="rtmoney" id="rtMoney"></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:20px">
+      <span style="flex:1"></span>
+      <button class="btn btn-ghost" onclick="closeReturn()">Cancel</button>
+      <button class="btn btn-coral" id="rtSave" onclick="saveReturn()">Send request</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="config.js"></script>
@@ -508,9 +536,7 @@ function renderOrders(){
       </div>
       <div class="oc-body">${body}</div>
       <div class="oc-foot">
-        ${o.refundedAt?`<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`
-          : o.returnWindowEndsAt && new Date(o.returnWindowEndsAt.replace(' ','T')+'Z') > new Date()
-            ? `<span class="ship-note" style="margin:0">Free returns until ${fmtDate(o.returnWindowEndsAt)}</span>` : ''}
+        ${returnsFootHTML(o)}
         <button class="btn btn-ghost btn-sm" onclick="toast('Reorder is coming soon')">Buy again</button>
         <button class="btn btn-ghost btn-sm" onclick="toast('Invoices are coming soon')">Invoice</button>
       </div></div>`;
@@ -750,7 +776,88 @@ async function confirmDeleteReview(id){
   try{await TroveAPI.api('/api/account/reviews/'+id,{method:'DELETE'});toast('Review removed');await reloadReviews();}
   catch(e){toast(e.message||'Could not remove it');}
 }
-document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&$('revScrim').classList.contains('open'))closeReview();});
+document.addEventListener('keydown',(e)=>{
+  if(e.key!=='Escape')return;
+  if($('revScrim').classList.contains('open'))closeReview();
+  if($('retScrim').classList.contains('open'))closeReturn();
+});
+
+/* ---------- RETURNS ----------
+ * Whole-order returns: reason + a few words + photos, reviewed by Trove.
+ * Money facts (fee, refund, deadline) come from the server per order —
+ * nothing is computed here, so the promise always matches what's paid. */
+function returnsFootHTML(o){
+  const r=o.returns||{}, rq=r.request;
+  if(rq){
+    if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
+      <button class="btn btn-ghost btn-sm" onclick="withdrawReturn('${o.id}')">Withdraw request</button>`;
+    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved — ${aed(rq.refund)} is on its way back to your card${rq.fee?` (${aed(rq.fee)} collection fee deducted)`:''}. Our courier will be in touch to collect.</span>`;
+    return `<span class="ship-note" style="margin:0;color:var(--coral-deep)">Return declined — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
+  }
+  if(o.refundedAt)return `<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
+  if(r.eligible)return `<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)}</span>
+    <button class="btn btn-ghost btn-sm" onclick="openReturn('${o.id}')">Request a return</button>`;
+  return '';
+}
+let rtOrder=null, rtImages=[];
+function openReturn(orderId){
+  const o=orders.find(x=>x.id===orderId); if(!o||!o.returns)return;
+  rtOrder=o; rtImages=[];
+  $('rtSub').textContent=`Order ${o.id} — everything in it goes back together`;
+  $('rtReason').value=''; $('rtDetails').value='';
+  const r=o.returns;
+  $('rtMoney').innerHTML=`You'll get <b>${aed(r.refund)}</b> back to your card. `
+    +(r.fee?`Collection costs ${aed(r.fee)} on orders under AED 500 — it's already deducted from that figure. `:`Collection is free for this order. `)
+    +`The service fee and original delivery aren't refundable.`;
+  renderRtPhotos();
+  $('retScrim').classList.add('open');
+}
+function closeReturn(){$('retScrim').classList.remove('open');rtOrder=null;}
+function renderRtPhotos(){
+  const w=$('rtPhotos');w.innerHTML='';
+  rtImages.forEach((u,i)=>{
+    const d=document.createElement('div');d.className='ph';
+    const im=document.createElement('img');im.src=u;d.appendChild(im);
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.onclick=()=>{rtImages.splice(i,1);renderRtPhotos();};
+    d.appendChild(x);w.appendChild(d);
+  });
+  if(rtImages.length<3){
+    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';
+    b.onclick=()=>$('rtFile').click();w.appendChild(b);
+  }
+}
+function retAddFiles(files){
+  [...files].slice(0,3-rtImages.length).forEach(f=>{
+    const rd=new FileReader();
+    rd.onload=()=>{const im=new Image();im.onload=()=>{
+      const s=Math.min(1,1200/Math.max(im.width,im.height));
+      const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      rtImages.push(c.toDataURL('image/jpeg',.85));renderRtPhotos();
+    };im.src=rd.result;};
+    rd.readAsDataURL(f);
+  });
+  $('rtFile').value='';
+}
+async function saveReturn(){
+  if(!rtOrder)return;
+  if(!$('rtReason').value){toast('Pick a reason for the return');return;}
+  if($('rtDetails').value.trim().length<5){toast('Tell us a little about what went wrong');return;}
+  if(!rtImages.length){toast('Add at least one photo of the item');return;}
+  const btn=$('rtSave'),was=btn.textContent;btn.textContent='Sending…';btn.disabled=true;
+  try{
+    await TroveAPI.api(`/api/account/orders/${rtOrder.id}/return-request`,{method:'POST',body:{
+      reason:$('rtReason').value,details:$('rtDetails').value.trim(),images:rtImages}});
+    closeReturn();toast("Return requested — we'll be in touch shortly");
+    await reloadOrders();renderOrders();
+  }catch(e){toast(e.message||'Could not send the request');}
+  finally{btn.textContent=was;btn.disabled=false;}
+}
+async function withdrawReturn(orderId){
+  if(!confirm('Withdraw this return request?'))return;
+  try{await TroveAPI.api(`/api/account/orders/${orderId}/return-request`,{method:'DELETE'});toast('Request withdrawn');await reloadOrders();renderOrders();}
+  catch(e){toast(e.message||'Could not withdraw it');}
+}
 
 /* ---------- ROUTER ---------- */
 const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, reorder and review'],wishlist:['Saved items','Your wishlist'],addresses:['Addresses','Where we ship'],payments:['Payment methods','Cards & checkout'],following:['Following','Shops you love'],details:['My details','Profile & preferences']};

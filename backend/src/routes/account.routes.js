@@ -5,6 +5,8 @@ const { requireAuth } = require('../middleware');
 const shipments = require('../shipments');
 const { SERVICE_AREAS, isServiceable } = require('../service-area');
 
+const returns = require('../returns');
+
 const router = express.Router();
 
 /* ---------------- Orders (buyer) ---------------- */
@@ -12,6 +14,7 @@ router.get('/orders', requireAuth, (req, res) => {
   const orders = db.prepare("SELECT * FROM orders WHERE buyer_id=? AND status!='pending' ORDER BY created_at DESC").all(req.user.id);
   const itemsStmt = db.prepare(`SELECT oi.*, s.name AS shop_name, s.color, s.is_house FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
   const shipStmt = db.prepare(`SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);
+  const reqStmt = db.prepare('SELECT * FROM return_requests WHERE order_id=?');
   res.json({
     orders: orders.map((o) => ({
       id: o.public_id,
@@ -27,8 +30,38 @@ router.get('/orders', requireAuth, (req, res) => {
         shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
       })),
       shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),
+      returns: {
+        eligible: !returns.ineligibleReason(o) && !reqStmt.get(o.id),
+        deadline: returns.deadline(o),
+        fee: returns.feeCents(o) / 100,
+        refund: returns.refundCents(o) / 100,
+        request: returns.shape(reqStmt.get(o.id)),
+      },
     })),
   });
+});
+
+/* ---------------- Return requests (buyer) ----------------
+ * Whole-order returns: reason + a few words + at least one photo. The request
+ * lands with Trove's admin (who approves/declines) and shows on the shops'
+ * order views. Money rules live in src/returns.js.
+ */
+router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) => {
+  try {
+    const order = db.prepare('SELECT * FROM orders WHERE public_id=? AND buyer_id=?').get(req.params.publicId, req.user.id);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const result = returns.create(req.user, order, req.body || {});
+    if (result.error) return res.status(result.status).json({ error: result.error });
+    res.status(201).json({ ok: true, id: result.id });
+  } catch (e) { next(e); }
+});
+
+// Withdraw your own request while it's still waiting on a decision.
+router.delete('/orders/:publicId/return-request', requireAuth, (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=? AND buyer_id=?').get(req.params.publicId, req.user.id);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (!returns.cancelOwn(req.user.id, order.id)) return res.status(404).json({ error: 'No pending return request to withdraw' });
+  res.json({ ok: true });
 });
 
 /* ---------------- Ratings & reviews (verified purchases) ---------------- */

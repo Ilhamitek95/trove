@@ -136,17 +136,29 @@ router.delete('/products/:id', requireSeller, (req, res) => {
 
 /* ---------------- Orders & shipment tracking ---------------- */
 router.get('/orders', requireSeller, (req, res) => {
+  const returns = require('../returns');
   const rows = db.prepare(`
     SELECT sh.*, o.public_id, o.email, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
-           s.name AS shop_name, s.color, s.is_house
+           s.name AS shop_name, s.color, s.is_house,
+           rr.status AS rr_status, rr.reason AS rr_reason, rr.details AS rr_details,
+           rr.images AS rr_images, rr.created_at AS rr_created, rr.decided_at AS rr_decided
     FROM shipments sh
     JOIN orders o ON o.id = sh.order_id
     JOIN shops  s ON s.id = sh.shop_id
+    LEFT JOIN return_requests rr ON rr.order_id = o.id
     WHERE sh.shop_id = ?
     ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
   res.json({ orders: rows.map((r) => ({
     ...shipments.shape(r),
     order: { publicId: r.public_id, email: r.email, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
+    returnRequest: r.rr_status ? {
+      status: r.rr_status,
+      reason: returns.REASONS[r.rr_reason] || r.rr_reason,
+      details: r.rr_details,
+      images: (() => { try { return JSON.parse(r.rr_images || '[]'); } catch (_) { return []; } })(),
+      createdAt: r.rr_created,
+      decidedAt: r.rr_decided || null,
+    } : null,
   })) });
 });
 

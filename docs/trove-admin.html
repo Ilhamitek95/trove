@@ -163,6 +163,7 @@
     <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4 12 22 2 12l8.6-8.6a2 2 0 0 1 1.4-.6h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.6 1.4z" transform="scale(.9) translate(1.5 0)"/><circle cx="16" cy="8" r="1.4"/></svg>Products</a>
     <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6 5 2H2"/></svg>Orders</a>
     <a class="mitem" data-v="reviews" onclick="go('reviews')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Reviews</a>
+    <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="badge zero" id="retBadge">0</span></a>
     <a class="mitem" data-v="sitecontent" onclick="go('sitecontent')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Site content</a>
     <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Trove payouts</a>
     <div class="sfoot">
@@ -225,6 +226,13 @@
       </div>
     </div>
 
+    <div class="view" id="view-returns">
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Buyers request whole-order returns with photos. Approving refunds the items total back to their card (minus the AED 25 collection fee under AED 500 — service and delivery fees are never refunded), reverses the shops' credits and books the courier collection. Declines go back to the buyer with your reason.</div></div>
+        <div id="returnsWrap" style="padding:14px 22px 22px"></div>
+      </div>
+    </div>
+
     <div class="view" id="view-sitecontent">
       <div class="card" style="margin-bottom:16px">
         <h3>Homepage &amp; Sell-on-Trove copy</h3>
@@ -265,7 +273,7 @@
 <script src="api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-let ME=null, STATS=null, SHOPS=[], ORDERS=[], PRODUCTS=[], REVIEWS=[], TRENDS=[], AI_TAGS=false, PREVIEW=null, SETTLEMENTS=[], BATCHES=[], GRAD={queue:[],railBEnabled:false}, VAT={vatRegistered:false,rows:[]};
+let ME=null, STATS=null, SHOPS=[], ORDERS=[], PRODUCTS=[], REVIEWS=[], RETURNS=[], TRENDS=[], AI_TAGS=false, PREVIEW=null, SETTLEMENTS=[], BATCHES=[], GRAD={queue:[],railBEnabled:false}, VAT={vatRegistered:false,rows:[]};
 
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
@@ -280,7 +288,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],shops:['Shops','Approve and manage every shop'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar and footer'],payouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],shops:['Shops','Approve and manage every shop'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to refund and collect'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar and footer'],payouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -299,9 +307,10 @@ async function reload(){
   STATS=stats;SHOPS=shops.shops;ORDERS=orders.orders;PRODUCTS=products.products;
   try{ TRENDS=(await TroveAPI.api('/api/admin/search-trends')).terms; }catch(_){ TRENDS=[]; }
   try{ REVIEWS=(await TroveAPI.api('/api/admin/reviews')).reviews; }catch(_){ REVIEWS=[]; }
+  try{ RETURNS=(await TroveAPI.api('/api/admin/returns')).returns; }catch(_){ RETURNS=[]; }
   // Site content loads once — later reloads must not clobber unsaved edits.
   if(!CMS){ try{ CMS=await TroveAPI.api('/api/admin/content'); cmsInitEdit(); }catch(_){ CMS=null; } }
-  renderOverview();renderShops();renderOrders();renderProducts();renderTrends();renderReviews();renderCms();
+  renderOverview();renderShops();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();
   reloadPayouts();
 }
 async function reloadPayouts(){
@@ -601,6 +610,57 @@ async function setReviewStatus(id,status,confirmFirst){
     REVIEWS=(await TroveAPI.api('/api/admin/reviews')).reviews;
     renderReviews();
   }catch(e){ toast(e.message||'Could not update the review'); }
+}
+
+/* ---------------- return requests ---------------- */
+function renderReturns(){
+  const pending=RETURNS.filter(r=>r.status==='requested').length;
+  const badge=$('retBadge'); if(badge){badge.textContent=pending;badge.classList.toggle('zero',!pending);}
+  const pill=s=>s==='requested'?'<span class="pill pending">requested</span>'
+    :s==='approved'?'<span class="pill approved">approved</span>'
+    :'<span class="pill suspended">declined</span>';
+  $('returnsWrap').innerHTML=RETURNS.length?RETURNS.map(r=>`
+    <div style="border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px${r.status!=='requested'?';opacity:.72':''}">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        ${pill(r.status)}
+        <b style="font-size:13.5px">${esc(r.order.publicId)}</b>
+        <span style="color:var(--muted);font-size:12.5px;font-weight:600">${esc(r.order.buyer||'')} · ${esc(r.order.email)}</span>
+        <span style="color:var(--muted);font-size:12px;margin-left:auto">${fmtDate(r.createdAt)}</span>
+      </div>
+      <div style="margin-top:10px;font-size:13px"><b>${esc(r.reasonLabel)}</b> — ${esc(r.details)}</div>
+      ${r.images.length?`<div style="display:flex;gap:6px;margin-top:9px">${r.images.map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}
+      <div style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600">${r.order.items.map(i=>`${esc(i.name)} ×${i.qty} — ${esc(i.shop)}`).join(' · ')}</div>
+      <div style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">
+        Items AED ${r.order.itemsTotal}
+        ${r.status==='approved'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${r.fee?` (AED ${r.fee} collection fee deducted)`:''}`
+          :r.status==='declined'?` · declined: “${esc(r.declineReason||'')}”`
+          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${r.feePreview?` (AED ${r.feePreview} collection fee deducted)`:' (free collection, AED 500+)'}`}
+      </div>
+      ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px">
+        <button class="btn btn-green" onclick="approveReturn(${r.id},${r.refundPreview})">Approve · refund AED ${r.refundPreview}</button>
+        <button class="btn btn-ghost" onclick="declineReturn(${r.id})">Decline…</button>
+      </div>`:''}
+    </div>`).join('')
+    :'<div class="empty" style="padding:26px 4px">No return requests yet — they appear here when a buyer asks to send an order back.</div>';
+}
+async function approveReturn(id,amount){
+  if(!confirm(`Approve this return? AED ${amount} goes back to the buyer's card, the shops' credits reverse, and the courier collects the parcel.`))return;
+  try{
+    await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST'});
+    toast('Return approved — refund issued');
+    await reload();
+  }catch(e){ toast(e.message||'Could not approve the return'); }
+}
+async function declineReturn(id){
+  const reason=prompt('Why is this return declined? The buyer sees this in their account.');
+  if(reason===null)return;
+  if(reason.trim().length<5){toast('Give the buyer a short reason');return;}
+  try{
+    await TroveAPI.api(`/api/admin/returns/${id}/decline`,{method:'POST',body:{reason:reason.trim()}});
+    toast('Return declined');
+    RETURNS=(await TroveAPI.api('/api/admin/returns')).returns;
+    renderReturns();
+  }catch(e){ toast(e.message||'Could not decline the return'); }
 }
 
 /* ---------------- site content (homepage + sell copy CMS) ---------------- */

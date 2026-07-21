@@ -12,11 +12,13 @@
 const on = (v) => v === '1' || v === 'true';
 
 const AGREEMENT_VERSION = 'v2';
-const RETURN_WINDOW_DAYS = 7;
+const RETURN_WINDOW_DAYS = 7;   // settlement hold: supplier credit payable after this
+const BUYER_RETURN_DAYS = 30;   // shopper-facing: request a return this long after delivery
 
 module.exports = {
   AGREEMENT_VERSION,
   RETURN_WINDOW_DAYS,
+  BUYER_RETURN_DAYS,
   railBEnabled: () => on(process.env.RAIL_B_ENABLED || ''),
   vatRegistered: () => on(process.env.VAT_REGISTERED || ''),
   graduationThresholdCents: () => {

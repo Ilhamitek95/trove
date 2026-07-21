@@ -324,6 +324,13 @@
   .ship-row .sr-id{font-family:'Cormorant';font-size:18px;font-weight:600;line-height:1.1}
   .sr-sub{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .sr-perso{color:var(--coral-deep);font-weight:800}
+  .sr-ret{color:var(--coral-deep);font-weight:800}
+  .sc-return{background:var(--rose-tint,#F2E9E4);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-top:14px}
+  .sc-return .rr-hd{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:800;color:var(--coral-deep)}
+  .sc-return .rr-body{font-size:13px;margin-top:7px;line-height:1.5}
+  .sc-return .rr-ph{display:flex;gap:6px;margin-top:8px}
+  .sc-return .rr-ph img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  .sc-return .rr-note{font-size:12px;color:var(--muted);font-weight:600;margin-top:8px}
   .sr-date{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0}
   .chev{color:var(--muted);flex-shrink:0}
   .sc-head{cursor:pointer}
@@ -921,10 +928,13 @@ function shipRowHTML(o){
   const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
   const perso=(o.items||[]).some(i=>i.personalization);
   const name=(o.order&&o.order.ship&&o.order.ship.name)||(o.order&&o.order.email)||'—';
+  const rr=o.returnRequest;
+  const retFlag=rr&&rr.status==='requested'?' · <span class="sr-ret">↩ return requested</span>'
+    :rr&&rr.status==='approved'?' · <span class="sr-ret">↩ return approved</span>':'';
   return `<div class="card ship-row" onclick="toggleShip(${o.id})">
       <span class="order-pill ${shipPill(o.status)}">${o.statusLabel}</span>
       <div style="min-width:0"><div class="sr-id">${o.order?o.order.publicId:''}</div>
-        <div class="sr-sub">${esc(name)} · ${units} item${units===1?'':'s'} · ${aed(o.itemTotal||0)}${perso?' · <span class="sr-perso">✎ personalised</span>':''}</div></div>
+        <div class="sr-sub">${esc(name)} · ${units} item${units===1?'':'s'} · ${aed(o.itemTotal||0)}${perso?' · <span class="sr-perso">✎ personalised</span>':''}${retFlag}</div></div>
       <span class="sr-date">${fmtDate(o.order?o.order.createdAt:o.createdAt)}</span>
       <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
     </div>`;
@@ -956,11 +966,26 @@ function shipCardHTML(o){
       <div class="e"><span class="k">Trove margin (${feePct()}%)</span><span class="val">−${aed(fee)}</span></div>
       <div class="e net"><span class="k">Your purchase price</span><span class="val">${aed(net)}</span></div>
     </div>
+    ${returnStripHTML(o)}
     <div class="sc-divider"></div>
     <div class="sc-sec-label">Fulfilment</div>
     ${shipStepper(o.status)}
     ${shipTimeline(o.timeline)}
     ${shipActions(o)}
+  </div>`;
+}
+// Buyer return requests arrive via Trove; the shop sees them here, read-only.
+function returnStripHTML(o){
+  const rr=o.returnRequest; if(!rr)return'';
+  const photos=(rr.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
+  const note=rr.status==='requested'?"Trove is reviewing it — nothing for you to do yet."
+    :rr.status==='approved'?"Return approved — the courier will bring the parcel back, and this sale no longer counts toward your payouts."
+    :"Trove declined the request — nothing changes for you.";
+  return `<div class="sc-return">
+    <div class="rr-hd">↩ ${rr.status==='requested'?'Return requested by the buyer':rr.status==='approved'?'Return approved by Trove':'Return declined by Trove'} · ${fmtDate(rr.createdAt)}</div>
+    <div class="rr-body"><b>${esc(rr.reason)}</b>${rr.details?' — '+esc(rr.details):''}</div>
+    ${photos?`<div class="rr-ph">${photos}</div>`:''}
+    <div class="rr-note">${note}</div>
   </div>`;
 }
 function renderOrders(){

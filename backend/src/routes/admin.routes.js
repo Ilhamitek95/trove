@@ -351,39 +351,86 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
       ...(order.rail === 'connect' ? { reverse_transfer: true, refund_application_fee: true } : {}),
     });
 
-    db.transaction(() => {
-      db.prepare("UPDATE orders SET refunded_at=datetime('now') WHERE id=?").run(order.id);
-      if (order.rail !== 'connect') {
-        const swept = db.prepare(`SELECT * FROM seller_balances
-          WHERE order_id=? AND type='credit_sale' AND settlement_id IS NOT NULL`).all(order.id);
-        for (const c of swept) {
-          db.prepare(`INSERT INTO seller_balances (shop_id, order_id, type, amount_cents)
-            VALUES (?,?, 'debit_refund', ?)`).run(c.shop_id, order.id, -c.amount_cents);
-        }
-      }
-    })();
-
-    // Logistics, best-effort after the money is sorted.
-    const delivery = require('../delivery');
-    for (const sh of db.prepare('SELECT * FROM shipments WHERE order_id=?').all(order.id)) {
-      if (['shipped', 'out_for_delivery', 'delivered'].includes(sh.status)) {
-        delivery.bookReversePickup(sh.id).then((r) => {
-          db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
-            .run(sh.id, sh.status, `Return pickup booked${r && r.ref ? ' · ' + r.ref : ''}`);
-        }).catch((e) => console.error('Reverse pickup failed for shipment', sh.id, e.message));
-      } else if (sh.status === 'processing') {
-        db.prepare("UPDATE shipments SET status='cancelled', updated_at=datetime('now') WHERE id=?").run(sh.id);
-        db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'cancelled', 'Order refunded — do not ship')").run(sh.id);
-      }
-    }
-    const transferred = db.prepare('SELECT DISTINCT transfer_id FROM order_items WHERE order_id=? AND transfer_id IS NOT NULL').all(order.id);
-    if (transferred.length) {
-      console.warn(`refund ${order.public_id}: reverse these Stripe Transfers by hand:`, transferred.map((t) => t.transfer_id).join(', '));
-    }
+    returns.applyRefundEffects(order);
 
     const fresh = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
     res.json({ ok: true, order: { publicId: fresh.public_id, refundedAt: fresh.refunded_at } });
   } catch (e) { next(e); }
+});
+
+/* ---------------- Return requests (buyer-initiated) ----------------
+ * Requests arrive from the account page with photos; Trove decides. Approval
+ * refunds the ITEMS SUBTOTAL back to the card (service + delivery fees are
+ * not refunded; under the free-delivery threshold the courier's AED 25
+ * return-collection fee is deducted) and then runs the exact same effects as
+ * a manual refund: settlement reversal, do-not-ship cancels, reverse pickups.
+ */
+const returns = require('../returns');
+
+router.get('/returns', requireAdmin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT rr.*, o.public_id, o.email, o.subtotal_cents, o.total_cents, o.rail,
+           o.delivered_at, o.refunded_at, u.name AS buyer_name
+    FROM return_requests rr
+    JOIN orders o ON o.id = rr.order_id
+    LEFT JOIN users u ON u.id = rr.buyer_id
+    ORDER BY CASE rr.status WHEN 'requested' THEN 0 ELSE 1 END, rr.created_at DESC
+    LIMIT 500`).all();
+  const itemsStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, s.name AS shop_name
+    FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
+  res.json({ returns: rows.map((r) => ({
+    ...returns.shape(r),
+    order: {
+      publicId: r.public_id, email: r.email, buyer: r.buyer_name || null, rail: r.rail,
+      itemsTotal: r.subtotal_cents / 100, total: r.total_cents / 100,
+      deliveredAt: r.delivered_at || null, refundedAt: r.refunded_at || null,
+      items: itemsStmt.all(r.order_id).map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, shop: i.shop_name })),
+    },
+    // Preview of what approval would refund (stamped for real on approve).
+    feePreview: returns.feeCents(r) / 100,
+    refundPreview: returns.refundCents(r) / 100,
+  })) });
+});
+
+router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
+  try {
+    const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
+    if (!rr) return res.status(404).json({ error: 'Return request not found' });
+    if (rr.status !== 'requested') return res.status(409).json({ error: 'This request was already decided' });
+    const order = db.prepare('SELECT * FROM orders WHERE id=?').get(rr.order_id);
+    if (order.refunded_at) return res.status(409).json({ error: 'Order already refunded' });
+    if (order.rail === 'connect') return res.status(409).json({ error: 'Connect-rail orders need the manual refund button' });
+
+    const fee = returns.feeCents(order);
+    const refund = returns.refundCents(order);
+
+    // Partial card refund first — if Stripe fails, nothing local changes.
+    // Orders from demo-payments mode have no PaymentIntent; they proceed
+    // without a card refund so the flow stays demonstrable before go-live.
+    const stripe = require('../stripe').getStripe();
+    if (stripe && order.stripe_payment_intent_id) {
+      await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id, amount: refund });
+    } else {
+      console.warn(`return ${rr.id} (${order.public_id}): approved without a card refund (demo mode / no PaymentIntent)`);
+    }
+
+    returns.applyRefundEffects(order);
+    db.prepare(`UPDATE return_requests SET status='approved', refund_cents=?, fee_cents=?, decided_at=datetime('now') WHERE id=?`)
+      .run(refund, fee, rr.id);
+
+    res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id)) });
+  } catch (e) { next(e); }
+});
+
+router.post('/returns/:id/decline', requireAdmin, (req, res) => {
+  const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
+  if (!rr) return res.status(404).json({ error: 'Return request not found' });
+  if (rr.status !== 'requested') return res.status(409).json({ error: 'This request was already decided' });
+  const reason = String((req.body || {}).reason || '').trim();
+  if (reason.length < 5) return res.status(400).json({ error: 'Give the buyer a short reason for the decline' });
+  db.prepare(`UPDATE return_requests SET status='declined', decline_reason=?, decided_at=datetime('now') WHERE id=?`)
+    .run(reason.slice(0, 500), rr.id);
+  res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id)) });
 });
 
 /* ---------------- Weekly settlements (consignment purchases) ----------------
