@@ -226,15 +226,18 @@
   .faq summary .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;color:var(--coral-deep);transition:transform .25s}
   .faq[open] summary .faq-tg{transform:rotate(45deg)}
   .faq .faq-a{padding:0 40px 22px 2px;font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.7}
-  /* maker testimonials on the sell page */
-  .qhead{margin:58px 0 26px}
+  /* maker testimonials on the sell page — sage feature band */
+  .mqband{background:var(--sage);border-radius:28px;padding:56px 48px}
+  .qhead{margin:0 0 30px;text-align:center}
   .mquotes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .mq{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:24px 22px;margin:0}
-  .mq blockquote{font-family:'Cormorant',Georgia,serif;font-size:18.5px;line-height:1.45;font-style:italic;color:var(--char);margin:0}
+  .mq{background:var(--paper);border-radius:18px;padding:24px 22px;margin:0;box-shadow:0 14px 34px -20px rgba(41,39,39,.3)}
+  .mqh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+  .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
+  .mqh .who b{display:block;font-size:13.5px;letter-spacing:.02em}
+  .mqh .who span{display:block;font-weight:600;color:var(--muted);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:2px}
+  .mq blockquote{font-family:'Cormorant',Georgia,serif;font-size:17.5px;line-height:1.45;font-style:italic;color:var(--char);margin:0}
   .mq blockquote::before{content:'\201C'}
   .mq blockquote::after{content:'\201D'}
-  .mq figcaption{margin-top:14px;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--char)}
-  .mq figcaption span{display:block;font-weight:600;color:var(--muted);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:3px}
 
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
@@ -488,9 +491,11 @@
     .faq summary{padding:14px 2px;font-size:15px}
     .faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}
     #view-sell section:last-of-type .sell p{font-size:15px;margin-bottom:18px!important}
-    .qhead{margin:36px 0 16px}
+    .mqband{padding:28px 20px}
+    .qhead{margin:0 0 18px}
     .mq{padding:18px 16px}
-    .mq blockquote{font-size:16.5px}
+    .mq blockquote{font-size:15.5px}
+    .mqh svg{width:40px;height:40px}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 
@@ -893,11 +898,17 @@
           <div class="step"><span class="nm">iv</span><div><h4>Sold? We come to you</h4><p>Our courier collects the piece from your door. Trove buys it from you at 80% of your price, and your money arrives with the weekly payout.</p></div></div>
         </div>
       </div>
-      <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2></div>
-      <div class="mquotes" id="quotesList">
-        <figure class="mq"><blockquote>I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.</blockquote><figcaption>Mara<span>Kiln &amp; Clay, Dubai</span></figcaption></figure>
-        <figure class="mq"><blockquote>I'd only ever sold at weekend markets. On trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote><figcaption>Nadia<span>Sable &amp; Stone, Abu Dhabi</span></figcaption></figure>
-        <figure class="mq"><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote><figcaption>Yasmin<span>Fern Apothecary, Abu Dhabi</span></figcaption></figure>
+    </div>
+  </section>
+  <section class="band" style="padding-top:0">
+    <div class="wrap">
+      <div class="mqband">
+        <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2></div>
+        <div class="mquotes" id="quotesList">
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#A85138"/></svg><div class="who"><b>Mara</b><span>Kiln &amp; Clay, Dubai</span></div></div><blockquote>I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg><div class="who"><b>Nadia</b><span>Sable &amp; Stone, Abu Dhabi</span></div></div><blockquote>I'd only ever sold at weekend markets. On trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#5E7E63"/></svg><div class="who"><b>Yasmin</b><span>Fern Apothecary, Abu Dhabi</span></div></div><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote></figure>
+        </div>
       </div>
     </div>
   </section>
@@ -1140,6 +1151,12 @@ function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c}
 function img(seed){return `https://picsum.photos/seed/trv${seed}/640/780`;}
 function aed(n){return 'AED '+n.toLocaleString();}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/* illustrated maker portraits for the testimonial cards (cycled by index) */
+const MAKER_AVATARS=[
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#A85138"/></svg>',
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg>',
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#5E7E63"/></svg>'
+];
 function vColor(v){return VENDORS[v].color;}
 function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
 
@@ -1854,7 +1871,7 @@ function applyContent(){
   const faq=cmsGet('sell.faq.items');
   if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
   const mq=cmsGet('sell.quotes.items');
-  if(Array.isArray(mq))$('quotesList').innerHTML=mq.map(q=>`<figure class="mq"><blockquote>${esc(q.quote)}</blockquote><figcaption>${esc(q.name)}<span>${esc(q.shop)}</span></figcaption></figure>`).join('');
+  if(Array.isArray(mq))$('quotesList').innerHTML=mq.map((q,i)=>`<figure class="mq"><div class="mqh">${MAKER_AVATARS[i%MAKER_AVATARS.length]}<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div></div><blockquote>${esc(q.quote)}</blockquote></figure>`).join('');
 }
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
