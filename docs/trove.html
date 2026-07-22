@@ -226,6 +226,15 @@
   .faq summary .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;color:var(--coral-deep);transition:transform .25s}
   .faq[open] summary .faq-tg{transform:rotate(45deg)}
   .faq .faq-a{padding:0 40px 22px 2px;font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.7}
+  /* maker testimonials on the sell page */
+  .qhead{margin:58px 0 26px}
+  .mquotes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .mq{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:24px 22px;margin:0}
+  .mq blockquote{font-family:'Cormorant',Georgia,serif;font-size:18.5px;line-height:1.45;font-style:italic;color:var(--char);margin:0}
+  .mq blockquote::before{content:'\201C'}
+  .mq blockquote::after{content:'\201D'}
+  .mq figcaption{margin-top:14px;font-size:12.5px;font-weight:700;letter-spacing:.04em;color:var(--char)}
+  .mq figcaption span{display:block;font-weight:600;color:var(--muted);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:3px}
 
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
@@ -409,6 +418,7 @@
     .pdp{gap:40px;padding:28px 0 70px}
     .fgrid{grid-template-columns:1fr 1fr;gap:36px 24px}
     .fgrid>div:first-child{grid-column:1/-1}
+    .mquotes{grid-template-columns:1fr;gap:12px}
     footer{padding:56px 0 32px}
   }
   @media(max-width:560px){
@@ -478,6 +488,9 @@
     .faq summary{padding:14px 2px;font-size:15px}
     .faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}
     #view-sell section:last-of-type .sell p{font-size:15px;margin-bottom:18px!important}
+    .qhead{margin:36px 0 16px}
+    .mq{padding:18px 16px}
+    .mq blockquote{font-size:16.5px}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 
@@ -879,6 +892,12 @@
           <div class="step"><span class="nm">iii</span><div><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div></div>
           <div class="step"><span class="nm">iv</span><div><h4>Sold? We come to you</h4><p>Our courier collects the piece from your door. Trove buys it from you at 80% of your price, and your money arrives with the weekly payout.</p></div></div>
         </div>
+      </div>
+      <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2></div>
+      <div class="mquotes" id="quotesList">
+        <figure class="mq"><blockquote>I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.</blockquote><figcaption>Mara<span>Kiln &amp; Clay, Dubai</span></figcaption></figure>
+        <figure class="mq"><blockquote>I'd only ever sold at weekend markets. On trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote><figcaption>Nadia<span>Sable &amp; Stone, Abu Dhabi</span></figcaption></figure>
+        <figure class="mq"><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote><figcaption>Yasmin<span>Fern Apothecary, Abu Dhabi</span></figcaption></figure>
       </div>
     </div>
   </section>
@@ -1834,6 +1853,8 @@ function applyContent(){
   if(Array.isArray(steps))$('sellStepsList').innerHTML=steps.map((s,i)=>`<div class="step"><span class="nm">${romanNum(i+1)}</span><div><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div></div>`).join('');
   const faq=cmsGet('sell.faq.items');
   if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
+  const mq=cmsGet('sell.quotes.items');
+  if(Array.isArray(mq))$('quotesList').innerHTML=mq.map(q=>`<figure class="mq"><blockquote>${esc(q.quote)}</blockquote><figcaption>${esc(q.name)}<span>${esc(q.shop)}</span></figcaption></figure>`).join('');
 }
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);

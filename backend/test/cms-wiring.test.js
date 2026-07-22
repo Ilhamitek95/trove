@@ -28,7 +28,7 @@ const storeHtml = fs.readFileSync(path.join(DOCS, 'trove.html'), 'utf8');
 const adminHtml = fs.readFileSync(path.join(DOCS, 'trove-admin.html'), 'utf8');
 
 // Lists the storefront re-renders from JS (flexible length — no static wiring).
-const JS_RENDERED = new Set(['sell.hero.facts', 'sell.steps.items', 'sell.faq.items']);
+const JS_RENDERED = new Set(['sell.hero.facts', 'sell.steps.items', 'sell.quotes.items', 'sell.faq.items']);
 
 const entities = (s) => s.replace(/&/g, '&amp;');
 const norm = (s) => s.replace(/\s+/g, ' ').trim();

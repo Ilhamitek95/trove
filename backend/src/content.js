@@ -97,6 +97,15 @@ const DEFAULTS = {
       { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door. Trove buys it from you at 80% of your price, and your money arrives with the weekly payout.' },
     ],
   },
+  'sell.quotes': {
+    eyebrow: 'From our makers',
+    heading: 'In their words.',
+    items: [
+      { quote: "I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.", name: 'Mara', shop: 'Kiln & Clay, Dubai' },
+      { quote: "I'd only ever sold at weekend markets. On trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.", name: 'Nadia', shop: 'Sable & Stone, Abu Dhabi' },
+      { quote: "The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.", name: 'Yasmin', shop: 'Fern Apothecary, Abu Dhabi' },
+    ],
+  },
   'sell.faq': {
     eyebrow: 'Good to know',
     heading: 'Your questions, answered honestly.',
@@ -123,7 +132,7 @@ const SECTIONS = Object.keys(DEFAULTS);
 /* ---- validation -------------------------------------------------------- */
 
 // Long-form fields get more room than labels and headings.
-const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a', 'blurb']);
+const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a', 'blurb', 'quote']);
 const MAX_SHORT = 200;
 const MAX_LONG = 1200;
 
@@ -131,6 +140,7 @@ const MAX_LONG = 1200;
 const LIST_BOUNDS = {
   'sell.hero.facts': [2, 6],
   'sell.steps.items': [2, 6],
+  'sell.quotes.items': [1, 6],
   'sell.faq.items': [1, 12],
 };
 
