@@ -90,10 +90,28 @@
     .quote,.deco{display:none}
   }
   @media(max-width:560px){
-    .brandside{padding:26px 22px}
-    .brandside .bmid{margin:18px 0 6px}
+    /* one-screen sign-in: slim brand strip + tight form rhythm, no scrolling */
+    .brandside{padding:16px 22px 18px}
+    .brandside .logo{font-size:30px}
+    .brandside .bmid{margin:10px 0 0;max-width:none}
+    .bmid .eyebrow{font-size:10px;margin-bottom:6px}
+    .bmid h1{font-size:clamp(26px,7.5vw,32px)}
+    .bmid p{display:none}
+    .authside{padding:18px 22px 16px}
+    .tabs{margin-bottom:12px}
+    .tabs button{padding:10px;font-size:13px}
+    .auth h2{font-size:24px}
+    .auth .lede{font-size:13px;margin:4px 0 14px}
+    .field{margin-bottom:10px}
+    .field label{margin-bottom:4px}
+    .field input{padding:11px 13px}
+    .submit{padding:13px;margin-top:4px}
+    .or{margin:10px 0}
+    .social button{padding:10px}
+    .social{flex-wrap:wrap}
+    .swap{margin-top:13px;font-size:13px}
+    .demo{margin-top:9px;font-size:10.5px}
     input,select{font-size:16px!important}
-    .social{flex-direction:column}
   }
 </style>
 </head>
