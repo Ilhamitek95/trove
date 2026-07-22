@@ -180,10 +180,14 @@
   .house .pts{display:flex;flex-direction:column;gap:16px;margin-bottom:36px}
   .house .pts div b{font-family:'Cormorant';font-size:22px;font-weight:600;display:block;line-height:1.25}
   .house .pts div span{font-size:13px;line-height:1.55;color:var(--char);opacity:.72;font-weight:500;max-width:44ch;display:block}
-  .house .gallery{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  /* tile geometry is fixed by the grid (rows split the column height; images
+     sit absolute inside) so layout never depends on whether an image loaded */
+  .house .gallery{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0}
   .house .gallery .g{position:relative;overflow:hidden;min-height:170px;cursor:pointer}
   .house .gallery .g .grad{position:absolute;inset:0}
-  .house .gallery .g img{filter:saturate(.9)}
+  .house .gallery .g img{position:absolute;inset:0;z-index:1;filter:saturate(.9);transition:transform .45s ease}
+  .house .gallery .g:hover img{transform:scale(1.05)}
+  .house .gallery .gname{position:absolute;left:12px;bottom:12px;z-index:2;background:rgba(253,247,245,.9);backdrop-filter:blur(6px);color:var(--char);font-size:11px;font-weight:700;letter-spacing:.02em;padding:6px 12px;border-radius:999px;max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* vendors */
   .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
@@ -378,8 +382,9 @@
     .hero .wrap{grid-template-columns:1fr;gap:40px}
     .hero-img{max-width:480px}
     .house,.sell,.pdp{grid-template-columns:1fr}
-    .house .gallery{grid-template-columns:1fr 1fr 1fr 1fr}
-    .house .gallery .g{min-height:120px}
+    /* stacked: square tiles inset to the copy's own margins */
+    .house .gallery{grid-template-rows:auto auto;gap:10px;padding:0 60px 44px}
+    .house .gallery .g{aspect-ratio:1/1;min-height:0;border-radius:16px}
     .pgrid{grid-template-columns:repeat(2,1fr)}
     .marquee .wrap{grid-template-columns:1fr 1fr;gap:18px}
     .marquee .mk{justify-content:flex-start}
@@ -432,8 +437,9 @@
     .card .add{margin-top:9px;padding:11px}
     .cat-rail{gap:12px}
     .cat .name{font-size:18px}
-    .house .gallery{grid-template-columns:1fr 1fr}
-    .house .gallery .g{min-height:150px}
+    .house .gallery{gap:9px;padding:0 30px 36px}
+    .house .gallery .g{border-radius:14px}
+    .house .gallery .gname{font-size:10px;padding:5px 9px;left:8px;bottom:8px;max-width:calc(100% - 16px)}
     .step{gap:14px}
     .step .nm{width:30px;font-size:26px}
     .faq summary{font-size:15.5px}
@@ -1217,7 +1223,7 @@ function renderHome(){
 
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
   $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="" decoding="async" onerror="imgRetry(this)"></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
 
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
   $('vendorGrid').innerHTML=vs.map(([k,v])=>`<article class="vcard" onclick="openVendor('${k}')">
