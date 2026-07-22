@@ -237,6 +237,9 @@
   .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
   .mqh .who b{display:block;font-size:13.5px;letter-spacing:.02em}
   .mqh .who span{display:block;font-weight:600;color:var(--muted);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:2px}
+  .mqh .who a.who-link{display:block;font-weight:600;color:var(--coral-deep);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:2px;cursor:pointer;text-decoration:none}
+  .mqh .who a.who-link::after{content:' \2192'}
+  .mqh .who a.who-link:hover{text-decoration:underline}
   .mq blockquote{font-family:'Cormorant',Georgia,serif;font-size:17.5px;line-height:1.45;font-style:italic;color:var(--char);margin:0}
   .mq blockquote::before{content:'\201C'}
   .mq blockquote::after{content:'\201D'}
@@ -1875,9 +1878,24 @@ function applyContent(){
   const mq=cmsGet('sell.quotes.items');
   if(Array.isArray(mq))$('quotesList').innerHTML=mq.map((q,i)=>`<figure class="mq"><div class="mqh">${MAKER_AVATARS[i%MAKER_AVATARS.length]}<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div></div><blockquote>${esc(q.quote)}</blockquote></figure>`).join('');
 }
+/* upgrade testimonial shop lines to links when the named shop exists in the
+ * catalogue (matched by name, so it works in demo, local and prod alike;
+ * unmatched shops stay plain text) */
+function linkQuoteShops(){
+  document.querySelectorAll('#quotesList .who span').forEach(sp=>{
+    const nm=(sp.textContent.split(',')[0]||'').trim().toLowerCase();
+    const k=Object.keys(VENDORS).find(key=>(VENDORS[key].name||'').toLowerCase()===nm);
+    if(!k)return;
+    const a=document.createElement('a');
+    a.className='who-link';a.textContent=sp.textContent;
+    a.setAttribute('aria-label','Visit '+VENDORS[k].name);
+    a.onclick=()=>openVendor(k);
+    sp.replaceWith(a);
+  });
+}
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
-  applyContent(); renderHome(); buildCatFilters(); updateCartCount();
+  applyContent(); linkQuoteShops(); renderHome(); buildCatFilters(); updateCartCount();
 }
 boot();
 </script>
