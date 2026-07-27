@@ -1381,7 +1381,7 @@ function initMakerCarousel(){
     moved=Math.max(moved,Math.abs(e.clientX-sx));
     MK.off=soff-(e.clientX-sx);
     const dt=e.timeStamp-lastTs;
-    if(dt>0)MK.vx=(e.clientX-lastX)/dt;
+    if(dt>0)MK.vx=Math.max(-3,Math.min(3,(e.clientX-lastX)/dt)); // clamp: no teleporting flings from freak event timings
     lastX=e.clientX;lastTs=e.timeStamp;
   });
   const endDrag=()=>{
