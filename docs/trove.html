@@ -196,15 +196,15 @@
   .house .gallery .gname{position:absolute;left:12px;bottom:12px;z-index:2;background:rgba(253,247,245,.9);backdrop-filter:blur(6px);color:var(--char);font-size:11px;font-weight:700;letter-spacing:.02em;padding:6px 12px;border-radius:999px;max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* vendors */
-  /* Meet-the-makers auto-carousel: two identical sets slide seamlessly right→left.
-     Each .vset carries its own trailing gap so translateX(-50%) is exactly one set. */
-  .vcarousel{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
-  .vtrack{display:flex;width:max-content;animation:vslide 54s linear infinite}
+  /* Meet-the-makers auto-carousel: JS-driven so it drifts right→left on its own
+     AND can be grabbed/swiped/flung on any device. Two identical sets; the wrap
+     is seamless because one set is exactly half the track. */
+  .vcarousel{overflow:hidden;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+  .vcarousel:active{cursor:grabbing}
+  .vcarousel img{-webkit-user-drag:none}
+  .vtrack{display:flex;width:max-content;will-change:transform}
   .vset{display:flex;gap:30px;padding-right:30px;flex:0 0 auto}
   .vset .vcard{width:360px;flex:0 0 360px}
-  @keyframes vslide{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-  .vcarousel:hover .vtrack,.vcarousel:active .vtrack{animation-play-state:paused}
-  @media(prefers-reduced-motion:reduce){.vtrack{animation:none}.vcarousel{overflow-x:auto;mask-image:none;-webkit-mask-image:none}}
   .vcard{cursor:pointer;text-align:center}
   .vcard .cover{aspect-ratio:16/10;border-radius:18px;overflow:hidden;position:relative;margin-bottom:-34px;transition:transform .3s}
   .vcard:hover .cover{transform:translateY(-4px)}
@@ -1355,7 +1355,59 @@ function renderHome(){
     <p>${v.bio}</p>
     <div class="vmeta"><span><b>${np}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}</div>
   </article>`;}).join('');
-  $('vendorGrid').innerHTML=`<div class="vtrack" style="animation-duration:${Math.max(30,vs.length*9)}s"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
+  $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
+  initMakerCarousel();
+}
+
+/* Makers carousel drive: auto-drift right→left; grab/swipe/fling anywhere; taps still open shops.
+ * Re-render safe — handlers bind once to the viewport, the track is re-read each init. */
+const MK={off:0,setW:0,speed:0,dragging:false,hovering:false,vx:0,resumeAt:0,bound:false,lastT:0,track:null};
+function initMakerCarousel(){
+  const vp=$('vendorGrid'); MK.track=vp.querySelector('.vtrack'); if(!MK.track)return;
+  const set=MK.track.querySelector('.vset');
+  MK.setW=set.getBoundingClientRect().width;
+  MK.speed=matchMedia('(prefers-reduced-motion: reduce)').matches?0:MK.setW/Math.max(30,set.children.length*9); // px per second
+  if(MK.setW)MK.off=((MK.off%MK.setW)+MK.setW)%MK.setW;
+  if(MK.bound)return;
+  MK.bound=true;
+  if(matchMedia('(hover: hover)').matches){ // tap-synthesised mouseenter would freeze touch devices
+    vp.addEventListener('mouseenter',()=>MK.hovering=true);
+    vp.addEventListener('mouseleave',()=>MK.hovering=false);
+  }
+  let sx=0,soff=0,moved=0,lastX=0,lastTs=0;
+  vp.addEventListener('pointerdown',e=>{MK.dragging=true;MK.vx=0;moved=0;sx=lastX=e.clientX;soff=MK.off;lastTs=e.timeStamp;try{vp.setPointerCapture(e.pointerId);}catch(_){}});
+  vp.addEventListener('pointermove',e=>{
+    if(!MK.dragging)return;
+    moved=Math.max(moved,Math.abs(e.clientX-sx));
+    MK.off=soff-(e.clientX-sx);
+    const dt=e.timeStamp-lastTs;
+    if(dt>0)MK.vx=(e.clientX-lastX)/dt;
+    lastX=e.clientX;lastTs=e.timeStamp;
+  });
+  const endDrag=()=>{
+    if(!MK.dragging)return;
+    MK.dragging=false;MK.resumeAt=performance.now()+2600;
+    if(moved>8){ // a real drag — swallow the click so the card underneath doesn't open
+      const kill=ev=>{ev.stopPropagation();ev.preventDefault();};
+      vp.addEventListener('click',kill,{capture:true,once:true});
+      setTimeout(()=>vp.removeEventListener('click',kill,{capture:true}),150);
+    }
+  };
+  vp.addEventListener('pointerup',endDrag);
+  vp.addEventListener('pointercancel',endDrag);
+  addEventListener('resize',()=>{const s=MK.track&&MK.track.querySelector('.vset');const w=s&&s.getBoundingClientRect().width;if(w)MK.setW=w;});
+  requestAnimationFrame(tickMakers);
+}
+function tickMakers(t){
+  requestAnimationFrame(tickMakers);
+  const dt=MK.lastT?Math.min(64,t-MK.lastT):16; MK.lastT=t;
+  if(!MK.track||!MK.setW)return;
+  if(!MK.dragging){
+    if(Math.abs(MK.vx)>0.02){MK.off-=MK.vx*dt;MK.vx*=Math.pow(.94,dt/16);} // fling momentum, eased out
+    else if(!MK.hovering&&t>MK.resumeAt)MK.off+=MK.speed*dt/1000;          // gentle auto drift
+  }
+  MK.off=((MK.off%MK.setW)+MK.setW)%MK.setW;
+  MK.track.style.transform=`translate3d(${-MK.off}px,0,0)`;
 }
 
 /* SHOP */
