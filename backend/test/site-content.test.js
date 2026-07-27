@@ -23,7 +23,7 @@ after(async () => { await ctx.close(); });
 test('public content serves the built-in defaults', async () => {
   const r = await ctx.api('GET', '/api/content');
   assert.equal(r.status, 200);
-  assert.equal(r.data.home.hero.h1, 'Curated|for *Living*');
+  assert.equal(r.data.home.hero.h1, 'Curated|for *Living*.');
   assert.equal(r.data.sell.faq.items.length, 7);
   assert.deepEqual(r.data.home.weekly.productIds, []);
   assert.match(r.data.site.promo.text, /Free delivery/);

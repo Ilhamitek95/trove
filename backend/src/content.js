@@ -30,7 +30,7 @@ const DEFAULTS = {
   },
   'home.hero': {
     eyebrow: 'Thoughtfully gathered',
-    h1: 'Curated|for *Living*',
+    h1: 'Curated|for *Living*.',
     lead: 'Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.',
     ctaShop: 'Shop the Collection',
     ctaSell: 'Explore the Marketplace',
