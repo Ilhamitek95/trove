@@ -196,7 +196,15 @@
   .house .gallery .gname{position:absolute;left:12px;bottom:12px;z-index:2;background:rgba(253,247,245,.9);backdrop-filter:blur(6px);color:var(--char);font-size:11px;font-weight:700;letter-spacing:.02em;padding:6px 12px;border-radius:999px;max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* vendors */
-  .vgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+  /* Meet-the-makers auto-carousel: two identical sets slide seamlessly left→right.
+     Each .vset carries its own trailing gap so translateX(-50%) is exactly one set. */
+  .vcarousel{overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
+  .vtrack{display:flex;width:max-content;animation:vslide 54s linear infinite}
+  .vset{display:flex;gap:30px;padding-right:30px;flex:0 0 auto}
+  .vset .vcard{width:360px;flex:0 0 360px}
+  @keyframes vslide{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+  .vcarousel:hover .vtrack,.vcarousel:active .vtrack{animation-play-state:paused}
+  @media(prefers-reduced-motion:reduce){.vtrack{animation:none}.vcarousel{overflow-x:auto;mask-image:none;-webkit-mask-image:none}}
   .vcard{cursor:pointer;text-align:center}
   .vcard .cover{aspect-ratio:16/10;border-radius:18px;overflow:hidden;position:relative;margin-bottom:-34px;transition:transform .3s}
   .vcard:hover .cover{transform:translateY(-4px)}
@@ -412,7 +420,8 @@
     .marquee .wrap{grid-template-columns:1fr 1fr;gap:18px}
     .marquee .mk{justify-content:flex-start}
     .cat-rail{grid-template-columns:repeat(3,1fr)}
-    .vgrid{grid-template-columns:1fr}
+    .vset{gap:18px;padding-right:18px}
+    .vset .vcard{width:300px;flex:0 0 300px}
     /* .browse-layout's own padding beats .wrap's (later in the sheet), so
        the side padding must be restated here or the grid runs edge-to-edge */
     .browse-layout{grid-template-columns:1fr;gap:0;padding:36px 26px 80px}
@@ -744,7 +753,7 @@
     <div class="wrap">
       <div class="band-head"><span class="eyebrow" data-cms="home.makers.eyebrow">The Trove Marketplace</span><h2 data-cms="home.makers.heading">Meet the makers</h2>
         <p data-cms="home.makers.intro">Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.</p></div>
-      <div class="vgrid" id="vendorGrid"></div>
+      <div class="vcarousel" id="vendorGrid" aria-label="Meet the makers"></div>
     </div>
   </section>
 
@@ -1334,8 +1343,9 @@ function renderHome(){
   $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
     <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
 
-  const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
-  $('vendorGrid').innerHTML=vs.map(([k,v])=>{
+  // Every maker rides the carousel; the second set is a visual clone for the seamless loop.
+  const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house);
+  const makerCards=vs.map(([k,v])=>{
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
     return `<article class="vcard" onclick="openVendor('${k}')">
     <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${v.img||img('shop-'+k)}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
@@ -1345,6 +1355,7 @@ function renderHome(){
     <p>${v.bio}</p>
     <div class="vmeta"><span><b>${np}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}</div>
   </article>`;}).join('');
+  $('vendorGrid').innerHTML=`<div class="vtrack" style="animation-duration:${Math.max(30,vs.length*9)}s"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
 }
 
 /* SHOP */
