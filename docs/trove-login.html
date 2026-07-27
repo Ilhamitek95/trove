@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>trove · sign in</title>
+<title>Trove · Sign in</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+  @font-face{font-family:'Dream Avenue';src:url('/fonts/DreamAvenue.woff2') format('woff2'),url('/fonts/DreamAvenue.woff') format('woff');font-weight:400;font-style:normal;font-display:swap}
   :root{
-    --font-display:'Italiana','Cormorant',Georgia,serif;
-    --rose:#DBC7BD; --coral:#F19A82; --coral-deep:#A85138; --coral-hover:#E98B70; --cream:#FDF7F5;
+    --font-display:'Dream Avenue',Georgia,serif;
+    --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
-    --rose-tint:#F2E9E4; --line:rgba(41,39,39,.12); --muted:#7E6F67; --ink-80:rgba(41,39,39,.78);
+    --rose-tint:#F2E9E4; --line:rgba(41,39,39,.12); --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
     --stripe:#635BFF;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -24,25 +25,25 @@
   ::selection{background:var(--coral);color:var(--char)}
   a{color:inherit}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
-  h1,h2,h3{font-family:'Cormorant',Georgia,serif;font-weight:500}
-  .serif{font-family:'Cormorant',Georgia,serif}
+  h1,h2,h3{font-family:var(--font-display);font-weight:500}
+  .serif{font-family:var(--font-display)}
 
   .shell{display:grid;grid-template-columns:1fr 1fr;min-height:100vh}
 
   /* left brand panel */
   .brandside{background:var(--rose);padding:56px 64px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden;transition:background .5s}
   .brandside.seller{background:var(--char)}
-  .brandside .logo{font-family:var(--font-display);font-size:40px;font-weight:600;line-height:1;transition:color .5s}
+  .brandside .logo{font-family:var(--font-display);font-size:40px;font-weight:600;line-height:1;transition:color .5s;text-decoration:none}
   .brandside.seller .logo,.brandside.seller .bmid h1,.brandside.seller .bmid p,.brandside.seller .quote,.brandside.seller .quote cite{color:var(--cream)}
   .bmid{max-width:24ch}
-  .bmid .eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--coral-deep);font-weight:700;display:block;margin-bottom:18px;transition:color .5s}
-  .brandside.seller .bmid .eyebrow{color:var(--coral)}
+  .bmid .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--accent-ink);font-weight:700;display:block;margin-bottom:18px;transition:color .5s}
+  .brandside.seller .bmid .eyebrow{color:rgba(253,247,245,.8)}
   .bmid h1{font-family:var(--font-display);font-size:clamp(40px,4.5vw,62px);line-height:1.0;font-weight:400}
-  .bmid h1 em{font-style:italic;color:var(--coral-deep)}
-  .brandside.seller .bmid h1 em{color:var(--coral)}
+  .bmid h1 em{font-style:normal;color:var(--coral)}
+  .brandside.seller .bmid h1 em{color:var(--rose)}
   .bmid p{font-size:16px;color:var(--ink-80);font-weight:400;margin-top:18px;line-height:1.6}
-  .quote{font-family:'Cormorant';font-size:20px;font-style:italic;color:var(--char);opacity:.8;max-width:30ch}
-  .quote cite{display:block;font-style:normal;font-family:'Quicksand';font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;opacity:.6;margin-top:10px}
+  .quote{font-family:var(--font-display);font-size:20px;color:var(--char);opacity:.8;max-width:30ch}
+  .quote cite{display:block;font-style:normal;font-family:'Quicksand';font-size:11.5px;letter-spacing:.06em;font-weight:700;opacity:.6;margin-top:10px}
   .deco{position:absolute;right:-80px;bottom:-80px;width:280px;height:280px;border-radius:50%;background:rgba(253,247,245,.25);pointer-events:none}
 
   /* right auth panel */
@@ -55,11 +56,11 @@
   .auth h2{font-size:34px;font-weight:500;line-height:1.05}
   .auth .lede{font-size:14px;color:var(--muted);font-weight:500;margin:6px 0 28px}
   .field{margin-bottom:16px}
-  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:7px}
   .field input{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
   .field input:focus{border-color:var(--char)}
   .field .fl{display:flex;justify-content:space-between;align-items:center}
-  .field .fl a{font-size:11.5px;color:var(--coral-deep);font-weight:600;text-decoration:none}
+  .field .fl a{font-size:11.5px;color:var(--accent-ink);font-weight:600;text-decoration:none}
   .field .fl a:hover{text-decoration:underline}
   .pw{position:relative}
   .pw input{padding-right:48px}
@@ -70,9 +71,9 @@
   .pweye.off .eye-off{display:block}
   .submit{width:100%;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s;display:flex;align-items:center;justify-content:center;gap:9px;margin-top:8px}
   .submit:hover{background:#3B3737}
-  .submit.seller{background:var(--coral-deep)}
+  .submit.seller{background:var(--char)}
   .submit.seller:hover{filter:brightness(1.08)}
-  .or{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+  .or{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--muted);font-size:11.5px;letter-spacing:.05em;font-weight:600}
   .or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
   .social{display:flex;gap:10px}
   .social button{flex:1;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-weight:600;font-size:13px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
@@ -121,13 +122,13 @@
 <div class="shell">
   <!-- BRAND PANEL -->
   <div class="brandside" id="brandside">
-    <a class="logo serif" href="/">trove</a>
+    <a class="logo serif" href="/" aria-label="Trove — home" id="logoLink"><img id="logoImg" src="/img/trove-wordmark.svg" alt="trove" style="height:34px;width:auto;display:block" onerror="this.closest('.logo').textContent='trove'"></a>
     <div class="bmid">
       <span class="eyebrow" id="bEyebrow">Welcome back</span>
       <h1 id="bTitle">Beautiful things, <em>gathered</em>.</h1>
-      <p id="bText">Sign in to pick up where you left off — your saved finds, your shops, your trove.</p>
+      <p id="bText">Sign in to pick up where you left off — your saved finds, your shops, your Trove.</p>
     </div>
-    <div class="quote" id="bQuote">"Thoughtfully gathered. Beautifully curated."<cite>— trove</cite></div>
+    <div class="quote" id="bQuote">"Thoughtfully gathered. Beautifully curated."<cite>— Trove</cite></div>
     <div class="deco"></div>
   </div>
 
@@ -141,7 +142,7 @@
         </button>
         <button id="tabSell" onclick="setMode('sell')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>
-          I sell on trove
+          I sell on Trove
         </button>
       </div>
 
@@ -155,7 +156,7 @@
         <div class="pw"><input id="pass" type="password" placeholder="••••••••">
           <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('pass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
       <div class="field" id="shopField" style="display:none"><label>Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
-      <div id="authErr" style="display:none;color:var(--coral-deep);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
+      <div id="authErr" style="display:none;color:var(--accent-ink);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
       <button class="submit" id="submitBtn" onclick="signIn()">Sign in</button>
 
@@ -165,7 +166,7 @@
         <button id="phoneBtn" onclick="togglePhone()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg><span id="phoneBtnLabel">UAE mobile</span></button>
       </div>
 
-      <div class="swap" id="swap">New to trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
+      <div class="swap" id="swap">New to Trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
       <div class="demo"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Trove is in early preview — payments aren't switched on just yet.</div>
     </div>
   </div>
@@ -177,10 +178,10 @@
 const $=id=>document.getElementById(id);
 let mode='shop', registering=false;
 const COPY={
-  shop:{eyebrow:'Welcome back',title:'Beautiful things, <em>gathered</em>.',text:'Sign in to pick up where you left off — your saved finds, your shops, your trove.',
-        quote:'"Thoughtfully gathered. Beautifully curated."',cite:'— trove',
+  shop:{eyebrow:'Welcome back',title:'Beautiful things, <em>gathered</em>.',text:'Sign in to pick up where you left off — your saved finds, your shops, your Trove.',
+        quote:'"Thoughtfully gathered. Beautifully curated."',cite:'— Trove',
         aTitle:'Sign in to shop',aLede:'Your account, orders, and saved finds.'},
-  sell:{eyebrow:'For sellers',title:'Your shop, <em>beautifully</em> run.',text:'Sign in to manage products, orders and payouts from your trove dashboard.',
+  sell:{eyebrow:'For sellers',title:'Your shop, <em>beautifully</em> run.',text:'Sign in to manage products, orders and payouts from your Trove dashboard.',
         quote:'"Where makers meet home."',cite:'— the Trove Marketplace',
         aTitle:'Sign in to your shop',aLede:'Manage products, orders and payments.'}
 };
@@ -189,6 +190,8 @@ function setMode(m){
   document.getElementById('tabShop').classList.toggle('on',m==='shop');
   document.getElementById('tabSell').classList.toggle('on',m==='sell');
   document.getElementById('brandside').classList.toggle('seller',m==='sell');
+  const li=document.getElementById('logoImg'); // charcoal wordmark on clay, cream variant on the charcoal seller panel
+  if(li)li.src=m==='sell'?'/img/trove-wordmark-cream.svg':'/img/trove-wordmark.svg';
   const c=COPY[m];
   document.getElementById('bEyebrow').textContent=c.eyebrow;
   document.getElementById('bTitle').innerHTML=c.title;
@@ -211,7 +214,7 @@ function updateRegisterUI(){
   document.getElementById('aTitle').textContent=registering?'Create your account':c.aTitle;
   document.getElementById('swap').innerHTML=registering
     ? `Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>`
-    : (mode==='sell'?`Not selling yet? <a href="/apply">Apply to open a shop</a>`:`New to trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
+    : (mode==='sell'?`Not selling yet? <a href="/apply">Apply to open a shop</a>`:`New to Trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
   $('nameField').style.display=registering?'block':'none';
   $('shopField').style.display=(registering&&mode==='sell')?'block':'none';
   // Phone mode: the mobile number is the identifier. Email stays visible while

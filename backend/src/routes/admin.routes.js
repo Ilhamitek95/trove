@@ -95,7 +95,8 @@ router.patch('/products/:id', requireAdmin, (req, res) => {
   if (b.status !== undefined && !['live', 'draft', 'hidden'].includes(b.status))
     return res.status(400).json({ error: 'status must be live, draft or hidden' });
   if (b.category != null) {
-    const catErr = require('../categories').categoryError(b.category);
+    const shop = db.prepare('SELECT is_house FROM shops WHERE id=?').get(p.shop_id);
+    const catErr = require('../categories').categoryError(b.category, { house: !!(shop && shop.is_house) });
     if (catErr) return res.status(422).json({ error: catErr.message });
   }
   db.prepare('UPDATE products SET status=COALESCE(?,status), category=COALESCE(?,category) WHERE id=?')

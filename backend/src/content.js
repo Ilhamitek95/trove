@@ -10,7 +10,8 @@
  * boot. Deleting an override falls back to the default.
  *
  * Heading strings may use two tokens the storefront renders safely:
- *   *word*  → italic accent      |  → line break
+ *   *word*  → Orange accent (never italic — the display face has no italic)
+ *   |       → line break
  *
  * Every saved string passes the same banned-language rules CI enforces on
  * checked-in copy (src/copy-rules.js) — the CMS can't drift where the repo
@@ -24,15 +25,15 @@ const DEFAULTS = {
     text: 'Delivering across Dubai & Abu Dhabi · Free delivery on orders over AED 500',
   },
   'site.footer': {
-    blurb: 'Thoughtfully chosen homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.',
-    legal: '© 2026 trove · Dubai, UAE',
+    blurb: 'Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.',
+    legal: '© 2026 Trove · Dubai, UAE',
   },
   'home.hero': {
     eyebrow: 'Thoughtfully gathered',
     h1: 'Curated|for *Living*',
-    lead: 'Discover thoughtfully chosen homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.',
-    ctaShop: 'Explore the trove',
-    ctaSell: 'Open a shop →',
+    lead: 'Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.',
+    ctaShop: 'Shop the Collection',
+    ctaSell: 'Explore the Marketplace',
     tagLine: 'Our own line',
     tagName: 'Trove Collection →',
   },
@@ -52,13 +53,13 @@ const DEFAULTS = {
     productIds: [],
   },
   'home.collection': {
-    eyebrow: 'Curated by trove',
-    h2: 'Trove Collection.|*Our own, made well.*',
-    intro: 'Timeless pieces chosen to become part of your everyday home. Curated by us, made by makers we trust, priced honestly.',
+    eyebrow: 'The Trove Collection · Designed by Trove',
+    h2: 'Our own, made well.',
+    intro: 'Timeless pieces designed to become part of your everyday home. Designed by Trove, made with quality materials and considered details — created to feel at home from the moment they arrive.',
     points: [
-      { title: 'Authentic', text: "Every piece is chosen by hand and made in small batches by real makers — each one comes out a little different, and that's the point." },
-      { title: 'Homely', text: 'Warm, everyday pieces made to be lived with — poured, thrown and stitched to make a house feel like home, not kept behind glass.' },
-      { title: 'Made yours', text: 'Spot a personalisation box on a piece? That maker will add your name or a few words of your choosing — made just for you.' },
+      { title: 'Thoughtfully designed', text: 'Every detail has purpose — quality, functionality and beauty considered in every piece.' },
+      { title: 'Made to last', text: 'We believe in buying fewer, better things: timeless design, honest materials, made to be enjoyed for years.' },
+      { title: 'Made yours', text: 'Spot a personalisation option? That piece can be made just for you or someone special.' },
     ],
     cta: 'Shop the Collection',
   },
@@ -68,7 +69,7 @@ const DEFAULTS = {
     intro: 'Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.',
   },
   'home.sellBand': {
-    eyebrow: 'Sell on trove',
+    eyebrow: 'Sell on Trove',
     h2: 'Make things at home? Give them a *shopfront*.',
     intro: 'No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price and takes care of delivery and the storefront — you keep your brand and your craft.',
     cta: 'See how it works',
@@ -80,9 +81,9 @@ const DEFAULTS = {
     ],
   },
   'sell.hero': {
-    eyebrow: 'Sell on trove',
+    eyebrow: 'Sell on Trove',
     h1: "You make the pieces.|We'll be the *shop*.",
-    intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.',
+    intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.',
     ctaApply: 'Start your application',
     ctaHow: 'See how it works',
     facts: ['Free to join', 'No trade licence needed', 'Courier collects from your door', 'A real person reviews every shop'],
@@ -102,7 +103,7 @@ const DEFAULTS = {
     heading: 'In their words.',
     items: [
       { quote: "I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.", name: 'Mara', shop: 'Kiln & Clay, Dubai' },
-      { quote: "I'd only ever sold at weekend markets. On trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.", name: 'Nadia', shop: 'Sable & Stone, Abu Dhabi' },
+      { quote: "I'd only ever sold at weekend markets. On Trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.", name: 'Nadia', shop: 'Sable & Stone, Abu Dhabi' },
       { quote: "The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.", name: 'Yasmin', shop: 'Fern Apothecary, Abu Dhabi' },
     ],
   },
@@ -110,13 +111,13 @@ const DEFAULTS = {
     eyebrow: 'Good to know',
     heading: 'Your questions, answered honestly.',
     items: [
-      { q: "I've never sold online before — is that okay?", a: "That's exactly who trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a trove shop." },
+      { q: "I've never sold online before — is that okay?", a: "That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop." },
       { q: 'Do I need a trade licence?', a: 'No. Trove buys your pieces from you and resells them to shoppers, so you can sell here without any licence. If you do have one, mention it when you apply — it unlocks extra payout options as you grow.' },
       { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee. You decide each piece's price. When one sells, Trove buys it from you at 80% of that price, and that's the whole arrangement. If nothing sells, you owe nothing." },
       { q: 'How does delivery work?', a: "You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it wrapped and ready. You can follow each order's journey in your dashboard." },
       { q: 'How and when do I get paid?', a: "Weekly, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered plus a 7-day buffer; if a buyer returns a piece after that, the amount is simply adjusted on a following payout. Your Payments page shows exactly what's coming and when." },
-      { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed." },
-      { q: 'Can I keep selling on Instagram or at markets?', a: 'Of course. Your trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.' },
+      { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed." },
+      { q: 'Can I keep selling on Instagram or at markets?', a: 'Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.' },
     ],
   },
   'sell.closing': {

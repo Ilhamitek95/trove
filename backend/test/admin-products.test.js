@@ -58,8 +58,8 @@ test('admin tag and category edits validate like seller ones', async () => {
   res = await ctx.api('PATCH', `/api/admin/products/${productId}`, { cookie: adminCookie, body: { category: 'Skincare' } });
   assert.equal(res.status, 422);
 
-  res = await ctx.api('PATCH', `/api/admin/products/${productId}`, { cookie: adminCookie, body: { category: 'Home' } });
-  assert.equal(res.data.product.category, 'Home');
+  res = await ctx.api('PATCH', `/api/admin/products/${productId}`, { cookie: adminCookie, body: { category: 'Home & Living' } });
+  assert.equal(res.data.product.category, 'Home & Living');
 });
 
 test('admin suggest-tags gates on the key like the seller one', async () => {

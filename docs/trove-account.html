@@ -5,18 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>trove · my account</title>
+<title>Trove · My account</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'Dream Avenue';src:url('/fonts/DreamAvenue.woff2') format('woff2'),url('/fonts/DreamAvenue.woff') format('woff');font-weight:400;font-style:normal;font-display:swap}
   :root{
-    --rose:#DBC7BD; --coral:#F19A82; --coral-deep:#A85138; --coral-hover:#E98B70; --cream:#FDF7F5;
+    --font-display:'Dream Avenue',Georgia,serif;
+    --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --peach:#FCC998; --blush:#F8D7E4;
     --moss:#CFDBBE; --sky:#BED3DF; --paper:#FFFCFA; --rose-tint:#F2E9E4; --cream-2:#F8F0EA;
     --line:rgba(41,39,39,.10); --line-soft:rgba(41,39,39,.06);
-    --muted:#7E6F67; --ink-80:rgba(41,39,39,.78);
-    --green:#5E7E63; --green-bg:#E4ECE5; --sky-text:#2E5871;
+    --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+    --green:#292727; --green-bg:#E4ECE5; --sky-text:#292727; /* status ink: Charcoal on tinted surfaces */
     --r:16px; --shadow:0 16px 44px -28px rgba(41,39,39,.30);
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -27,17 +29,17 @@
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   img{display:block;width:100%;height:100%;object-fit:cover}
   input,select,textarea{font-family:inherit}
-  h1,h2,h3,h4{font-family:'Cormorant',Georgia,serif;font-weight:500;letter-spacing:.002em}
-  .serif{font-family:'Cormorant',Georgia,serif}
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:500;letter-spacing:.002em}
+  .serif{font-family:var(--font-display)}
 
   .app{display:grid;grid-template-columns:262px 1fr;min-height:100vh}
 
   /* sidebar */
   .side{background:var(--paper);border-right:1px solid var(--line);padding:26px 18px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
-  .side .logo{font-family:'Cormorant';font-size:34px;font-weight:600;padding:0 10px 4px;line-height:1}
+  .side .logo{font-family:var(--font-display);font-size:34px;font-weight:600;padding:0 10px 4px;line-height:1}
   .user-card{margin:22px 0 16px;padding:16px 12px;text-align:center;border:1px solid var(--line);border-radius:14px}
-  .user-card .av{width:60px;height:60px;border-radius:50%;background:var(--coral);display:grid;place-items:center;color:var(--char);font-family:'Cormorant';font-size:28px;font-weight:600;margin:0 auto 10px}
-  .user-card .nm{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1}
+  .user-card .av{width:60px;height:60px;border-radius:50%;background:var(--rose);display:grid;place-items:center;color:var(--char);font-family:var(--font-display);font-size:28px;font-weight:600;margin:0 auto 10px}
+  .user-card .nm{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1}
   .user-card .em{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:3px}
   nav.menu{display:flex;flex-direction:column;gap:2px}
   .mitem{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;font-size:14px;font-weight:600;color:var(--ink-80);transition:.14s;position:relative}
@@ -66,7 +68,7 @@
   .btn{display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:999px;font-weight:600;font-size:13px;letter-spacing:.03em;transition:.18s}
   .btn svg{width:15px;height:15px}
   .btn-dark{background:var(--char);color:var(--cream)} .btn-dark:hover{background:#3B3737}
-  .btn-coral{background:var(--coral);color:var(--char)} .btn-coral:hover{background:var(--coral-hover)}
+  .btn-coral{background:var(--char);color:var(--cream)} .btn-coral:hover{background:#3B3737}
   .btn-ghost{border:1px solid var(--line);color:var(--char);background:var(--paper)} .btn-ghost:hover{border-color:var(--char)}
   .btn-sm{padding:8px 15px;font-size:12px}
 
@@ -74,16 +76,16 @@
 
   /* overview */
   .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
-  .stat .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
-  .stat .big{font-family:'Cormorant';font-size:40px;font-weight:600;line-height:1;margin:8px 0 2px}
+  .stat .lbl{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  .stat .big{font-family:var(--font-display);font-size:40px;font-weight:600;line-height:1;margin:8px 0 2px}
   .stat .s{font-size:12px;color:var(--muted);font-weight:600}
   .hello{font-size:clamp(32px,4vw,46px);font-weight:400;margin-bottom:4px}
-  .hello em{font-style:italic;color:var(--coral-deep)}
+  .hello em{font-style:normal}
 
   /* tracking */
   .track{margin-top:18px}
   .track .th{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:20px}
-  .track .th .oid{font-family:'Cormorant';font-size:22px;font-weight:600}
+  .track .th .oid{font-family:var(--font-display);font-size:22px;font-weight:600}
   /* flex-start, not center: a wrapped label ("Out for delivery" on phones)
      makes its step taller, and centering pushed the other dots off the line */
   .progress{display:flex;align-items:flex-start;margin:8px 4px 6px}
@@ -99,29 +101,29 @@
   .quick-links{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
   .ql{border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.16s;background:var(--paper)}
   .ql:hover{border-color:var(--rose);transform:translateY(-3px)}
-  .ql .ic{width:38px;height:38px;border-radius:10px;background:var(--rose-tint);display:grid;place-items:center;color:var(--coral-deep);margin-bottom:12px}
+  .ql .ic{width:38px;height:38px;border-radius:10px;background:var(--rose-tint);display:grid;place-items:center;color:var(--accent-ink);margin-bottom:12px}
   .ql .ic svg{width:19px;height:19px;stroke-width:1.7}
-  .ql .t{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1.05}
+  .ql .t{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.05}
   .ql .d{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
 
   /* order cards */
   .order-card{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:18px;background:var(--paper)}
   .order-card .oc-head{display:flex;align-items:center;gap:22px;padding:16px 22px;background:var(--cream-2);border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
   .order-card .oc-head .h{display:flex;flex-direction:column}
-  .order-card .oc-head .h .k{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .order-card .oc-head .h .k{font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700}
   .order-card .oc-head .h .v{font-size:14px;font-weight:700;margin-top:2px}
-  .order-card .oc-head .h .v.tot{font-family:'Cormorant';font-size:19px}
+  .order-card .oc-head .h .v.tot{font-family:var(--font-display);font-size:19px}
   .order-card .oc-head .stat{margin-left:auto}
   .opill{font-size:11px;font-weight:700;letter-spacing:.04em;padding:6px 14px;border-radius:999px}
   .opill.delivered{background:var(--green-bg);color:var(--green)}
   .opill.shipped{background:var(--sky);color:var(--sky-text)}
   .opill.processing{background:var(--peach);color:#946321}
   .oc-body{padding:18px 22px}
-  .oc-shop{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);font-weight:700;display:flex;align-items:center;gap:7px;margin:6px 0 12px}
+  .oc-shop{font-size:11px;letter-spacing:.05em;color:var(--taupe);font-weight:700;display:flex;align-items:center;gap:7px;margin:6px 0 12px}
   .oc-shop .gem{width:7px;height:7px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
   .oline{display:flex;align-items:center;gap:14px;margin-bottom:12px}
   .oline .im{width:50px;height:60px;border-radius:9px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
-  .oline .nm{font-family:'Cormorant';font-size:17px;font-weight:600;line-height:1.1}
+  .oline .nm{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.1}
   .oline .qt{font-size:12px;color:var(--muted);font-weight:600}
   .oline .pr{margin-left:auto;font-weight:600;font-size:14px}
   /* per-shop shipment tracking */
@@ -131,7 +133,7 @@
   .ship-hd .oc-shop{margin:0}
   .ship-note{font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:12px}
   .ship-track{font-size:12.5px;font-weight:700;text-align:center;margin-top:6px;color:var(--char)}
-  .ship-track a{color:var(--coral-deep)}
+  .ship-track a{color:var(--accent-ink)}
   .ship-items{margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)}
   .ship-items .oline{margin-bottom:10px}
   .ship-items .oline:last-child{margin-bottom:0}
@@ -143,28 +145,28 @@
   .pcard .ph{position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:var(--rose);margin-bottom:12px}
   .pcard .ph .grad{position:absolute;inset:0}
   .pcard .ph img{position:absolute;inset:0;filter:saturate(.9)}
-  .pcard .heart{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(253,247,245,.92);display:grid;place-items:center;color:var(--coral-deep);transition:.15s}
+  .pcard .heart{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(253,247,245,.92);display:grid;place-items:center;color:var(--accent-ink);transition:.15s}
   .pcard .heart:hover{background:var(--paper);transform:scale(1.08)}
-  .pcard .vr{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--taupe);font-weight:700}
+  .pcard .vr{font-size:10.5px;letter-spacing:.05em;color:var(--taupe);font-weight:700}
   .pcard h3{font-size:19px;font-weight:600;line-height:1.1;margin:4px 0 6px}
   .pcard .row{display:flex;justify-content:space-between;align-items:center}
   .pcard .price{font-weight:600;font-size:14px}
   .empty-state{text-align:center;padding:70px 20px}
-  .empty-state .big{font-family:'Cormorant';font-size:30px;font-weight:500;margin-bottom:6px}
+  .empty-state .big{font-family:var(--font-display);font-size:30px;font-weight:500;margin-bottom:6px}
   .empty-state p{color:var(--muted);font-weight:500;margin-bottom:20px}
 
   /* address + payment rows */
   .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
   .addr-card{border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;position:relative;background:var(--paper)}
   .addr-card.def{border-color:var(--rose);background:var(--rose-tint)}
-  .addr-card .badge{position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--coral-deep)}
+  .addr-card .badge{position:absolute;top:18px;right:18px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--accent-ink)}
   .addr-card h4{font-size:19px;font-weight:600;margin-bottom:8px}
   .addr-card p{font-size:13.5px;color:var(--ink-80);font-weight:500;line-height:1.6}
   .addr-card .acts{display:flex;gap:14px;margin-top:14px;font-size:12.5px;font-weight:600}
   .addr-card .acts a{color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:1px;cursor:pointer}
-  .addr-card .acts a.danger{color:var(--coral-deep);border-color:transparent}
+  .addr-card .acts a.danger{color:var(--accent-ink);border-color:transparent}
   .add-tile{border:1.5px dashed var(--line);border-radius:var(--r);display:grid;place-items:center;cursor:pointer;min-height:150px;color:var(--muted);font-weight:600;transition:.15s}
-  .add-tile:hover{border-color:var(--coral);color:var(--coral-deep);background:var(--paper)}
+  .add-tile:hover{border-color:var(--coral);color:var(--accent-ink);background:var(--paper)}
   .add-tile .inner{text-align:center}
   .add-tile svg{width:26px;height:26px;margin-bottom:8px;stroke-width:1.6}
 
@@ -174,18 +176,18 @@
   .pay-row .pn{font-weight:700;font-size:14px}
   .pay-row .pe{font-size:12px;color:var(--muted);font-weight:600}
   .pay-row .pacts{margin-left:auto;display:flex;gap:12px;align-items:center;font-size:12.5px;font-weight:600}
-  .pay-row .pacts .def-badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--coral-deep);font-weight:700}
+  .pay-row .pacts .def-badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);font-weight:700}
   .pay-row .pacts a{cursor:pointer;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:1px}
-  .pay-row .pacts a.danger{color:var(--coral-deep);border:none}
+  .pay-row .pacts a.danger{color:var(--accent-ink);border:none}
   .secure-note{display:flex;gap:10px;align-items:flex-start;background:var(--rose-tint);border-radius:12px;padding:14px 16px;font-size:12.5px;color:var(--ink-80);font-weight:500;margin-top:6px;line-height:1.5}
-  .secure-note svg{flex-shrink:0;color:var(--coral-deep);margin-top:1px}
+  .secure-note svg{flex-shrink:0;color:var(--accent-ink);margin-top:1px}
 
   /* following */
   .follow-row{display:flex;align-items:center;gap:16px;border-bottom:1px solid var(--line-soft);padding:18px 0}
   .follow-row:last-child{border:none}
-  .follow-row .fav{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:24px;font-weight:600;flex-shrink:0}
-  .follow-row .fn{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1}
-  .follow-row .fl{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:3px}
+  .follow-row .fav{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-size:24px;font-weight:600;flex-shrink:0}
+  .follow-row .fn{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1}
+  .follow-row .fl{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:3px}
   .follow-row .facts{margin-left:auto;display:flex;gap:10px}
   .followbtn{padding:9px 18px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--char);transition:.15s}
   .followbtn.on{background:var(--char);color:var(--cream)}
@@ -194,7 +196,7 @@
   /* profile form */
   .form-card{max-width:560px}
   .field{margin-bottom:18px}
-  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:7px}
   .field input{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
   .field input:focus{border-color:var(--char)}
   .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -206,7 +208,7 @@
   .sw.on{background:var(--coral)}
   .sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:var(--paper);transition:.2s}
   .sw.on::after{left:22px}
-  .sub-h{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 0 14px}
+  .sub-h{font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:6px 0 14px}
 
   /* drawer */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.3s}
@@ -225,7 +227,7 @@
 
   /* ratings & reviews */
   .rev-nudge{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:20px}
-  .rev-nudge h3{font-family:'Cormorant',serif;font-size:22px;font-weight:600;margin-bottom:2px}
+  .rev-nudge h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:2px}
   .rev-nudge .sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:14px}
   .rev-row{display:flex;align-items:center;gap:13px;padding:10px 0;border-top:1px solid var(--line-soft,rgba(41,39,39,.06))}
   .rev-row .im{width:46px;height:56px;border-radius:10px;position:relative;overflow:hidden;flex-shrink:0}
@@ -234,7 +236,7 @@
   .rev-row .sl{font-size:12px;color:var(--muted);font-weight:600}
   .rev-row .btn{margin-left:auto;white-space:nowrap}
   .myrev{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:20px}
-  .myrev h3{font-family:'Cormorant',serif;font-size:22px;font-weight:600;margin-bottom:12px}
+  .myrev h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:12px}
   .myrev .r{padding:13px 0;border-top:1px solid var(--line-soft,rgba(41,39,39,.06))}
   .myrev .rh{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .myrev .rstars{color:var(--coral);letter-spacing:2px;font-size:14px}
@@ -242,13 +244,13 @@
   .myrev .rw{font-size:12px;color:var(--muted);font-weight:600;margin-left:auto}
   .myrev p{font-size:13px;color:var(--ink-80,rgba(41,39,39,.78));font-weight:500;margin-top:5px;line-height:1.6}
   .myrev .racts{margin-top:7px;display:flex;gap:14px;font-size:12.5px;font-weight:700}
-  .myrev .racts a{cursor:pointer;color:var(--coral-deep)}
+  .myrev .racts a{cursor:pointer;color:var(--accent-ink)}
   .myrev .rimgs{display:flex;gap:7px;margin-top:8px}
   .myrev .rimgs img{width:52px;height:52px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
   .rev-scrim{position:fixed;inset:0;background:rgba(41,39,39,.38);z-index:120;display:none;place-items:center;padding:20px}
   .rev-scrim.open{display:grid}
   .rev-modal{background:var(--paper);border-radius:20px;padding:26px 28px;width:540px;max-width:94vw;max-height:88vh;overflow-y:auto;box-shadow:0 30px 70px rgba(41,39,39,.28)}
-  .rev-modal h3{font-family:'Cormorant',serif;font-size:24px;font-weight:600}
+  .rev-modal h3{font-family:var(--font-display);font-size:24px;font-weight:600}
   .rev-modal .sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:16px}
   .starpick{display:flex;gap:6px;margin:6px 0 16px}
   .starpick button{font-size:31px;line-height:1;color:#DCCFC6;cursor:pointer;transition:.12s;background:none;border:none;padding:2px}
@@ -260,7 +262,7 @@
   .rev-photos .ph img{width:100%;height:100%;object-fit:cover}
   .rev-photos .ph button{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:rgba(41,39,39,.65);color:var(--cream);border:none;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
   .rev-photos .addph{width:74px;height:74px;border-radius:10px;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--muted);cursor:pointer;font-size:22px;background:none}
-  .rev-photos .addph:hover{border-color:var(--coral);color:var(--coral-deep)}
+  .rev-photos .addph:hover{border-color:var(--coral);color:var(--accent-ink)}
   .rtfield{width:100%;font-family:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--paper);color:var(--char);margin-bottom:10px}
   .rtmoney{margin-top:14px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.55;background:var(--cream-2,#F8F0EA);border-radius:10px;padding:11px 13px}
   .rtmoney b{color:var(--char)}
@@ -289,7 +291,7 @@
     .mh-btn{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:999px;padding:10px 16px;font-size:13px;font-weight:600;background:var(--paper);color:var(--char)}
     .mh-btn:active{transform:scale(.96)}
     .mh-btn svg{width:17px;height:17px}
-    .mh-sec{font-family:'Cormorant',Georgia,serif;font-size:19px;font-weight:600;color:var(--char)}
+    .mh-sec{font-family:var(--font-display);font-size:19px;font-weight:600;color:var(--char)}
   }
   @media(max-width:560px){
     .content{padding-top:22px}
@@ -302,7 +304,7 @@
   <!-- SIDEBAR -->
   <aside class="side" id="sideMenu">
     <button class="side-close" aria-label="Close menu" onclick="closeMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
-    <a class="logo serif" href="/">trove</a>
+    <a class="logo serif" href="/" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('.logo').textContent='trove'"></a>
     <div class="user-card">
       <div class="av" id="uAv">L</div>
       <div class="nm" id="uName">Layla</div>
@@ -338,14 +340,14 @@
       <!-- OVERVIEW -->
       <div class="view active" id="view-overview">
         <h2 class="hello">Hello, <em>Layla</em>.</h2>
-        <p style="color:var(--muted);font-weight:500;margin-bottom:24px">Here's what's happening with your trove.</p>
+        <p style="color:var(--muted);font-weight:500;margin-bottom:24px">Here's what's happening with your Trove.</p>
         <div class="grid-3">
           <div class="card stat"><div class="lbl">Active orders</div><div class="big" id="oActive">1</div><div class="s">1 on the way</div></div>
           <div class="card stat"><div class="lbl">Saved items</div><div class="big" id="oSaved">3</div><div class="s">across 3 shops</div></div>
           <div class="card stat"><div class="lbl">Following</div><div class="big" id="oFollow">3</div><div class="s">shops you love</div></div>
         </div>
         <div class="card track">
-          <div class="th"><div><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">TRV-9F2K</div></div>
+          <div class="th"><div><div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">TRV-9F2K</div></div>
             <span class="opill shipped">On the way</span></div>
           <div class="progress">
             <div class="pstep done"><div class="pline"></div><div class="dot">✓</div><div class="pl">Ordered</div></div>
@@ -386,7 +388,7 @@
         </div>
         <div id="cardList"></div>
         <div class="secure-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-          <span>Your card details are tokenised and held securely by Stripe — they never touch trove's servers. (In this prototype no real card is stored.)</span></div>
+          <span>Your card details are tokenised and held securely by Stripe — they never touch Trove's servers. (In this prototype no real card is stored.)</span></div>
       </div>
 
       <!-- FOLLOWING -->
@@ -441,7 +443,7 @@
     <div class="rev-photos" id="rvPhotos"></div>
     <input type="file" id="rvFile" accept="image/*" multiple style="display:none" onchange="revAddFiles(this.files)">
     <div style="display:flex;gap:10px;align-items:center;margin-top:20px">
-      <a id="rvDelete" style="display:none;cursor:pointer;color:var(--coral-deep);font-size:13px;font-weight:700" onclick="deleteReview()">Remove review</a>
+      <a id="rvDelete" style="display:none;cursor:pointer;color:var(--accent-ink);font-size:13px;font-weight:700" onclick="deleteReview()">Remove review</a>
       <span style="flex:1"></span>
       <button class="btn btn-ghost" onclick="closeReview()">Cancel</button>
       <button class="btn btn-coral" id="rvSave" onclick="saveReview()">Share review</button>
@@ -498,7 +500,19 @@ let ME=null;
 const $=id=>document.getElementById(id);
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
 function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
-function img(seed){return `https://picsum.photos/seed/trv${seed}/200/250`;}
+/* Interim brand-motif product tiles until real photography lands (matches the storefront's generator). */
+const PH_BG=['#F2E9E4','#F8F0EA','#E4ECE5','#FCEBE4'];
+const PH_TINT=['#DBC7BD','#CAD5CC','#BD9C8C','#F8D7E4','#CFDBBE','#BED3DF'];
+function phHash(s){s=String(s);let h=7;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+function img(seed){
+  const h=phHash(seed),bg=PH_BG[h%PH_BG.length];
+  let a=PH_TINT[h%6],b=PH_TINT[(2+(h>>3))%6];
+  if(a===b)b=PH_TINT[(1+(h>>3))%6];
+  if((a==='#F8D7E4'&&b==='#CAD5CC')||(a==='#CAD5CC'&&b==='#F8D7E4'))b='#DBC7BD';
+  const r1=70+(h%26),r2=38+((h>>4)%20),rot=(h>>2)%180,cx=60+((h>>5)%80),cy=70+((h>>7)%110);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250"><rect width="200" height="250" fill="${bg}"/><ellipse cx="${cx}" cy="${cy}" rx="${r1}" ry="${Math.round(r1*.82)}" fill="${a}" opacity=".9" transform="rotate(${rot} ${cx} ${cy})"/><ellipse cx="${200-cx}" cy="${250-cy}" rx="${r2}" ry="${Math.round(r2*.78)}" fill="${b}" opacity=".85" transform="rotate(${(rot+64)%180} ${200-cx} ${250-cy})"/></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
 let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
@@ -511,7 +525,7 @@ const SHIP_STEP={processing:'Processing',shipped:'Shipped',out_for_delivery:'Out
 const SHIP_PILL={processing:'processing',shipped:'shipped',out_for_delivery:'shipped',delivered:'delivered',cancelled:'processing'};
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function shipTracker(status){
-  if(status==='cancelled') return `<div class="ship-note" style="color:var(--coral-deep)">This parcel was cancelled.</div>`;
+  if(status==='cancelled') return `<div class="ship-note" style="color:var(--accent-ink)">This parcel was cancelled.</div>`;
   const cur=Math.max(0,SHIP_FLOW.indexOf(status)), delivered=status==='delivered';
   return `<div class="progress">`+SHIP_FLOW.map((s,i)=>{
     const done=i<cur||delivered, now=i===cur&&!delivered;
@@ -539,7 +553,7 @@ function renderOrders(){
       body=sh.map(s=>{
         const color=(s.shop&&s.shop.color)||'#BD9C8C';
         const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div></div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
         const last=(s.timeline||[]).slice(-1)[0];
         const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
         return `<div class="ship">
@@ -556,7 +570,7 @@ function renderOrders(){
       body=Object.entries(groups).map(([name,g])=>
         `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
         g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#BD9C8C')}"></div></div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
       ).join('');
     }
     return `<div class="order-card">
@@ -585,16 +599,16 @@ function renderOverview(){
     const sh=latest.shipments||[];
     // Headline progress = the least-advanced parcel, so "on the way" never overstates.
     const overall=sh.length?SHIP_FLOW[Math.min(...sh.map(s=>{const i=SHIP_FLOW.indexOf(s.status);return i<0?0:i;}))]:'processing';
-    track.innerHTML=`<div class="th"><div><div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">${latest.id}</div></div><span class="opill ${cls}">${lbl}</span></div>`
+    track.innerHTML=`<div class="th"><div><div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">${latest.id}</div></div><span class="opill ${cls}">${lbl}</span></div>`
       + shipTracker(overall)
-      + `<div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">${sh.length>1?sh.length+' parcels, tracked separately — ':''}<a href="#" onclick="go('orders');return false" style="color:var(--coral-deep);font-weight:700">view details →</a></div>`;
+      + `<div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">${sh.length>1?sh.length+' parcels, tracked separately — ':''}<a href="#" onclick="go('orders');return false" style="color:var(--accent-ink);font-weight:700">view details →</a></div>`;
   } else if(track){ track.style.display='none'; }
 }
 
 /* ---------- WISHLIST ---------- */
 function renderWishlist(){
   $('wishPill').textContent=wishlist.length; $('oSaved').textContent=wishlist.length;
-  if(!wishlist.length){$('wishWrap').innerHTML=`<div class="empty-state"><div class="big">Nothing saved yet</div><p>Tap the heart on anything you love and it'll wait for you here.</p><a class="btn btn-coral" href="/">Discover the trove</a></div>`;return;}
+  if(!wishlist.length){$('wishWrap').innerHTML=`<div class="empty-state"><div class="big">Nothing saved yet</div><p>Tap the heart on anything you love and it'll wait for you here.</p><a class="btn btn-coral" href="/">Discover Trove</a></div>`;return;}
   $('wishWrap').innerHTML=`<div class="pgrid">${wishlist.map((w,i)=>{
     const V=VENDORS[w.v];
     return `<div class="pcard">
@@ -727,7 +741,7 @@ function renderMyReviews(){
       <div class="rh"><span class="rstars">${rstars(r.rating)}</span>
         <span class="rt">${esc(r.productName||r.shopName)}</span>
         ${r.productId?`<span style="font-size:11.5px;color:var(--muted);font-weight:600">${esc(r.shopName)}</span>`:'<span style="font-size:11.5px;color:var(--muted);font-weight:600">Shop review</span>'}
-        ${r.status==='hidden'?'<span style="font-size:10.5px;font-weight:700;color:var(--coral-deep);background:var(--rose-tint,#F2E9E4);border-radius:999px;padding:3px 9px">hidden by trove</span>':''}
+        ${r.status==='hidden'?'<span style="font-size:10.5px;font-weight:700;color:var(--accent-ink);background:var(--rose-tint,#F2E9E4);border-radius:999px;padding:3px 9px">hidden by Trove</span>':''}
         <span class="rw">${fmtDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
       ${r.body?`<p>${esc(r.body)}</p>`:''}
       ${r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}">`).join('')}</div>`:''}
@@ -825,7 +839,7 @@ function returnsFootHTML(o){
     if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
       <button class="btn btn-ghost btn-sm" onclick="withdrawReturn('${o.id}')">Withdraw request</button>`;
     if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved — ${aed(rq.refund)} is on its way back to your card${rq.fee?` (${aed(rq.fee)} collection fee deducted)`:''}. Our courier will be in touch to collect.</span>`;
-    return `<span class="ship-note" style="margin:0;color:var(--coral-deep)">Return declined — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
+    return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">Return declined — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
   }
   if(o.refundedAt)return `<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
   if(r.eligible)return `<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)}</span>

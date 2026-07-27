@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS products (
   shop_id          INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
   name             TEXT NOT NULL,
   description      TEXT DEFAULT '',
-  category         TEXT DEFAULT 'Home',
+  category         TEXT DEFAULT 'Home & Living',
   price_cents      INTEGER NOT NULL,
   compare_at_cents INTEGER,
   stock            INTEGER NOT NULL DEFAULT 0,

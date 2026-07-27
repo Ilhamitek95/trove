@@ -77,9 +77,9 @@ const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.pr
 const { normalizeTags } = require('../tags');
 
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags } = req.body || {};
+  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
-  const catErr = require('../categories').categoryError(category);
+  const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
   const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
@@ -110,7 +110,7 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   if (!p) return res.status(404).json({ error: 'Not found' });
   const b = req.body || {};
   if (b.category != null) {
-    const catErr = require('../categories').categoryError(b.category);
+    const catErr = require('../categories').categoryError(b.category, { house: !!req.shop.is_house });
     if (catErr) return res.status(422).json({ error: catErr.message });
   }
   db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),

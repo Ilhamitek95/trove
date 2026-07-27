@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>Page not found — trove</title>
+<title>Page not found — Trove</title>
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'Dream Avenue';src:url('/fonts/DreamAvenue.woff2') format('woff2'),url('/fonts/DreamAvenue.woff') format('woff');font-weight:400;font-style:normal;font-display:swap}
   :root{
-    --font-display:'Italiana','Cormorant',Georgia,serif;
-    --rose:#DBC7BD; --coral:#F19A82; --coral-deep:#A85138; --coral-hover:#E98B70;
+    --font-display:'Dream Avenue',Georgia,serif;
+    --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727;
     --cream:#FDF7F5; --sage:#CAD5CC; --char:#292727; --peach:#FCC998;
-    --muted:#7E6F67; --ink-80:rgba(41,39,39,.78);
+    --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{min-height:100vh;background:var(--cream);color:var(--char);font-family:'Quicksand',system-ui,sans-serif;
@@ -23,14 +24,14 @@
   ::selection{background:var(--coral);color:var(--char)}
   .card{max-width:520px;text-align:center}
   .art{width:200px;height:150px;margin:0 auto 30px;display:block}
-  .eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--coral-deep);font-weight:700}
+  .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--ink-80);font-weight:700}
   h1{font-family:var(--font-display);font-weight:400;font-size:clamp(38px,6vw,56px);line-height:1.05;margin:16px 0 14px}
-  h1 em{font-style:italic;color:var(--coral-deep)}
+  h1 em{font-style:normal;color:var(--coral)}
   p{color:var(--ink-80);max-width:42ch;margin:0 auto 30px}
   .ctas{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;align-items:center}
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;
        font-size:13.5px;letter-spacing:.05em;text-decoration:none;transition:.2s}
-  .btn-coral{background:var(--coral);color:var(--char)}
+  .btn-coral{background:var(--char);color:var(--cream)}
   .btn-coral:hover{background:var(--coral-hover);transform:translateY(-2px)}
   .quiet{font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rose);padding-bottom:2px}
   .quiet:hover{color:var(--char)}
@@ -55,9 +56,9 @@
   </svg>
   <span class="eyebrow">404 · Page not found</span>
   <h1>This page has <em>wandered off</em></h1>
-  <p>The link may be old, or the piece may have found a new home. Everything worth keeping is still in the trove.</p>
+  <p>The link may be old, or the piece may have found a new home. Everything worth keeping is still on Trove.</p>
   <div class="ctas">
-    <a class="btn btn-coral" href="/">Back to the trove</a>
+    <a class="btn btn-coral" href="/">Back to Trove</a>
     <a class="quiet" href="/#vendors">Meet our makers</a>
   </div>
 </main>

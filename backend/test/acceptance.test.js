@@ -112,5 +112,5 @@ test('prohibited category: listing soap is refused with a clear 422', async () =
     body: { name: 'Test Item', price: 30, category: 'Gadgets' },
   });
   assert.equal(other.status, 422);
-  assert.match(other.data.error, /isn't one of Trove's categories/);
+  assert.match(other.data.error, /isn't one of the Trove Marketplace's categories/);
 });

@@ -5,21 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>trove — a curated marketplace</title>
+<title>Trove — Curated for Living</title>
+<meta name="description" content="Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://picsum.photos">
-<link rel="preconnect" href="https://fastly.picsum.photos">
-<!-- Display: Italiana (Google Fonts; Cormorant is the graceful fallback) · Body: Quicksand -->
-<link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Display: Dream Avenue (self-hosted webfont, drop files in docs/fonts/) · Body: Quicksand -->
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @font-face{font-family:'Dream Avenue';src:url('/fonts/DreamAvenue.woff2') format('woff2'),url('/fonts/DreamAvenue.woff') format('woff');font-weight:400;font-style:normal;font-display:swap}
   :root{
-    --font-display:'Italiana','Cormorant',Georgia,serif;
+    --font-display:'Dream Avenue',Georgia,serif;
     /* brand palette — 2026 brand book */
     --rose:#DBC7BD;        /* Clay Beige */
-    --coral:#F19A82;       /* Orange — CTAs, highlights */
-    --coral-deep:#A85138;  /* derived deep Orange, AA-legible for small text */
-    --coral-hover:#E98B70; /* Orange hover, keeps Charcoal text AA */
+    --coral:#F19A82;       /* Orange — display accents only; never paired with Charcoal, never small text */
+    --accent-ink:#292727;  /* Charcoal — the accent ink for small text and links (Orange fails contrast there) */
     --cream:#FDF7F5;       /* Cream — default background */
     --sage:#CAD5CC;        /* Sage Green */
     --char:#292727;        /* Charcoal */
@@ -33,7 +32,7 @@
     --rose-tint:#F2E9E4;
     --line:rgba(41,39,39,.10);
     --line-soft:rgba(41,39,39,.07);
-    --muted:#7E6F67;
+    --muted:rgba(41,39,39,.62);
     --ink-80:rgba(41,39,39,.78);
     --r:18px;
     --shadow:0 18px 50px -28px rgba(41,39,39,.30);
@@ -43,7 +42,7 @@
   body{overflow-x:clip}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
        -webkit-font-smoothing:antialiased;line-height:1.6;font-weight:500;letter-spacing:.005em}
-  ::selection{background:var(--coral);color:var(--char)}
+  ::selection{background:var(--rose);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   /* touch feel: no grey tap flash; our own pressed states instead */
@@ -58,10 +57,10 @@
   .mnav,.filters,.drawer .dbody{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   img{display:block;width:100%;height:100%;object-fit:cover}
   .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
-  .serif{font-family:'Cormorant',Georgia,serif}
-  .eyebrow{font-family:'Quicksand';font-weight:600;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--coral-deep)}
-  h1,h2,h3,h4{font-family:'Cormorant',Georgia,serif;font-weight:500;letter-spacing:.002em}
-  .hero h1,.band-head h2,.house h2,#view-sell h1{font-family:var(--font-display)}
+  .serif{font-family:var(--font-display)}
+  .eyebrow{font-family:'Quicksand';font-weight:600;font-size:12px;letter-spacing:.12em;color:var(--ink-80)}
+  h1,h2,h3,h4{font-family:var(--font-display);font-weight:500;letter-spacing:.002em}
+  h1 em,h2 em,h3 em{font-style:normal;color:var(--coral)}
 
   /* ---------- HEADER ---------- */
   .promo{background:var(--char);color:var(--cream)}
@@ -69,6 +68,10 @@
   header.top{position:sticky;top:0;z-index:60;background:rgba(253,247,245,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
   .nav{display:flex;align-items:center;gap:34px;height:84px}
   .brand{font-family:var(--font-display);font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
+  /* official wordmark asset (drop in docs/img/); the typed name is only the onerror fallback */
+  .brand img{height:34px;width:auto;display:block}
+  .mn-brand img{height:28px;width:auto;display:block}
+  footer .brand img{height:38px;width:auto;display:block}
   .nav .links{display:flex;gap:30px;margin-left:14px;font-size:13.5px;font-weight:600;letter-spacing:.04em}
   .nav .links a{padding:4px 0;color:var(--ink-80);position:relative}
   .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
@@ -80,7 +83,7 @@
   .search input{border:none;outline:none;background:none;flex:1;font-family:inherit;font-size:13px;color:var(--char)}
   .icon-btn{position:relative;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;color:var(--char);transition:background .15s}
   .icon-btn:hover{background:var(--rose-tint)}
-  .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--coral);color:var(--char);border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
+  .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--char);color:var(--cream);border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
   .cart-count.hide{display:none}
   .menu-btn,.search-btn{display:none}
 
@@ -91,7 +94,7 @@
   .mn-brand{font-family:var(--font-display);font-size:32px;line-height:1}
   .mn-search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:12px 18px;color:var(--muted);margin-bottom:12px}
   .mn-search input{border:none;outline:none;background:none;flex:1;min-width:0;font-family:inherit;font-size:16px;color:var(--char)}
-  .mn-link{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 2px;font-family:'Cormorant',Georgia,serif;font-size:24px;font-weight:600;border-bottom:1px solid var(--line-soft);cursor:pointer}
+  .mn-link{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 2px;font-family:var(--font-display);font-size:24px;font-weight:600;border-bottom:1px solid var(--line-soft);cursor:pointer}
   .mn-link span{color:var(--taupe);font-size:18px}
   .mn-foot{margin-top:auto;padding-top:22px;display:flex;flex-direction:column;gap:14px;font-size:14px;font-weight:600;color:var(--ink-80)}
   .mn-foot a{display:flex;align-items:center;gap:11px}
@@ -106,7 +109,7 @@
   .hero .wrap{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
   .hero .lead .eyebrow{margin-bottom:24px;display:block}
   .hero h1{font-size:clamp(52px,7vw,92px);line-height:.96;font-weight:400;letter-spacing:-.01em}
-  .hero h1 em{font-style:italic;color:var(--coral-deep)}
+  .hero h1 em{font-style:normal;color:var(--coral)}
   .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
   .hero .ctas{display:flex;align-items:center;gap:24px}
   .hero-img{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:5/6;background:var(--rose)}
@@ -114,14 +117,14 @@
   .hero-img img{position:absolute;inset:0;filter:saturate(.92)}
   .hero-tag{position:absolute;left:22px;bottom:22px;background:rgba(253,247,245,.92);backdrop-filter:blur(6px);border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
   .hero-tag .d{width:34px;height:34px;border-radius:9px;background:var(--char)}
-  .hero-tag .l{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .hero-tag .n{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1}
+  .hero-tag .l{font-size:10.5px;letter-spacing:.09em;color:var(--muted);font-weight:600}
+  .hero-tag .n{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1}
   .marquee{margin-top:42px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:26px 0}
   .marquee .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
   .marquee .mk{display:flex;align-items:center;justify-content:center;gap:13px}
   .marquee .mk .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--char)}
-  .marquee .mk .tx b{display:block;font-family:'Cormorant';font-size:20px;font-weight:600;color:var(--char);line-height:1.1}
-  .marquee .mk .tx span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .marquee .mk .tx b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--char);line-height:1.1}
+  .marquee .mk .tx span{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:600}
 
   /* ---------- SECTION ---------- */
   section.band{padding:88px 0}
@@ -132,7 +135,7 @@
   .band-head.left{text-align:left;margin:0 0 40px;max-width:none;display:flex;justify-content:space-between;align-items:flex-end;gap:30px;flex-wrap:wrap}
   .band-head.left>div{max-width:560px}
   .link-more{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:3px;white-space:nowrap}
-  .link-more:hover{color:var(--coral-deep)}
+  .link-more:hover{color:var(--accent-ink)}
 
   /* categories */
   .cat-rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px}
@@ -144,10 +147,11 @@
   .cat:hover .tile{transform:translateY(-6px);box-shadow:var(--shadow)}
   .cat:hover .tile .blob{transform:scale(1.14) rotate(10deg)}
   .cat:hover .tile svg{transform:rotate(-5deg) scale(1.08)}
-  .cat .name{font-family:'Cormorant';font-size:21px;font-weight:600;line-height:1.1;transition:color .25s}
-  .cat:hover .name{color:var(--coral-deep)}
-  .cat .ct{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:1px}
-  .cat .ct i{font-style:normal;display:inline-block;opacity:0;transform:translateX(-5px);transition:.25s;color:var(--coral-deep)}
+  .cat .name{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1.1;transition:color .25s}
+  .cat:hover .name{color:var(--accent-ink)}
+  .cat .pillar{font-size:10.5px;letter-spacing:.07em;color:var(--taupe);font-weight:700;margin-top:10px}
+  .cat .ct{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:1px}
+  .cat .ct i{font-style:normal;display:inline-block;opacity:0;transform:translateX(-5px);transition:.25s;color:var(--accent-ink)}
   .cat:hover .ct i{opacity:1;transform:none}
 
   /* product grid + card */
@@ -157,13 +161,13 @@
   .card .ph .grad{position:absolute;inset:0}
   .card .ph img{position:absolute;inset:0;filter:saturate(.9);transition:transform .6s}
   .card:hover .ph img{transform:scale(1.04)}
-  .card .ph .sale{position:absolute;top:14px;left:14px;background:var(--coral);color:var(--char);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
+  .card .ph .sale{position:absolute;top:14px;left:14px;background:var(--char);color:var(--cream);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
   .card .add{position:absolute;left:14px;right:14px;bottom:14px;padding:12px;border-radius:11px;background:rgba(253,247,245,.94);backdrop-filter:blur(6px);color:var(--char);font-weight:600;font-size:13px;letter-spacing:.04em;opacity:0;transform:translateY(8px);transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
   .card:hover .add{opacity:1;transform:none}
   .card .add:hover{background:var(--char);color:var(--cream)}
-  .card .add.added{background:var(--coral);color:var(--char);opacity:1;transform:none}
-  .card .vrow{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe);font-weight:600;display:flex;align-items:center;gap:6px}
-  .card .vrow.house{color:var(--coral-deep)}
+  .card .add.added{background:var(--char);color:var(--cream);opacity:1;transform:none}
+  .card .vrow{font-size:11px;letter-spacing:.06em;color:var(--taupe);font-weight:600;display:flex;align-items:center;gap:6px}
+  .card .vrow.house{color:var(--accent-ink)}
   .card .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px}
   .card h3{font-size:21px;font-weight:600;line-height:1.1;margin:6px 0 7px}
   .card .foot{display:flex;justify-content:space-between;align-items:baseline}
@@ -175,16 +179,17 @@
   /* house band */
   .house{background:var(--rose);border-radius:28px;overflow:hidden;display:grid;grid-template-columns:1fr 1.05fr}
   .house .copy{padding:72px 60px}
-  .house .eyebrow{color:var(--coral-deep)}
+  .house .eyebrow{color:var(--accent-ink)}
   .house h2{font-size:clamp(38px,4vw,56px);line-height:1.0;font-weight:400;margin:18px 0 18px}
-  .house h2 em{font-style:italic}
+  .house h2 em{font-style:normal}
   .house p{color:var(--char);opacity:.82;max-width:40ch;font-weight:400;font-size:16px;margin-bottom:30px}
   .house .pts{display:flex;flex-direction:column;gap:16px;margin-bottom:36px}
-  .house .pts div b{font-family:'Cormorant';font-size:22px;font-weight:600;display:block;line-height:1.25}
+  .house .pts div b{font-family:var(--font-display);font-size:22px;font-weight:600;display:block;line-height:1.25}
   .house .pts div span{font-size:13px;line-height:1.55;color:var(--char);opacity:.72;font-weight:500;max-width:44ch;display:block}
   /* tile geometry is fixed by the grid (rows split the column height; images
      sit absolute inside) so layout never depends on whether an image loaded */
   .house .gallery{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0}
+  .house .gallery.two{grid-template-rows:1fr}
   .house .gallery .g{position:relative;overflow:hidden;min-height:170px;cursor:pointer}
   .house .gallery .g .grad{position:absolute;inset:0}
   .house .gallery .g img{position:absolute;inset:0;z-index:1;filter:saturate(.9);transition:transform .45s ease}
@@ -198,9 +203,9 @@
   .vcard:hover .cover{transform:translateY(-4px)}
   .vcard .cover .grad{position:absolute;inset:0}
   .vcard .cover img{position:absolute;inset:0;filter:saturate(.85);opacity:.92}
-  .vcard .av{width:68px;height:68px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:'Cormorant';font-size:30px;color:var(--cream);font-weight:600}
+  .vcard .av{width:68px;height:68px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:var(--font-display);font-size:30px;color:var(--cream);font-weight:600}
   .vcard h3{font-size:24px;font-weight:600;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
-  .vcard .loc{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:2px}
+  .vcard .loc{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:2px}
   .vcard p{font-size:14px;color:var(--ink-80);margin:14px auto 0;max-width:34ch;font-weight:400}
   .vcard .vmeta{display:flex;justify-content:center;gap:22px;margin-top:16px;font-size:12px;color:var(--muted);font-weight:600}
   .vcard .vmeta b{color:var(--char)}
@@ -210,12 +215,12 @@
   .sell{background:var(--sage);border-radius:28px;padding:72px 60px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
   .sell .eyebrow{color:var(--char);opacity:.55}
   .sell h2{font-size:clamp(38px,4vw,54px);line-height:1.0;font-weight:400;margin:16px 0 18px}
-  .sell h2 em{font-style:italic;color:var(--coral-deep)}
+  .sell h2 em{font-style:normal;color:var(--coral)}
   .sell p{color:var(--char);opacity:.82;max-width:42ch;margin-bottom:30px;font-weight:400;font-size:16px}
   .steps{display:flex;flex-direction:column}
   .step{display:flex;gap:22px;padding:20px 0;border-bottom:1px solid rgba(41,39,39,.13)}
   .step:last-child{border:none}
-  .step .nm{font-family:'Cormorant';font-size:30px;font-weight:500;color:var(--cream);line-height:1;width:42px;flex-shrink:0}
+  .step .nm{font-family:var(--font-display);font-size:30px;font-weight:500;color:var(--cream);line-height:1;width:42px;flex-shrink:0}
   .step h4{font-size:21px;font-weight:600;margin-bottom:2px}
   .step p{font-size:14px;margin:0;opacity:.7}
   /* sell-on-trove page */
@@ -225,7 +230,7 @@
   .faq{border-bottom:1px solid var(--line)}
   .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:21px 2px;font-size:16.5px;font-weight:600}
   .faq summary::-webkit-details-marker{display:none}
-  .faq summary .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;color:var(--coral-deep);transition:transform .25s}
+  .faq summary .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;color:var(--accent-ink);transition:transform .25s}
   .faq[open] summary .faq-tg{transform:rotate(45deg)}
   .faq .faq-a{padding:0 40px 22px 2px;font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.7}
   /* maker testimonials on the sell page — sage feature band */
@@ -236,11 +241,11 @@
   .mqh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
   .mqh .who b{display:block;font-size:13.5px;letter-spacing:.02em}
-  .mqh .who span{display:block;font-weight:600;color:var(--muted);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:2px}
-  .mqh .who a.who-link{display:block;font-weight:600;color:var(--coral-deep);letter-spacing:.1em;font-size:10.5px;text-transform:uppercase;margin-top:2px;cursor:pointer;text-decoration:none}
+  .mqh .who span{display:block;font-weight:600;color:var(--muted);letter-spacing:.05em;font-size:11px;margin-top:2px}
+  .mqh .who a.who-link{display:block;font-weight:600;color:var(--accent-ink);letter-spacing:.05em;font-size:11px;margin-top:2px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
   .mqh .who a.who-link::after{content:' \2192'}
   .mqh .who a.who-link:hover{text-decoration:underline}
-  .mq blockquote{font-family:'Cormorant',Georgia,serif;font-size:17.5px;line-height:1.45;font-style:italic;color:var(--char);margin:0}
+  .mq blockquote{font-family:var(--font-display);font-size:18px;line-height:1.45;color:var(--char);margin:0}
   .mq blockquote::before{content:'\201C'}
   .mq blockquote::after{content:'\201D'}
 
@@ -248,30 +253,30 @@
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
   .btn-dark{background:var(--char);color:var(--cream)}
   .btn-dark:hover{background:#3B3737;transform:translateY(-2px)}
-  .btn-coral{background:var(--coral);color:var(--char)}
-  .btn-coral:hover{background:var(--coral-hover);transform:translateY(-2px)}
+  .btn-coral{background:var(--char);color:var(--cream)}
+  .btn-coral:hover{background:#3B3737;transform:translateY(-2px)}
   .btn-ghost{border:1px solid var(--char);color:var(--char)}
   .btn-ghost:hover{background:var(--char);color:var(--cream)}
   .txt-link{font-size:13.5px;font-weight:600;letter-spacing:.05em;border-bottom:1px solid var(--coral);padding-bottom:3px}
-  .txt-link:hover{color:var(--coral-deep)}
+  .txt-link:hover{color:var(--accent-ink)}
 
   /* ---------- BROWSE ---------- */
   .browse-head{text-align:center;padding:56px 0 8px}
-  .crumb{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px}
-  .crumb a:hover{color:var(--coral-deep)}
+  .crumb{font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-bottom:14px}
+  .crumb a:hover{color:var(--accent-ink)}
   .browse-head h1{font-size:clamp(38px,5vw,60px);font-weight:400}
   .browse-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:48px 0 100px}
-  .filters h4{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0 0 16px}
+  .filters h4{font-family:'Quicksand';font-size:11.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:0 0 16px}
   .fgroup{padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line)}
   .fitem{display:flex;align-items:center;gap:11px;padding:7px 0;font-size:14px;color:var(--ink-80);cursor:pointer;font-weight:500}
   .fitem:hover{color:var(--char)}
-  .fitem input{accent-color:var(--coral);width:15px;height:15px}
+  .fitem input{accent-color:var(--char);width:15px;height:15px}
   .fitem .c{margin-left:auto;font-size:11px;color:var(--muted)}
   .fitem.dim{opacity:.45}
   .fshop{width:100%;margin-top:10px;font-family:inherit;font-weight:600;font-size:13px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--paper);color:var(--char);letter-spacing:.03em;cursor:pointer}
   .schip{display:inline-flex;align-items:center;gap:9px;margin-top:14px;padding:7px 9px 7px 16px;border-radius:999px;background:var(--rose-tint);font-size:13px;font-weight:600;color:var(--char)}
   .schip button{width:20px;height:20px;border-radius:50%;background:var(--char);color:var(--cream);font-size:12px;line-height:1;display:grid;place-items:center}
-  .schip button:hover{background:var(--coral-deep)}
+  .schip button:hover{background:var(--accent-ink)}
   .noresult{grid-column:1/-1;text-align:center;padding:44px 20px 4px}
   .noresult .big{font-family:var(--font-display);font-size:clamp(26px,3vw,34px);font-weight:400;margin-bottom:10px}
   .noresult p{color:var(--muted);font-weight:500;font-size:15px;max-width:460px;margin:0 auto 24px;line-height:1.6}
@@ -291,25 +296,27 @@
   .vhero img{position:absolute;inset:0;filter:saturate(.85);opacity:.85}
   .vhero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,var(--cream))}
   .vhead{position:relative;text-align:center;margin-top:-90px;z-index:5}
-  .vhead .lav{width:104px;height:104px;border-radius:50%;border:5px solid var(--cream);margin:0 auto 18px;display:grid;place-items:center;font-family:'Cormorant';font-size:46px;color:var(--cream);font-weight:600}
+  .vhead .lav{width:104px;height:104px;border-radius:50%;border:5px solid var(--cream);margin:0 auto 18px;display:grid;place-items:center;font-family:var(--font-display);font-size:46px;color:var(--cream);font-weight:600}
   .vhead h1{font-size:clamp(38px,5vw,56px);font-weight:400;display:flex;align-items:center;justify-content:center;gap:12px}
-  .vhead .loc{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:6px}
+  .vhead .loc{font-size:12.5px;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:6px}
   .vhead p{font-size:16px;color:var(--ink-80);max-width:56ch;margin:18px auto 0;font-weight:400}
   .vhead .vstats{display:flex;justify-content:center;gap:54px;margin-top:30px}
-  .vhead .vstats b{font-family:'Cormorant';font-size:32px;font-weight:600;display:block;line-height:1}
-  .vhead .vstats span{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .vhead .vstats b{font-family:var(--font-display);font-size:32px;font-weight:600;display:block;line-height:1}
+  .vhead .vstats span{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:600}
 
   /* ---------- PDP ---------- */
   .pdp{display:grid;grid-template-columns:1fr 1fr;gap:64px;padding:40px 0 90px}
   .pdp .gallery{display:grid;grid-template-columns:70px 1fr;gap:16px}
   .pdp .thumbs{display:flex;flex-direction:column;gap:14px}
   .pdp .thumbs .t{aspect-ratio:1;border-radius:12px;overflow:hidden;border:1px solid var(--line);position:relative;cursor:pointer}
+  .pdp .thumbs .t img{position:absolute;inset:0;z-index:1} /* grad z-auto < img z-1 — positioned grad must never cover the image */
   .pdp .thumbs .t.on{border-color:var(--coral);border-width:2px}
   .pdp .main-img{aspect-ratio:4/5;border-radius:22px;overflow:hidden;position:relative;background:var(--rose)}
   .pdp .main-img .grad{position:absolute;inset:0}
+  .pdp .main-img img{position:absolute;inset:0;z-index:1}
   .pdp .info{padding-top:14px}
-  .pdp .info .vlink{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--taupe);font-weight:600;display:inline-flex;align-items:center;gap:8px}
-  .pdp .info .vlink:hover{color:var(--coral-deep)}
+  .pdp .info .vlink{font-size:11.5px;letter-spacing:.06em;color:var(--taupe);font-weight:600;display:inline-flex;align-items:center;gap:8px}
+  .pdp .info .vlink:hover{color:var(--accent-ink)}
   .pdp .info h1{font-size:clamp(40px,4.5vw,58px);line-height:1.0;font-weight:400;margin:14px 0 14px}
   .pdp .stars{margin-bottom:18px}
   .pdp .pricerow .price{font-size:26px;font-weight:600}
@@ -320,15 +327,15 @@
   .rev .rstars{color:var(--coral);font-size:15px;letter-spacing:2px}
   .rev .rwho{font-weight:700;font-size:13.5px}
   .rev .rwhen{font-size:12px;color:var(--muted);font-weight:600;margin-left:auto}
-  .rev .rprod{font-size:11.5px;color:var(--coral-deep);font-weight:700;margin-bottom:6px}
+  .rev .rprod{font-size:11.5px;color:var(--accent-ink);font-weight:700;margin-bottom:6px}
   .rev p{font-size:14px;line-height:1.7;color:var(--ink-80);font-weight:400}
   .rev .rimgs{display:flex;gap:8px;margin-top:12px}
   .rev .rimgs img{width:74px;height:74px;object-fit:cover;border-radius:10px;border:1px solid var(--line);cursor:zoom-in}
   .ptags{display:flex;flex-wrap:wrap;gap:8px;margin:-14px 0 26px}
   .ptags:empty{display:none}
   .ptag{border:1px solid var(--line);background:var(--cream);color:var(--ink-80);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.18s}
-  .ptag:hover{border-color:var(--coral);color:var(--coral-deep);background:var(--rose-tint)}
-  .lbl{font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:12px}
+  .ptag:hover{border-color:var(--coral);color:var(--accent-ink);background:var(--rose-tint)}
+  .lbl{font-size:11.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:12px}
   .swatches{display:flex;gap:12px;margin-bottom:30px}
   .sw{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
   .sw.on{border-color:var(--char)}
@@ -339,10 +346,10 @@
   .ship b{display:block;font-weight:700;color:var(--char);margin-bottom:2px;font-family:'Quicksand';font-size:13px;letter-spacing:.02em}
   .sold-card{margin-top:18px;border:1px solid var(--line);border-radius:16px;padding:18px 20px;display:flex;align-items:center;gap:16px;cursor:pointer;transition:.2s}
   .sold-card:hover{border-color:var(--coral)}
-  .sold-card .sav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-size:22px;font-weight:600}
+  .sold-card .sav{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-size:22px;font-weight:600}
   .sold-card .st{flex:1}
-  .sold-card .st .l{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:600}
-  .sold-card .st .nm{font-family:'Cormorant';font-size:22px;font-weight:600;display:flex;align-items:center;gap:7px;line-height:1.1;margin-top:2px}
+  .sold-card .st .l{font-size:10.5px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .sold-card .st .nm{font-family:var(--font-display);font-size:22px;font-weight:600;display:flex;align-items:center;gap:7px;line-height:1.1;margin-top:2px}
 
   /* ---------- CART ---------- */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
@@ -353,26 +360,26 @@
   .drawer .dhead h3{font-size:28px;font-weight:500}
   .drawer .dbody{flex:1;overflow-y:auto;padding:6px 28px}
   .vendor-group{padding:22px 0;border-bottom:1px solid var(--line)}
-  .vendor-group .vg-head{display:flex;align-items:center;gap:8px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--char);font-weight:700;margin-bottom:18px}
+  .vendor-group .vg-head{display:flex;align-items:center;gap:8px;font-size:11.5px;letter-spacing:.06em;color:var(--char);font-weight:700;margin-bottom:18px}
   .vendor-group .vg-head .gem{width:7px;height:7px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
   .vendor-group .vg-head .ship-note{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500}
   .citem{display:flex;gap:16px;margin-bottom:18px}
   .citem .cimg{width:70px;height:86px;border-radius:11px;overflow:hidden;flex-shrink:0;position:relative;background:var(--rose)}
   .citem .ci{flex:1}
-  .citem .ci .n{font-family:'Cormorant';font-size:19px;font-weight:600;line-height:1.15}
+  .citem .ci .n{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
   .citem .ci .v{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
   .citem .ci .qrow{display:flex;align-items:center;gap:12px;margin-top:10px}
   .qbtn{width:28px;height:28px;border:1px solid var(--line);border-radius:8px;display:grid;place-items:center;font-size:16px;background:var(--paper);font-weight:500}
   .qbtn:hover{border-color:var(--char)}
   .citem .ci .qv{font-size:13px;min-width:18px;text-align:center;font-weight:600}
   .citem .ci .rm{margin-left:auto;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;font-weight:500}
-  .citem .ci .rm:hover{color:var(--coral-deep)}
+  .citem .ci .rm:hover{color:var(--accent-ink)}
   .citem .cp{font-weight:600;font-size:14px;white-space:nowrap}
   .empty{text-align:center;padding:90px 20px;color:var(--muted)}
-  .empty .big{font-family:'Cormorant';font-size:34px;color:var(--char);font-weight:500;margin-bottom:8px}
+  .empty .big{font-family:var(--font-display);font-size:34px;color:var(--char);font-weight:500;margin-bottom:8px}
   .dfoot{border-top:1px solid var(--line);padding:24px 28px;background:var(--paper)}
   .drow{display:flex;justify-content:space-between;font-size:14px;color:var(--ink-80);margin-bottom:10px;font-weight:500}
-  .drow.total{font-family:'Cormorant';font-size:26px;font-weight:600;color:var(--char);margin-top:8px}
+  .drow.total{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--char);margin-top:8px}
   .dfoot .note{font-size:12px;color:var(--muted);margin:12px 0 16px;font-weight:500;line-height:1.5}
   .checkout{width:100%;padding:17px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.05em}
   .checkout:hover{background:#3B3737}
@@ -382,11 +389,11 @@
   .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:54px;border-bottom:1px solid rgba(41,39,39,.13)}
   footer .brand{font-size:44px;margin-bottom:18px;display:block}
   footer p.blurb{font-size:14.5px;max-width:32ch;line-height:1.65;opacity:.78;font-weight:400}
-  footer h5{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin-bottom:18px;opacity:.55}
+  footer h5{font-family:'Quicksand';font-size:11.5px;letter-spacing:.08em;font-weight:700;margin-bottom:18px;opacity:.55}
   footer ul{list-style:none}
   footer li{margin-bottom:12px}
   footer a{font-size:14px;font-weight:500;opacity:.82}
-  footer a:hover{opacity:1;color:var(--coral-deep)}
+  footer a:hover{opacity:1;color:var(--accent-ink)}
   .fbot{padding-top:26px;display:flex;justify-content:space-between;font-size:12px;opacity:.6;flex-wrap:wrap;gap:12px;font-weight:500;letter-spacing:.04em}
 
   /* pointer-events:none — the faded-out toast is still a fixed box over the
@@ -505,21 +512,21 @@
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 
   /* supplemental tokens */
-  :root{--cream-2:#F8F0EA;--green:#5E7E63;--green-bg:#E4ECE5}
+  :root{--cream-2:#F8F0EA;--green:#292727;--green-bg:#E4ECE5} /* status ink: Charcoal on a sage tint */
 
   /* account menu */
   .acct-wrap{position:relative}
   .acct-menu{position:absolute;right:0;top:52px;width:252px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:8px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:.18s;z-index:80}
   .acct-menu.open{opacity:1;visibility:visible;transform:none}
   .acct-menu .am-head{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--line-soft);margin-bottom:6px}
-  .acct-menu .am-av{width:40px;height:40px;border-radius:50%;background:var(--coral);color:var(--char);display:grid;place-items:center;font-family:'Cormorant';font-size:20px;font-weight:600}
-  .acct-menu .am-n{font-family:'Cormorant';font-size:18px;font-weight:600;line-height:1}
+  .acct-menu .am-av{width:40px;height:40px;border-radius:50%;background:var(--rose);color:var(--char);display:grid;place-items:center;font-family:var(--font-display);font-size:20px;font-weight:600}
+  .acct-menu .am-n{font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1}
   .acct-menu .am-e{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
   .acct-menu a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--ink-80)}
   .acct-menu a:hover{background:var(--cream-2);color:var(--char)}
   .acct-menu a svg{width:16px;height:16px;stroke-width:1.7;opacity:.7}
   .acct-menu .am-div{height:1px;background:var(--line-soft);margin:6px 4px}
-  .acct-menu a.sell{color:var(--coral-deep)}
+  .acct-menu a.sell{color:var(--accent-ink)}
 
   /* checkout */
   .co-wrap{max-width:1080px;margin:0 auto;padding:38px 32px 90px}
@@ -528,10 +535,10 @@
   .co-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
   .co-step{margin-bottom:30px}
   .co-step .sh{display:flex;align-items:center;gap:12px;margin-bottom:16px}
-  .co-step .sh .num{width:28px;height:28px;border-radius:50%;background:var(--char);color:var(--cream);display:grid;place-items:center;font-family:'Cormorant';font-size:16px;font-weight:600;flex-shrink:0}
+  .co-step .sh .num{width:28px;height:28px;border-radius:50%;background:var(--char);color:var(--cream);display:grid;place-items:center;font-family:var(--font-display);font-size:16px;font-weight:600;flex-shrink:0}
   .co-step .sh h3{font-size:24px;font-weight:600}
   .co-field{margin-bottom:14px}
-  .co-field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .co-field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:7px}
   .co-field input,.co-field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:13px 15px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none}
   .co-field input:focus{border-color:var(--char)}
   .pw{position:relative}
@@ -545,14 +552,14 @@
   /* the "create an account" offer, shown to guests at checkout + confirmation */
   .acct-offer{background:#F0F4F1;border:1px solid var(--line);border-radius:14px;padding:15px 16px;margin-top:4px}
   .acct-offer .ao-check{display:flex;gap:10px;align-items:center;cursor:pointer;font-size:14.5px;font-weight:700;flex-wrap:wrap}
-  .acct-offer .ao-check input{width:17px;height:17px;accent-color:var(--coral-deep);flex-shrink:0;cursor:pointer}
-  .acct-offer .ao-pill{background:var(--coral-deep);color:var(--cream);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
+  .acct-offer .ao-check input{width:17px;height:17px;accent-color:var(--accent-ink);flex-shrink:0;cursor:pointer}
+  .acct-offer .ao-pill{background:var(--accent-ink);color:var(--cream);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px}
   .acct-offer .ao-perks{list-style:none;margin:10px 0 2px;padding:0;display:flex;flex-direction:column;gap:6px}
   .acct-offer .ao-perks li{font-size:13px;font-weight:500;color:var(--ink-80);display:flex;gap:8px;align-items:flex-start}
-  .acct-offer .ao-perks li::before{content:'✓';color:var(--coral-deep);font-weight:800;flex-shrink:0}
+  .acct-offer .ao-perks li::before{content:'✓';color:var(--accent-ink);font-weight:800;flex-shrink:0}
   .acct-offer .ao-guest{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px}
   .acct-offer .ao-guest a{color:var(--muted);text-decoration:underline;cursor:pointer}
-  .acct-offer .ao-err{display:none;background:#FCEBE4;color:var(--coral-deep);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45}
+  .acct-offer .ao-err{display:none;background:#FCEBE4;color:var(--accent-ink);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45}
   .saved-opt{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.14s}
   .saved-opt:hover{border-color:var(--rose)}
   .saved-opt.on{border-color:var(--char);background:var(--rose-tint)}
@@ -562,33 +569,33 @@
   .co-summary{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:26px;position:sticky;top:100px}
   .co-summary h3{font-size:24px;font-weight:600;margin-bottom:18px}
   .co-sum-group{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line-soft)}
-  .co-sum-shop{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--taupe);font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+  .co-sum-shop{font-size:10.5px;letter-spacing:.05em;color:var(--taupe);font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:7px}
   .co-sum-shop .gem{width:6px;height:6px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
   .co-li{display:flex;gap:12px;margin-bottom:11px}
   .co-li .im{width:42px;height:50px;border-radius:8px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
-  .co-li .nm{font-family:'Cormorant';font-size:15px;font-weight:600;line-height:1.1}
+  .co-li .nm{font-family:var(--font-display);font-size:15px;font-weight:600;line-height:1.1}
   .co-li .qt{font-size:11px;color:var(--muted);font-weight:600}
   .co-li .pr{margin-left:auto;font-weight:600;font-size:13px;white-space:nowrap}
   .co-tot{padding-top:6px}
   .co-tot .row{display:flex;justify-content:space-between;font-size:13.5px;color:var(--ink-80);font-weight:500;margin-bottom:9px}
-  .co-tot .row.grand{font-family:'Cormorant';font-size:24px;font-weight:600;color:var(--char);margin-top:8px;padding-top:12px;border-top:1px solid var(--line-soft)}
+  .co-tot .row.grand{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--char);margin-top:8px;padding-top:12px;border-top:1px solid var(--line-soft)}
   .co-place{width:100%;padding:16px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;margin-top:18px;transition:.18s}
   .co-place:hover{background:#3B3737}
   .co-secure{font-size:11.5px;color:var(--muted);font-weight:500;text-align:center;margin-top:12px;display:flex;gap:6px;align-items:center;justify-content:center}
   .stripe-note{display:flex;gap:11px;align-items:flex-start;background:var(--rose-tint);border-radius:12px;padding:13px 15px;font-size:12px;color:var(--ink-80);font-weight:500;line-height:1.5;margin-top:6px}
-  .stripe-note svg{flex-shrink:0;color:var(--coral-deep);margin-top:1px}
+  .stripe-note svg{flex-shrink:0;color:var(--accent-ink);margin-top:1px}
 
   /* confirmation */
   .confirm{max-width:620px;margin:0 auto;padding:70px 32px 90px;text-align:center}
   .confirm .check{width:74px;height:74px;border-radius:50%;background:var(--green-bg);color:var(--green);display:grid;place-items:center;margin:0 auto 24px}
   .confirm h1{font-size:clamp(40px,5vw,58px);font-weight:400;line-height:1.0}
-  .confirm h1 em{font-style:italic;color:var(--coral-deep)}
+  .confirm h1 em{font-style:normal;color:var(--coral)}
   .confirm .lede{font-size:16px;color:var(--ink-80);font-weight:400;margin:14px 0 6px}
   .confirm .ordid{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--char)}
   .confirm .ship-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:30px 0}
   .confirm .ship-card .sg{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
   .confirm .ship-card .sg:last-child{border:none}
-  .confirm .ship-card .sg .d{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--cream);font-family:'Cormorant';font-weight:600;flex-shrink:0}
+  .confirm .ship-card .sg .d{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-weight:600;flex-shrink:0}
 
   /* mobile rules for the sections above (checkout + confirmation are
      defined after the main responsive block, so theirs live down here) */
@@ -613,17 +620,17 @@
 <header class="top">
   <div class="wrap nav">
     <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-    <a href="#" class="brand" onclick="go('home');return false">trove</a>
+    <a href="#" class="brand" aria-label="Trove — home" onclick="go('home');return false"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></a>
     <nav class="links">
       <a href="#" onclick="go('shop','all');return false">Shop all</a>
       <a href="#" onclick="go('shop','House');return false">Trove Collection</a>
-      <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Our shops</a>
-      <a href="#" onclick="go('sell');return false">Sell on trove</a>
+      <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Marketplace</a>
+      <a href="#" onclick="go('sell');return false">Sell on Trove</a>
     </nav>
     <div class="right">
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="searchInput" placeholder="Search the trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
+        <input id="searchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
       </div>
       <button class="icon-btn search-btn" title="Search" aria-label="Search" onclick="openMenu(true)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
       <a class="icon-btn" title="Saved" href="/account#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
@@ -636,7 +643,7 @@
           <a href="/account#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
           <a href="/account#following"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Following</a>
           <div class="am-div"></div>
-          <a class="sell" href="/sell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on trove ↗</a>
+          <a class="sell" href="/sell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on Trove ↗</a>
           <a href="/login" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
         </div>
       </div>
@@ -655,10 +662,10 @@
       <div class="lead">
         <span class="eyebrow" data-cms="home.hero.eyebrow">Thoughtfully gathered</span>
         <h1 data-cms-rich="home.hero.h1">Curated<br>for <em>Living</em></h1>
-        <p data-cms="home.hero.lead">Discover thoughtfully chosen homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
+        <p data-cms="home.hero.lead">Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
         <div class="ctas">
-          <button class="btn btn-dark" data-cms="home.hero.ctaShop" onclick="go('shop','all')">Explore the trove</button>
-          <a class="txt-link" data-cms="home.hero.ctaSell" href="#" onclick="go('sell');return false">Open a shop →</a>
+          <button class="btn btn-dark" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
+          <a class="txt-link" data-cms="home.hero.ctaSell" href="#" onclick="go('shop','all');return false">Explore the Marketplace</a>
         </div>
       </div>
       <div class="hero-img" onclick="go('shop','House')" style="cursor:pointer" title="Shop the Trove Collection">
@@ -694,7 +701,7 @@
   <div class="marquee"><div class="wrap">
     <div class="mk"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.0.head">Handpicked shops</b><span data-cms="home.marquee.items.0.sub">Vetted by hand</span></div></div>
     <div class="mk"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.1.head">Small-batch pieces</b><span data-cms="home.marquee.items.1.sub">Made to last</span></div></div>
-    <div class="mk"><div class="ic" style="background:#FCC998"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">2–4 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
+    <div class="mk"><div class="ic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">2–4 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
     <div class="mk"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b data-cms="home.marquee.items.3.head">30-day returns</b><span data-cms="home.marquee.items.3.sub">Free on orders over AED 500</span></div></div>
   </div></div>
 
@@ -719,13 +726,13 @@
     <div class="wrap">
       <div class="house">
         <div class="copy">
-          <span class="eyebrow" data-cms="home.collection.eyebrow">Curated by trove</span>
-          <h2 data-cms-rich="home.collection.h2">Trove Collection.<br><em>Our own, made well.</em></h2>
-          <p data-cms="home.collection.intro">Timeless pieces chosen to become part of your everyday home. Curated by us, made by makers we trust, priced honestly.</p>
+          <span class="eyebrow" data-cms="home.collection.eyebrow">The Trove Collection · Designed by Trove</span>
+          <h2 data-cms-rich="home.collection.h2">Our own, made well.</h2>
+          <p data-cms="home.collection.intro">Timeless pieces designed to become part of your everyday home. Designed by Trove, made with quality materials and considered details — created to feel at home from the moment they arrive.</p>
           <div class="pts">
-            <div><b data-cms="home.collection.points.0.title">Authentic</b><span data-cms="home.collection.points.0.text">Every piece is chosen by hand and made in small batches by real makers — each one comes out a little different, and that's the point.</span></div>
-            <div><b data-cms="home.collection.points.1.title">Homely</b><span data-cms="home.collection.points.1.text">Warm, everyday pieces made to be lived with — poured, thrown and stitched to make a house feel like home, not kept behind glass.</span></div>
-            <div><b data-cms="home.collection.points.2.title">Made yours</b><span data-cms="home.collection.points.2.text">Spot a personalisation box on a piece? That maker will add your name or a few words of your choosing — made just for you.</span></div>
+            <div><b data-cms="home.collection.points.0.title">Thoughtfully designed</b><span data-cms="home.collection.points.0.text">Every detail has purpose — quality, functionality and beauty considered in every piece.</span></div>
+            <div><b data-cms="home.collection.points.1.title">Made to last</b><span data-cms="home.collection.points.1.text">We believe in buying fewer, better things: timeless design, honest materials, made to be enjoyed for years.</span></div>
+            <div><b data-cms="home.collection.points.2.title">Made yours</b><span data-cms="home.collection.points.2.text">Spot a personalisation option? That piece can be made just for you or someone special.</span></div>
           </div>
           <button class="btn btn-coral" data-cms="home.collection.cta" onclick="go('shop','House')">Shop the Collection</button>
         </div>
@@ -746,7 +753,7 @@
     <div class="wrap">
       <div class="sell">
         <div>
-          <span class="eyebrow" data-cms="home.sellBand.eyebrow">Sell on trove</span>
+          <span class="eyebrow" data-cms="home.sellBand.eyebrow">Sell on Trove</span>
           <h2 data-cms-rich="home.sellBand.h2">Make things at home? Give them a <em>shopfront</em>.</h2>
           <p data-cms="home.sellBand.intro">No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price and takes care of delivery and the storefront — you keep your brand and your craft.</p>
           <button class="btn btn-dark" data-cms="home.sellBand.cta" onclick="go('sell')">See how it works</button>
@@ -765,7 +772,7 @@
 <!-- SHOP -->
 <div class="view" id="view-shop">
   <div class="browse-head"><div class="wrap">
-    <div class="crumb" id="shopCrumb"><a href="#" onclick="go('home');return false">trove</a> &nbsp;/&nbsp; <span>Shop all</span></div>
+    <div class="crumb" id="shopCrumb"><a href="#" onclick="go('home');return false">Trove</a> &nbsp;/&nbsp; <span>Shop all</span></div>
     <h1 id="browseTitle">Shop all</h1>
     <div id="searchChip"></div>
   </div></div>
@@ -814,8 +821,7 @@
     <p id="vBio"></p>
     <div class="vstats">
       <div><b id="vProds"></b><span>Pieces</span></div>
-      <div><b id="vRate"></b><span>Rating</span></div>
-      <div><b id="vSince"></b><span>On trove</span></div>
+      <div id="vRateWrap"><b id="vRate"></b><span>Rating</span></div>
     </div>
   </div>
   <div class="wrap" style="padding:56px 32px 40px">
@@ -831,7 +837,7 @@
 <!-- PDP -->
 <div class="view" id="view-pdp">
   <div class="wrap" style="padding-top:28px">
-    <div class="crumb"><a href="#" onclick="go('home');return false">trove</a> &nbsp;/&nbsp; <a href="#" onclick="go('shop','all');return false">Shop all</a> &nbsp;/&nbsp; <span id="pdpCrumb"></span></div>
+    <div class="crumb"><a href="#" onclick="go('home');return false">Trove</a> &nbsp;/&nbsp; <a href="#" onclick="go('shop','all');return false">Shop all</a> &nbsp;/&nbsp; <span id="pdpCrumb"></span></div>
   </div>
   <div class="wrap">
     <div class="pdp">
@@ -845,11 +851,10 @@
         <div class="stars" id="pdpStars"></div>
         <div class="pricerow"><span class="price" id="pdpPrice"></span></div>
         <p class="desc" id="pdpDesc"></p>
-        <div class="ptags" id="pdpTags"></div>
         <div class="lbl">Colour</div>
         <div class="swatches" id="pdpSwatches"></div>
         <div id="pdpPerso" style="display:none;margin:18px 0 4px">
-          <div class="lbl" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:10px;letter-spacing:.08em;background:var(--rose-tint);color:var(--coral-deep);padding:3px 8px;border-radius:999px;font-weight:700"></span></div>
+          <div class="lbl" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:10px;letter-spacing:.08em;background:var(--rose-tint);color:var(--accent-ink);padding:3px 8px;border-radius:999px;font-weight:700"></span></div>
           <div id="pdpPersoPrompt" style="font-size:13px;color:var(--muted);font-weight:500;margin:2px 0 8px"></div>
           <textarea id="pdpPersoText" rows="2" maxlength="256" oninput="persoCount()" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;resize:vertical" placeholder="Type it exactly as you'd like it"></textarea>
           <div id="pdpPersoCount" style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:right;margin-top:4px"></div>
@@ -880,9 +885,9 @@
 <div class="view" id="view-sell">
   <section class="band" style="padding-bottom:0">
     <div class="wrap" style="text-align:center;max-width:760px">
-      <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on trove</span>
-      <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:italic;color:var(--coral-deep)">shop</em>.</h1>
-      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:24px auto 30px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.</p>
+      <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on Trove</span>
+      <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h1>
+      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:24px auto 30px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href='/apply'">Start your application</button>
         <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
@@ -910,9 +915,9 @@
       <div class="mqband">
         <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2></div>
         <div class="mquotes" id="quotesList">
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#A85138"/></svg><div class="who"><b>Mara</b><span>Kiln &amp; Clay, Dubai</span></div></div><blockquote>I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.</blockquote></figure>
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg><div class="who"><b>Nadia</b><span>Sable &amp; Stone, Abu Dhabi</span></div></div><blockquote>I'd only ever sold at weekend markets. On trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote></figure>
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#5E7E63"/></svg><div class="who"><b>Yasmin</b><span>Fern Apothecary, Abu Dhabi</span></div></div><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg><div class="who"><b>Mara</b><span>Kiln &amp; Clay, Dubai</span></div></div><blockquote>I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg><div class="who"><b>Nadia</b><span>Sable &amp; Stone, Abu Dhabi</span></div></div><blockquote>I'd only ever sold at weekend markets. On Trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#CAD5CC"/></svg><div class="who"><b>Yasmin</b><span>Fern Apothecary, Abu Dhabi</span></div></div><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote></figure>
         </div>
       </div>
     </div>
@@ -922,7 +927,7 @@
       <div class="band-head"><span class="eyebrow" data-cms="sell.faq.eyebrow">Good to know</span><h2 data-cms="sell.faq.heading">Your questions, answered honestly.</h2></div>
       <div class="faqs" id="faqList">
         <details class="faq"><summary>I've never sold online before — is that okay?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">That's exactly who trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a trove shop.</div></details>
+          <div class="faq-a">That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop.</div></details>
         <details class="faq"><summary>Do I need a trade licence?<span class="faq-tg">+</span></summary>
           <div class="faq-a">No. Trove buys your pieces from you and resells them to shoppers, so you can sell here without any licence. If you do have one, mention it when you apply — it unlocks extra payout options as you grow.</div></details>
         <details class="faq"><summary>What does it cost?<span class="faq-tg">+</span></summary>
@@ -932,9 +937,9 @@
         <details class="faq"><summary>How and when do I get paid?<span class="faq-tg">+</span></summary>
           <div class="faq-a">Weekly, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered plus a 7-day buffer; if a buyer returns a piece after that, the amount is simply adjusted on a following payout. Your Payments page shows exactly what's coming and when.</div></details>
         <details class="faq"><summary>What if I only make a few pieces a month?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Small-batch is the point of trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed.</div></details>
+          <div class="faq-a">Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed.</div></details>
         <details class="faq"><summary>Can I keep selling on Instagram or at markets?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Of course. Your trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.</div></details>
+          <div class="faq-a">Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.</div></details>
       </div>
     </div>
   </section>
@@ -962,7 +967,7 @@
           <div class="co-field"><label>Email</label><input id="coEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
           <div id="coAcctBox" style="display:none">
             <div class="acct-offer">
-              <label class="ao-check"><input type="checkbox" id="coAcctChk" checked onchange="toggleCoAcct()">Create your trove account<span class="ao-pill">Recommended</span></label>
+              <label class="ao-check"><input type="checkbox" id="coAcctChk" checked onchange="toggleCoAcct()">Create your Trove account<span class="ao-pill">Recommended</span></label>
               <ul class="ao-perks">
                 <li>Track every parcel as it ships, shop by shop</li>
                 <li>Faster checkout next time — your address is saved</li>
@@ -1033,17 +1038,17 @@
 <div class="scrim" id="uiScrim" onclick="closeSheets()"></div>
 <aside class="mnav" id="mnav" aria-label="Menu">
   <div class="mn-head">
-    <span class="mn-brand">trove</span>
+    <span class="mn-brand"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.mn-brand').textContent='trove'"></span>
     <button class="icon-btn" aria-label="Close menu" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="mn-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input id="mSearchInput" placeholder="Search the trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
+    <input id="mSearchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
   </div>
   <a class="mn-link" onclick="closeSheets();go('shop','all')">Shop all<span>→</span></a>
   <a class="mn-link" onclick="closeSheets();go('shop','House')">Trove Collection<span>→</span></a>
-  <a class="mn-link" onclick="closeSheets();go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),80)">Our shops<span>→</span></a>
-  <a class="mn-link" onclick="closeSheets();go('sell')">Sell on trove<span>→</span></a>
+  <a class="mn-link" onclick="closeSheets();go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),80)">Marketplace<span>→</span></a>
+  <a class="mn-link" onclick="closeSheets();go('sell')">Sell on Trove<span>→</span></a>
   <div class="mn-foot">
     <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
     <a href="/account#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
@@ -1054,7 +1059,7 @@
 <!-- CART -->
 <div class="scrim" id="scrim" onclick="closeCart()"></div>
 <aside class="drawer" id="drawer">
-  <div class="dhead"><h3>Your trove</h3>
+  <div class="dhead"><h3>Your Trove</h3>
     <button class="icon-btn" onclick="closeCart()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="dbody" id="cartBody"></div>
@@ -1074,14 +1079,14 @@
   <div class="wrap">
     <div class="fgrid">
       <div>
-        <span class="brand serif">trove</span>
-        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully chosen homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
+        <span class="brand serif"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></span>
+        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
       </div>
       <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li><a href="#" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li><li><a href="#">Gift cards</a></li></ul></div>
       <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li><li><a href="#">Trove fulfilment</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
-    <div class="fbot"><span data-cms="site.footer.legal">© 2026 trove · Dubai, UAE</span><span>Privacy · Terms · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
+    <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span>Privacy · Terms · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
   </div>
 </footer>
 
@@ -1092,47 +1097,72 @@
 <script>
 /* ---------------- DATA ---------------- */
 let VENDORS = {
-  trove:  {name:'Trove Collection', house:true, loc:'In-house · Dubai', color:'#292727', bio:'Our own line — curated by us, made by makers we trust, priced honestly. The standard we hold the marketplace to.', rating:'4.9', prods:48, since:'2024'},
-  kiln:   {name:'Kiln & Clay', loc:'Alserkal Avenue, Dubai', color:'#BD9C8C', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:'4.9', prods:62, since:'2023'},
-  loom:   {name:'Northbound Loom', loc:'Al Quoz, Dubai', color:'#BED3DF', bio:'Heavyweight knitwear and woven goods from a family workshop running since 1978.', rating:'4.8', prods:37, since:'2022'},
-  ember:  {name:'Ember Goods', loc:'Deira, Dubai', color:'#FCC998', bio:'Leather and brass made the slow way, in our Deira workshop.', rating:'5.0', prods:54, since:'2023'},
-  fern:   {name:'Fern Apothecary', loc:'Masdar City, Abu Dhabi', color:'#CFDBBE', bio:'Plant-based skincare and home scent, formulated in tiny batches.', rating:'4.9', prods:41, since:'2021'},
-  paper:  {name:'Folio Paper Co.', loc:'Al Zahiyah, Abu Dhabi', color:'#F8D7E4', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:'4.8', prods:73, since:'2022'},
+  /* Demo fallback only — no fabricated ratings, counts or dates; live mode replaces all of this with real API data. */
+  trove:  {name:'Trove Collection', house:true, loc:'In-house · Dubai', color:'#292727', bio:'Our own line — designed by Trove, made with quality materials and considered details. The standard we hold the marketplace to.', rating:null, prods:null, since:null},
+  kiln:   {name:'Kiln & Clay', loc:'Alserkal Avenue, Dubai', color:'#BD9C8C', bio:'Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that\'s the point.', rating:null, prods:null, since:null},
+  loom:   {name:'Northbound Loom', loc:'Al Quoz, Dubai', color:'#BED3DF', bio:'Heavyweight knitwear and woven goods from a family workshop.', rating:null, prods:null, since:null},
+  ember:  {name:'Ember Goods', loc:'Deira, Dubai', color:'#FCC998', bio:'Leather and brass made the slow way, in our Deira workshop.', rating:null, prods:null, since:null},
+  fern:   {name:'Fern Apothecary', loc:'Masdar City, Abu Dhabi', color:'#CFDBBE', bio:'Home scent poured in tiny batches — candles, room mists and wax melts.', rating:null, prods:null, since:null},
+  paper:  {name:'Folio Paper Co.', loc:'Al Zahiyah, Abu Dhabi', color:'#F8D7E4', bio:'Stationery, notebooks and desk goods for people who still write things down.', rating:null, prods:null, since:null},
 };
+/* Brand taxonomy — two pillars. Tiles only render for categories that hold live pieces. */
 const CATS = [
-  {name:'Home', color:'#CAD5CC', ct:'2,140'},
-  {name:'Apparel', color:'#BED3DF', ct:'1,860'},
-  {name:'Ceramics', color:'#BD9C8C', ct:'940'},
-  {name:'Beauty', color:'#F8D7E4', ct:'1,120'},
-  {name:'Stationery', color:'#FCC998', ct:'780'},
-  {name:'Accessories', color:'#DBC7BD', ct:'1,540'},
+  {name:'Kitchen & Dining',          pillar:'Trove Collection',  color:'#BD9C8C'},
+  {name:'Decorative Accessories',    pillar:'Trove Collection',  color:'#DBC7BD'},
+  {name:'Storage & Organisation',    pillar:'Trove Collection',  color:'#CAD5CC'},
+  {name:'Textiles',                  pillar:'Trove Collection',  color:'#BED3DF'},
+  {name:'Candles & Home Fragrance',  pillar:'Trove Collection',  color:'#CFDBBE'},
+  {name:'Seasonal Collections',      pillar:'Trove Collection',  color:'#F8D7E4'},
+  {name:'Home & Living',             pillar:'Trove Marketplace', color:'#CAD5CC'},
+  {name:'Wall Art & Prints',         pillar:'Trove Marketplace', color:'#F8D7E4'},
+  {name:'Ceramics',                  pillar:'Trove Marketplace', color:'#BD9C8C'},
+  {name:'Stationery',                pillar:'Trove Marketplace', color:'#DBC7BD'},
+  {name:'Jewellery',                 pillar:'Trove Marketplace', color:'#BED3DF'},
+  {name:'Personalised Gifts',        pillar:'Trove Marketplace', color:'#CFDBBE'},
+  {name:"Children's",                pillar:'Trove Marketplace', color:'#F8D7E4'},
+  {name:'Pet Accessories',           pillar:'Trove Marketplace', color:'#BD9C8C'},
+  {name:'Wellness & Self-Care',      pillar:'Trove Marketplace', color:'#CAD5CC'},
+  {name:'Accessories',               pillar:'Trove Marketplace', color:'#DBC7BD'},
+  {name:'Seasonal',                  pillar:'Trove Marketplace', color:'#CFDBBE'},
+  {name:'Handmade Crafts',           pillar:'Trove Marketplace', color:'#BED3DF'},
 ];
 const CAT_ICON={
-  Home:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.3 11h5.4l.8 5.8a3.9 3.9 0 0 1-7 0z"/><path d="M12 11V5.2"/><path d="M12 7.8C10.4 7.5 9.3 6.3 9 4.6c1.7.3 2.8 1.5 3 3.2Z"/><path d="M12 6.4c1.3-.25 2.2-1.2 2.4-2.6-1.4.2-2.2 1.2-2.4 2.6Z"/></svg>',
-  Apparel:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.2 5.6 4 8l2 2.6 2.2-1.4v9.3h7.6V9.2l2.2 1.4L20 8l-3.2-2.4h-2.1a2.7 2.7 0 0 1-5.4 0z"/></svg>',
-  Ceramics:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10h9.5v5a4 4 0 0 1-4 4H9.5a4 4 0 0 1-4-4z"/><path d="M15 11.2h1.6a2.4 2.4 0 0 1 0 4.8H15"/><path d="M8.2 7c0-1 .9-1.2.9-2.4M11.6 7c0-1 .9-1.2.9-2.4"/></svg>',
-  Beauty:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8.6" y="10.2" width="6.8" height="8.8" rx="2"/><path d="M10.6 10.2V8.2h2.8v2"/><path d="M12 8.2V5.4"/><path d="M12 6.6c1.5-.2 2.5-1.2 2.7-2.9-1.6.2-2.5 1.3-2.7 2.9Z"/></svg>',
-  Stationery:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4.6" width="11.5" height="14.8" rx="1.6"/><path d="M9.2 4.6v14.8"/><path d="M11.8 9.2h3.4M11.8 12.2h3.4"/></svg>',
-  Accessories:'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 9.2h10.8l-1 10.3H7.6z"/><path d="M9.6 9.2V7.6a2.4 2.4 0 0 1 4.8 0v1.6"/></svg>',
+  'Kitchen & Dining':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7.5"/><circle cx="12" cy="12" r="3.4"/></svg>',
+  'Decorative Accessories':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.3 11h5.4l.8 5.8a3.9 3.9 0 0 1-7 0z"/><path d="M12 11V5.2"/><path d="M12 7.8C10.4 7.5 9.3 6.3 9 4.6c1.7.3 2.8 1.5 3 3.2Z"/><path d="M12 6.4c1.3-.25 2.2-1.2 2.4-2.6-1.4.2-2.2 1.2-2.4 2.6Z"/></svg>',
+  'Storage & Organisation':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 8.5h15v10a1 1 0 0 1-1 1h-13a1 1 0 0 1-1-1z"/><path d="M4.5 8.5 6 4.9h12l1.5 3.6"/><path d="M9.8 12h4.4"/></svg>',
+  'Textiles':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7.5c2.5-2 5-2 7.5 0s5 2 7.5 0"/><path d="M4.5 12c2.5-2 5-2 7.5 0s5 2 7.5 0"/><path d="M4.5 16.5c2.5-2 5-2 7.5 0s5 2 7.5 0"/></svg>',
+  'Candles & Home Fragrance':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="10.5" width="8" height="9" rx="1.6"/><path d="M12 10.5V8.3"/><path d="M12 8.3c-1.4-.9-1.4-2.4 0-3.8 1.4 1.4 1.4 2.9 0 3.8Z"/></svg>',
+  'Seasonal Collections':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15M12 19.5c-.4-3.2-2-5-4.6-5.6M12 16c.5-2.6 2-4 4.4-4.4M12 12c-.5-2.4-1.8-3.7-4-4.1M12 8.6c.4-1.9 1.5-3 3.3-3.4"/></svg>',
+  'Home & Living':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5 12 5l7.5 6.5"/><path d="M6.5 10v8.5a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V10"/></svg>',
+  'Wall Art & Prints':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="1.2"/><path d="M5 15.5 9.5 11l4 4 2-2 3.5 3.5"/><circle cx="9.8" cy="8.8" r="1.1"/></svg>',
+  'Ceramics':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10h9.5v5a4 4 0 0 1-4 4H9.5a4 4 0 0 1-4-4z"/><path d="M15 11.2h1.6a2.4 2.4 0 0 1 0 4.8H15"/><path d="M8.2 7c0-1 .9-1.2.9-2.4M11.6 7c0-1 .9-1.2.9-2.4"/></svg>',
+  'Stationery':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4.6" width="11.5" height="14.8" rx="1.6"/><path d="M9.2 4.6v14.8"/><path d="M11.8 9.2h3.4M11.8 12.2h3.4"/></svg>',
+  'Jewellery':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="5.5"/><path d="M9.5 8.5 12 4.5l2.5 4"/></svg>',
+  'Personalised Gifts':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9.5" width="14" height="10" rx="1.2"/><path d="M12 9.5v10M5 13h14"/><path d="M12 9.5C10 9.5 8.2 8.6 8.2 7s1.4-2.4 2.4-1.6c1 .7 1.4 2.5 1.4 4.1Zm0 0c2 0 3.8-.9 3.8-2.5s-1.4-2.4-2.4-1.6c-1 .7-1.4 2.5-1.4 4.1Z"/></svg>',
+  "Children's":'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="6"/><circle cx="7" cy="7" r="2.4"/><circle cx="17" cy="7" r="2.4"/><path d="M9.8 13.4h.01M14.2 13.4h.01"/><path d="M10.4 15.6c1 .8 2.2.8 3.2 0"/></svg>',
+  'Pet Accessories':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19.5c-2.6 0-4.4-1.5-4.4-3.4 0-2.2 2-3.6 4.4-3.6s4.4 1.4 4.4 3.6c0 1.9-1.8 3.4-4.4 3.4Z"/><circle cx="7.2" cy="9.2" r="1.7"/><circle cx="16.8" cy="9.2" r="1.7"/><circle cx="10.2" cy="6.2" r="1.7"/><circle cx="13.8" cy="6.2" r="1.7"/></svg>',
+  'Wellness & Self-Care':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19c-3.5-2-7-4.6-7-8a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 3.4-3.5 6-7 8Z"/></svg>',
+  'Accessories':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 9.2h10.8l-1 10.3H7.6z"/><path d="M9.6 9.2V7.6a2.4 2.4 0 0 1 4.8 0v1.6"/></svg>',
+  'Seasonal':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15M12 19.5c-.4-3.2-2-5-4.6-5.6M12 16c.5-2.6 2-4 4.4-4.4M12 12c-.5-2.4-1.8-3.7-4-4.1M12 8.6c.4-1.9 1.5-3 3.3-3.4"/></svg>',
+  'Handmade Crafts':'<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12.5c0 4.5-3.4 7-7.5 7s-7.5-2.5-7.5-7c0-2.5 1.3-4.6 3.2-5.9M12 19.5V9"/><path d="M12 12.6c-2.2 0-3.9-1.5-4.2-3.9 2.4-.4 4 1 4.2 3.9Zm0-3.4c.3-2.4 1.8-3.8 4.2-3.5-.3 2.5-2 3.7-4.2 3.5Z"/></svg>',
 };
 const P = (id,name,vendor,price,was,cat,rating,reviews,desc,seed)=>({id,name,vendor,price,was,cat,rating,reviews,desc,seed});
+/* Demo fallback only — categories follow the brand taxonomy; ratings stay empty until real reviews exist. */
 let PRODUCTS = [
-  P(1,'Reeded Stoneware Mug','kiln',64,null,'Ceramics','4.9',214,'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.','mug7'),
-  P(2,'The Everyday Tee','trove',95,null,'Apparel','4.8',512,'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.','tee4'),
-  P(3,'Lopapeysa Wool Sweater','loom',420,480,'Apparel','4.9',88,'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.','knit5'),
-  P(4,'Hammered Brass Tray','ember',140,null,'Home','5.0',156,'Hand-hammered brass catch-all for keys, cards and the small things that wander.','tray3'),
-  P(5,'Cedar & Smoke Candle','fern',88,null,'Home','4.9',340,'Coconut-soy wax, fifty-five hour burn. Smells like a cabin you don\'t want to leave.','candle8'),
-  P(6,'Linen-Bound Notebook','paper',72,null,'Stationery','4.8',267,'A5, 192 pages of cream paper that won\'t bleed through. Lay-flat binding.','note2'),
-  P(7,'Waxed Canvas Weekender','trove',285,null,'Accessories','4.9',193,'Waxed canvas and bridle leather, built to be handed down. Our house staple.','bag6'),
-  P(8,'Glazed Serving Bowl','kiln',128,null,'Ceramics','4.9',97,'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.','bowl9'),
-  P(9,'Merino Watch Cap','loom',110,null,'Apparel','4.8',142,'Ribbed merino beanie, double-folded. Itch-free and packs flat.','cap2'),
-  P(10,'Folded Leather Wallet','ember',195,null,'Accessories','5.0',221,'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.','wallet3'),
-  P(11,'Botanical Hand Balm','fern',54,null,'Beauty','4.9',408,'Shea and calendula for working hands. Sinks in fast, no greasy film.','balm5'),
-  P(12,'Glazed Ceramic Planter','trove',76,95,'Home','4.7',164,'House-label planter with drainage and matching saucer, in three sizes.','planter4'),
-  P(13,'Weighted Brass Clip','paper',38,null,'Stationery','4.8',119,'A weighted brass clip that keeps the page you\'re on, open.','clip1'),
-  P(14,'Hand-Knotted Wool Throw','loom',360,null,'Home','4.9',64,'Chunky undyed throw, fringed by hand. The one everyone fights over.','throw7'),
-  P(15,'Olive & Sea Salt Soap','fern',32,null,'Beauty','4.9',286,'Cold-process bar, cured six weeks. Gentle enough for face and hands.','soap3'),
-  P(16,'Combed Cotton Socks · 3','trove',58,null,'Apparel','4.8',377,'House-label combed-cotton socks, reinforced heel and toe. The ones you\'ll look for.','socks2'),
+  P(1,'Reeded Stoneware Mug','kiln',64,null,'Ceramics',null,0,'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.','mug7'),
+  P(3,'Lopapeysa Wool Sweater','loom',420,480,'Handmade Crafts',null,0,'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.','knit5'),
+  P(4,'Hammered Brass Tray','ember',140,null,'Home & Living',null,0,'Hand-hammered brass catch-all for keys, cards and the small things that wander.','tray3'),
+  P(5,'Cedar & Smoke Candle','fern',88,null,'Home & Living',null,0,'Coconut-soy wax, fifty-five hour burn. Smells like a cabin you don\'t want to leave.','candle8'),
+  P(6,'Linen-Bound Notebook','paper',72,null,'Stationery',null,0,'A5, 192 pages of cream paper that won\'t bleed through. Lay-flat binding.','note2'),
+  P(7,'Waxed Canvas Weekender','trove',285,null,'Storage & Organisation',null,0,'Waxed canvas and bridle leather, built to be handed down. Our house staple.','bag6'),
+  P(8,'Glazed Serving Bowl','kiln',128,null,'Ceramics',null,0,'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.','bowl9'),
+  P(9,'Merino Watch Cap','loom',110,null,'Handmade Crafts',null,0,'Ribbed merino beanie, double-folded. Itch-free and packs flat.','cap2'),
+  P(10,'Folded Leather Wallet','ember',195,null,'Accessories',null,0,'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.','wallet3'),
+  P(11,'Botanical Room Mist','fern',54,null,'Home & Living',null,0,'Fig leaf and green stems in a fine-mist bottle — one spray resets a room.','mist5'),
+  P(12,'Glazed Ceramic Planter','trove',76,95,'Decorative Accessories',null,0,'House-label planter with drainage and matching saucer, in three sizes.','planter4'),
+  P(13,'Weighted Brass Clip','paper',38,null,'Stationery',null,0,'A weighted brass clip that keeps the page you\'re on, open.','clip1'),
+  P(14,'Hand-Knotted Wool Throw','loom',360,null,'Home & Living',null,0,'Chunky undyed throw, fringed by hand. The one everyone fights over.','throw7'),
+  P(15,'Fig & Vetiver Wax Melts','fern',32,null,'Home & Living',null,0,'Six wick-free melts for the burner. The slow way to scent a room.','melt3'),
 ];
 
 let state={view:'home',cat:'all',houseOnly:false,shop:'all',sale:false,min:0,max:9999,q:''};
@@ -1153,14 +1183,35 @@ let coAddr=0, coCard=0, coNewAddr=false;
 const $=id=>document.getElementById(id);
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
 function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
-function img(seed){return `https://picsum.photos/seed/trv${seed}/640/780`;}
+/* Interim product imagery: deterministic brand-motif tiles (organic shapes on
+ * palette tints) until real photography lands — see docs/PHOTOGRAPHY-MANIFEST.md.
+ * Never a flat colour block, never unrelated stock. */
+const PH_BG=['#F2E9E4','#F8F0EA','#E4ECE5','#FCEBE4'];
+const PH_TINT=['#DBC7BD','#CAD5CC','#BD9C8C','#F8D7E4','#CFDBBE','#BED3DF'];
+function phHash(s){s=String(s);let h=7;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+function img(seed){
+  const h=phHash(seed);
+  const bg=PH_BG[h%PH_BG.length];
+  let a=PH_TINT[h%6], b=PH_TINT[(2+(h>>3))%6];
+  if(a===b)b=PH_TINT[(1+(h>>3))%6];
+  // brand rule: Pink and Sage never sit together
+  if((a==='#F8D7E4'&&b==='#CAD5CC')||(a==='#CAD5CC'&&b==='#F8D7E4'))b='#DBC7BD';
+  const r1=200+(h%90), r2=120+((h>>4)%70), rot=(h>>2)%180;
+  const cx=200+((h>>5)%240), cy=240+((h>>7)%300);
+  const cx2=640-cx+((h>>6)%60)-30, cy2=780-cy+((h>>8)%60)-30;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 780"><rect width="640" height="780" fill="${bg}"/>`+
+    `<ellipse cx="${cx}" cy="${cy}" rx="${r1}" ry="${Math.round(r1*.82)}" fill="${a}" opacity=".9" transform="rotate(${rot} ${cx} ${cy})"/>`+
+    `<ellipse cx="${cx2}" cy="${cy2}" rx="${r2}" ry="${Math.round(r2*.78)}" fill="${b}" opacity=".85" transform="rotate(${(rot+64)%180} ${cx2} ${cy2})"/>`+
+    `<g fill="#292727" opacity=".28"><circle cx="${(cx+310)%600+20}" cy="${(cy+140)%720+30}" r="4"/><circle cx="${(cx2+90)%600+20}" cy="${(cy2+430)%720+30}" r="4"/></g></svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
 function aed(n){return 'AED '+n.toLocaleString();}
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 /* illustrated maker portraits for the testimonial cards (cycled by index) */
 const MAKER_AVATARS=[
-  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#A85138"/></svg>',
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg>',
   '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg>',
-  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#5E7E63"/></svg>'
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#CAD5CC"/></svg>'
 ];
 function vColor(v){return VENDORS[v].color;}
 function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
@@ -1262,11 +1313,12 @@ function productCard(p,eager){
 
 /* HOME */
 function renderHome(){
-  $('catRail').innerHTML=CATS.filter(c=>!LIVE||PRODUCTS.some(p=>p.cat===c.name)).map(c=>{
-    const n=LIVE?PRODUCTS.filter(p=>p.cat===c.name).length:c.ct;
-    return `<div class="cat" onclick="go('shop','${c.name}')">
+  // Taxonomy tiles, Collection pillar first; only categories that hold pieces render, counts are real.
+  $('catRail').innerHTML=CATS.map(c=>({...c,n:PRODUCTS.filter(p=>p.cat===c.name).length}))
+    .filter(c=>c.n>0).map(c=>`<div class="cat" onclick="go('shop','${esc(c.name).replace(/'/g,'&#39;')}')">
     <div class="tile"><div class="grad" style="${grad(c.color)}"></div><span class="blob"></span>${CAT_ICON[c.name]||''}</div>
-    <div class="name">${c.name}</div><div class="ct">${n} ${n===1?'piece':'pieces'} <i>→</i></div></div>`;}).join('');
+    <div class="pillar">${c.pillar}</div>
+    <div class="name">${esc(c.name)}</div><div class="ct">${c.n} ${c.n===1?'piece':'pieces'} <i>→</i></div></div>`).join('');
 
   // Weekly finds: admin-picked products when set, else the 8 newest pieces.
   let weekly=PRODUCTS.slice(0,8);
@@ -1278,19 +1330,22 @@ function renderHome(){
   }
   $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true)).join('');
 
-  const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
-  $('houseGallery').innerHTML=house.slice(0,4).map(p=>`<div class="g" onclick="openPDP(${p.id})">
+  const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house).slice(0,4);
+  $('houseGallery').className='gallery'+(house.length<=2?' two':'');
+  $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
     <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
 
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house).slice(0,3);
-  $('vendorGrid').innerHTML=vs.map(([k,v])=>`<article class="vcard" onclick="openVendor('${k}')">
-    <div class="cover"><div class="grad" style="${grad(v.color)}"></div>${v.img?`<img src="${v.img}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%">`:''}</div>
+  $('vendorGrid').innerHTML=vs.map(([k,v])=>{
+    const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
+    return `<article class="vcard" onclick="openVendor('${k}')">
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${v.img||img('shop-'+k)}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
     <div class="av" style="${v.img?`background:center/cover no-repeat url('${v.img}')`:`background:${v.color}`}">${v.img?'':v.name[0]}</div>
     <h3>${v.name}</h3>
     <div class="loc">${v.loc}</div>
     <p>${v.bio}</p>
-    <div class="vmeta"><span><b>${v.prods}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.since?`<span>since <b>${v.since}</b></span>`:''}</div>
-  </article>`).join('');
+    <div class="vmeta"><span><b>${np}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}</div>
+  </article>`;}).join('');
 }
 
 /* SHOP */
@@ -1359,7 +1414,7 @@ function filteredProducts(){
 function catLabel(){return state.cat==='House'?'Trove Collection':state.cat;}
 function crumbHTML(){
   const sep=' &nbsp;/&nbsp; ';
-  const bits=[`<a href="#" onclick="go('home');return false">trove</a>`];
+  const bits=[`<a href="#" onclick="go('home');return false">Trove</a>`];
   if(state.cat==='all'&&!state.q){bits.push('<span>Shop all</span>');return bits.join(sep);}
   bits.push(`<a href="#" onclick="go('shop');return false">Shop all</a>`);
   if(state.cat!=='all')bits.push(state.q?`<a href="#" onclick="clearSearch();return false">${esc(catLabel())}</a>`:`<span>${esc(catLabel())}</span>`);
@@ -1390,9 +1445,9 @@ function emptyStateHTML(){
     if(qMatches.length){
       const one=qMatches.length===1;
       head=`Nothing here matches “${esc(state.q)}”`;
-      sub=`But ${one?'one piece does':qMatches.length+' pieces do'} elsewhere in the trove — your ${state.cat!=='all'?'category':'price, seller or sale'} filter is hiding ${one?'it':'them'}.`;
+      sub=`But ${one?'one piece does':qMatches.length+' pieces do'} elsewhere on Trove — your ${state.cat!=='all'?'category':'price, seller or sale'} filter is hiding ${one?'it':'them'}.`;
       actions=btn('widenSearch()',one?'Show it':'Show all '+qMatches.length,1)+btn('clearSearch()','Clear the search');
-      recs=qMatches.slice(0,n); recHead='Found elsewhere in the trove';
+      recs=qMatches.slice(0,n); recHead='Found elsewhere on Trove';
     }else{
       head=`Nothing turned up for “${esc(state.q)}”`;
       sub='Check the spelling, or try a broader word — the pieces below might be close to what you meant.';
@@ -1459,7 +1514,8 @@ function openVendor(key){
   else{$('vLav').style.background=v.color;$('vLav').textContent=v.name[0];}
   $('vName').innerHTML=`${v.name}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
   $('vLoc').textContent=v.loc; $('vBio').textContent=v.bio;
-  $('vProds').textContent=v.prods; $('vRate').textContent=v.rating?v.rating+'★':'—'; $('vSince').textContent=v.since||'—';
+  $('vProds').textContent=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===key).length;
+  $('vRateWrap').style.display=v.rating?'':'none'; $('vRate').textContent=v.rating?v.rating+'★':'';
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
   loadShopReviews(key);
@@ -1479,9 +1535,12 @@ function openPDP(id){
   $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} review${p.reviews===1?'':'s'}</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
-  // Tags double as one-tap searches — “stoneware” finds everything stoneware.
-  $('pdpTags').innerHTML='';
-  (p.tags||[]).forEach(t=>{const b=document.createElement('button');b.className='ptag';b.textContent=t;b.onclick=()=>searchTag(t);$('pdpTags').appendChild(b);});
+  // Tags stay out of sight (they still power search); for SEO they live in structured data only.
+  let ld=document.getElementById('pdpLd');
+  if(!ld){ld=document.createElement('script');ld.type='application/ld+json';ld.id='pdpLd';document.head.appendChild(ld);}
+  ld.textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',name:p.name,description:p.desc,
+    keywords:(p.tags||[]).join(', '),brand:{'@type':'Brand',name:VENDORS[p.vendor].name},
+    offers:{'@type':'Offer',priceCurrency:'AED',price:p.price,availability:'https://schema.org/InStock'}});
   const sw=['#292727','#BD9C8C','#DBC7BD','#CAD5CC'];
   $('pdpSwatches').innerHTML=sw.map((c,i)=>`<div class="sw ${i===0?'on':''}" style="background:${c}" onclick="document.querySelectorAll('.sw').forEach(e=>e.classList.remove('on'));this.classList.add('on')"></div>`).join('');
   // Etsy-style personalisation: sellers switch it on per piece; buyers type
@@ -1555,25 +1614,25 @@ function addToCart(id,btn,note){
   if(ex)ex.qty++; else cart.push({pid:id,qty:1,note});
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
-  toast(`${p.name} added to your trove`);
+  toast(`${p.name} added to your Trove`);
 }
 function changeQty(i,d){const c=cart[i];if(!c)return;c.qty+=d;if(c.qty<=0)cart.splice(i,1);updateCartCount();renderCart();}
 function removeItem(i){cart.splice(i,1);updateCartCount();renderCart();}
 function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);resetPayment();}
 function renderCart(){
   const body=$('cartBody');
-  if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">Your trove is empty</div><p style="font-weight:400">Pieces you add will gather here, grouped by shop.</p></div>`;$('cartFoot').style.display='none';return;}
+  if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">Your Trove is empty</div><p style="font-weight:400">Pieces you add will gather here, grouped by shop.</p></div>`;$('cartFoot').style.display='none';return;}
   const groups={};
   cart.forEach((c,idx)=>{const p=PRODUCTS.find(x=>x.id===c.pid);(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p,idx});});
   let html='';
   Object.entries(groups).forEach(([v,items])=>{
     const V=VENDORS[v];
-    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
+    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
     items.forEach(({p,qty,note,idx})=>{
       html+=`<div class="citem">
         <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
-          ${note?`<div class="v" style="color:var(--coral-deep);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
+          ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
           <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
         </div>
         <div class="cp">${aed(p.price*qty)}</div></div>`;
@@ -1614,7 +1673,7 @@ document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.re
 /* CHECKOUT */
 function cartGroups(){const g={};cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);(g[p.vendor]=g[p.vendor]||[]).push({...c,p});});return g;}
 function startCheckout(){
-  if(!cart.length){toast('Your trove is empty');return;}
+  if(!cart.length){toast('Your Trove is empty');return;}
   // Guests check out with their own details — no demo addresses, and an
   // optional "create an account" offer (only when a real backend is live).
   if(LIVE&&!ME){SAVED_ADDR=[];coNewAddr=true;coAddr=-1;}
@@ -1659,7 +1718,7 @@ async function ensureGuestAccount(){
     if(payIntent){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret}});}catch(_){/* order stays a guest order */}}
     ME={name,email};
     loadAuth(); // refresh the header with the real session
-    toast('Account created — welcome to trove');
+    toast('Account created — welcome to Trove');
     return true;
   }catch(e){
     coAcctError(e.status===409
@@ -1677,12 +1736,12 @@ function renderCheckout(){
   // addresses — saved ones outside Dubai/Abu Dhabi can't be delivered to
   $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>{
     const ok=inServiceArea(a.city);
-    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span>${ok?'':'<br><span style="color:var(--coral-deep);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
+    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
   }).join('')
     +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
   $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
   // delivery grouped by shop
-  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('')
+  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('')
     +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">Trove currently delivers across Dubai &amp; Abu Dhabi.</div>`;
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
@@ -1714,7 +1773,7 @@ function showConfirmation(orderId){
   $('confAcct').style.display=(LIVE&&!ME)?'block':'none';
   if(LIVE&&!ME){$('confAcctEmail').value=(lastOrder&&lastOrder.email)||'';$('confAcctPw').value='';}
   $('confOrdId').textContent='Order '+orderId;
-  $('confShip').innerHTML=`<div style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
+  $('confShip').innerHTML=`<div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
       return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · ${V.house?'arrives 2–4 days':'arrives 3–6 days'}</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();

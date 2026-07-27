@@ -29,7 +29,7 @@ function shop(email, ownerName, shopName, slug, bio, location, color, isHouse, p
 }
 
 const house = shop('hello@trove.com', 'Trove', 'Trove Collection', 'trove-label',
-  'Our own line — curated by us, made by makers we trust, priced honestly. The standard we hold the marketplace to.',
+  'Our own line — designed by Trove, made with quality materials and considered details. The standard we hold the marketplace to.',
   'In-house · Dubai', '#292727', true,
   { type: 'managed', bankName: 'Emirates NBD', accountName: 'Trove Marketplace FZ-LLC', iban: 'AE600260001015079130500' });
 const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay',
@@ -37,7 +37,7 @@ const kiln = shop('mara@kilnandclay.com', 'Mara', 'Kiln & Clay', 'kiln-and-clay'
   'Alserkal Avenue, Dubai', '#BD9C8C', false,
   { type: 'managed', bankName: 'Mashreq Bank', accountName: 'Mara Ceramics Studio', iban: 'AE930330000010101010101' });
 const loom = shop('hello@northboundloom.com', 'Northbound Loom', 'Northbound Loom', 'northbound-loom',
-  'Heavyweight knitwear and woven goods from a family workshop running since 1978.',
+  'Heavyweight knitwear and woven goods from a family workshop.',
   'Al Quoz, Dubai', '#BED3DF', false, { type: 'connect' });
 const ember = shop('hello@embergoods.com', 'Ember Goods', 'Ember Goods', 'ember-goods',
   'Leather and brass made the slow way, in our Deira workshop.',
@@ -56,13 +56,13 @@ const paper = shop('hello@foliopaper.com', 'Folio Paper Co.', 'Folio Paper Co.',
 const sable = shop('nadia@sableandstone.com', 'Nadia', 'Sable & Stone', 'sable-and-stone',
   "I'm Nadia, a self-taught silversmith working from a small studio in Khalifa City, Abu Dhabi. Everything is made to order in recycled silver — I cut and set each stone by hand, so no two pieces ever match. I've sold at local markets for three years and want to reach people who value slow-made jewellery.",
   'Khalifa City, Abu Dhabi', '#B8AFA6', false, { type: 'managed' });
-db.prepare(`UPDATE shops SET status='pending', category='Accessories',
+db.prepare(`UPDATE shops SET status='pending', category='Jewellery',
   pitch_products='Raw stone signet rings — AED 220–260\nHammered silver stacking bands\nDesert stone pendants on silk cord\nOne-off statement cuffs (small batches of 5)',
   pitch_instagram='instagram.com/sableandstone.uae', pitch_links='sableandstone.com',
   pitch_experience='3+ years', pitch_maker='I make everything myself',
   pitch_channels='Markets & pop-ups', pitch_capacity='10–30', pitch_phone='+971 50 234 5678'
   WHERE id=?`).run(sable);
-mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Accessories', c(240), null, 8, 'live', 'ring1');
+mkProd.run(sable, 'Raw Stone Signet Ring', 'Recycled silver band with an unpolished desert stone. Each one unique.', 'Jewellery', c(240), null, 8, 'live', 'ring1');
 
 /* ---- Two-rail supplier setup ----
  * Approved consignment suppliers arrive with payout setup already complete
@@ -87,23 +87,24 @@ for (const [shopId, last4] of Object.entries(SUPPLIER_IDS)) {
   stampSetup.run(last4, pcrypto.maskIban(s.payout_iban), enc, enc ? '' : s.payout_iban, shopId);
 }
 
+// Categories follow the 2026 brand taxonomy (src/categories.js): the house
+// line uses Collection categories, makers use Marketplace ones. Apparel is
+// gone from the taxonomy, so the old tee/socks basics are retired.
 const products = [
-  [kiln,  'Reeded Stoneware Mug',     'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.', 'Ceramics',    c(64),  null,   38,  'live', 'mug7'],
-  [house, 'The Everyday Tee',         'Heavyweight organic cotton, garment-dyed by hand. Our most returned-to basic.',         'Apparel',     c(95),  null,   120, 'live', 'tee4'],
-  [loom,  'Lopapeysa Wool Sweater',   'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.', 'Apparel',     c(420), c(480), 18,  'live', 'knit5'],
-  [ember, 'Hammered Brass Tray',      'Hand-hammered brass catch-all for keys, cards and the small things that wander.',       'Home',        c(140), null,   26,  'live', 'tray3'],
-  [fern,  'Cedar & Smoke Candle',     "Coconut-soy wax, fifty-five hour burn. Smells like a cabin you don't want to leave.",   'Home',        c(88),  null,   64,  'live', 'candle8'],
-  [paper, 'Linen-Bound Notebook',     "A5, 192 pages of cream paper that won't bleed through. Lay-flat binding.",              'Stationery',  c(72),  null,   90,  'live', 'note2'],
-  [house, 'Waxed Canvas Weekender',   'Waxed canvas and bridle leather, built to be handed down. Our house staple.',           'Accessories', c(285), null,   30,  'live', 'bag6'],
-  [kiln,  'Glazed Serving Bowl',      'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.',      'Ceramics',    c(128), null,   12,  'live', 'bowl9'],
-  [loom,  'Merino Watch Cap',         'Ribbed merino beanie, double-folded. Itch-free and packs flat.',                        'Apparel',     c(110), null,   44,  'live', 'cap2'],
-  [ember, 'Folded Leather Wallet',    'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.',          'Accessories', c(195), null,   33,  'live', 'wallet3'],
-  [fern,  'Botanical Room Mist',      'Fig leaf and green stems in a fine-mist bottle — one spray resets a room.',            'Home',        c(54),  null,   110, 'live', 'mist5'],
-  [house, 'Glazed Ceramic Planter',   'House-label planter with drainage and matching saucer, in three sizes.',               'Home',        c(76),  c(95),  44,  'live', 'planter4'],
-  [paper, 'Weighted Brass Clip',      "A weighted brass clip that keeps the page you're on, open.",                            'Stationery',  c(38),  null,   75,  'live', 'clip1'],
-  [loom,  'Hand-Knotted Wool Throw',  'Chunky undyed throw, fringed by hand. The one everyone fights over.',                   'Home',        c(360), null,   9,   'live', 'throw7'],
-  [fern,  'Fig & Vetiver Wax Melts',  'Six unscented-wick-free melts for the burner. The slow way to scent a room.',           'Home',        c(32),  null,   140, 'live', 'melt3'],
-  [house, 'Combed Cotton Socks · 3',  "House-label combed-cotton socks, reinforced heel and toe. The ones you'll look for.",   'Apparel',     c(58),  null,   88,  'live', 'socks2'],
+  [kiln,  'Reeded Stoneware Mug',     'Hand-thrown stoneware with a reactive matte glaze. Holds 320ml. No two are quite alike.', 'Ceramics',        c(64),  null,   38,  'live', 'mug7'],
+  [loom,  'Lopapeysa Wool Sweater',   'Traditional Icelandic yoke sweater in undyed lopi wool. Warm enough to skip the coat.', 'Handmade Crafts', c(420), c(480), 18,  'live', 'knit5'],
+  [ember, 'Hammered Brass Tray',      'Hand-hammered brass catch-all for keys, cards and the small things that wander.',       'Home & Living',   c(140), null,   26,  'live', 'tray3'],
+  [fern,  'Cedar & Smoke Candle',     "Coconut-soy wax, fifty-five hour burn. Smells like a cabin you don't want to leave.",   'Home & Living',   c(88),  null,   64,  'live', 'candle8'],
+  [paper, 'Linen-Bound Notebook',     "A5, 192 pages of cream paper that won't bleed through. Lay-flat binding.",              'Stationery',      c(72),  null,   90,  'live', 'note2'],
+  [house, 'Waxed Canvas Weekender',   'Waxed canvas and bridle leather, built to be handed down. Our house staple.',           'Storage & Organisation', c(285), null, 30, 'live', 'bag6'],
+  [kiln,  'Glazed Serving Bowl',      'Wide low bowl in speckled clay — equally good for salad or fruit on the counter.',      'Ceramics',        c(128), null,   12,  'live', 'bowl9'],
+  [loom,  'Merino Watch Cap',         'Ribbed merino beanie, double-folded. Itch-free and packs flat.',                        'Handmade Crafts', c(110), null,   44,  'live', 'cap2'],
+  [ember, 'Folded Leather Wallet',    'Vegetable-tanned leather, six cards plus notes. Ages to a deep honey patina.',          'Accessories',     c(195), null,   33,  'live', 'wallet3'],
+  [fern,  'Botanical Room Mist',      'Fig leaf and green stems in a fine-mist bottle — one spray resets a room.',            'Home & Living',   c(54),  null,   110, 'live', 'mist5'],
+  [house, 'Glazed Ceramic Planter',   'House-label planter with drainage and matching saucer, in three sizes.',               'Decorative Accessories', c(76), c(95), 44, 'live', 'planter4'],
+  [paper, 'Weighted Brass Clip',      "A weighted brass clip that keeps the page you're on, open.",                            'Stationery',      c(38),  null,   75,  'live', 'clip1'],
+  [loom,  'Hand-Knotted Wool Throw',  'Chunky undyed throw, fringed by hand. The one everyone fights over.',                   'Home & Living',   c(360), null,   9,   'live', 'throw7'],
+  [fern,  'Fig & Vetiver Wax Melts',  'Six unscented-wick-free melts for the burner. The slow way to scent a room.',           'Home & Living',   c(32),  null,   140, 'live', 'melt3'],
 ];
 for (const p of products) mkProd.run(...p);
 
