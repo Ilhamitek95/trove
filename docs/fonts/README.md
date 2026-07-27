@@ -1,21 +1,11 @@
-# Dream Avenue webfont — drop the files here
+# Display font
 
-The whole site is already wired for the official display face. When the
-licensed files arrive, drop them into this folder with EXACTLY these names:
+The site's display face for all headings is **Cormorant**, loaded from Google
+Fonts on every page (upright weights 400/500/600 only — the site uses no
+italics; emphasis is an Orange accent instead). Nothing needs to go in this
+folder for Cormorant.
 
-- `DreamAvenue.woff2`  (preferred — smaller, every modern browser)
-- `DreamAvenue.woff`   (fallback for older browsers)
-
-Nothing else to do — every page declares:
-
-    @font-face{font-family:'Dream Avenue';
-      src:url('/fonts/DreamAvenue.woff2') format('woff2'),
-          url('/fonts/DreamAvenue.woff') format('woff');
-      font-weight:400;font-style:normal;font-display:swap}
-
-Until the files exist the site falls back to Georgia (a quiet serif), so
-nothing looks broken. If the purchase only includes .otf/.ttf, convert to
-woff2/woff first (any font-converter can; keep the licence receipt).
-
-Dream Avenue has a single weight and NO italic — the CSS never asks for
-either, so don't add synthetic bold/italic files.
+This folder exists in case the brand's original display face (Dream Avenue)
+is ever purchased: if that happens, ask for the @font-face wiring to be
+restored and drop `DreamAvenue.woff2` + `DreamAvenue.woff` here. Until then
+the folder stays empty on purpose.
