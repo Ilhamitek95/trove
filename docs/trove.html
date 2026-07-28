@@ -241,9 +241,10 @@
   .faq[open] summary .faq-tg{transform:rotate(45deg)}
   .faq .faq-a{padding:0 40px 22px 2px;font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.7}
   /* maker testimonials on the sell page — sage feature band */
-  .mqband{background:var(--sage);border-radius:28px;padding:56px 48px}
-  .qhead{margin:0 0 30px;text-align:center}
-  .mquotes{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .mqband{background:radial-gradient(620px 360px at 8% 0%,rgba(253,247,245,.55),transparent 70%),radial-gradient(660px 400px at 94% 100%,rgba(207,219,190,.6),transparent 72%),var(--sage);border-radius:28px;padding:64px 52px 56px}
+  .qhead{margin:0 auto 36px;text-align:center}
+  .qsub{margin:14px auto 0;max-width:52ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
+  .mquotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
   .mq{background:var(--paper);border-radius:18px;padding:24px 22px;margin:0;box-shadow:0 14px 34px -20px rgba(41,39,39,.3)}
   .mqh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
@@ -252,9 +253,17 @@
   .mqh .who a.who-link{display:block;font-weight:600;color:var(--accent-ink);letter-spacing:.05em;font-size:11px;margin-top:2px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
   .mqh .who a.who-link::after{content:' \2192'}
   .mqh .who a.who-link:hover{text-decoration:underline}
-  .mq blockquote{font-family:var(--font-display);font-size:18px;line-height:1.45;color:var(--char);margin:0}
+  .mq blockquote{font-family:var(--font-display);font-size:16.5px;line-height:1.5;color:var(--char);margin:0}
   .mq blockquote::before{content:'\201C'}
   .mq blockquote::after{content:'\201D'}
+  .mq-feat{grid-column:1/-1;background:transparent;box-shadow:none;padding:0 20px 26px;text-align:center}
+  .mq-feat::before{content:'\201C';display:block;font-family:var(--font-display);font-size:112px;line-height:.6;height:.6em;color:rgba(41,39,39,.16)}
+  .mq-feat blockquote{font-size:clamp(21px,2.4vw,29px);line-height:1.34;max-width:760px;margin:0 auto}
+  .mq-feat blockquote::before,.mq-feat blockquote::after{content:none}
+  .mq-feat .mqh{justify-content:center;margin:26px 0 0}
+  .mq-feat .mqh svg{width:58px;height:58px}
+  .mq-feat .who{text-align:left}
+  @media(hover:hover){.mq:not(.mq-feat){transition:transform .25s ease,box-shadow .25s ease}.mq:not(.mq-feat):hover{transform:translateY(-3px);box-shadow:0 20px 42px -20px rgba(41,39,39,.38)}}
 
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
@@ -441,7 +450,7 @@
     .pdp{gap:40px;padding:28px 0 70px}
     .fgrid{grid-template-columns:1fr 1fr;gap:36px 24px}
     .fgrid>div:first-child{grid-column:1/-1}
-    .mquotes{grid-template-columns:1fr;gap:12px}
+    .mquotes{gap:12px}
     footer{padding:56px 0 32px}
   }
   @media(max-width:560px){
@@ -511,11 +520,17 @@
     .faq summary{padding:14px 2px;font-size:15px}
     .faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}
     #view-sell section:last-of-type .sell p{font-size:15px;margin-bottom:18px!important}
-    .mqband{padding:28px 20px}
-    .qhead{margin:0 0 18px}
+    .mqband{padding:36px 20px 32px}
+    .qhead{margin:0 auto 22px}
+    .qsub{font-size:14px}
     .mq{padding:18px 16px}
     .mq blockquote{font-size:15.5px}
+    .mq-feat{padding:0 2px 18px}
+    .mq-feat::before{font-size:84px}
+    .mq-feat blockquote{font-size:20px;line-height:1.4}
     .mqh svg{width:40px;height:40px}
+    .mq-feat .mqh{margin:18px 0 0}
+    .mq-feat .mqh svg{width:48px;height:48px}
   }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 
@@ -921,11 +936,13 @@
   <section class="band" style="padding-top:0">
     <div class="wrap">
       <div class="mqband">
-        <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2></div>
+        <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2><p class="qsub" data-cms="sell.quotes.sub">Independent makers run their own shops on Trove. Here's how it feels from the studio side.</p></div>
         <div class="mquotes" id="quotesList">
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg><div class="who"><b>Mara</b><span>Kiln &amp; Clay, Dubai</span></div></div><blockquote>I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.</blockquote></figure>
+          <figure class="mq mq-feat"><blockquote>For years my pottery stayed in cupboards, because selling felt like a second job I didn't have time for — a licence, couriers, a shopfront. Trove takes all of that on. I photograph a piece, set my price and get back to my wheel; when something sells, the courier collects it from my door. My work sits in homes across the Emirates now, and I still spend my days exactly where I want to be — in the studio.</blockquote><figcaption class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg><div class="who"><b>Mara</b><span>Kiln &amp; Clay, Dubai</span></div></figcaption></figure>
           <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg><div class="who"><b>Nadia</b><span>Sable &amp; Stone, Abu Dhabi</span></div></div><blockquote>I'd only ever sold at weekend markets. On Trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote></figure>
           <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#CAD5CC"/></svg><div class="who"><b>Yasmin</b><span>Fern Apothecary, Abu Dhabi</span></div></div><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#BED3DF"/><path d="M13 22c0-7.5 4.8-12 11-12s11 4.5 11 12l-1 3.4c-1.7-4.2-4.7-6.2-10-6.2s-8.3 2-10 6.2z" fill="#33261E"/><circle cx="24" cy="25" r="7.5" fill="#CE9868"/><path d="M17 27c.3 5 3 8 7 8s6.7-3 7-8c1.4 5.8-1.2 10.6-7 10.6S15.6 32.8 17 27z" fill="#33261E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#3B2E26"/></svg><div class="who"><b>Saeed</b><span>Ember Goods, Dubai</span></div></div><blockquote>Selling online always felt like someone else's world — we've worked leather and brass in Deira for years. The application really is written like a chat, and we listed our first four pieces the same evening.</blockquote></figure>
+          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CFDBBE"/><path d="M12.5 34c-2.5-10 .5-23 11.5-23s14 13 11.5 23l-4.3-.6c1.6-4.8 1.8-9.8.4-13-2.5 2.4-12.2 2.7-15.2.3-1.4 3.2-1.2 8-.4 12.7z" fill="#7A4A2B"/><circle cx="24" cy="25" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg><div class="who"><b>Lena</b><span>Northbound Loom, Dubai</span></div></div><blockquote>Knitwear is slow work, and I worried a marketplace would push me to churn pieces out. It's the opposite — you choose how many orders a month you're comfortable with, and Trove has respected that number ever since.</blockquote></figure>
         </div>
       </div>
     </div>
@@ -1219,7 +1236,9 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'
 const MAKER_AVATARS=[
   '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg>',
   '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg>',
-  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#CAD5CC"/></svg>'
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#CAD5CC"/></svg>',
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#BED3DF"/><path d="M13 22c0-7.5 4.8-12 11-12s11 4.5 11 12l-1 3.4c-1.7-4.2-4.7-6.2-10-6.2s-8.3 2-10 6.2z" fill="#33261E"/><circle cx="24" cy="25" r="7.5" fill="#CE9868"/><path d="M17 27c.3 5 3 8 7 8s6.7-3 7-8c1.4 5.8-1.2 10.6-7 10.6S15.6 32.8 17 27z" fill="#33261E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#3B2E26"/></svg>',
+  '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CFDBBE"/><path d="M12.5 34c-2.5-10 .5-23 11.5-23s14 13 11.5 23l-4.3-.6c1.6-4.8 1.8-9.8.4-13-2.5 2.4-12.2 2.7-15.2.3-1.4 3.2-1.2 8-.4 12.7z" fill="#7A4A2B"/><circle cx="24" cy="25" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg>'
 ];
 function vColor(v){return VENDORS[v].color;}
 function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
@@ -1997,7 +2016,13 @@ function applyContent(){
   const faq=cmsGet('sell.faq.items');
   if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
   const mq=cmsGet('sell.quotes.items');
-  if(Array.isArray(mq))$('quotesList').innerHTML=mq.map((q,i)=>`<figure class="mq"><div class="mqh">${MAKER_AVATARS[i%MAKER_AVATARS.length]}<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div></div><blockquote>${esc(q.quote)}</blockquote></figure>`).join('');
+  if(Array.isArray(mq))$('quotesList').innerHTML=mq.map((q,i)=>{
+    const av=MAKER_AVATARS[i%MAKER_AVATARS.length];
+    const who=`<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div>`;
+    return i===0
+      ?`<figure class="mq mq-feat"><blockquote>${esc(q.quote)}</blockquote><figcaption class="mqh">${av}${who}</figcaption></figure>`
+      :`<figure class="mq"><div class="mqh">${av}${who}</div><blockquote>${esc(q.quote)}</blockquote></figure>`;
+  }).join('');
 }
 /* upgrade testimonial shop lines to links when the named shop exists in the
  * catalogue (matched by name, so it works in demo, local and prod alike;

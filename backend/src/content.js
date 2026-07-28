@@ -101,10 +101,13 @@ const DEFAULTS = {
   'sell.quotes': {
     eyebrow: 'From our makers',
     heading: 'In their words.',
+    sub: "Independent makers run their own shops on Trove. Here's how it feels from the studio side.",
     items: [
-      { quote: "I photograph a piece, set my price, and get back to my wheel. When something sells, the courier collects it from my door — I've never once queued at a courier office.", name: 'Mara', shop: 'Kiln & Clay, Dubai' },
+      { quote: "For years my pottery stayed in cupboards, because selling felt like a second job I didn't have time for — a licence, couriers, a shopfront. Trove takes all of that on. I photograph a piece, set my price and get back to my wheel; when something sells, the courier collects it from my door. My work sits in homes across the Emirates now, and I still spend my days exactly where I want to be — in the studio.", name: 'Mara', shop: 'Kiln & Clay, Dubai' },
       { quote: "I'd only ever sold at weekend markets. On Trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.", name: 'Nadia', shop: 'Sable & Stone, Abu Dhabi' },
       { quote: "The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.", name: 'Yasmin', shop: 'Fern Apothecary, Abu Dhabi' },
+      { quote: "Selling online always felt like someone else's world — we've worked leather and brass in Deira for years. The application really is written like a chat, and we listed our first four pieces the same evening.", name: 'Saeed', shop: 'Ember Goods, Dubai' },
+      { quote: "Knitwear is slow work, and I worried a marketplace would push me to churn pieces out. It's the opposite — you choose how many orders a month you're comfortable with, and Trove has respected that number ever since.", name: 'Lena', shop: 'Northbound Loom, Dubai' },
     ],
   },
   'sell.faq': {
