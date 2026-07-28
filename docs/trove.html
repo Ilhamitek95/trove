@@ -241,8 +241,8 @@
   .faq[open] summary .faq-tg{transform:rotate(45deg)}
   .faq .faq-a{padding:0 40px 22px 2px;font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.7}
   /* maker testimonials on the sell page — sage feature band */
-  .mqband{background:radial-gradient(620px 360px at 8% 0%,rgba(253,247,245,.55),transparent 70%),radial-gradient(660px 400px at 94% 100%,rgba(207,219,190,.6),transparent 72%),var(--sage);border-radius:28px;padding:64px 52px 56px}
-  .qhead{margin:0 auto 36px;text-align:center}
+  .mqband{background:radial-gradient(620px 360px at 8% 0%,rgba(253,247,245,.55),transparent 70%),radial-gradient(660px 400px at 94% 100%,rgba(207,219,190,.6),transparent 72%),var(--sage);border-radius:28px;padding:52px 44px 46px}
+  .qhead{margin:0 auto 28px;text-align:center}
   .qsub{margin:14px auto 0;max-width:52ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
   .mquotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
   .mq{background:var(--paper);border-radius:18px;padding:24px 22px;margin:0;box-shadow:0 14px 34px -20px rgba(41,39,39,.3)}
@@ -256,14 +256,31 @@
   .mq blockquote{font-family:var(--font-display);font-size:16.5px;line-height:1.5;color:var(--char);margin:0}
   .mq blockquote::before{content:'\201C'}
   .mq blockquote::after{content:'\201D'}
-  .mq-feat{grid-column:1/-1;background:transparent;box-shadow:none;padding:0 20px 26px;text-align:center}
-  .mq-feat::before{content:'\201C';display:block;font-family:var(--font-display);font-size:112px;line-height:.6;height:.6em;color:rgba(41,39,39,.16)}
-  .mq-feat blockquote{font-size:clamp(21px,2.4vw,29px);line-height:1.34;max-width:760px;margin:0 auto}
+  .mq-feat{grid-column:1/-1;background:transparent;box-shadow:none;padding:0 20px 18px;text-align:center}
+  .mq-feat::before{content:'\201C';display:block;font-family:var(--font-display);font-size:100px;line-height:.6;height:.6em;color:rgba(41,39,39,.16)}
+  .mq-feat blockquote{font-size:clamp(21px,2.2vw,27px);line-height:1.34;max-width:760px;margin:0 auto}
   .mq-feat blockquote::before,.mq-feat blockquote::after{content:none}
-  .mq-feat .mqh{justify-content:center;margin:26px 0 0}
+  .mq-feat .mqh{justify-content:center;margin:20px 0 0}
   .mq-feat .mqh svg{width:58px;height:58px}
   .mq-feat .who{text-align:left}
   @media(hover:hover){.mq:not(.mq-feat){transition:transform .25s ease,box-shadow .25s ease}.mq:not(.mq-feat):hover{transform:translateY(-3px);box-shadow:0 20px 42px -20px rgba(41,39,39,.38)}}
+  /* sell page — compact: hero+steps share a band, 4-col steps, 2-col FAQ, closing folded into a CTA card */
+  #view-sell section.band{padding:64px 0}
+  #view-sell .band-head{margin:0 auto 30px}
+  #view-sell .band-head h2{font-size:clamp(28px,3.6vw,40px)}
+  #view-sell .stephead{margin:56px auto 26px}
+  #view-sell .stepsband{background:var(--rose);border-radius:24px;padding:36px 40px}
+  #view-sell .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 30px}
+  #view-sell .step{display:block;padding:0;border-bottom:0}
+  #view-sell .step .nm{width:auto;display:block;margin-bottom:10px}
+  #view-sell .step h4{font-size:17px;margin-bottom:5px}
+  #view-sell .step p{font-size:13.5px;line-height:1.62}
+  #view-sell .faqs{max-width:1020px;display:grid;grid-template-columns:1fr 1fr;gap:0 46px;align-items:start}
+  #view-sell .sellcta{background:var(--rose);border-radius:24px;padding:38px 44px;margin:44px auto 0;max-width:1020px;display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap;text-align:left}
+  #view-sell .sellcta h2{font-size:clamp(26px,3vw,34px);margin:12px 0 10px;font-weight:400;line-height:1.1}
+  #view-sell .sellcta h2 em{font-style:normal;color:var(--coral)}
+  #view-sell .sellcta p{margin:0;font-size:14.5px;color:var(--ink-80);max-width:52ch;font-weight:400}
+  #view-sell .sellcta .btn{flex-shrink:0}
 
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
@@ -451,6 +468,10 @@
     .fgrid{grid-template-columns:1fr 1fr;gap:36px 24px}
     .fgrid>div:first-child{grid-column:1/-1}
     .mquotes{gap:12px}
+    #view-sell .steps{grid-template-columns:1fr 1fr;gap:18px 24px}
+    #view-sell .faqs{grid-template-columns:1fr;max-width:660px}
+    #view-sell .sellcta{display:block;text-align:center}
+    #view-sell .sellcta p{margin:0 auto 22px}
     footer{padding:56px 0 32px}
   }
   @media(max-width:560px){
@@ -510,16 +531,21 @@
     #view-sell section:first-of-type .wrap>p{font-size:15px!important;margin:16px auto 22px!important}
     .sellfacts{gap:7px;margin-top:18px}
     .sellfacts span{padding:7px 12px;font-size:12px}
-    #view-sell .band-head{margin-bottom:22px}
-    #view-sell .band-head h2{font-size:clamp(30px,8.5vw,36px)}
-    #view-sell .sell{padding:30px 22px}
-    #view-sell .step{padding:13px 0;gap:12px}
-    #view-sell .step .nm{width:26px;font-size:22px}
-    #view-sell .step h4{font-size:17.5px}
-    #view-sell .step p{font-size:13.5px}
+    #view-sell .band-head{margin-bottom:20px}
+    #view-sell .band-head h2{font-size:clamp(26px,7.5vw,32px)}
+    #view-sell .stephead{margin:34px auto 18px}
+    #view-sell .stepsband{padding:24px 20px}
+    #view-sell .steps{grid-template-columns:1fr;gap:0}
+    #view-sell .step{display:flex;padding:12px 0;gap:12px;border-bottom:1px solid rgba(41,39,39,.13)}
+    #view-sell .step:last-child{border-bottom:0}
+    #view-sell .step .nm{width:26px;font-size:22px;margin:0;flex-shrink:0}
+    #view-sell .step h4{font-size:16.5px}
+    #view-sell .step p{font-size:13px}
     .faq summary{padding:14px 2px;font-size:15px}
     .faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}
-    #view-sell section:last-of-type .sell p{font-size:15px;margin-bottom:18px!important}
+    #view-sell .sellcta{padding:28px 22px;margin-top:30px}
+    #view-sell .sellcta h2{font-size:24px}
+    #view-sell .sellcta .btn{width:100%}
     .mqband{padding:36px 20px 32px}
     .qhead{margin:0 auto 22px}
     .qsub{font-size:14px}
@@ -906,11 +932,11 @@
 
 <!-- SELL -->
 <div class="view" id="view-sell">
-  <section class="band" style="padding-bottom:0">
+  <section class="band">
     <div class="wrap" style="text-align:center;max-width:760px">
       <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on Trove</span>
-      <h1 style="font-size:clamp(44px,6vw,76px);font-weight:400;line-height:1.0;margin:18px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h1>
-      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:24px auto 30px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.</p>
+      <h1 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h1>
+      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:18px auto 26px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href='/apply'">Start your application</button>
         <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
@@ -919,12 +945,10 @@
         <span>Free to join</span><span>No trade licence needed</span><span>Courier collects from your door</span><span>A real person reviews every shop</span>
       </div>
     </div>
-  </section>
-  <section class="band" id="sellSteps">
-    <div class="wrap" style="max-width:780px;margin:0 auto">
-      <div class="band-head"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.steps.heading">From craft table to shopfront, in four steps.</h2></div>
-      <div class="sell" style="background:var(--rose)">
-        <div class="steps" style="grid-column:1/-1" id="sellStepsList">
+    <div class="wrap" id="sellSteps" style="max-width:1020px">
+      <div class="band-head stephead"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.steps.heading">From craft table to shopfront, in four steps.</h2></div>
+      <div class="stepsband">
+        <div class="steps" id="sellStepsList">
           <div class="step"><span class="nm">i</span><div><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div></div>
           <div class="step"><span class="nm">ii</span><div><h4>Add your pieces</h4><p>Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.</p></div></div>
           <div class="step"><span class="nm">iii</span><div><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div></div>
@@ -966,14 +990,12 @@
         <details class="faq"><summary>Can I keep selling on Instagram or at markets?<span class="faq-tg">+</span></summary>
           <div class="faq-a">Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.</div></details>
       </div>
-    </div>
-  </section>
-  <section class="band" style="padding-top:0">
-    <div class="wrap" style="max-width:780px;margin:0 auto">
-      <div class="sell" style="display:block;text-align:center">
-        <span class="eyebrow" data-cms="sell.closing.eyebrow">Ready when you are</span>
-        <h2 style="margin:14px 0 12px" data-cms-rich="sell.closing.heading">Give your craft a <em>shopfront</em>.</h2>
-        <p style="margin:0 auto 26px" data-cms="sell.closing.text">The application takes about ten minutes, and you can sign in and prepare your shop while a real person reviews it.</p>
+      <div class="sellcta">
+        <div>
+          <span class="eyebrow" data-cms="sell.closing.eyebrow">Ready when you are</span>
+          <h2 data-cms-rich="sell.closing.heading">Give your craft a <em>shopfront</em>.</h2>
+          <p data-cms="sell.closing.text">The application takes about ten minutes, and you can sign in and prepare your shop while a real person reviews it.</p>
+        </div>
         <button class="btn btn-dark" data-cms="sell.closing.cta" onclick="location.href='/apply'">Start your application</button>
       </div>
     </div>
