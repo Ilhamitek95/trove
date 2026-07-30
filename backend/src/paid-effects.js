@@ -33,8 +33,22 @@ function paidDbEffects(order, groups) {
   // Payment success is the moment Trove purchases the goods from its
   // suppliers: title transfers now, and the buyer-facing order is paid.
   db.prepare("UPDATE orders SET status='paid', title_transferred_at=datetime('now'), vat_amount_cents=? WHERE id=?").run(vat, order.id);
+  const options = require('./options');
   for (const it of db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id)) {
-    db.prepare('UPDATE products SET stock = MAX(0, stock - ?) WHERE id=?').run(it.qty, it.product_id);
+    const p = db.prepare('SELECT options, variants FROM products WHERE id=?').get(it.product_id);
+    const chosen = options.parse(it.options);
+    // A piece with variations keeps its stock per combination; products.stock
+    // stays the sum so every sold-out check in the app still reads one number.
+    if (p && chosen.length && options.parse(p.options).length) {
+      const variants = options.parse(p.variants);
+      const key = options.variantKey(chosen);
+      const v = variants.find((x) => x.key === key);
+      if (v) v.stock = Math.max(0, v.stock - it.qty);
+      db.prepare('UPDATE products SET variants=?, stock=? WHERE id=?')
+        .run(JSON.stringify(variants), options.totalStock(variants), it.product_id);
+    } else {
+      db.prepare('UPDATE products SET stock = MAX(0, stock - ?) WHERE id=?').run(it.qty, it.product_id);
+    }
   }
   // One shipment per shop, so each supplier fulfils and tracks their own items.
   for (const { shop_id } of db.prepare('SELECT DISTINCT shop_id FROM order_items WHERE order_id=?').all(order.id)) {
@@ -56,13 +70,34 @@ function paidDbEffects(order, groups) {
   }
 }
 
-/** Courier pickups + Rail B leftover transfers. Failure never blocks the
- *  payment — the seller stepper still works by hand. */
+/** The receipt the confirmation page promises. Fire-and-forget: a mail
+ *  failure must never unwind a paid order. Without RESEND_API_KEY it logs
+ *  "email skipped" and resolves, so local dev and tests need no setup. */
+function sendConfirmation(order) {
+  const email = require('./email');
+  const options = require('./options');
+  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, s.name AS shop_name
+    FROM order_items oi JOIN shops s ON s.id = oi.shop_id WHERE oi.order_id=? ORDER BY s.name, oi.id`).all(order.id);
+  const meta = (i) => [options.label(i.options), i.personalization ? `“${i.personalization}”` : ''].filter(Boolean).join(' · ');
+  let ship = null;
+  try { ship = order.shipping_json ? JSON.parse(order.shipping_json) : null; } catch (_) { /* keep the receipt, drop the block */ }
+  const msg = email.orderConfirmation({
+    order,
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, meta: meta(i) })),
+    shops: [...new Set(items.map((i) => i.shop_name))],
+    ship,
+  });
+  email.send({ to: order.email, ...msg }).catch((e) => console.error('order-confirmation email failed:', e.message));
+}
+
+/** Courier pickups, the buyer's receipt + Rail B leftover transfers. Failure
+ *  never blocks the payment — the seller stepper still works by hand. */
 function paidPostEffects(order, groups, stripe) {
   const delivery = require('./delivery');
   for (const sh of db.prepare('SELECT id FROM shipments WHERE order_id=?').all(order.id)) {
     delivery.bookPickup(sh.id).catch((e) => console.error('Pickup booking failed for shipment', sh.id, e.message));
   }
+  try { sendConfirmation(order); } catch (e) { console.error('order-confirmation email failed:', e.message); }
 
   if (order.rail === 'connect') return;
   // Rail B leftover: a mixed cart can contain a connect-tier shop's items;
@@ -89,4 +124,4 @@ function paidPostEffects(order, groups, stripe) {
   }
 }
 
-module.exports = { perShopGroups, paidDbEffects, paidPostEffects };
+module.exports = { perShopGroups, paidDbEffects, paidPostEffects, sendConfirmation };

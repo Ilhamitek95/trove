@@ -8,7 +8,8 @@ const verifyPassword = (pw, hash) => bcrypt.compareSync(pw, hash);
 // Strip sensitive fields before sending a user to the client.
 function publicUser(u) {
   if (!u) return null;
-  return { id: u.id, email: u.email, name: u.name, role: u.role };
+  // Their own sign-in mobile — used to prefill the courier field at checkout.
+  return { id: u.id, email: u.email, name: u.name, role: u.role, phone: u.phone || null };
 }
 
 function requireAuth(req, res, next) {

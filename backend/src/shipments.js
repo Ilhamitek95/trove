@@ -17,7 +17,7 @@ const LABELS = {
   cancelled: 'Cancelled',
 };
 
-const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, p.image_seed, p.images FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND oi.shop_id=?');
+const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, p.image_seed, p.images FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND oi.shop_id=?');
 const firstImage = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) && v[0] ? v[0] : null; } catch (_) { return null; } };
 const eventsStmt = db.prepare('SELECT status, note, created_at FROM shipment_events WHERE shipment_id=? ORDER BY id ASC');
 
@@ -37,7 +37,9 @@ function shape(s) {
     updatedAt: s.updated_at,
     shop: { id: s.shop_id, name: s.shop_name, color: s.color, isHouse: !!s.is_house },
     itemTotal: items.reduce((t, i) => t + i.price_cents * i.qty, 0) / 100,
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, seed: i.image_seed || '', image: firstImage(i.images), personalization: i.personalization || '' })),
+    // `options` is what the buyer chose (Colour: Clay) — the maker needs it to
+    // pack the right piece, so it travels with the shipment on both sides.
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, seed: i.image_seed || '', image: firstImage(i.images), personalization: i.personalization || '', options: require('./options').parse(i.options) })),
     timeline: eventsStmt.all(s.id).map((e) => ({ status: e.status, label: LABELS[e.status] || e.status, note: e.note, at: e.created_at })),
   };
 }

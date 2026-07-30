@@ -98,9 +98,26 @@ router.get('/products', requireSeller, (req, res) => {
 // Personalisation settings arrive as { enabled, required, prompt, maxLen }.
 const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.prompt || '').slice(0, 300), Math.min(1024, Math.max(1, parseInt(p.maxLen) || 256))] : [0, 0, '', 256];
 const { normalizeTags } = require('../tags');
+// Buyer-facing variations, each with its own stock — see src/options.js.
+const productOptions = require('../options');
+
+/**
+ * The variant grid is rebuilt server-side from the options on every save, so
+ * it always covers exactly the combinations the shop offers. Returns the
+ * columns to write: a piece with variations takes its stock from them.
+ */
+function optionCols(options, variantsFromClient, plainStock) {
+  const groups = productOptions.normalize(options);
+  const variants = productOptions.buildVariants(groups, variantsFromClient);
+  return {
+    options: JSON.stringify(groups),
+    variants: JSON.stringify(variants),
+    stock: groups.length ? productOptions.totalStock(variants) : plainStock,
+  };
+}
 
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags, images } = req.body || {};
+  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags, images, options, variants } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
@@ -108,10 +125,13 @@ router.post('/products', requireSeller, (req, res) => {
     const imgErr = imagesError(images);
     if (imgErr) return res.status(400).json({ error: imgErr });
   }
-  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,
+  const optErr = productOptions.optionsError(options);
+  if (optErr) return res.status(400).json({ error: optErr });
+  const opt = optionCols(options, variants, stock);
+  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed,
-      JSON.stringify(normalizeTags(tags)), ...persoCols(personalization));
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), opt.stock, status, imageSeed,
+      JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, ...persoCols(personalization));
   if (images !== undefined && images.length) {
     try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
     catch (e) {
@@ -148,6 +168,9 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     const catErr = require('../categories').categoryError(b.category, { house: !!req.shop.is_house });
     if (catErr) return res.status(422).json({ error: catErr.message });
   }
+  // Validated before the first write, so a rejected save changes nothing.
+  const optErr = productOptions.optionsError(b.options);
+  if (optErr) return res.status(400).json({ error: optErr });
   db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
     price_cents=COALESCE(?,price_cents), compare_at_cents=?, stock=COALESCE(?,stock), status=COALESCE(?,status) WHERE id=?`)
     .run(b.name, b.description, b.category, toCents(b.price),
@@ -159,6 +182,22 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   }
   if (b.tags !== undefined) {
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
+  }
+  if (b.options !== undefined || b.variants !== undefined) {
+    // Either half arriving rebuilds the whole grid, carrying over the stock of
+    // combinations that survive the edit.
+    const groups = b.options !== undefined ? b.options : productOptions.parse(p.options);
+    const carry = b.variants !== undefined ? b.variants : productOptions.parse(p.variants);
+    // Dropping the variations falls back to what the grid added up to, so a
+    // shop that simplifies a listing doesn't find it silently sold out.
+    const hadVariants = productOptions.parse(p.options).length;
+    const plainStock = b.stock == null ? (hadVariants ? productOptions.totalStock(p.variants) : p.stock) : b.stock;
+    const opt = optionCols(groups, carry, plainStock);
+    db.prepare('UPDATE products SET options=?, variants=?, stock=? WHERE id=?').run(opt.options, opt.variants, opt.stock, p.id);
+  } else if (b.stock !== undefined && productOptions.parse(p.options).length) {
+    // A piece with variations has no stock of its own to set — the quick
+    // stock box in the products table doesn't apply, so hold the derived sum.
+    db.prepare('UPDATE products SET stock=? WHERE id=?').run(productOptions.totalStock(p.variants), p.id);
   }
   if (b.images !== undefined) {
     const imgErr = imagesError(b.images);
@@ -190,7 +229,7 @@ function shopReturnShape(rr, shopId) {
     reason: returns.REASONS[rr.reason] || rr.reason,
     details: rr.details,
     images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100 })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, options: productOptions.parse(i.options) })),
     itemsTotal: gross / 100,
     creditImpact: fees.split(gross).net / 100,
     declineReason: rr.decline_reason || null,

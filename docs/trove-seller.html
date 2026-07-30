@@ -183,6 +183,25 @@
   .tagbox .tg button{border:0;background:rgba(41,39,39,.08);color:var(--char);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
   .tagbox .tg button:hover{background:var(--coral);color:var(--char)}
   .tagbox input{border:0;outline:0;background:none;flex:1;min-width:130px;font:inherit;font-size:13.5px;padding:4px 2px}
+  /* buyer choices (Colour, Size…) — one card per group, values as chips */
+  .optg{border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px;background:var(--paper)}
+  .optg-top{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .optg-top input{flex:1;border:1px solid var(--line);border-radius:10px;padding:8px 11px;font:inherit;font-size:13.5px;background:var(--cream);color:var(--char);outline:0}
+  .optg-top input:focus{border-color:var(--taupe)}
+  .optg-del{border:0;background:rgba(41,39,39,.07);color:var(--char);width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0}
+  .optg-del:hover{background:var(--coral)}
+  /* the variant grid: one row per combination, its own stock and price */
+  .vgridwrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:4px}
+  .vgrid{width:100%;border-collapse:collapse;font-size:13px}
+  .vgrid th{text-align:left;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:9px 12px;background:var(--cream);border-bottom:1px solid var(--line)}
+  .vgrid td{padding:7px 12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  .vgrid tr:last-child td{border-bottom:0}
+  .vgrid .vc{font-weight:600;color:var(--char)}
+  .vgrid input{width:76px;border:1px solid var(--line);border-radius:9px;padding:6px 9px;font:inherit;font-size:13px;background:var(--paper);color:var(--char);outline:0}
+  .vgrid input:focus{border-color:var(--taupe)}
+  .vgrid tr.out .vc{color:var(--muted)}
+  .vgrid .vout{font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--accent-ink);margin-left:8px}
+  .vtot{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:var(--cream);font-size:12.5px;font-weight:700;color:var(--char)}
   #dTagAI.thinking{opacity:.55;pointer-events:none}
   .tagsug{display:none;margin-top:11px;padding:12px 13px;background:rgba(195,209,199,.16);border:1px solid rgba(195,209,199,.7);border-radius:12px}
   .tagsug.show{display:block}
@@ -440,7 +459,7 @@
     <nav class="menu">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
-      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill">2</span></a>
+      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill">0</span></a>
       <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="pill" id="returnPill" style="display:none">0</span></a>
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
@@ -623,8 +642,8 @@
           <div class="ferr"></div></div>
       </div>
       <div class="hint" style="margin:-10px 0 18px">Fill the was-price only for a genuine markdown — it shows crossed out next to your price, with a Sale badge.</div>
-      <div class="field"><label for="dStock">Stock</label><input id="dStock" type="number" min="0" placeholder="0">
-        <div class="hint">How many you can sell right now — 0 shows as sold out.</div></div>
+      <div class="field" id="dStockField"><label for="dStock">Stock</label><input id="dStock" type="number" min="0" placeholder="0">
+        <div class="hint">How many you can sell right now — 0 shows as sold out. Adding choices below moves this to a count per combination.</div></div>
       <div class="dfee">Trove buys at your list price minus <span id="dFeePct">20</span>%.&nbsp;On a AED <span id="dFeeBase">0</span> item your purchase price is&nbsp;<b>AED <span id="dFeeKeep">0</span></b>.</div>
     </div>
 
@@ -641,6 +660,12 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="field" style="margin:18px 0 0"><label>Choices for the buyer</label>
+        <div id="dOptions"></div>
+        <button class="btn btn-ghost btn-sm" type="button" id="dOptAdd" onclick="addOptGroup()">+ Add a choice</button>
+        <div class="hint">Colour, size, glaze — anything the buyer picks before adding to their basket. Their pick arrives with the order so you know what to make.</div>
+        <div id="dVariants"></div>
       </div>
       <div class="field" style="margin:18px 0 0"><label>Visibility</label>
         <div class="seg" id="dStatusSeg"><button data-s="live" class="on" onclick="setSeg(this)">Live</button><button data-s="draft" onclick="setSeg(this)">Draft</button></div>
@@ -708,7 +733,9 @@ function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clea
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'shipped'; }
 function parseTagsCol(s){ try{const v=JSON.parse(s||'[]');return Array.isArray(v)?v:[];}catch(_){return[];} }
-function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),
+/* "Glaze: Ash grey · Size: Large" — what the buyer chose, on order lines. */
+const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
@@ -756,6 +783,9 @@ async function reloadOrders(){
   // Each row is one shipment (this shop's items within an order), with an `order` summary attached.
   try{ const {orders:o}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; }
   catch(_){ orders=[]; }
+  // The sidebar count belongs to the orders load, not to opening Products —
+  // it used to sit in renderProducts() and read 0 until you happened to go there.
+  $('orderPill').textContent=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
   renderOrders(); renderOverview();
 }
 async function refreshStripeStatus(){
@@ -799,7 +829,6 @@ function renderOverview(){
 /* ---------------- PRODUCTS ---------------- */
 function renderProducts(){
   $('prodCount').textContent=products.length;
-  $('orderPill').textContent=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
   if(!products.length){ $('prodTable').innerHTML=`<tbody><tr><td style="padding:30px 16px;color:var(--muted);font-weight:600">No products yet — add your first piece with the button above.</td></tr></tbody>`; return; }
   $('prodTable').innerHTML=`
     <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
@@ -808,7 +837,9 @@ function renderProducts(){
         <div><div class="pn">${p.name}</div><div class="ps">${p.stock} in stock</div></div></div></td>
       <td style="color:var(--muted);font-weight:600">${p.cat}</td>
       <td><span class="price-edit" onclick="editPrice(${p.id},this)">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
-      <td><input class="stock-input" type="number" value="${p.stock}" onchange="setStock(${p.id},this.value)">${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
+      <td>${(p.options||[]).length
+        ? `<span class="ps" title="Stock is kept per combination">${p.stock} across ${p.variants.length} choice${p.variants.length===1?'':'s'}</span>`
+        : `<input class="stock-input" type="number" value="${p.stock}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
       <td><span class="pill-st ${p.status}" onclick="cycleStatus(${p.id})">${p.status}</span></td>
       <td><div class="rowact">
         <button class="iact" title="Edit" onclick="openEdit(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
@@ -898,6 +929,127 @@ async function aiSuggestTags(){
   finally{btn.classList.remove('thinking');btn.textContent=was;}
 }
 
+/* drawer — buyer choices (Colour: Sand / Clay). The shop lists the groups and
+   their values; the buyer must pick one of each before the piece goes in the
+   basket, and their pick travels to the order. Stock stays product-level, so
+   a maker isn't asked to count six variants of a hand-thrown pot. */
+let drawerOptions=[];
+const MAX_OPT_GROUPS=3, MAX_OPT_VALUES=20;
+function renderDrawerOptions(){
+  const w=$('dOptions');w.innerHTML='';
+  drawerOptions.forEach((g,gi)=>{
+    const card=document.createElement('div');card.className='optg';
+
+    const top=document.createElement('div');top.className='optg-top';
+    const name=document.createElement('input');
+    name.placeholder='Name it — e.g. Colour, Size, Glaze';
+    name.value=g.name;
+    // Renaming a group re-keys its combinations, so the grid follows along
+    // (without re-rendering these cards, which would steal focus mid-word).
+    name.oninput=()=>{g.name=name.value.slice(0,24);drawerDirty=true;syncDrawerVariants();};
+    const del=document.createElement('button');del.type='button';del.className='optg-del';del.textContent='×';del.title='Remove this choice';
+    del.onclick=()=>{drawerOptions.splice(gi,1);renderDrawerOptions();};
+    top.appendChild(name);top.appendChild(del);
+    card.appendChild(top);
+
+    const box=document.createElement('div');box.className='tagbox';
+    const input=document.createElement('input');
+    input.placeholder=g.values.length?'Add another…':'Type a choice, press Enter';
+    g.values.forEach((v,vi)=>{
+      const chip=document.createElement('span');chip.className='tg';
+      chip.appendChild(document.createTextNode(v));
+      const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+      x.onclick=(e)=>{e.stopPropagation();g.values.splice(vi,1);renderDrawerOptions();};
+      chip.appendChild(x);box.appendChild(chip);
+    });
+    const addValue=(raw)=>{
+      const v=String(raw||'').replace(/\s+/g,' ').trim().slice(0,40);
+      if(!v)return;
+      if(g.values.length>=MAX_OPT_VALUES){toast(`${MAX_OPT_VALUES} choices is the limit for one option`);return;}
+      if(!g.values.some(x=>x.toLowerCase()===v.toLowerCase()))g.values.push(v);
+      renderDrawerOptions();
+      const fresh=$('dOptions').querySelectorAll('.tagbox input')[gi];
+      if(fresh)fresh.focus();
+    };
+    input.onkeydown=(e)=>{
+      if(e.key==='Enter'||e.key===','){e.preventDefault();addValue(e.target.value);e.target.value='';}
+      else if(e.key==='Backspace'&&!e.target.value&&g.values.length){g.values.pop();renderDrawerOptions();}
+    };
+    input.onblur=(e)=>{if(e.target.value.trim()){addValue(e.target.value);e.target.value='';}};
+    box.onclick=()=>input.focus();
+    box.appendChild(input);
+    card.appendChild(box);
+    w.appendChild(card);
+  });
+  $('dOptAdd').style.display=drawerOptions.length>=MAX_OPT_GROUPS?'none':'';
+  $('dOptAdd').textContent=drawerOptions.length?'+ Add another choice':'+ Add a choice';
+  drawerDirty=true;
+  syncDrawerVariants();
+}
+function addOptGroup(){
+  if(drawerOptions.length>=MAX_OPT_GROUPS){toast(`${MAX_OPT_GROUPS} choices is the limit — more than that is a lot to ask of a shopper`);return;}
+  drawerOptions.push({name:'',values:[]});
+  renderDrawerOptions();
+  const names=$('dOptions').querySelectorAll('.optg-top input');
+  if(names.length)names[names.length-1].focus();
+}
+/* Drop the half-filled rows a seller left behind rather than failing the save. */
+function drawerOptionsPayload(){
+  return drawerOptions
+    .map(g=>({name:String(g.name||'').trim(),values:g.values.filter(Boolean)}))
+    .filter(g=>g.name&&g.values.length);
+}
+
+/* The variant grid: one row per combination, each with its own stock and an
+   optional price. The server rebuilds this on save, so what shows here is
+   exactly what will exist — a combination that isn't in the grid can't sell. */
+let drawerVariants=[];
+/* Everything typed against a combination during this edit, remembered by key.
+   Adding a group re-keys the whole grid; taking it off again has to give the
+   seller their numbers back rather than quietly zeroing the listing. */
+let drawerStockMemory=new Map();
+const vKey=chosen=>chosen.map(o=>`${o.name}:${o.value}`).join('|');
+function vCombos(groups){
+  return groups.reduce((rows,g)=>rows.flatMap(r=>g.values.map(v=>[...r,{name:g.name,value:v}])),[[]]);
+}
+/* Rebuild for the current groups, carrying over what the seller already typed.
+   A combination nobody has ever filled in starts at zero — the shop says what
+   it can make before it goes on sale. */
+function syncDrawerVariants(){
+  const groups=drawerOptionsPayload();
+  drawerVariants.forEach(v=>drawerStockMemory.set(v.key,{stock:v.stock,priceCents:v.priceCents}));
+  drawerVariants=groups.length?vCombos(groups).map(chosen=>{
+    const key=vKey(chosen), old=drawerStockMemory.get(key)||{};
+    return {key,options:chosen,stock:old.stock==null?0:old.stock,priceCents:old.priceCents==null?null:old.priceCents};
+  }):[];
+  renderDrawerVariants();
+}
+function renderDrawerVariants(){
+  const w=$('dVariants');
+  // With no variations the plain Stock field upstairs still rules.
+  $('dStockField').style.display=drawerVariants.length?'none':'';
+  if(!drawerVariants.length){w.innerHTML='';return;}
+  const total=drawerVariants.reduce((t,v)=>t+(parseInt(v.stock)||0),0);
+  w.innerHTML=`<div class="hint" style="margin:14px 0 6px">Stock is counted per combination — when one sells out the others stay on sale. Leave a price empty to use your product price.</div>
+    <div class="vgridwrap"><table class="vgrid">
+      <thead><tr><th>Combination</th><th style="width:96px">Stock</th><th style="width:110px">Price (AED)</th></tr></thead>
+      <tbody>${drawerVariants.map((v,i)=>{
+        const out=!(parseInt(v.stock)||0);
+        return `<tr class="${out?'out':''}">
+          <td class="vc">${esc(v.options.map(o=>o.value).join(' · '))}${out?'<span class="vout">SOLD OUT</span>':''}</td>
+          <td><input type="number" min="0" value="${parseInt(v.stock)||0}" onchange="setVariantStock(${i},this.value)"></td>
+          <td><input type="number" min="0" value="${v.priceCents?v.priceCents/100:''}" placeholder="${$('dPrice').value||'—'}" onchange="setVariantPrice(${i},this.value)"></td>
+        </tr>`;}).join('')}</tbody>
+    </table><div class="vtot"><span>Total stock</span><span>${total}</span></div></div>`;
+}
+function setVariantStock(i,v){ if(!drawerVariants[i])return; drawerVariants[i].stock=Math.max(0,parseInt(v)||0); drawerDirty=true; renderDrawerVariants(); }
+function setVariantPrice(i,v){
+  if(!drawerVariants[i])return;
+  const n=parseFloat(v);
+  drawerVariants[i].priceCents=(v===''||isNaN(n)||n<=0)?null:Math.round(n*100);
+  drawerDirty=true; renderDrawerVariants();
+}
+
 /* drawer — product photos (client downsizes to keep uploads small; the
    server stores them under /uploads/products and the first is the cover) */
 let drawerImages=[];
@@ -959,12 +1111,17 @@ function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('
   $('dName').value='';$('dDesc').value='';fillCatOptions();$('dCat').selectedIndex=0;$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
   drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   drawerImages=[];renderDrawerPhotos();
+  drawerOptions=[];drawerVariants=[];drawerStockMemory=new Map();renderDrawerOptions();
   fillPerso(null);setSegStatus('live');updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSub').textContent='Tweak anything — nothing changes until you save.';$('drawerSave').textContent='Save changes';
   $('dName').value=p.name;$('dDesc').value=p.desc||'';fillCatOptions();ensureCatOption(p.cat);$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
   drawerTags=(p.tags||[]).slice();suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   drawerImages=(p.images||[]).slice();renderDrawerPhotos();
+  drawerOptions=(p.options||[]).map(g=>({name:g.name,values:(g.values||[]).slice()}));
+  drawerVariants=(p.variants||[]).map(v=>({key:v.key,options:v.options,stock:v.stock,priceCents:v.priceCents==null?null:v.priceCents}));
+  drawerStockMemory=new Map(drawerVariants.map(v=>[v.key,{stock:v.stock,priceCents:v.priceCents}]));
+  renderDrawerOptions();   // syncs the grid, keeping the stock just loaded
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 const STATUS_HINT={live:'Shoppers can see and buy it as soon as you save.',draft:'Only you can see it — finish it and go live whenever you like.'};
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=STATUS_HINT[drawerStatus];drawerDirty=true;}
@@ -990,7 +1147,8 @@ $('drawerSave').onclick=async()=>{
   if($('dTagIn').value.trim()){addDrawerTag($('dTagIn').value);$('dTagIn').value='';}   // catch a half-typed tag
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
     compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
-    tags:drawerTags,personalization:readPerso(),images:drawerImages};
+    tags:drawerTags,personalization:readPerso(),images:drawerImages,
+    options:drawerOptionsPayload(),variants:drawerVariants};
   const btn=$('drawerSave'), was=btn.textContent;
   btn.disabled=true;btn.textContent=editingId?'Saving…':'Adding…';
   try{
@@ -1060,6 +1218,7 @@ function shipCardHTML(o){
   const items=(o.items||[]).map(i=>`<div class="sc-li">
       <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${(i.image||i.seed)?`<img src="${i.image?esc(i.image):img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
       <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
+        ${optLabel(i.options)?`<div class="q" style="color:var(--accent-ink);font-weight:700">${esc(optLabel(i.options))}</div>`:''}
         ${i.personalization?`<div class="q" style="color:var(--accent-ink);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
       <div class="pr">${aed(i.price*i.qty)}</div>
     </div>`).join('');
@@ -1093,7 +1252,7 @@ function shipCardHTML(o){
 // Item-level: only YOUR items in the request ride along, and the money line
 // is the purchase credit that reverses if Trove approves.
 function rrItemsLine(rr){
-  return (rr.items||[]).map(i=>`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}`).join(', ');
+  return (rr.items||[]).map(i=>`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` (${esc(optLabel(i.options))})`:''}`).join(', ');
 }
 function returnStripHTML(o){
   const rr=o.returnRequest; if(!rr)return'';
@@ -1130,7 +1289,7 @@ function renderReturnsView(){
   wrap.innerHTML=returnRequests.map(r=>{
     const photos=(r.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
     const items=(r.items||[]).map(i=>`<div class="sc-li" style="padding:8px 0">
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div></div>
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}</div></div>
         <div class="pr" style="margin-left:auto">${aed(i.price*i.qty)}</div>
       </div>`).join('');
     const state=r.status==='requested'

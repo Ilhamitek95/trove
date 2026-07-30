@@ -12,7 +12,7 @@ const provider = () => (process.env.QUIQUP_API_KEY ? require('./quiqup-live') : 
 
 /** Book the buyer-bound pickup for a shipment. No-op if already booked. */
 async function bookPickup(shipmentId) {
-  const sh = db.prepare(`SELECT sh.*, o.shipping_json, o.public_id FROM shipments sh
+  const sh = db.prepare(`SELECT sh.*, o.shipping_json, o.phone AS buyer_phone, o.public_id FROM shipments sh
     JOIN orders o ON o.id = sh.order_id WHERE sh.id=?`).get(shipmentId);
   if (!sh || sh.delivery_ref) return null;
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(sh.shop_id);
@@ -27,7 +27,7 @@ async function bookPickup(shipmentId) {
 
 /** Book the return leg (buyer → supplier) after a refund. */
 async function bookReversePickup(shipmentId) {
-  const sh = db.prepare(`SELECT sh.*, o.shipping_json, o.public_id FROM shipments sh
+  const sh = db.prepare(`SELECT sh.*, o.shipping_json, o.phone AS buyer_phone, o.public_id FROM shipments sh
     JOIN orders o ON o.id = sh.order_id WHERE sh.id=?`).get(shipmentId);
   if (!sh) return null;
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(sh.shop_id);

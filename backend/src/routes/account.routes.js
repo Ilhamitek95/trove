@@ -28,6 +28,7 @@ router.get('/orders', requireAuth, (req, res) => {
         refundedAt: o.refunded_at || null,
         items: itemsStmt.all(o.id).map((i) => ({
           name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
+          options: require('../options').parse(i.options),
           productId: i.product_id, shopId: i.shop_id, orderItemId: i.id,
           shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
         })),

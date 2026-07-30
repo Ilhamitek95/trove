@@ -244,7 +244,9 @@ router.get('/orders', requireAdmin, (_req, res) => {
     FROM orders o
     ORDER BY o.created_at DESC, o.id DESC LIMIT 200`).all();
   res.json({ orders: rows.map((o) => ({
-    publicId: o.public_id, email: o.email, status: o.status,
+    // Trove is the merchant of record: support and the courier desk reach the
+    // customer from here. Sellers get neither the email nor the phone.
+    publicId: o.public_id, email: o.email, phone: o.phone || '', status: o.status,
     totalCents: o.total_cents, itemCount: o.item_count,
     shops: o.shop_names ? o.shop_names.split(',') : [],
     createdAt: o.created_at,

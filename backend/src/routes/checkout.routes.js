@@ -5,10 +5,28 @@ const db = require('../db');
 const { requireStripe } = require('../stripe');
 const { SERVICE_FEE_CENTS, deliveryFor } = require('../fees');
 const { SERVICE_AREAS, isServiceable } = require('../service-area');
+const { normalizeUAEMobile } = require('../phone');
+const options = require('../options');
 
 const OUT_OF_AREA = `We currently deliver in ${SERVICE_AREAS.join(' and ')} only`;
+const BAD_PHONE = 'Enter a UAE mobile number so the courier can reach you on the day';
 
 const router = express.Router();
+
+/* The courier needs a number; the shops never see it (it lives on its own
+ * column, not in the address snapshot the seller payload hands over). */
+function phoneFrom(body) {
+  const raw = String((body || {}).phone || '').trim();
+  if (!raw) return { phone: '' };
+  const norm = normalizeUAEMobile(raw);
+  return norm ? { phone: norm } : { error: BAD_PHONE };
+}
+/* Belt and braces: a phone must never end up inside shipping_json. */
+const shipSnapshot = (address) => {
+  if (!address) return null;
+  const { phone, ...rest } = address;
+  return rest;
+};
 const CURRENCY = () => process.env.CURRENCY || 'aed';
 const publicId = () => 'TRV-' + crypto.randomBytes(2).toString('hex').toUpperCase() + Math.floor(Math.random() * 90 + 10);
 
@@ -30,18 +48,30 @@ router.post('/', async (req, res, next) => {
     // mounts before the form is filled) — but if one is given, it must be
     // inside the service area.
     if (address && !isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
-    const buyerEmail = email || (req.session.userId && db.prepare('SELECT email FROM users WHERE id=?').get(req.session.userId)?.email);
+    // Resolve the signed-in buyer ONCE, and only if they still exist: a
+    // session outliving its user (deleted account, reseeded dev database)
+    // would otherwise write a dangling buyer_id and fail the whole order on
+    // a foreign key.
+    const buyer = req.session.userId ? db.prepare('SELECT id, email FROM users WHERE id=?').get(req.session.userId) : null;
+    const buyerEmail = email || (buyer && buyer.email);
     if (!buyerEmail) return res.status(400).json({ error: 'Email is required' });
+    // Like the address, the number can arrive later via /checkout/update when
+    // the payment form mounts before the form is filled in.
+    const { phone, error: phoneError } = phoneFrom(req.body);
+    if (phoneError) return res.status(400).json({ error: phoneError });
 
     // Resolve products + recompute everything from the DB.
     const get = db.prepare(`SELECT p.*, s.id AS shop_id, s.is_house FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=? AND p.status='live' AND s.status='approved'`);
     const lines = [];
     let subtotal = 0;
+    // Two lines can point at the same piece (different personalisation), so
+    // stock is checked against the running total, not line by line.
+    const claimed = new Map();
+    const claim = (id, qty) => { const n = (claimed.get(id) || 0) + qty; claimed.set(id, n); return n; };
     for (const it of items) {
       const p = get.get(it.productId);
       const qty = Math.max(1, parseInt(it.qty) || 1);
       if (!p) return res.status(400).json({ error: `Product ${it.productId} is unavailable` });
-      if (p.stock < qty) return res.status(409).json({ error: `${p.name} is out of stock` });
       // Personalisation: only kept when the product allows it; required means the
       // order can't go through without it (mirrors Etsy's listing personalisation).
       let perso = '';
@@ -50,9 +80,29 @@ router.post('/', async (req, res, next) => {
         if (p.personalization_required && !perso)
           return res.status(400).json({ error: `${p.name} needs your personalisation text before checkout` });
       }
-      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: p.price_cents, qty, personalization: perso };
+      // Variations (colour, size, …): the buyer must pick one value per group
+      // the seller listed, and only their spelling of it is stored.
+      const chosen = options.selectionError(p.options, it.options, p.name);
+      if (chosen.error) return res.status(400).json({ error: chosen.error });
+
+      // Stock and price come from the exact variant when the piece has
+      // variations — the ash glaze selling out must not sell the deep clay's
+      // stock. A combination missing from the grid does not exist.
+      let unitPrice = p.price_cents;
+      if (chosen.value.length) {
+        const variant = options.findVariant(p.variants, chosen.value);
+        const which = `${p.name} (${options.label(chosen.value)})`;
+        if (!variant) return res.status(400).json({ error: `${which} isn't available` });
+        if (variant.priceCents) unitPrice = variant.priceCents;
+        if (variant.stock < claim(`${p.id}:${variant.key}`, qty))
+          return res.status(409).json({ error: variant.stock ? `Only ${variant.stock} left of ${which}` : `${which} is out of stock` });
+      } else if (p.stock < claim(String(p.id), qty)) {
+        return res.status(409).json({ error: p.stock ? `Only ${p.stock} left of ${p.name}` : `${p.name} is out of stock` });
+      }
+
+      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: unitPrice, qty, personalization: perso, options: JSON.stringify(chosen.value) };
       lines.push(line);
-      subtotal += p.price_cents * qty;
+      subtotal += unitPrice * qty;
     }
 
     // Buyer fees: a flat service fee plus delivery (delivery free over the threshold).
@@ -63,8 +113,11 @@ router.post('/', async (req, res, next) => {
     // Demo-payments mode (no Stripe key yet): there is no payment form, so
     // the full delivery details must arrive with this call — no later /update.
     const stripeClient = require('../stripe').getStripe();
-    if (!stripeClient && (!address || !String(address.name || '').trim() || !String(address.line || '').trim()))
-      return res.status(400).json({ error: 'A delivery name and address are required' });
+    if (!stripeClient) {
+      if (!address || !String(address.name || '').trim() || !String(address.line || '').trim())
+        return res.status(400).json({ error: 'A delivery name and address are required' });
+      if (!phone) return res.status(400).json({ error: BAD_PHONE });
+    }
 
     // Rail B routing: an order whose items ALL belong to one fully-onboarded
     // connect-tier shop becomes a destination charge (never on_behalf_of —
@@ -86,11 +139,11 @@ router.post('/', async (req, res, next) => {
     // Persist a pending order + items in one transaction.
     const pid = publicId();
     const orderId = db.transaction(() => {
-      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
-        VALUES (?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, req.session.userId || null, buyerEmail, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address || null), rail);
+      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
+        VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail);
       const oid = info.lastInsertRowid;
-      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization) VALUES (?,?,?,?,?,?,?)');
-      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization);
+      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options) VALUES (?,?,?,?,?,?,?,?)');
+      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options);
       return oid;
     })();
 
@@ -148,8 +201,13 @@ router.post('/update', (req, res) => {
   if (!address || !String(address.name || '').trim() || !String(address.line || '').trim())
     return res.status(400).json({ error: 'A delivery name and address are required' });
   if (!isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
-  db.prepare('UPDATE orders SET email=COALESCE(?,email), shipping_json=? WHERE id=?')
-    .run(email || null, JSON.stringify(address), order.id);
+  // This is the last stop before the card is charged, so the courier number
+  // has to be here — whether it arrived with the original call or not.
+  const { phone, error: phoneError } = phoneFrom(req.body);
+  if (phoneError) return res.status(400).json({ error: phoneError });
+  if (!phone && !order.phone) return res.status(400).json({ error: BAD_PHONE });
+  db.prepare('UPDATE orders SET email=COALESCE(?,email), phone=COALESCE(NULLIF(?,\'\'),phone), shipping_json=? WHERE id=?')
+    .run(email || null, phone, JSON.stringify(shipSnapshot(address)), order.id);
   res.json({ ok: true });
 });
 

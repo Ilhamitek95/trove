@@ -41,7 +41,7 @@ const DEFAULTS = {
     items: [
       { head: 'Handpicked shops', sub: 'Vetted by hand' },
       { head: 'Small-batch pieces', sub: 'Made to last' },
-      { head: '2–4 day delivery', sub: 'Dubai & Abu Dhabi' },
+      { head: '3–6 day delivery', sub: 'Dubai & Abu Dhabi' },
       { head: '30-day returns', sub: 'Free on orders over AED 500' },
     ],
   },

@@ -149,6 +149,20 @@ addColumn('products', 'tags', "TEXT DEFAULT '[]'");
 // Seller-uploaded product photos: JSON array of /uploads/products URLs, first
 // one is the cover. [] falls back to the brand-motif tile.
 addColumn('products', 'images', "TEXT NOT NULL DEFAULT '[]'");
+// Buyer-chosen variations (colour, size, …): the seller lists the groups and
+// their values, the buyer picks one value per group before adding to the
+// basket, and the choice is snapshotted on the line item. Every combination is
+// a variant with its own stock and optional price; products.stock is kept
+// equal to the sum of them. See src/options.js.
+addColumn('products', 'options', "TEXT NOT NULL DEFAULT '[]'");
+addColumn('products', 'variants', "TEXT NOT NULL DEFAULT '[]'");
+addColumn('order_items', 'options', "TEXT NOT NULL DEFAULT '[]'");
+// Contact number for the courier. Deliberately its OWN column rather than a
+// field inside shipping_json: the seller payload hands over the parsed
+// shipping address, so a phone in there would reach every maker (see
+// test/seller-buyer-privacy.test.js). Trove books the pickup, so the number
+// belongs on Trove's booking, not the maker's dashboard.
+addColumn('orders', 'phone', "TEXT NOT NULL DEFAULT ''");
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS payouts (

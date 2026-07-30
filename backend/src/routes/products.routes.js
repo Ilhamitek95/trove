@@ -2,6 +2,7 @@
 const express = require('express');
 const db = require('../db');
 const { parseTags } = require('../tags');
+const productOptions = require('../options');
 
 const router = express.Router();
 
@@ -20,6 +21,12 @@ function shape(p) {
     stock: p.stock,
     imageSeed: p.image_seed,
     images: parseImages(p.images),
+    options: productOptions.parse(p.options),
+    // Per-combination availability, so the product page can grey out the
+    // glaze that's sold out instead of taking the order and disappointing.
+    variants: productOptions.parse(p.variants).map((v) => ({
+      key: v.key, options: v.options, stock: v.stock, price: v.priceCents ? v.priceCents / 100 : null,
+    })),
     personalization: p.personalization_enabled
       ? { required: !!p.personalization_required, prompt: p.personalization_prompt || '', maxLen: p.personalization_char_limit || 256 }
       : null,

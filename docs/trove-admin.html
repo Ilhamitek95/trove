@@ -680,7 +680,7 @@ function renderReturns(){
       <div style="margin-top:10px;font-size:13px"><b>${esc(r.reasonLabel)}</b> — ${esc(r.details)}</div>
       ${r.images.length?`<div style="display:flex;gap:6px;margin-top:9px">${r.images.map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}
       <div style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600">
-        Coming back: ${r.items.map(i=>`<b style="color:var(--char)">${esc(i.name)} ×${i.qty}</b> — ${esc(i.shop)}`).join(' · ')}
+        Coming back: ${r.items.map(i=>`<b style="color:var(--char)">${esc(i.name)} ×${i.qty}</b>${(i.options&&i.options.length)?` <span style="color:var(--muted)">(${esc(i.options.map(o=>o.name+': '+o.value).join(' · '))})</span>`:''} — ${esc(i.shop)}`).join(' · ')}
         ${r.items.length<r.order.itemCount?` <span style="color:var(--muted)">(${r.items.length} of ${r.order.itemCount} items on the order)</span>`:' (the whole order)'}
       </div>
       <div style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">
@@ -838,7 +838,7 @@ function renderOrders(){
   $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Shops</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
     <tbody>${ORDERS.length?ORDERS.map(o=>`<tr>
       <td style="font-weight:700">${esc(o.publicId)}</td>
-      <td style="color:var(--muted)">${esc(o.email)}</td>
+      <td style="color:var(--muted)">${esc(o.email)}${o.phone?`<div style="font-size:12px">${esc(o.phone)}</div>`:''}</td>
       <td>${o.shops.map(esc).join(', ')}</td>
       <td>${o.itemCount}</td>
       <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(o.totalCents)}</td>

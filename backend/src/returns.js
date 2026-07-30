@@ -45,7 +45,7 @@ function feeCents(order) {
 }
 // The items going back with a request, with their shop for the seller views.
 const reqItemsStmt = db.prepare(`
-  SELECT ri.order_item_id, ri.qty, oi.name_snapshot, oi.price_cents, oi.shop_id, oi.transfer_id,
+  SELECT ri.order_item_id, ri.qty, oi.name_snapshot, oi.price_cents, oi.shop_id, oi.transfer_id, oi.options,
          s.name AS shop_name
   FROM return_request_items ri
   JOIN order_items oi ON oi.id = ri.order_item_id
@@ -90,8 +90,10 @@ function lockedItems(orderId) {
 /** The order's items with their return state — feeds the buyer's picker. */
 function returnableItems(order) {
   const locked = lockedItems(order.id);
-  return db.prepare('SELECT id, name_snapshot, qty, price_cents FROM order_items WHERE order_id=?').all(order.id)
-    .map((i) => ({ id: i.id, name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, locked: locked.get(i.id) || null }));
+  // The chosen variation rides along so two lines of the same piece (the mug
+  // in Sand and the mug in Clay) are told apart in the return picker.
+  return db.prepare('SELECT id, name_snapshot, qty, price_cents, options FROM order_items WHERE order_id=?').all(order.id)
+    .map((i) => ({ id: i.id, name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, options: require('./options').parse(i.options), locked: locked.get(i.id) || null }));
 }
 
 /* ---- shapes ---- */
@@ -109,7 +111,7 @@ function shape(r) {
     reasonLabel: REASONS[r.reason] || r.reason,
     details: r.details,
     images: parseImages(r.images),
-    items: items.map((i) => ({ orderItemId: i.order_item_id, name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, shop: i.shop_name })),
+    items: items.map((i) => ({ orderItemId: i.order_item_id, name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, shop: i.shop_name, options: require('./options').parse(i.options) })),
     itemsTotal: grossCents(items) / 100,
     refund: r.refund_cents != null ? r.refund_cents / 100 : null,
     fee: r.fee_cents != null ? r.fee_cents / 100 : null,

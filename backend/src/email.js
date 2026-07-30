@@ -58,13 +58,41 @@ function layout(title, inner) {
 </div>`;
 }
 const p = (s) => `<p style="font-size:14.5px;line-height:1.65;margin:12px 0">${s}</p>`;
+// `meta` is the optional second line under an item — the chosen variation and
+// any personalisation, so a receipt says which mug is on its way.
 function itemsBlock(items) {
   return `<div style="background:#FDF7F5;border:1px solid #EADFD9;border-radius:12px;padding:14px 18px;margin:16px 0">
     ${items.map((i) => `<div style="display:flex;justify-content:space-between;font-size:14px;padding:4px 0">
-      <span>${esc(i.name)}${i.qty > 1 ? ` &times;${i.qty}` : ''}</span>
+      <span>${esc(i.name)}${i.qty > 1 ? ` &times;${i.qty}` : ''}${i.meta ? `<br><span style="font-size:12.5px;color:#8b8380">${esc(i.meta)}</span>` : ''}</span>
       <span style="font-weight:600">${aed(i.price_cents * i.qty)}</span>
     </div>`).join('')}
   </div>`;
+}
+const totalRow = (label, value, bold) => `<div style="display:flex;justify-content:space-between;font-size:${bold ? '15.5px' : '14px'};padding:${bold ? '10px 0 0' : '3px 0'};${bold ? 'border-top:1px solid #EADFD9;margin-top:8px;font-weight:700' : 'color:#6f6764'}">
+  <span>${esc(label)}</span><span>${value}</span></div>`;
+
+/* ---- order confirmation ----
+ * Sent the moment payment succeeds, from the shared paid effects — so the
+ * real webhook and demo-mode completion send exactly the same receipt.
+ * { order, items, shops[], ship } with money in fils on the order row.
+ */
+function orderConfirmation({ order, items, shops, ship }) {
+  const many = shops.length > 1;
+  const inner =
+    p(`Thank you${ship && ship.name ? `, ${esc(String(ship.name).split(' ')[0])}` : ''} — your order is confirmed and the ${many ? 'shops are' : 'shop is'} preparing it now.`)
+    + `<div style="font-size:13px;color:#8b8380;margin:18px 0 0">Order</div>
+       <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;letter-spacing:.04em">${esc(order.public_id)}</div>`
+    + itemsBlock(items)
+    + totalRow('Subtotal', aed(order.subtotal_cents))
+    + totalRow('Service fee', aed(order.service_fee_cents))
+    + totalRow('Delivery', order.shipping_cents ? aed(order.shipping_cents) : 'Free')
+    + totalRow('Total', aed(order.total_cents), true)
+    + p(`Arriving in <b>3–6 days</b>${many ? `, in ${shops.length} parcels — each shop packs its own, all tracked together in one place.` : '.'}`)
+    + (ship ? `<div style="background:#FDF7F5;border:1px solid #EADFD9;border-radius:12px;padding:14px 18px;margin:16px 0;font-size:14px;line-height:1.6">
+        <div style="font-size:12px;color:#8b8380;margin-bottom:4px">Delivering to</div>
+        ${esc(ship.name)}<br>${esc(ship.line)}<br>${esc(ship.city)}</div>` : '')
+    + p(`You can follow every parcel in <a href="https://troveathome.com/account" style="color:#292727"><b>your account</b></a>. Something not right? Just reply to this email.`);
+  return { subject: `Your Trove order ${order.public_id} is confirmed`, html: layout('Your order is confirmed', inner) };
 }
 
 /* ---- return lifecycle templates ----
@@ -100,4 +128,4 @@ function returnDeclined({ order, items, declineReason }) {
   return { subject: `About your return request — order ${order.public_id}`, html: layout('Your return request', inner) };
 }
 
-module.exports = { enabled, send, returnRequested, returnApproved, returnDeclined };
+module.exports = { enabled, send, orderConfirmation, returnRequested, returnApproved, returnDeclined };

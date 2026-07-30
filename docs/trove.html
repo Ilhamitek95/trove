@@ -369,8 +369,19 @@
   .ptag{border:1px solid var(--line);background:var(--cream);color:var(--ink-80);border-radius:999px;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:.18s}
   .ptag:hover{border-color:var(--coral);color:var(--accent-ink);background:var(--rose-tint)}
   .lbl{font-size:11.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;margin-bottom:12px}
-  .swatches{display:flex;gap:12px;margin-bottom:30px}
-  .sw{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+  /* Seller-defined options (Glaze, Size…). Text chips, not colour circles:
+     a maker's choices are words, and a swatch can't say "Ash grey". */
+  .optgroup{margin-bottom:16px}
+  .optgroup:last-child{margin-bottom:26px}
+  .optchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .optchip{border:1px solid var(--line);background:var(--paper);color:var(--ink-80);border-radius:999px;padding:8px 15px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer;transition:border-color .18s,background .18s,color .18s}
+  .optchip.on{background:var(--char);border-color:var(--char);color:var(--cream)}
+  .optchip:active{transform:scale(.97)}
+  /* a combination the shop has run out of: still readable, clearly not for sale */
+  .optchip.gone{color:rgba(41,39,39,.38);border-style:dashed;cursor:not-allowed;text-decoration:line-through}
+  .optchip.gone:active{transform:none}
+  .optleft{font-size:12.5px;font-weight:600;color:var(--accent-ink);margin-top:10px}
+  @media(hover:hover){.optchip:hover:not(.gone){border-color:var(--char)}}
   .sw.on{border-color:var(--char)}
   .pdp .buyrow{display:flex;gap:14px;margin-bottom:30px}
   .pdp .buyrow .btn{flex:1;justify-content:center;padding:17px}
@@ -750,7 +761,7 @@
   <div class="marquee"><div class="wrap">
     <div class="mk"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.0.head">Handpicked shops</b><span data-cms="home.marquee.items.0.sub">Vetted by hand</span></div></div>
     <div class="mk"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.1.head">Small-batch pieces</b><span data-cms="home.marquee.items.1.sub">Made to last</span></div></div>
-    <div class="mk"><div class="ic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">2–4 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
+    <div class="mk"><div class="ic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">3–6 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
     <div class="mk"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b data-cms="home.marquee.items.3.head">30-day returns</b><span data-cms="home.marquee.items.3.sub">Free on orders over AED 500</span></div></div>
   </div></div>
 
@@ -900,8 +911,8 @@
         <div class="stars" id="pdpStars"></div>
         <div class="pricerow"><span class="price" id="pdpPrice"></span></div>
         <p class="desc" id="pdpDesc"></p>
-        <div class="lbl">Colour</div>
-        <div class="swatches" id="pdpSwatches"></div>
+        <div id="pdpOptions"></div>
+        <div id="pdpStockNote" class="optleft" style="display:none"></div>
         <div id="pdpPerso" style="display:none;margin:18px 0 4px">
           <div class="lbl" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:10px;letter-spacing:.08em;background:var(--rose-tint);color:var(--accent-ink);padding:3px 8px;border-radius:999px;font-weight:700"></span></div>
           <div id="pdpPersoPrompt" style="font-size:13px;color:var(--muted);font-weight:500;margin:2px 0 8px"></div>
@@ -914,7 +925,7 @@
         </div>
         <div class="ship">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>
-          <div><b>Trove-fulfilled · arrives in 2–4 days</b>30-day returns — collection is free on orders over AED 500.</div>
+          <div><b>Trove-fulfilled · arrives in 3–6 days</b>30-day returns — collection is free on orders over AED 500.</div>
         </div>
         <div class="sold-card" id="pdpSoldCard">
           <div class="sav" id="pdpSav"></div>
@@ -1012,6 +1023,8 @@
         <div class="co-step">
           <div class="sh"><span class="num">1</span><h3>Contact</h3></div>
           <div class="co-field"><label>Email</label><input id="coEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
+          <div class="co-field"><label>Mobile</label><input id="coPhone" type="tel" placeholder="05X XXX XXXX" autocomplete="tel" inputmode="tel">
+            <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:6px">For the driver on delivery day. The shops never see it — Trove books the courier.</div></div>
           <div id="coAcctBox" style="display:none">
             <div class="acct-offer">
               <label class="ao-check"><input type="checkbox" id="coAcctChk" checked onchange="toggleCoAcct()">Create your Trove account<span class="ao-pill">Recommended</span></label>
@@ -1060,7 +1073,7 @@
 <div class="view" id="view-confirm">
   <div class="confirm">
     <div class="check"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
-    <h1>Thank you, <em id="confName">there</em>.</h1>
+    <h1 id="confHead">Thank you.</h1>
     <p class="lede">Your order is in. A receipt is on its way to your email.</p>
     <div class="ordid" id="confOrdId"></div>
     <div class="ship-card" id="confShip"></div>
@@ -1301,10 +1314,16 @@ function checkoutPayload(){
   }
   return {
     email:$('coEmail').value.trim(),
-    items:cart.map(c=>({productId:c.pid,qty:c.qty,personalization:c.note||''})),
+    // Kept out of `address` on purpose: the address snapshot is what a shop
+    // is shown to pack the parcel, and the number is Trove's to hold.
+    phone:$('coPhone')?$('coPhone').value.trim():'',
+    items:cart.map(c=>({productId:c.pid,qty:c.qty,personalization:c.note||'',options:c.opts||[]})),
     address,
   };
 }
+/* Accepts what people actually type (050 123 4567, +971 50 123 4567, …).
+   The server normalises and has the final say — this is just fast feedback. */
+const isUAEMobile=v=>/^5\d{8}$/.test(String(v||'').replace(/[\s().-]/g,'').replace(/^\+?971/,'').replace(/^0/,''));
 
 async function mountPaymentElement(){
   const status=$('payStatus');
@@ -1648,8 +1667,9 @@ function openPDP(id){
   ld.textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',name:p.name,description:p.desc,
     keywords:(p.tags||[]).join(', '),brand:{'@type':'Brand',name:VENDORS[p.vendor].name},
     offers:{'@type':'Offer',priceCurrency:'AED',price:p.price,availability:'https://schema.org/InStock'}});
-  const sw=['#292727','#BD9C8C','#DBC7BD','#CAD5CC'];
-  $('pdpSwatches').innerHTML=sw.map((c,i)=>`<div class="sw ${i===0?'on':''}" style="background:${c}" onclick="document.querySelectorAll('.sw').forEach(e=>e.classList.remove('on'));this.classList.add('on')"></div>`).join('');
+  // Options the shop actually offers — nothing is preselected, so the buyer
+  // makes a real choice and the maker knows which piece to send.
+  pdpChoice={}; pdpProduct=p;
   // Etsy-style personalisation: sellers switch it on per piece; buyers type
   // their text here and it travels with the order to the seller.
   const per=p.perso; $('pdpPerso').style.display=per?'block':'none';
@@ -1660,13 +1680,18 @@ function openPDP(id){
   }
   const addBtn=$('pdpAdd'); addBtn.textContent='Add to cart'; addBtn.className='btn btn-dark';
   addBtn.onclick=()=>{
+    const picked=chosenOptions(p);
+    if(picked.missing){toast(`Choose a ${picked.missing.toLowerCase()} before adding this to your Trove`);return;}
     let note='';
     if(per){
       note=$('pdpPersoText').value.trim();
       if(per.required&&!note){toast('Add your personalisation first — the maker needs it.');$('pdpPersoText').focus();return;}
     }
-    addToCart(p.id,addBtn,note);
+    addToCart(p.id,addBtn,note,picked.value);
   };
+  // Renders the chips and settles the price, the stock line and the button —
+  // after the button is wired, so it owns the final label.
+  renderPdpOptions();
   if(V.img){$('pdpSav').style.background=`center/cover no-repeat url("${V.img}")`;$('pdpSav').textContent='';}
   else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=V.name[0];}
   $('pdpSoldName').textContent=V.name;
@@ -1676,6 +1701,84 @@ function openPDP(id){
 }
 let pdpSrcs=[];
 function swapMain(i,el){$('pdpImg').src=pdpSrcs[i]||pdpSrcs[0];document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+
+/* PDP option picking — one value per group, nothing preselected.
+ * Each combination is its own variant with its own stock and sometimes its own
+ * price, so the chips have to say what's actually still makeable. */
+let pdpChoice={}, pdpProduct=null;
+const variantFor=(p,chosen)=>(p.variants||[]).find(v=>v.key===chosen.map(o=>`${o.name}:${o.value}`).join('|'))||null;
+/* Could this value still be bought, given what's picked in the OTHER groups? */
+function valueAvailable(p,gi,value){
+  const groups=p.options||[];
+  return (p.variants||[]).some(v=>v.stock>0&&groups.every((g,i)=>{
+    const want=i===gi?value:(pdpChoice[i]==null?null:g.values[pdpChoice[i]]);
+    return want==null||v.options.some(o=>o.name===g.name&&o.value===want);
+  }));
+}
+function renderPdpOptions(){
+  const p=pdpProduct; if(!p)return;
+  $('pdpOptions').innerHTML=(p.options||[]).map((g,gi)=>
+    `<div class="optgroup"><div class="lbl">${esc(g.name)}</div><div class="optchips">${
+      g.values.map((v,vi)=>{
+        const gone=!valueAvailable(p,gi,v);
+        return `<button type="button" class="optchip${pdpChoice[gi]===vi?' on':''}${gone?' gone':''}"${gone?' aria-disabled="true"':''} onclick="pickOption(${gi},${vi})">${esc(v)}</button>`;
+      }).join('')}</div></div>`).join('');
+  updatePdpAvailability();
+}
+function pickOption(gi,vi){
+  const g=(pdpProduct.options||[])[gi]; if(!g)return;
+  if(!valueAvailable(pdpProduct,gi,g.values[vi])){toast(`${g.values[vi]} is sold out just now`);return;}
+  pdpChoice[gi]=vi;
+  renderPdpOptions();
+}
+/* Price, the "only N left" nudge and the button, for whatever is picked. */
+function updatePdpAvailability(){
+  const p=pdpProduct, groups=p.options||[], btn=$('pdpAdd'), note=$('pdpStockNote');
+  let price=p.price, override=false, left=null, soldOut;
+  if(groups.length){
+    soldOut=!(p.variants||[]).some(v=>v.stock>0);
+    const picked=chosenOptions(p);
+    const v=picked.value?variantFor(p,picked.value):null;
+    if(v){ if(v.price){price=v.price;override=true;} left=v.stock; }
+  }else{
+    soldOut=p.stock===0;
+    left=p.stock==null?null:p.stock;
+  }
+  $('pdpPrice').innerHTML=`${(p.was&&!override)?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(price)}`;
+  const show=soldOut?'This piece is sold out — the shop may make more.'
+    :(left!=null&&left>0&&left<=3)?`Only ${left} left${groups.length?' of this one':''}.`:'';
+  note.textContent=show; note.style.display=show?'':'none';
+  btn.disabled=!!soldOut;
+  btn.textContent=soldOut?'Sold out':'Add to cart';
+  btn.style.opacity=soldOut?.5:1;
+  btn.style.cursor=soldOut?'not-allowed':'';
+}
+/* → {value:[{name,value}]} once every group is answered, else {missing:'Size'} */
+function chosenOptions(p){
+  const groups=p.options||[];
+  const value=[];
+  for(let i=0;i<groups.length;i++){
+    const vi=pdpChoice[i];
+    if(vi==null)return {missing:groups[i].name};
+    value.push({name:groups[i].name,value:groups[i].values[vi]});
+  }
+  return {value};
+}
+/* "Glaze: Ash grey · Size: Large" — the one-line form used in the basket,
+   the summary and the receipt. */
+const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
+/* What this exact combination costs — a variant may carry its own price.
+   The server recomputes it all again at checkout; this is what we show. */
+function unitPrice(p,opts){
+  const v=(opts&&opts.length)?variantFor(p,opts):null;
+  return (v&&v.price)?v.price:p.price;
+}
+/* How many of this exact combination the shop still has (null = not tracked). */
+function unitStock(p,opts){
+  if(!(p.options||[]).length)return p.stock==null?null:p.stock;
+  const v=(opts&&opts.length)?variantFor(p,opts):null;
+  return v?v.stock:0;
+}
 
 /* Verified-buyer reviews, shown on the product page and the shop page. */
 function revDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?'':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
@@ -1710,45 +1813,103 @@ async function loadShopReviews(slug){
   }catch(_){}
 }
 
-/* CART */
+/* CART
+ * The basket survives a refresh. It used to live only in memory, so a phone
+ * that reloaded mid-browse — or came back to the tab an hour later — lost
+ * everything. Only the choices are stored (product id, quantity, options);
+ * prices and availability are always re-read from the live catalogue, and the
+ * server recomputes both again at checkout. */
+const CART_KEY='trove.cart.v1';
+function saveCart(){
+  try{localStorage.setItem(CART_KEY,JSON.stringify(cart));}
+  catch(_){/* private browsing or a full quota — the basket just won't persist */}
+}
+/* A saved line is only restored if the piece is still on sale AND the choice
+   still exists; a maker who retires the Ash grey glaze shouldn't leave someone
+   holding a basket that fails at checkout. */
+function lineStillValid(c){
+  const p=PRODUCTS.find(x=>x.id===c.pid);
+  if(!p)return false;
+  const groups=p.options||[];
+  if(groups.length!==(c.opts||[]).length)return false;
+  if(!groups.every(g=>(c.opts||[]).some(o=>o.name===g.name&&g.values.includes(o.value))))return false;
+  // The combination must still be one the shop offers. Being sold out is not
+  // grounds to bin it — the basket says so and the buyer decides.
+  return !groups.length||!!variantFor(p,c.opts);
+}
+function restoreCart(){
+  let saved=[];
+  try{saved=JSON.parse(localStorage.getItem(CART_KEY)||'[]');}catch(_){return;}
+  if(!Array.isArray(saved)||!saved.length)return;
+  const clean=saved
+    .map(c=>c&&typeof c==='object'?{pid:c.pid,qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[]}:null)
+    .filter(c=>c&&lineStillValid(c));
+  const dropped=saved.length-clean.length;
+  cart=clean; updateCartCount(); renderCart();
+  if(dropped)toast(dropped===1?'One piece from your basket is no longer available'
+    :`${dropped} pieces from your basket are no longer available`);
+}
+
 function persoCount(){const ta=$('pdpPersoText');$('pdpPersoCount').textContent=`${ta.value.length} / ${ta.maxLength}`;}
-function addToCart(id,btn,note){
+function addToCart(id,btn,note,opts){
   const p=PRODUCTS.find(x=>x.id===id);
-  // A required personalisation can only be typed on the product page.
+  // A required personalisation or a choice of options can only be made on the
+  // product page — send them there rather than guessing on their behalf.
   if(p.perso&&p.perso.required&&note===undefined){openPDP(id);toast('This piece is personalised — add your text first');return;}
-  note=(note||'').trim();
-  // Same product + same note = one line; a different note is its own line.
-  const ex=cart.find(c=>c.pid===id&&(c.note||'')===note);
-  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note});
+  if((p.options||[]).length&&opts===undefined){openPDP(id);toast(`Choose a ${p.options[0].name.toLowerCase()} for this piece`);return;}
+  note=(note||'').trim(); opts=opts||[];
+  // Same product + same note + same options = one line; anything different is
+  // its own line, because it's a different piece to make and to pack.
+  const ex=cart.find(c=>c.pid===id&&(c.note||'')===note&&optLabel(c.opts)===optLabel(opts));
+  // Never let the basket hold more of a combination than the shop can make —
+  // counting every line that shares it, not just this one.
+  const have=unitStock(p,opts);
+  if(have!=null){
+    const already=cart.filter(c=>c.pid===id&&optLabel(c.opts)===optLabel(opts)).reduce((n,c)=>n+c.qty,0);
+    if(already+1>have){toast(have?`Only ${have} left of this one`:`${p.name} is sold out just now`);return;}
+  }
+  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts});
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
   toast(`${p.name} added to your Trove`);
 }
-function changeQty(i,d){const c=cart[i];if(!c)return;c.qty+=d;if(c.qty<=0)cart.splice(i,1);updateCartCount();renderCart();}
+function changeQty(i,d){
+  const c=cart[i];if(!c)return;
+  if(d>0){
+    const p=PRODUCTS.find(x=>x.id===c.pid), have=p?unitStock(p,c.opts):null;
+    const already=p?cart.filter(x=>x.pid===c.pid&&optLabel(x.opts)===optLabel(c.opts)).reduce((n,x)=>n+x.qty,0):0;
+    if(have!=null&&already+d>have){toast(have?`Only ${have} left of this one`:'Sold out just now');return;}
+  }
+  c.qty+=d;if(c.qty<=0)cart.splice(i,1);updateCartCount();renderCart();
+}
 function removeItem(i){cart.splice(i,1);updateCartCount();renderCart();}
-function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);resetPayment();}
+function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);saveCart();resetPayment();}
 function renderCart(){
   const body=$('cartBody');
   if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">Your Trove is empty</div><p style="font-weight:400">Pieces you add will gather here, grouped by shop.</p></div>`;$('cartFoot').style.display='none';return;}
   const groups={};
-  cart.forEach((c,idx)=>{const p=PRODUCTS.find(x=>x.id===c.pid);(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p,idx});});
+  cart.forEach((c,idx)=>{const p=PRODUCTS.find(x=>x.id===c.pid);if(p)(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p,idx});});
   let html='';
   Object.entries(groups).forEach(([v,items])=>{
     const V=VENDORS[v];
     html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
-    items.forEach(({p,qty,note,idx})=>{
+    items.forEach(({p,qty,note,opts,idx})=>{
+      const unit=unitPrice(p,opts), have=unitStock(p,opts);
+      const short=have!=null&&have<qty;
       html+=`<div class="citem">
         <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
+          ${(opts&&opts.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(opts))}</div>`:''}
           ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
+          ${short?`<div class="v" style="color:var(--accent-ink);font-weight:700">${have?`Only ${have} left — lower the quantity`:'Sold out — remove to check out'}</div>`:''}
           <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
         </div>
-        <div class="cp">${aed(p.price*qty)}</div></div>`;
+        <div class="cp">${aed(unit*qty)}</div></div>`;
     });
     html+='</div>';
   });
   body.innerHTML=html;
-  const subtotal=cart.reduce((s,c)=>{const p=PRODUCTS.find(x=>x.id===c.pid);return s+p.price*c.qty;},0);
+  const subtotal=cart.reduce((s,c)=>{const p=PRODUCTS.find(x=>x.id===c.pid);return s+(p?unitPrice(p,c.opts)*c.qty:0);},0);
   const shopCount=Object.keys(groups).length;
   const fb=feeBreakdown(subtotal);
   $('cartSubtotal').textContent=aed(subtotal);
@@ -1779,7 +1940,7 @@ function toggleAcct(e){e.stopPropagation();$('acctMenu').classList.toggle('open'
 document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.remove('open');});
 
 /* CHECKOUT */
-function cartGroups(){const g={};cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);(g[p.vendor]=g[p.vendor]||[]).push({...c,p});});return g;}
+function cartGroups(){const g={};cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);if(p)(g[p.vendor]=g[p.vendor]||[]).push({...c,p});});return g;}
 function startCheckout(){
   if(!cart.length){toast('Your Trove is empty');return;}
   // Guests check out with their own details — no demo addresses, and an
@@ -1805,9 +1966,9 @@ function coAcctError(m){const e=$('coAcctErr');e.textContent=m;e.style.display=m
 /* Save the address they typed at checkout to the fresh account, so the
  * "faster next time" promise is actually true. Best-effort. */
 async function saveCheckoutAddress(){
-  const a=checkoutPayload().address;
+  const {address:a,phone}=checkoutPayload();
   if(a&&a.name&&a.line&&a.city)
-    await TroveAPI.api('/api/account/addresses',{method:'POST',body:{label:'Home',name:a.name,line:a.line,city:a.city,country:a.country||'United Arab Emirates',isDefault:true}});
+    await TroveAPI.api('/api/account/addresses',{method:'POST',body:{label:'Home',name:a.name,line:a.line,city:a.city,country:a.country||'United Arab Emirates',phone,isDefault:true}});
 }
 /* If the guest asked for an account, create it (and attach the in-flight
  * order) before taking payment. Returns false when the order must not proceed. */
@@ -1849,7 +2010,7 @@ function renderCheckout(){
     +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
   $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
   // delivery grouped by shop
-  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>${V.house?'2–4 days · Free':'3–6 days'}</b></div>`;}).join('')
+  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>3–6 days</b></div>`;}).join('')
     +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">Trove currently delivers across Dubai &amp; Abu Dhabi.</div>`;
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
@@ -1866,7 +2027,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
+    items.forEach(({p,qty,note,opts})=>{const unit=unitPrice(p,opts);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -1876,6 +2037,10 @@ function renderCheckout(){
 function showConfirmation(orderId){
   const groups=cartGroups();
   const n=Object.keys(groups).length;
+  // Greet them by name when we have one — from the account, or from the
+  // delivery details they just typed. No name means no dangling comma.
+  const who=((ME&&ME.name)||(lastOrder&&lastOrder.name)||(checkoutPayload().address||{}).name||'').trim().split(' ')[0];
+  $('confHead').innerHTML=who?`Thank you, <em>${esc(who)}</em>.`:'Thank you.';
   $('confTrack').style.display=(LIVE&&!ME)?'none':''; // guests have no account to track in
   // Second chance for guests: create the account right on the confirmation page.
   $('confAcct').style.display=(LIVE&&!ME)?'block':'none';
@@ -1883,7 +2048,7 @@ function showConfirmation(orderId){
   $('confOrdId').textContent='Order '+orderId;
   $('confShip').innerHTML=`<div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
-      return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · ${V.house?'arrives 2–4 days':'arrives 3–6 days'}</div></div></div>`;}).join('');
+      return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · arrives 3–6 days</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
   showView('confirm');jumpTop();
 }
@@ -1891,6 +2056,7 @@ async function placeOrder(){
   // Contact + delivery details must be complete and inside the service area.
   if(LIVE){
     if(!/^\S+@\S+\.\S+$/.test($('coEmail').value.trim())){toast('Enter your email so we can send your receipt');window.scrollTo(0,0);return;}
+    if(!isUAEMobile($('coPhone').value)){toast('Add a UAE mobile so the driver can reach you');$('coPhone').focus();window.scrollTo(0,0);return;}
     const a=checkoutPayload().address;
     if(!a||!a.name||!a.line){toast('Add your delivery name and address');return;}
     if(!inServiceArea(a.emirate||a.city)){toast('We deliver in Dubai and Abu Dhabi only');return;}
@@ -1904,7 +2070,7 @@ async function placeOrder(){
     // the order was opened when the payment form mounted, before these fields
     // were filled in.
     try{
-      await TroveAPI.api('/api/checkout/update',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),address:checkoutPayload().address}});
+      await TroveAPI.api('/api/checkout/update',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),phone:$('coPhone').value.trim(),address:checkoutPayload().address}});
     }catch(e){
       btn.disabled=false;btn.style.opacity=1;
       $('payStatus').textContent=e.message||'Could not save your delivery details — please try again.';
@@ -1985,7 +2151,7 @@ async function loadCatalog(){
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],perso:p.personalization||null};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}
@@ -2005,9 +2171,15 @@ async function loadAuth(){
     if($('coEmail'))$('coEmail').value=ME.email;
     try{
       const {addresses}=await TroveAPI.api('/api/account/addresses');
-      if(addresses&&addresses.length)SAVED_ADDR=addresses.map(a=>({label:a.label,name:a.name,line:a.line,city:a.city}));
+      if(addresses&&addresses.length){
+        SAVED_ADDR=addresses.map(a=>({label:a.label,name:a.name,line:a.line,city:a.city}));
+        // One less field to retype: the number on their default address.
+        const withPhone=addresses.find(a=>a.is_default&&a.phone)||addresses.find(a=>a.phone);
+        if(withPhone&&$('coPhone')&&!$('coPhone').value)$('coPhone').value=withPhone.phone;
+      }
       else{SAVED_ADDR=[];coNewAddr=true;}
     }catch(_){}
+    if(ME.phone&&$('coPhone')&&!$('coPhone').value)$('coPhone').value=ME.phone;
   }else{
     $('amName').textContent='Welcome'; $('amEmail').textContent='Sign in to your account'; $('amAv').textContent='·';
     $('authLabel').textContent='Sign in';
@@ -2068,7 +2240,10 @@ function linkQuoteShops(){
 }
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
-  applyContent(); linkQuoteShops(); renderHome(); buildCatFilters(); updateCartCount();
+  applyContent(); linkQuoteShops(); renderHome(); buildCatFilters();
+  // After the catalogue, so a saved basket can be checked against what's
+  // actually still on sale (restoreCart updates the count itself).
+  restoreCart(); updateCartCount();
 }
 boot();
 </script>

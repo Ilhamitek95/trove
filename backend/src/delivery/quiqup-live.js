@@ -29,7 +29,9 @@ async function call(method, path, body) {
 function job(kind, shipment, shop) {
   const dest = parseShip(shipment.shipping_json) || {};
   const pickupPoint = { name: shop.name, address: shop.location };
-  const dropPoint = { name: dest.name || '', address: [dest.line, dest.city].filter(Boolean).join(', '), phone: dest.phone || '' };
+  // The buyer's number lives on the order, never in the address snapshot —
+  // that snapshot is what the seller dashboard shows (see src/db.js).
+  const dropPoint = { name: dest.name || '', address: [dest.line, dest.city].filter(Boolean).join(', '), phone: shipment.buyer_phone || '' };
   const [from, to] = kind === 'reverse' ? [dropPoint, pickupPoint] : [pickupPoint, dropPoint];
   return {
     kind: 'partner_delivery',
@@ -42,6 +44,7 @@ function job(kind, shipment, shop) {
 
 module.exports = {
   name: 'Quiqup',
+  _job: job,   // exported for the delivery tests — never called by the app
 
   async bookPickup(shipment, shop) {
     const j = await call('POST', '/partner/jobs', job('pickup', shipment, shop));

@@ -9,6 +9,7 @@ let ctx, db, buyerCookie, otherCookie;
 let shopId, mugId;
 
 const ADDRESS = { name: 'Amal Rashid', line: 'Apt 4, Harbour Views', city: 'Dubai Marina, Dubai', emirate: 'Dubai' };
+const PHONE = '050 123 4567';   // the courier needs a number on the day
 
 before(async () => {
   ctx = await startApp();
@@ -34,7 +35,7 @@ test('demo checkout needs the address up front (no payment form to come back fro
 
 test('demo checkout opens a REAL order and demo-complete pays it like the webhook would', async () => {
   let res = await ctx.api('POST', '/api/checkout', {
-    cookie: buyerCookie, body: { items: [{ productId: mugId, qty: 2 }], address: ADDRESS },
+    cookie: buyerCookie, body: { items: [{ productId: mugId, qty: 2 }], address: ADDRESS, phone: PHONE },
   });
   assert.equal(res.status, 200, res.text);
   assert.equal(res.data.demo, true);
@@ -74,7 +75,7 @@ test('a guest order can be claimed by the account created right after (same sess
   // Guest: no auth cookie — capture the session Set-Cookie from checkout itself.
   const res = await fetch(ctx.baseUrl + '/api/checkout', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: [{ productId: mugId, qty: 1 }], email: 'guest@test.local', address: ADDRESS }),
+    body: JSON.stringify({ items: [{ productId: mugId, qty: 1 }], email: 'guest@test.local', address: ADDRESS, phone: PHONE }),
   });
   assert.equal(res.status, 200);
   const guestCookie = (res.headers.get('set-cookie') || '').split(';')[0];
@@ -96,16 +97,32 @@ test('a guest order can be claimed by the account created right after (same sess
   // A different session cannot claim someone's demo order with just the id.
   const res2 = await fetch(ctx.baseUrl + '/api/checkout', {
     method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ items: [{ productId: mugId, qty: 1 }], email: 'guest2@test.local', address: ADDRESS }),
+    body: JSON.stringify({ items: [{ productId: mugId, qty: 1 }], email: 'guest2@test.local', address: ADDRESS, phone: PHONE }),
   });
   const { orderId: otherOrder } = await res2.json();
   r = await ctx.api('POST', '/api/checkout/claim', { cookie: buyerCookie, body: { orderId: otherOrder } });
   assert.equal(r.status, 403, 'session stamp required');
 });
 
+test('a session that outlived its user still checks out, as a guest', async () => {
+  // Deleted account, reseeded dev database: the cookie survives, the row
+  // doesn't. Trusting session.userId blindly wrote a dangling buyer_id and
+  // failed the whole order on a foreign key.
+  const ghost = db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('ghost@test.local',?, 'Ghost','buyer')").run(require('../src/middleware').hashPassword('testpass123')).lastInsertRowid;
+  const ghostCookie = await ctx.loginAs('ghost@test.local', 'testpass123');
+  db.prepare('DELETE FROM users WHERE id=?').run(ghost);
+
+  const res = await ctx.api('POST', '/api/checkout', {
+    cookie: ghostCookie, body: { items: [{ productId: mugId, qty: 1 }], email: 'ghost@test.local', address: ADDRESS, phone: PHONE },
+  });
+  assert.equal(res.status, 200, res.text);
+  assert.equal(db.prepare('SELECT buyer_id FROM orders WHERE public_id=?').get(res.data.orderId).buyer_id, null,
+    'the order stands on its own rather than pointing at a user who is gone');
+});
+
 test('the demo door closes by itself the moment Stripe is configured', async () => {
   const res = await ctx.api('POST', '/api/checkout', {
-    cookie: buyerCookie, body: { items: [{ productId: mugId, qty: 1 }], address: ADDRESS },
+    cookie: buyerCookie, body: { items: [{ productId: mugId, qty: 1 }], address: ADDRESS, phone: PHONE },
   });
   const pid = res.data.orderId;
 
@@ -114,7 +131,7 @@ test('the demo door closes by itself the moment Stripe is configured', async () 
     const r = await ctx.api('POST', '/api/checkout/demo-complete', { cookie: buyerCookie, body: { orderId: pid } });
     assert.equal(r.status, 409, 'demo completion refused once payments are live');
     const co = await ctx.api('POST', '/api/checkout', {
-      cookie: buyerCookie, body: { items: [{ productId: mugId, qty: 1 }], address: ADDRESS },
+      cookie: buyerCookie, body: { items: [{ productId: mugId, qty: 1 }], address: ADDRESS, phone: PHONE },
     });
     assert.ok(co.data.clientSecret, 'real checkout resumes with a PaymentIntent');
     assert.equal(co.data.demo, undefined);
