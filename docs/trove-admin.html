@@ -506,7 +506,7 @@ function renderProducts(){
   const list=PRODUCTS.filter(p=>!q||(p.name+' '+p.category+' '+p.shop.name+' '+p.tags.join(' ')).toLowerCase().includes(q));
   $('productsTable').innerHTML=`<thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Tags</th><th>Status</th><th></th></tr></thead>
     <tbody>${list.length?list.map(p=>`<tr${p.shop.status!=='approved'?' style="opacity:.55"':''}>
-      <td><div class="shoprow"><div class="tile" style="background:center/cover no-repeat url('${prodImg(p.imageSeed)}'),linear-gradient(150deg,${shade(p.shop.color||'#BD9C8C',14)},${p.shop.color||'#BD9C8C'})"></div>
+      <td><div class="shoprow"><div class="tile" style="background:center/cover no-repeat url('${(p.images&&p.images[0])?esc(p.images[0]):prodImg(p.imageSeed)}'),linear-gradient(150deg,${shade(p.shop.color||'#BD9C8C',14)},${p.shop.color||'#BD9C8C'})"></div>
         <div><div class="nm">${esc(p.name)}</div><div class="sl">${esc(p.shop.name)}${p.shop.status!=='approved'?` · <span style="color:var(--accent-ink)">shop ${esc(p.shop.status)}</span>`:''}</div></div></div></td>
       <td style="color:var(--muted)">${esc(p.category)}</td>
       <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(p.priceCents)}</td>
@@ -679,12 +679,15 @@ function renderReturns(){
       </div>
       <div style="margin-top:10px;font-size:13px"><b>${esc(r.reasonLabel)}</b> — ${esc(r.details)}</div>
       ${r.images.length?`<div style="display:flex;gap:6px;margin-top:9px">${r.images.map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}
-      <div style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600">${r.order.items.map(i=>`${esc(i.name)} ×${i.qty} — ${esc(i.shop)}`).join(' · ')}</div>
+      <div style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600">
+        Coming back: ${r.items.map(i=>`<b style="color:var(--char)">${esc(i.name)} ×${i.qty}</b> — ${esc(i.shop)}`).join(' · ')}
+        ${r.items.length<r.order.itemCount?` <span style="color:var(--muted)">(${r.items.length} of ${r.order.itemCount} items on the order)</span>`:' (the whole order)'}
+      </div>
       <div style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">
-        Items AED ${r.order.itemsTotal}
+        Returning AED ${r.itemsTotal} of the order's AED ${r.order.itemsTotal}
         ${r.status==='approved'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${r.fee?` (AED ${r.fee} collection fee deducted)`:''}`
           :r.status==='declined'?` · declined: “${esc(r.declineReason||'')}”`
-          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${r.feePreview?` (AED ${r.feePreview} collection fee deducted)`:' (free collection, AED 500+)'}`}
+          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${r.feePreview?` (AED ${r.feePreview} collection fee deducted)`:' (free collection, AED 500+ order)'}`}
       </div>
       ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px">
         <button class="btn btn-green" onclick="approveReturn(${r.id},${r.refundPreview})">Approve · refund AED ${r.refundPreview}</button>

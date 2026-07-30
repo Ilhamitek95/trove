@@ -5,6 +5,8 @@ const { parseTags } = require('../tags');
 
 const router = express.Router();
 
+const parseImages = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } };
+
 function shape(p) {
   return {
     id: p.id,
@@ -17,6 +19,7 @@ function shape(p) {
     compareAt: p.compare_at_cents ? p.compare_at_cents / 100 : null,
     stock: p.stock,
     imageSeed: p.image_seed,
+    images: parseImages(p.images),
     personalization: p.personalization_enabled
       ? { required: !!p.personalization_required, prompt: p.personalization_prompt || '', maxLen: p.personalization_char_limit || 256 }
       : null,

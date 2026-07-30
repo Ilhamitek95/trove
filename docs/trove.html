@@ -1340,6 +1340,8 @@ function imgRetry(el){
   const base=el.src.split(/[?#]/)[0];
   setTimeout(()=>{el.src=`${base}?rt=${n}`;},700*n);
 }
+/* A product's cover: the seller's first uploaded photo, else the motif tile. */
+function pImg(p,i){ return (p.images&&p.images[i||0])?p.images[i||0]:img(p.seed+(i?'ab'[i-1]||'':'')); }
 /* product card — eager===true only for above-the-fold uses (weekly finds);
  * .map(productCard) passes an index as the 2nd arg, hence the strict check */
 function productCard(p,eager){
@@ -1347,7 +1349,7 @@ function productCard(p,eager){
   return `<article class="card" onclick="openPDP(${p.id})">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${img(p.seed)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async" onerror="imgRetry(this)">
+      <img src="${pImg(p)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async" onerror="imgRetry(this)">
       ${p.was?`<span class="sale">Sale</span>`:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
     </div>
@@ -1382,7 +1384,7 @@ function renderHome(){
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house).slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
   $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${img(p.seed)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${pImg(p)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
 
   // Every maker rides the carousel; the second set is a visual clone for the seamless loop.
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house);
@@ -1630,8 +1632,10 @@ function openPDP(id){
   const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
   $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
-  $('pdpImg').src=img(p.seed);
-  $('pdpThumbs').innerHTML=[p.seed,p.seed+'a',p.seed+'b'].map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain('${s}',this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
+  // Real seller photos when they exist, else three motif-tile variations.
+  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):[img(p.seed),img(p.seed+'a'),img(p.seed+'b')];
+  $('pdpImg').src=pdpSrcs[0];
+  $('pdpThumbs').innerHTML=pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
   $('pdpVendorLink').innerHTML=`${V.name}`;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
@@ -1670,7 +1674,8 @@ function openPDP(id){
   loadProductReviews(p.id);
   showView('pdp'); jumpTop();
 }
-function swapMain(seed,el){$('pdpImg').src=img(seed);document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+let pdpSrcs=[];
+function swapMain(i,el){$('pdpImg').src=pdpSrcs[i]||pdpSrcs[0];document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 
 /* Verified-buyer reviews, shown on the product page and the shop page. */
 function revDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?'':d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
@@ -1733,7 +1738,7 @@ function renderCart(){
     html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
     items.forEach(({p,qty,note,idx})=>{
       html+=`<div class="citem">
-        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
           ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
           <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
@@ -1861,7 +1866,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${img(p.seed)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
+    items.forEach(({p,qty,note})=>{sub+=p.price*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(p.price*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -1980,7 +1985,7 @@ async function loadCatalog(){
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,tags:p.tags||[],perso:p.personalization||null};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}

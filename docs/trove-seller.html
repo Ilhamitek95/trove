@@ -364,6 +364,15 @@
   .sc-return .rr-ph{display:flex;gap:6px;margin-top:8px}
   .sc-return .rr-ph img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
   .sc-return .rr-note{font-size:12px;color:var(--muted);font-weight:600;margin-top:8px}
+  #returnList .rr-ph img{width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+  /* product-drawer photo picker */
+  .dphotos{display:flex;gap:9px;flex-wrap:wrap}
+  .dphotos .ph{width:74px;height:74px;border-radius:10px;position:relative;overflow:hidden;border:1px solid var(--line);background:var(--rose-tint)}
+  .dphotos .ph img{width:100%;height:100%;object-fit:cover}
+  .dphotos .ph button{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:rgba(41,39,39,.65);color:var(--cream);border:none;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
+  .dphotos .ph .cover{position:absolute;left:3px;bottom:3px;background:rgba(253,247,245,.92);color:var(--char);font-size:9px;font-weight:800;letter-spacing:.03em;padding:2px 6px;border-radius:999px}
+  .dphotos .addph{width:74px;height:74px;border-radius:10px;border:1.5px dashed var(--line);display:grid;place-items:center;color:var(--muted);cursor:pointer;font-size:22px;background:none}
+  .dphotos .addph:hover{border-color:var(--coral);color:var(--accent-ink)}
   .sr-date{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;flex-shrink:0}
   .chev{color:var(--muted);flex-shrink:0}
   .sc-head{cursor:pointer}
@@ -432,6 +441,7 @@
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
       <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill">2</span></a>
+      <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="pill" id="returnPill" style="display:none">0</span></a>
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
       <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
@@ -490,6 +500,12 @@
       <div class="view" id="view-orders">
         <div class="sec-head"><span class="n">Update each parcel as you pack and send it — your buyer sees the tracking instantly.</span></div>
         <div id="orderList"></div>
+      </div>
+
+      <!-- RETURNS -->
+      <div class="view" id="view-returns">
+        <div class="sec-head"><span class="n">Buyers request, Trove decides — track here what's coming back and what it means for your payouts. Returned pieces stay yours; adjust your stock in Products once they're back with you.</span></div>
+        <div id="returnList"></div>
       </div>
 
       <!-- PAYMENTS -->
@@ -568,7 +584,7 @@
         <div class="dprev-price"><span id="dpvPrice">AED 0</span><s id="dpvCompare" style="display:none"></s></div>
       </div>
     </div>
-    <div class="dprev-note">Live preview — roughly how it appears in your shop. A colour tile stands in for a photo for now.</div>
+    <div class="dprev-note">Live preview — roughly how it appears in your shop. Your first photo is the cover; without one, a colour tile stands in.</div>
 
     <div class="dsec">
       <div class="dsec-h"><span class="n">1</span><h4>What you're selling</h4></div>
@@ -576,6 +592,10 @@
         <div class="ferr"></div></div>
       <div class="field"><label for="dDesc">Description</label><textarea id="dDesc" placeholder="e.g. Hand-thrown in our Al Quoz studio, satin glaze, holds 300 ml."></textarea>
         <div class="hint">What it's made of, how big it is, what makes it special — two or three sentences is plenty.</div></div>
+      <div class="field"><label>Photos</label>
+        <div class="dphotos" id="dPhotos"></div>
+        <input type="file" id="dPhotoFile" accept="image/*" multiple style="display:none" onchange="prodAddFiles(this.files)">
+        <div class="hint">Up to 4 — the first one is the cover shoppers see. Bright, simple, true to colour. Without photos the piece shows a brand-pattern tile.</div></div>
       <div class="field" style="margin-bottom:4px"><label for="dCat">Category</label><select id="dCat" onchange="updateDrawerPreview()"><option>Home &amp; Living</option><option>Wall Art &amp; Prints</option><option>Ceramics</option><option>Stationery</option><option>Jewellery</option><option>Personalised Gifts</option><option>Children's</option><option>Pet Accessories</option><option>Wellness &amp; Self-Care</option><option>Accessories</option><option>Seasonal</option><option>Handmade Crafts</option></select></div>
     </div>
 
@@ -688,7 +708,7 @@ function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clea
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
 function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'shipped'; }
 function parseTagsCol(s){ try{const v=JSON.parse(s||'[]');return Array.isArray(v)?v:[];}catch(_){return[];} }
-function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,desc:p.description,sales:null,tags:parseTagsCol(p.tags),
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
@@ -784,7 +804,7 @@ function renderProducts(){
   $('prodTable').innerHTML=`
     <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
     <tbody>${products.map(p=>`<tr>
-      <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${img(p.seed)}" onerror="this.style.display='none'"></div>
+      <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${(p.images&&p.images[0])?esc(p.images[0]):img(p.seed)}" onerror="this.style.display='none'"></div>
         <div><div class="pn">${p.name}</div><div class="ps">${p.stock} in stock</div></div></div></td>
       <td style="color:var(--muted);font-weight:600">${p.cat}</td>
       <td><span class="price-edit" onclick="editPrice(${p.id},this)">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
@@ -878,6 +898,38 @@ async function aiSuggestTags(){
   finally{btn.classList.remove('thinking');btn.textContent=was;}
 }
 
+/* drawer — product photos (client downsizes to keep uploads small; the
+   server stores them under /uploads/products and the first is the cover) */
+let drawerImages=[];
+function renderDrawerPhotos(){
+  const w=$('dPhotos');w.innerHTML='';
+  drawerImages.forEach((u,i)=>{
+    const d=document.createElement('div');d.className='ph';
+    const im=document.createElement('img');im.src=u;d.appendChild(im);
+    if(i===0){const c=document.createElement('span');c.className='cover';c.textContent='COVER';d.appendChild(c);}
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+    x.onclick=()=>{drawerImages.splice(i,1);drawerDirty=true;renderDrawerPhotos();updateDrawerPreview();};
+    d.appendChild(x);w.appendChild(d);
+  });
+  if(drawerImages.length<4){
+    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';
+    b.onclick=()=>$('dPhotoFile').click();w.appendChild(b);
+  }
+}
+function prodAddFiles(files){
+  [...files].slice(0,4-drawerImages.length).forEach(f=>{
+    const rd=new FileReader();
+    rd.onload=()=>{const im=new Image();im.onload=()=>{
+      const s=Math.min(1,1400/Math.max(im.width,im.height));
+      const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      drawerImages.push(c.toDataURL('image/jpeg',.85));drawerDirty=true;renderDrawerPhotos();updateDrawerPreview();
+    };im.src=rd.result;};
+    rd.readAsDataURL(f);
+  });
+  $('dPhotoFile').value='';
+}
+
 /* drawer */
 function togglePerso(){$('dPersoFields').style.display=$('dPerso').checked?'block':'none';}
 function setPersoReq(btn){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
@@ -888,6 +940,7 @@ function readPerso(){return {enabled:$('dPerso').checked,required:document.query
   prompt:$('dPersoPrompt').value.trim(),maxLen:parseInt($('dPersoLimit').value)||256};}
 /* live preview + inline validation */
 function updateDrawerPreview(){   // NB: distinct name — updatePreview() further down is the storefront-settings preview
+  $('dImg').style=drawerImages[0]?`background:center/cover no-repeat url("${drawerImages[0]}")`:grad(SHOP.color);
   const name=$('dName').value.trim();
   $('dpvName').textContent=name||'Your product name';
   $('dpvName').classList.toggle('empty',!name);
@@ -905,12 +958,14 @@ function fieldError(inputId,msg){const f=$(inputId).closest('.field');f.classLis
 function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSub').textContent='Takes about a minute — you can always save it as a draft.';$('drawerSave').textContent='Add product';
   $('dName').value='';$('dDesc').value='';fillCatOptions();$('dCat').selectedIndex=0;$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
   drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
-  fillPerso(null);setSegStatus('live');$('dImg').style=grad(SHOP.color);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
+  drawerImages=[];renderDrawerPhotos();
+  fillPerso(null);setSegStatus('live');updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSub').textContent='Tweak anything — nothing changes until you save.';$('drawerSave').textContent='Save changes';
   $('dName').value=p.name;$('dDesc').value=p.desc||'';fillCatOptions();ensureCatOption(p.cat);$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
   drawerTags=(p.tags||[]).slice();suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
-  fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);$('dImg').style=grad(SHOP.color);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
+  drawerImages=(p.images||[]).slice();renderDrawerPhotos();
+  fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 const STATUS_HINT={live:'Shoppers can see and buy it as soon as you save.',draft:'Only you can see it — finish it and go live whenever you like.'};
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=STATUS_HINT[drawerStatus];drawerDirty=true;}
 function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;$('dStatusHint').textContent=STATUS_HINT[s];}
@@ -935,7 +990,7 @@ $('drawerSave').onclick=async()=>{
   if($('dTagIn').value.trim()){addDrawerTag($('dTagIn').value);$('dTagIn').value='';}   // catch a half-typed tag
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
     compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
-    tags:drawerTags,personalization:readPerso()};
+    tags:drawerTags,personalization:readPerso(),images:drawerImages};
   const btn=$('drawerSave'), was=btn.textContent;
   btn.disabled=true;btn.textContent=editingId?'Saving…':'Adding…';
   try{
@@ -1003,7 +1058,7 @@ function shipCardHTML(o){
   const gross=o.itemTotal||0, fee=gross*feePct()/100, net=gross-fee;
   const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
   const items=(o.items||[]).map(i=>`<div class="sc-li">
-      <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${i.seed?`<img src="${img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
+      <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${(i.image||i.seed)?`<img src="${i.image?esc(i.image):img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
       <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
         ${i.personalization?`<div class="q" style="color:var(--accent-ink);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
       <div class="pr">${aed(i.price*i.qty)}</div>
@@ -1035,18 +1090,66 @@ function shipCardHTML(o){
   </div>`;
 }
 // Buyer return requests arrive via Trove; the shop sees them here, read-only.
+// Item-level: only YOUR items in the request ride along, and the money line
+// is the purchase credit that reverses if Trove approves.
+function rrItemsLine(rr){
+  return (rr.items||[]).map(i=>`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}`).join(', ');
+}
 function returnStripHTML(o){
   const rr=o.returnRequest; if(!rr)return'';
   const photos=(rr.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
-  const note=rr.status==='requested'?"Trove is reviewing it — nothing for you to do yet."
-    :rr.status==='approved'?"Return approved — the courier will bring the parcel back, and this sale no longer counts toward your payouts."
+  const note=rr.status==='requested'?`Trove is reviewing it — nothing for you to do yet. If it's approved, ${aed(rr.creditImpact||0)} of this sale's credit reverses.`
+    :rr.status==='approved'?`Return approved — the courier will bring the item${(rr.items||[]).length>1?'s':''} back, and ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.`
     :"Trove declined the request — nothing changes for you.";
   return `<div class="sc-return">
     <div class="rr-hd">↩ ${rr.status==='requested'?'Return requested by the buyer':rr.status==='approved'?'Return approved by Trove':'Return declined by Trove'} · ${fmtDate(rr.createdAt)}</div>
-    <div class="rr-body"><b>${esc(rr.reason)}</b>${rr.details?' — '+esc(rr.details):''}</div>
+    ${rr.items&&rr.items.length?`<div class="rr-body" style="margin-top:6px"><b>${rrItemsLine(rr)}</b> · ${aed(rr.itemsTotal||0)}</div>`:''}
+    <div class="rr-body">${esc(rr.reason)}${rr.details?' — '+esc(rr.details):''}</div>
     ${photos?`<div class="rr-ph">${photos}</div>`:''}
     <div class="rr-note">${note}</div>
   </div>`;
+}
+
+/* ---------------- RETURNS — the shop-side tracking view ---------------- */
+let returnRequests=[];
+async function reloadReturns(){
+  try{ const {returns:r}=await TroveAPI.api('/api/seller/returns'); returnRequests=r||[]; }
+  catch(_){ returnRequests=[]; }
+  const open=returnRequests.filter(r=>r.status==='requested').length;
+  const pill=$('returnPill');
+  if(pill){ pill.textContent=open; pill.style.display=open?'':'none'; }
+  if($('view-returns').classList.contains('active'))renderReturnsView();
+}
+function returnPill(s){ return s==='requested'?'new':s==='approved'?'fulfilled':'shipped'; }
+function renderReturnsView(){
+  const wrap=$('returnList');
+  if(!returnRequests.length){
+    wrap.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">No return requests so far. When a buyer asks to send one of your pieces back, it appears here with Trove's decision.</div>`;
+    return;
+  }
+  wrap.innerHTML=returnRequests.map(r=>{
+    const photos=(r.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
+    const items=(r.items||[]).map(i=>`<div class="sc-li" style="padding:8px 0">
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div></div>
+        <div class="pr" style="margin-left:auto">${aed(i.price*i.qty)}</div>
+      </div>`).join('');
+    const state=r.status==='requested'
+      ? `Trove is reviewing this request — nothing for you to do yet. If it's approved, <b>${aed(r.creditImpact||0)}</b> of the sale's credit reverses on your next settlement.`
+      : r.status==='approved'
+      ? `Approved by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — the courier brings the item${(r.items||[]).length>1?'s':''} back and <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock in Products once it's back.`
+      : `Declined by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — nothing changes for you.${r.declineReason?' Reason given to the buyer: “'+esc(r.declineReason)+'”':''}`;
+    return `<div class="card" style="margin-bottom:14px${r.status!=='requested'?';opacity:.78':''}">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':r.status}</span>
+        <b style="font-size:13.5px">${esc(r.order?r.order.publicId:'')}</b>
+        <span style="color:var(--muted);font-size:12px;margin-left:auto">requested ${fmtDate(r.createdAt)}</span>
+      </div>
+      <div style="margin-top:10px">${items}</div>
+      <div class="rr-body" style="font-size:13px;margin-top:4px"><b>${esc(r.reason)}</b>${r.details?' — '+esc(r.details):''}</div>
+      ${photos?`<div class="rr-ph" style="display:flex;gap:6px;margin-top:9px">${photos}</div>`:''}
+      <div class="rr-note" style="font-size:12.5px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.55">${state}</div>
+    </div>`;
+  }).join('');
 }
 function renderOrders(){
   const wrap=$('orderList');
@@ -1557,7 +1660,7 @@ function revealActiveTab(){
   b.scrollTo({left:Math.max(0,on.offsetLeft-(b.clientWidth-on.offsetWidth)/2),behavior:'smooth'});
 }
 const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],returns:['Returns','Buyer requests, Trove decisions'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -1569,7 +1672,7 @@ function go(v){
   if(v==='products')ta.innerHTML=`<button class="btn btn-coral" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add product</button>`;
   else if(v==='overview')ta.innerHTML=`<a class="btn btn-ghost" href="/" target="_blank">View storefront ↗</a>`;
   else ta.innerHTML='';
-  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='adminpayouts')renderAdminPayouts();
+  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='adminpayouts')renderAdminPayouts();
   window.scrollTo(0,0);
 }
 
@@ -1594,7 +1697,7 @@ async function boot(){
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
   if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
   buildMobileTabs();
-  await Promise.all([reloadProducts(), reloadOrders()]);
+  await Promise.all([reloadProducts(), reloadOrders(), reloadReturns()]);
   // Claude-written tag suggestions: only show the button when the server has a key.
   TroveAPI.config().then(c=>{ if(c&&c.aiTagsEnabled)$('dTagAI').style.display=''; }).catch(()=>{});
   fillStoreForm();

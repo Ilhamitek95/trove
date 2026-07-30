@@ -82,6 +82,7 @@ router.get('/products', requireAdmin, (_req, res) => {
     id: p.id, name: p.name, description: p.description, category: p.category,
     priceCents: p.price_cents, stock: p.stock, status: p.status,
     imageSeed: p.image_seed, tags: parseTags(p.tags), createdAt: p.created_at,
+    images: (() => { try { const v = JSON.parse(p.images || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } })(),
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, color: p.color, image: p.shop_image, isHouse: !!p.is_house, status: p.shop_status },
   })) });
 });
@@ -345,6 +346,10 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
     if (order.refunded_at) return res.status(409).json({ error: 'Order already refunded' });
     if (!['paid', 'fulfilled'].includes(order.status)) return res.status(409).json({ error: 'Only paid orders can be refunded' });
     if (!order.stripe_payment_intent_id) return res.status(409).json({ error: 'No card payment to refund' });
+    // Item-level returns already refunded part of this order — a full-order
+    // refund on top would pay the buyer twice for those items.
+    const partiallyReturned = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status='approved'").get(order.id).c;
+    if (partiallyReturned) return res.status(409).json({ error: 'Items from this order were already refunded through a return — handle the rest from the Returns view' });
 
     const stripe = require('../stripe').requireStripe();
     await stripe.refunds.create({
@@ -360,13 +365,17 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
 });
 
 /* ---------------- Return requests (buyer-initiated) ----------------
- * Requests arrive from the account page with photos; Trove decides. Approval
- * refunds the ITEMS SUBTOTAL back to the card (service + delivery fees are
- * not refunded; under the free-delivery threshold the courier's AED 25
- * return-collection fee is deducted) and then runs the exact same effects as
- * a manual refund: settlement reversal, do-not-ship cancels, reverse pickups.
+ * Requests arrive from the account page with photos and name the exact items
+ * going back; Trove decides. Approval refunds THOSE ITEMS' line totals back
+ * to the card (service + delivery fees are not refunded; under the free-
+ * delivery threshold the courier's AED 25 return-collection fee is deducted
+ * per request) and reverses the suppliers' credit for just those items. The
+ * buyer is emailed at every decision (best-effort, see src/email.js).
  */
 const returns = require('../returns');
+const email = require('../email');
+const emailItems = (requestId) => returns.requestItems(requestId)
+  .map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents }));
 
 router.get('/returns', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
@@ -377,20 +386,21 @@ router.get('/returns', requireAdmin, (_req, res) => {
     LEFT JOIN users u ON u.id = rr.buyer_id
     ORDER BY CASE rr.status WHEN 'requested' THEN 0 ELSE 1 END, rr.created_at DESC
     LIMIT 500`).all();
-  const itemsStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, s.name AS shop_name
-    FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
-  res.json({ returns: rows.map((r) => ({
-    ...returns.shape(r),
-    order: {
-      publicId: r.public_id, email: r.email, buyer: r.buyer_name || null, rail: r.rail,
-      itemsTotal: r.subtotal_cents / 100, total: r.total_cents / 100,
-      deliveredAt: r.delivered_at || null, refundedAt: r.refunded_at || null,
-      items: itemsStmt.all(r.order_id).map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, shop: i.shop_name })),
-    },
-    // Preview of what approval would refund (stamped for real on approve).
-    feePreview: returns.feeCents(r) / 100,
-    refundPreview: returns.refundCents(r) / 100,
-  })) });
+  const countStmt = db.prepare('SELECT COUNT(*) AS c FROM order_items WHERE order_id=?');
+  res.json({ returns: rows.map((r) => {
+    const m = returns.money(r, r.id); // r carries the order's subtotal_cents for the fee rule
+    return {
+      ...returns.shape(r),
+      order: {
+        publicId: r.public_id, email: r.email, buyer: r.buyer_name || null, rail: r.rail,
+        itemsTotal: r.subtotal_cents / 100, total: r.total_cents / 100, itemCount: countStmt.get(r.order_id).c,
+        deliveredAt: r.delivered_at || null, refundedAt: r.refunded_at || null,
+      },
+      // Preview of what approval would refund (stamped for real on approve).
+      feePreview: m.fee / 100,
+      refundPreview: m.refund / 100,
+    };
+  }) });
 });
 
 router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
@@ -402,24 +412,24 @@ router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
     if (order.refunded_at) return res.status(409).json({ error: 'Order already refunded' });
     if (order.rail === 'connect') return res.status(409).json({ error: 'Connect-rail orders need the manual refund button' });
 
-    const fee = returns.feeCents(order);
-    const refund = returns.refundCents(order);
+    const m = returns.money(order, rr.id);
 
     // Partial card refund first — if Stripe fails, nothing local changes.
     // Orders from demo-payments mode have no PaymentIntent; they proceed
     // without a card refund so the flow stays demonstrable before go-live.
     const stripe = require('../stripe').getStripe();
-    if (stripe && order.stripe_payment_intent_id) {
-      await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id, amount: refund });
-    } else {
+    if (stripe && order.stripe_payment_intent_id && m.refund > 0) {
+      await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id, amount: m.refund });
+    } else if (!stripe || !order.stripe_payment_intent_id) {
       console.warn(`return ${rr.id} (${order.public_id}): approved without a card refund (demo mode / no PaymentIntent)`);
     }
 
-    returns.applyRefundEffects(order);
-    db.prepare(`UPDATE return_requests SET status='approved', refund_cents=?, fee_cents=?, decided_at=datetime('now') WHERE id=?`)
-      .run(refund, fee, rr.id);
+    const fresh = returns.approve(rr, order, m);
 
-    res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id)) });
+    const msg = email.returnApproved({ order, items: emailItems(rr.id), money: m });
+    email.send({ to: order.email, ...msg }).catch((e) => console.error('return-approved email failed:', e.message));
+
+    res.json({ ok: true, request: returns.shape(fresh) });
   } catch (e) { next(e); }
 });
 
@@ -431,6 +441,11 @@ router.post('/returns/:id/decline', requireAdmin, (req, res) => {
   if (reason.length < 5) return res.status(400).json({ error: 'Give the buyer a short reason for the decline' });
   db.prepare(`UPDATE return_requests SET status='declined', decline_reason=?, decided_at=datetime('now') WHERE id=?`)
     .run(reason.slice(0, 500), rr.id);
+
+  const order = db.prepare('SELECT * FROM orders WHERE id=?').get(rr.order_id);
+  const msg = email.returnDeclined({ order, items: emailItems(rr.id), declineReason: reason.slice(0, 500) });
+  email.send({ to: order.email, ...msg }).catch((e) => console.error('return-declined email failed:', e.message));
+
   res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id)) });
 });
 

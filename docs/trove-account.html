@@ -265,6 +265,14 @@
   .rtfield{width:100%;font-family:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--paper);color:var(--char);margin-bottom:10px}
   .rtmoney{margin-top:14px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.55;background:var(--cream-2,#F8F0EA);border-radius:10px;padding:11px 13px}
   .rtmoney b{color:var(--char)}
+  .rtitems{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
+  .rti{display:flex;align-items:center;gap:11px;padding:11px 13px;font-size:13.5px;font-weight:600;cursor:pointer;border-bottom:1px solid var(--line-soft,#F0E6E0)}
+  .rti:last-child{border-bottom:none}
+  .rti input{width:16px;height:16px;accent-color:var(--char);flex:none}
+  .rti .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rti .pr{color:var(--char);font-weight:700;white-space:nowrap}
+  .rti.off{cursor:default;opacity:.55}
+  .rti .lk{font-size:11.5px;color:var(--muted);white-space:nowrap}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   .mhead{display:none}
@@ -452,8 +460,10 @@
 
 <div class="rev-scrim" id="retScrim" onclick="if(event.target===this)closeReturn()">
   <div class="rev-modal">
-    <h3>Return this order</h3>
+    <h3>Request a return</h3>
     <div class="sub" id="rtSub"></div>
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin:0 0 6px">What's going back? (tick each item)</div>
+    <div class="rtitems" id="rtItems"></div>
     <select id="rtReason" class="rtfield">
       <option value="">Why are you returning it?</option>
       <option value="damaged">Arrived damaged</option>
@@ -551,7 +561,7 @@ function renderOrders(){
     if(sh.length){
       body=sh.map(s=>{
         const color=(s.shop&&s.shop.color)||'#BD9C8C';
-        const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div></div>
+        const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div>${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display='none'">`:''}</div>
           <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
         const last=(s.timeline||[]).slice(-1)[0];
         const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
@@ -829,36 +839,56 @@ document.addEventListener('keydown',(e)=>{
 });
 
 /* ---------- RETURNS ----------
- * Whole-order returns: reason + a few words + photos, reviewed by Trove.
- * Money facts (fee, refund, deadline) come from the server per order —
- * nothing is computed here, so the promise always matches what's paid. */
+ * Item-level returns: tick the items going back, a reason + a few words +
+ * photos, reviewed by Trove. Money facts (fee, per-item prices, deadline)
+ * come from the server — this page only ever sums them for the preview; the
+ * amount that's actually refunded is recomputed and stamped server-side. */
 function returnsFootHTML(o){
-  const r=o.returns||{}, rq=r.request;
-  if(rq){
-    if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
-      <button class="btn btn-ghost btn-sm" onclick="withdrawReturn('${o.id}')">Withdraw request</button>`;
-    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved — ${aed(rq.refund)} is on its way back to your card${rq.fee?` (${aed(rq.fee)} collection fee deducted)`:''}. Our courier will be in touch to collect.</span>`;
-    return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">Return declined — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
-  }
-  if(o.refundedAt)return `<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
-  if(r.eligible)return `<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)}</span>
+  const r=o.returns||{}, reqs=r.requests||[];
+  const what=rq=>(rq.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ');
+  let out=reqs.map(rq=>{
+    if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested for <b>${what(rq)}</b> on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
+      <button class="btn btn-ghost btn-sm" onclick="withdrawReturn('${o.id}',${rq.id})">Withdraw</button>`;
+    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved for <b>${what(rq)}</b> — ${aed(rq.refund)} is on its way back to your card${rq.fee?` (${aed(rq.fee)} collection fee deducted)`:''}. Our courier will be in touch to collect.</span>`;
+    return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">Return declined for <b>${what(rq)}</b> — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
+  }).join('');
+  if(o.refundedAt&&!reqs.some(q=>q.status==='approved'))out+=`<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
+  if(r.eligible)out+=`<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)}</span>
     <button class="btn btn-ghost btn-sm" onclick="openReturn('${o.id}')">Request a return</button>`;
-  return '';
+  return out;
 }
-let rtOrder=null, rtImages=[];
+let rtOrder=null, rtImages=[], rtPicked=new Set();
 function openReturn(orderId){
   const o=orders.find(x=>x.id===orderId); if(!o||!o.returns)return;
-  rtOrder=o; rtImages=[];
-  $('rtSub').textContent=`Order ${o.id} — everything in it goes back together`;
+  rtOrder=o; rtImages=[]; rtPicked=new Set();
+  const free=(o.returns.items||[]).filter(i=>!i.locked);
+  if(free.length===1)rtPicked.add(free[0].id);   // only one candidate → pre-ticked
+  $('rtSub').textContent=`Order ${o.id} — only what you tick goes back`;
   $('rtReason').value=''; $('rtDetails').value='';
-  const r=o.returns;
-  $('rtMoney').innerHTML=`You'll get <b>${aed(r.refund)}</b> back to your card. `
-    +(r.fee?`Collection costs ${aed(r.fee)} on orders under AED 500 — it's already deducted from that figure. `:`Collection is free for this order. `)
-    +`The service fee and original delivery aren't refundable.`;
-  renderRtPhotos();
+  renderRtItems(); updateRtMoney(); renderRtPhotos();
   $('retScrim').classList.add('open');
 }
 function closeReturn(){$('retScrim').classList.remove('open');rtOrder=null;}
+function renderRtItems(){
+  const items=(rtOrder.returns.items||[]);
+  $('rtItems').innerHTML=items.map(i=>{
+    const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}`;
+    if(i.locked)return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='approved'?'return approved':'already requested'}</span></label>`;
+    return `<label class="rti"><input type="checkbox" ${rtPicked.has(i.id)?'checked':''} onchange="toggleRtItem(${i.id},this.checked)"><span class="nm">${nm}</span><span class="pr">${aed(i.price*i.qty)}</span></label>`;
+  }).join('');
+}
+function toggleRtItem(id,on){ if(on)rtPicked.add(id); else rtPicked.delete(id); updateRtMoney(); }
+function updateRtMoney(){
+  const r=rtOrder.returns;
+  const picked=(r.items||[]).filter(i=>rtPicked.has(i.id));
+  if(!picked.length){ $('rtMoney').innerHTML=`Tick at least one item above — your refund figure appears here.`; return; }
+  const gross=picked.reduce((t,i)=>t+i.price*i.qty,0);
+  const refund=Math.max(0,gross-(r.fee||0));
+  const more=(r.items||[]).some(i=>!i.locked&&!rtPicked.has(i.id));
+  $('rtMoney').innerHTML=`You'll get <b>${aed(refund)}</b> back to your card. `
+    +(r.fee?`Collection costs ${aed(r.fee)} on orders under AED 500 — it's already deducted from that figure.${more?` Sending more than one item back? Tick them together — one collection, one fee.`:''} `:`Collection is free for this order. `)
+    +`The service fee and original delivery aren't refundable.`;
+}
 function renderRtPhotos(){
   const w=$('rtPhotos');w.innerHTML='';
   rtImages.forEach((u,i)=>{
@@ -887,21 +917,22 @@ function retAddFiles(files){
 }
 async function saveReturn(){
   if(!rtOrder)return;
+  if(!rtPicked.size){toast('Tick at least one item to send back');return;}
   if(!$('rtReason').value){toast('Pick a reason for the return');return;}
   if($('rtDetails').value.trim().length<5){toast('Tell us a little about what went wrong');return;}
   if(!rtImages.length){toast('Add at least one photo of the item');return;}
   const btn=$('rtSave'),was=btn.textContent;btn.textContent='Sending…';btn.disabled=true;
   try{
     await TroveAPI.api(`/api/account/orders/${rtOrder.id}/return-request`,{method:'POST',body:{
-      reason:$('rtReason').value,details:$('rtDetails').value.trim(),images:rtImages}});
-    closeReturn();toast("Return requested — we'll be in touch shortly");
+      itemIds:[...rtPicked],reason:$('rtReason').value,details:$('rtDetails').value.trim(),images:rtImages}});
+    closeReturn();toast("Return requested — we'll keep you posted by email");
     await reloadOrders();renderOrders();
   }catch(e){toast(e.message||'Could not send the request');}
   finally{btn.textContent=was;btn.disabled=false;}
 }
-async function withdrawReturn(orderId){
+async function withdrawReturn(orderId,requestId){
   if(!confirm('Withdraw this return request?'))return;
-  try{await TroveAPI.api(`/api/account/orders/${orderId}/return-request`,{method:'DELETE'});toast('Request withdrawn');await reloadOrders();renderOrders();}
+  try{await TroveAPI.api(`/api/account/orders/${orderId}/return-requests/${requestId}`,{method:'DELETE'});toast('Request withdrawn');await reloadOrders();renderOrders();}
   catch(e){toast(e.message||'Could not withdraw it');}
 }
 

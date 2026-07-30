@@ -14,37 +14,43 @@ router.get('/orders', requireAuth, (req, res) => {
   const orders = db.prepare("SELECT * FROM orders WHERE buyer_id=? AND status!='pending' ORDER BY created_at DESC").all(req.user.id);
   const itemsStmt = db.prepare(`SELECT oi.*, s.name AS shop_name, s.color, s.is_house FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
   const shipStmt = db.prepare(`SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);
-  const reqStmt = db.prepare('SELECT * FROM return_requests WHERE order_id=?');
+  const reqStmt = db.prepare('SELECT * FROM return_requests WHERE order_id=? ORDER BY created_at DESC, id DESC');
   res.json({
-    orders: orders.map((o) => ({
-      id: o.public_id,
-      status: o.status,
-      total: o.total_cents / 100,
-      createdAt: o.created_at,
-      deliveredAt: o.delivered_at || null,
-      returnWindowEndsAt: o.return_window_ends_at || null,
-      refundedAt: o.refunded_at || null,
-      items: itemsStmt.all(o.id).map((i) => ({
-        name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
-        productId: i.product_id, shopId: i.shop_id,
-        shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
-      })),
-      shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),
-      returns: {
-        eligible: !returns.ineligibleReason(o) && !reqStmt.get(o.id),
-        deadline: returns.deadline(o),
-        fee: returns.feeCents(o) / 100,
-        refund: returns.refundCents(o) / 100,
-        request: returns.shape(reqStmt.get(o.id)),
-      },
-    })),
+    orders: orders.map((o) => {
+      const retItems = returns.returnableItems(o);
+      return {
+        id: o.public_id,
+        status: o.status,
+        total: o.total_cents / 100,
+        createdAt: o.created_at,
+        deliveredAt: o.delivered_at || null,
+        returnWindowEndsAt: o.return_window_ends_at || null,
+        refundedAt: o.refunded_at || null,
+        items: itemsStmt.all(o.id).map((i) => ({
+          name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
+          productId: i.product_id, shopId: i.shop_id, orderItemId: i.id,
+          shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
+        })),
+        shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),
+        returns: {
+          // Item-level: eligible while the window is open AND something is
+          // still free to send back. Money facts are server-fed; the picker
+          // only ever sums the item prices below minus the fee.
+          eligible: !returns.ineligibleReason(o) && retItems.some((i) => !i.locked),
+          deadline: returns.deadline(o),
+          fee: returns.feeCents(o) / 100,
+          items: retItems,
+          requests: reqStmt.all(o.id).map((r) => returns.shape(r)),
+        },
+      };
+    }),
   });
 });
 
 /* ---------------- Return requests (buyer) ----------------
- * Whole-order returns: reason + a few words + at least one photo. The request
- * lands with Trove's admin (who approves/declines) and shows on the shops'
- * order views. Money rules live in src/returns.js.
+ * Item-level returns: pick the items, a reason, a few words and at least one
+ * photo. The request lands with Trove's admin (who approves/declines) and
+ * shows on the shops' order views. Money rules live in src/returns.js.
  */
 router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) => {
   try {
@@ -52,15 +58,26 @@ router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) =>
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const result = returns.create(req.user, order, req.body || {});
     if (result.error) return res.status(result.status).json({ error: result.error });
+
+    // Confirmation email — best-effort, never blocks the request.
+    const email = require('../email');
+    const msg = email.returnRequested({
+      order,
+      items: returns.requestItems(result.id).map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents })),
+      money: returns.money(order, result.id),
+      reasonLabel: returns.REASONS[req.body.reason] || req.body.reason,
+    });
+    email.send({ to: order.email, ...msg }).catch((e) => console.error('return-requested email failed:', e.message));
+
     res.status(201).json({ ok: true, id: result.id });
   } catch (e) { next(e); }
 });
 
-// Withdraw your own request while it's still waiting on a decision.
-router.delete('/orders/:publicId/return-request', requireAuth, (req, res) => {
+// Withdraw one of your own requests while it's still waiting on a decision.
+router.delete('/orders/:publicId/return-requests/:requestId', requireAuth, (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE public_id=? AND buyer_id=?').get(req.params.publicId, req.user.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
-  if (!returns.cancelOwn(req.user.id, order.id)) return res.status(404).json({ error: 'No pending return request to withdraw' });
+  if (!returns.cancelOwn(req.user.id, order.id, req.params.requestId)) return res.status(404).json({ error: 'No pending return request to withdraw' });
   res.json({ ok: true });
 });
 

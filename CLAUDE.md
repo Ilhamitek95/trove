@@ -24,7 +24,7 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 
 ## Dev gotchas
 
-- Tests: `cd backend && npm test` (node:test suite, ~114 tests) — run before any push. Unset `ANTHROPIC_API_KEY` first (the user env var leaks in and breaks tags.test.js).
+- Tests: `cd backend && npm test` (node:test suite, ~119 tests) — run before any push. Unset `ANTHROPIC_API_KEY` first (the user env var leaks in and breaks tags.test.js).
 - Run locally: `cd backend && npm install && npm run seed && npm run dev` → http://localhost:4242 (Express also serves `docs/` statically — single origin).
 - **Never round-trip repo files through PowerShell `Get-Content`/`Set-Content`** — it mojibakes UTF-8 (corrupted a route file once). Use the Edit/Write tools.
 - Git commit messages containing double-quotes fail under PowerShell 5.1 quoting — avoid `"` in messages.
@@ -33,3 +33,6 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 - Brand review (2026-07): display face is **Cormorant** (Google Fonts, upright 400/500/600 only — user's call 2026-07-27 since Dream Avenue was never purchased); official wordmark pending in `docs/img/` (typed-text fallback via `onerror`). NO italics anywhere; `*word*` CMS token renders an Orange accent. Never pair Charcoal with Orange (buttons are charcoal/cream); `#A85138`/`#7E6F67`/`#5E7E63` are banned. Categories = two-pillar taxonomy in `backend/src/categories.js` (house vs marketplace lists). UK English in all visible copy; "Trove" always capitalised in sentences (the lowercase wordmark is artwork).
 - Browser QA gotcha: native `confirm()`/`prompt()` dialogs freeze automation — override (`window.confirm=()=>true`) before clicking buttons that trigger them.
 - AI tag-writer (`backend/src/ai.js`, claude-haiku-4-5 via `AI_TAGS_MODEL`) needs `ANTHROPIC_API_KEY` (set on Render); endpoints 503 without it and the UI hides the button — degrade, don't error.
+- Returns are ITEM-LEVEL (migration 011): a request names order items (`return_request_items`), several requests per order, an item sits in max one open/approved request. Refund = items − AED 25 collection fee when the ORDER subtotal < 500. Owner decisions 2026-07-30: NO restock on return, NO VAT adjustment on return refunds. Order stamps `refunded_at` only when every item is approved-returned; partial approvals debit `split(returned gross).net` (settled credits) or shrink the credit row in place (unswept), closing to the exact remainder on the shop's last item.
+- Transactional email: `backend/src/email.js` (Resend HTTP API). Gated on `RESEND_API_KEY` + `EMAIL_FROM` (domain must be verified in Resend) — without the key every send logs "email skipped" and resolves, so local/tests need no setup. Always fire-and-forget with `.catch` — an email failure must never fail the request.
+- Product photos: `products.images` (JSON array of `/uploads/products` URLs, max 4, first = cover). Client sends the FULL array each save (data URLs for new, `/uploads` URLs for kept); server deletes dropped files. Storefront falls back to motif tiles when empty (`pImg(p)` in trove.html).

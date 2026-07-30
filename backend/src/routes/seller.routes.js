@@ -68,6 +68,29 @@ router.post('/me/image', requireSeller, (req, res, next) => {
 /* ---------------- Products ---------------- */
 const toCents = (v) => (v == null || v === '' ? null : Math.round(Number(v) * 100));
 
+/* Product photos: up to 4, first is the cover. The client sends the FULL
+   array each save — data URLs for new photos mixed with /uploads URLs for
+   kept ones. Dropped files are deleted best-effort; [] clears back to the
+   brand-motif tile. */
+const MAX_PRODUCT_IMAGES = 4;
+const parseImagesCol = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } };
+function imagesError(list) {
+  if (!Array.isArray(list)) return 'images must be a list';
+  if (list.length > MAX_PRODUCT_IMAGES) return `Up to ${MAX_PRODUCT_IMAGES} photos per product`;
+  return null;
+}
+function applyProductImages(shopId, productId, incoming, existing) {
+  const kept = [];
+  incoming.forEach((im, i) => {
+    if (typeof im !== 'string' || !im) return;
+    if (im.startsWith('/uploads/products/')) { if (existing.includes(im) && !kept.includes(im)) kept.push(im); return; }
+    kept.push(uploads.saveDataUrl(im, 'products', `prod-${shopId}-${productId}-${i}`));
+  });
+  existing.forEach((old) => { if (!kept.includes(old)) uploads.removeByUrl(old); });
+  db.prepare('UPDATE products SET images=? WHERE id=?').run(JSON.stringify(kept), productId);
+  return kept;
+}
+
 router.get('/products', requireSeller, (req, res) => {
   res.json({ products: db.prepare('SELECT * FROM products WHERE shop_id=? ORDER BY created_at DESC').all(req.shop.id) });
 });
@@ -77,14 +100,26 @@ const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.pr
 const { normalizeTags } = require('../tags');
 
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags } = req.body || {};
+  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags, images } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
+  if (images !== undefined) {
+    const imgErr = imagesError(images);
+    if (imgErr) return res.status(400).json({ error: imgErr });
+  }
   const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), stock, status, imageSeed,
       JSON.stringify(normalizeTags(tags)), ...persoCols(personalization));
+  if (images !== undefined && images.length) {
+    try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
+    catch (e) {
+      // A bad photo must not leave a half-created product behind.
+      db.prepare('DELETE FROM products WHERE id=?').run(info.lastInsertRowid);
+      throw e;
+    }
+  }
   res.status(201).json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(info.lastInsertRowid) });
 });
 
@@ -125,40 +160,88 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   if (b.tags !== undefined) {
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
   }
+  if (b.images !== undefined) {
+    const imgErr = imagesError(b.images);
+    if (imgErr) return res.status(400).json({ error: imgErr });
+    applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images));
+  }
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });
 
 router.delete('/products/:id', requireSeller, (req, res) => {
-  const r = db.prepare('DELETE FROM products WHERE id=? AND shop_id=?').run(req.params.id, req.shop.id);
-  if (!r.changes) return res.status(404).json({ error: 'Not found' });
+  const p = db.prepare('SELECT * FROM products WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
+  if (!p) return res.status(404).json({ error: 'Not found' });
+  parseImagesCol(p.images).forEach((u) => uploads.removeByUrl(u));
+  db.prepare('DELETE FROM products WHERE id=?').run(p.id);
   res.json({ ok: true });
 });
 
 /* ---------------- Orders & shipment tracking ---------------- */
-router.get('/orders', requireSeller, (req, res) => {
+
+// A return request as this shop sees it: only ITS items ride along, plus the
+// value of those items and the purchase credit that reverses on approval.
+function shopReturnShape(rr, shopId) {
   const returns = require('../returns');
+  const items = returns.requestItems(rr.id).filter((i) => i.shop_id === shopId);
+  const gross = items.reduce((t, i) => t + i.price_cents * i.qty, 0);
+  return {
+    id: rr.id,
+    status: rr.status,
+    reason: returns.REASONS[rr.reason] || rr.reason,
+    details: rr.details,
+    images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100 })),
+    itemsTotal: gross / 100,
+    creditImpact: fees.split(gross).net / 100,
+    declineReason: rr.decline_reason || null,
+    createdAt: rr.created_at,
+    decidedAt: rr.decided_at || null,
+  };
+}
+// Latest request that touches this shop's items in an order (for the order card strip).
+const latestShopReturnStmt = () => db.prepare(`
+  SELECT rr.* FROM return_requests rr
+  WHERE rr.order_id = ? AND EXISTS (
+    SELECT 1 FROM return_request_items ri JOIN order_items oi ON oi.id = ri.order_item_id
+    WHERE ri.request_id = rr.id AND oi.shop_id = ?)
+  ORDER BY rr.created_at DESC, rr.id DESC LIMIT 1`);
+
+router.get('/orders', requireSeller, (req, res) => {
   const rows = db.prepare(`
     SELECT sh.*, o.public_id, o.email, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
-           s.name AS shop_name, s.color, s.is_house,
-           rr.status AS rr_status, rr.reason AS rr_reason, rr.details AS rr_details,
-           rr.images AS rr_images, rr.created_at AS rr_created, rr.decided_at AS rr_decided
+           s.name AS shop_name, s.color, s.is_house
     FROM shipments sh
     JOIN orders o ON o.id = sh.order_id
     JOIN shops  s ON s.id = sh.shop_id
-    LEFT JOIN return_requests rr ON rr.order_id = o.id
     WHERE sh.shop_id = ?
     ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
-  res.json({ orders: rows.map((r) => ({
-    ...shipments.shape(r),
-    order: { publicId: r.public_id, email: r.email, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
-    returnRequest: r.rr_status ? {
-      status: r.rr_status,
-      reason: returns.REASONS[r.rr_reason] || r.rr_reason,
-      details: r.rr_details,
-      images: (() => { try { return JSON.parse(r.rr_images || '[]'); } catch (_) { return []; } })(),
-      createdAt: r.rr_created,
-      decidedAt: r.rr_decided || null,
-    } : null,
+  const latestReq = latestShopReturnStmt();
+  res.json({ orders: rows.map((r) => {
+    const rr = latestReq.get(r.order_id, req.shop.id);
+    return {
+      ...shipments.shape(r),
+      order: { publicId: r.public_id, email: r.email, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
+      returnRequest: rr ? shopReturnShape(rr, req.shop.id) : null,
+    };
+  }) });
+});
+
+// GET /api/seller/returns → every return request touching this shop's items,
+// open ones first. Read-only: buyers request, Trove decides — this view is
+// how a shop tracks what's coming back and what it does to their payouts.
+router.get('/returns', requireSeller, (req, res) => {
+  const rows = db.prepare(`
+    SELECT DISTINCT rr.*, o.public_id
+    FROM return_requests rr
+    JOIN orders o ON o.id = rr.order_id
+    JOIN return_request_items ri ON ri.request_id = rr.id
+    JOIN order_items oi ON oi.id = ri.order_item_id
+    WHERE oi.shop_id = ?
+    ORDER BY CASE rr.status WHEN 'requested' THEN 0 ELSE 1 END, rr.created_at DESC
+    LIMIT 300`).all(req.shop.id);
+  res.json({ returns: rows.map((rr) => ({
+    ...shopReturnShape(rr, req.shop.id),
+    order: { publicId: rr.public_id },
   })) });
 });
 

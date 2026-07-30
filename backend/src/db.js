@@ -146,6 +146,9 @@ addColumn('order_items', 'personalization', "TEXT DEFAULT ''");
 // them (or let Claude write them) in the product drawer; /api/products?q=
 // matches against them.
 addColumn('products', 'tags', "TEXT DEFAULT '[]'");
+// Seller-uploaded product photos: JSON array of /uploads/products URLs, first
+// one is the cover. [] falls back to the brand-motif tile.
+addColumn('products', 'images', "TEXT NOT NULL DEFAULT '[]'");
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS payouts (
