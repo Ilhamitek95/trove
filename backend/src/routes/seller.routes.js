@@ -206,9 +206,13 @@ const latestShopReturnStmt = () => db.prepare(`
     WHERE ri.request_id = rr.id AND oi.shop_id = ?)
   ORDER BY rr.created_at DESC, rr.id DESC LIMIT 1`);
 
+// The buyer's email is deliberately NOT selected here. Trove is the merchant of
+// record, so a shop never needs to contact the customer directly — the packing
+// name and ship-to address are all a maker needs to fulfil. Keeping the address
+// out of the seller payload also keeps the sale on-platform. Admin still sees it.
 router.get('/orders', requireSeller, (req, res) => {
   const rows = db.prepare(`
-    SELECT sh.*, o.public_id, o.email, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
+    SELECT sh.*, o.public_id, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
            s.name AS shop_name, s.color, s.is_house
     FROM shipments sh
     JOIN orders o ON o.id = sh.order_id
@@ -220,7 +224,7 @@ router.get('/orders', requireSeller, (req, res) => {
     const rr = latestReq.get(r.order_id, req.shop.id);
     return {
       ...shipments.shape(r),
-      order: { publicId: r.public_id, email: r.email, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
+      order: { publicId: r.public_id, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
       returnRequest: rr ? shopReturnShape(rr, req.shop.id) : null,
     };
   }) });

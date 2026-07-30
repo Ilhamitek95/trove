@@ -790,7 +790,7 @@ function renderOverview(){
   if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Tuesdays' : 'Your Stripe schedule';
   $('ovOrders').innerHTML = orders.length
     ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
-        <td style="font-weight:700">${o.order?o.order.publicId:''}</td><td>${esc(o.order&&o.order.email)}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
+        <td style="font-weight:700">${o.order?o.order.publicId:''}</td><td>${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
         <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${aed(o.itemTotal)}</td>
         <td style="text-align:right"><span class="order-pill ${shipPill(o.status)}">${o.statusLabel}</span></td></tr>`).join('')}</tbody>`
     : `<tbody><tr><td style="color:var(--muted);padding:18px;font-weight:600">No orders yet.</td></tr></tbody>`;
@@ -1042,7 +1042,7 @@ function toggleShip(id){if(expandedShips.has(id))expandedShips.delete(id);else e
 function shipRowHTML(o){
   const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
   const perso=(o.items||[]).some(i=>i.personalization);
-  const name=(o.order&&o.order.ship&&o.order.ship.name)||(o.order&&o.order.email)||'—';
+  const name=(o.order&&o.order.ship&&o.order.ship.name)||'—';
   const rr=o.returnRequest;
   const retFlag=rr&&rr.status==='requested'?' · <span class="sr-ret">↩ return requested</span>'
     :rr&&rr.status==='approved'?' · <span class="sr-ret">↩ return approved</span>':'';
@@ -1070,7 +1070,7 @@ function shipCardHTML(o){
       <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
     </div>
     <div class="sc-cols">
-      <div class="sc-info"><div class="up">Customer</div><div class="v"><div class="nm">${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</div>${esc(o.order&&o.order.email)}</div></div>
+      <div class="sc-info"><div class="up">Customer</div><div class="v"><div class="nm">${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</div>Trove handles customer contact</div></div>
       <div class="sc-info"><div class="up">Ship to</div>${shipAddress(o)}</div>
     </div>
     <div class="sc-divider"></div>
