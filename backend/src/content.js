@@ -98,6 +98,19 @@ const DEFAULTS = {
       { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door. Trove buys it from you at 60% of your price, and your money arrives with the weekly payout.' },
     ],
   },
+  'sell.offer': {
+    eyebrow: 'Included with every shop',
+    heading: 'You make. Trove does the rest.',
+    sub: 'Everything below is part of the arrangement — no joining fee, no listing fee, no hidden costs.',
+    items: [
+      { title: 'Professional photography', text: 'Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.' },
+      { title: 'Marketing, done for you', text: 'Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.' },
+      { title: 'Delivery, arranged and paid', text: "When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it." },
+      { title: 'The shopkeeping', text: 'Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.' },
+      { title: 'Weekly payouts', text: "Your share lands in your bank account every week, and your Payments page shows exactly what's coming and when." },
+      { title: 'No trade licence needed', text: 'Trove buys your pieces and resells them, so you can start selling without a licence of your own.' },
+    ],
+  },
   'sell.quotes': {
     eyebrow: 'From our makers',
     heading: 'In their words.',
@@ -144,6 +157,7 @@ const MAX_LONG = 1200;
 const LIST_BOUNDS = {
   'sell.hero.facts': [2, 6],
   'sell.steps.items': [2, 6],
+  'sell.offer.items': [3, 8],
   'sell.quotes.items': [1, 6],
   'sell.faq.items': [1, 12],
 };
