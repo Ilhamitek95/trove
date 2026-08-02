@@ -671,15 +671,41 @@
     /* 16px inputs so iOS Safari doesn't zoom on focus */
     .co-field input,.co-field select{font-size:16px}
   }
-  /* ---- sell page: What Trove takes care of (sell.offer) ---- */
-  .ofsub{margin:12px 0 0;max-width:56ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
-  .ofgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:34px}
-  .ofcard{background:rgba(255,255,255,.72);border:1px solid rgba(41,39,39,.08);border-radius:18px;padding:22px 24px}
-  .ofic{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--char);margin-bottom:14px}
-  .ofcard h4{font-family:var(--font-display);font-size:18px;font-weight:600;margin:0 0 6px}
-  .ofcard p{font-size:14px;line-height:1.6;color:var(--ink-80);margin:0;font-weight:400}
-  @media(max-width:960px){.ofgrid{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.ofgrid{grid-template-columns:1fr;gap:12px;margin-top:24px}.ofcard{padding:18px 20px}}
+  /* ---- sell page: the hand-off (steps + offer merged into a two-lane timeline) ---- */
+  .hd-c{text-align:center;margin:0 auto}
+  .ofsub{margin:12px auto 0;max-width:58ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
+  .ofic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--char);flex:none}
+  .handoff{margin-top:42px}
+  .h-lanes{display:grid;grid-template-columns:1fr 64px 1fr;margin-bottom:4px}
+  .h-lane b{font-family:var(--font-display);font-size:21px;font-weight:600;display:block}
+  .h-lane span{font-size:12.5px;color:rgba(41,39,39,.55)}
+  .hl-you{text-align:right}
+  .h-rows{position:relative;display:flex;flex-direction:column}
+  .h-rows::before{content:'';position:absolute;left:50%;top:8px;bottom:8px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
+  .h-row{display:grid;grid-template-columns:1fr 64px 1fr;padding:24px 0;position:relative}
+  .h-dot{position:absolute;left:50%;top:28px;transform:translateX(-50%);width:32px;height:32px;border-radius:50%;background:var(--cream);border:1.5px solid var(--char);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;z-index:1}
+  .h-row::after{content:'';position:absolute;left:calc(50% + 18px);top:43px;width:22px;border-top:1.5px dashed rgba(41,39,39,.22)}
+  .h-you{text-align:right}
+  .h-you h4{font-family:var(--font-display);font-size:18.5px;font-weight:600;margin:12px 0 6px}
+  .h-you p{font-size:13.5px;line-height:1.62;color:var(--ink-80);max-width:36ch;margin:0 0 0 auto;font-weight:400}
+  .h-trove{display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .h-card{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.72);border:1px solid rgba(41,39,39,.08);border-radius:14px;padding:14px 16px}
+  .h-card b{font-size:15px;display:block;font-family:var(--font-display);font-weight:600}
+  .h-card p{font-size:13px;line-height:1.55;color:var(--ink-80);margin:2px 0 0;font-weight:400}
+  .h-kick{text-align:center;font-size:14px;color:rgba(41,39,39,.65);margin-top:30px}
+  @media(max-width:860px){
+    .h-lanes{display:none}
+    .h-rows::before{left:13px;transform:none}
+    .h-row{display:block;padding:18px 0 18px 36px}
+    .h-dot{left:13px;transform:translateX(-50%);top:0;width:27px;height:27px;font-size:12.5px}
+    .h-row::after{display:none}
+    .h-you{text-align:left}
+    .h-you h4{margin:1px 0 6px}
+    .h-you p{margin:0;max-width:none}
+    .h-trove{margin-top:12px;gap:8px}
+    .h-trove::before{content:'Trove takes care of';font-size:11.5px;color:rgba(41,39,39,.5)}
+  }
+  @media(max-width:560px){.h-card{padding:12px 14px}.h-kick{font-size:13px;margin-top:22px}}
 </style>
 </head>
 <body>
@@ -824,7 +850,7 @@
         <div>
           <span class="eyebrow" data-cms="home.sellBand.eyebrow">Sell on Trove</span>
           <h2 data-cms-rich="home.sellBand.h2">Make things at home? Give them a <em>shopfront</em>.</h2>
-          <p data-cms="home.sellBand.intro">No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 60% of your price and takes care of the photography, the marketing, the delivery and the storefront — you keep your brand and your craft.</p>
+          <p data-cms="home.sellBand.intro">No shop experience needed and nothing to pay up front. You set your prices and keep your brand; Trove takes care of the photography, the marketing, the delivery and the storefront.</p>
           <button class="btn btn-dark" data-cms="home.sellBand.cta" onclick="go('sell')">See how it works</button>
         </div>
         <div class="steps">
@@ -956,7 +982,7 @@
     <div class="wrap" style="text-align:center;max-width:760px">
       <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on Trove</span>
       <h1 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h1>
-      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:18px auto 26px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 60% of your price.</p>
+      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:18px auto 26px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href='/apply'">Start your application</button>
         <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
@@ -965,32 +991,21 @@
         <span>Free to join</span><span>No trade licence needed</span><span>Courier collects from your door</span><span>A real person reviews every shop</span>
       </div>
     </div>
-    <div class="wrap" id="sellSteps" style="max-width:1020px">
-      <div class="band-head stephead"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.steps.heading">From craft table to shopfront, in four steps.</h2></div>
-      <div class="stepsband">
-        <div class="steps" id="sellStepsList">
-          <div class="step"><span class="nm">i</span><div><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div></div>
-          <div class="step"><span class="nm">ii</span><div><h4>Add your pieces</h4><p>Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.</p></div></div>
-          <div class="step"><span class="nm">iii</span><div><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div></div>
-          <div class="step"><span class="nm">iv</span><div><h4>Sold? We come to you</h4><p>Our courier collects the piece from your door. Trove buys it from you at 60% of your price, and your money arrives with the weekly payout.</p></div></div>
+    <div class="wrap" id="sellSteps" style="max-width:1060px">
+      <div class="band-head hd-c"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.offer.heading">You make. Trove does the rest.</h2><p class="ofsub" data-cms="sell.steps.heading">Four steps from craft table to shopfront — with Trove carrying the load at every one.</p></div>
+      <div class="handoff">
+        <div class="h-lanes"><div class="h-lane hl-you"><b>You</b><span>The craft</span></div><div class="h-mid"></div><div class="h-lane hl-trove"><b>Trove</b><span data-cms="sell.offer.eyebrow">Included with every shop</span></div></div>
+        <div class="h-rows" id="handoffRows">
+          <div class="h-row"><div class="h-you"><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div><div class="h-mid"><span class="h-dot">i</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><div><b>No trade licence needed</b><p>Trove buys your pieces and resells them, so you can start selling without a licence of your own.</p></div></div></div></div>
+          <div class="h-row"><div class="h-you"><h4>Add your pieces</h4><p>Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.</p></div><div class="h-mid"><span class="h-dot">ii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><div><b>Professional photography</b><p>Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.</p></div></div><div class="h-card"><span class="ofic" style="background:#BED3DF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4L7 9H3v6h4l11 5z"/><path d="M21 10a4 4 0 0 1 0 4"/></svg></span><div><b>Marketing, done for you</b><p>Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.</p></div></div></div></div>
+          <div class="h-row"><div class="h-you"><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div><div class="h-mid"><span class="h-dot">iii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l1-5h14l1 5"/><path d="M4 10v9h16v-9"/><path d="M9 19v-5h6v5"/></svg></span><div><b>The shopkeeping</b><p>Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.</p></div></div></div></div>
+          <div class="h-row"><div class="h-you"><h4>Sold? We come to you</h4><p>Our courier collects the piece from your door, and your money arrives with the weekly payout.</p></div><div class="h-mid"><span class="h-dot">iv</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><div><b>Delivery, arranged and paid</b><p>When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it.</p></div></div><div class="h-card"><span class="ofic" style="background:#F3E7E0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span><div><b>Weekly payouts</b><p>Your share lands in your bank account every week, and your Payments page shows exactly what's coming and when.</p></div></div></div></div>
         </div>
       </div>
+      <p class="h-kick" data-cms="sell.offer.sub">All of it is part of the arrangement — no joining fee, no listing fee, no hidden costs.</p>
     </div>
   </section>
-  <section class="band" style="padding-top:0">
-    <div class="wrap" style="max-width:1020px">
-      <div class="band-head"><span class="eyebrow" data-cms="sell.offer.eyebrow">Included with every shop</span><h2 data-cms="sell.offer.heading">You make. Trove does the rest.</h2><p class="ofsub" data-cms="sell.offer.sub">Everything below is part of the arrangement — no joining fee, no listing fee, no hidden costs.</p></div>
-      <div class="ofgrid" id="offerList">
-        <div class="ofcard"><span class="ofic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><h4>Professional photography</h4><p>Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.</p></div>
-        <div class="ofcard"><span class="ofic" style="background:#BED3DF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4L7 9H3v6h4l11 5z"/><path d="M21 10a4 4 0 0 1 0 4"/></svg></span><h4>Marketing, done for you</h4><p>Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.</p></div>
-        <div class="ofcard"><span class="ofic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><h4>Delivery, arranged and paid</h4><p>When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it.</p></div>
-        <div class="ofcard"><span class="ofic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l1-5h14l1 5"/><path d="M4 10v9h16v-9"/><path d="M9 19v-5h6v5"/></svg></span><h4>The shopkeeping</h4><p>Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.</p></div>
-        <div class="ofcard"><span class="ofic" style="background:#F3E7E0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span><h4>Weekly payouts</h4><p>Your share lands in your bank account every week, and your Payments page shows exactly what's coming and when.</p></div>
-        <div class="ofcard"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><h4>No trade licence needed</h4><p>Trove buys your pieces and resells them, so you can start selling without a licence of your own.</p></div>
-      </div>
-    </div>
-  </section>
-  <section class="band" style="padding-top:0">
+    <section class="band" style="padding-top:0">
     <div class="wrap">
       <div class="mqband">
         <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2><p class="qsub" data-cms="sell.quotes.sub">Independent makers run their own shops on Trove. Here's how it feels from the studio side.</p></div>
@@ -2225,15 +2240,16 @@ async function loadContent(){
 const cmsGet=p=>p.split('.').reduce((o,k)=>(o==null?undefined:o[k]),CONTENT);
 const cmsRich=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\|/g,'<br>');
 const romanNum=n=>['i','ii','iii','iv','v','vi'][n-1]||String(n);
-/* sell.offer cards: icon + tint cycled by index (same pattern as MAKER_AVATARS) */
-const OFFER_TINTS=['#F8D7E4','#BED3DF','#CFDBBE','#DBC7BD','#F3E7E0','#CAD5CC'];
+/* sell.offer cards: icon + tint cycled by index, in DEFAULTS item order:
+ * licence, photography, marketing, shopkeeping, delivery, payouts */
+const OFFER_TINTS=['#CAD5CC','#F8D7E4','#BED3DF','#DBC7BD','#CFDBBE','#F3E7E0'];
 const OFFER_ICONS=[
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg>',
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4L7 9H3v6h4l11 5z"/><path d="M21 10a4 4 0 0 1 0 4"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg>',
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l1-5h14l1 5"/><path d="M4 10v9h16v-9"/><path d="M9 19v-5h6v5"/></svg>',
+  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg>',
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg>',
 ];
 function applyContent(){
   if(!CONTENT)return;
@@ -2241,12 +2257,21 @@ function applyContent(){
   document.querySelectorAll('[data-cms-rich]').forEach(el=>{const v=cmsGet(el.dataset.cmsRich);if(typeof v==='string')el.innerHTML=cmsRich(v);});
   const facts=cmsGet('sell.hero.facts');
   if(Array.isArray(facts))$('sellFacts').innerHTML=facts.map(f=>`<span>${esc(f)}</span>`).join('');
+  /* the hand-off: steps (You lane) + offer (Trove lane) merged into one timeline.
+   * Offer cards attach to steps by even distribution, so admin edits to either
+   * list reflow gracefully instead of breaking a hard pairing. */
   const steps=cmsGet('sell.steps.items');
-  if(Array.isArray(steps))$('sellStepsList').innerHTML=steps.map((s,i)=>`<div class="step"><span class="nm">${romanNum(i+1)}</span><div><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div></div>`).join('');
+  const offerItems=cmsGet('sell.offer.items');
+  if(Array.isArray(steps)&&Array.isArray(offerItems)&&$('handoffRows')){
+    const n=steps.length||1,m=offerItems.length;
+    $('handoffRows').innerHTML=steps.map((s,k)=>{
+      const a=Math.floor(k*m/n),b=Math.floor((k+1)*m/n);
+      const cards=offerItems.slice(a,b).map((o,j)=>`<div class="h-card"><span class="ofic" style="background:${OFFER_TINTS[(a+j)%OFFER_TINTS.length]}">${OFFER_ICONS[(a+j)%OFFER_ICONS.length]}</span><div><b>${esc(o.title)}</b><p>${esc(o.text)}</p></div></div>`).join('');
+      return `<div class="h-row"><div class="h-you"><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div><div class="h-mid"><span class="h-dot">${romanNum(k+1)}</span></div><div class="h-trove">${cards}</div></div>`;
+    }).join('');
+  }
   const faq=cmsGet('sell.faq.items');
   if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
-  const offer=cmsGet('sell.offer.items');
-  if(Array.isArray(offer))$('offerList').innerHTML=offer.map((o,i)=>`<div class="ofcard"><span class="ofic" style="background:${OFFER_TINTS[i%OFFER_TINTS.length]}">${OFFER_ICONS[i%OFFER_ICONS.length]}</span><h4>${esc(o.title)}</h4><p>${esc(o.text)}</p></div>`).join('');
   const mq=cmsGet('sell.quotes.items');
   if(Array.isArray(mq))$('quotesList').innerHTML=mq.map((q,i)=>{
     const av=MAKER_AVATARS[i%MAKER_AVATARS.length];

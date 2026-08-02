@@ -71,7 +71,7 @@ const DEFAULTS = {
   'home.sellBand': {
     eyebrow: 'Sell on Trove',
     h2: 'Make things at home? Give them a *shopfront*.',
-    intro: 'No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 60% of your price and takes care of the photography, the marketing, the delivery and the storefront — you keep your brand and your craft.',
+    intro: 'No shop experience needed and nothing to pay up front. You set your prices and keep your brand; Trove takes care of the photography, the marketing, the delivery and the storefront.',
     cta: 'See how it works',
     steps: [
       { title: 'Tell us about your craft', text: 'A short, friendly form — a real person reads every application.' },
@@ -83,32 +83,32 @@ const DEFAULTS = {
   'sell.hero': {
     eyebrow: 'Sell on Trove',
     h1: "You make the pieces.|We'll be the *shop*.",
-    intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 60% of your price.',
+    intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.',
     ctaApply: 'Start your application',
     ctaHow: 'See how it works',
     facts: ['Free to join', 'No trade licence needed', 'Courier collects from your door', 'A real person reviews every shop'],
   },
   'sell.steps': {
     eyebrow: 'How it works',
-    heading: 'From craft table to shopfront, in four steps.',
+    heading: 'Four steps from craft table to shopfront — with Trove carrying the load at every one.',
     items: [
       { title: 'Tell us about your craft', text: 'A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.' },
       { title: 'Add your pieces', text: 'Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.' },
       { title: 'Shoppers discover them', text: 'Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.' },
-      { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door. Trove buys it from you at 60% of your price, and your money arrives with the weekly payout.' },
+      { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door, and your money arrives with the weekly payout.' },
     ],
   },
   'sell.offer': {
     eyebrow: 'Included with every shop',
     heading: 'You make. Trove does the rest.',
-    sub: 'Everything below is part of the arrangement — no joining fee, no listing fee, no hidden costs.',
+    sub: 'All of it is part of the arrangement — no joining fee, no listing fee, no hidden costs.',
     items: [
+      { title: 'No trade licence needed', text: 'Trove buys your pieces and resells them, so you can start selling without a licence of your own.' },
       { title: 'Professional photography', text: 'Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.' },
       { title: 'Marketing, done for you', text: 'Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.' },
-      { title: 'Delivery, arranged and paid', text: "When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it." },
       { title: 'The shopkeeping', text: 'Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.' },
+      { title: 'Delivery, arranged and paid', text: "When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it." },
       { title: 'Weekly payouts', text: "Your share lands in your bank account every week, and your Payments page shows exactly what's coming and when." },
-      { title: 'No trade licence needed', text: 'Trove buys your pieces and resells them, so you can start selling without a licence of your own.' },
     ],
   },
   'sell.quotes': {
