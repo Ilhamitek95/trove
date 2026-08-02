@@ -167,7 +167,7 @@ test('a variant can carry its own price, and the server charges that one', async
     items: [{ productId: mugId, qty: 1, options: [{ name: 'Colour', value: 'Clay' }, { name: 'Size', value: 'Large' }] }],
     address: ADDRESS, phone: PHONE } });
   assert.equal(res.status, 200, res.text);
-  assert.equal(res.data.amount, 9900 + 900 + 2500, 'the variant price, not the product price');
+  assert.equal(res.data.amount, 9900 + 3000, 'the variant price, not the product price');
   const item = db.prepare('SELECT price_cents FROM order_items oi JOIN orders o ON o.id=oi.order_id WHERE o.public_id=?').get(res.data.orderId);
   assert.equal(item.price_cents, 9900, 'snapshotted on the line item');
 });

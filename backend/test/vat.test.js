@@ -22,27 +22,27 @@ before(async () => {
 after(async () => { await ctx.close(); });
 
 test('quarterly VAT report splits by rail with correct 5/105 amounts', async () => {
-  // Consignment order: VAT = 5/105 × 23400 = 1114.
+  // Consignment order: VAT = 5/105 × 23000 = 1095.
   const o1 = db.prepare(`INSERT INTO orders (public_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
-    VALUES ('TRV-VAT01','b@test.local',20000,2500,900,23400,'pending','consignment','pi_vat_1')`).run().lastInsertRowid;
+    VALUES ('TRV-VAT01','b@test.local',20000,3000,0,23000,'pending','consignment','pi_vat_1')`).run().lastInsertRowid;
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)').run(o1, productId, shopId, 'Vase');
   await ctx.postWebhook({ id: 'evt_vat_a', type: 'payment_intent.succeeded', data: { object: { id: 'pi_vat_1', metadata: { order_id: String(o1) } } } });
 
-  // Connect-rail order: VAT = 5/105 × margin (4000) = 190.
+  // Connect-rail order: VAT = 5/105 × margin (8000) = 381.
   const o2 = db.prepare(`INSERT INTO orders (public_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
-    VALUES ('TRV-VAT02','b@test.local',20000,2500,900,23400,'pending','connect','pi_vat_2')`).run().lastInsertRowid;
+    VALUES ('TRV-VAT02','b@test.local',20000,3000,0,23000,'pending','connect','pi_vat_2')`).run().lastInsertRowid;
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)').run(o2, productId, shopId, 'Vase');
   await ctx.postWebhook({ id: 'evt_vat_b', type: 'payment_intent.succeeded', data: { object: { id: 'pi_vat_2', metadata: { order_id: String(o2) } } } });
 
-  assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o1).vat_amount_cents, 1114);
-  assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o2).vat_amount_cents, 190);
+  assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o1).vat_amount_cents, 1095);
+  assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o2).vat_amount_cents, 381);
 
   const rep = await ctx.api('GET', '/api/admin/vat-report', { cookie: adminCookie });
   assert.equal(rep.status, 200);
   assert.equal(rep.data.vatRegistered, true);
   const consign = rep.data.rows.find((r) => r.rail === 'consignment');
   const connect = rep.data.rows.find((r) => r.rail === 'connect');
-  assert.equal(consign.vatCents, 1114);
-  assert.equal(connect.vatCents, 190);
+  assert.equal(consign.vatCents, 1095);
+  assert.equal(connect.vatCents, 381);
   assert.match(consign.quarter, /^\d{4}-Q[1-4]$/);
 });

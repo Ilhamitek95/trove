@@ -55,7 +55,7 @@ test('paying sends the buyer a receipt with the order, the pieces and the money'
   assert.match(mail.html, /Colour: Clay/, 'says which one is coming');
   assert.match(mail.html, /Wool Throw/);
   assert.match(mail.html, /AED 552/, 'subtotal: 3 mugs at 64 plus a 360 throw');
-  assert.match(mail.html, /AED 561/, 'total adds the AED 9 service fee, delivery free over AED 500');
+  assert.ok(!mail.html.includes('Service fee'), 'no service fee line — there is none to charge');
   assert.match(mail.html, />Free</, 'free delivery reads as Free, not AED 0');
   assert.match(mail.html, /3–6 days/, 'the same promise the site makes');
   assert.match(mail.html, /2 parcels/, 'two shops, two parcels, one order');

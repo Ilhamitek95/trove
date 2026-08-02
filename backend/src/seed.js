@@ -152,12 +152,12 @@ setPerso.run(0, 'A word or name for the cover, foil-pressed (max 20 characters)'
 const mug = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='mug7'").get();
 const wallet = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='wallet3'").get();
 const demoSub = mug.price_cents + wallet.price_cents;
-const demoDelivery = demoSub >= 50000 ? 0 : 2500;
+const demoDelivery = demoSub > 20000 ? 0 : 3000;
 // The contact number sits on its own column, never in the address snapshot —
 // that snapshot is what the seller dashboard shows (see src/db.js).
 const demoShip = JSON.stringify({ name: 'Layla Hassan', line: 'Apt 1204, Marina Gate 2', city: 'Dubai Marina, Dubai', country: 'United Arab Emirates' });
 const demoOrder = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail,title_transferred_at)
-  VALUES (?,?,?,?,?,?,?,?, 'aed', ?, 'paid', 'consignment', datetime('now','-12 days'))`).run('TRV-SEED01', layla, 'layla@email.com', '+971501234567', demoSub, demoDelivery, 900, demoSub + demoDelivery + 900, demoShip).lastInsertRowid;
+  VALUES (?,?,?,?,?,?,?,?, 'aed', ?, 'paid', 'consignment', datetime('now','-12 days'))`).run('TRV-SEED01', layla, 'layla@email.com', '+971501234567', demoSub, demoDelivery, 0, demoSub + demoDelivery, demoShip).lastInsertRowid;
 const mkItem = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options) VALUES (?,?,?,?,?,?,?,?)');
 mkItem.run(demoOrder, mug.id, mug.shop_id, mug.name, mug.price_cents, 1, 'LH', JSON.stringify([{ name: 'Glaze', value: 'Ash grey' }]));
 mkItem.run(demoOrder, wallet.id, wallet.shop_id, wallet.name, wallet.price_cents, 1, '', '[]');

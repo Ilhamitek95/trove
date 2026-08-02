@@ -41,7 +41,7 @@ test('demo checkout opens a REAL order and demo-complete pays it like the webhoo
   assert.equal(res.data.demo, true);
   assert.ok(res.data.orderId, 'public order id returned');
   assert.equal(res.data.clientSecret, undefined, 'no Stripe secret in demo mode');
-  assert.equal(res.data.amount, 6400 * 2 + 900 + 2500, 'items + service + delivery');
+  assert.equal(res.data.amount, 6400 * 2 + 3000, 'items + delivery');
   const pid = res.data.orderId;
 
   // Someone else cannot complete it.
@@ -58,7 +58,7 @@ test('demo checkout opens a REAL order and demo-complete pays it like the webhoo
   const ship = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(order.id);
   assert.ok(ship, 'shipment opened for the shop');
   const credit = db.prepare("SELECT * FROM seller_balances WHERE order_id=? AND type='credit_sale'").get(order.id);
-  assert.equal(credit.amount_cents, Math.round(6400 * 2 * 0.8), 'supplier credited at 80%');
+  assert.equal(credit.amount_cents, Math.round(6400 * 2 * 0.6), 'supplier credited at 60%');
 
   // The buyer sees it in their account, return-eligible machinery included.
   const acct = await ctx.api('GET', '/api/account/orders', { cookie: buyerCookie });

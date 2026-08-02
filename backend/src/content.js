@@ -22,7 +22,7 @@ const { copyViolation } = require('./copy-rules');
 
 const DEFAULTS = {
   'site.promo': {
-    text: 'Delivering across Dubai & Abu Dhabi · Free delivery on orders over AED 500',
+    text: 'Delivering across Dubai & Abu Dhabi · Free delivery on orders over AED 200',
   },
   'site.footer': {
     blurb: 'Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.',
@@ -42,7 +42,7 @@ const DEFAULTS = {
       { head: 'Handpicked shops', sub: 'Vetted by hand' },
       { head: 'Small-batch pieces', sub: 'Made to last' },
       { head: '3–6 day delivery', sub: 'Dubai & Abu Dhabi' },
-      { head: '30-day returns', sub: 'Free on orders over AED 500' },
+      { head: '30-day returns', sub: 'Free on orders over AED 200' },
     ],
   },
   'home.browse': { eyebrow: 'Browse by', heading: 'Where would you like to begin?' },
@@ -71,7 +71,7 @@ const DEFAULTS = {
   'home.sellBand': {
     eyebrow: 'Sell on Trove',
     h2: 'Make things at home? Give them a *shopfront*.',
-    intro: 'No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price and takes care of delivery and the storefront — you keep your brand and your craft.',
+    intro: 'No shop experience needed and nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 60% of your price and takes care of the photography, the marketing, the delivery and the storefront — you keep your brand and your craft.',
     cta: 'See how it works',
     steps: [
       { title: 'Tell us about your craft', text: 'A short, friendly form — a real person reads every application.' },
@@ -83,7 +83,7 @@ const DEFAULTS = {
   'sell.hero': {
     eyebrow: 'Sell on Trove',
     h1: "You make the pieces.|We'll be the *shop*.",
-    intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 80% of your price.',
+    intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front. You set your prices; when a piece sells, Trove buys it from you at 60% of your price.',
     ctaApply: 'Start your application',
     ctaHow: 'See how it works',
     facts: ['Free to join', 'No trade licence needed', 'Courier collects from your door', 'A real person reviews every shop'],
@@ -95,7 +95,7 @@ const DEFAULTS = {
       { title: 'Tell us about your craft', text: 'A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.' },
       { title: 'Add your pieces', text: 'Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.' },
       { title: 'Shoppers discover them', text: 'Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.' },
-      { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door. Trove buys it from you at 80% of your price, and your money arrives with the weekly payout.' },
+      { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door. Trove buys it from you at 60% of your price, and your money arrives with the weekly payout.' },
     ],
   },
   'sell.quotes': {
@@ -116,7 +116,7 @@ const DEFAULTS = {
     items: [
       { q: "I've never sold online before — is that okay?", a: "That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop." },
       { q: 'Do I need a trade licence?', a: 'No. Trove buys your pieces from you and resells them to shoppers, so you can sell here without any licence. If you do have one, mention it when you apply — it unlocks extra payout options as you grow.' },
-      { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee. You decide each piece's price. When one sells, Trove buys it from you at 80% of that price, and that's the whole arrangement. If nothing sells, you owe nothing." },
+      { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included — and that's the whole arrangement. If nothing sells, you owe nothing." },
       { q: 'How does delivery work?', a: "You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it wrapped and ready. You can follow each order's journey in your dashboard." },
       { q: 'How and when do I get paid?', a: "Weekly, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered plus a 7-day buffer; if a buyer returns a piece after that, the amount is simply adjusted on a following payout. Your Payments page shows exactly what's coming and when." },
       { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed." },

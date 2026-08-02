@@ -84,7 +84,7 @@ function orderConfirmation({ order, items, shops, ship }) {
        <div style="font-family:Georgia,'Times New Roman',serif;font-size:20px;letter-spacing:.04em">${esc(order.public_id)}</div>`
     + itemsBlock(items)
     + totalRow('Subtotal', aed(order.subtotal_cents))
-    + totalRow('Service fee', aed(order.service_fee_cents))
+    + (order.service_fee_cents ? totalRow('Service fee', aed(order.service_fee_cents)) : '')
     + totalRow('Delivery', order.shipping_cents ? aed(order.shipping_cents) : 'Free')
     + totalRow('Total', aed(order.total_cents), true)
     + p(`Arriving in <b>3–6 days</b>${many ? `, in ${shops.length} parcels — each shop packs its own, all tracked together in one place.` : '.'}`)
@@ -105,7 +105,7 @@ function returnRequested({ order, items, money, reasonLabel }) {
     p(`We've received your return request for order <b>${esc(order.public_id)}</b> and our team is reviewing it now. You'll hear from us by email as soon as it's decided — usually within a couple of days.`)
     + itemsBlock(items)
     + p(`Reason: <b>${esc(reasonLabel)}</b>`)
-    + p(`If it's approved, <b>${aed(money.refund)}</b> goes back to your original payment method${money.fee ? ` (a ${aed(money.fee)} collection fee applies on orders under AED 500 and is already deducted from that figure)` : ' — collection is free for this order'}. The service fee and original delivery aren't refundable.`)
+    + p(`If it's approved, <b>${aed(money.refund)}</b> goes back to your original payment method${money.fee ? ` (a ${aed(money.fee)} collection fee applies on orders of AED 200 and below and is already deducted from that figure)` : ' — collection is free for this order'}. The original delivery fee isn't refundable.`)
     + p('Nothing else to do for now — keep the item packed and ready in case the return is approved.');
   return { subject: `We've received your return request — order ${order.public_id}`, html: layout('Your return request is in', inner) };
 }

@@ -93,9 +93,9 @@ test('single-connect-shop order routes as a destination charge and skips the led
   assert.equal(co.status, 200, co.text);
 
   const piCall = ctx.stripeMock.calls.find((c) => c.method === 'paymentIntents.create');
-  assert.equal(piCall.params.amount, 23400); // 200 + 9 + 25
+  assert.equal(piCall.params.amount, 23000); // 200 + 30 delivery (charged at or under AED 200)
   assert.equal(piCall.params.transfer_data.destination, shop.stripe_account_id);
-  assert.equal(piCall.params.application_fee_amount, 4000 + 900 + 2500); // margin + buyer fees
+  assert.equal(piCall.params.application_fee_amount, 8000 + 3000); // margin + delivery
   assert.equal(piCall.params.on_behalf_of, undefined);
 
   const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(co.data.orderId);

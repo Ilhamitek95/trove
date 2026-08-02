@@ -11,7 +11,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function mkPaidWebhookOrder(pid, pi) {
   const orderId = db.prepare(`INSERT INTO orders (public_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
-    VALUES (?,?,20000,2500,900,23400,'pending','consignment',?)`).run(pid, 'buyer@test.local', pi).lastInsertRowid;
+    VALUES (?,?,20000,3000,0,23000,'pending','consignment',?)`).run(pid, 'buyer@test.local', pi).lastInsertRowid;
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)')
     .run(orderId, productId, shopId, 'Vase');
   return orderId;

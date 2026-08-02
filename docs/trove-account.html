@@ -901,8 +901,8 @@ function updateRtMoney(){
   const refund=Math.max(0,gross-(r.fee||0));
   const more=(r.items||[]).some(i=>!i.locked&&!rtPicked.has(i.id));
   $('rtMoney').innerHTML=`You'll get <b>${aed(refund)}</b> back to your card. `
-    +(r.fee?`Collection costs ${aed(r.fee)} on orders under AED 500 — it's already deducted from that figure.${more?` Sending more than one item back? Tick them together — one collection, one fee.`:''} `:`Collection is free for this order. `)
-    +`The service fee and original delivery aren't refundable.`;
+    +(r.fee?`Collection costs ${aed(r.fee)} on orders of AED 200 and below — it's already deducted from that figure.${more?` Sending more than one item back? Tick them together — one collection, one fee.`:''} `:`Collection is free for this order. `)
+    +`The original delivery fee isn't refundable.`;
 }
 function renderRtPhotos(){
   const w=$('rtPhotos');w.innerHTML='';

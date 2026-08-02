@@ -11,7 +11,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function paidOrder(pid, pi) {
   const oid = db.prepare(`INSERT INTO orders (public_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
-    VALUES (?,?,20000,2500,900,23400,'pending','consignment',?)`).run(pid, 'buyer@test.local', pi).lastInsertRowid;
+    VALUES (?,?,20000,3000,0,23000,'pending','consignment',?)`).run(pid, 'buyer@test.local', pi).lastInsertRowid;
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)')
     .run(oid, productId, shopId, 'Vase');
   await ctx.postWebhook({ id: 'evt_' + pi, type: 'payment_intent.succeeded', data: { object: { id: pi, metadata: { order_id: String(oid) } } } });
@@ -59,7 +59,7 @@ test('refund BEFORE settlement: Stripe refunded, no debit, credit never settles,
   assert.equal(sh.status, 'cancelled');
 });
 
-test('refund AFTER settlement: debit -16000 drives the balance negative and nets forward', async () => {
+test('refund AFTER settlement: debit -12000 drives the balance negative and nets forward', async () => {
   const oid = await paidOrder('TRV-REF02', 'pi_ref_2');
   const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh.id } });
@@ -74,14 +74,14 @@ test('refund AFTER settlement: debit -16000 drives the balance negative and nets
 
   const debit = db.prepare("SELECT * FROM seller_balances WHERE order_id=? AND type='debit_refund'").get(oid);
   assert.ok(debit, 'debit exists for the settled credit');
-  assert.equal(debit.amount_cents, -16000);
+  assert.equal(debit.amount_cents, -12000);
   assert.equal(debit.settlement_id, null, 'debit is unswept — nets against the NEXT run');
 
   // Delivered parcel → return pickup event logged.
   const ev = db.prepare("SELECT * FROM shipment_events WHERE shipment_id=? ORDER BY id DESC LIMIT 1").get(sh.id);
   assert.match(ev.note, /Return pickup booked/);
 
-  // Next run: fresh 16000 credit nets to 0 → supplier held back, nothing paid.
+  // Next run: fresh 12000 credit nets to 0 → supplier held back, nothing paid.
   const oid3 = await paidOrder('TRV-REF03', 'pi_ref_3');
   const sh3 = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid3);
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh3.id } });

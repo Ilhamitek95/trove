@@ -8,10 +8,12 @@
  *     carry several requests, but an item only ever sits in one open or
  *     approved request.
  *   - Refund on approval = the selected items' line totals, in full. The
- *     service fee and the original delivery fee are not refunded.
- *   - Return collection is free when the ORDER's items subtotal reached the
- *     free-delivery threshold (AED 500); below it the courier fee (AED 25)
- *     is deducted from each request's refund (one request = one pickup).
+ *     original delivery fee is not refunded (nor the legacy service fee on
+ *     orders that predate its removal).
+ *   - Return collection is free when the ORDER's items subtotal exceeds the
+ *     free-delivery threshold (AED 200); at or below it the courier fee
+ *     (AED 30) is deducted from each request's refund (one request = one
+ *     pickup).
  *   - The commission is never refunded: the supplier's credit for the
  *     returned items reverses in full. A credit already swept into a
  *     settlement nets back as a debit_refund on the next run; an unswept
@@ -41,7 +43,7 @@ const MAX_DETAILS = 1000;
 
 /* ---- money ---- */
 function feeCents(order) {
-  return order.subtotal_cents >= fees.FREE_DELIVERY_THRESHOLD_CENTS ? 0 : fees.DELIVERY_FEE_CENTS;
+  return order.subtotal_cents > fees.FREE_DELIVERY_THRESHOLD_CENTS ? 0 : fees.DELIVERY_FEE_CENTS;
 }
 // The items going back with a request, with their shop for the seller views.
 const reqItemsStmt = db.prepare(`
