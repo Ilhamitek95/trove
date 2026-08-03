@@ -233,6 +233,23 @@ CREATE TABLE IF NOT EXISTS search_log (
 );
 CREATE INDEX IF NOT EXISTS idx_search_log_time ON search_log(created_at);
 
+-- Shop analytics: the shopper actions behind a maker's dashboard numbers
+-- (shop_view | product_view | add_to_cart). Anonymous by design — an event
+-- carries a per-browser id and nothing else about the shopper, and that id is
+-- scrubbed at 90 days so the counts outlive the identifier. Money is never
+-- tracked here; orders are the truth about sales. See src/analytics.js.
+CREATE TABLE IF NOT EXISTS analytics_events (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  kind       TEXT NOT NULL,
+  shop_id    INTEGER NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+  product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
+  visitor    TEXT NOT NULL DEFAULT '',
+  source     TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_events_shop_time ON analytics_events(shop_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_events_product ON analytics_events(product_id, kind);
+
 -- Admin-edited storefront copy (homepage + sell page). One row per section,
 -- value is the full section object as JSON; defaults live in src/content.js
 -- and a missing row means "use the default". See src/content.js.

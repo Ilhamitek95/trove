@@ -101,13 +101,23 @@
   .chart-card h3{font-size:22px;font-weight:600}
   .chart-card .ch-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
   .chart-card .ch-head .tot{font-family:var(--font-display);font-size:30px;font-weight:600}
-  .bars{display:flex;align-items:flex-end;gap:8px;height:150px}
-  .bar{flex:1;background:var(--rose);border-radius:6px 6px 0 0;transition:.2s;position:relative;cursor:pointer;min-height:4px}
-  .bar:hover{background:var(--coral)}
-  .bar .tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--char);color:var(--cream);font-size:11px;font-weight:600;padding:4px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;margin-bottom:6px}
-  .bar:hover .tip{opacity:1}
-  .blabels{display:flex;gap:8px;margin-top:8px}
-  .blabels span{flex:1;text-align:center;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+  /* Daily bar chart — one component, used by the overview and by Shop
+     Analytics. One series, one hue: the height IS the number, so nothing is
+     encoded in colour. A day with nothing to report draws a flat rule rather
+     than a stub, because a stub reads as "one". */
+  .an-chart{padding-top:26px}                       /* headroom for the tooltip */
+  .an-bars{display:flex;align-items:flex-end;gap:3px;height:150px}
+  .an-bar{flex:1;min-width:0;position:relative;display:flex;align-items:flex-end;height:100%}
+  .an-bar i{display:block;width:100%;background:var(--rose);border-radius:4px 4px 0 0;transition:.15s}
+  .an-bar:hover i{background:var(--taupe)}
+  .an-bar.zero i{background:var(--line);border-radius:2px}
+  .an-tip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:var(--char);color:var(--cream);font-size:11px;font-weight:600;line-height:1.5;padding:5px 9px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.15s;margin-bottom:7px;z-index:5}
+  .an-bar:hover .an-tip{opacity:1}
+  /* the end tooltips would otherwise be clipped by the card's overflow */
+  .an-bar:first-child .an-tip{left:0;transform:none}
+  .an-bar:last-child .an-tip{left:auto;right:0;transform:none}
+  .an-axis{display:flex;gap:3px;margin-top:9px}
+  .an-axis span{flex:1;min-width:0;text-align:center;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;overflow:hidden}
   .payout-card .row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:600}
   .payout-card .row:last-of-type{border:none}
   .payout-card .row .v{font-family:var(--font-display);font-size:20px;font-weight:600}
@@ -446,6 +456,26 @@
   .impbar button{border:0;border-radius:999px;background:var(--cream);color:var(--char);font:inherit;font-weight:800;padding:8px 16px;cursor:pointer;white-space:nowrap}
   .impbar button:hover{background:var(--rose)}
   @media(max-width:620px){.impbar{gap:10px;padding-left:14px;font-size:12px}}
+  /* ---- Shop Analytics ---- */
+  .an-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .an-note{font-size:12.5px;color:var(--muted);font-weight:600}
+  .an-two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  /* funnel: three ordered stages, so the fill darkens as it narrows */
+  .an-step{margin-bottom:16px}
+  .an-step:last-child{margin-bottom:0}
+  .an-step .k{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;font-weight:600;margin-bottom:7px}
+  .an-step .k b{font-family:var(--font-display);font-size:20px;font-weight:600}
+  .an-step .tr{height:12px;border-radius:999px;background:var(--cream-2)}
+  .an-step .tr i{display:block;height:100%;border-radius:999px;min-width:3px}
+  .an-step .rate{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:6px}
+  .an-src{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:13px;font-weight:600}
+  .an-src:last-child{border-bottom:0}
+  .an-src .nm{width:104px;flex:none}
+  .an-src .tr{flex:1;height:8px;border-radius:999px;background:var(--cream-2)}
+  .an-src .tr i{display:block;height:100%;border-radius:999px;background:var(--rose);min-width:3px}
+  .an-src .n{font-family:var(--font-display);font-size:17px;font-weight:600;min-width:30px;text-align:right}
+  .an-foot{font-size:12px;color:var(--muted);font-weight:600;padding:14px 22px 18px}
+  @media(max-width:760px){.an-two{grid-template-columns:1fr}}
 </style>
 <div class="app">
   <!-- SIDEBAR -->
@@ -461,6 +491,7 @@
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
       <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill">0</span></a>
       <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="pill" id="returnPill" style="display:none">0</span></a>
+      <a class="mitem" data-v="analytics" onclick="go('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="6" rx="1"/><rect x="10" y="8" width="4" height="10" rx="1"/><rect x="16" y="4" width="4" height="14" rx="1"/></svg>Shop Analytics</a>
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
       <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
@@ -489,9 +520,9 @@
         </div>
         <div class="ov-row">
           <div class="card chart-card">
-            <div class="ch-head"><div><h3>Sales</h3><div style="font-size:12px;color:var(--muted);font-weight:600">Last 12 weeks</div></div><div class="tot" id="chartTot">—</div></div>
-            <div class="bars" id="bars"></div>
-            <div class="blabels" id="blabels"></div>
+            <div class="ch-head"><div><h3 id="ovChartTitle">Piece views</h3><div style="font-size:12px;color:var(--muted);font-weight:600" id="ovChartSub">Last 30 days</div></div><div class="tot" id="chartTot">—</div></div>
+            <div class="an-chart"><div class="an-bars" id="bars"></div><div class="an-axis" id="blabels"></div></div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:16px" onclick="go('analytics')">Shop Analytics →</button>
           </div>
           <div class="card payout-card">
             <h3 style="font-size:22px;font-weight:600;margin-bottom:6px">Next payout</h3>
@@ -526,6 +557,9 @@
         <div class="sec-head"><span class="n">Buyers request, Trove decides — track here what's coming back and what it means for your payouts. Returned pieces stay yours; adjust your stock in Products once they're back with you.</span></div>
         <div id="returnList"></div>
       </div>
+
+      <!-- SHOP ANALYTICS (rendered from JS) -->
+      <div class="view" id="view-analytics"></div>
 
       <!-- PAYMENTS -->
       <div class="view" id="view-payments"></div>
@@ -810,11 +844,7 @@ function renderOverview(){
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
   $('ovBanner').innerHTML = reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
-  // no time-series data yet → friendly placeholder instead of a fake chart
-  $('chartTot').textContent=aed(revenue);
-  const bars=$('bars'); bars.style.alignItems='center'; bars.style.justifyContent='center';
-  bars.innerHTML='<span style="color:var(--muted);font-size:13px;font-weight:600">Sales analytics are coming soon</span>';
-  $('blabels').innerHTML='';
+  renderOverviewChart();
   $('poAvail').textContent=aed(net);
   $('poDate').textContent=managed ? 'Tuesdays · by Trove' : (sc.payoutsEnabled?'On your Stripe schedule':'—');
   if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Tuesdays' : 'Your Stripe schedule';
@@ -824,6 +854,24 @@ function renderOverview(){
         <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${aed(o.itemTotal)}</td>
         <td style="text-align:right"><span class="order-pill ${shipPill(o.status)}">${o.statusLabel}</span></td></tr>`).join('')}</tbody>`
     : `<tbody><tr><td style="color:var(--muted);padding:18px;font-weight:600">No orders yet.</td></tr></tbody>`;
+}
+
+/* The overview's chart is the same daily-views component as Shop Analytics,
+ * reading whatever range that view last loaded. */
+function renderOverviewChart(){
+  const bars=$('bars'), axis=$('blabels'), a=ANALYTICS;
+  if($('ovChartSub'))$('ovChartSub').textContent=a?(AN_RANGES.find(r=>r[0]===a.days)||[0,'Last 30 days'])[1]:'Last 30 days';
+  if(!a||!a.daily.length||!a.summary.productViews){
+    $('chartTot').textContent=a?String(a.summary.productViews):'—';
+    bars.style.alignItems='center'; bars.style.justifyContent='center';
+    bars.innerHTML='<span style="color:var(--muted);font-size:13px;font-weight:600;text-align:center">No shopper activity recorded yet</span>';
+    axis.innerHTML='';
+    return;
+  }
+  bars.style.alignItems=''; bars.style.justifyContent='';
+  const c=anChartHTML(a.daily);
+  $('chartTot').textContent=a.summary.productViews.toLocaleString();
+  bars.innerHTML=c.bars; axis.innerHTML=c.axis;
 }
 
 /* ---------------- PRODUCTS ---------------- */
@@ -1267,6 +1315,117 @@ function returnStripHTML(o){
     ${photos?`<div class="rr-ph">${photos}</div>`:''}
     <div class="rr-note">${note}</div>
   </div>`;
+}
+
+/* ---------------- SHOP ANALYTICS ----------------
+ * How shoppers are finding and responding to this shop. Interest (visitors,
+ * views, baskets) comes from the storefront beacon as anonymous counts —
+ * never a person, never a row that could name one; orders, units and earnings
+ * come from the order tables. The shop owner's own visits are excluded
+ * server-side, so browsing your own piece never looks like demand. */
+const AN_RANGES = [[7, 'Last 7 days'], [30, 'Last 30 days'], [90, 'Last 90 days']];
+let ANALYTICS=null, anDays=30, anError='';
+
+async function reloadAnalytics(){
+  try{ ANALYTICS=await TroveAPI.api('/api/seller/analytics?days='+anDays); anError=''; }
+  catch(e){ ANALYTICS=null; anError=e.message||'Could not load your analytics just now'; }
+  if($('view-analytics').classList.contains('active'))renderAnalytics();
+  if($('view-overview').classList.contains('active'))renderOverviewChart();
+}
+function setAnRange(d){ if(d===anDays)return; anDays=d; ANALYTICS=null; renderAnalytics(); reloadAnalytics(); }
+
+// Rates arrive as fractions; null means there was nothing to divide by, which
+// is not the same as 0% and must never be drawn as it.
+function anPct(x){ if(x==null)return '—'; const p=Math.min(x,9.99)*100; return (p<10?p.toFixed(1):Math.round(p))+'%'; }
+function anDayLabel(iso){ const d=new Date(iso+'T00:00:00Z'); return isNaN(d)?iso:d.toLocaleDateString('en-GB',{day:'numeric',month:'short'}); }
+const anPlural=(n,w)=>`${n} ${w}${n===1?'':'s'}`;
+
+/** The daily-views chart, shared by the overview and this view. One series,
+ *  one hue: the height is the whole message. Every Nth day is labelled so the
+ *  axis can't collide with itself, and each bar carries its day in a tooltip
+ *  and in an aria-label for anyone not using a mouse. */
+function anChartHTML(daily){
+  const max=Math.max(1,...daily.map(d=>d.views));
+  const every=Math.max(1,Math.ceil(daily.length/7));
+  const bars=daily.map(d=>{
+    const label=`${anDayLabel(d.date)}: ${anPlural(d.views,'view')}, ${anPlural(d.visitors,'visitor')}, ${anPlural(d.orders,'order')}`;
+    const tip=`${anDayLabel(d.date)}<br>${anPlural(d.views,'view')} · ${anPlural(d.visitors,'visitor')}${d.orders?' · '+anPlural(d.orders,'order'):''}`;
+    const h=d.views?Math.max(6,Math.round(d.views/max*100))+'%':'2px';
+    return `<div class="an-bar${d.views?'':' zero'}" role="img" aria-label="${esc(label)}"><span class="an-tip">${tip}</span><i style="height:${h}"></i></div>`;
+  }).join('');
+  const axis=daily.map((d,i)=>`<span>${i%every===0?anDayLabel(d.date):''}</span>`).join('');
+  return { bars, axis };
+}
+
+function renderAnalytics(){
+  const v=$('view-analytics');
+  const chips=`<div class="ofilters" style="margin:0">${AN_RANGES.map(([d,l])=>`<button class="ochip ${anDays===d?'on':''}" onclick="setAnRange(${d})">${l}</button>`).join('')}</div>`;
+  if(anError){ v.innerHTML=`<div class="an-head">${chips}</div><div class="card" style="color:var(--accent-ink);font-weight:600">${esc(anError)}</div>`; return; }
+  if(!ANALYTICS){ v.innerHTML=`<div class="an-head">${chips}</div><div class="card" style="color:var(--muted);font-weight:600">Counting up your numbers…</div>`; return; }
+
+  const a=ANALYTICS, s=a.summary;
+  const since=a.countingSince
+    ? `Counting shopper activity since ${fmtDate(a.countingSince)}`
+    : 'Counting starts the moment a shopper arrives';
+  const { bars, axis }=anChartHTML(a.daily);
+  const quiet=!s.productViews && !s.shopViews;
+
+  // Funnel stages: ordered, so the fill darkens as the numbers narrow. The
+  // base counts every stage, so a stage can never overflow its own track
+  // (orders placed before tracking began would otherwise run past 100%).
+  const base=Math.max(s.productViews,s.addToCart,s.orders,1);
+  const stages=[
+    ['Piece views', s.productViews, 'var(--rose)', s.shopViews?`${anPlural(s.shopViews,'visit')} to your shop page`:''],
+    ['Added to basket', s.addToCart, 'var(--taupe)', `${anPct(s.basketRate)} of the pieces people looked at`],
+    ['Orders', s.orders, 'var(--char)', s.visitors?`${anPct(s.orderRate)} of the people who visited`:''],
+  ];
+  const funnel=stages.map(([label,n,fill,note])=>`<div class="an-step">
+      <div class="k"><span>${label}</span><b>${n.toLocaleString()}</b></div>
+      <div class="tr"><i style="width:${Math.round(n/base*100)}%;background:${fill}"></i></div>
+      ${note?`<div class="rate">${note}</div>`:''}
+    </div>`).join('');
+
+  const srcTotal=a.sources.reduce((t,r)=>t+r.n,0);
+  // storefront view names → what a maker would call that part of the site
+  const SRC_LABEL={home:'Home page',shop:'Browsing',search:'Search',vendor:'Your shop page',pdp:'Another piece',cart:'The basket',direct:'Direct'};
+  const sources=srcTotal
+    ? a.sources.map(r=>`<div class="an-src"><span class="nm">${esc(SRC_LABEL[r.source]||(r.source.charAt(0).toUpperCase()+r.source.slice(1)))}</span><span class="tr"><i style="width:${Math.round(r.n/srcTotal*100)}%"></i></span><span class="n">${r.n}</span></div>`).join('')
+    : `<div style="color:var(--muted);font-weight:600;font-size:13px">Once shoppers start opening your pieces, this shows where they came from.</div>`;
+
+  const rows=a.products.length
+    ? a.products.map(p=>`<tr>
+        <td style="font-weight:700">${esc(p.name)}${p.status!=='live'?` <span class="pill-st ${p.status}" style="cursor:default;margin-left:6px">${p.status}</span>`:''}</td>
+        <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${p.views}</td>
+        <td>${p.adds}</td>
+        <td>${p.units}</td>
+        <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${aed(p.earnings)}</td>
+        <td style="color:var(--muted)">${p.stock} in stock</td>
+      </tr>`).join('')
+    : `<tr><td style="padding:30px 16px;color:var(--muted);font-weight:600">Add a piece and it will start collecting numbers here.</td></tr>`;
+
+  v.innerHTML=`
+    <div class="an-head">${chips}<span class="an-note">${since}</span></div>
+    <div class="grid-4">
+      <div class="card stat"><div class="lbl">Visitors</div><div class="big">${s.visitors.toLocaleString()}</div><div class="delta" style="color:var(--muted)">people who looked around</div></div>
+      <div class="card stat"><div class="lbl">Piece views</div><div class="big">${s.productViews.toLocaleString()}</div><div class="delta" style="color:var(--muted)">${anPlural(s.shopViews,'shop-page visit')}</div></div>
+      <div class="card stat"><div class="lbl">Added to basket</div><div class="big">${s.addToCart.toLocaleString()}</div><div class="delta" style="color:var(--muted)">${anPct(s.basketRate)} of views</div></div>
+      <div class="card stat"><div class="lbl">Orders</div><div class="big">${s.orders.toLocaleString()}</div><div class="delta" style="color:var(--muted)">${aed(s.earnings)} earned</div></div>
+    </div>
+    <div class="card chart-card" style="margin-top:18px">
+      <div class="ch-head"><div><h3>Piece views</h3><div style="font-size:12px;color:var(--muted);font-weight:600">${AN_RANGES.find(r=>r[0]===a.days)[1].toLowerCase()}</div></div><div class="tot">${s.productViews.toLocaleString()}</div></div>
+      ${quiet
+        ? `<div style="padding:26px 0 6px;color:var(--muted);font-weight:600;font-size:13.5px">No shopper activity recorded in this window yet. Every time someone opens your shop or one of your pieces, it appears here.</div>`
+        : `<div class="an-chart"><div class="an-bars">${bars}</div><div class="an-axis">${axis}</div></div>`}
+    </div>
+    <div class="an-two">
+      <div class="card"><h3 style="font-size:22px;font-weight:600;margin-bottom:18px">Looking to buying</h3>${funnel}</div>
+      <div class="card"><h3 style="font-size:22px;font-weight:600;margin-bottom:14px">Where views came from</h3>${sources}</div>
+    </div>
+    <div class="card" style="margin-top:18px;padding:0">
+      <div style="padding:20px 22px 6px"><h3 style="font-size:22px;font-weight:600">Every piece</h3></div>
+      <table class="tbl"><thead><tr><th>Piece</th><th>Views</th><th>Added</th><th>Sold</th><th>You earned</th><th>Stock</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="an-foot">Your own visits aren't counted. Earnings are your ${100-feePct()}% share of what sold in this window.</div>
+    </div>`;
 }
 
 /* ---------------- RETURNS — the shop-side tracking view ---------------- */
@@ -1819,7 +1978,7 @@ function revealActiveTab(){
   b.scrollTo({left:Math.max(0,on.offsetLeft-(b.clientWidth-on.offsetWidth)/2),behavior:'smooth'});
 }
 const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],returns:['Returns','Buyer requests, Trove decisions'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],returns:['Returns','Buyer requests, Trove decisions'],analytics:['Shop Analytics','How shoppers are finding your work'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -1831,7 +1990,7 @@ function go(v){
   if(v==='products')ta.innerHTML=`<button class="btn btn-coral" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add product</button>`;
   else if(v==='overview')ta.innerHTML=`<a class="btn btn-ghost" href="/" target="_blank">View storefront ↗</a>`;
   else ta.innerHTML='';
-  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='adminpayouts')renderAdminPayouts();
+  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='adminpayouts')renderAdminPayouts();
   window.scrollTo(0,0);
 }
 
@@ -1856,7 +2015,7 @@ async function boot(){
   $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
   if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
   buildMobileTabs();
-  await Promise.all([reloadProducts(), reloadOrders(), reloadReturns()]);
+  await Promise.all([reloadProducts(), reloadOrders(), reloadReturns(), reloadAnalytics()]);
   // Claude-written tag suggestions: only show the button when the server has a key.
   TroveAPI.config().then(c=>{ if(c&&c.aiTagsEnabled)$('dTagAI').style.display=''; }).catch(()=>{});
   fillStoreForm();

@@ -1678,8 +1678,34 @@ function renderShop(){
   if(!list.length)fillPopularSearches();
 }
 
+/* ---------------- Shop analytics beacon ----------------
+ * Reports three shopper actions so makers can see how their shop is doing:
+ * a shop page opened, a piece opened, a piece added to the basket. The
+ * visitor id is a random per-browser string with no link to any account — it
+ * exists so a repeat visit counts once rather than twice — and nothing else
+ * about the shopper is sent. The server resolves which shop the event belongs
+ * to, and drops the owner's own visits. Demo mode never reports: those ids
+ * are not real pieces. */
+function visitorId(){
+  try{
+    let v=localStorage.getItem('trove.vid.v1');
+    if(!/^[a-z0-9]{8,40}$/.test(v||'')){
+      v=(Math.random().toString(36)+Math.random().toString(36)).replace(/[^a-z0-9]/g,'').slice(0,24);
+      localStorage.setItem('trove.vid.v1',v);
+    }
+    return v;
+  }catch(_){return '';}   // private browsing: still counted, just not deduped
+}
+function track(kind,body){
+  if(!LIVE)return;
+  try{
+    TroveAPI.api('/api/track',{method:'POST',body:{kind,visitor:visitorId(),source:state.q?'search':state.view,...body}}).catch(()=>{});
+  }catch(_){}
+}
+
 /* VENDOR */
 function openVendor(key){
+  track('shop_view',{shop:key});
   const v=VENDORS[key];
   $('vheroGrad').style=v.img?`background:center/cover no-repeat url("${v.img}")`:grad(v.color);
   if(v.img){$('vLav').style.background=`center/cover no-repeat url("${v.img}")`;$('vLav').textContent='';}
@@ -1697,6 +1723,7 @@ function openVendor(key){
 /* PDP */
 function openPDP(id){
   const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
+  track('product_view',{productId:id});   // before showView, so source is where the shopper clicked from
   $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   // Real seller photos when they exist, else three motif-tile variations.
@@ -1917,6 +1944,7 @@ function addToCart(id,btn,note,opts){
     if(already+1>have){toast(have?`Only ${have} left of this one`:`${p.name} is sold out just now`);return;}
   }
   if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts});
+  track('add_to_cart',{productId:id});   // only once it really went in — the guards above bail out first
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
   toast(`${p.name} added to your Trove`);

@@ -269,6 +269,25 @@ router.get('/orders', requireSeller, (req, res) => {
   }) });
 });
 
+/* ---------------- Shop analytics ----------------
+ * GET /api/seller/analytics?days=7|30|90 → how shoppers are finding and
+ * responding to this shop. Aggregates only, always scoped to req.shop: the
+ * shopper side of the payload is counts, never rows, so it cannot identify a
+ * buyer any more than the orders payload can. See src/analytics.js. */
+router.get('/analytics', requireSeller, (req, res) => {
+  const analytics = require('../analytics');
+  const days = analytics.windowDays(req.query.days);
+  res.json({
+    days,
+    ranges: analytics.RANGES,
+    countingSince: analytics.countingSince(req.shop.id),
+    summary: analytics.summary(req.shop.id, days),
+    daily: analytics.daily(req.shop.id, days),
+    products: analytics.productRows(req.shop.id, days),
+    sources: analytics.sources(req.shop.id, days),
+  });
+});
+
 // GET /api/seller/returns → every return request touching this shop's items,
 // open ones first. Read-only: buyers request, Trove decides — this view is
 // how a shop tracks what's coming back and what it does to their payouts.

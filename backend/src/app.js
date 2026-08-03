@@ -135,6 +135,18 @@ function createApp() {
     require('./trends').logSearch(q, results);
     res.status(204).end();
   });
+  // Storefront analytics beacon — one shopper action (a shop page opened, a
+  // piece opened, a piece added to the basket) for the seller's dashboard.
+  // The body never names the shop: it is resolved server-side from the piece,
+  // so a beacon can only ever write into the numbers it belongs to. Always
+  // 204, whatever the outcome — the reply must not confirm what exists.
+  app.post('/api/track', (req, res) => {
+    const { kind, productId, shop, visitor, source } = req.body || {};
+    try {
+      require('./analytics').track({ kind, productId, shopSlug: shop, visitor, source, userId: req.session.userId });
+    } catch (e) { console.error('track failed:', e.message); }
+    res.status(204).end();
+  });
   // Popular searches for the storefront's no-result page. Anonymous term
   // text only, each re-checked against the live catalogue before serving.
   app.get('/api/search/popular', (_req, res) => {

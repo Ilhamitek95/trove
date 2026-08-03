@@ -105,6 +105,13 @@ try {
   if (purged) console.log(`search log: purged ${purged} entr${purged === 1 ? 'y' : 'ies'} older than 90 days`);
 } catch (e) { console.error('search log purge failed:', e.message); }
 
+// Analytics hygiene: visitor ids are scrubbed at 90 days (the counts stay, the
+// identifiers go) and events themselves are dropped at a year.
+try {
+  const { scrubbed, removed } = require('./analytics').hygiene();
+  if (scrubbed || removed) console.log(`analytics: scrubbed ${scrubbed} visitor id(s), removed ${removed} old event(s)`);
+} catch (e) { console.error('analytics hygiene failed:', e.message); }
+
 /* ---------------- Scheduled jobs (single process, guarded) ---------------- */
 if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
   const cron = require('node-cron');
