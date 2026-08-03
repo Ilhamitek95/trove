@@ -230,9 +230,7 @@
   .step .nm{font-family:var(--font-display);font-size:30px;font-weight:500;color:var(--cream);line-height:1;width:42px;flex-shrink:0}
   .step h4{font-size:21px;font-weight:600;margin-bottom:2px}
   .step p{font-size:14px;margin:0;opacity:.7}
-  /* sell-on-trove page */
-  .sellfacts{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:26px}
-  .sellfacts span{background:var(--rose-tint);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;color:var(--char)}
+  /* sell-on-trove page (the hero facts now open the hand-off timeline — see .h-terms) */
   .faqs{max-width:660px;margin:0 auto}
   .faq{border-bottom:1px solid var(--line)}
   .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:21px 2px;font-size:16.5px;font-weight:600}
@@ -540,8 +538,6 @@
     #view-sell .band{padding:38px 0}
     #view-sell h1{font-size:clamp(36px,10.5vw,42px)!important;margin:12px 0 0!important}
     #view-sell section:first-of-type .wrap>p{font-size:15px!important;margin:16px auto 22px!important}
-    .sellfacts{gap:7px;margin-top:18px}
-    .sellfacts span{padding:7px 12px;font-size:12px}
     #view-sell .band-head{margin-bottom:20px}
     #view-sell .band-head h2{font-size:clamp(26px,7.5vw,32px)}
     #view-sell .stephead{margin:34px auto 18px}
@@ -675,8 +671,16 @@
   .hd-c{text-align:center;margin:0 auto}
   .ofsub{margin:12px auto 0;max-width:58ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
   .ofic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--char);flex:none}
-  .handoff{margin-top:42px}
+  #view-sell #sellSteps{margin-top:58px}
+  .handoff{margin-top:34px}
+  /* the hero's reassurance chips, re-cast as the terms the whole hand-off runs on:
+     outline pills in the timeline's dashed language, feeding into the spine */
+  .h-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 0 30px}
+  .h-terms span{display:inline-flex;align-items:center;gap:8px;background:var(--cream);border:1.5px dashed rgba(41,39,39,.26);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;line-height:1.2;color:var(--char)}
+  .h-terms svg{flex:none;opacity:.45}
   .h-lanes{display:grid;grid-template-columns:1fr 64px 1fr;margin-bottom:4px}
+  .h-lanes .h-mid{position:relative}
+  .h-lanes .h-mid::before{content:'';position:absolute;left:50%;top:-18px;bottom:-12px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
   .h-lane b{font-family:var(--font-display);font-size:21px;font-weight:600;display:block}
   .h-lane span{font-size:12.5px;color:rgba(41,39,39,.55)}
   .hl-you{text-align:right}
@@ -695,6 +699,8 @@
   .h-kick{text-align:center;font-size:14px;color:rgba(41,39,39,.65);margin-top:30px}
   @media(max-width:860px){
     .h-lanes{display:none}
+    /* flush left, so the terms share an edge with the left-rail timeline below */
+    .h-terms{justify-content:flex-start}
     .h-rows::before{left:13px;transform:none}
     .h-row{display:block;padding:18px 0 18px 36px}
     .h-dot{left:13px;transform:translateX(-50%);top:0;width:27px;height:27px;font-size:12.5px}
@@ -705,7 +711,12 @@
     .h-trove{margin-top:12px;gap:8px}
     .h-trove::before{content:'Trove takes care of';font-size:11.5px;color:rgba(41,39,39,.5)}
   }
-  @media(max-width:560px){.h-card{padding:12px 14px}.h-kick{font-size:13px;margin-top:22px}}
+  @media(max-width:560px){
+    .h-card{padding:12px 14px}.h-kick{font-size:13px;margin-top:22px}
+    #view-sell #sellSteps{margin-top:34px}
+    .h-terms{gap:7px;margin-bottom:22px}
+    .h-terms span{padding:7px 12px;font-size:12px;gap:6px}
+  }
 </style>
 </head>
 <body>
@@ -987,13 +998,13 @@
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href='/apply'">Start your application</button>
         <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
       </div>
-      <div class="sellfacts" id="sellFacts">
-        <span>Free to join</span><span>No trade licence needed</span><span>Courier collects from your door</span><span>A real person reviews every shop</span>
-      </div>
     </div>
     <div class="wrap" id="sellSteps" style="max-width:1060px">
       <div class="band-head hd-c"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.offer.heading">You make. Trove does the rest.</h2><p class="ofsub" data-cms="sell.steps.heading">Four steps from craft table to shopfront — with Trove carrying the load at every one.</p></div>
       <div class="handoff">
+        <div class="h-terms" id="sellFacts">
+          <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free to join</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No trade licence needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Courier collects from your door</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>A real person reviews every shop</span>
+        </div>
         <div class="h-lanes"><div class="h-lane hl-you"><b>You</b><span>The craft</span></div><div class="h-mid"></div><div class="h-lane hl-trove"><b>Trove</b><span data-cms="sell.offer.eyebrow">Included with every shop</span></div></div>
         <div class="h-rows" id="handoffRows">
           <div class="h-row"><div class="h-you"><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div><div class="h-mid"><span class="h-dot">i</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><div><b>No trade licence needed</b><p>Trove buys your pieces and resells them, so you can start selling without a licence of your own.</p></div></div></div></div>
@@ -2242,6 +2253,7 @@ const cmsRich=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\|/g,'<br
 const romanNum=n=>['i','ii','iii','iv','v','vi'][n-1]||String(n);
 /* sell.offer cards: icon + tint cycled by index, in DEFAULTS item order:
  * licence, photography, marketing, shopkeeping, delivery, payouts */
+const TERM_TICK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
 const OFFER_TINTS=['#CAD5CC','#F8D7E4','#BED3DF','#DBC7BD','#CFDBBE','#F3E7E0'];
 const OFFER_ICONS=[
   '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg>',
@@ -2256,7 +2268,7 @@ function applyContent(){
   document.querySelectorAll('[data-cms]').forEach(el=>{const v=cmsGet(el.dataset.cms);if(typeof v==='string')el.textContent=v;});
   document.querySelectorAll('[data-cms-rich]').forEach(el=>{const v=cmsGet(el.dataset.cmsRich);if(typeof v==='string')el.innerHTML=cmsRich(v);});
   const facts=cmsGet('sell.hero.facts');
-  if(Array.isArray(facts))$('sellFacts').innerHTML=facts.map(f=>`<span>${esc(f)}</span>`).join('');
+  if(Array.isArray(facts))$('sellFacts').innerHTML=facts.map(f=>`<span>${TERM_TICK}${esc(f)}</span>`).join('');
   /* the hand-off: steps (You lane) + offer (Trove lane) merged into one timeline.
    * Offer cards attach to steps by even distribution, so admin edits to either
    * list reflow gracefully instead of breaking a hard pairing. */
