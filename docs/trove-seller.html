@@ -466,7 +466,7 @@
   .an-step .k{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;font-weight:600;margin-bottom:7px}
   .an-step .k b{font-family:var(--font-display);font-size:20px;font-weight:600}
   .an-step .tr{height:12px;border-radius:999px;background:var(--cream-2)}
-  .an-step .tr i{display:block;height:100%;border-radius:999px;min-width:3px}
+  .an-step .tr i{display:block;height:100%;border-radius:999px}
   .an-step .rate{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:6px}
   .an-src{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:13px;font-weight:600}
   .an-src:last-child{border-bottom:0}
@@ -1381,7 +1381,7 @@ function renderAnalytics(){
   ];
   const funnel=stages.map(([label,n,fill,note])=>`<div class="an-step">
       <div class="k"><span>${label}</span><b>${n.toLocaleString()}</b></div>
-      <div class="tr"><i style="width:${Math.round(n/base*100)}%;background:${fill}"></i></div>
+      <div class="tr"><i style="width:${Math.round(n/base*100)}%;min-width:${n?3:0}px;background:${fill}"></i></div>
       ${note?`<div class="rate">${note}</div>`:''}
     </div>`).join('');
 
