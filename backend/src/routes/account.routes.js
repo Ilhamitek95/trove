@@ -29,6 +29,7 @@ router.get('/orders', requireAuth, (req, res) => {
         items: itemsStmt.all(o.id).map((i) => ({
           name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
           options: require('../options').parse(i.options),
+          extras: require('../extras').parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })),
           productId: i.product_id, shopId: i.shop_id, orderItemId: i.id,
           shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
         })),

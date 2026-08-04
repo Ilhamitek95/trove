@@ -100,6 +100,8 @@ const persoCols = (p) => p ? [p.enabled ? 1 : 0, p.required ? 1 : 0, String(p.pr
 const { normalizeTags } = require('../tags');
 // Buyer-facing variations, each with its own stock — see src/options.js.
 const productOptions = require('../options');
+// Priced extras (gift wrap, engraving …), each with its own price — src/extras.js.
+const productExtras = require('../extras');
 
 /**
  * The variant grid is rebuilt server-side from the options on every save, so
@@ -117,7 +119,7 @@ function optionCols(options, variantsFromClient, plainStock) {
 }
 
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags, images, options, variants } = req.body || {};
+  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags, images, options, variants, extras } = req.body || {};
   if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
@@ -127,11 +129,13 @@ router.post('/products', requireSeller, (req, res) => {
   }
   const optErr = productOptions.optionsError(options);
   if (optErr) return res.status(400).json({ error: optErr });
+  const extErr = productExtras.extrasError(extras);
+  if (extErr) return res.status(400).json({ error: extErr });
   const opt = optionCols(options, variants, stock);
-  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,
+  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,extras,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), opt.stock, status, imageSeed,
-      JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, ...persoCols(personalization));
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), opt.stock, status, imageSeed,
+      JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization));
   if (images !== undefined && images.length) {
     try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
     catch (e) {
@@ -171,6 +175,8 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   // Validated before the first write, so a rejected save changes nothing.
   const optErr = productOptions.optionsError(b.options);
   if (optErr) return res.status(400).json({ error: optErr });
+  const extErr = productExtras.extrasError(b.extras);
+  if (extErr) return res.status(400).json({ error: extErr });
   db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
     price_cents=COALESCE(?,price_cents), compare_at_cents=?, stock=COALESCE(?,stock), status=COALESCE(?,status) WHERE id=?`)
     .run(b.name, b.description, b.category, toCents(b.price),
@@ -182,6 +188,9 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   }
   if (b.tags !== undefined) {
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
+  }
+  if (b.extras !== undefined) {
+    db.prepare('UPDATE products SET extras=? WHERE id=?').run(JSON.stringify(productExtras.normalize(b.extras)), p.id);
   }
   if (b.options !== undefined || b.variants !== undefined) {
     // Either half arriving rebuilds the whole grid, carrying over the stock of
@@ -229,7 +238,7 @@ function shopReturnShape(rr, shopId) {
     reason: returns.REASONS[rr.reason] || rr.reason,
     details: rr.details,
     images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, options: productOptions.parse(i.options) })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
     itemsTotal: gross / 100,
     creditImpact: fees.split(gross).net / 100,
     declineReason: rr.decline_reason || null,

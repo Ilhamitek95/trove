@@ -7,6 +7,7 @@ const { SERVICE_FEE_CENTS, deliveryFor } = require('../fees');
 const { SERVICE_AREAS, isServiceable } = require('../service-area');
 const { normalizeUAEMobile } = require('../phone');
 const options = require('../options');
+const extras = require('../extras');
 
 const OUT_OF_AREA = `We currently deliver in ${SERVICE_AREAS.join(' and ')} only`;
 const BAD_PHONE = 'Enter a UAE mobile number so the courier can reach you on the day';
@@ -100,7 +101,14 @@ router.post('/', async (req, res, next) => {
         return res.status(409).json({ error: p.stock ? `Only ${p.stock} left of ${p.name}` : `${p.name} is out of stock` });
       }
 
-      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: unitPrice, qty, personalization: perso, options: JSON.stringify(chosen.value) };
+      // Priced extras: the buyer only names them; the amounts come from the
+      // product row, and the cost rides inside the unit price so settlement
+      // and returns keep reading the one number they always have.
+      const picked = extras.selectionError(p.extras, it.extras, p.name);
+      if (picked.error) return res.status(400).json({ error: picked.error });
+      unitPrice += extras.totalCents(picked.value);
+
+      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: unitPrice, qty, personalization: perso, options: JSON.stringify(chosen.value), extras: JSON.stringify(picked.value) };
       lines.push(line);
       subtotal += unitPrice * qty;
     }
@@ -142,8 +150,8 @@ router.post('/', async (req, res, next) => {
       const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
         VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail);
       const oid = info.lastInsertRowid;
-      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options) VALUES (?,?,?,?,?,?,?,?)');
-      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options);
+      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options,extras) VALUES (?,?,?,?,?,?,?,?,?)');
+      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options, l.extras);
       return oid;
     })();
 

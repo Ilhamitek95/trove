@@ -27,6 +27,8 @@ function shape(p) {
     variants: productOptions.parse(p.variants).map((v) => ({
       key: v.key, options: v.options, stock: v.stock, price: v.priceCents ? v.priceCents / 100 : null,
     })),
+    // Optional priced extras (gift wrap, engraving …) the buyer can tick.
+    extras: require('../extras').parse(p.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })),
     personalization: p.personalization_enabled
       ? { required: !!p.personalization_required, prompt: p.personalization_prompt || '', maxLen: p.personalization_char_limit || 256 }
       : null,

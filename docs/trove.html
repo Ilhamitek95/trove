@@ -959,6 +959,7 @@
         <p class="desc" id="pdpDesc"></p>
         <div id="pdpOptions"></div>
         <div id="pdpStockNote" class="optleft" style="display:none"></div>
+        <div id="pdpExtras"></div>
         <div id="pdpPerso" style="display:none;margin:18px 0 4px">
           <div class="lbl" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:10px;letter-spacing:.08em;background:var(--rose-tint);color:var(--accent-ink);padding:3px 8px;border-radius:999px;font-weight:700"></span></div>
           <div id="pdpPersoPrompt" style="font-size:13px;color:var(--muted);font-weight:500;margin:2px 0 8px"></div>
@@ -1365,7 +1366,7 @@ function checkoutPayload(){
     // Kept out of `address` on purpose: the address snapshot is what a shop
     // is shown to pack the parcel, and the number is Trove's to hold.
     phone:$('coPhone')?$('coPhone').value.trim():'',
-    items:cart.map(c=>({productId:c.pid,qty:c.qty,personalization:c.note||'',options:c.opts||[]})),
+    items:cart.map(c=>({productId:c.pid,qty:c.qty,personalization:c.note||'',options:c.opts||[],extras:c.extras||[]})),
     address,
   };
 }
@@ -1745,6 +1746,7 @@ function openPDP(id){
   // Options the shop actually offers — nothing is preselected, so the buyer
   // makes a real choice and the maker knows which piece to send.
   pdpChoice={}; pdpProduct=p;
+  pdpExtraPick={}; renderPdpExtras();
   // Etsy-style personalisation: sellers switch it on per piece; buyers type
   // their text here and it travels with the order to the seller.
   const per=p.perso; $('pdpPerso').style.display=per?'block':'none';
@@ -1762,7 +1764,7 @@ function openPDP(id){
       note=$('pdpPersoText').value.trim();
       if(per.required&&!note){toast('Add your personalisation first — the maker needs it.');$('pdpPersoText').focus();return;}
     }
-    addToCart(p.id,addBtn,note,picked.value);
+    addToCart(p.id,addBtn,note,picked.value,chosenExtras(p));
   };
   // Renders the chips and settles the price, the stock line and the button —
   // after the button is wired, so it owns the final label.
@@ -1819,6 +1821,7 @@ function updatePdpAvailability(){
     soldOut=p.stock===0;
     left=p.stock==null?null:p.stock;
   }
+  price+=extrasPrice(p,chosenExtras(p));   // ticked extras ride on whatever the combination costs
   $('pdpPrice').innerHTML=`${(p.was&&!override)?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(price)}`;
   const show=soldOut?'This piece is sold out — the shop may make more.'
     :(left!=null&&left>0&&left<=3)?`Only ${left} left${groups.length?' of this one':''}.`:'';
@@ -1828,6 +1831,22 @@ function updatePdpAvailability(){
   btn.style.opacity=soldOut?.5:1;
   btn.style.cursor=soldOut?'not-allowed':'';
 }
+/* Priced extras — optional finishing touches the shop offers (gift wrap, a
+   gift box …). Ticked on and off freely; never required, never preselected. */
+let pdpExtraPick={};
+function renderPdpExtras(){
+  const p=pdpProduct, list=(p&&p.extras)||[];
+  $('pdpExtras').innerHTML=list.length?`<div class="optgroup"><div class="lbl">Extras</div><div class="optchips">${
+    list.map((e,i)=>`<button type="button" class="optchip${pdpExtraPick[i]?' on':''}" onclick="toggleExtra(${i})">${pdpExtraPick[i]?'✓ ':''}${esc(e.name)}${e.price?` +AED ${e.price.toLocaleString()}`:''}</button>`).join('')}</div></div>`:'';
+}
+function toggleExtra(i){pdpExtraPick[i]=!pdpExtraPick[i];renderPdpExtras();updatePdpAvailability();}
+const chosenExtras=p=>(p.extras||[]).filter((e,i)=>pdpExtraPick[i]).map(e=>e.name);
+/* What the ticked extras add per unit — resolved from the live product, the
+   server prices them again from its own row at checkout. */
+function extrasPrice(p,names){return (names||[]).reduce((s,n)=>{const e=(p.extras||[]).find(x=>x.name===n);return s+((e&&e.price)||0);},0);}
+/* "Gift wrap +AED 15 · Handwritten card" — basket, summary and receipt line. */
+function exLabel(p,names){return (names||[]).map(n=>{const e=(p.extras||[]).find(x=>x.name===n);return (e&&e.price)?`${n} +AED ${e.price.toLocaleString()}`:n;}).join(' · ');}
+
 /* → {value:[{name,value}]} once every group is answered, else {missing:'Size'} */
 function chosenOptions(p){
   const groups=p.options||[];
@@ -1908,6 +1927,9 @@ function lineStillValid(c){
   const groups=p.options||[];
   if(groups.length!==(c.opts||[]).length)return false;
   if(!groups.every(g=>(c.opts||[]).some(o=>o.name===g.name&&g.values.includes(o.value))))return false;
+  // Every ticked extra must still be one the shop offers — a renamed or
+  // retired extra would otherwise fail at checkout.
+  if(!(c.extras||[]).every(n=>(p.extras||[]).some(e=>e.name===n)))return false;
   // The combination must still be one the shop offers. Being sold out is not
   // grounds to bin it — the basket says so and the buyer decides.
   return !groups.length||!!variantFor(p,c.opts);
@@ -1917,7 +1939,7 @@ function restoreCart(){
   try{saved=JSON.parse(localStorage.getItem(CART_KEY)||'[]');}catch(_){return;}
   if(!Array.isArray(saved)||!saved.length)return;
   const clean=saved
-    .map(c=>c&&typeof c==='object'?{pid:c.pid,qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[]}:null)
+    .map(c=>c&&typeof c==='object'?{pid:c.pid,qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[],extras:Array.isArray(c.extras)?c.extras.filter(x=>typeof x==='string'):[]}:null)
     .filter(c=>c&&lineStillValid(c));
   const dropped=saved.length-clean.length;
   cart=clean; updateCartCount(); renderCart();
@@ -1926,16 +1948,17 @@ function restoreCart(){
 }
 
 function persoCount(){const ta=$('pdpPersoText');$('pdpPersoCount').textContent=`${ta.value.length} / ${ta.maxLength}`;}
-function addToCart(id,btn,note,opts){
+function addToCart(id,btn,note,opts,extras){
   const p=PRODUCTS.find(x=>x.id===id);
   // A required personalisation or a choice of options can only be made on the
   // product page — send them there rather than guessing on their behalf.
+  // Extras are always optional, so a quick add from a card simply skips them.
   if(p.perso&&p.perso.required&&note===undefined){openPDP(id);toast('This piece is personalised — add your text first');return;}
   if((p.options||[]).length&&opts===undefined){openPDP(id);toast(`Choose a ${p.options[0].name.toLowerCase()} for this piece`);return;}
-  note=(note||'').trim(); opts=opts||[];
-  // Same product + same note + same options = one line; anything different is
-  // its own line, because it's a different piece to make and to pack.
-  const ex=cart.find(c=>c.pid===id&&(c.note||'')===note&&optLabel(c.opts)===optLabel(opts));
+  note=(note||'').trim(); opts=opts||[]; extras=extras||[];
+  // Same product + same note + same options + same extras = one line; anything
+  // different is its own line, because it's a different piece to make and pack.
+  const ex=cart.find(c=>c.pid===id&&(c.note||'')===note&&optLabel(c.opts)===optLabel(opts)&&(c.extras||[]).join('|')===extras.join('|'));
   // Never let the basket hold more of a combination than the shop can make —
   // counting every line that shares it, not just this one.
   const have=unitStock(p,opts);
@@ -1943,7 +1966,7 @@ function addToCart(id,btn,note,opts){
     const already=cart.filter(c=>c.pid===id&&optLabel(c.opts)===optLabel(opts)).reduce((n,c)=>n+c.qty,0);
     if(already+1>have){toast(have?`Only ${have} left of this one`:`${p.name} is sold out just now`);return;}
   }
-  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts});
+  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts,extras});
   track('add_to_cart',{productId:id});   // only once it really went in — the guards above bail out first
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
@@ -1969,13 +1992,14 @@ function renderCart(){
   Object.entries(groups).forEach(([v,items])=>{
     const V=VENDORS[v];
     html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
-    items.forEach(({p,qty,note,opts,idx})=>{
-      const unit=unitPrice(p,opts), have=unitStock(p,opts);
+    items.forEach(({p,qty,note,opts,extras,idx})=>{
+      const unit=unitPrice(p,opts)+extrasPrice(p,extras), have=unitStock(p,opts);
       const short=have!=null&&have<qty;
       html+=`<div class="citem">
         <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
         <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
           ${(opts&&opts.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(opts))}</div>`:''}
+          ${(extras&&extras.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(exLabel(p,extras))}</div>`:''}
           ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
           ${short?`<div class="v" style="color:var(--accent-ink);font-weight:700">${have?`Only ${have} left — lower the quantity`:'Sold out — remove to check out'}</div>`:''}
           <div class="qrow"><button class="qbtn" onclick="changeQty(${idx},-1)">−</button><span class="qv">${qty}</span><button class="qbtn" onclick="changeQty(${idx},1)">+</button><span class="rm" onclick="removeItem(${idx})">Remove</span></div>
@@ -1985,7 +2009,7 @@ function renderCart(){
     html+='</div>';
   });
   body.innerHTML=html;
-  const subtotal=cart.reduce((s,c)=>{const p=PRODUCTS.find(x=>x.id===c.pid);return s+(p?unitPrice(p,c.opts)*c.qty:0);},0);
+  const subtotal=cart.reduce((s,c)=>{const p=PRODUCTS.find(x=>x.id===c.pid);return s+(p?(unitPrice(p,c.opts)+extrasPrice(p,c.extras))*c.qty:0);},0);
   const shopCount=Object.keys(groups).length;
   const fb=feeBreakdown(subtotal);
   $('cartSubtotal').textContent=aed(subtotal);
@@ -2102,7 +2126,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note,opts})=>{const unit=unitPrice(p,opts);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
+    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -2226,7 +2250,7 @@ async function loadCatalog(){
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,perso:p.personalization||null};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}

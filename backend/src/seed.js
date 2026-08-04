@@ -147,6 +147,13 @@ setPerso.run(1, 'Initials to stamp on the base (up to 3 letters)', 3, 'mug7');
 setPerso.run(0, 'Add a monogram — up to 4 letters, embossed by hand', 4, 'wallet3');
 setPerso.run(0, 'A word or name for the cover, foil-pressed (max 20 characters)', 20, 'note2');
 
+// Priced extras on a few pieces so the tick-an-extra flow is visible end to
+// end — including a free one, which shows without a price. See src/extras.js.
+const setExtras = db.prepare('UPDATE products SET extras=? WHERE image_seed=?');
+setExtras.run(JSON.stringify([{ name: 'Gift wrap', priceCents: 1500 }, { name: 'Handwritten card', priceCents: 0 }]), 'mug7');
+setExtras.run(JSON.stringify([{ name: 'Gift box', priceCents: 2500 }]), 'wallet3');
+setExtras.run(JSON.stringify([{ name: 'Gift wrap', priceCents: 1200 }]), 'throw7');
+
 // A demo PAID order (normally created by checkout) so the managed payout flow
 // has something to settle: a Kiln & Clay mug + an Ember wallet — both managed shops.
 const mug = db.prepare("SELECT id, price_cents, shop_id, name FROM products WHERE image_seed='mug7'").get();

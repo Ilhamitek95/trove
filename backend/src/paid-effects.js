@@ -76,9 +76,12 @@ function paidDbEffects(order, groups) {
 function sendConfirmation(order) {
   const email = require('./email');
   const options = require('./options');
-  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, s.name AS shop_name
+  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, s.name AS shop_name
     FROM order_items oi JOIN shops s ON s.id = oi.shop_id WHERE oi.order_id=? ORDER BY s.name, oi.id`).all(order.id);
-  const meta = (i) => [options.label(i.options), i.personalization ? `“${i.personalization}”` : ''].filter(Boolean).join(' · ');
+  const extras = require('./extras');
+  // Extras are named WITH their prices — the line price already includes them,
+  // and the receipt should say why it is more than the listing price.
+  const meta = (i) => [options.label(i.options), extras.label(i.extras), i.personalization ? `“${i.personalization}”` : ''].filter(Boolean).join(' · ');
   let ship = null;
   try { ship = order.shipping_json ? JSON.parse(order.shipping_json) : null; } catch (_) { /* keep the receipt, drop the block */ }
   const msg = email.orderConfirmation({

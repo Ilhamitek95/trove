@@ -200,6 +200,13 @@
   .optg-top input:focus{border-color:var(--taupe)}
   .optg-del{border:0;background:rgba(41,39,39,.07);color:var(--char);width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:15px;line-height:1;flex-shrink:0}
   .optg-del:hover{background:var(--coral)}
+  /* paid extras — one row per add-on: name + its price */
+  .exrow{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  .exrow input{border:1px solid var(--line);border-radius:10px;padding:8px 11px;font:inherit;font-size:13.5px;background:var(--cream);color:var(--char);outline:0}
+  .exrow input:focus{border-color:var(--taupe)}
+  .exrow .exname{flex:1;min-width:0}
+  .exrow .mny{width:132px;flex-shrink:0}
+  .exrow .mny input{width:100%}
   /* the variant grid: one row per combination, its own stock and price */
   .vgridwrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-top:4px}
   .vgrid{width:100%;border-collapse:collapse;font-size:13px}
@@ -701,6 +708,11 @@
         <div class="hint">Colour, size, glaze — anything the buyer picks before adding to their basket. Their pick arrives with the order so you know what to make.</div>
         <div id="dVariants"></div>
       </div>
+      <div class="field" style="margin:18px 0 0"><label>Paid extras</label>
+        <div id="dExtras"></div>
+        <button class="btn btn-ghost btn-sm" type="button" id="dExtraAdd" onclick="addExtra()">+ Add an extra</button>
+        <div class="hint">Optional add-ons with their own price — gift wrap, a gift box, hand-engraving. Buyers tick the ones they'd like and the price is added on top. Leave the price at 0 for a free extra.</div>
+      </div>
       <div class="field" style="margin:18px 0 0"><label>Visibility</label>
         <div class="seg" id="dStatusSeg"><button data-s="live" class="on" onclick="setSeg(this)">Live</button><button data-s="draft" onclick="setSeg(this)">Draft</button></div>
         <div class="hint" id="dStatusHint">Shoppers can see and buy it as soon as you save.</div>
@@ -769,7 +781,10 @@ function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'ship
 function parseTagsCol(s){ try{const v=JSON.parse(s||'[]');return Array.isArray(v)?v:[];}catch(_){return[];} }
 /* "Glaze: Ash grey · Size: Large" — what the buyer chose, on order lines. */
 const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
-function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),
+/* "Gift wrap (+AED 15) · Gift message" — the extras the buyer ticked; their
+   cost is already inside the line price. */
+const exText=x=>(x||[]).map(e=>e.price?`${e.name} (+AED ${e.price.toLocaleString()})`:e.name).join(' · ');
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),extras:parseTagsCol(p.extras),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
@@ -1130,6 +1145,26 @@ function prodAddFiles(files){
   $('dPhotoFile').value='';
 }
 
+/* drawer — paid extras (gift wrap, a gift box …), each with its own price.
+   State updates on change (blur) like the variant grid, so typing never
+   fights a re-render for focus. */
+let drawerExtras=[];
+function renderDrawerExtras(){
+  $('dExtras').innerHTML=drawerExtras.map((e,i)=>`<div class="exrow">
+    <input class="exname" placeholder="e.g. Gift wrap" value="${esc(e.name)}" onchange="setExtraName(${i},this.value)">
+    <div class="mny"><input type="number" min="0" placeholder="0" value="${e.priceCents?e.priceCents/100:''}" onchange="setExtraPrice(${i},this.value)"></div>
+    <button type="button" class="optg-del" onclick="delExtra(${i})" title="Remove this extra">×</button>
+  </div>`).join('');
+  $('dExtraAdd').style.display=drawerExtras.length>=6?'none':'';
+}
+function setExtraName(i,v){if(drawerExtras[i]){drawerExtras[i].name=v;drawerDirty=true;}}
+function setExtraPrice(i,v){if(!drawerExtras[i])return;const n=parseFloat(v);drawerExtras[i].priceCents=(v===''||isNaN(n)||n<=0)?0:Math.round(n*100);drawerDirty=true;}
+function addExtra(){if(drawerExtras.length>=6)return;drawerExtras.push({name:'',priceCents:0});drawerDirty=true;renderDrawerExtras();
+  const names=$('dExtras').querySelectorAll('.exname');if(names.length)names[names.length-1].focus();}
+function delExtra(i){drawerExtras.splice(i,1);drawerDirty=true;renderDrawerExtras();}
+/* Drop the rows a seller left empty rather than failing the save. */
+function drawerExtrasPayload(){return drawerExtras.map(e=>({name:String(e.name||'').trim(),priceCents:e.priceCents||0})).filter(e=>e.name);}
+
 /* drawer */
 function togglePerso(){$('dPersoFields').style.display=$('dPerso').checked?'block':'none';}
 function setPersoReq(btn){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
@@ -1160,6 +1195,7 @@ function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('
   drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   drawerImages=[];renderDrawerPhotos();
   drawerOptions=[];drawerVariants=[];drawerStockMemory=new Map();renderDrawerOptions();
+  drawerExtras=[];renderDrawerExtras();
   fillPerso(null);setSegStatus('live');updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSub').textContent='Tweak anything — nothing changes until you save.';$('drawerSave').textContent='Save changes';
@@ -1170,6 +1206,7 @@ function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   drawerVariants=(p.variants||[]).map(v=>({key:v.key,options:v.options,stock:v.stock,priceCents:v.priceCents==null?null:v.priceCents}));
   drawerStockMemory=new Map(drawerVariants.map(v=>[v.key,{stock:v.stock,priceCents:v.priceCents}]));
   renderDrawerOptions();   // syncs the grid, keeping the stock just loaded
+  drawerExtras=(p.extras||[]).map(e=>({name:e.name,priceCents:e.priceCents||0}));renderDrawerExtras();
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 const STATUS_HINT={live:'Shoppers can see and buy it as soon as you save.',draft:'Only you can see it — finish it and go live whenever you like.'};
 function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=STATUS_HINT[drawerStatus];drawerDirty=true;}
@@ -1196,7 +1233,7 @@ $('drawerSave').onclick=async()=>{
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
     compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
     tags:drawerTags,personalization:readPerso(),images:drawerImages,
-    options:drawerOptionsPayload(),variants:drawerVariants};
+    options:drawerOptionsPayload(),variants:drawerVariants,extras:drawerExtrasPayload()};
   const btn=$('drawerSave'), was=btn.textContent;
   btn.disabled=true;btn.textContent=editingId?'Saving…':'Adding…';
   try{
@@ -1267,6 +1304,7 @@ function shipCardHTML(o){
       <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${(i.image||i.seed)?`<img src="${i.image?esc(i.image):img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
       <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
         ${optLabel(i.options)?`<div class="q" style="color:var(--accent-ink);font-weight:700">${esc(optLabel(i.options))}</div>`:''}
+        ${exText(i.extras)?`<div class="q" style="color:var(--accent-ink);font-weight:700">+ ${esc(exText(i.extras))}</div>`:''}
         ${i.personalization?`<div class="q" style="color:var(--accent-ink);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
       <div class="pr">${aed(i.price*i.qty)}</div>
     </div>`).join('');
@@ -1448,7 +1486,7 @@ function renderReturnsView(){
   wrap.innerHTML=returnRequests.map(r=>{
     const photos=(r.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
     const items=(r.items||[]).map(i=>`<div class="sc-li" style="padding:8px 0">
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}</div></div>
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
         <div class="pr" style="margin-left:auto">${aed(i.price*i.qty)}</div>
       </div>`).join('');
     const state=r.status==='requested'

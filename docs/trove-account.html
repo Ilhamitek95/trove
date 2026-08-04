@@ -535,6 +535,8 @@ const SHIP_PILL={processing:'processing',shipped:'shipped',out_for_delivery:'shi
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 /* "Glaze: Ash grey · Size: Large" — the variation the buyer chose. */
 const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
+/* The extras ticked at checkout — their cost is already inside the line price. */
+const exText=x=>(x||[]).map(e=>e.price?`${e.name} (+AED ${e.price.toLocaleString()})`:e.name).join(' · ');
 function shipTracker(status){
   if(status==='cancelled') return `<div class="ship-note" style="color:var(--accent-ink)">This parcel was cancelled.</div>`;
   const cur=Math.max(0,SHIP_FLOW.indexOf(status)), delivered=status==='delivered';
@@ -564,7 +566,7 @@ function renderOrders(){
       body=sh.map(s=>{
         const color=(s.shop&&s.shop.color)||'#BD9C8C';
         const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div>${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display='none'">`:''}</div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
         const last=(s.timeline||[]).slice(-1)[0];
         const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
         return `<div class="ship">
@@ -581,7 +583,7 @@ function renderOrders(){
       body=Object.entries(groups).map(([name,g])=>
         `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
         g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#BD9C8C')}"></div></div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
+          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
       ).join('');
     }
     return `<div class="order-card">
@@ -885,9 +887,10 @@ function closeReturn(){$('retScrim').classList.remove('open');rtOrder=null;}
 function renderRtItems(){
   const items=(rtOrder.returns.items||[]);
   $('rtItems').innerHTML=items.map(i=>{
-    // The chosen variation is part of the name here — two lines of the same
-    // piece in different colours are otherwise impossible to tell apart.
-    const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` <span style="color:var(--muted);font-weight:600">· ${esc(optLabel(i.options))}</span>`:''}`;
+    // The chosen variation and extras are part of the name here — two lines of
+    // the same piece (different colour, or one gift-wrapped) are otherwise
+    // impossible to tell apart, and the refund includes what the extras cost.
+    const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` <span style="color:var(--muted);font-weight:600">· ${esc(optLabel(i.options))}</span>`:''}${exText(i.extras)?` <span style="color:var(--muted);font-weight:600">· ${esc(exText(i.extras))}</span>`:''}`;
     if(i.locked)return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='approved'?'return approved':'already requested'}</span></label>`;
     return `<label class="rti"><input type="checkbox" ${rtPicked.has(i.id)?'checked':''} onchange="toggleRtItem(${i.id},this.checked)"><span class="nm">${nm}</span><span class="pr">${aed(i.price*i.qty)}</span></label>`;
   }).join('');

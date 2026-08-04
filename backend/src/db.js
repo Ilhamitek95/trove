@@ -157,6 +157,13 @@ addColumn('products', 'images', "TEXT NOT NULL DEFAULT '[]'");
 addColumn('products', 'options', "TEXT NOT NULL DEFAULT '[]'");
 addColumn('products', 'variants', "TEXT NOT NULL DEFAULT '[]'");
 addColumn('order_items', 'options', "TEXT NOT NULL DEFAULT '[]'");
+// Priced extras (gift wrap, a gift box, engraving …): the seller lists them
+// with their own prices, the buyer ticks any on the product page. The chosen
+// ones are snapshotted here (name + price at purchase) and their cost is
+// folded into the line's price_cents, so every money path — settlement,
+// returns, VAT — keeps reading the one number it always has. See src/extras.js.
+addColumn('products', 'extras', "TEXT NOT NULL DEFAULT '[]'");
+addColumn('order_items', 'extras', "TEXT NOT NULL DEFAULT '[]'");
 // Contact number for the courier. Deliberately its OWN column rather than a
 // field inside shipping_json: the seller payload hands over the parsed
 // shipping address, so a phone in there would reach every maker (see
