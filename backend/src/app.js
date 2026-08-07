@@ -23,7 +23,10 @@ function createApp() {
   // For split hosting you may list several allowed origins, comma-separated.
   // RENDER_EXTERNAL_URL is set automatically by Render, so no config is needed there.
   const CLIENT_URL = process.env.CLIENT_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-  const ALLOWED_ORIGINS = CLIENT_URL.split(',').map((s) => s.trim()).filter(Boolean);
+  // APP_ORIGINS = extra origins allowed to call the API (the Trove app's web build).
+  // Kept separate from CLIENT_URL, which must stay a single URL for Stripe links.
+  const APP_ORIGINS = (process.env.APP_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const ALLOWED_ORIGINS = [...CLIENT_URL.split(',').map((s) => s.trim()).filter(Boolean), ...APP_ORIGINS];
 
   // Behind a hosting proxy (Render/Railway/Fly) so secure cookies are honoured.
   app.set('trust proxy', 1);
