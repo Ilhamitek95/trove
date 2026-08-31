@@ -6,6 +6,7 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 
 - Consignment "Rail A": Trove is merchant of record; commission **40%** (makers keep 60%), **no buyer service fee** (owner: "no hidden costs", 2026-08-02), delivery **AED 30 charged on orders of AED 200 and below** (free above; exactly AED 200 pays — `deliveryFor` uses `>`). All money rules live in `backend/src/fees.js` (env-overridable). Division of labour (owner, 2026-08-02): Trove arranges + pays the Quiqup courier and does all marketing + photography (funded by the 40%); **makers pack sold pieces in their own packaging** and hand them to the courier. Weekly Tuesday settlement runs; bank CSV export is the ONLY place IBANs decrypt.
 - Rail B (Stripe Connect graduation) exists behind `RAIL_B_ENABLED=0` — off by default.
+- Seller agreement current version is **v3** (40% margin). v1/v2 md files stay untouched as the signed record — on any terms change add a new md and bump `AGREEMENT_VERSION` in `src/config.js` (onboarding tests pin the literal).
 - Service area is Dubai + Abu Dhabi only, enforced server-side (`backend/src/service-area.js`).
 - Prod is still demo-payments mode (no Stripe key) — checkout stops at the payment gate; that's the remaining go-live step, plus a compliance check before real money.
 
