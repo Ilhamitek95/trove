@@ -2,7 +2,7 @@
 
 A curated multi-vendor marketplace — independent shops plus an own house label
 (*trove label*). Shoppers buy from Trove; Trove **purchases each sold piece
-from its supplier** (list price minus a 20% margin) and settles with suppliers
+from its supplier** (list price minus a 40% margin) and settles with suppliers
 weekly by bank transfer once the buyer's return window closes. See
 [Payment architecture: two rails](#payment-architecture-two-rails).
 
@@ -143,7 +143,7 @@ processor for its sellers.
 the merchant of record. Buyers pay Trove's own Stripe account (a standard
 PaymentIntent — no Connect). At the moment a payment succeeds, **Trove
 purchases the sold goods from the supplier** at list price minus
-`COMMISSION_PERCENT` (20%): title transfers, and the purchase price is
+`COMMISSION_PERCENT` (40%): title transfers, and the purchase price is
 credited to the supplier's ledger. Suppliers onboard with an Emirates ID
 last-4, an IBAN in their own name (encrypted at rest) and the Seller
 Agreement — no trade license, no Stripe account.

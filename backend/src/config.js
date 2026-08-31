@@ -11,7 +11,7 @@
  */
 const on = (v) => v === '1' || v === 'true';
 
-const AGREEMENT_VERSION = 'v2';
+const AGREEMENT_VERSION = 'v3';
 const RETURN_WINDOW_DAYS = 7;   // settlement hold: supplier credit payable after this
 const BUYER_RETURN_DAYS = 30;   // shopper-facing: request a return this long after delivery
 

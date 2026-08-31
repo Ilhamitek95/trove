@@ -21,7 +21,7 @@ after(async () => { await ctx.close(); });
 test('the seller agreement is served with a verifiable hash', async () => {
   const res = await ctx.api('GET', '/api/legal/seller-agreement');
   assert.equal(res.status, 200);
-  assert.equal(res.data.version, 'v2');
+  assert.equal(res.data.version, 'v3');
   assert.match(res.data.markdown, /Trove purchases that piece from you/);
   assert.match(res.data.markdown, /accountable for the goods you supply/);
   assert.equal(res.data.sha256, require('../src/crypto').sha256(res.data.markdown));
@@ -60,7 +60,7 @@ test('payout-setup validation: last4, expiry, IBAN, agreement', async () => {
   assert.ok(shop.iban_encrypted);
   assert.equal(shop.payout_iban, '');
   assert.equal(shop.emirates_id_last4, '4417');
-  assert.equal(shop.agreement_version, 'v2');
+  assert.equal(shop.agreement_version, 'v3');
   assert.ok(shop.agreement_accepted_at);
   assert.ok(shop.agreement_hash);
   assert.equal(require('../src/crypto').decrypt(shop.iban_encrypted), 'AE070331234567890123456');
