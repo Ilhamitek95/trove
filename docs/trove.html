@@ -1663,7 +1663,8 @@ function mosaicTiles(){
 function mosaicSpans(list){
   const feat=new Set(), want=list.length>=8?2:list.length>=5?1:0;
   const byN=list.slice().sort((a,b)=>b.n-a.n);
-  if(want){ feat.add(byN[0].name); if(want>1){ const other=byN.find(c=>c.pillar!==byN[0].pillar)||byN[1]; if(other)feat.add(other.name); } }
+  if(want){ feat.add(byN[0].name); if(want>1){ // the other pillar's fullest category, if it has enough pieces to fill a feature tile
+    const other=byN.find(c=>c.pillar!==byN[0].pillar&&c.n>=2)||byN[1]; if(other)feat.add(other.name); } }
   const wide=new Set();
   let gap=(4-list.reduce((s,c)=>s+(feat.has(c.name)?4:1),0)%4)%4;
   for(let i=list.length-1;i>=0&&gap>0;i--){ if(!feat.has(list[i].name)){wide.add(list[i].name);gap--;} }
