@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <!-- Display: Cormorant (Google Fonts; italic 400 loaded only for the hero accent word) · Body: Quicksand -->
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add('js')</script>
 <style>
   :root{
     --font-display:'Cormorant',Georgia,serif;
@@ -104,26 +105,81 @@
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
   /* ---------- HERO ---------- */
-  .hero{padding:64px 0 30px}
-  .hero .wrap{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
-  .hero .lead .eyebrow{margin-bottom:24px;display:block}
-  .hero h1{font-size:clamp(52px,7vw,92px);line-height:.96;font-weight:400;letter-spacing:-.01em}
+  .hero{padding:46px 0 26px;position:relative}
+  .hero .wrap{display:grid;grid-template-columns:1fr 1.12fr;gap:56px;align-items:center}
+  .hero .lead .eyebrow{margin-bottom:22px;display:block}
+  .hero h1{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
   .hero h1 em{font-style:italic;color:var(--coral)} /* the one sanctioned italic: the hero accent word */
   .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
   .hero .ctas{display:flex;align-items:center;gap:24px}
-  .hero-img{position:relative;border-radius:24px;overflow:hidden;aspect-ratio:5/6;background:var(--rose)}
-  .hero-img .grad{position:absolute;inset:0}
-  .hero-img img{position:absolute;inset:0;filter:saturate(.92)}
-  .hero-tag{position:absolute;left:22px;bottom:22px;background:rgba(253,247,245,.92);backdrop-filter:blur(6px);border-radius:14px;padding:13px 18px;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
-  .hero-tag .d{width:34px;height:34px;border-radius:9px;background:var(--char)}
-  .hero-tag .l{font-size:10.5px;letter-spacing:.09em;color:var(--muted);font-weight:600}
-  .hero-tag .n{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1}
+  /* first paint: the copy settles in line by line — short, eased, once */
+  .js .hero .lead>*{animation:rise .9s cubic-bezier(.22,.61,.36,1) both}
+  .js .hero .lead>:nth-child(2){animation-delay:.08s}
+  .js .hero .lead>:nth-child(3){animation-delay:.16s}
+  .js .hero .lead>:nth-child(4){animation-delay:.24s}
+  .js .hero .lead>:nth-child(5){animation-delay:.32s}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  /* the Collection pointer: a quiet line item under the buttons */
+  .hero-tag{margin-top:38px;padding-top:22px;border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;cursor:pointer;width:fit-content}
+  .hero-tag .d{width:36px;height:36px;border-radius:10px;background:var(--char);flex-shrink:0;position:relative;transition:transform .3s}
+  .hero-tag .d::after{content:"";position:absolute;inset:0;margin:auto;width:9px;height:9px;background:var(--cream);transform:rotate(45deg);border-radius:1px}
+  .hero-tag:hover .d{transform:rotate(-8deg)}
+  .hero-tag .l{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:600;display:block}
+  .hero-tag .n{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1.05;display:block;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:5px;text-decoration-thickness:1px;transition:text-decoration-color .25s}
+  .hero-tag:hover .n{text-decoration-color:var(--coral)}
+  /* The shelf: featured pieces fanned on a stage. The centre card is the one
+     on offer — it carries the caption and opens on tap; the others slide in. */
+  .hstage{position:relative;border-radius:30px;background:var(--rose-tint);overflow:hidden;padding:22px 0 16px;outline:none;isolation:isolate}
+  .js .hstage{animation:fade .8s .2s both}
+  .hstage:focus-visible{box-shadow:0 0 0 3px var(--rose)}
+  .hs-bg{position:absolute;inset:-12% -8%;z-index:0;pointer-events:none;will-change:transform}
+  .hs-bg svg{width:100%;height:100%;display:block}
+  .hs-deck{position:relative;z-index:1;aspect-ratio:1/.78;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;transition:transform .45s cubic-bezier(.22,.61,.36,1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+  .hs-deck.drag{transition:none;cursor:grabbing}
+  .hs-deck img{-webkit-user-drag:none}
+  .hc{position:absolute;left:50%;top:50%;width:46%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:var(--paper);box-shadow:0 26px 54px -30px rgba(41,39,39,.5);transform:translate(-50%,-50%);transition:transform .8s cubic-bezier(.22,.61,.36,1),opacity .55s;will-change:transform;cursor:pointer}
+  .hc .hc-ph{position:absolute;inset:0}
+  .hc .hc-ph .grad{position:absolute;inset:0}
+  .hc .hc-ph img{position:absolute;inset:0;z-index:1;filter:saturate(.92)}
+  .hc .hc-ph::after{content:"";position:absolute;inset:0;z-index:2;background:rgba(253,247,245,.24);transition:opacity .6s}
+  .hc.on .hc-ph::after{opacity:0}
+  .hc:not(.on):hover .hc-ph::after{opacity:.35}
+  .hc .sale{position:absolute;top:14px;left:14px;z-index:3;background:var(--char);color:var(--cream);font-size:10px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
+  .hc-cap{position:absolute;left:12px;right:12px;bottom:12px;z-index:3;background:rgba(253,247,245,.94);backdrop-filter:blur(8px);border-radius:14px;padding:11px 14px 12px;opacity:0;transform:translateY(10px);transition:opacity .4s,transform .5s cubic-bezier(.22,.61,.36,1)}
+  .hc.on .hc-cap{opacity:1;transform:none;transition-delay:.28s}
+  .hc-cap .vrow{font-size:10.5px;letter-spacing:.06em;color:var(--taupe);font-weight:600;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hc-cap .vrow.is-house{color:var(--accent-ink)}
+  .hc-cap .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px;flex-shrink:0}
+  .hc-cap h3{font-size:20px;font-weight:600;line-height:1.1;margin:4px 0 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .hc-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .hc-go{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:2px;white-space:nowrap}
+  .hs-bar{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 22px 2px}
+  .hs-label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em;display:flex;align-items:baseline;gap:12px;min-width:0}
+  .hs-label b{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--char);letter-spacing:.02em;white-space:nowrap}
+  .hs-ctrl{display:flex;align-items:center;gap:10px;flex-shrink:0}
+  .hs-btn{width:38px;height:38px;border-radius:50%;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;color:var(--char);transition:background .18s,color .18s,border-color .18s,transform .18s}
+  .hs-btn:hover{background:var(--char);color:var(--cream);border-color:var(--char)}
+  .hs-btn:active{transform:scale(.94)}
+  .hs-dots{display:flex;gap:6px;align-items:center}
+  .hs-dot{width:7px;height:7px;border-radius:999px;background:rgba(41,39,39,.22);position:relative;overflow:hidden;transition:width .35s cubic-bezier(.22,.61,.36,1),background .35s;padding:0;flex-shrink:0}
+  .hs-dot.on{width:30px;background:rgba(41,39,39,.14)}
+  .hs-dot i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--char);border-radius:999px}
+  .hs-dot.on i{animation:hsfill var(--hs-dur,4.6s) linear forwards}
+  .hs-dots.paused .hs-dot i{animation-play-state:paused}
+  @keyframes hsfill{from{width:0}to{width:100%}}
   .marquee{margin-top:42px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:26px 0}
   .marquee .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
   .marquee .mk{display:flex;align-items:center;justify-content:center;gap:13px}
   .marquee .mk .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--char)}
   .marquee .mk .tx b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--char);line-height:1.1}
   .marquee .mk .tx span{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+
+  /* ---------- SCROLL MOTION ---------- */
+  /* .rv = reveal on first sight: a short rise, eased out, once. The classes
+     come off again once it lands, so hover/press styles get their element
+     back. Only applies with JS (html.js) so nothing can stay hidden. */
+  .js .rv{opacity:0;transform:translateY(22px)}
+  .js .rv.in{opacity:1;transform:none;transition:opacity .75s ease,transform .85s cubic-bezier(.22,.61,.36,1);transition-delay:var(--d,0s)}
 
   /* ---------- SECTION ---------- */
   section.band{padding:88px 0}
@@ -136,22 +192,47 @@
   .link-more{font-size:13px;font-weight:600;letter-spacing:.06em;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:3px;white-space:nowrap}
   .link-more:hover{color:var(--accent-ink)}
 
-  /* categories */
-  .cat-rail{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:18px}
-  .cat{cursor:pointer;text-align:center}
-  .cat .tile{aspect-ratio:1;border-radius:18px;overflow:hidden;position:relative;margin-bottom:14px;transition:transform .35s,box-shadow .35s;display:grid;place-items:center}
-  .cat .tile .grad{position:absolute;inset:0}
-  .cat .tile .blob{position:absolute;width:66%;aspect-ratio:1;border-radius:46% 54% 52% 48%/48% 46% 54% 52%;background:rgba(253,247,245,.55);transition:transform .45s}
-  .cat .tile svg{position:relative;z-index:2;color:var(--char);transition:transform .35s;width:42px;height:42px}
-  .cat:hover .tile{transform:translateY(-6px);box-shadow:var(--shadow)}
-  .cat:hover .tile .blob{transform:scale(1.14) rotate(10deg)}
-  .cat:hover .tile svg{transform:rotate(-5deg) scale(1.08)}
-  .cat .name{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1.1;transition:color .25s}
-  .cat:hover .name{color:var(--accent-ink)}
-  .cat .pillar{font-size:10.5px;letter-spacing:.07em;color:var(--taupe);font-weight:700;margin-top:10px}
-  .cat .ct{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:1px}
-  .cat .ct i{font-style:normal;display:inline-block;opacity:0;transform:translateX(-5px);transition:.25s;color:var(--accent-ink)}
-  .cat:hover .ct i{opacity:1;transform:none}
+  /* browse by — the mosaic: every category is a lit tile with its own pieces
+     stacked in the corner; the fullest ones grow to feature tiles, the tail
+     widens so every row closes (spans are worked out in renderCatMosaic) */
+  .pill-tabs{display:flex;justify-content:center;gap:8px;margin:-16px 0 30px;flex-wrap:wrap}
+  .pt{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:600;color:var(--ink-80);transition:background .18s,color .18s,border-color .18s}
+  .pt:hover{border-color:var(--char);color:var(--char)}
+  .pt.on{background:var(--char);color:var(--cream);border-color:var(--char)}
+  .cat-mosaic{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:212px;grid-auto-flow:dense;gap:16px;transition:opacity .22s,transform .22s}
+  .cat-mosaic.sw{opacity:0;transform:translateY(8px)}
+  .cat{position:relative;border-radius:22px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;padding:18px 20px;color:var(--char);text-align:left;isolation:isolate;transition:transform .5s cubic-bezier(.22,.61,.36,1),box-shadow .5s,opacity .4s}
+  .cat.feat{grid-column:span 2;grid-row:span 2;padding:26px 28px}
+  .cat.wide{grid-column:span 2}
+  .cat .cat-bg{position:absolute;inset:0;z-index:-2;background:linear-gradient(150deg,var(--t1),var(--t0) 55%,var(--t2))}
+  .cat .blob{position:absolute;left:-14%;bottom:-24%;width:62%;aspect-ratio:1;border-radius:46% 54% 52% 48%/48% 46% 54% 52%;background:rgba(253,247,245,.42);z-index:-1;transition:transform .8s cubic-bezier(.22,.61,.36,1)}
+  .cat .pillar{font-size:10.5px;letter-spacing:.06em;font-weight:700;color:rgba(41,39,39,.55);position:relative;z-index:1}
+  .cat .stack{position:absolute;right:18px;top:18px;width:34%;aspect-ratio:4/5;z-index:0;pointer-events:none}
+  .cat.feat .stack{right:28px;top:28px;width:40%}
+  .cat.wide .stack{width:18%;right:22px}
+  .cat .stack img{position:absolute;inset:0;border-radius:11px;box-shadow:0 12px 26px -14px rgba(41,39,39,.55);transform-origin:50% 110%;transition:transform .7s cubic-bezier(.22,.61,.36,1);filter:saturate(.92)}
+  .cat .stack img:nth-child(1){transform:rotate(-9deg) translateX(-24%)}
+  .cat .stack img:nth-child(2){transform:rotate(1deg)}
+  .cat .stack img:nth-child(3){transform:rotate(10deg) translateX(24%)}
+  .cat .stack img:only-child{transform:rotate(-4deg)}
+  .cat .cat-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;position:relative;z-index:1}
+  .cat .ico{width:36px;height:36px;border-radius:50%;background:rgba(253,247,245,.78);display:grid;place-items:center;margin-bottom:10px;color:var(--char)}
+  .cat .ico svg{width:20px;height:20px}
+  .cat .name{font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1.05}
+  .cat.feat .name{font-size:clamp(30px,3vw,40px)}
+  .cat .ct{font-size:11.5px;letter-spacing:.04em;color:rgba(41,39,39,.62);font-weight:600;margin-top:6px}
+  .cat .arrow{width:38px;height:38px;border-radius:50%;background:var(--char);color:var(--cream);display:grid;place-items:center;flex-shrink:0;transform:translate(6px,6px) scale(.85);opacity:0;transition:transform .4s cubic-bezier(.22,.61,.36,1),opacity .3s}
+  .cat .arrow svg{width:16px;height:16px}
+  .cat:hover,.cat.lit{transform:translateY(-6px);box-shadow:0 28px 54px -30px rgba(41,39,39,.5)}
+  .cat:active{transform:scale(.985)}
+  .cat:hover .arrow,.cat.lit .arrow{opacity:1;transform:none}
+  .cat:hover .blob,.cat.lit .blob{transform:scale(1.2) rotate(14deg)}
+  .cat:hover .stack img:nth-child(1),.cat.lit .stack img:nth-child(1){transform:rotate(-16deg) translate(-40%,-5%)}
+  .cat:hover .stack img:nth-child(2),.cat.lit .stack img:nth-child(2){transform:rotate(0) translateY(-7%)}
+  .cat:hover .stack img:nth-child(3),.cat.lit .stack img:nth-child(3){transform:rotate(17deg) translate(40%,-5%)}
+  .cat:hover .stack img:only-child,.cat.lit .stack img:only-child{transform:rotate(-8deg) translateY(-6%)}
+  /* spotlight: the tile under the pointer stays lit, the rest step back */
+  @media(hover:hover){.cat-mosaic:hover .cat:not(:hover){opacity:.7}}
 
   /* product grid + card */
   .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
@@ -166,7 +247,7 @@
   .card .add:hover{background:var(--char);color:var(--cream)}
   .card .add.added{background:var(--char);color:var(--cream);opacity:1;transform:none}
   .card .vrow{font-size:11px;letter-spacing:.06em;color:var(--taupe);font-weight:600;display:flex;align-items:center;gap:6px}
-  .card .vrow.house{color:var(--accent-ink)}
+  .card .vrow.is-house{color:var(--accent-ink)} /* is-house, not house — .house is the Collection band */
   .card .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px}
   .card h3{font-size:21px;font-weight:600;line-height:1.1;margin:6px 0 7px}
   .card .foot{display:flex;justify-content:space-between;align-items:baseline}
@@ -445,8 +526,8 @@
 
   /* ---------- RESPONSIVE ---------- */
   @media(max-width:960px){
-    .hero .wrap{grid-template-columns:1fr;gap:40px}
-    .hero-img{max-width:480px}
+    .hero .wrap{grid-template-columns:1fr;gap:34px}
+    .hstage{max-width:640px;width:100%;margin:0 auto}
     .house,.sell,.pdp{grid-template-columns:1fr}
     /* stacked: square tiles inset to the copy's own margins */
     .house .gallery{grid-template-rows:auto auto;gap:10px;padding:0 60px 44px}
@@ -454,7 +535,7 @@
     .pgrid{grid-template-columns:repeat(2,1fr)}
     .marquee .wrap{grid-template-columns:1fr 1fr;gap:18px}
     .marquee .mk{justify-content:flex-start}
-    .cat-rail{grid-template-columns:repeat(3,1fr)}
+    .cat-mosaic{grid-template-columns:repeat(2,1fr)}
     .vset{gap:18px;padding-right:18px}
     .vset .vcard{width:300px;flex:0 0 300px}
     /* .browse-layout's own padding beats .wrap's (later in the sheet), so
@@ -485,7 +566,7 @@
   }
   @media(max-width:560px){
     .wrap{padding:0 26px}
-    .pgrid,.cat-rail{grid-template-columns:1fr 1fr}
+    .pgrid{grid-template-columns:1fr 1fr}
     .search{display:none}
     .search-btn{display:grid}
     .house .copy,.sell{padding:46px 30px}
@@ -494,12 +575,25 @@
     .brand{font-size:29px}
     .icon-btn{width:40px;height:40px}
     .nav .right{gap:2px}
-    .hero{padding:34px 0 12px}
-    .hero .wrap{gap:26px}
+    .hero{padding:26px 0 8px}
+    .hero .wrap{gap:24px}
     .hero h1{font-size:clamp(42px,12.5vw,52px)}
-    .hero .lead p{margin:20px 0 26px}
-    .hero .ctas{flex-wrap:wrap;gap:16px}
-    .hero-img{aspect-ratio:4/3}
+    .hero .lead .eyebrow{margin-bottom:16px}
+    .hero .lead p{margin:16px 0 22px;font-size:16px}
+    .hero .ctas{flex-wrap:wrap;gap:14px}
+    .hero-tag{display:none}
+    .hstage{border-radius:24px;padding:14px 0 12px}
+    .hs-deck{aspect-ratio:1/.86}
+    .hc{width:56%;border-radius:18px}
+    .hc-cap{left:9px;right:9px;bottom:9px;padding:9px 11px 10px;border-radius:12px}
+    .hc-cap h3{font-size:17px}
+    /* phones: label + counter on one row, dots centred beneath — nothing squeezes or wraps mid-word */
+    .hs-bar{padding:6px 14px 0;flex-wrap:wrap;row-gap:4px}
+    .hs-label{flex:1 1 100%;justify-content:space-between}
+    .hs-label span{white-space:nowrap}
+    .hs-label b{font-size:16px}
+    .hs-ctrl{flex:1 1 100%;justify-content:center}
+    .hs-btn{display:none} /* swipe is the gesture on phones; dots + counter stay */
     .marquee{margin-top:26px;padding:18px 0}
     section.band{padding:56px 0}
     .band-head{margin-bottom:34px}
@@ -507,8 +601,16 @@
     .card h3{font-size:18px}
     .card .ph{margin-bottom:10px}
     .card .add{margin-top:9px;padding:11px}
-    .cat-rail{gap:12px}
-    .cat .name{font-size:18px}
+    .cat-mosaic{grid-auto-rows:168px;gap:12px}
+    .cat{padding:14px 15px;border-radius:18px}
+    .cat.feat{padding:18px}
+    .cat .name{font-size:19px}
+    .cat.feat .name{font-size:28px}
+    .cat .ico{width:30px;height:30px;margin-bottom:8px}
+    .cat .ico svg{width:17px;height:17px}
+    .cat .arrow{width:32px;height:32px}
+    .pill-tabs{margin:-10px 0 22px}
+    .pt{padding:8px 14px;font-size:12.5px}
     .house .gallery{gap:9px;padding:0 30px 36px}
     .house .gallery .g{border-radius:14px}
     .house .gallery .gname{font-size:10px;padding:5px 9px;left:8px;bottom:8px;max-width:calc(100% - 16px)}
@@ -773,54 +875,51 @@
           <button class="btn btn-dark" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
           <a class="txt-link" data-cms="home.hero.ctaSell" href="#" onclick="go('shop','all');return false">Explore the Marketplace</a>
         </div>
+        <a class="hero-tag" href="#" onclick="go('shop','House');return false" title="Shop the Trove Collection"><span class="d"></span><span><span class="l" data-cms="home.hero.tagLine">Our own line</span><span class="n" data-cms="home.hero.tagName">Trove Collection →</span></span></a>
       </div>
-      <div class="hero-img" onclick="go('shop','House')" style="cursor:pointer" title="Shop the Trove Collection">
-        <svg viewBox="0 0 500 600" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%;display:block" aria-hidden="true">
-          <rect width="500" height="600" fill="#FDF7F5"/>
-          <path d="M250 80 C 340 70, 430 140, 425 245 C 420 350, 350 420, 250 430 C 150 440, 70 360, 75 255 C 80 150, 160 90, 250 80 Z" fill="#DBC7BD"/>
-          <path d="M120 340 C 200 330, 280 390, 275 470 C 270 550, 195 610, 105 600 C 15 590, -40 520, -20 440 C -5 375, 45 350, 120 340 Z" fill="#CAD5CC"/>
-          <path d="M410 455 C 460 445, 505 480, 500 530 C 495 580, 450 605, 405 595 C 360 585, 340 545, 355 505 C 366 475, 380 461, 410 455 Z" fill="#FCC998" opacity=".85"/>
-          <path d="M390 60 C 450 55, 505 105, 500 165 C 495 225, 440 265, 380 255 C 320 245, 285 195, 300 135 C 312 88, 340 65, 390 60 Z" fill="#F19A82" opacity=".92"/>
-          <g fill="none" stroke="#292727" stroke-width="2.2" stroke-linecap="round">
-            <path d="M250 560 C 245 480, 260 420, 250 340 C 243 280, 255 240, 250 196"/>
-            <path d="M250 470 C 220 460, 205 435, 208 410 C 235 415, 250 440, 250 470 Z"/>
-            <path d="M251 400 C 281 390, 296 365, 293 340 C 266 345, 251 370, 251 400 Z"/>
-            <path d="M250 320 C 224 312, 210 290, 212 268 C 236 272, 250 294, 250 320 Z"/>
-            <path d="M250 340 C 285 330, 310 305, 318 275"/>
-          </g>
-          <g transform="translate(250 172)">
-            <g fill="#F19A82"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
-            <circle r="6" fill="#292727"/>
-          </g>
-          <g transform="translate(320 264) scale(.62)">
-            <g fill="#F8D7E4"><ellipse cx="0" cy="-15" rx="7.5" ry="15"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(72)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(144)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(216)"/><ellipse cx="0" cy="-15" rx="7.5" ry="15" transform="rotate(288)"/></g>
-            <circle r="6" fill="#292727"/>
-          </g>
-          <g fill="#292727" opacity=".55"><circle cx="150" cy="160" r="3"/><circle cx="360" cy="330" r="3"/><circle cx="180" cy="540" r="3"/><circle cx="440" cy="250" r="3"/></g>
-        </svg>
-        <div class="hero-tag"><div class="d" style="background:#292727"></div>
-          <div><div class="l" data-cms="home.hero.tagLine">Our own line</div><div class="n" data-cms="home.hero.tagName">Trove Collection →</div></div></div>
+      <!-- The shelf: featured pieces fanned on a stage. Admin-picked (Site content → Hero)
+           or an automatic Collection / Marketplace mix — see renderHeroDeck(). -->
+      <div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel" aria-label="Featured pieces">
+        <div class="hs-bg" aria-hidden="true" data-px="30"><svg viewBox="0 0 500 420" preserveAspectRatio="xMidYMid slice">
+          <path d="M250 40 C 340 30, 430 100, 425 205 C 420 310, 350 380, 250 390 C 150 400, 70 320, 75 215 C 80 110, 160 50, 250 40 Z" fill="#DBC7BD" opacity=".6"/>
+          <path d="M60 250 C 140 240, 220 300, 215 380 C 210 460, 135 520, 45 510 C -45 500, -100 430, -80 350 C -65 285, -15 260, 60 250 Z" fill="#CAD5CC" opacity=".62"/>
+          <path d="M430 300 C 480 290, 525 325, 520 375 C 515 425, 470 450, 425 440 C 380 430, 360 390, 375 350 C 386 320, 400 306, 430 300 Z" fill="#CFDBBE" opacity=".7"/>
+          <path d="M400 -20 C 460 -25, 515 25, 510 85 C 505 145, 450 185, 390 175 C 330 165, 295 115, 310 55 C 322 8, 350 -15, 400 -20 Z" fill="#F19A82" opacity=".5"/>
+        </svg></div>
+        <div class="hs-deck" id="heroDeck"></div>
+        <div class="hs-bar">
+          <div class="hs-label"><span data-cms="home.hero.stageLabel">On the shelf this week</span><b id="hsCount">— / —</b></div>
+          <div class="hs-ctrl">
+            <button class="hs-btn" aria-label="Previous piece" onclick="hcStep(-1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <div class="hs-dots" id="hsDots"></div>
+            <button class="hs-btn" aria-label="Next piece" onclick="hcStep(1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+        </div>
       </div>
     </div>
   </section>
-
   <div class="marquee"><div class="wrap">
-    <div class="mk"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.0.head">Handpicked shops</b><span data-cms="home.marquee.items.0.sub">Vetted by hand</span></div></div>
-    <div class="mk"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.1.head">Small-batch pieces</b><span data-cms="home.marquee.items.1.sub">Made to last</span></div></div>
-    <div class="mk"><div class="ic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">3–6 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
-    <div class="mk"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b data-cms="home.marquee.items.3.head">30-day returns</b><span data-cms="home.marquee.items.3.sub">Free on orders over AED 200</span></div></div>
+    <div class="mk rv"><div class="ic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="2.8"/><path d="M12 4v3.4M12 16.6V20M4 12h3.4M16.6 12H20M6.3 6.3l2.4 2.4M15.3 15.3l2.4 2.4M17.7 6.3l-2.4 2.4M8.7 15.3l-2.4 2.4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.0.head">Handpicked shops</b><span data-cms="home.marquee.items.0.sub">Vetted by hand</span></div></div>
+    <div class="mk rv" style="--d:.07s"><div class="ic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10l4 6-9 10L3 10z"/><path d="M3 10h18M12 20 8.5 10 11 4M12 20l3.5-10L13 4"/></svg></div><div class="tx"><b data-cms="home.marquee.items.1.head">Small-batch pieces</b><span data-cms="home.marquee.items.1.sub">Made to last</span></div></div>
+    <div class="mk rv" style="--d:.14s"><div class="ic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5h12v9H2z"/><path d="M14 10h4l3 3.2v2.3h-7"/><circle cx="6.5" cy="17.3" r="1.7"/><circle cx="16.5" cy="17.3" r="1.7"/></svg></div><div class="tx"><b data-cms="home.marquee.items.2.head">3–6 day delivery</b><span data-cms="home.marquee.items.2.sub">Dubai &amp; Abu Dhabi</span></div></div>
+    <div class="mk rv" style="--d:.21s"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b data-cms="home.marquee.items.3.head">30-day returns</b><span data-cms="home.marquee.items.3.sub">Free on orders over AED 200</span></div></div>
   </div></div>
 
   <section class="band">
     <div class="wrap">
-      <div class="band-head"><span class="eyebrow" data-cms="home.browse.eyebrow">Browse by</span><h2 data-cms="home.browse.heading">Where would you like to begin?</h2></div>
-      <div class="cat-rail" id="catRail"></div>
+      <div class="band-head rv"><span class="eyebrow" data-cms="home.browse.eyebrow">Browse by</span><h2 data-cms="home.browse.heading">Where would you like to begin?</h2></div>
+      <div class="pill-tabs rv" style="--d:.08s" id="catTabs" role="tablist" aria-label="Browse by pillar">
+        <button class="pt on" role="tab" aria-selected="true" onclick="setCatPillar('all',this)">Everything</button>
+        <button class="pt" role="tab" aria-selected="false" onclick="setCatPillar('Trove Collection',this)">Trove Collection</button>
+        <button class="pt" role="tab" aria-selected="false" onclick="setCatPillar('Trove Marketplace',this)">Trove Marketplace</button>
+      </div>
+      <div class="cat-mosaic" id="catRail"></div>
     </div>
   </section>
 
   <section class="band" style="padding-top:0">
     <div class="wrap">
-      <div class="band-head left">
+      <div class="band-head left rv">
         <div><span class="eyebrow" data-cms="home.weekly.eyebrow">The weekly edit</span><h2 data-cms="home.weekly.heading">This week's finds</h2></div>
         <a class="link-more" data-cms="home.weekly.linkLabel" href="#" onclick="go('shop','all');return false">Shop everything →</a>
       </div>
@@ -830,7 +929,7 @@
 
   <section class="band" style="padding-top:0">
     <div class="wrap">
-      <div class="house">
+      <div class="house rv">
         <div class="copy">
           <span class="eyebrow" data-cms="home.collection.eyebrow">The Trove Collection · Designed by Trove</span>
           <h2 data-cms-rich="home.collection.h2">Our own, made well.</h2>
@@ -849,7 +948,7 @@
 
   <section class="band" id="vendors">
     <div class="wrap">
-      <div class="band-head"><span class="eyebrow" data-cms="home.makers.eyebrow">The Trove Marketplace</span><h2 data-cms="home.makers.heading">Meet the makers</h2>
+      <div class="band-head rv"><span class="eyebrow" data-cms="home.makers.eyebrow">The Trove Marketplace</span><h2 data-cms="home.makers.heading">Meet the makers</h2>
         <p data-cms="home.makers.intro">Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.</p></div>
       <div class="vcarousel" id="vendorGrid" aria-label="Meet the makers"></div>
     </div>
@@ -857,7 +956,7 @@
 
   <section class="band" style="padding-top:0">
     <div class="wrap">
-      <div class="sell">
+      <div class="sell rv">
         <div>
           <span class="eyebrow" data-cms="home.sellBand.eyebrow">Sell on Trove</span>
           <h2 data-cms-rich="home.sellBand.h2">Make things at home? Give them a <em>shopfront</em>.</h2>
@@ -1421,7 +1520,7 @@ function productCard(p,eager){
       ${p.was?`<span class="sale">Sale</span>`:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
     </div>
-    <div class="vrow ${house?'house':''}"><span class="gem"></span>${V.name}</div>
+    <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${V.name}</div>
     <h3>${p.name}</h3>
     <div class="foot">
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
@@ -1432,12 +1531,7 @@ function productCard(p,eager){
 
 /* HOME */
 function renderHome(){
-  // Taxonomy tiles, Collection pillar first; only categories that hold pieces render, counts are real.
-  $('catRail').innerHTML=CATS.map(c=>({...c,n:PRODUCTS.filter(p=>p.cat===c.name).length}))
-    .filter(c=>c.n>0).map(c=>`<div class="cat" onclick="go('shop','${esc(c.name).replace(/'/g,'&#39;')}')">
-    <div class="tile"><div class="grad" style="${grad(c.color)}"></div><span class="blob"></span>${CAT_ICON[c.name]||''}</div>
-    <div class="pillar">${c.pillar}</div>
-    <div class="name">${esc(c.name)}</div><div class="ct">${c.n} ${c.n===1?'piece':'pieces'} <i>→</i></div></div>`).join('');
+  renderCatMosaic();
 
   // Weekly finds: admin-picked products when set, else the 8 newest pieces.
   let weekly=PRODUCTS.slice(0,8);
@@ -1448,11 +1542,13 @@ function renderHome(){
     if(sel.length)weekly=sel;
   }
   $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true)).join('');
+  stagger($('trendingGrid'),.06);
 
   const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house).slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
   $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
     <div class="grad" style="${grad('#292727')}"></div><img src="${pImg(p)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
+  stagger($('houseGallery'),.1);
 
   // Every maker rides the carousel; the second set is a visual clone for the seamless loop.
   const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house);
@@ -1468,6 +1564,170 @@ function renderHome(){
   </article>`;}).join('');
   $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
   initMakerCarousel();
+  renderHeroDeck(); initReveal(); initParallax();
+}
+
+/* ---------------- THE SHELF: hero carousel ----------------
+ * Featured pieces fanned on the stage. The centre card carries its caption and
+ * opens the piece; the others slide to centre on tap. Auto-advances, pauses on
+ * hover, swipes/drags on any device, arrows + keyboard on the stage. Admin can
+ * hand-pick the pieces (Site content → Hero); otherwise Collection and
+ * Marketplace pieces alternate, Collection first. */
+const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const HC={i:0,n:0,items:[],timer:0,dur:4600,paused:false};
+function heroPicks(){
+  const isHouse=p=>!!(VENDORS[p.vendor]&&VENDORS[p.vendor].house);
+  const picks=cmsGet('home.hero.productIds');
+  if(LIVE&&Array.isArray(picks)&&picks.length){
+    const byId={};PRODUCTS.forEach(p=>byId[p.id]=p);
+    const sel=picks.map(id=>byId[id]).filter(Boolean);
+    if(sel.length)return sel;
+  }
+  const house=PRODUCTS.filter(isHouse), makers=PRODUCTS.filter(p=>!isHouse(p)), out=[];
+  for(let i=0;out.length<8&&(house[i]||makers[i]);i++){
+    if(house[i])out.push(house[i]);
+    if(makers[i]&&out.length<8)out.push(makers[i]);
+  }
+  return out;
+}
+function renderHeroDeck(){
+  const deck=$('heroDeck'); if(!deck)return;
+  HC.items=heroPicks(); HC.n=HC.items.length; HC.i=0;
+  deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
+    return `<article class="hc" data-k="${k}" onclick="hcTap(${k})" aria-label="${esc(p.name)}">
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${pImg(p)}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
+      <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3>${esc(p.name)}</h3>
+        <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></div></div>
+    </article>`;}).join('');
+  $('hsDots').innerHTML=HC.items.map((p,k)=>`<button class="hs-dot" aria-label="Piece ${k+1} of ${HC.n}" onclick="hcGo(${k})"><i></i></button>`).join('');
+  $('hsDots').style.setProperty('--hs-dur',HC.dur+'ms');
+  hcLayout(); hcDots(); hcBind(); hcPlay();
+}
+/* card pose by distance from centre: [x, y] in card widths/heights, tilt, scale, opacity */
+const HC_POS=[[0,0,0,1,1],[.78,.05,6,.86,.94],[1.5,.11,12,.72,.7],[2.1,.18,18,.6,0]];
+function hcLayout(){
+  const n=HC.n;
+  for(const c of $('heroDeck').children){
+    let d=(+c.dataset.k)-HC.i; if(d>n/2)d-=n; if(d<-n/2)d+=n;
+    const a=Math.min(3,Math.abs(d)), s=Math.sign(d), [x,y,r,sc,op]=HC_POS[a];
+    c.classList.toggle('on',d===0);
+    c.style.zIndex=10-a;
+    c.style.opacity=op;
+    c.style.transform=`translate(calc(-50% + ${(s*x*100).toFixed(1)}%),calc(-50% + ${(y*100).toFixed(1)}%)) rotate(${s*r}deg) scale(${sc})`;
+    c.setAttribute('aria-hidden',d===0?'false':'true');
+  }
+}
+function hcTap(k){ if(k===HC.i){const p=HC.items[k];if(p)openPDP(p.id);} else hcGo(k); }
+function hcGo(k){ if(!HC.n||k===HC.i)return; HC.i=((k%HC.n)+HC.n)%HC.n; hcLayout(); hcDots(); hcPlay(); }
+function hcStep(n,auto){ if(HC.n<2)return; HC.i=((HC.i+n)%HC.n+HC.n)%HC.n; hcLayout(); hcDots(); if(!auto)hcPlay(); }
+function hcDots(){
+  [...$('hsDots').children].forEach((d,k)=>{d.classList.remove('on');if(k===HC.i){void d.offsetWidth;d.classList.add('on');}});
+  $('hsCount').textContent=HC.n?String(HC.i+1).padStart(2,'0')+' / '+String(HC.n).padStart(2,'0'):'— / —';
+}
+function hcPlay(){ hcStop(); if(REDUCED||HC.n<2||HC.paused)return; HC.timer=setInterval(()=>{ if(document.hidden||state.view!=='home')return; hcStep(1,true); },HC.dur); }
+function hcStop(){ if(HC.timer)clearInterval(HC.timer); HC.timer=0; }
+function hcPause(on){ if(HC.paused===on)return; HC.paused=on; $('hsDots').classList.toggle('paused',on); if(on)hcStop(); else{hcDots();hcPlay();} }
+function hcBind(){
+  const deck=$('heroDeck'), stage=$('heroStage');
+  if(deck.dataset.bound)return; deck.dataset.bound='1';
+  let down=false,sx=0,dx=0,moved=false;
+  deck.addEventListener('pointerdown',e=>{ if(e.button)return; down=true;moved=false;sx=e.clientX;dx=0; deck.classList.add('drag'); hcStop(); try{deck.setPointerCapture(e.pointerId);}catch(_){} });
+  deck.addEventListener('pointermove',e=>{ if(!down)return; dx=e.clientX-sx; if(Math.abs(dx)>6)moved=true; deck.style.transform=`translateX(${(dx*.28).toFixed(1)}px)`; });
+  const up=()=>{
+    if(!down)return; down=false; deck.classList.remove('drag'); deck.style.transform='';
+    if(Math.abs(dx)>34)hcStep(dx<0?1:-1); else if(!HC.paused){hcDots();hcPlay();}
+    if(moved){ // a real drag — swallow the click so the card underneath doesn't open
+      const kill=ev=>{ev.stopPropagation();ev.preventDefault();};
+      deck.addEventListener('click',kill,{capture:true,once:true});
+      setTimeout(()=>deck.removeEventListener('click',kill,{capture:true}),150);
+    }
+  };
+  deck.addEventListener('pointerup',up); deck.addEventListener('pointercancel',up);
+  if(matchMedia('(hover: hover)').matches){ // tap-synthesised mouseenter would freeze touch devices
+    stage.addEventListener('mouseenter',()=>hcPause(true));
+    stage.addEventListener('mouseleave',()=>hcPause(false));
+  }
+  stage.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'){hcStep(1);e.preventDefault();} else if(e.key==='ArrowLeft'){hcStep(-1);e.preventDefault();} });
+  document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!HC.paused){hcDots();hcPlay();} });
+}
+
+/* ---------------- BROWSE BY: the mosaic ----------------
+ * Only categories that hold pieces render, counts are real. The fullest
+ * category becomes a 2×2 feature tile (two when there are 8+ tiles, one per
+ * pillar where possible); the tail widens so every row closes. */
+let CAT_PILLAR='all', litIO=null;
+function mosaicTiles(){
+  return CATS.map(c=>{const items=PRODUCTS.filter(p=>p.cat===c.name);return {...c,items,n:items.length};})
+    .filter(c=>c.n>0&&(CAT_PILLAR==='all'||c.pillar===CAT_PILLAR));
+}
+function mosaicSpans(list){
+  const feat=new Set(), want=list.length>=8?2:list.length>=5?1:0;
+  const byN=list.slice().sort((a,b)=>b.n-a.n);
+  if(want){ feat.add(byN[0].name); if(want>1){ const other=byN.find(c=>c.pillar!==byN[0].pillar)||byN[1]; if(other)feat.add(other.name); } }
+  const wide=new Set();
+  let gap=(4-list.reduce((s,c)=>s+(feat.has(c.name)?4:1),0)%4)%4;
+  for(let i=list.length-1;i>=0&&gap>0;i--){ if(!feat.has(list[i].name)){wide.add(list[i].name);gap--;} }
+  return {feat,wide};
+}
+const CAT_ARROW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+function renderCatMosaic(){
+  const list=mosaicTiles(), {feat,wide}=mosaicSpans(list);
+  const tabs=$('catTabs');
+  if(tabs){ const pillars=new Set(CATS.filter(c=>PRODUCTS.some(p=>p.cat===c.name)).map(c=>c.pillar)); tabs.style.display=pillars.size>1?'':'none'; }
+  $('catRail').innerHTML=list.map(c=>{
+    const cls='cat'+(feat.has(c.name)?' feat':wide.has(c.name)?' wide':'');
+    const stack=c.items.slice(0,3).map(p=>`<img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
+    const count=`${c.n} ${c.n===1?'piece':'pieces'}`;
+    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="#" onclick="go('shop','${esc(c.name).replace(/'/g,'&#39;')}');return false" aria-label="${esc(c.name)} — ${count}">
+      <div class="cat-bg"></div><span class="blob"></span>
+      <span class="pillar">${c.pillar}</span>
+      <div class="stack">${stack}</div>
+      <div class="cat-foot"><div><span class="ico">${CAT_ICON[c.name]||''}</span><div class="name">${esc(c.name)}</div><div class="ct">${count}</div></div><span class="arrow">${CAT_ARROW}</span></div>
+    </a>`;}).join('');
+  stagger($('catRail'),.06);
+  initReveal(); initTouchLit();
+}
+function setCatPillar(p,btn){
+  if(p===CAT_PILLAR)return; CAT_PILLAR=p;
+  document.querySelectorAll('#catTabs .pt').forEach(b=>{const on=b===btn;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+  const grid=$('catRail'); grid.classList.add('sw');
+  setTimeout(()=>{renderCatMosaic();grid.classList.remove('sw');},REDUCED?0:220);
+}
+/* no hover on touch — the tile in the middle of the screen lights up as you scroll */
+function initTouchLit(){
+  if(matchMedia('(hover: hover)').matches||!('IntersectionObserver' in window))return;
+  if(litIO)litIO.disconnect();
+  litIO=new IntersectionObserver(es=>es.forEach(e=>e.target.classList.toggle('lit',e.isIntersecting)),{rootMargin:'-45% 0px -45% 0px',threshold:0});
+  document.querySelectorAll('#catRail .cat').forEach(el=>litIO.observe(el));
+}
+
+/* ---------------- SCROLL MOTION ----------------
+ * Reveals: .rv elements rise into place the first time they're seen, then hand
+ * their classes back. Parallax: [data-px] elements drift a few px against the
+ * scroll, measured from their parent so the drift never feeds back. Both sit
+ * out under prefers-reduced-motion. */
+function stagger(el,step){ if(!el)return; [...el.children].forEach((c,i)=>{c.classList.add('rv');c.style.setProperty('--d',(Math.min(i,10)*step).toFixed(2)+'s');}); }
+let rvIO=null;
+function initReveal(){
+  const els=document.querySelectorAll('#view-home .rv');
+  if(!('IntersectionObserver' in window)){els.forEach(el=>el.classList.remove('rv'));return;}
+  if(!rvIO)rvIO=new IntersectionObserver(es=>es.forEach(e=>{
+    if(!e.isIntersecting)return; const el=e.target; rvIO.unobserve(el); el.classList.add('in');
+    setTimeout(()=>{el.classList.remove('rv','in');el.style.removeProperty('--d');},REDUCED?0:1200);
+  }),{threshold:.08,rootMargin:'0px 0px -6% 0px'});
+  els.forEach(el=>rvIO.observe(el));
+}
+const PX={els:[],raf:0};
+function initParallax(){
+  if(REDUCED||PX.els.length)return;
+  PX.els=[...document.querySelectorAll('#view-home [data-px]')];
+  if(!PX.els.length)return;
+  const run=()=>{ PX.raf=0; if(state.view!=='home')return; const vh=innerHeight;
+    PX.els.forEach(el=>{ const r=el.parentElement.getBoundingClientRect(); if(r.bottom<0||r.top>vh)return;
+      const c=(r.top+r.height/2-vh/2)/vh; el.style.transform=`translate3d(0,${(-c*(+el.dataset.px||0)).toFixed(1)}px,0)`; }); };
+  const ask=()=>{if(!PX.raf)PX.raf=requestAnimationFrame(run);};
+  addEventListener('scroll',ask,{passive:true}); addEventListener('resize',ask);
+  run();
 }
 
 /* Makers carousel drive: auto-drift right→left; grab/swipe/fling anywhere; taps still open shops.

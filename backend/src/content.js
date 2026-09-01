@@ -36,6 +36,8 @@ const DEFAULTS = {
     ctaSell: 'Explore the Marketplace',
     tagLine: 'Our own line',
     tagName: 'Trove Collection →',
+    stageLabel: 'On the shelf this week',
+    productIds: [],
   },
   'home.marquee': {
     items: [
@@ -187,9 +189,9 @@ function validateSection(section, value) {
     const v = value[key];
     if (key === 'productIds') {
       if (!Array.isArray(v)) bad('"productIds" must be a list');
-      if (v.length > 8) bad('Pick at most 8 weekly finds');
+      if (v.length > 8) bad('Pick at most 8 pieces');
       clean[key] = v.map((n) => {
-        if (!Number.isInteger(n) || n < 1) bad('Weekly finds must be product ids');
+        if (!Number.isInteger(n) || n < 1) bad('Picked pieces must be product ids');
         return n;
       });
     } else if (Array.isArray(dv)) {
@@ -228,7 +230,8 @@ function getPublic() {
   const out = {};
   for (const s of SECTIONS) {
     const [page, key] = s.split('.');
-    (out[page] = out[page] || {})[key] = ov[s] || DEFAULTS[s];
+    // defaults underlie every override, so a field added later is never missing from a section saved earlier
+    (out[page] = out[page] || {})[key] = ov[s] ? { ...DEFAULTS[s], ...ov[s] } : DEFAULTS[s];
   }
   return out;
 }
