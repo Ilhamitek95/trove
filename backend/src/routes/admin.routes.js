@@ -31,7 +31,11 @@ router.get('/stats', requireAdmin, (_req, res) => {
   const lic = db.prepare(`SELECT COUNT(*) AS total,
       COALESCE(SUM(CASE WHEN license_verified_at IS NOT NULL THEN 1 ELSE 0 END),0) AS verified
     FROM shops WHERE (connect_queue=1 OR license_verified_at IS NOT NULL) AND status!='rejected'`).get();
-  res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products,
+  // Service providers (the services marketplace) — same approval workflow.
+  const provRows = db.prepare('SELECT status, COUNT(*) AS c FROM service_providers GROUP BY status').all();
+  const providers = { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 };
+  for (const r of provRows) { providers[r.status] = r.c; providers.total += r.c; }
+  res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products, providers,
     licensed: { total: lic.total, verified: lic.verified, awaiting: lic.total - lic.verified } });
 });
 
@@ -219,6 +223,50 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
+});
+
+/* ---------------- Service providers (services marketplace) ---------------- */
+
+// GET /api/admin/providers → every provider with their application, listings
+// and booking counts, pending first.
+router.get('/providers', requireAdmin, (_req, res) => {
+  const rows = db.prepare(`
+    SELECT p.*, u.email AS owner_email, u.name AS owner_name,
+      (SELECT COUNT(*) FROM services sv WHERE sv.provider_id = p.id) AS service_count,
+      (SELECT COUNT(*) FROM services sv WHERE sv.provider_id = p.id AND sv.status='live') AS live_count,
+      (SELECT COUNT(*) FROM service_bookings bk WHERE bk.provider_id = p.id) AS booking_count,
+      (SELECT COUNT(*) FROM service_bookings bk WHERE bk.provider_id = p.id AND bk.status='requested') AS open_requests
+    FROM service_providers p JOIN users u ON u.id = p.user_id
+    ORDER BY CASE p.status WHEN 'pending' THEN 0 ELSE 1 END, p.created_at DESC`).all();
+  res.json({ providers: rows.map((p) => ({
+    id: p.id, name: p.name, slug: p.slug, status: p.status,
+    owner: { name: p.owner_name, email: p.owner_email },
+    location: p.location, bio: p.bio, color: p.color,
+    categories: (() => { try { const v = JSON.parse(p.categories || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } })(),
+    pitchServices: p.pitch_services || '', pitchExperience: p.pitch_experience || '',
+    pitchInstagram: p.pitch_instagram || '', pitchLinks: p.pitch_links || '',
+    pitchPhone: p.pitch_phone || '',
+    subAgreedAt: p.sub_agreed_at || null, subStartedAt: p.sub_started_at || null,
+    services: p.service_count, liveServices: p.live_count,
+    bookings: p.booking_count, openRequests: p.open_requests,
+    createdAt: p.created_at,
+  })) });
+});
+
+// PATCH /api/admin/providers/:id { status } → the approval workflow. First
+// approval stamps sub_started_at — the anchor for the monthly platform
+// subscription.
+router.patch('/providers/:id', requireAdmin, (req, res) => {
+  const { status } = req.body || {};
+  if (!['pending', 'approved', 'rejected', 'suspended'].includes(status))
+    return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
+  const p = db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.params.id);
+  if (!p) return res.status(404).json({ error: 'Provider not found' });
+  db.prepare('UPDATE service_providers SET status=? WHERE id=?').run(status, p.id);
+  if (status === 'approved' && !p.sub_started_at) {
+    db.prepare("UPDATE service_providers SET sub_started_at=datetime('now') WHERE id=?").run(p.id);
+  }
+  res.json({ provider: db.prepare('SELECT * FROM service_providers WHERE id=?').get(p.id) });
 });
 
 // POST /api/admin/impersonate/:shopId → "shop view": switch this session to

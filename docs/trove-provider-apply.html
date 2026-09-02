@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Trove · Become a services provider</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font-display:'Cormorant',Georgia,serif;
+    --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
+    --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
+    --rose-tint:#F2E9E4; --line:rgba(41,39,39,.12); --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500;min-height:100vh}
+  ::selection{background:var(--coral);color:var(--char)}
+  a{color:inherit}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  h1,h2,h3{font-family:var(--font-display);font-weight:500}
+
+  .shell{display:grid;grid-template-columns:minmax(340px,44%) 1fr;min-height:100vh}
+  @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
+
+  .brandside{background:var(--char);padding:56px 60px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .brandside .logo{font-family:var(--font-display);font-size:38px;font-weight:600;color:var(--cream)}
+  .brandside .logo a{text-decoration:none}
+  .bmid{margin-top:10vh;max-width:32ch}
+  .bmid .eyebrow{font-size:12px;letter-spacing:.12em;color:rgba(253,247,245,.8);font-weight:700;display:block;margin-bottom:18px}
+  .bmid h1{font-family:var(--font-display);font-size:clamp(36px,3.6vw,54px);line-height:1.04;font-weight:400;color:var(--cream)}
+  .bmid h1 em{font-style:normal;color:var(--rose)}
+  .bmid p{font-size:15px;color:rgba(253,247,245,.75);font-weight:400;margin-top:18px;line-height:1.65}
+  .bfacts{margin-top:34px;display:flex;flex-direction:column;gap:10px}
+  .bfact{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:rgba(253,247,245,.85);font-weight:600}
+  .bfact svg{flex-shrink:0;margin-top:2px;opacity:.7}
+  .bsteps{margin-top:40px;display:flex;flex-direction:column;gap:18px}
+  .bstep{display:flex;gap:14px;align-items:flex-start;color:rgba(253,247,245,.55);transition:color .3s}
+  .bstep .n{width:26px;height:26px;border-radius:50%;border:1px solid rgba(253,247,245,.3);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;transition:.3s}
+  .bstep .t{font-size:14px;font-weight:600;padding-top:3px}
+  .bstep.on{color:var(--cream)}
+  .bstep.on .n{background:var(--coral);border-color:var(--coral);color:var(--char)}
+  .bstep.done{color:rgba(253,247,245,.8)}
+  .bstep.done .n{background:rgba(253,247,245,.15);border-color:transparent}
+  .deco{position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;border-radius:50%;background:rgba(253,247,245,.07);pointer-events:none}
+
+  .formside{display:flex;align-items:center;justify-content:center;padding:44px 28px}
+  .form{width:100%;max-width:500px}
+  .crumbs{display:flex;gap:8px;margin-bottom:26px}
+  .crumbs .c{height:4px;flex:1;border-radius:999px;background:var(--rose-tint);transition:.3s}
+  .crumbs .c.on{background:var(--coral)}
+  .form h2{font-size:32px;font-weight:500;line-height:1.05}
+  .form .lede{font-size:14px;color:var(--muted);font-weight:500;margin:8px 0 26px;line-height:1.55}
+  .field{margin-bottom:16px}
+  .field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:7px}
+  .field label .opt{color:var(--taupe);text-transform:none;letter-spacing:0;font-weight:600}
+  .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
+  .field textarea{resize:vertical;min-height:104px;line-height:1.55}
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--char)}
+  .field .help{font-size:12px;color:var(--muted);font-weight:500;margin-top:6px;line-height:1.5}
+  .field .count{float:right}
+  .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.ftwo{grid-template-columns:1fr}}
+  @media(max-width:560px){
+    .formside{padding:28px 24px calc(28px + env(safe-area-inset-bottom))}
+    .field input,.field select,.field textarea{font-size:16px}
+  }
+  .err{display:none;background:#FCEBE4;color:var(--accent-ink);font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
+  .note{display:none;background:#EBF1EC;color:#4A5A4E;font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin:2px 0 14px;line-height:1.5}
+  .note a{color:var(--accent-ink)}
+
+  /* category picker */
+  .audlbl{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:10px 0 7px}
+  .catbox{display:flex;gap:7px;flex-wrap:wrap}
+  .catopt{padding:9px 15px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:600;background:var(--paper);transition:.15s}
+  .catopt.on{background:var(--char);color:var(--cream);border-color:var(--char)}
+
+  /* subscription agreement */
+  .subbox{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:16px 18px;margin:6px 0 16px}
+  .subbox .fee{font-family:var(--font-display);font-size:26px;font-weight:600}
+  .subbox .fee small{font-family:'Quicksand',sans-serif;font-size:12.5px;color:var(--muted);font-weight:600}
+  .subbox p{font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.55;margin-top:8px}
+  .subbox label{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;font-weight:600;cursor:pointer;line-height:1.5}
+  .subbox input{margin-top:2px;accent-color:var(--char);width:16px;height:16px}
+
+  .btnrow{display:flex;gap:12px;margin-top:24px;align-items:center}
+  .next{flex:1;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s}
+  .next:hover{background:#3B3737}
+  .next:active{transform:scale(.98)}
+  .back{padding:15px 22px;border-radius:999px;border:1px solid var(--line);font-weight:600;font-size:13.5px}
+  .back:hover{border-color:var(--char)}
+  .signin{font-size:13px;color:var(--muted);font-weight:600;text-align:center;margin-top:20px}
+  .signin a{color:var(--accent-ink);font-weight:700}
+
+  .done-mark{width:74px;height:74px;border-radius:50%;background:var(--sage);display:grid;place-items:center;font-size:32px;margin-bottom:22px}
+  .done h2{font-size:36px}
+  .done p{font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.65;margin:14px 0 8px}
+  .done .what{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
+  .done .what b{display:block;font-size:13.5px;margin-bottom:4px}
+  .done .what span{font-size:13px;color:var(--muted);font-weight:500;line-height:1.5}
+  @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="brandside">
+    <div class="logo"><a href="/services" aria-label="Trove Services"><img src="/img/trove-wordmark-cream.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('a').textContent='trove'"></a></div>
+    <div class="bmid">
+      <span class="eyebrow">Become a services provider</span>
+      <h1>Tell us what you <em>do</em>.</h1>
+      <p>Trove Services is curated like the marketplace — every provider is reviewed by a real person before going live. Muralists, stylists, photographers, workshop hosts, brand designers: if you do it beautifully, we want to see it.</p>
+      <div class="bfacts">
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>AED 30 a month — that's the whole platform fee</div>
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>No commission — your prices are yours</div>
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>Booking requests straight to your dashboard</div>
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>Cash on the day, or card once payments launch</div>
+      </div>
+      <div class="bsteps">
+        <div class="bstep on" id="bs1"><span class="n">1</span><span class="t">About you</span></div>
+        <div class="bstep" id="bs2"><span class="n">2</span><span class="t">Your practice</span></div>
+        <div class="bstep" id="bs3"><span class="n">3</span><span class="t">What you'll offer</span></div>
+      </div>
+    </div>
+    <div class="deco"></div>
+  </aside>
+
+  <div class="formside">
+    <div class="form" id="form">
+      <div class="crumbs"><div class="c on" id="c1"></div><div class="c" id="c2"></div><div class="c" id="c3"></div></div>
+      <div class="err" id="err"></div>
+
+      <!-- STEP 1 -->
+      <div id="step1">
+        <h2>First, about you.</h2>
+        <p class="lede">This creates your provider account — you'll use it to sign in and manage your bookings.</p>
+        <div class="note" id="signedNote">You're signed in as <b id="signedWho"></b> — your provider profile will be added to this account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
+        <div class="field"><label>Your name</label><input id="fName" placeholder="Your full name" autocomplete="name"></div>
+        <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
+        <div class="field" id="passField"><label>Password</label>
+          <input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+          <div class="help">Already on Trove — shopping or selling? Use your existing email and password and we'll add your services to that account.</div></div>
+        <div class="btnrow"><button class="next" onclick="toStep(2)">Continue →</button></div>
+        <div class="signin">Already a provider? <a href="/login">Sign in</a></div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="step2" style="display:none">
+        <h2>Now, your practice.</h2>
+        <p class="lede">Who you are, what you do, and where you do it.</p>
+        <div class="field"><label>Practice or studio name</label><input id="fPractice" placeholder="e.g. Reem Makes"></div>
+        <div class="field"><label>What do you offer? <span class="opt">· pick one to three</span></label>
+          <div id="catPicker"><div class="help">Loading categories…</div></div>
+        </div>
+        <div class="ftwo">
+          <div class="field"><label>Where are you based?</label>
+            <select id="fLoc"><option>Dubai, UAE</option><option>Abu Dhabi, UAE</option></select>
+            <div class="help">Trove Services covers Dubai &amp; Abu Dhabi for now.</div></div>
+          <div class="field"><label>How long have you been at it?</label>
+            <select id="fExp"><option>Just starting out</option><option>Under a year</option><option>1–3 years</option><option>3+ years</option></select></div>
+        </div>
+        <div class="field"><label>About you &amp; your work <span class="count" id="aboutCount"></span></label>
+          <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you do, and what makes the way you do it special? Write it like you'd tell a friend."></textarea>
+          <div class="help">A few honest sentences are perfect — this also becomes your public profile.</div></div>
+        <div class="btnrow"><button class="back" onclick="toStep(1)">← Back</button><button class="next" onclick="toStep(3)">Continue →</button></div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="step3" style="display:none">
+        <h2>What will you offer?</h2>
+        <p class="lede">List the services you're planning to offer — rough ideas and rough prices are fine.</p>
+        <div class="field"><label>Planned services</label>
+          <textarea id="fServices" maxlength="2000" placeholder="One per line, e.g.&#10;Pottery hand-building workshop at your home — AED 350 per group&#10;Nursery wall mural — from AED 1,500&#10;Gallery-wall hanging — AED 250"></textarea>
+          <div class="help">Prices and details can change later — we just want a feel for your range.</div></div>
+        <div class="field"><label>Instagram <span class="opt">· or a portfolio link below</span></label>
+          <input id="fInsta" placeholder="@yourwork or instagram.com/yourwork">
+          <div class="help">The fastest way for our curation team to see your work.</div></div>
+        <div class="ftwo">
+          <div class="field"><label>Website or portfolio <span class="opt">· optional</span></label>
+            <input id="fLinks" placeholder="yourwork.com"></div>
+          <div class="field"><label>WhatsApp</label>
+            <input id="fPhone" placeholder="+971 50 123 4567">
+            <div class="help">So our curation team can reach you.</div></div>
+        </div>
+        <div class="subbox">
+          <div class="fee" id="subFee">AED 30 <small>/ month</small></div>
+          <p>The provider subscription is the whole platform fee — Trove takes no commission on what you charge, and there's nothing to pay until your profile is approved. Card billing starts when Trove's card payments launch; we'll tell you before the first charge.</p>
+          <label><input type="checkbox" id="fAgree"><span>I understand the monthly subscription and want to offer my services on Trove.</span></label>
+        </div>
+        <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next" id="submitBtn" onclick="submitApp()">Submit application</button></div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="stepDone" style="display:none" class="done">
+        <div class="done-mark">🎉</div>
+        <h2>Application received.</h2>
+        <p>Thanks <b id="doneName"></b> — <b id="donePractice"></b> is now with our curation team. Every provider on Trove is reviewed by a real person, usually within a day or two.</p>
+        <div class="what"><b>While you wait</b><span>You're signed in already. You can add your services and set your prices now — everything goes live the moment you're approved, and your subscription only starts then too.</span></div>
+        <div class="btnrow"><button class="next" onclick="location.href='/provider'">Set up your services →</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+let step=1, SIGNED_IN=false, TAX=null, PICKED=[];
+
+(async()=>{
+  try{
+    const me=await TroveAPI.me();
+    if(me&&me.user){
+      if(me.provider){location.href='/provider';return;} // already a provider
+      SIGNED_IN=true;
+      $('fName').value=$('fName').value||me.user.name||'';
+      $('fEmail').value=me.user.email||'';
+      $('fEmail').readOnly=true;$('fEmail').style.background='var(--rose-tint)';
+      $('passField').style.display='none';
+      $('signedWho').textContent=me.user.email;
+      $('signedNote').style.display='block';
+    }
+  }catch(_){}
+})();
+(async()=>{
+  try{
+    TAX=await TroveAPI.api('/api/services/taxonomy');
+    if(TAX.providerSubFeeCents)$('subFee').innerHTML='AED '+Math.round(TAX.providerSubFeeCents/100)+' <small>/ month</small>';
+    renderCatPicker();
+  }catch(_){ $('catPicker').innerHTML='<div class="help">Couldn’t load the category list — refresh to try again.</div>'; }
+})();
+
+function renderCatPicker(){
+  $('catPicker').innerHTML=TAX.audiences.map(a=>{
+    const cats=TAX.categories.filter(c=>c.audience===a.key);
+    return `<div class="audlbl">${esc(a.name)} — ${esc(a.sub.toLowerCase())}</div>
+      <div class="catbox">${cats.map(c=>`<button type="button" class="catopt ${PICKED.includes(c.slug)?'on':''}" onclick="toggleCat('${c.slug}')">${esc(c.name)}</button>`).join('')}</div>`;
+  }).join('');
+}
+function toggleCat(slug){
+  if(PICKED.includes(slug))PICKED=PICKED.filter(s=>s!==slug);
+  else{
+    if(PICKED.length>=3){showErr('Three categories is the limit — unpick one first.');return;}
+    PICKED.push(slug);
+  }
+  hideErr();renderCatPicker();
+}
+
+async function signOutApply(){ await TroveAPI.logout(); location.reload(); }
+
+document.querySelectorAll('#step1 input,#step2 input,#step3 input:not([type=checkbox])').forEach(el=>{
+  el.addEventListener('keydown',e=>{
+    if(e.key!=='Enter')return;
+    e.preventDefault();
+    if(step===1)toStep(2);else if(step===2)toStep(3);else submitApp();
+  });
+});
+
+function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';window.scrollTo(0,0);}
+function hideErr(){$('err').style.display='none';}
+function countAbout(){const v=$('fAbout').value;$('aboutCount').textContent=v.length?v.length+' / 2000':'';}
+
+function validate(target){
+  if(target>1&&step===1&&target>step){
+    if(!$('fName').value.trim())return 'Please tell us your name.';
+    const em=$('fEmail').value.trim();
+    if(!em||!/^\S+@\S+\.\S+$/.test(em))return 'That email doesn’t look right — mind checking it?';
+    if(!SIGNED_IN&&$('fPass').value.length<8)return 'Your password needs at least 8 characters.';
+  }
+  if(target>2&&step===2&&target>step){
+    if(!$('fPractice').value.trim())return 'Give your practice a name — you can change it later.';
+    if(!PICKED.length)return 'Pick at least one service category.';
+    if($('fAbout').value.trim().length<30)return 'Tell us a little more about you and your work — a few sentences helps us say yes faster.';
+  }
+  return null;
+}
+
+function toStep(target){
+  hideErr();
+  const bad=validate(target);
+  if(bad){showErr(bad);return;}
+  step=target;
+  [1,2,3].forEach(i=>{
+    $('step'+i).style.display=i===target?'block':'none';
+    $('c'+i).classList.toggle('on',i<=target);
+    const bs=$('bs'+i);bs.classList.toggle('on',i===target);bs.classList.toggle('done',i<target);
+  });
+  window.scrollTo(0,0);
+}
+
+async function submitApp(){
+  hideErr();
+  if(!$('fServices').value.trim()){showErr('List at least one service you’re planning to offer.');return;}
+  if(!$('fInsta').value.trim()&&!$('fLinks').value.trim()){showErr('Share your Instagram or a portfolio link — it’s how our curation team sees your work.');return;}
+  if(!$('fPhone').value.trim()){showErr('Add your WhatsApp number so our curation team can reach you.');return;}
+  if(!$('fAgree').checked){showErr('Tick the subscription box to apply — it’s how the platform fee works.');return;}
+  const btn=$('submitBtn');const label=btn.textContent;
+  btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
+  try{
+    await TroveAPI.api('/api/services/apply',{method:'POST',body:{
+      name:$('fName').value.trim(),
+      email:$('fEmail').value.trim(),
+      password:$('fPass').value,
+      providerName:$('fPractice').value.trim(),
+      categories:PICKED,
+      location:$('fLoc').value.trim(),
+      about:$('fAbout').value.trim(),
+      experience:$('fExp').value,
+      plannedServices:$('fServices').value.trim(),
+      instagram:$('fInsta').value.trim(),
+      links:$('fLinks').value.trim(),
+      phone:$('fPhone').value.trim(),
+      agreeSub:$('fAgree').checked,
+    }});
+    $('doneName').textContent=$('fName').value.trim().split(' ')[0];
+    $('donePractice').textContent=$('fPractice').value.trim();
+    ['step1','step2','step3'].forEach(id=>$(id).style.display='none');
+    document.querySelector('.crumbs').style.display='none';
+    ['bs1','bs2','bs3'].forEach(id=>{$(id).classList.add('done');$(id).classList.remove('on');});
+    $('stepDone').style.display='block';
+    window.scrollTo(0,0);
+  }catch(e){
+    btn.textContent=label;btn.disabled=false;btn.style.opacity='1';
+    const code=e.data&&e.data.code;
+    if(e.status===409&&code==='already_provider'){toStep(1);showErr('This account is already registered as a provider — sign in to manage your services.');}
+    else if(e.status===409){toStep(1);showErr('An account with this email already exists. To add your services to it, use that account’s password here — or apply with a different email.');}
+    else showErr(e.message||'Something went wrong — please try again.');
+  }
+}
+</script>
+</body>
+</html>

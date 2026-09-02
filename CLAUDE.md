@@ -8,6 +8,7 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 - Rail B (Stripe Connect graduation) exists behind `RAIL_B_ENABLED=0` — off by default.
 - Seller agreement current version is **v3** (40% margin). v1/v2 md files stay untouched as the signed record — on any terms change add a new md and bump `AGREEMENT_VERSION` in `src/config.js` (onboarding tests pin the literal).
 - Service area is Dubai + Abu Dhabi only, enforced server-side (`backend/src/service-area.js`).
+- **Services marketplace (2026-09):** providers enrol at `/become-a-provider` (admin approves in /admin → Providers), list in-person services (`/services`, taxonomy in `backend/src/service-taxonomy.js` — 12 categories, two audiences), and manage bookings at `/provider`. Money model: **no commission on service prices — providers pay AED 30/month** (`fees.PROVIDER_SUB_FEE_CENTS`; `sub_started_at` stamps at first approval, card billing waits for Stripe go-live). Bookings settle customer↔provider (cash on the day; the card option unlocks with `paymentsEnabled`). Contact privacy mirrors products: providers never see the customer email, and the phone is released only on confirm (`test/services.test.js` pins both). Tables `service_providers`/`services`/`service_bookings` are baseline CREATEs in db.js (no migration).
 - Prod is still demo-payments mode (no Stripe key) — checkout stops at the payment gate; that's the remaining go-live step, plus a compliance check before real money.
 
 ## Safety rules (never break)

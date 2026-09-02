@@ -26,6 +26,9 @@ const fees = {
   SERVICE_FEE_CENTS: num(process.env.SERVICE_FEE_CENTS, 0), // none — no hidden costs
   DELIVERY_FEE_CENTS: num(process.env.DELIVERY_FEE_CENTS, 3000), // AED 30.00
   FREE_DELIVERY_THRESHOLD_CENTS: num(process.env.FREE_DELIVERY_THRESHOLD_CENTS, 20000), // AED 200.00
+  // Services marketplace: providers pay a flat monthly platform subscription;
+  // Trove takes no commission on the service price itself.
+  PROVIDER_SUB_FEE_CENTS: num(process.env.PROVIDER_SUB_FEE_CENTS, 3000), // AED 30.00 / month
 };
 
 // Deprecated alias — old readers still get the same number.

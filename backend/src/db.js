@@ -265,6 +265,77 @@ CREATE TABLE IF NOT EXISTS site_content (
   value      TEXT NOT NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Services marketplace (2026-09): providers enrol via /become-a-provider,
+-- an admin approves them, and they list in-person services (taxonomy in
+-- src/service-taxonomy.js). Trove takes no cut of the service price —
+-- providers pay a monthly platform subscription instead (fees.js). One
+-- provider profile per account; a user can run a shop AND a practice.
+CREATE TABLE IF NOT EXISTS service_providers (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id         INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  name            TEXT NOT NULL,
+  slug            TEXT NOT NULL UNIQUE,
+  status          TEXT NOT NULL DEFAULT 'pending',  -- pending | approved | rejected | suspended
+  bio             TEXT NOT NULL DEFAULT '',
+  location        TEXT NOT NULL DEFAULT '',
+  categories      TEXT NOT NULL DEFAULT '[]',       -- JSON array of taxonomy slugs (max 3)
+  color           TEXT NOT NULL DEFAULT '#BD9C8C',
+  pitch_services  TEXT NOT NULL DEFAULT '',
+  pitch_experience TEXT NOT NULL DEFAULT '',
+  pitch_instagram TEXT NOT NULL DEFAULT '',
+  pitch_links     TEXT NOT NULL DEFAULT '',
+  pitch_phone     TEXT NOT NULL DEFAULT '',
+  sub_agreed_at   TEXT,                             -- accepted the monthly platform subscription at apply
+  sub_started_at  TEXT,                             -- stamped on first approval; billing anchor
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS services (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider_id INTEGER NOT NULL REFERENCES service_providers(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  category    TEXT NOT NULL,                        -- taxonomy slug
+  description TEXT NOT NULL DEFAULT '',
+  price_cents INTEGER NOT NULL,
+  price_type  TEXT NOT NULL DEFAULT 'fixed',        -- fixed | from | hourly
+  duration    TEXT NOT NULL DEFAULT '',             -- free text, e.g. "2–3 hours"
+  setting     TEXT NOT NULL DEFAULT 'home',         -- home | studio | remote
+  status      TEXT NOT NULL DEFAULT 'live',         -- live | hidden
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_services_provider ON services(provider_id, status);
+
+-- A booking request for one service. Money is settled between customer and
+-- provider (cash when the service is done, or by card once payments launch)
+-- — the price here is a snapshot of the listing at request time, for the
+-- provider's records. The customer's email is for Trove only; the provider
+-- sees the phone number once they confirm (same contact-privacy stance as
+-- the product marketplace).
+CREATE TABLE IF NOT EXISTS service_bookings (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  code           TEXT NOT NULL UNIQUE,              -- SRV-XXXXXX
+  service_id     INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  provider_id    INTEGER NOT NULL REFERENCES service_providers(id) ON DELETE CASCADE,
+  buyer_id       INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  name           TEXT NOT NULL,
+  email          TEXT NOT NULL,
+  phone          TEXT NOT NULL,
+  area           TEXT NOT NULL,                     -- Dubai | Abu Dhabi
+  preferred_date TEXT NOT NULL DEFAULT '',
+  notes          TEXT NOT NULL DEFAULT '',
+  payment_method TEXT NOT NULL DEFAULT 'cash',      -- cash | online
+  title          TEXT NOT NULL,                     -- listing snapshot
+  price_cents    INTEGER NOT NULL,
+  price_type     TEXT NOT NULL,
+  status         TEXT NOT NULL DEFAULT 'requested', -- requested | confirmed | declined | completed | cancelled
+  decline_reason TEXT NOT NULL DEFAULT '',
+  created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+  confirmed_at   TEXT,
+  completed_at   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_bookings_provider ON service_bookings(provider_id, status);
+CREATE INDEX IF NOT EXISTS idx_bookings_buyer ON service_bookings(buyer_id);
 `);
 
 // Versioned migrations run last, so they always see the full baseline schema

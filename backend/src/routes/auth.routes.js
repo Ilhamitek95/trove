@@ -171,10 +171,12 @@ router.post('/stop-impersonating', (req, res) => {
   res.json({ user: publicUser(admin) });
 });
 
-// GET /api/auth/me  -> current user + whether they have a shop
+// GET /api/auth/me  -> current user + whether they have a shop or a
+// service-provider profile (every page's boot reads this one shape).
 router.get('/me', requireAuth, (req, res) => {
   const shop = db.prepare('SELECT id, name, slug FROM shops WHERE user_id = ?').get(req.user.id);
-  res.json({ user: publicUser(req.user), shop: shop || null, impersonating: !!req.session.impersonatorId });
+  const provider = db.prepare('SELECT id, name, slug, status FROM service_providers WHERE user_id = ?').get(req.user.id);
+  res.json({ user: publicUser(req.user), shop: shop || null, provider: provider || null, impersonating: !!req.session.impersonatorId });
 });
 
 module.exports = router;

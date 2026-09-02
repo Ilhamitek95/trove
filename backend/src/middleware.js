@@ -29,6 +29,18 @@ function requireSeller(req, res, next) {
   });
 }
 
+// Requires the user to have a service-provider profile (any status — like
+// sellers, providers can prepare their listings while the application is
+// reviewed; only approved providers appear publicly). Attaches req.provider.
+function requireProvider(req, res, next) {
+  requireAuth(req, res, () => {
+    const provider = db.prepare('SELECT * FROM service_providers WHERE user_id = ?').get(req.user.id);
+    if (!provider) return res.status(403).json({ error: 'No provider profile on this account' });
+    req.provider = provider;
+    next();
+  });
+}
+
 // Requires an admin (the trove platform owner) — gates the payout endpoints.
 function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
@@ -37,4 +49,4 @@ function requireAdmin(req, res, next) {
   });
 }
 
-module.exports = { hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireAdmin };
+module.exports = { hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin };

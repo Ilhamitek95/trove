@@ -130,6 +130,7 @@ function createApp() {
     serviceAreas: require('./service-area').SERVICE_AREAS,
     aiTagsEnabled: require('./ai').enabled(),
     googleClientId: require('./google-auth').clientId(),
+    providerSubFeeCents: fees.PROVIDER_SUB_FEE_CENTS,
   }));
   // Storefront search beacon — the shop page filters locally, so it reports
   // each search here. Anonymous by design: query text and hit count only.
@@ -176,6 +177,8 @@ function createApp() {
   app.use('/api/checkout', require('./routes/checkout.routes'));
   app.use('/api/account', require('./routes/account.routes'));
   app.use('/api/delivery', require('./routes/delivery.routes'));
+  app.use('/api/services', require('./routes/services.routes'));
+  app.use('/api/provider', require('./routes/provider.routes'));
 
   // Unknown /api/* path → JSON 404 (so the SPA fallback below never swallows API calls).
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
@@ -200,6 +203,9 @@ function createApp() {
     '/apply': 'trove-apply.html',
     '/admin': 'trove-admin.html',
     '/seller-agreement': 'seller-agreement.html',
+    '/services': 'trove-services.html',
+    '/become-a-provider': 'trove-provider-apply.html',
+    '/provider': 'trove-provider.html',
   };
   for (const [clean, file] of Object.entries(PAGES)) {
     app.get(clean, (_req, res) => res.sendFile(path.join(DOCS_DIR, file)));
