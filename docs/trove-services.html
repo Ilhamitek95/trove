@@ -136,6 +136,77 @@
   .booked p{font-size:14px;color:var(--ink-80);font-weight:400;line-height:1.65;margin-top:10px}
   .booked .code{font-weight:700;letter-spacing:.05em}
 
+  /* ---- how-it-works bands (the sell-page design language) ---- */
+  .band{padding:58px 0 6px}
+  .band-head{text-align:center;max-width:640px;margin:0 auto 34px}
+  .band-head .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--muted);display:block;margin-bottom:14px}
+  .band-head h2{font-size:clamp(28px,3.6vw,40px);line-height:1.06}
+  .band-head p{color:var(--ink-80);margin-top:12px;font-weight:400;font-size:15px;line-height:1.6}
+
+  /* customers: four compact steps */
+  .booksteps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;max-width:1060px;margin:0 auto}
+  .bstep4{background:var(--rose-tint);border-radius:18px;padding:20px 20px 22px}
+  .bstep4 .n{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--taupe)}
+  .bstep4 h4{font-family:var(--font-display);font-size:19px;font-weight:600;margin:8px 0 6px}
+  .bstep4 p{font-size:13px;line-height:1.6;color:var(--ink-80);font-weight:400}
+  @media(max-width:960px){.booksteps{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.booksteps{grid-template-columns:1fr;gap:12px}}
+
+  /* providers: the two-lane hand-off timeline */
+  .handoff{margin-top:34px;max-width:1060px;margin-left:auto;margin-right:auto}
+  .h-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 0 30px}
+  .h-terms span{display:inline-flex;align-items:center;gap:8px;background:var(--cream);border:1.5px dashed rgba(41,39,39,.26);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;line-height:1.2;color:var(--char)}
+  .h-terms svg{flex:none;opacity:.45}
+  .h-lanes{display:grid;grid-template-columns:1fr 64px 1fr;margin-bottom:4px}
+  .h-lanes .h-mid{position:relative}
+  .h-lanes .h-mid::before{content:'';position:absolute;left:50%;top:-18px;bottom:-12px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
+  .h-lane b{font-family:var(--font-display);font-size:21px;font-weight:600;display:block}
+  .h-lane span{font-size:12.5px;color:rgba(41,39,39,.55)}
+  .hl-you{text-align:right}
+  .h-rows{position:relative;display:flex;flex-direction:column}
+  .h-rows::before{content:'';position:absolute;left:50%;top:8px;bottom:8px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
+  .h-row{display:grid;grid-template-columns:1fr 64px 1fr;padding:24px 0;position:relative}
+  .h-dot{position:absolute;left:50%;top:28px;transform:translateX(-50%);width:32px;height:32px;border-radius:50%;background:var(--cream);border:1.5px solid var(--char);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;z-index:1}
+  .h-row::after{content:'';position:absolute;left:calc(50% + 18px);top:43px;width:22px;border-top:1.5px dashed rgba(41,39,39,.22)}
+  .h-you{text-align:right}
+  .h-you h4{font-family:var(--font-display);font-size:18.5px;font-weight:600;margin:12px 0 6px}
+  .h-you p{font-size:13.5px;line-height:1.62;color:var(--ink-80);max-width:36ch;margin:0 0 0 auto;font-weight:400}
+  .h-trove{display:flex;flex-direction:column;gap:10px;justify-content:center}
+  .h-card{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.72);border:1px solid rgba(41,39,39,.08);border-radius:14px;padding:14px 16px}
+  .h-card b{font-size:15px;display:block;font-family:var(--font-display);font-weight:600}
+  .h-card p{font-size:13px;line-height:1.55;color:var(--ink-80);margin:2px 0 0;font-weight:400}
+  .ofic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--char);flex:none}
+  .h-kick{text-align:center;font-size:14px;color:rgba(41,39,39,.65);margin-top:30px}
+  @media(max-width:860px){
+    .h-lanes{display:none}
+    .h-terms{justify-content:flex-start}
+    .h-rows::before{left:13px;transform:none}
+    .h-row{display:block;padding:18px 0 18px 36px}
+    .h-dot{left:13px;transform:translateX(-50%);top:0;width:27px;height:27px;font-size:12.5px}
+    .h-row::after{display:none}
+    .h-you{text-align:left}
+    .h-you h4{margin:1px 0 6px}
+    .h-you p{margin:0;max-width:none}
+    .h-trove{margin-top:12px;gap:8px}
+    .h-trove::before{content:'Trove takes care of';font-size:11.5px;color:rgba(41,39,39,.5)}
+  }
+  @media(max-width:560px){
+    .h-card{padding:12px 14px}.h-kick{font-size:13px;margin-top:22px}
+    .h-terms{gap:7px;margin-bottom:22px}
+    .h-terms span{padding:7px 12px;font-size:12px;gap:6px}
+  }
+
+  /* FAQ: two-column accordion */
+  .faqs{max-width:1020px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:0 46px;align-items:start}
+  .faq{border-bottom:1px solid var(--line)}
+  .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:19px 2px;font-size:15.5px;font-weight:600}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;color:var(--accent-ink);transition:transform .25s}
+  .faq[open] summary .faq-tg{transform:rotate(45deg)}
+  .faq .faq-a{padding:0 40px 20px 2px;font-size:14px;color:var(--ink-80);font-weight:400;line-height:1.7}
+  @media(max-width:960px){.faqs{grid-template-columns:1fr;max-width:660px}}
+  @media(max-width:560px){.faq summary{padding:14px 2px;font-size:14.5px}.faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}}
+
   footer{border-top:1px solid var(--line);margin-top:20px;padding:30px 0 40px;font-size:12.5px;color:var(--muted);font-weight:500}
   footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   footer a{text-decoration:underline}
@@ -151,6 +222,7 @@
     <nav class="links">
       <a href="/">Shop</a>
       <a href="/services" class="on">Services</a>
+      <a href="#how" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'});return false">How it works</a>
       <a href="/sell">Sell on Trove</a>
     </nav>
     <div class="grow"></div>
@@ -172,6 +244,69 @@
   <div class="catrail" id="catRail"></div>
   <div id="myBookings"></div>
   <div id="catSections"></div>
+
+  <!-- HOW BOOKING WORKS (customers) -->
+  <section class="band" id="how">
+    <div class="band-head">
+      <span class="eyebrow">How booking works</span>
+      <h2>From “I wish someone could…” to done.</h2>
+      <p>No baskets, no checkout — a service is a conversation. You send a request, the provider confirms, and the details are arranged between you.</p>
+    </div>
+    <div class="booksteps">
+      <div class="bstep4"><div class="n">i</div><h4>Find your service</h4><p>Browse by what you need — for your home, your celebration, or your brand. Every provider is reviewed by a real person before they appear here.</p></div>
+      <div class="bstep4"><div class="n">ii</div><h4>Send a request</h4><p>Pick a date that suits you, describe what you have in mind, and choose how you'd like to pay. No account needed.</p></div>
+      <div class="bstep4"><div class="n">iii</div><h4>They confirm</h4><p>The provider accepts your request and reaches you on your mobile to agree the details — time, place, and the final scope.</p></div>
+      <div class="bstep4"><div class="n">iv</div><h4>Enjoy, then settle</h4><p>You pay the provider directly — cash when the service is done, with card payment through Trove arriving when our card payments launch.</p></div>
+    </div>
+  </section>
+
+  <!-- FOR PROVIDERS: THE HAND-OFF (the Sell-on-Trove timeline pattern) -->
+  <section class="band">
+    <div class="band-head">
+      <span class="eyebrow">For providers</span>
+      <h2>You do the work. Trove brings the door knocks.</h2>
+      <p>Four steps from applying to your first booking — and one flat fee for all of it.</p>
+    </div>
+    <div class="handoff">
+      <div class="h-terms">
+        <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>AED 30 a month — nothing else</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No commission — your prices are yours</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Dubai &amp; Abu Dhabi</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>A real person reviews every provider</span>
+      </div>
+      <div class="h-lanes"><div class="h-lane hl-you"><b>You</b><span>The work</span></div><div class="h-mid"></div><div class="h-lane hl-trove"><b>Trove</b><span>Included with your subscription</span></div></div>
+      <div class="h-rows">
+        <div class="h-row"><div class="h-you"><h4>Tell us what you do</h4><p>A short application about you, your work and what you'll offer — written like a chat, not paperwork. About ten minutes, reviewed by a real person, usually within a day or two.</p></div><div class="h-mid"><span class="h-dot">i</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><div><b>Curated, like the marketplace</b><p>Only approved providers appear on this page, so your name sits beside work worth being beside — and customers can trust every listing they see.</p></div></div></div></div>
+        <div class="h-row"><div class="h-you"><h4>List your services</h4><p>Name each service, price it the way you actually charge — a fixed price, a starting price, or per hour — and say where it happens: their place, your studio, or remote.</p></div><div class="h-mid"><span class="h-dot">ii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8 13h8M8 16h5"/></svg></span><div><b>Your own dashboard</b><p>Add, edit, hide or retire services whenever you like — you can set everything up while your application is still in review.</p></div></div><div class="h-card"><span class="ofic" style="background:#BED3DF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span><div><b>Live the moment you're approved</b><p>Approval flips everything public at once — and that's also the day your subscription starts. Nothing is owed before it.</p></div></div></div></div>
+        <div class="h-row"><div class="h-you"><h4>Booking requests arrive</h4><p>Each request shows the customer's name, area, preferred date and a brief of what they want. Confirm the ones that suit you; decline the rest with a short note.</p></div><div class="h-mid"><span class="h-dot">iii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M9 7h6M9 11h6M9 15h3"/></svg></span><div><b>Customer contact, looked after</b><p>Until you confirm, Trove keeps the customer's contact details private. Confirming releases their mobile so you can arrange the visit — their email stays with Trove.</p></div></div></div></div>
+        <div class="h-row"><div class="h-you"><h4>Do the work, settle direct</h4><p>Deliver the service and take payment yourself — cash on the day for now, with the card option through the site unlocking when Trove's card payments launch. Then mark the booking done.</p></div><div class="h-mid"><span class="h-dot">iv</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span><div><b>One flat fee, and that's all</b><p>AED 30 a month is the whole platform cost. No commission, no listing fees, no cut of the booking — a full diary costs the same as a quiet one.</p></div></div></div></div>
+      </div>
+      <p class="h-kick">Every price on this page is the provider's own — Trove adds nothing on top, for either side.</p>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="band">
+    <div class="band-head">
+      <span class="eyebrow">Good to know</span>
+      <h2>Your questions, answered honestly.</h2>
+    </div>
+    <div class="faqs">
+      <details class="faq"><summary>What does it cost to offer services?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">A flat AED 30 a month, and nothing else — no commission, no listing fees, no cut of your bookings. It starts only when your profile is approved, and card billing begins when Trove's card payments launch; you'll be told before the first charge.</div></details>
+      <details class="faq"><summary>How do customers pay me?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">Directly, between the two of you — cash when the service is done is the norm for now, and the card option through the site unlocks when Trove's card payments launch. Each booking keeps a snapshot of the listed price for both your records.</div></details>
+      <details class="faq"><summary>What happens when someone books?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">The request lands in your dashboard with the customer's name, area, preferred date and a brief. Confirm it and their mobile number is released to you, so you can call or WhatsApp to agree the details. Decline with a short note if it's not one for you — the customer sees it, and there's no penalty.</div></details>
+      <details class="faq"><summary>Why can't I see the customer's number straight away?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">The same privacy stance as the rest of Trove: contact details change hands only when there's a confirmed arrangement to use them for. The mobile is released the moment you confirm; the email address stays with Trove.</div></details>
+      <details class="faq"><summary>What can I offer?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">Anything in the twelve categories above — creative work at people's homes, and brand, content or shop support for makers. Regulated trades are out of scope: no food or catering, no beauty or skin treatments, and advice-only where a profession is licensed.</div></details>
+      <details class="faq"><summary>Where does it work?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">Dubai and Abu Dhabi, like the rest of Trove. Each service says where it happens — at the customer's place, at your studio, or remote for work like design, copy and coaching.</div></details>
+      <details class="faq"><summary>I sell pieces on Trove — can I offer services too?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">Yes, and it's a natural pairing: one account can run a maker shop and a services practice side by side. A potter who sells bowls can host hand-building workshops; a photographer who shoots for makers can list family shoots at home.</div></details>
+      <details class="faq"><summary>Do customers need an account to book?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">No — anyone can send a request with just a name, email and UAE mobile. Signed-in customers get a little extra: every request tracked on this page under "Your bookings", with one-tap cancel while it's still open.</div></details>
+    </div>
+  </section>
 
   <div class="ctaband">
     <div>
