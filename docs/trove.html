@@ -106,7 +106,7 @@
 
   /* ---------- HERO ---------- */
   .hero{padding:46px 0 26px;position:relative}
-  .hero .wrap{display:grid;grid-template-columns:1fr 1.12fr;gap:56px;align-items:center}
+  .hero .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:44px;align-items:center}
   .hero .lead .eyebrow{margin-bottom:22px;display:block}
   .hero h1{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
   .hero h1 em{font-style:italic;color:var(--coral)} /* the one sanctioned italic: the hero accent word */
@@ -129,15 +129,14 @@
   .hero-tag:hover .n{text-decoration-color:var(--coral)}
   /* The shelf: featured pieces fanned on a stage. The centre card is the one
      on offer — it carries the caption and opens on tap; the others slide in. */
-  /* The stage takes its colour from the piece on show — hcTint() samples the
-     centre card's photo, softens it toward cream, and eases the backdrop over. */
-  .hstage{position:relative;border-radius:30px;background:var(--hs-tint,var(--rose-tint));overflow:hidden;padding:22px 0 16px;outline:none;isolation:isolate;transition:background 1.4s ease}
+  /* The shelf sits straight on the page — no stage panel, just the cards. */
+  .hstage{position:relative;outline:none}
   .js .hstage{animation:fade .8s .2s both}
-  .hstage:focus-visible{box-shadow:0 0 0 3px var(--rose)}
+  .hstage:focus-visible{box-shadow:0 0 0 3px var(--rose);border-radius:24px}
   .hs-deck{position:relative;z-index:1;aspect-ratio:1/.78;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;transition:transform .45s cubic-bezier(.22,.61,.36,1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
   .hs-deck.drag{transition:none;cursor:grabbing}
   .hs-deck img{-webkit-user-drag:none}
-  .hc{position:absolute;left:50%;top:50%;width:46%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:var(--paper);box-shadow:0 26px 54px -30px rgba(41,39,39,.5);transform:translate(-50%,-50%);transition:transform .8s cubic-bezier(.22,.61,.36,1),opacity .55s;will-change:transform;cursor:pointer}
+  .hc{position:absolute;left:50%;top:50%;width:50%;aspect-ratio:4/5;border-radius:22px;overflow:hidden;background:var(--paper);box-shadow:0 26px 54px -30px rgba(41,39,39,.5);transform:translate(-50%,-50%);transition:transform .8s cubic-bezier(.22,.61,.36,1),opacity .55s;will-change:transform;cursor:pointer}
   .hc .hc-ph{position:absolute;inset:0}
   .hc .hc-ph .grad{position:absolute;inset:0}
   .hc .hc-ph img{position:absolute;inset:0;z-index:1;filter:saturate(.92)}
@@ -153,7 +152,7 @@
   .hc-cap h3{font-size:20px;font-weight:600;line-height:1.1;margin:4px 0 6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .hc-foot{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   .hc-go{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--char);border-bottom:1px solid var(--coral);padding-bottom:2px;white-space:nowrap}
-  .hs-bar{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:8px 22px 2px}
+  .hs-bar{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:10px 4px 0}
   .hs-label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.02em;display:flex;align-items:baseline;gap:12px;min-width:0}
   .hs-label b{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--char);letter-spacing:.02em;white-space:nowrap}
   .hs-ctrl{display:flex;align-items:center;gap:10px;flex-shrink:0}
@@ -527,7 +526,7 @@
   /* ---------- RESPONSIVE ---------- */
   @media(max-width:960px){
     .hero .wrap{grid-template-columns:1fr;gap:34px}
-    .hstage{max-width:640px;width:100%;margin:0 auto}
+    .hstage{max-width:680px;width:100%;margin:0 auto}
     .house,.sell,.pdp{grid-template-columns:1fr}
     /* stacked: square tiles inset to the copy's own margins */
     .house .gallery{grid-template-rows:auto auto;gap:10px;padding:0 60px 44px}
@@ -582,9 +581,8 @@
     .hero .lead p{margin:16px 0 22px;font-size:16px}
     .hero .ctas{flex-wrap:wrap;gap:14px}
     .hero-tag{display:none}
-    .hstage{border-radius:24px;padding:14px 0 12px}
     .hs-deck{aspect-ratio:1/.86}
-    .hc{width:56%;border-radius:18px}
+    .hc{width:62%;border-radius:18px}
     .hc-cap{left:9px;right:9px;bottom:9px;padding:9px 11px 10px;border-radius:12px}
     .hc-cap h3{font-size:17px}
     /* phones: label + counter on one row, dots centred beneath — nothing squeezes or wraps mid-word */
@@ -1641,35 +1639,6 @@ function hcLayout(){
     c.style.transform=`translate(calc(-50% + ${(s*x*100).toFixed(1)}%),calc(-50% + ${(y*100).toFixed(1)}%)) rotate(${s*r}deg) scale(${sc})`;
     c.setAttribute('aria-hidden',d===0?'false':'true');
   }
-  hcTint();
-}
-/* The stage follows the piece on show: sample its photo for a dominant colour,
- * soften it toward cream, and ease the stage wash over to it. Motif tiles and
- * tainted images fall back to the piece's own palette tint. */
-const HS_TINT={};
-function hsMix(c,t){ const m=[253,247,245]; return '#'+c.map((v,k)=>Math.round(v+(m[k]-v)*t).toString(16).padStart(2,'0')).join(''); }
-function hsApply(t){ const st=$('heroStage'); if(st)st.style.setProperty('--hs-tint',t.bg); }
-function hsFromRGB(c){ return {bg:hsMix(c,.72)}; }
-function hsFallback(p){ const hex=PH_TINT[phHash(p.seed||p.id)%6], n=parseInt(hex.slice(1),16); return hsFromRGB([n>>16,(n>>8)&255,n&255]); }
-function hcTint(){
-  const p=HC.items[HC.i]; if(!p)return;
-  if(HS_TINT[p.id])return hsApply(HS_TINT[p.id]);
-  hsApply(HS_TINT[p.id]=hsFallback(p)); // instant answer; refined from the photo below
-  const src=pImg(p); if(src.startsWith('data:'))return; // motif tile — the palette tint IS its colour
-  const id=p.id, im=new Image(); im.crossOrigin='anonymous';
-  im.onload=()=>{ try{
-    const cv=document.createElement('canvas'); cv.width=cv.height=24;
-    const cx=cv.getContext('2d',{willReadFrequently:true});
-    cx.drawImage(im,0,0,24,24);
-    const d=cx.getImageData(0,0,24,24).data; let r=0,g=0,b=0,w=0;
-    for(let k=0;k<d.length;k+=4){
-      const wt=1+(Math.max(d[k],d[k+1],d[k+2])-Math.min(d[k],d[k+1],d[k+2]))/48; // favour saturated pixels so studio walls don't wash it out
-      r+=d[k]*wt; g+=d[k+1]*wt; b+=d[k+2]*wt; w+=wt;
-    }
-    HS_TINT[id]=hsFromRGB([r/w,g/w,b/w].map(Math.round));
-    if(HC.items[HC.i]&&HC.items[HC.i].id===id)hsApply(HS_TINT[id]);
-  }catch(_){/* cross-origin canvas taint — the palette fallback stands */} };
-  im.src=src;
 }
 function hcTap(k){ if(k===HC.i){const p=HC.items[k];if(p)openPDP(p.id);} else hcGo(k); }
 function hcGo(k){ if(!HC.n||k===HC.i)return; HC.i=((k%HC.n)+HC.n)%HC.n; hcLayout(); hcDots(); hcPlay(); }
