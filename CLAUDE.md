@@ -12,7 +12,7 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 
 ## Safety rules (never break)
 
-- **Never push or deploy without the user explicitly saying so.**
+- **Always ship live (owner instruction 2026-09-02):** every change is committed, pushed, deployed on Render, and verified live in the same turn — no local-only stops. Run the tests first; still pause for anything destructive (prod DB writes, unseen migrations).
 - **`PAYOUT_ENC_KEY` (Render env) is irreplaceable** — if lost, all stored seller IBANs are unrecoverable. Never rotate or "clean up" this var.
 - Copy guardrails are CI-enforced (`backend/test/copy-guardrails.test.js`): no carbon-neutral/greenwashing claims, no money-transmission phrases. Never fabricate reviews, ratings, or stats — live mode only shows real data.
 - Prod DB never reseeds once users exist; `npm run seed` is for local dev only.
