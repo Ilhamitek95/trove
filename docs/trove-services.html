@@ -143,14 +143,21 @@
   .band-head h2{font-size:clamp(28px,3.6vw,40px);line-height:1.06}
   .band-head p{color:var(--ink-80);margin-top:12px;font-weight:400;font-size:15px;line-height:1.6}
 
-  /* customers: four compact steps */
-  .booksteps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;max-width:1060px;margin:0 auto}
-  .bstep4{background:var(--rose-tint);border-radius:18px;padding:20px 20px 22px}
-  .bstep4 .n{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--taupe)}
-  .bstep4 h4{font-family:var(--font-display);font-size:19px;font-weight:600;margin:8px 0 6px}
-  .bstep4 p{font-size:13px;line-height:1.6;color:var(--ink-80);font-weight:400}
-  @media(max-width:960px){.booksteps{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.booksteps{grid-template-columns:1fr;gap:12px}}
+  /* customers: four steps on the same dashed journey line as the timeline below */
+  .booksteps{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:26px;max-width:1060px;margin:0 auto}
+  .booksteps::before{content:'';position:absolute;left:12.5%;right:12.5%;top:16px;border-top:1.5px dashed rgba(41,39,39,.22)}
+  .bstep4{text-align:center}
+  .bstep4 .dot{width:32px;height:32px;border-radius:50%;background:var(--cream);border:1.5px solid var(--char);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;margin:0 auto;position:relative;z-index:1}
+  .bstep4 h4{font-family:var(--font-display);font-size:18.5px;font-weight:600;margin:14px 0 6px}
+  .bstep4 p{font-size:13.5px;line-height:1.62;color:var(--ink-80);font-weight:400;max-width:30ch;margin:0 auto}
+  @media(max-width:860px){
+    .booksteps{display:block;max-width:660px}
+    .booksteps::before{left:13px;right:auto;top:8px;bottom:8px;border-top:none;border-left:1.5px dashed rgba(41,39,39,.22)}
+    .bstep4{text-align:left;padding:14px 0 14px 36px;position:relative}
+    .bstep4 .dot{position:absolute;left:13px;top:12px;transform:translateX(-50%);width:27px;height:27px;font-size:12.5px;margin:0}
+    .bstep4 h4{margin:0 0 6px}
+    .bstep4 p{margin:0;max-width:none}
+  }
 
   /* providers: the two-lane hand-off timeline */
   .handoff{margin-top:34px;max-width:1060px;margin-left:auto;margin-right:auto}
@@ -253,10 +260,10 @@
       <p>No baskets, no checkout — a service is a conversation. You send a request, the provider confirms, and the details are arranged between you.</p>
     </div>
     <div class="booksteps">
-      <div class="bstep4"><div class="n">i</div><h4>Find your service</h4><p>Browse by what you need — for your home, your celebration, or your brand. Every provider is reviewed by a real person before they appear here.</p></div>
-      <div class="bstep4"><div class="n">ii</div><h4>Send a request</h4><p>Pick a date that suits you, describe what you have in mind, and choose how you'd like to pay. No account needed.</p></div>
-      <div class="bstep4"><div class="n">iii</div><h4>They confirm</h4><p>The provider accepts your request and reaches you on your mobile to agree the details — time, place, and the final scope.</p></div>
-      <div class="bstep4"><div class="n">iv</div><h4>Enjoy, then settle</h4><p>You pay the provider directly — cash when the service is done, with card payment through Trove arriving when our card payments launch.</p></div>
+      <div class="bstep4"><div class="dot">i</div><h4>Find your service</h4><p>Browse by what you need — for your home, your celebration, or your brand. Every provider is reviewed by a real person before they appear here.</p></div>
+      <div class="bstep4"><div class="dot">ii</div><h4>Send a request</h4><p>Pick a date that suits you, describe what you have in mind, and choose how you'd like to pay. No account needed.</p></div>
+      <div class="bstep4"><div class="dot">iii</div><h4>They confirm</h4><p>The provider accepts your request and reaches you on your mobile to agree the details — time, place, and the final scope.</p></div>
+      <div class="bstep4"><div class="dot">iv</div><h4>Enjoy, then settle</h4><p>You pay the provider directly — cash when the service is done, with card payment through Trove arriving when our card payments launch.</p></div>
     </div>
   </section>
 
