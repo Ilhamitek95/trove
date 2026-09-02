@@ -129,11 +129,14 @@
   .hero-tag:hover .n{text-decoration-color:var(--coral)}
   /* The shelf: featured pieces fanned on a stage. The centre card is the one
      on offer — it carries the caption and opens on tap; the others slide in. */
-  .hstage{position:relative;border-radius:30px;background:var(--rose-tint);overflow:hidden;padding:22px 0 16px;outline:none;isolation:isolate}
+  /* The stage takes its colour from the piece on show — hcTint() samples the
+     centre card's photo, softens it toward cream, and eases the backdrop over. */
+  .hstage{position:relative;border-radius:30px;background:var(--hs-tint,var(--rose-tint));overflow:hidden;padding:22px 0 16px;outline:none;isolation:isolate;transition:background 1.4s ease}
   .js .hstage{animation:fade .8s .2s both}
   .hstage:focus-visible{box-shadow:0 0 0 3px var(--rose)}
   .hs-bg{position:absolute;inset:-12% -8%;z-index:0;pointer-events:none;will-change:transform}
   .hs-bg svg{width:100%;height:100%;display:block}
+  .hs-bg path{transition:fill 1.4s ease}
   .hs-deck{position:relative;z-index:1;aspect-ratio:1/.78;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;transition:transform .45s cubic-bezier(.22,.61,.36,1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
   .hs-deck.drag{transition:none;cursor:grabbing}
   .hs-deck img{-webkit-user-drag:none}
@@ -881,8 +884,8 @@
            or an automatic Collection / Marketplace mix — see renderHeroDeck(). -->
       <div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel" aria-label="Featured pieces">
         <div class="hs-bg" aria-hidden="true" data-px="30"><svg viewBox="0 0 500 420" preserveAspectRatio="xMidYMid slice">
-          <path d="M250 40 C 340 30, 430 100, 425 205 C 420 310, 350 380, 250 390 C 150 400, 70 320, 75 215 C 80 110, 160 50, 250 40 Z" fill="#DBC7BD" opacity=".6"/>
-          <path d="M60 250 C 140 240, 220 300, 215 380 C 210 460, 135 520, 45 510 C -45 500, -100 430, -80 350 C -65 285, -15 260, 60 250 Z" fill="#CAD5CC" opacity=".62"/>
+          <path d="M250 40 C 340 30, 430 100, 425 205 C 420 310, 350 380, 250 390 C 150 400, 70 320, 75 215 C 80 110, 160 50, 250 40 Z" fill="var(--hs-b1,#DBC7BD)" opacity=".6"/>
+          <path d="M60 250 C 140 240, 220 300, 215 380 C 210 460, 135 520, 45 510 C -45 500, -100 430, -80 350 C -65 285, -15 260, 60 250 Z" fill="var(--hs-b2,#CAD5CC)" opacity=".62"/>
           <path d="M430 300 C 480 290, 525 325, 520 375 C 515 425, 470 450, 425 440 C 380 430, 360 390, 375 350 C 386 320, 400 306, 430 300 Z" fill="#CFDBBE" opacity=".7"/>
           <path d="M400 -20 C 460 -25, 515 25, 510 85 C 505 145, 450 185, 390 175 C 330 165, 295 115, 310 55 C 322 8, 350 -15, 400 -20 Z" fill="#F19A82" opacity=".5"/>
         </svg></div>
@@ -1507,8 +1510,42 @@ function imgRetry(el){
   const base=el.src.split(/[?#]/)[0];
   setTimeout(()=>{el.src=`${base}?rt=${n}`;},700*n);
 }
-/* A product's cover: the seller's first uploaded photo, else the motif tile. */
-function pImg(p,i){ return (p.images&&p.images[i||0])?p.images[i||0]:img(p.seed+(i?'ab'[i-1]||'':'')); }
+/* Interim matched photography (owner, 2026-09-02): a hand-picked stock photo per
+ * piece so the storefront can be judged with real imagery before our own shoots
+ * land. Keyed by product name; seller uploads always win. Delete this map (and
+ * its two lookups) when the PHOTOGRAPHY-MANIFEST shoots replace it. */
+const UPH=id=>`https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=72`;
+const STOCK_IMG={
+  'Reeded Stoneware Mug':UPH('1495100497150-fe209c585f50'),
+  'Lopapeysa Wool Sweater':UPH('1630013348455-c47fb12c8742'),
+  'Hammered Brass Tray':UPH('1633015690070-df90035bca9d'),
+  'Cedar & Smoke Candle':UPH('1612293905607-b003de9e54fb'),
+  'Linen-Bound Notebook':UPH('1654542645844-590f5b8c146a'),
+  'Waxed Canvas Weekender':UPH('1448582649076-3981753123b5'),
+  'Glazed Serving Bowl':UPH('1552740844-4f8a8206c68d'),
+  'Merino Watch Cap':UPH('1664289321749-07316ab5e374'),
+  'Folded Leather Wallet':UPH('1628483211662-9bcc692c46dc'),
+  'Botanical Room Mist':UPH('1608571702600-5a5419d31475'),
+  'Glazed Ceramic Planter':UPH('1604762525953-2c80447cc4a6'),
+  'Weighted Brass Clip':UPH('1572866314964-231d42916df3'),
+  'Hand-Knotted Wool Throw':UPH('1674475760738-8c7af859f821'),
+  'Fig & Vetiver Wax Melts':UPH('1643716991721-15b3e95660a7'),
+  'Handwoven Linen Cushion Cover':UPH('1617597193786-a3afcf869f23'),
+  'Dune Lines':UPH('1755686974373-08a7d29f1ccd'),
+  'Falaj Gardens':UPH('1620509400919-a2ef8294f239'),
+  'Walnut & Leather Valet Tray':UPH('1654124803546-aebfbf0959a5'),
+  'Turned Teak Catch-All Bowl':UPH('1651589822716-2bb531112b8a'),
+  'Raw Stone Signet Ring':UPH('1778759335295-b332b4eaac15'),
+  'Hammered Silver Stacking Bands':UPH('1501046791521-e24baf06e55b'),
+  'Desert Stone Pendant':UPH('1610694955371-d4a3e0ce4b52'),
+};
+/* A product's cover: the seller's first uploaded photo, else the matched stock
+ * shot, else the motif tile. */
+function pImg(p,i){
+  if(p.images&&p.images[i||0])return p.images[i||0];
+  if(!i&&STOCK_IMG[p.name])return STOCK_IMG[p.name];
+  return img(p.seed+(i?'ab'[i-1]||'':''));
+}
 /* product card — eager===true only for above-the-fold uses (weekly finds);
  * .map(productCard) passes an index as the 2nd arg, hence the strict check */
 function productCard(p,eager){
@@ -1616,6 +1653,36 @@ function hcLayout(){
     c.style.transform=`translate(calc(-50% + ${(s*x*100).toFixed(1)}%),calc(-50% + ${(y*100).toFixed(1)}%)) rotate(${s*r}deg) scale(${sc})`;
     c.setAttribute('aria-hidden',d===0?'false':'true');
   }
+  hcTint();
+}
+/* The stage follows the piece on show: sample its photo for a dominant colour,
+ * soften it toward cream, and hand the result to the backdrop (stage wash +
+ * the two big blobs — the green and orange accents stay brand-fixed). Motif
+ * tiles and tainted images fall back to the piece's own palette tint. */
+const HS_TINT={};
+function hsMix(c,t){ const m=[253,247,245]; return '#'+c.map((v,k)=>Math.round(v+(m[k]-v)*t).toString(16).padStart(2,'0')).join(''); }
+function hsApply(t){ const st=$('heroStage'); if(!st)return; st.style.setProperty('--hs-tint',t.bg); st.style.setProperty('--hs-b1',t.b1); st.style.setProperty('--hs-b2',t.b2); }
+function hsFromRGB(c){ return {bg:hsMix(c,.8),b1:hsMix(c,.42),b2:hsMix(c,.6)}; }
+function hsFallback(p){ const hex=PH_TINT[phHash(p.seed||p.id)%6], n=parseInt(hex.slice(1),16); return hsFromRGB([n>>16,(n>>8)&255,n&255]); }
+function hcTint(){
+  const p=HC.items[HC.i]; if(!p)return;
+  if(HS_TINT[p.id])return hsApply(HS_TINT[p.id]);
+  hsApply(HS_TINT[p.id]=hsFallback(p)); // instant answer; refined from the photo below
+  const src=pImg(p); if(src.startsWith('data:'))return; // motif tile — the palette tint IS its colour
+  const id=p.id, im=new Image(); im.crossOrigin='anonymous';
+  im.onload=()=>{ try{
+    const cv=document.createElement('canvas'); cv.width=cv.height=24;
+    const cx=cv.getContext('2d',{willReadFrequently:true});
+    cx.drawImage(im,0,0,24,24);
+    const d=cx.getImageData(0,0,24,24).data; let r=0,g=0,b=0,w=0;
+    for(let k=0;k<d.length;k+=4){
+      const wt=1+(Math.max(d[k],d[k+1],d[k+2])-Math.min(d[k],d[k+1],d[k+2]))/48; // favour saturated pixels so studio walls don't wash it out
+      r+=d[k]*wt; g+=d[k+1]*wt; b+=d[k+2]*wt; w+=wt;
+    }
+    HS_TINT[id]=hsFromRGB([r/w,g/w,b/w].map(Math.round));
+    if(HC.items[HC.i]&&HC.items[HC.i].id===id)hsApply(HS_TINT[id]);
+  }catch(_){/* cross-origin canvas taint — the palette fallback stands */} };
+  im.src=src;
 }
 function hcTap(k){ if(k===HC.i){const p=HC.items[k];if(p)openPDP(p.id);} else hcGo(k); }
 function hcGo(k){ if(!HC.n||k===HC.i)return; HC.i=((k%HC.n)+HC.n)%HC.n; hcLayout(); hcDots(); hcPlay(); }
@@ -1988,8 +2055,9 @@ function openPDP(id){
   track('product_view',{productId:id});   // before showView, so source is where the shopper clicked from
   $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
-  // Real seller photos when they exist, else three motif-tile variations.
-  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):[img(p.seed),img(p.seed+'a'),img(p.seed+'b')];
+  // Real seller photos when they exist, else the matched stock shot, else
+  // three motif-tile variations.
+  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):STOCK_IMG[p.name]?[STOCK_IMG[p.name]]:[img(p.seed),img(p.seed+'a'),img(p.seed+'b')];
   $('pdpImg').src=pdpSrcs[0];
   $('pdpThumbs').innerHTML=pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
   $('pdpVendorLink').innerHTML=`${V.name}`;
