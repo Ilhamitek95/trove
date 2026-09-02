@@ -134,9 +134,6 @@
   .hstage{position:relative;border-radius:30px;background:var(--hs-tint,var(--rose-tint));overflow:hidden;padding:22px 0 16px;outline:none;isolation:isolate;transition:background 1.4s ease}
   .js .hstage{animation:fade .8s .2s both}
   .hstage:focus-visible{box-shadow:0 0 0 3px var(--rose)}
-  .hs-bg{position:absolute;inset:-12% -8%;z-index:0;pointer-events:none;will-change:transform}
-  .hs-bg svg{width:100%;height:100%;display:block}
-  .hs-bg path{transition:fill 1.4s ease}
   .hs-deck{position:relative;z-index:1;aspect-ratio:1/.78;touch-action:pan-y;cursor:grab;user-select:none;-webkit-user-select:none;transition:transform .45s cubic-bezier(.22,.61,.36,1);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
   .hs-deck.drag{transition:none;cursor:grabbing}
   .hs-deck img{-webkit-user-drag:none}
@@ -883,12 +880,6 @@
       <!-- The shelf: featured pieces fanned on a stage. Admin-picked (Site content → Hero)
            or an automatic Collection / Marketplace mix — see renderHeroDeck(). -->
       <div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel" aria-label="Featured pieces">
-        <div class="hs-bg" aria-hidden="true" data-px="30"><svg viewBox="0 0 500 420" preserveAspectRatio="xMidYMid slice">
-          <path d="M250 40 C 340 30, 430 100, 425 205 C 420 310, 350 380, 250 390 C 150 400, 70 320, 75 215 C 80 110, 160 50, 250 40 Z" fill="var(--hs-b1,#DBC7BD)" opacity=".6"/>
-          <path d="M60 250 C 140 240, 220 300, 215 380 C 210 460, 135 520, 45 510 C -45 500, -100 430, -80 350 C -65 285, -15 260, 60 250 Z" fill="var(--hs-b2,#CAD5CC)" opacity=".62"/>
-          <path d="M430 300 C 480 290, 525 325, 520 375 C 515 425, 470 450, 425 440 C 380 430, 360 390, 375 350 C 386 320, 400 306, 430 300 Z" fill="#CFDBBE" opacity=".7"/>
-          <path d="M400 -20 C 460 -25, 515 25, 510 85 C 505 145, 450 185, 390 175 C 330 165, 295 115, 310 55 C 322 8, 350 -15, 400 -20 Z" fill="#F19A82" opacity=".5"/>
-        </svg></div>
         <div class="hs-deck" id="heroDeck"></div>
         <div class="hs-bar">
           <div class="hs-label"><span data-cms="home.hero.stageLabel">On the shelf this week</span><b id="hsCount">— / —</b></div>
@@ -1653,13 +1644,12 @@ function hcLayout(){
   hcTint();
 }
 /* The stage follows the piece on show: sample its photo for a dominant colour,
- * soften it toward cream, and hand the result to the backdrop (stage wash +
- * the two big blobs — the green and orange accents stay brand-fixed). Motif
- * tiles and tainted images fall back to the piece's own palette tint. */
+ * soften it toward cream, and ease the stage wash over to it. Motif tiles and
+ * tainted images fall back to the piece's own palette tint. */
 const HS_TINT={};
 function hsMix(c,t){ const m=[253,247,245]; return '#'+c.map((v,k)=>Math.round(v+(m[k]-v)*t).toString(16).padStart(2,'0')).join(''); }
-function hsApply(t){ const st=$('heroStage'); if(!st)return; st.style.setProperty('--hs-tint',t.bg); st.style.setProperty('--hs-b1',t.b1); st.style.setProperty('--hs-b2',t.b2); }
-function hsFromRGB(c){ return {bg:hsMix(c,.8),b1:hsMix(c,.42),b2:hsMix(c,.6)}; }
+function hsApply(t){ const st=$('heroStage'); if(st)st.style.setProperty('--hs-tint',t.bg); }
+function hsFromRGB(c){ return {bg:hsMix(c,.72)}; }
 function hsFallback(p){ const hex=PH_TINT[phHash(p.seed||p.id)%6], n=parseInt(hex.slice(1),16); return hsFromRGB([n>>16,(n>>8)&255,n&255]); }
 function hcTint(){
   const p=HC.items[HC.i]; if(!p)return;
