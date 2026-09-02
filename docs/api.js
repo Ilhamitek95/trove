@@ -68,3 +68,36 @@
     api, health, me, logout, config,
   };
 })();
+
+/* Interim matched photography (owner, 2026-09-02): a hand-picked stock photo per
+ * piece so the storefront can be judged with real imagery before our own shoots
+ * land. Keyed by product name; seller uploads always win. Shared here so the
+ * storefront and the admin crop editor show the same cover. Delete this map
+ * when the PHOTOGRAPHY-MANIFEST shoots replace it. */
+window.TROVE_STOCK_IMG = (function () {
+  const u = (id) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=72`;
+  return {
+    'Reeded Stoneware Mug': u('1495100497150-fe209c585f50'),
+    'Lopapeysa Wool Sweater': u('1630013348455-c47fb12c8742'),
+    'Hammered Brass Tray': u('1633015690070-df90035bca9d'),
+    'Cedar & Smoke Candle': u('1612293905607-b003de9e54fb'),
+    'Linen-Bound Notebook': u('1654542645844-590f5b8c146a'),
+    'Waxed Canvas Weekender': u('1448582649076-3981753123b5'),
+    'Glazed Serving Bowl': u('1552740844-4f8a8206c68d'),
+    'Merino Watch Cap': u('1664289321749-07316ab5e374'),
+    'Folded Leather Wallet': u('1628483211662-9bcc692c46dc'),
+    'Botanical Room Mist': u('1608571702600-5a5419d31475'),
+    'Glazed Ceramic Planter': u('1604762525953-2c80447cc4a6'),
+    'Weighted Brass Clip': u('1572866314964-231d42916df3'),
+    'Hand-Knotted Wool Throw': u('1674475760738-8c7af859f821'),
+    'Fig & Vetiver Wax Melts': u('1643716991721-15b3e95660a7'),
+    'Handwoven Linen Cushion Cover': u('1617597193786-a3afcf869f23'),
+    'Dune Lines': u('1755686974373-08a7d29f1ccd'),
+    'Falaj Gardens': u('1620509400919-a2ef8294f239'),
+    'Walnut & Leather Valet Tray': u('1654124803546-aebfbf0959a5'),
+    'Turned Teak Catch-All Bowl': u('1651589822716-2bb531112b8a'),
+    'Raw Stone Signet Ring': u('1778759335295-b332b4eaac15'),
+    'Hammered Silver Stacking Bands': u('1501046791521-e24baf06e55b'),
+    'Desert Stone Pendant': u('1610694955371-d4a3e0ce4b52'),
+  };
+})();

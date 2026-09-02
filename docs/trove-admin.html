@@ -180,6 +180,15 @@
   .cmspick{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
   .cmspick .pk{display:inline-flex;align-items:center;gap:7px;background:var(--rose-tint);border-radius:999px;padding:5px 7px 5px 13px;font-size:12px;font-weight:700}
   .cmspick .pk button{border:0;background:var(--char);color:var(--cream);border-radius:50%;width:17px;height:17px;line-height:1;font-size:10px;cursor:pointer;padding:0}
+  .cmspick .pk .crop-btn{border-radius:999px;width:auto;padding:2px 9px;font-size:10px;font-weight:700;background:var(--cream);color:var(--char);border:1px solid var(--line)}
+  .cmspick .pk .crop-btn.on{background:var(--char);color:var(--cream);border-color:var(--char)}
+  .cropbox{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;background:var(--rose-tint);border-radius:14px;padding:14px;margin:4px 0 10px}
+  .cropbox .prev{width:190px;border-radius:12px;overflow:hidden;position:relative;cursor:grab;touch-action:none;background:var(--cream);flex-shrink:0}
+  .cropbox .prev:active{cursor:grabbing}
+  .cropbox .prev img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;user-select:none;-webkit-user-drag:none}
+  .cropbox .ctr{flex:1;min-width:180px;display:flex;flex-direction:column;gap:10px}
+  .cropbox .ctr .hint{margin:0;font-size:12px}
+  .cropbox input[type=range]{width:100%;accent-color:var(--char)}
   .cmsbadge{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;background:var(--rose-tint);color:var(--accent-ink);border-radius:999px;padding:4px 10px}
   .cmsbadge.dirty{background:var(--sage);color:var(--char)}
   .rprev{font-family:var(--font-display);font-size:20px;line-height:1.15;color:var(--char);margin-top:7px;padding:8px 12px;background:var(--paper);border:1px dashed var(--line);border-radius:10px}
@@ -720,12 +729,12 @@ async function declineReturn(id){
 let CMS=null, CMS_EDIT={}, CMS_DIRTY={};
 const CMS_SPEC=[
   {key:'site.promo',label:'Storefront — Announcement bar',fields:[['text','Bar text']]},
-  {key:'home.hero',label:'Homepage — Hero',fields:[['eyebrow','Eyebrow'],['h1','Big heading','rich'],['lead','Intro paragraph','area'],['ctaShop','Dark button label'],['ctaSell','Text link label'],['tagLine','Collection pointer — small line'],['tagName','Collection pointer — name'],['stageLabel','Carousel label']],picker:{note:'Hero pieces — up to 8, shown in this order on the carousel. Leave empty for the automatic mix (Collection and Marketplace pieces, alternating).',auto:'Automatic — Collection and Marketplace pieces, alternating'}},
+  {key:'home.hero',label:'Homepage — Hero',fields:[['eyebrow','Eyebrow'],['h1','Big heading','rich'],['lead','Intro paragraph','area'],['ctaShop','Dark button label'],['ctaSell','Text link label'],['tagLine','Collection pointer — small line'],['tagName','Collection pointer — name'],['stageLabel','Carousel label']],picker:{note:'Hero pieces — up to 8, shown in this order on the carousel. Leave empty for the automatic mix (Collection and Marketplace pieces, alternating).',auto:'Automatic — Collection and Marketplace pieces, alternating',crop:'4 / 5'}},
   {key:'home.marquee',label:'Homepage — Highlights strip',list:{field:'items',fixed:true,label:'Highlight',item:[['head','Heading'],['sub','Small line']]}},
   {key:'home.browse',label:'Homepage — Browse by',fields:[['eyebrow','Eyebrow'],['heading','Heading']]},
-  {key:'home.weekly',label:"Homepage — This week's finds",fields:[['eyebrow','Eyebrow'],['heading','Heading'],['linkLabel','Link label']],picker:{note:'Hand-picked finds — up to 8, shown in this order. Leave empty for the automatic pick (the 8 newest pieces).',auto:'Automatic — the 8 newest pieces'}},
-  {key:'home.collection',label:'Homepage — Trove Collection band',fields:[['eyebrow','Eyebrow'],['h2','Heading','rich'],['intro','Intro paragraph','area'],['cta','Button label']],list:{field:'points',fixed:true,label:'Point',item:[['title','Title'],['text','Text','area']]}},
-  {key:'home.makers',label:'Homepage — Meet the makers',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['intro','Intro paragraph','area']]},
+  {key:'home.weekly',label:"Homepage — This week's finds",fields:[['eyebrow','Eyebrow'],['heading','Heading'],['linkLabel','Link label']],picker:{note:'Hand-picked finds — up to 8, shown in this order. Leave empty for the automatic pick (the 8 newest pieces).',auto:'Automatic — the 8 newest pieces',crop:'4 / 5'}},
+  {key:'home.collection',label:'Homepage — Trove Collection band',fields:[['eyebrow','Eyebrow'],['h2','Heading','rich'],['intro','Intro paragraph','area'],['cta','Button label']],list:{field:'points',fixed:true,label:'Point',item:[['title','Title'],['text','Text','area']]},picker:{note:'Gallery pieces — up to 4 Collection pieces, shown in this order. Leave empty for the automatic pick (the first 4 Collection pieces).',auto:'Automatic — the first 4 Collection pieces',house:true,max:4,crop:'16 / 10'}},
+  {key:'home.makers',label:'Homepage — Meet the makers',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['intro','Intro paragraph','area']],shopPicker:{note:'Featured makers — up to 8, shown in this order on the carousel. Leave empty to show every approved maker.',auto:'Automatic — every approved maker'}},
   {key:'home.sellBand',label:'Homepage — Sell on Trove band',fields:[['eyebrow','Eyebrow'],['h2','Heading','rich'],['intro','Intro paragraph','area'],['cta','Button label']],list:{field:'steps',fixed:true,label:'Step',item:[['title','Step title'],['text','Step text','area']]}},
   {key:'sell.hero',label:'Sell page — Hero + hand-off terms',fields:[['eyebrow','Eyebrow'],['h1','Big heading','rich'],['intro','Intro paragraph','area'],['ctaApply','Main button label'],['ctaHow','Second button label']],list:{field:'facts',label:'Term',min:2,max:6}},
   {key:'sell.steps',label:'Sell page — The hand-off: your four steps (You lane)',fields:[['eyebrow','Eyebrow'],['heading','Supporting line under the big heading']],list:{field:'items',label:'Step',min:2,max:6,item:[['title','Step title'],['text','Step text','area']]}},
@@ -736,7 +745,8 @@ const CMS_SPEC=[
   {key:'site.footer',label:'Storefront — Footer',fields:[['blurb','About blurb','area'],['legal','Bottom line']]},
 ];
 const cmsClone=v=>JSON.parse(JSON.stringify(v));
-function cmsInitEdit(){ CMS_EDIT={}; for(const s of CMS_SPEC) CMS_EDIT[s.key]=cmsClone(CMS.overrides[s.key]||CMS.defaults[s.key]); }
+// Defaults underlie each override so keys added later (picker lists, crops) are never missing.
+function cmsInitEdit(){ CMS_EDIT={}; for(const s of CMS_SPEC) CMS_EDIT[s.key]=cmsClone({...CMS.defaults[s.key],...(CMS.overrides[s.key]||{})}); }
 function cmsSet(key,path,val){
   const parts=path.split('.'); let o=CMS_EDIT[key];
   for(let i=0;i<parts.length-1;i++)o=o[parts[i]];
@@ -781,21 +791,106 @@ function cmsAdd(key,field){
   CMS_EDIT[key][field].push(L.item?Object.fromEntries(L.item.map(([f])=>[f,''])):'');
   cmsDirty(key);renderCms();
 }
-/* product picker — any section with `picker` and a productIds list (hero pieces, weekly finds) */
+/* product picker — any section with `picker` and a productIds list (hero pieces,
+ * weekly finds, Collection gallery). `picker.house` limits it to Collection
+ * pieces, `picker.max` caps the list (default 8), and `picker.crop` adds a
+ * per-piece crop editor (the aspect matches that section's tiles). */
+function cmsCover(p){ return (p.images&&p.images[0])||window.TROVE_STOCK_IMG&&window.TROVE_STOCK_IMG[p.name]||prodImg(p.imageSeed); }
 function cmsPickerHTML(spec){
   const key=spec.key, ids=CMS_EDIT[key].productIds||(CMS_EDIT[key].productIds=[]);
-  const live=PRODUCTS.filter(p=>p.status==='live'&&p.shop.status==='approved');
-  const byId={};live.forEach(p=>byId[p.id]=p);
+  const max=spec.picker.max||8;
+  const live=PRODUCTS.filter(p=>p.status==='live'&&p.shop.status==='approved'&&(!spec.picker.house||p.shop.isHouse));
+  const byId={};PRODUCTS.forEach(p=>byId[p.id]=p);
   const sel='cmsPickSel-'+key.replace(/\W/g,'_');
-  const chips=ids.map((id,i)=>`<span class="pk">${esc(byId[id]?byId[id].name:'#'+id)}<button onclick="cmsPickRemove('${key}',${i})" title="Remove">×</button></span>`).join('');
+  const chips=ids.map((id,i)=>{
+    const open=CMS_CROP&&CMS_CROP.key===key&&CMS_CROP.id===id;
+    const cropBtn=spec.picker.crop?`<button class="crop-btn ${open?'on':''}" onclick="cmsCropToggle('${key}',${id})">Crop</button>`:'';
+    return `<span class="pk">${esc(byId[id]?byId[id].name:'#'+id)}${cropBtn}<button onclick="cmsPickRemove('${key}',${i})" title="Remove">×</button></span>`;
+  }).join('');
   const opts=live.filter(p=>!ids.includes(p.id)).map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.shop.name)}</option>`).join('');
+  const editor=CMS_CROP&&CMS_CROP.key===key&&byId[CMS_CROP.id]?cmsCropEditorHTML(spec,byId[CMS_CROP.id]):'';
   return `<div class="cmsf"><span class="flab">${spec.picker.note}</span>
     <div class="cmspick">${chips||`<span style="font-size:12px;color:var(--muted);font-weight:600">${spec.picker.auto}</span>`}</div>
-    ${ids.length<8&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsPickAdd('${key}','${sel}')">Add</button></div>`:''}
+    ${editor}
+    ${ids.length<max&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsPickAdd('${key}','${sel}')">Add</button></div>`:''}
   </div>`;
 }
-function cmsPickAdd(key,sel){const v=parseInt($(sel).value);const ids=CMS_EDIT[key].productIds||(CMS_EDIT[key].productIds=[]);if(v&&!ids.includes(v))ids.push(v);cmsDirty(key);renderCms();}
-function cmsPickRemove(key,i){CMS_EDIT[key].productIds.splice(i,1);cmsDirty(key);renderCms();}
+function cmsPickAdd(key,sel){
+  const v=parseInt($(sel).value);const ids=CMS_EDIT[key].productIds||(CMS_EDIT[key].productIds=[]);
+  const max=(CMS_SPEC.find(s=>s.key===key).picker||{}).max||8;
+  if(v&&!ids.includes(v)&&ids.length<max)ids.push(v);cmsDirty(key);renderCms();
+}
+function cmsPickRemove(key,i){
+  const ids=CMS_EDIT[key].productIds,id=ids[i];ids.splice(i,1);
+  if(CMS_EDIT[key].crops)delete CMS_EDIT[key].crops[id]; // its crop goes with it
+  if(CMS_CROP&&CMS_CROP.key===key&&CMS_CROP.id===id)CMS_CROP=null;
+  cmsDirty(key);renderCms();
+}
+
+/* crop editor — drag the photo to reframe it, zoom to come in closer. The
+ * focal point and zoom save with the section and only apply on the homepage;
+ * the product page keeps the full photo. */
+let CMS_CROP=null; // {key,id} of the open editor
+function cmsCropGet(key,id){ const cr=CMS_EDIT[key].crops||(CMS_EDIT[key].crops={}); return cr[id]||(cr[id]={x:50,y:50,z:1}); }
+function cmsCropStyle(c){ return `object-position:${c.x}% ${c.y}%;transform:scale(${c.z});transform-origin:${c.x}% ${c.y}%`; }
+function cmsCropToggle(key,id){ CMS_CROP=CMS_CROP&&CMS_CROP.key===key&&CMS_CROP.id===id?null:{key,id}; renderCms(); }
+function cmsCropEditorHTML(spec,p){
+  const key=spec.key, c=cmsCropGet(key,p.id);
+  return `<div class="cropbox">
+    <div class="prev" id="cropPrev" style="aspect-ratio:${spec.picker.crop}"
+      onpointerdown="cmsCropDown(event,'${key}',${p.id})" onpointermove="cmsCropDrag(event,'${key}',${p.id})"
+      onpointerup="this.dataset.drag=''" onpointercancel="this.dataset.drag=''">
+      <img id="cropImg" src="${esc(cmsCover(p))}" alt="" style="${cmsCropStyle(c)}">
+    </div>
+    <div class="ctr">
+      <div class="hint"><strong>${esc(p.name)}</strong> — drag the photo to reframe it. This is exactly how the tile crops on the homepage.</div>
+      <label style="font-size:12px;font-weight:700">Zoom
+        <input type="range" min="1" max="2.5" step="0.05" value="${c.z}" oninput="cmsCropZoom('${key}',${p.id},this.value)"></label>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="cmsCropReset('${key}',${p.id})">Reset</button>
+        <button class="btn btn-coral" onclick="CMS_CROP=null;renderCms()">Done</button>
+      </div>
+    </div>
+  </div>`;
+}
+function cmsCropDown(ev,key,id){
+  ev.preventDefault();const el=ev.currentTarget;
+  try{el.setPointerCapture(ev.pointerId);}catch(_){}
+  const c=cmsCropGet(key,id);
+  el.dataset.drag='1';el.dataset.sx=ev.clientX;el.dataset.sy=ev.clientY;el.dataset.x0=c.x;el.dataset.y0=c.y;
+}
+function cmsCropDrag(ev,key,id){
+  const el=ev.currentTarget; if(!el.dataset.drag)return;
+  const c=cmsCropGet(key,id), r=el.getBoundingClientRect();
+  const k=160/c.z; // drag feel: a full sweep pans the whole frame at any zoom
+  c.x=Math.round(Math.max(0,Math.min(100,+el.dataset.x0-(ev.clientX-+el.dataset.sx)/r.width*k)));
+  c.y=Math.round(Math.max(0,Math.min(100,+el.dataset.y0-(ev.clientY-+el.dataset.sy)/r.height*k)));
+  const im=document.getElementById('cropImg'); if(im)im.style.cssText=cmsCropStyle(c);
+  cmsDirty(key);
+}
+function cmsCropZoom(key,id,v){
+  const c=cmsCropGet(key,id); c.z=Math.round(+v*20)/20;
+  const im=document.getElementById('cropImg'); if(im)im.style.cssText=cmsCropStyle(c);
+  cmsDirty(key);
+}
+function cmsCropReset(key,id){ if(CMS_EDIT[key].crops)delete CMS_EDIT[key].crops[id]; cmsDirty(key); renderCms(); }
+
+/* maker picker — the Meet-the-makers section: hand-pick and order the shops
+ * on the carousel (approved marketplace shops only; the house line never rides it). */
+function cmsShopPickerHTML(spec){
+  const key=spec.key, slugs=CMS_EDIT[key].shopSlugs||(CMS_EDIT[key].shopSlugs=[]);
+  const open=SHOPS.filter(s=>s.status==='approved'&&!s.isHouse);
+  const bySlug={};SHOPS.forEach(s=>bySlug[s.slug]=s);
+  const sel='cmsShopSel-'+key.replace(/\W/g,'_');
+  const chips=slugs.map((sl,i)=>`<span class="pk">${esc(bySlug[sl]?bySlug[sl].name:sl)}<button onclick="cmsShopRemove('${key}',${i})" title="Remove">×</button></span>`).join('');
+  const opts=open.filter(s=>!slugs.includes(s.slug)).map(s=>`<option value="${esc(s.slug)}">${esc(s.name)} — ${esc(s.location||'')}</option>`).join('');
+  return `<div class="cmsf"><span class="flab">${spec.shopPicker.note}</span>
+    <div class="cmspick">${chips||`<span style="font-size:12px;color:var(--muted);font-weight:600">${spec.shopPicker.auto}</span>`}</div>
+    ${slugs.length<8&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsShopAdd('${key}','${sel}')">Add</button></div>`:''}
+  </div>`;
+}
+function cmsShopAdd(key,sel){const v=$(sel).value;const slugs=CMS_EDIT[key].shopSlugs||(CMS_EDIT[key].shopSlugs=[]);if(v&&!slugs.includes(v))slugs.push(v);cmsDirty(key);renderCms();}
+function cmsShopRemove(key,i){CMS_EDIT[key].shopSlugs.splice(i,1);cmsDirty(key);renderCms();}
 function renderCms(){
   const w=$('cmsWrap'); if(!w)return;
   if(!CMS){w.innerHTML='<div class="empty">Could not load the site content — refresh to try again.</div>';return;}
@@ -811,7 +906,7 @@ function renderCms(){
           ${overridden?`<button class="btn btn-ghost" onclick="cmsReset('${spec.key}')">Reset to original</button>`:''}
           <button class="btn btn-coral" onclick="cmsSave('${spec.key}')">Save</button>
         </div></div>
-      ${fields}${spec.list?cmsListHTML(spec):''}${spec.picker?cmsPickerHTML(spec):''}
+      ${fields}${spec.list?cmsListHTML(spec):''}${spec.picker?cmsPickerHTML(spec):''}${spec.shopPicker?cmsShopPickerHTML(spec):''}
     </div>`;
   }).join('');
 }

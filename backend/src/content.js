@@ -38,6 +38,7 @@ const DEFAULTS = {
     tagName: 'Trove Collection →',
     stageLabel: 'On the shelf this week',
     productIds: [],
+    crops: {},
   },
   'home.marquee': {
     items: [
@@ -53,6 +54,7 @@ const DEFAULTS = {
     heading: "This week's finds",
     linkLabel: 'Shop everything →',
     productIds: [],
+    crops: {},
   },
   'home.collection': {
     eyebrow: 'The Trove Collection · Designed by Trove',
@@ -64,11 +66,14 @@ const DEFAULTS = {
       { title: 'Made yours', text: 'Spot a personalisation option? That piece can be made just for you or someone special.' },
     ],
     cta: 'Shop the Collection',
+    productIds: [],
+    crops: {},
   },
   'home.makers': {
     eyebrow: 'The Trove Marketplace',
     heading: 'Meet the makers',
     intro: 'Discover handcrafted products from independent makers, carefully curated for their quality, creativity and craftsmanship.',
+    shopSlugs: [],
   },
   'home.sellBand': {
     eyebrow: 'Sell on Trove',
@@ -188,12 +193,40 @@ function validateSection(section, value) {
     const dv = def[key];
     const v = value[key];
     if (key === 'productIds') {
+      // An older admin build may omit keys added later — treat missing as empty.
+      if (v == null) { clean[key] = []; continue; }
       if (!Array.isArray(v)) bad('"productIds" must be a list');
       if (v.length > 8) bad('Pick at most 8 pieces');
       clean[key] = v.map((n) => {
         if (!Number.isInteger(n) || n < 1) bad('Picked pieces must be product ids');
         return n;
       });
+    } else if (key === 'shopSlugs') {
+      if (v == null) { clean[key] = []; continue; }
+      if (!Array.isArray(v)) bad('"shopSlugs" must be a list');
+      if (v.length > 8) bad('Pick at most 8 makers');
+      clean[key] = v.map((s) => {
+        if (typeof s !== 'string' || !/^[a-z0-9-]{1,80}$/.test(s)) bad('Picked makers must be shop slugs');
+        return s;
+      });
+    } else if (key === 'crops') {
+      // Homepage image crops: { productId: { x, y, z } } — focal point in %, zoom 1–3.
+      if (v == null) { clean[key] = {}; continue; }
+      if (typeof v !== 'object' || Array.isArray(v)) bad('"crops" must be a map of piece crops');
+      const entries = Object.entries(v);
+      if (entries.length > 12) bad('Too many crops — clear ones you no longer use');
+      const cc = {};
+      for (const [id, c] of entries) {
+        if (!/^\d{1,10}$/.test(id)) bad('Crops must be keyed by product id');
+        if (!c || typeof c !== 'object' || Array.isArray(c)) bad('Each crop must set x, y and z');
+        const num = (n, lo, hi, name) => {
+          const f = Number(c[n]);
+          if (!Number.isFinite(f) || f < lo || f > hi) bad(`Crop ${name} must be between ${lo} and ${hi}`);
+          return Math.round(f * 10) / 10;
+        };
+        cc[id] = { x: num('x', 0, 100, 'position'), y: num('y', 0, 100, 'position'), z: num('z', 1, 3, 'zoom') };
+      }
+      clean[key] = cc;
     } else if (Array.isArray(dv)) {
       if (!Array.isArray(v)) bad(`"${key}" must be a list`);
       const [min, max] = LIST_BOUNDS[`${section}.${key}`] || [dv.length, dv.length];

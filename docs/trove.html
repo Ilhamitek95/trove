@@ -1510,35 +1510,9 @@ function imgRetry(el){
   const base=el.src.split(/[?#]/)[0];
   setTimeout(()=>{el.src=`${base}?rt=${n}`;},700*n);
 }
-/* Interim matched photography (owner, 2026-09-02): a hand-picked stock photo per
- * piece so the storefront can be judged with real imagery before our own shoots
- * land. Keyed by product name; seller uploads always win. Delete this map (and
- * its two lookups) when the PHOTOGRAPHY-MANIFEST shoots replace it. */
-const UPH=id=>`https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=72`;
-const STOCK_IMG={
-  'Reeded Stoneware Mug':UPH('1495100497150-fe209c585f50'),
-  'Lopapeysa Wool Sweater':UPH('1630013348455-c47fb12c8742'),
-  'Hammered Brass Tray':UPH('1633015690070-df90035bca9d'),
-  'Cedar & Smoke Candle':UPH('1612293905607-b003de9e54fb'),
-  'Linen-Bound Notebook':UPH('1654542645844-590f5b8c146a'),
-  'Waxed Canvas Weekender':UPH('1448582649076-3981753123b5'),
-  'Glazed Serving Bowl':UPH('1552740844-4f8a8206c68d'),
-  'Merino Watch Cap':UPH('1664289321749-07316ab5e374'),
-  'Folded Leather Wallet':UPH('1628483211662-9bcc692c46dc'),
-  'Botanical Room Mist':UPH('1608571702600-5a5419d31475'),
-  'Glazed Ceramic Planter':UPH('1604762525953-2c80447cc4a6'),
-  'Weighted Brass Clip':UPH('1572866314964-231d42916df3'),
-  'Hand-Knotted Wool Throw':UPH('1674475760738-8c7af859f821'),
-  'Fig & Vetiver Wax Melts':UPH('1643716991721-15b3e95660a7'),
-  'Handwoven Linen Cushion Cover':UPH('1617597193786-a3afcf869f23'),
-  'Dune Lines':UPH('1755686974373-08a7d29f1ccd'),
-  'Falaj Gardens':UPH('1620509400919-a2ef8294f239'),
-  'Walnut & Leather Valet Tray':UPH('1654124803546-aebfbf0959a5'),
-  'Turned Teak Catch-All Bowl':UPH('1651589822716-2bb531112b8a'),
-  'Raw Stone Signet Ring':UPH('1778759335295-b332b4eaac15'),
-  'Hammered Silver Stacking Bands':UPH('1501046791521-e24baf06e55b'),
-  'Desert Stone Pendant':UPH('1610694955371-d4a3e0ce4b52'),
-};
+/* Interim matched photography — the shared map lives in api.js (the admin crop
+ * editor previews the same covers). Seller uploads always win over it. */
+const STOCK_IMG=window.TROVE_STOCK_IMG||{};
 /* A product's cover: the seller's first uploaded photo, else the matched stock
  * shot, else the motif tile. */
 function pImg(p,i){
@@ -1546,14 +1520,23 @@ function pImg(p,i){
   if(!i&&STOCK_IMG[p.name])return STOCK_IMG[p.name];
   return img(p.seed+(i?'ab'[i-1]||'':''));
 }
+/* Admin-set crop for a piece in a homepage section (Site content → crop on a
+ * picked piece): focal point steers object-position, zoom scales from it. */
+function cropCss(sec,p){
+  const m=cmsGet(sec+'.crops'), c=m&&m[p.id];
+  if(!c)return '';
+  const x=Math.max(0,Math.min(100,+c.x||50)), y=Math.max(0,Math.min(100,+c.y||50)), z=Math.max(1,Math.min(3,+c.z||1));
+  return `object-position:${x}% ${y}%;${z>1?`transform:scale(${z});transform-origin:${x}% ${y}%;`:''}`;
+}
 /* product card — eager===true only for above-the-fold uses (weekly finds);
- * .map(productCard) passes an index as the 2nd arg, hence the strict check */
-function productCard(p,eager){
+ * .map(productCard) passes an index as the 2nd arg, hence the strict check.
+ * `crop` (a cropCss string) is only ever passed by homepage sections. */
+function productCard(p,eager,crop){
   const V=VENDORS[p.vendor], house=V.house;
   return `<article class="card" onclick="openPDP(${p.id})">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${pImg(p)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async" onerror="imgRetry(this)">
+      <img src="${pImg(p)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
       ${p.was?`<span class="sale">Sale</span>`:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
     </div>
@@ -1578,17 +1561,31 @@ function renderHome(){
     const sel=picks.map(id=>byId[id]).filter(Boolean);
     if(sel.length)weekly=sel;
   }
-  $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true)).join('');
+  $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true,cropCss('home.weekly',p))).join('');
   stagger($('trendingGrid'),.06);
 
-  const house=PRODUCTS.filter(p=>VENDORS[p.vendor].house).slice(0,4);
+  // Collection band gallery: admin-picked house pieces when set, else the first 4.
+  let house=PRODUCTS.filter(p=>VENDORS[p.vendor].house);
+  const hp=cmsGet('home.collection.productIds');
+  if(LIVE&&Array.isArray(hp)&&hp.length){
+    const byId={};PRODUCTS.forEach(p=>byId[p.id]=p);
+    const sel=hp.map(id=>byId[id]).filter(Boolean);
+    if(sel.length)house=sel;
+  }
+  house=house.slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
   $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${pImg(p)}" alt="${esc(p.name)}" decoding="async" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${pImg(p)}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
   stagger($('houseGallery'),.1);
 
-  // Every maker rides the carousel; the second set is a visual clone for the seamless loop.
-  const vs=Object.entries(VENDORS).filter(([k,v])=>!v.house);
+  // Every maker rides the carousel (admin can hand-pick and order them);
+  // the second set is a visual clone for the seamless loop.
+  let vs=Object.entries(VENDORS).filter(([k,v])=>!v.house);
+  const ms=cmsGet('home.makers.shopSlugs');
+  if(LIVE&&Array.isArray(ms)&&ms.length){
+    const sel=ms.filter(s=>VENDORS[s]&&!VENDORS[s].house).map(s=>[s,VENDORS[s]]);
+    if(sel.length)vs=sel;
+  }
   const makerCards=vs.map(([k,v])=>{
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
     return `<article class="vcard" onclick="openVendor('${k}')">
@@ -1632,7 +1629,7 @@ function renderHeroDeck(){
   HC.items=heroPicks(); HC.n=HC.items.length; HC.i=0;
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
     return `<article class="hc" data-k="${k}" onclick="hcTap(${k})" aria-label="${esc(p.name)}">
-      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${pImg(p)}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${pImg(p)}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
       <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3>${esc(p.name)}</h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></div></div>
     </article>`;}).join('');

@@ -50,7 +50,7 @@ const wired = [];
 const jsListStrings = [];
 for (const section of SECTIONS) {
   for (const [key, dv] of Object.entries(DEFAULTS[section])) {
-    if (key === 'productIds') continue; // picker-driven, no default copy
+    if (key === 'productIds' || key === 'shopSlugs' || key === 'crops') continue; // picker/crop-driven, no default copy
     if (Array.isArray(dv)) {
       if (JS_RENDERED.has(`${section}.${key}`)) {
         for (const item of dv) {
