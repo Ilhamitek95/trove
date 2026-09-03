@@ -121,13 +121,13 @@
 
 <div class="shell" id="shell" style="display:none">
   <aside class="side">
-    <div class="logo"><img src="/img/trove-wordmark.svg" alt="trove" style="height:22px;width:auto;display:inline-block;vertical-align:middle" onerror="this.outerHTML='trove'"><span>services</span></div>
+    <div class="logo"><img src="/img/trove-wordmark.svg" alt="trove" style="height:22px;width:auto;display:inline-block;vertical-align:middle" onerror="this.outerHTML='trove'"><span>services marketplace</span></div>
     <div class="who"><div class="av" id="whoAv">·</div><div><div class="nm" id="whoName">—</div><div class="rl" id="whoStatus">Provider</div></div></div>
     <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
     <a class="mitem" data-v="services" onclick="go('services')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>My services</a>
     <a class="mitem" data-v="bookings" onclick="go('bookings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="17" rx="2.5"/><path d="M3 9h18M8 2.5V6M16 2.5V6"/></svg>Bookings<span class="badge zero" id="bkBadge">0</span></a>
     <div class="sfoot">
-      <a href="/services" target="_blank">View the services page ↗</a>
+      <a href="/services" target="_blank">View the Services Marketplace ↗</a>
       <a onclick="signOut()">Sign out</a>
     </div>
   </aside>
@@ -170,7 +170,7 @@
       </div>
       <div class="card">
         <h3>My services</h3>
-        <div class="hint">Live services appear on the public services page as soon as your profile is approved. Hide one to take it off without deleting it.</div>
+        <div class="hint">Live services appear on the public Services Marketplace as soon as your profile is approved. Hide one to take it off without deleting it.</div>
         <div id="svList"></div>
       </div>
     </div>
@@ -220,7 +220,7 @@ function renderOverview(){
     st==='pending'?'<div class="banner pending">Your application is with our curation team — usually a day or two. Add your services now and everything goes live the moment you’re approved.</div>'
     :st==='rejected'?'<div class="banner bad">This application wasn’t approved this time. If things have moved on — new work, new portfolio — get in touch and we’ll take another look.</div>'
     :st==='suspended'?'<div class="banner bad">Your profile is suspended and your services are off the public page. Get in touch with the Trove team.</div>'
-    :'<div class="banner good">You’re live — your services are on the public services page.</div>';
+    :'<div class="banner good">You’re live — your services are on the public Services Marketplace.</div>';
   $('statCards').innerHTML=`
     <div class="stat"><div class="k">Live services</div><div class="v">${live}</div><div class="n">of ${SERVICES.length} listed</div></div>
     <div class="stat"><div class="k">New requests</div><div class="v">${open}</div><div class="n">waiting for your reply</div></div>
@@ -335,7 +335,7 @@ function renderBookings(){
   const rest=BOOKINGS.filter(b=>!['requested','confirmed'].includes(b.status));
   $('bkWrap').innerHTML=`
     <div class="card"><h3>New requests</h3><div class="hint">Confirm to take the booking — you’ll get the customer’s mobile to arrange the details. Decline with a short note if it’s not one for you.</div>
-      ${open.length?open.map(bkCard).join(''):'<div class="empty">No new requests right now. Requests from the services page land here.</div>'}</div>
+      ${open.length?open.map(bkCard).join(''):'<div class="empty">No new requests right now. Requests from the Services Marketplace land here.</div>'}</div>
     <div class="card"><h3>Confirmed</h3><div class="hint">Settle payment directly with the customer — cash on the day, or card once Trove’s card payments launch. Mark it done afterwards.</div>
       ${upcoming.length?upcoming.map(bkCard).join(''):'<div class="empty">Nothing confirmed yet.</div>'}</div>
     <div class="card"><h3>History</h3>

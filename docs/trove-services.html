@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>Trove · Services</title>
+<title>Trove · Services Marketplace</title>
 <meta name="description" content="Creative services at your place in Dubai &amp; Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -42,17 +42,41 @@
   .btn-ghost:hover{border-color:var(--char)}
   @media(max-width:700px){.nav .links{display:none}}
 
-  /* hero */
-  .hero{padding:64px 0 30px}
+  /* hero — the Sell-on-Trove composition: centred, one line of intro, the facts as dashed pills */
+  .hero{padding:58px 0 22px}
+  .hero .lead{text-align:center;max-width:920px}
   .hero .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--muted);display:block;margin-bottom:14px}
-  .hero h1{font-size:clamp(36px,4.6vw,58px);line-height:1.04;max-width:14ch}
+  .hero h1{font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;letter-spacing:-.008em}
   .hero h1 span{color:var(--coral)}
-  .hero p{font-size:15.5px;color:var(--ink-80);font-weight:400;line-height:1.65;max-width:56ch;margin-top:16px}
-  .audswitch{display:flex;gap:8px;margin-top:30px;flex-wrap:wrap}
-  .audbtn{padding:12px 22px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:600;background:var(--paper);transition:.18s}
-  .audbtn small{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+  .hero p{font-size:16.5px;color:var(--ink-80);font-weight:400;line-height:1.6;max-width:64ch;margin:16px auto 0}
+  .hero .h-terms{margin:24px 0 0;justify-content:center}
+  /* first paint: the copy settles in line by line — same rise as the storefront hero */
+  .hero .lead>*{animation:rise .9s cubic-bezier(.22,.61,.36,1) both}
+  .hero .lead>:nth-child(2){animation-delay:.08s}
+  .hero .lead>:nth-child(3){animation-delay:.16s}
+  .hero .lead>:nth-child(4){animation-delay:.24s}
+  .hero .lead>:nth-child(5){animation-delay:.32s}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @media(prefers-reduced-motion:reduce){.hero .lead>*{animation:none}}
+
+  /* the two doors: who is this for — same card + icon-circle motif as the hand-off timeline */
+  .audswitch{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:640px;margin:26px auto 0}
+  .audbtn{display:flex;align-items:center;gap:13px;text-align:left;padding:14px 18px 14px 14px;border-radius:16px;border:1.5px solid var(--line);background:rgba(255,255,255,.72);transition:.18s;position:relative}
+  .audbtn .ofic{width:38px;height:38px}
+  .audbtn .ofic svg{width:19px;height:19px}
+  .audbtn b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.1}
+  .audbtn small{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-top:3px;line-height:1.35}
+  .audbtn .arr{margin-left:auto;font-size:18px;color:var(--muted);transition:.18s;flex:none}
+  @media(hover:hover){.audbtn:hover{border-color:var(--char);transform:translateY(-2px)}.audbtn:hover .arr{transform:translateX(3px)}}
   .audbtn.on{background:var(--char);color:var(--cream);border-color:var(--char)}
-  .audbtn.on small{color:rgba(253,247,245,.7)}
+  .audbtn.on small{color:rgba(253,247,245,.72)}
+  .audbtn.on .arr{color:var(--coral)}
+  @media(max-width:560px){
+    .hero{padding:40px 0 16px}
+    .audswitch{grid-template-columns:1fr;gap:9px;margin-top:20px}
+    .audbtn{padding:12px 14px}
+    .audbtn b{font-size:18px}
+  }
 
   /* category chips */
   .catrail{display:flex;gap:8px;flex-wrap:wrap;margin:26px 0 8px}
@@ -228,7 +252,7 @@
     <a href="/" class="brand" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></a>
     <nav class="links">
       <a href="/">Shop</a>
-      <a href="/services" class="on">Services</a>
+      <a href="/services" class="on">Services Marketplace</a>
       <a href="#how" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'});return false">How it works</a>
       <a href="/sell">Sell on Trove</a>
     </nav>
@@ -239,10 +263,13 @@
 </header>
 
 <section class="hero">
-  <div class="wrap">
-    <span class="eyebrow">Trove Services · Dubai &amp; Abu Dhabi</span>
+  <div class="wrap lead">
+    <span class="eyebrow">Services Marketplace · Dubai &amp; Abu Dhabi</span>
     <h1>Skilled hands, <span>at your place</span>.</h1>
-    <p>The people behind Trove's world of making, bookable for you. Pieces made to order, loved things repaired, homes styled, workshops around your own table — and for makers, the photography, design and shop support that helps a small brand grow.</p>
+    <p>Trove's makers and creatives, bookable. Made-to-order, repairs, styling and workshops for your home; photography, design and shop support for your brand.</p>
+    <div class="h-terms">
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay on the day</span>
+    </div>
     <div class="audswitch" id="audSwitch"></div>
   </div>
 </section>
@@ -327,7 +354,7 @@
 <footer>
   <div class="wrap">
     <span>© 2026 Trove · Dubai, UAE</span>
-    <span><a href="/">The marketplace</a> · <a href="/become-a-provider">Become a provider</a> · <a href="/seller-agreement">Seller agreement</a></span>
+    <span><a href="/">The shop</a> · <a href="/become-a-provider">Become a provider</a> · <a href="/seller-agreement">Seller agreement</a></span>
   </div>
 </footer>
 
@@ -371,9 +398,18 @@ function svTile(s){
 }
 
 /* ---------------- rendering ---------------- */
+const AUD_ICON={
+  home:{tint:'#CAD5CC',svg:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
+  makers:{tint:'#F8D7E4',svg:'<path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/>'}
+};
 function renderAudSwitch(){
-  $('audSwitch').innerHTML=TAX.audiences.map(a=>
-    `<button class="audbtn ${state.audience===a.key?'on':''}" onclick="setAudience('${a.key}')">${esc(a.name)}<small>${esc(a.sub)}</small></button>`).join('');
+  $('audSwitch').innerHTML=TAX.audiences.map(a=>{
+    const ic=AUD_ICON[a.key]||{tint:'#DBC7BD',svg:'<circle cx="12" cy="12" r="7"/>'};
+    return `<button class="audbtn ${state.audience===a.key?'on':''}" onclick="setAudience('${a.key}')" aria-pressed="${state.audience===a.key}">
+      <span class="ofic" style="background:${ic.tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</svg></span>
+      <span><b>${esc(a.name)}</b><small>${esc(a.sub)}</small></span>
+      <span class="arr">→</span>
+    </button>`;}).join('');
 }
 function setAudience(k){state.audience=k;state.cat=null;renderAll();}
 function setCat(slug){state.cat=state.cat===slug?null:slug;renderAll();}
@@ -403,7 +439,7 @@ function renderSections(){
       <div class="cathead"><div><h2>${esc(c.name)}</h2><div class="blurb">${esc(c.blurb)}</div></div></div>
       <div class="examples"><b>Things you can book here</b>${c.examples.map(esc).join(' · ')}</div>
       ${list.length?`<div class="svgrid">${list.map(svCardHTML).join('')}</div>`
-        :`<div class="empty">No providers offer this yet — Trove Services is just opening. Do this beautifully yourself? <a href="/become-a-provider">Become a provider</a> and be the first name here.</div>`}
+        :`<div class="empty">No providers offer this yet — the Services Marketplace is just opening. Do this beautifully yourself? <a href="/become-a-provider">Become a provider</a> and be the first name here.</div>`}
     </section>`;
   }).join('');
 }

@@ -100,7 +100,7 @@ router.post('/apply', (req, res) => {
   if (!String(b.phone || '').trim()) return res.status(400).json({ error: 'A WhatsApp number is required to apply' });
   const { SERVICE_AREAS, isServiceable } = require('../service-area');
   if (!isServiceable(b.location)) {
-    return res.status(400).json({ error: `Trove services are currently open to providers in ${SERVICE_AREAS.join(' and ')} only` });
+    return res.status(400).json({ error: `The Services Marketplace is currently open to providers in ${SERVICE_AREAS.join(' and ')} only` });
   }
   const cats = Array.isArray(b.categories) ? b.categories.map((c) => String(c).trim()).filter(Boolean) : [];
   if (!cats.length || cats.length > 3) return res.status(400).json({ error: 'Choose one to three service categories' });
@@ -186,7 +186,7 @@ router.post('/:id(\\d+)/book', (req, res) => {
   if (!phone) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });
   const { SERVICE_AREAS, isServiceable } = require('../service-area');
   if (!isServiceable(b.area)) {
-    return res.status(400).json({ error: `Trove services are available in ${SERVICE_AREAS.join(' and ')} only` });
+    return res.status(400).json({ error: `The Services Marketplace is available in ${SERVICE_AREAS.join(' and ')} only` });
   }
   const paymentMethod = b.paymentMethod === 'online' ? 'online' : 'cash';
 
