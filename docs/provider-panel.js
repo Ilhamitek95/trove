@@ -57,7 +57,10 @@
 .pp .pp-row .grow{flex:1;min-width:200px}
 .pp .pp-row .t{font-weight:700;font-size:14px}
 .pp .pp-row .s{font-size:12px;color:var(--muted,rgba(41,39,39,.62));font-weight:600;margin-top:2px}
-.pp .pp-link{font-size:12.5px;font-weight:700;color:var(--muted,rgba(41,39,39,.62));text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit}
+.pp .pp-link{font-size:12.5px;font-weight:700;color:var(--muted,rgba(41,39,39,.62));text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;padding:9px 8px;margin:-6px -4px}
+.pp .pp-bkbody a{display:inline-block;padding:4px 0}
+.pp .pp-hint a,.pp .pp-banner a{display:inline-block;padding:5px 0;margin:-5px 0}
+@media(max-width:560px){.pp .pp-row{padding:12px 14px}.pp .pp-row .grow{min-width:100%}.pp .pp-bkacts .pp-btn{flex:1;min-width:120px}.pp .pp-actions .pp-btn{flex:1}}
 .pp .pp-link:hover{color:var(--char,#292727)}
 .pp .pp-field{margin-bottom:14px}
 .pp .pp-field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted,rgba(41,39,39,.62));font-weight:700;margin-bottom:6px}
