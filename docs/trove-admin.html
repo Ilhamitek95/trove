@@ -245,7 +245,7 @@
     <div class="view" id="view-providers">
       <div class="card">
         <h3>Service providers</h3>
-        <div class="hint">The Services Marketplace — approve, reject or suspend providers. Only approved providers appear on the public Services Marketplace; the monthly subscription starts at first approval.</div>
+        <div class="hint">The Services Marketplace — approve, reject or suspend providers. Only approved providers appear on the public Services Marketplace; the monthly subscription starts at first approval. Every provider accepts the Provider Agreement (their services are their own responsibility) — the version and date show on the card.</div>
         <div id="providersWrap"></div>
       </div>
     </div>
@@ -502,7 +502,7 @@ function providerActions(p){
   return `<button class="btn btn-green" onclick="setProviderStatus(${p.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setProviderStatus(${p.id},'pending')">Back to review</button>`;
 }
 function providerCardHTML(p){
-  const facts=[['Experience',p.pitchExperience],['WhatsApp',p.pitchPhone],['Listings',`${p.liveServices} live of ${p.services}`],['Bookings',`${p.bookings} total · ${p.openRequests} open`],['Subscription',p.subStartedAt?('since '+fmtDate(p.subStartedAt)):'starts at approval']].filter(f=>f[1]);
+  const facts=[['Experience',p.pitchExperience],['WhatsApp',p.pitchPhone],['Listings',`${p.liveServices} live of ${p.services}`],['Bookings',`${p.bookings} total · ${p.openRequests} open`],['Subscription',p.subStartedAt?('since '+fmtDate(p.subStartedAt)):'starts at approval'],['Provider Agreement',p.agreementVersion?`${p.agreementVersion} · ${fmtDate(p.agreementAcceptedAt)}`:'not accepted']].filter(f=>f[1]);
   return `<div style="border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;background:var(--cream)">
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <div class="shoprow" style="flex:1;min-width:230px">${tile(p)}

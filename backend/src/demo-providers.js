@@ -163,10 +163,11 @@ function ensureDemoProviders(db) {
       const pid = db.prepare(`INSERT INTO service_providers
           (user_id, name, slug, status, bio, location, categories, color,
            pitch_services, pitch_experience, pitch_instagram, pitch_links, pitch_phone,
-           sub_agreed_at, sub_started_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'})`)
+           sub_agreed_at, sub_started_at, agreement_version, agreement_accepted_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'), ${status === 'approved' ? "datetime('now')" : 'NULL'}, ?, datetime('now'))`)
         .run(userId, d.name, d.slug, status, d.bio, d.location, JSON.stringify(d.categories), d.color,
-          d.services.map((s) => s.title).join('; '), d.experience, d.instagram, '', '+971 50 000 0000')
+          d.services.map((s) => s.title).join('; '), d.experience, d.instagram, '', '+971 50 000 0000',
+          require('./config').PROVIDER_AGREEMENT_VERSION)
         .lastInsertRowid;
       const ins = db.prepare(`INSERT INTO services
           (provider_id, title, category, description, price_cents, price_type, duration, setting, status)
@@ -174,6 +175,11 @@ function ensureDemoProviders(db) {
       for (const s of d.services) ins.run(pid, s.title, s.category, s.description, c(s.price), s.type, s.duration, s.setting);
       created++;
     }
+    // Demo profiles created before the Provider Agreement existed: stamp the
+    // current version so the dashboards show a realistic acceptance line.
+    db.prepare(`UPDATE service_providers SET agreement_version=?, agreement_accepted_at=datetime('now')
+      WHERE (agreement_version IS NULL OR agreement_version='') AND slug IN (${DEMO_PROVIDERS.map(() => '?').join(',')})`)
+      .run(require('./config').PROVIDER_AGREEMENT_VERSION, ...DEMO_PROVIDERS.map((d) => d.slug));
     const layla = db.prepare("SELECT id FROM users WHERE email = 'layla@email.com'").get();
     for (const b of DEMO_BOOKINGS) {
       if (db.prepare('SELECT 1 FROM service_bookings WHERE code = ?').get(b.code)) continue;
@@ -182,10 +188,11 @@ function ensureDemoProviders(db) {
       if (!sv) continue;
       db.prepare(`INSERT INTO service_bookings
           (code, service_id, provider_id, buyer_id, name, email, phone, area, preferred_date, notes,
-           payment_method, title, price_cents, price_type, status, confirmed_at)
-        VALUES (?,?,?,?,?,?,?,?,?,?,'cash',?,?,?,?, ${b.status === 'confirmed' ? "datetime('now')" : 'NULL'})`)
+           payment_method, title, price_cents, price_type, status, confirmed_at, terms_version)
+        VALUES (?,?,?,?,?,?,?,?,?,?,'direct',?,?,?,?, ${b.status === 'confirmed' ? "datetime('now')" : 'NULL'}, ?)`)
         .run(b.code, sv.id, sv.provider_id, layla ? layla.id : null, 'Layla Hassan', 'layla@email.com', '+971501234567',
-          b.area, b.preferredDate, b.notes, sv.title, sv.price_cents, sv.price_type, b.status);
+          b.area, b.preferredDate, b.notes, sv.title, sv.price_cents, sv.price_type, b.status,
+          require('./config').SERVICES_TERMS_VERSION);
     }
   });
   run();

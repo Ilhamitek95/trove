@@ -26,9 +26,12 @@ const fees = {
   SERVICE_FEE_CENTS: num(process.env.SERVICE_FEE_CENTS, 0), // none — no hidden costs
   DELIVERY_FEE_CENTS: num(process.env.DELIVERY_FEE_CENTS, 3000), // AED 30.00
   FREE_DELIVERY_THRESHOLD_CENTS: num(process.env.FREE_DELIVERY_THRESHOLD_CENTS, 20000), // AED 200.00
-  // Services marketplace: providers pay a flat monthly platform subscription;
-  // Trove takes no commission on the service price itself.
+  // Services marketplace: providers pay a flat monthly platform subscription.
+  // Bookings the customer settles directly with the provider carry nothing
+  // else; on a booking paid THROUGH Trove (card, once payments launch) Trove
+  // keeps a platform fee and the provider's fee is the remainder.
   PROVIDER_SUB_FEE_CENTS: num(process.env.PROVIDER_SUB_FEE_CENTS, 3000), // AED 30.00 / month
+  SERVICE_COMMISSION_PERCENT: num(process.env.SERVICE_COMMISSION_PERCENT, 10),
 };
 
 // Deprecated alias — old readers still get the same number.
@@ -42,6 +45,12 @@ fees.deliveryFor = (subtotalCents) =>
 // price. Both rails use this one function so they always round the same way.
 fees.split = (grossCents) => {
   const fee = Math.round((grossCents * fees.COMMISSION_PERCENT) / 100);
+  return { fee, net: grossCents - fee };
+};
+
+// A booking paid through Trove: the platform fee and the provider's fee.
+fees.serviceSplit = (grossCents) => {
+  const fee = Math.round((grossCents * fees.SERVICE_COMMISSION_PERCENT) / 100);
   return { fee, net: grossCents - fee };
 };
 

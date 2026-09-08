@@ -338,6 +338,13 @@ CREATE INDEX IF NOT EXISTS idx_bookings_provider ON service_bookings(provider_id
 CREATE INDEX IF NOT EXISTS idx_bookings_buyer ON service_bookings(buyer_id);
 `);
 
+// Services Marketplace terms + money snapshots (additive, no migration).
+addColumn('service_providers', 'agreement_version',     "TEXT DEFAULT ''");  // provider agreement accepted
+addColumn('service_providers', 'agreement_accepted_at', 'TEXT');
+addColumn('service_bookings',  'terms_version',         "TEXT DEFAULT ''");  // services terms the customer accepted
+addColumn('service_bookings',  'commission_cents',      'INTEGER NOT NULL DEFAULT 0'); // Trove's fee when paid through Trove
+addColumn('service_bookings',  'provider_net_cents',    'INTEGER NOT NULL DEFAULT 0'); // the provider's fee on those
+
 // Versioned migrations run last, so they always see the full baseline schema
 // (fresh databases included). See src/migrations/index.js.
 require('./migrations').run(db);

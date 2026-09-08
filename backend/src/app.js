@@ -131,6 +131,9 @@ function createApp() {
     aiTagsEnabled: require('./ai').enabled(),
     googleClientId: require('./google-auth').clientId(),
     providerSubFeeCents: fees.PROVIDER_SUB_FEE_CENTS,
+    serviceCommissionPercent: fees.SERVICE_COMMISSION_PERCENT,
+    providerAgreementVersion: require('./config').PROVIDER_AGREEMENT_VERSION,
+    servicesTermsVersion: require('./config').SERVICES_TERMS_VERSION,
   }));
   // Storefront search beacon — the shop page filters locally, so it reports
   // each search here. Anonymous by design: query text and hit count only.
@@ -161,12 +164,18 @@ function createApp() {
   app.get('/api/content', (_req, res) => {
     res.json(require('./content').getPublic());
   });
-  // The seller agreement, served with its hash so acceptance is verifiable.
-  app.get('/api/legal/seller-agreement', (_req, res) => {
+  // Legal documents, served with their hash so acceptance is verifiable.
+  const LEGAL = {
+    'seller-agreement': () => require('./config').AGREEMENT_VERSION,
+    'provider-agreement': () => require('./config').PROVIDER_AGREEMENT_VERSION,
+    'services-terms': () => require('./config').SERVICES_TERMS_VERSION,
+  };
+  app.get('/api/legal/:doc', (req, res) => {
+    const v = LEGAL[req.params.doc];
+    if (!v) return res.status(404).json({ error: 'Not found' });
     const fs = require('fs');
-    const file = path.join(__dirname, '..', 'legal', `seller-agreement-${require('./config').AGREEMENT_VERSION}.md`);
-    const markdown = fs.readFileSync(file, 'utf8');
-    res.json({ version: require('./config').AGREEMENT_VERSION, markdown, sha256: require('./crypto').sha256(markdown) });
+    const markdown = fs.readFileSync(path.join(__dirname, '..', 'legal', `${req.params.doc}-${v()}.md`), 'utf8');
+    res.json({ version: v(), markdown, sha256: require('./crypto').sha256(markdown) });
   });
 
   app.use('/api/auth', require('./routes/auth.routes'));
@@ -203,6 +212,8 @@ function createApp() {
     '/apply': 'trove-apply.html',
     '/admin': 'trove-admin.html',
     '/seller-agreement': 'seller-agreement.html',
+    '/provider-agreement': 'provider-agreement.html',
+    '/services-terms': 'services-terms.html',
     '/services': 'trove-services.html',
     '/become-a-provider': 'trove-provider-apply.html',
     '/provider': 'trove-provider.html',

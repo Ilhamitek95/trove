@@ -202,6 +202,9 @@
   .payopt b{font-size:13px;display:block}
   .payopt span{font-size:12px;color:var(--muted);font-weight:500;line-height:1.45}
   .payopt.off{opacity:.55;cursor:not-allowed}
+  .terms{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.5;margin:0 0 14px;cursor:pointer}
+  .terms input{margin-top:3px;accent-color:var(--char);flex:none}
+  .terms a{text-decoration:underline;font-weight:700}
   .err{display:none;background:#FCEBE4;color:var(--accent-ink);font-size:13px;font-weight:600;padding:11px 15px;border-radius:12px;margin-bottom:12px;line-height:1.5}
   .submit{width:100%;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;transition:.18s}
   .submit:hover{background:#3B3737}
@@ -296,7 +299,7 @@
   </div>
   <div class="wrap pv-body">
     <div class="results"><div class="rhead"><h2>What they offer</h2><span id="pvCount"></span></div><div class="svgrid" id="pvGrid"></div></div>
-    <p class="pv-note">Every price here is <span id="pvName2"></span>'s own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile.</p>
+    <p class="pv-note">Every price here is <span id="pvName2"></span>'s own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile. The service is theirs to deliver; Trove lists it.</p>
   </div>
 </section>
 
@@ -306,7 +309,7 @@
     <h1>Skilled hands, <span>at your place</span>.</h1>
     <p>Trove's makers and creatives, bookable. Made-to-order, repairs, styling and workshops for your home; photography, design and shop support for your brand.</p>
     <div class="h-terms">
-      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay on the day</span>
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay your way</span>
     </div>
     <div class="audswitch" id="audSwitch"></div>
   </div>
@@ -332,27 +335,27 @@
     <div class="band-head">
       <span class="eyebrow">How it works</span>
       <h2>No baskets, no checkout — a service is a conversation.</h2>
-      <p>You send a request, the provider confirms, and the details are arranged between you. Providers pay one flat fee; Trove adds nothing to the price, for either side.</p>
+      <p>You send a request, the provider confirms, and the details are arranged between you. You pay the listed price either way — directly to the provider, or through Trove by card. The provider is responsible for the service; Trove lists it.</p>
     </div>
     <div class="hiw">
       <div class="lane">
         <div class="lane-h"><span class="ofic" style="background:#CAD5CC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><span><b>Booking one</b><small>For customers</small></span></div>
-        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay on the day</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span></div>
+        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay your way</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span></div>
         <div class="steps">
           <div class="step"><span class="dot">i</span><div><h4>Find your service</h4><p>Browse by what you need — for your home, your celebration, or your brand. Every provider is reviewed by a real person before they appear here.</p></div></div>
           <div class="step"><span class="dot">ii</span><div><h4>Send a request</h4><p>A date that suits you, a few lines on what you have in mind, and how you'd like to pay. Just a name, email and UAE mobile.</p></div></div>
           <div class="step"><span class="dot">iii</span><div><h4>They confirm</h4><p>The provider accepts and reaches you on your mobile to agree the details — time, place, and the final scope. Your email stays with Trove.</p></div></div>
-          <div class="step"><span class="dot">iv</span><div><h4>Enjoy, then settle</h4><p>You pay the provider directly — cash when the service is done, with card payment through Trove arriving when our card payments launch.</p></div></div>
+          <div class="step"><span class="dot">iv</span><div><h4>Enjoy, then settle</h4><p>Settle directly with the provider — bank transfer or cash, as you agree — or pay through Trove by card once they confirm, arriving with our card payments. Either way it's the listed price, nothing added.</p></div></div>
         </div>
       </div>
       <div class="lane">
         <div class="lane-h"><span class="ofic" style="background:#F8D7E4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/></svg></span><span><b>Offering one</b><small>For providers</small></span></div>
-        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>AED 30 a month — nothing else</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No commission</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Dubai &amp; Abu Dhabi</span></div>
+        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>AED 30 a month</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No commission on direct bookings</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>10% only when paid through Trove</span></div>
         <div class="steps">
           <div class="step"><span class="dot">i</span><div><h4>Tell us what you do</h4><p>A ten-minute application about you and your work, written like a chat. A real person reviews it, usually within a day or two, and only approved providers are listed — so your name sits beside work worth being beside.</p></div></div>
           <div class="step"><span class="dot">ii</span><div><h4>List your services</h4><p>Price each one the way you actually charge — fixed, from, or per hour — and say where it happens: their place, your studio, or remote. Build it in your dashboard while you're still in review; approval makes it public, and that's the day your subscription starts. Nothing is owed before it.</p></div></div>
           <div class="step"><span class="dot">iii</span><div><h4>Requests arrive</h4><p>Each shows the customer's name, area, preferred date and a brief. Confirm and their mobile is released so you can arrange the visit; until then their contact stays private, and their email stays with Trove. Decline with a short note — no penalty.</p></div></div>
-          <div class="step"><span class="dot">iv</span><div><h4>Do the work, settle direct</h4><p>Take payment yourself — cash on the day for now, card through the site when Trove's card payments launch — then mark it done. Every booking keeps a snapshot of the listed price. AED 30 a month is the whole platform cost: no commission, no listing fees, no cut of the booking.</p></div></div>
+          <div class="step"><span class="dot">iv</span><div><h4>Do the work, get paid</h4><p>Direct bookings are settled between you and the customer — bank transfer or cash — and carry no commission. Bookings paid through Trove by card, arriving with card payments, carry a 10% platform fee; Trove pays you the other 90% once you mark the booking done. Every booking keeps a snapshot of the listed price, and the service itself is always your responsibility — Trove lists it.</p></div></div>
         </div>
       </div>
     </div>
@@ -366,7 +369,9 @@
     </div>
     <div class="faqs">
       <details class="faq"><summary>What does it cost to offer services?<span class="faq-tg">+</span></summary>
-        <div class="faq-a">A flat AED 30 a month, and nothing else — no commission, no listing fees, no cut of your bookings. It starts only when your profile is approved, and card billing begins when Trove's card payments launch; you'll be told before the first charge.</div></details>
+        <div class="faq-a">A flat AED 30 a month, plus a 10% platform fee only on bookings the customer pays through Trove by card. Direct bookings — bank transfer or cash between you and the customer — carry no commission and no listing fees. The subscription starts only when your profile is approved, and card billing begins when Trove's card payments launch; you'll be told before the first charge.</div></details>
+      <details class="faq"><summary>Who is responsible for the service?<span class="faq-tg">+</span></summary>
+        <div class="faq-a">The provider, always. Trove lists the service and passes on the request; it doesn't perform, supervise or guarantee it. The <a href="/provider-agreement" style="text-decoration:underline">Provider Agreement</a> and the <a href="/services-terms" style="text-decoration:underline">Services Terms</a> both say so plainly — read them before you apply or book.</div></details>
       <details class="faq"><summary>Why can't I see the customer's number straight away?<span class="faq-tg">+</span></summary>
         <div class="faq-a">The same privacy stance as the rest of Trove: contact details change hands only when there's a confirmed arrangement to use them for. The mobile is released the moment you confirm; the email address stays with Trove.</div></details>
       <details class="faq"><summary>What can I offer?<span class="faq-tg">+</span></summary>
@@ -392,7 +397,7 @@
 <footer>
   <div class="wrap">
     <span>© 2026 Trove · Dubai, UAE</span>
-    <span><a href="/">The shop</a> · <a href="/become-a-provider">Become a provider</a> · <a href="/seller-agreement">Seller agreement</a></span>
+    <span><a href="/">The shop</a> · <a href="/become-a-provider">Become a provider</a> · <a href="/services-terms">Services terms</a> · <a href="/provider-agreement">Provider agreement</a></span>
   </div>
 </footer>
 
@@ -522,7 +527,7 @@ function renderMyBookings(){
     const st=STATUS[b.status]||[b.status,'pill'];
     return `<div class="bkcard">
       <div class="grow"><div class="t">${esc(b.title)} · ${esc(b.providerName)}</div>
-      <div class="s">${esc(b.code)}${b.preferredDate?` · ${esc(b.preferredDate)}`:''} · ${b.paymentMethod==='online'?'Paying by card':'Cash when the service is done'}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
+      <div class="s">${esc(b.code)}${b.preferredDate?` · ${esc(b.preferredDate)}`:''} · ${b.paymentMethod==='trove'?'Paying through Trove':'Settling directly with the provider'}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
       <span class="${st[1]}">${st[0]}</span>
       ${['requested','confirmed'].includes(b.status)?`<button class="linkbtn" onclick="cancelBooking(${b.id})">Cancel</button>`:''}
     </div>`;}).join('')}</div>`;
@@ -623,9 +628,10 @@ function openService(id){
       <div class="field"><label>When suits you? <span style="text-transform:none;letter-spacing:0;color:var(--taupe)">· optional</span></label><input id="bkDate" placeholder="e.g. a Friday afternoon, or 14 September"></div>
       <div class="field"><label>Tell them about it</label><textarea id="bkNotes" maxlength="1000" placeholder="What you have in mind, how many people, anything they should know."></textarea></div>
       <div class="payrow">
-        <label class="payopt"><input type="radio" name="bkPay" value="cash" checked><span><b>Cash, when the service is done</b><span>You settle directly with the provider on the day.</span></span></label>
-        <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="online" ${paymentsLive?'':'disabled'}><span><b>Card, through Trove</b><span>${paymentsLive?'Pay online once the provider confirms.':'Card payments are coming soon — cash on the day for now.'}</span></span></label>
+        <label class="payopt"><input type="radio" name="bkPay" value="direct" checked><span><b>Settle directly with the provider</b><span>Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.</span></span></label>
+        <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="trove" ${paymentsLive?'':'disabled'}><span><b>Pay through Trove by card</b><span>${paymentsLive?'Pay once the provider confirms. Refunded in full if the service isn’t delivered.':'Coming with Trove’s card payments — settle directly for now.'}</span></span></label>
       </div>
+      <label class="terms"><input type="checkbox" id="bkTerms"><span>I accept the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a> — the provider, not Trove, is responsible for the service.</span></label>
       <button class="submit" id="bkSubmit" onclick="submitBooking()">Send booking request</button>
     </div>`;
   if(ME&&ME.user){
@@ -644,6 +650,7 @@ async function submitBooking(){
   if(!$('bkName').value.trim())return show('Please tell us your name.');
   if(!/^\S+@\S+\.\S+$/.test($('bkEmail').value.trim()))return show('That email doesn’t look right — mind checking it?');
   if(!$('bkPhone').value.trim())return show('Add a UAE mobile so the provider can reach you once they confirm.');
+  if(!$('bkTerms').checked)return show('Please accept the Services Terms — they say plainly that the provider, not Trove, is responsible for the service.');
   const btn=$('bkSubmit');btn.disabled=true;btn.textContent='Sending…';
   try{
     const r=await TroveAPI.api('/api/services/'+CURRENT.id+'/book',{method:'POST',body:{
@@ -653,7 +660,8 @@ async function submitBooking(){
       area:$('bkArea').value,
       preferredDate:$('bkDate').value.trim(),
       notes:$('bkNotes').value.trim(),
-      paymentMethod:(document.querySelector('input[name=bkPay]:checked')||{}).value||'cash',
+      paymentMethod:(document.querySelector('input[name=bkPay]:checked')||{}).value||'direct',
+      agreeTerms:true,
     }});
     $('bookForm').innerHTML=`<div class="booked">
       <div class="mark">✓</div>

@@ -33,6 +33,7 @@ const APPLY = {
   links: '',
   phone: '+971 50 111 2233',
   agreeSub: true,
+  agreeTerms: true,
 };
 
 before(async () => {
@@ -169,7 +170,7 @@ test('admin stats count providers', async () => {
 let guestBookingId, buyerBookingId;
 
 test('a guest can request a booking; area and phone are validated', async () => {
-  const body = { name: 'Amal Guest', email: 'amal@test.local', phone: '050 987 6543', area: 'Dubai', preferredDate: 'Friday afternoon', notes: 'Six adults, garden table.', paymentMethod: 'cash' };
+  const body = { name: 'Amal Guest', email: 'amal@test.local', phone: '050 987 6543', area: 'Dubai', preferredDate: 'Friday afternoon', notes: 'Six adults, garden table.', paymentMethod: 'direct', agreeTerms: true };
   assert.equal((await api('POST', `/api/services/${serviceId}/book`, { body: { ...body, area: 'Sharjah' } })).status, 400);
   assert.equal((await api('POST', `/api/services/${serviceId}/book`, { body: { ...body, phone: '12345' } })).status, 400);
   const res = await api('POST', `/api/services/${serviceId}/book`, { body });
@@ -183,7 +184,7 @@ test('the provider sees the request without email or phone until confirmed', asy
   assert.equal(data.bookings.length, 1);
   const bk = data.bookings[0];
   assert.equal(bk.customerName, 'Amal Guest');
-  assert.equal(bk.paymentMethod, 'cash');
+  assert.equal(bk.paymentMethod, 'direct');
   assert.equal(bk.phone, null, 'phone is withheld until the provider confirms');
   assert.ok(!JSON.stringify(data).includes('amal@test.local'), 'the customer email never reaches the provider');
 });
@@ -201,13 +202,13 @@ test('confirming hands over the phone; completing needs a confirmed booking', as
 test('a signed-in customer sees their bookings and can cancel a request', async () => {
   const res = await api('POST', `/api/services/${serviceId}/book`, {
     cookie: buyerCookie,
-    body: { name: 'Layla Buyer', email: 'buyer@test.local', phone: '0501112222', area: 'Abu Dhabi', paymentMethod: 'online' },
+    body: { name: 'Layla Buyer', email: 'buyer@test.local', phone: '0501112222', area: 'Abu Dhabi', paymentMethod: 'trove', agreeTerms: true },
   });
   assert.equal(res.status, 201);
   buyerBookingId = res.data.booking.id;
   const mine = await api('GET', '/api/services/my-bookings', { cookie: buyerCookie });
   assert.equal(mine.data.bookings.length, 1);
-  assert.equal(mine.data.bookings[0].paymentMethod, 'online');
+  assert.equal(mine.data.bookings[0].paymentMethod, 'trove');
   assert.equal(mine.data.bookings[0].providerName, 'Reem Makes');
   const cancel = await api('POST', `/api/services/bookings/${buyerBookingId}/cancel`, { cookie: buyerCookie });
   assert.equal(cancel.status, 200);

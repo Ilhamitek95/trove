@@ -247,6 +247,7 @@ router.get('/providers', requireAdmin, (_req, res) => {
     pitchInstagram: p.pitch_instagram || '', pitchLinks: p.pitch_links || '',
     pitchPhone: p.pitch_phone || '',
     subAgreedAt: p.sub_agreed_at || null, subStartedAt: p.sub_started_at || null,
+    agreementVersion: p.agreement_version || '', agreementAcceptedAt: p.agreement_accepted_at || null,
     services: p.service_count, liveServices: p.live_count,
     bookings: p.booking_count, openRequests: p.open_requests,
     createdAt: p.created_at,

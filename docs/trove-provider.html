@@ -142,13 +142,14 @@
         <h3>Your subscription</h3>
         <div class="fee" id="subFee">AED 30 <small>/ month</small></div>
         <div class="hint" id="subHint" style="margin-top:8px"></div>
+        <div class="hint" id="agreeLine" style="margin:0"></div>
       </div>
     </div>
 
     <div class="view" id="view-services">
       <div class="card" id="editorCard" style="display:none">
         <h3 id="edTitle">Add a service</h3>
-        <div class="hint">Set the price the way you charge — a fixed price, a starting price, or per hour. You settle directly with the customer; Trove takes no cut.</div>
+        <div class="hint">Set the price the way you charge — a fixed price, a starting price, or per hour. Direct bookings carry no commission; bookings paid through Trove carry a 10% platform fee.</div>
         <div class="err" id="edErr"></div>
         <div class="field"><label>Service name</label><input id="edName" maxlength="90" placeholder="e.g. Pottery hand-building workshop at your home"></div>
         <div class="ftwo">
@@ -229,8 +230,10 @@ function renderOverview(){
   const fee=PROVIDER.subscription?PROVIDER.subscription.feeCents:3000;
   $('subFee').innerHTML=`AED ${Math.round(fee/100)} <small>/ month</small>`;
   $('subHint').textContent=PROVIDER.subscription&&PROVIDER.subscription.startedAt
-    ?`Running since ${fmtDate(PROVIDER.subscription.startedAt)}. This flat fee is the whole platform cost — no commission on what you charge. Card billing begins when Trove's card payments launch; you'll be told before the first charge.`
-    :`Nothing to pay yet — the subscription starts the day your profile is approved. It's the whole platform cost: no commission on what you charge.`;
+    ?`Running since ${fmtDate(PROVIDER.subscription.startedAt)}. No commission on direct bookings; a ${PROVIDER.commissionPercent||10}% platform fee only on bookings paid through Trove. Card billing begins when Trove's card payments launch; you'll be told before the first charge.`
+    :`Nothing to pay yet — the subscription starts the day your profile is approved. No commission on direct bookings; a ${PROVIDER.commissionPercent||10}% platform fee only on bookings paid through Trove.`;
+  const ag=PROVIDER.agreement||{};
+  $('agreeLine').innerHTML=ag.version?`<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement ${esc(ag.version)}</a> accepted ${fmtDate(ag.acceptedAt)} — your services are your own responsibility; Trove lists them.`:`<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — your services are your own responsibility; Trove lists them.`;
   const badges=[...document.querySelectorAll('#bkBadge,#bkBadgeM')];
   badges.forEach(b=>{b.textContent=open;b.classList.toggle('zero',!open);});
 }
@@ -310,7 +313,7 @@ async function deleteService(id){
 
 /* ---------------- bookings ---------------- */
 function bkCard(b){
-  const pay=b.paymentMethod==='online'?'Card through Trove':'Cash on the day';
+  const pay=b.paymentMethod==='trove'?`Paid through Trove · your fee ${money(b.providerNetCents)} after a ${PROVIDER.commissionPercent||10}% platform fee`:'Settled directly with the customer';
   const when=b.preferredDate?`<b>When:</b> ${esc(b.preferredDate)}<br>`:'';
   const phone=b.phone?`<b>Mobile:</b> <a href="tel:${esc(b.phone)}" style="text-decoration:underline">${esc(b.phone)}</a><br>`:'';
   const notes=b.notes?`<b>Brief:</b> ${esc(b.notes)}<br>`:'';
@@ -336,7 +339,7 @@ function renderBookings(){
   $('bkWrap').innerHTML=`
     <div class="card"><h3>New requests</h3><div class="hint">Confirm to take the booking — you’ll get the customer’s mobile to arrange the details. Decline with a short note if it’s not one for you.</div>
       ${open.length?open.map(bkCard).join(''):'<div class="empty">No new requests right now. Requests from the Services Marketplace land here.</div>'}</div>
-    <div class="card"><h3>Confirmed</h3><div class="hint">Settle payment directly with the customer — cash on the day, or card once Trove’s card payments launch. Mark it done afterwards.</div>
+    <div class="card"><h3>Confirmed</h3><div class="hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: your fee is paid after you mark the booking done.</div>
       ${upcoming.length?upcoming.map(bkCard).join(''):'<div class="empty">Nothing confirmed yet.</div>'}</div>
     <div class="card"><h3>History</h3>
       ${rest.length?rest.map(bkCard).join(''):'<div class="empty">Completed, declined and cancelled bookings end up here.</div>'}</div>`;

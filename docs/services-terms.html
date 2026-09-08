@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Services Terms — Trove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--cream:#FDF7F5;--charcoal:#292727;--coral:#F19A82;--accent-ink:#292727;--muted:rgba(41,39,39,.62);--line:#eee4da;--font-display:'Cormorant',Georgia,serif}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--cream);color:var(--charcoal);font-family:'Quicksand',sans-serif;line-height:1.7}
+  .wrap{max-width:760px;margin:0 auto;padding:48px 22px 80px}
+  a.back{color:var(--accent-ink);text-decoration:none;font-weight:600;font-size:14px}
+  h1{font-family:var(--font-display);font-weight:600;font-size:42px;margin:18px 0 6px}
+  .sub{color:var(--muted);font-weight:600;font-size:13.5px;margin-bottom:28px}
+  #doc h2{font-family:var(--font-display);font-weight:600;font-size:26px;margin:30px 0 10px}
+  #doc p,#doc li{font-size:15px;font-weight:500;margin:10px 0}
+  #doc ul{padding-left:22px}
+  #doc strong{font-weight:700}
+  .hash{margin-top:36px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/services">← Back to the Services Marketplace</a>
+  <h1>Services Terms</h1>
+  <div class="sub" id="sub">Loading…</div>
+  <div id="doc"></div>
+  <div class="hash" id="hash"></div>
+</div>
+<script src="/config.js"></script>
+<script src="/api.js"></script>
+<script>
+// Tiny markdown renderer — headings, bold, bullets, paragraphs. Works on
+// whole blocks (blank-line separated) so **bold** that wraps across source
+// lines still renders; wrapped bullet lines rejoin their bullet.
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function md(src){
+  const inline=(t)=>esc(t).replace(/\*\*([\s\S]+?)\*\*/g,'<strong>$1</strong>');
+  const out=[];
+  for(const block of src.split(/\r?\n\s*\r?\n/)){
+    const text=block.trim();
+    if(!text)continue;
+    if(text.startsWith('## ')){out.push('<h2>'+inline(text.slice(3).replace(/\s+/g,' '))+'</h2>');continue;}
+    if(text.startsWith('# '))continue; /* page already has the H1 */
+    if(/^- /m.test(text)){
+      // Split into items on lines that START a bullet; wrapped lines rejoin.
+      const items=[];
+      for(const line of text.split(/\r?\n/)){
+        if(line.trimStart().startsWith('- '))items.push(line.trim().slice(2));
+        else if(items.length)items[items.length-1]+=' '+line.trim();
+        else items.push(line.trim());
+      }
+      out.push('<ul>'+items.map(i=>'<li>'+inline(i)+'</li>').join('')+'</ul>');
+      continue;
+    }
+    out.push('<p>'+inline(text.replace(/\s+/g,' '))+'</p>');
+  }
+  return out.join('');
+}
+(async function(){
+  try{
+    const a=await TroveAPI.api('/api/legal/services-terms');
+    document.getElementById('sub').textContent='Version '+a.version+' · plain English, on purpose';
+    document.getElementById('doc').innerHTML=md(a.markdown);
+    document.getElementById('hash').textContent='Document integrity (SHA-256): '+a.sha256;
+  }catch(e){
+    document.getElementById('sub').textContent='The agreement couldn\'t be loaded right now — please try again shortly.';
+  }
+})();
+</script>
+</body>
+</html>

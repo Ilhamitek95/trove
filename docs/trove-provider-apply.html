@@ -113,10 +113,10 @@
       <h1>Tell us what you <em>do</em>.</h1>
       <p>The Services Marketplace is curated like the shop — every provider is reviewed by a real person before going live. Muralists, stylists, photographers, workshop hosts, brand designers: if you do it beautifully, we want to see it.</p>
       <div class="bfacts">
-        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>AED 30 a month — that's the whole platform fee</div>
-        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>No commission — your prices are yours</div>
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>AED 30 a month, plus 10% only on bookings paid through Trove</div>
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>No commission on direct bookings</div>
         <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>Booking requests straight to your dashboard</div>
-        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>Cash on the day, or card once payments launch</div>
+        <div class="bfact"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>Customers settle directly, or pay through Trove (10% fee)</div>
       </div>
       <div class="bsteps">
         <div class="bstep on" id="bs1"><span class="n">1</span><span class="t">About you</span></div>
@@ -186,8 +186,8 @@
         </div>
         <div class="subbox">
           <div class="fee" id="subFee">AED 30 <small>/ month</small></div>
-          <p>The provider subscription is the whole platform fee — Trove takes no commission on what you charge, and there's nothing to pay until your profile is approved. Card billing starts when Trove's card payments launch; we'll tell you before the first charge.</p>
-          <label><input type="checkbox" id="fAgree"><span>I understand the monthly subscription and want to offer my services on Trove.</span></label>
+          <p>The subscription is the platform fee. Direct bookings carry no commission; bookings paid through Trove by card carry a 10% platform fee. Nothing is due until your profile is approved, and card billing starts when Trove's card payments launch — we'll tell you before the first charge.</p>
+          <label><input type="checkbox" id="fAgree"><span>I understand the monthly subscription and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
         </div>
         <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next" id="submitBtn" onclick="submitApp()">Submit application</button></div>
       </div>
@@ -297,7 +297,7 @@ async function submitApp(){
   if(!$('fServices').value.trim()){showErr('List at least one service you’re planning to offer.');return;}
   if(!$('fInsta').value.trim()&&!$('fLinks').value.trim()){showErr('Share your Instagram or a portfolio link — it’s how our curation team sees your work.');return;}
   if(!$('fPhone').value.trim()){showErr('Add your WhatsApp number so our curation team can reach you.');return;}
-  if(!$('fAgree').checked){showErr('Tick the subscription box to apply — it’s how the platform fee works.');return;}
+  if(!$('fAgree').checked){showErr('Tick the box to apply — it covers the subscription and the Provider Agreement.');return;}
   const btn=$('submitBtn');const label=btn.textContent;
   btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
   try{
@@ -315,6 +315,7 @@ async function submitApp(){
       links:$('fLinks').value.trim(),
       phone:$('fPhone').value.trim(),
       agreeSub:$('fAgree').checked,
+      agreeTerms:$('fAgree').checked,
     }});
     $('doneName').textContent=$('fName').value.trim().split(' ')[0];
     $('donePractice').textContent=$('fPractice').value.trim();

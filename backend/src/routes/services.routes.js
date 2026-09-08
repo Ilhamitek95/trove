@@ -11,10 +11,17 @@
  *   GET  /api/services/my-bookings   the signed-in customer's booking requests
  *   POST /api/services/bookings/:id/cancel
  *
- * Money model: no commission on the service price — providers pay the monthly
- * platform subscription (fees.PROVIDER_SUB_FEE_CENTS). A booking is settled
- * between customer and provider: cash when the service is done, or by card
- * through the site's payment rails once card payments launch.
+ * Money model: providers pay the monthly platform subscription
+ * (fees.PROVIDER_SUB_FEE_CENTS). A booking is paid one of two ways, chosen
+ * by the customer at request time and snapshotted on the booking:
+ *   direct — settled between customer and provider (bank transfer, cash…);
+ *            Trove is not part of that payment and takes nothing from it
+ *   trove  — paid to Trove by card once the provider confirms (arrives with
+ *            card payments); Trove keeps fees.SERVICE_COMMISSION_PERCENT and
+ *            the provider's fee is the remainder (commission_cents /
+ *            provider_net_cents are snapshotted from the listed price)
+ * Every booking records the Services Terms version the customer accepted;
+ * every provider records the Provider Agreement version they accepted.
  */
 const express = require('express');
 const db = require('../db');
@@ -129,6 +136,9 @@ router.post('/apply', (req, res) => {
   if (b.agreeSub !== true) {
     return res.status(400).json({ error: `The AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month platform subscription needs your agreement to apply` });
   }
+  if (b.agreeTerms !== true) {
+    return res.status(400).json({ error: 'The Provider Agreement needs your acceptance to apply' });
+  }
   if (!String(b.instagram || '').trim() && !String(b.links || '').trim()) {
     return res.status(400).json({ error: 'Share your Instagram or a portfolio link so our curation team can see your work' });
   }
@@ -179,12 +189,14 @@ router.post('/apply', (req, res) => {
 
   db.prepare(`INSERT INTO service_providers
       (user_id, name, slug, status, bio, location, categories,
-       pitch_services, pitch_experience, pitch_instagram, pitch_links, pitch_phone, sub_agreed_at)
-    VALUES (?,?,?,'pending',?,?,?,?,?,?,?,?, datetime('now'))`)
+       pitch_services, pitch_experience, pitch_instagram, pitch_links, pitch_phone, sub_agreed_at,
+       agreement_version, agreement_accepted_at)
+    VALUES (?,?,?,'pending',?,?,?,?,?,?,?,?, datetime('now'), ?, datetime('now'))`)
     .run(userId, providerName, slug,
       clean(b.about, 2000), clean(b.location, 120), JSON.stringify(cats.slice(0, 3)),
       clean(b.plannedServices, 2000), clean(b.experience, 60),
-      ig, clean(b.links, 300), clean(b.phone, 40));
+      ig, clean(b.links, 300), clean(b.phone, 40),
+      require('../config').PROVIDER_AGREEMENT_VERSION);
 
   req.session.userId = userId;
   res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
@@ -198,9 +210,14 @@ function shapeBookingForBuyer(bk) {
     priceCents: bk.price_cents, priceType: bk.price_type,
     area: bk.area, preferredDate: bk.preferred_date, notes: bk.notes,
     paymentMethod: bk.payment_method, declineReason: bk.decline_reason,
+    termsVersion: bk.terms_version || '',
     providerName: bk.provider_name, createdAt: bk.created_at,
   };
 }
+
+// The two ways a booking is paid. Old spellings from the first release map
+// onto the new ones so nothing stored breaks.
+const PAYMENT_METHODS = { direct: 'direct', cash: 'direct', trove: 'trove', online: 'trove' };
 
 // POST /api/services/:id/book — a booking request. Open to guests (name,
 // email and phone are required); a signed-in customer's request is linked to
@@ -223,7 +240,11 @@ router.post('/:id(\\d+)/book', (req, res) => {
   if (!isServiceable(b.area)) {
     return res.status(400).json({ error: `The Services Marketplace is available in ${SERVICE_AREAS.join(' and ')} only` });
   }
-  const paymentMethod = b.paymentMethod === 'online' ? 'online' : 'cash';
+  const paymentMethod = PAYMENT_METHODS[String(b.paymentMethod || 'direct')] || 'direct';
+  if (b.agreeTerms !== true) {
+    return res.status(400).json({ error: 'Please accept the Services Terms to send a request' });
+  }
+  const split = paymentMethod === 'trove' ? fees.serviceSplit(row.price_cents) : { fee: 0, net: 0 };
 
   let code;
   do { code = 'SRV-' + require('crypto').randomBytes(3).toString('hex').toUpperCase(); }
@@ -231,13 +252,15 @@ router.post('/:id(\\d+)/book', (req, res) => {
 
   const info = db.prepare(`INSERT INTO service_bookings
       (code, service_id, provider_id, buyer_id, name, email, phone, area,
-       preferred_date, notes, payment_method, title, price_cents, price_type)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+       preferred_date, notes, payment_method, title, price_cents, price_type,
+       terms_version, commission_cents, provider_net_cents)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(code, row.id, row.provider_id, req.session.userId || null,
       name, email, phone, String(b.area).trim().slice(0, 60),
       String(b.preferredDate || '').trim().slice(0, 60),
       String(b.notes || '').trim().slice(0, 1000),
-      paymentMethod, row.title, row.price_cents, row.price_type);
+      paymentMethod, row.title, row.price_cents, row.price_type,
+      require('../config').SERVICES_TERMS_VERSION, split.fee, split.net);
 
   res.status(201).json({ booking: { id: info.lastInsertRowid, code, status: 'requested' } });
 });

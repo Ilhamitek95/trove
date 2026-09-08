@@ -30,6 +30,8 @@ function providerMe(p) {
       agreedAt: p.sub_agreed_at || null,
       startedAt: p.sub_started_at || null,
     },
+    commissionPercent: fees.SERVICE_COMMISSION_PERCENT,
+    agreement: { version: p.agreement_version || '', acceptedAt: p.agreement_accepted_at || null },
     createdAt: p.created_at,
   };
 }
@@ -160,6 +162,8 @@ function shapeBookingForProvider(bk) {
     customerName: bk.name, area: bk.area,
     preferredDate: bk.preferred_date, notes: bk.notes,
     paymentMethod: bk.payment_method,
+    commissionCents: bk.commission_cents || 0,
+    providerNetCents: bk.provider_net_cents || 0,
     phone: confirmed ? bk.phone : null,
     createdAt: bk.created_at, confirmedAt: bk.confirmed_at, completedAt: bk.completed_at,
   };
