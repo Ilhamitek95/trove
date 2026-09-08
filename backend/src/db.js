@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS site_content (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
--- Services marketplace (2026-09): providers enrol via /become-a-provider,
+-- Services marketplace (2026-09): providers enrol via /apply (pieces, services or both),
 -- an admin approves them, and they list in-person services (taxonomy in
 -- src/service-taxonomy.js). Trove takes no cut of the service price —
 -- providers pay a monthly platform subscription instead (fees.js). One

@@ -125,7 +125,7 @@ async function signOut(){await TroveAPI.logout();window.location.href='/login';}
   let me=null;
   try{me=await TroveAPI.me();}catch(_){}
   if(!me||!me.user){window.location.href='/login';return;}
-  if(!me.provider){window.location.href='/become-a-provider';return;}
+  if(!me.provider){window.location.href='/apply?for=services';return;}
   try{
     await ProviderPanel.init({toast,onChange:setBadges,onOpenEditor:()=>go('services')});
   }catch(e){$('gate').textContent=e.message||'Could not load your dashboard — refresh to try again.';return;}

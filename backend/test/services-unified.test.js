@@ -134,5 +134,12 @@ test('the shared dashboard script and the Services tab are served', async () => 
   r = await api('GET', '/provider');
   assert.ok(r.text.includes('provider-panel.js') && r.text.includes('id="ppServices"'));
   r = await api('GET', '/apply');
-  assert.ok(r.text.includes('id="fAlso"') && r.text.includes('/api/services/apply'));
+  assert.ok(r.text.includes('data-role="maker"') && r.text.includes('data-role="provider"') && r.text.includes('data-role="both"'), 'one form, three doors');
+  assert.ok(r.text.includes('/api/services/apply') && r.text.includes('/api/auth/register'));
+  // The old provider wizard address lands on the same form, services preselected.
+  r = await api('GET', '/become-a-provider');
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('location'), '/apply?for=services');
+  r = await api('GET', '/trove-provider-apply.html');
+  assert.equal(r.status, 301);
 });

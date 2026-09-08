@@ -215,9 +215,11 @@ function createApp() {
     '/provider-agreement': 'provider-agreement.html',
     '/services-terms': 'services-terms.html',
     '/services': 'trove-services.html',
-    '/become-a-provider': 'trove-provider-apply.html',
     '/provider': 'trove-provider.html',
   };
+  // One application for pieces, services or both: the old provider wizard
+  // address lands on the same form with services preselected.
+  app.get(['/become-a-provider', '/trove-provider-apply.html', '/trove-provider-apply'], (_req, res) => res.redirect(301, '/apply?for=services'));
   for (const [clean, file] of Object.entries(PAGES)) {
     app.get(clean, (_req, res) => res.sendFile(path.join(DOCS_DIR, file)));
     for (const legacy of ['/' + file, '/' + file.replace(/\.html$/, '')]) {

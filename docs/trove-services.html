@@ -302,7 +302,7 @@
     </nav>
     <div class="grow"></div>
     <a class="btn btn-ghost" id="acctBtn" href="/login">Sign in</a>
-    <a class="btn btn-dark" href="/become-a-provider">Become a provider</a>
+    <a class="btn btn-dark" href="/apply?for=services">Become a provider</a>
   </div>
 </header>
 
@@ -412,14 +412,14 @@
       <h2>Good at something? <span>Offer it on Trove.</span></h2>
       <p>List your services beside the region's best makers — every booking request lands in your own dashboard.</p>
     </div>
-    <a class="btn" href="/become-a-provider">Become a provider →</a>
+    <a class="btn" href="/apply?for=services">Become a provider →</a>
   </div>
 </main>
 
 <footer>
   <div class="wrap">
     <span>© 2026 Trove · Dubai, UAE</span>
-    <span><a href="/">The shop</a> · <a href="/become-a-provider">Become a provider</a> · <a href="/services-terms">Services terms</a> · <a href="/provider-agreement">Provider agreement</a></span>
+    <span><a href="/">The shop</a> · <a href="/apply?for=services">Become a provider</a> · <a href="/services-terms">Services terms</a> · <a href="/provider-agreement">Provider agreement</a></span>
   </div>
 </footer>
 
@@ -506,7 +506,7 @@ function renderDir(){
       <p class="ex">${c.examples.map(esc).join(' · ')}</p>
       <div class="foot">${n
         ?`<span class="from">${min?'From '+money(min):''}</span><span class="go">${on?'Showing below ↓':'See services →'}</span>`
-        :`<span></span><a href="/become-a-provider" onclick="event.stopPropagation()">Offer this →</a>`}</div>
+        :`<span></span><a href="/apply?for=services" onclick="event.stopPropagation()">Offer this →</a>`}</div>
     </div>`;
   }).join('');
 }
@@ -527,7 +527,7 @@ function renderResults(){
   const all=SERVICES.filter(s=>cats.some(c=>c.slug===s.category));
   if(!all.length){
     const aud=(TAX.audiences.find(a=>a.key===state.audience)||{}).name||'';
-    el.innerHTML=`<div class="empty">No providers offer services ${esc(aud.toLowerCase())} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href="/become-a-provider">Become a provider</a> and be the first name here.</div>`;
+    el.innerHTML=`<div class="empty">No providers offer services ${esc(aud.toLowerCase())} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href="/apply?for=services">Become a provider</a> and be the first name here.</div>`;
     return;
   }
   const cat=state.cat?cats.find(c=>c.slug===state.cat):null;
