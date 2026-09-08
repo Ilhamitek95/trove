@@ -410,6 +410,13 @@
   .sortbar select{font-family:inherit;font-weight:600;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:11px 18px;background:var(--paper);color:var(--char);letter-spacing:.03em}
 
   /* ---------- VENDOR ---------- */
+  .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+  .svc-card{display:flex;flex-direction:column;gap:6px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--paper);transition:.18s}
+  .svc-card:hover{border-color:var(--char);transform:translateY(-2px)}
+  .svc-card .svc-t{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.15}
+  .svc-card .svc-m{font-size:12.5px;color:var(--muted);font-weight:600}
+  .svc-card .svc-m b{color:var(--char);font-family:var(--font-display);font-size:16px}
+  .svc-card .svc-go{margin-top:auto;padding-top:8px;font-size:12px;font-weight:700;color:var(--accent-ink);text-decoration:underline}
   .vhero{position:relative;height:300px;overflow:hidden}
   .vhero .grad{position:absolute;inset:0}
   .vhero img{position:absolute;inset:0;filter:saturate(.85);opacity:.85}
@@ -1036,6 +1043,10 @@
     <div class="band-head left"><div><span class="eyebrow">From this shop</span><h2 style="font-size:38px">The collection</h2></div></div>
     <div class="pgrid" id="vendorProducts"></div>
   </div>
+  <div class="wrap" id="vendorServices" style="display:none;padding:0 32px 60px">
+    <div class="band-head left" style="margin-bottom:22px"><div><span class="eyebrow">Also bookable</span><h2 style="font-size:36px" id="vSvcHead">Services</h2></div><a class="btn btn-ghost btn-sm" id="vSvcLink" href="/services">See all on the Services Marketplace →</a></div>
+    <div class="svc-grid" id="vSvcList"></div>
+  </div>
   <div class="wrap" id="vendorReviews" style="display:none;padding:0 32px 100px">
     <div class="band-head left" style="margin-bottom:22px"><div><span class="eyebrow">From verified buyers</span><h2 style="font-size:36px" id="vRevHead">What buyers say</h2></div></div>
     <div class="rev-list" id="vRevList"></div>
@@ -1595,7 +1606,7 @@ function renderHome(){
     <h3>${v.name}</h3>
     <div class="loc">${v.loc}</div>
     <p>${v.bio}</p>
-    <div class="vmeta"><span><b>${np}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}</div>
+    <div class="vmeta"><span><b>${np}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.provider?`<span><b>${v.provider.serviceCount}</b> ${v.provider.serviceCount===1?'service':'services'}</span>`:''}</div>
   </article>`;}).join('');
   $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
   initMakerCarousel();
@@ -2014,7 +2025,24 @@ function openVendor(key){
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
   loadShopReviews(key);
+  loadShopServices(key);
   showView('vendor'); jumpTop();
+}
+/* The maker's services, when the same account runs a practice on the
+ * Services Marketplace. Booking happens there — these cards link across. */
+async function loadShopServices(key){
+  const wrap=$('vendorServices'); wrap.style.display='none';
+  const v=VENDORS[key]; if(!LIVE||!v||!v.provider)return;
+  try{
+    const {provider,services}=await TroveAPI.api('/api/services/providers/'+encodeURIComponent(v.provider.slug));
+    if(!services.length)return;
+    const price=s=>s.priceType==='from'?'From AED '+(s.priceCents/100).toLocaleString():s.priceType==='hourly'?'AED '+(s.priceCents/100).toLocaleString()+' / hour':'AED '+(s.priceCents/100).toLocaleString();
+    const where={home:'At your place',studio:'At their studio',remote:'Remote'};
+    $('vSvcHead').textContent='Services by '+provider.name;
+    $('vSvcLink').href='/services/'+provider.slug;
+    $('vSvcList').innerHTML=services.map(s=>`<a class="svc-card" href="/services/${provider.slug}"><span class="svc-t">${s.title}</span><span class="svc-m"><b>${price(s)}</b> · ${where[s.setting]||''}</span><span class="svc-go">Book on the Services Marketplace →</span></a>`).join('');
+    wrap.style.display='';
+  }catch(_){}
 }
 
 /* PDP */
@@ -2544,7 +2572,7 @@ async function loadCatalog(){
   try{
     const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
     VENDORS={};
-    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0};});
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
       return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
@@ -2663,6 +2691,15 @@ async function boot(){
   // After the catalogue, so a saved basket can be checked against what's
   // actually still on sale (restoreCart updates the count itself).
   restoreCart(); updateCartCount();
+  // Deep links from the Services Marketplace: /?shop=<slug> opens a shop
+  // page, /?p=<id> a piece. The query is dropped so a refresh is the home.
+  try{
+    const q=new URLSearchParams(location.search);
+    const shopSlug=q.get('shop'), pid=Number(q.get('p'));
+    if(shopSlug&&VENDORS[shopSlug])openVendor(shopSlug);
+    else if(pid&&PRODUCTS.some(p=>p.id===pid))openPDP(pid);
+    if(shopSlug||pid)history.replaceState({},'',location.pathname);
+  }catch(_){}
 }
 boot();
 </script>

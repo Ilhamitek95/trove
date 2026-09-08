@@ -120,6 +120,35 @@ test('the public services list carries the demo listings with their provider', a
   assert.ok(!data.services.some((s) => s.provider.slug === 'oud-by-khalid'), 'pending provider listings stay private');
 });
 
+test('shop and provider pages know about each other when one account runs both', async () => {
+  const mara = db.prepare("SELECT id FROM users WHERE email='mara@kilnandclay.com'").get();
+  db.prepare("INSERT INTO shops (user_id, name, slug, status, bio, location) VALUES (?,?,?,?,?,?)")
+    .run(mara.id, 'Kiln & Clay', 'kiln-and-clay', 'approved', 'Stoneware from Al Quoz.', 'Al Quoz, Dubai');
+  const shopId = db.prepare("SELECT id FROM shops WHERE slug='kiln-and-clay'").get().id;
+  db.prepare("INSERT INTO products (shop_id, name, description, category, price_cents, stock, status, image_seed) VALUES (?,?,?,?,?,?,?,?)")
+    .run(shopId, 'Speckled mug', 'A mug.', 'Ceramics', 6500, 5, 'live', 'mug7');
+
+  let r = await api('GET', '/api/shops/kiln-and-clay');
+  assert.deepEqual(r.data.shop.provider, { slug: 'kiln-and-clay-workshops', name: 'Kiln & Clay Workshops', serviceCount: 3 });
+  r = await api('GET', '/api/shops');
+  assert.equal(r.data.shops.find((s) => s.slug === 'kiln-and-clay').provider.slug, 'kiln-and-clay-workshops');
+
+  r = await api('GET', '/api/services/providers/kiln-and-clay-workshops');
+  assert.deepEqual(r.data.provider.shop, { slug: 'kiln-and-clay', name: 'Kiln & Clay', productCount: 1 });
+  r = await api('GET', '/api/services/providers');
+  assert.equal(r.data.providers.find((p) => p.slug === 'noor-letters').shop, null, 'a provider without a shop carries null');
+
+  // A pending provider never rides along on a shop; a suspended shop never on a provider.
+  const khalid = db.prepare("SELECT id FROM users WHERE email='khalid@oudbykhalid.ae'").get();
+  db.prepare("INSERT INTO shops (user_id, name, slug, status) VALUES (?,?,?,?)").run(khalid.id, 'Oud Shop', 'oud-shop', 'approved');
+  r = await api('GET', '/api/shops/oud-shop');
+  assert.equal(r.data.shop.provider, null);
+  db.prepare("UPDATE shops SET status='suspended' WHERE slug='kiln-and-clay'").run();
+  r = await api('GET', '/api/services/providers/kiln-and-clay-workshops');
+  assert.equal(r.data.provider.shop, null);
+  db.prepare("UPDATE shops SET status='approved' WHERE slug='kiln-and-clay'").run();
+});
+
 test('/services/<slug> serves the services page; asset paths under it do not', async () => {
   let r = await api('GET', '/services/kiln-and-clay-workshops');
   assert.equal(r.status, 200);

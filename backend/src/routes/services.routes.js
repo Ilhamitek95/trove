@@ -88,8 +88,17 @@ router.get('/', (req, res) => {
 
 /* ---------------- Providers ---------------- */
 
+// The same account can run a shop too: the approved shop (with live pieces)
+// rides along so the provider page can cross-link to it.
+function shopFor(userId) {
+  const s = db.prepare(`SELECT s.slug, s.name,
+      (SELECT COUNT(*) FROM products pr WHERE pr.shop_id = s.id AND pr.status = 'live') AS n
+    FROM shops s WHERE s.user_id = ? AND s.status = 'approved'`).get(userId);
+  return s ? { slug: s.slug, name: s.name, productCount: s.n } : null;
+}
 const providerCard = (p) => ({
   ...publicProvider(p),
+  shop: shopFor(p.user_id),
   serviceCount: p.service_count || 0,
   fromCents: p.from_cents || null,
   since: p.created_at ? String(p.created_at).slice(0, 4) : null,

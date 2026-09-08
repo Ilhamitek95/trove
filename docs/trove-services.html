@@ -130,6 +130,18 @@
   .pv-stats span{font-size:10.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;display:block;margin-top:5px}
   .pv-body{padding:44px 26px 10px}
   .pv-note{margin-top:22px;text-align:center;font-size:13.5px;color:var(--muted);font-weight:500}
+  .pv-shop{margin-top:40px}
+  .pv-shop .rhead a{font-size:12.5px;font-weight:700;text-decoration:underline;color:var(--muted)}
+  .pv-shop .rhead a:hover{color:var(--char)}
+  .pcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+  .pc{display:block;background:var(--paper);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:.18s}
+  @media(hover:hover){.pc:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(41,39,39,.09)}}
+  .pc .pcimg{aspect-ratio:1;background:center/cover no-repeat var(--rose-tint)}
+  .pc .pcb{padding:11px 13px 13px}
+  .pc .pct{font-family:var(--font-display);font-size:16px;font-weight:600;line-height:1.15}
+  .pc .pcp{font-size:12.5px;font-weight:700;margin-top:4px}
+  .pcard .also{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--rose-tint);padding:4px 10px;border-radius:999px}
+  @media(max-width:620px){.pcgrid{grid-template-columns:1fr 1fr;gap:10px}}
   @media(max-width:560px){.pv-hero{height:170px}.pv-back{left:14px;top:12px}.pv-stats{gap:24px}.pv-body{padding:32px 26px 6px}}
 
   /* the services themselves, shown once beneath the directory (filtered by the chosen card) */
@@ -299,6 +311,9 @@
   </div>
   <div class="wrap pv-body">
     <div class="results"><div class="rhead"><h2>What they offer</h2><span id="pvCount"></span></div><div class="svgrid" id="pvGrid"></div></div>
+    <div class="pv-shop" id="pvShop" hidden>
+      <div class="results"><div class="rhead"><h2>Also in their shop</h2><span id="pvShopCount"></span><a id="pvShopLink" href="/">Visit the shop →</a></div><div class="pcgrid" id="pvPieces"></div></div>
+    </div>
     <p class="pv-note">Every price here is <span id="pvName2"></span>'s own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile. The service is theirs to deliver; Trove lists it.</p>
   </div>
 </section>
@@ -552,6 +567,7 @@ function provCardHTML(p){
     <p>${esc(p.bio)}</p>
     <div class="pmeta"><span><b>${p.serviceCount}</b> ${p.serviceCount===1?'service':'services'}</span>${p.fromCents?`<span>from <b>${money(p.fromCents)}</b></span>`:''}</div>
     <div class="pcats">${catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('')}</div>
+    ${p.shop&&p.shop.productCount?`<span class="also">Also sells pieces · ${esc(p.shop.name)}</span>`:''}
   </article>`;
 }
 /* Providers working in the chosen audience come first; everyone stays listed. */
@@ -582,10 +598,28 @@ async function openProvider(slug,push=true){
   $('pvCount').textContent=`${data.services.length} ${data.services.length===1?'service':'services'}`;
   $('pvGrid').innerHTML=data.services.length?data.services.map(svCardHTML).join('')
     :`<div class="empty" style="grid-column:1/-1">${esc(p.name)} hasn't listed a service yet — check back soon.</div>`;
+  loadProviderPieces(p);
   document.body.classList.add('pv');$('pview').hidden=false;
   document.title=`${p.name} · Trove Services Marketplace`;
   if(push)history.pushState({provider:slug},'','/services/'+slug);
   window.scrollTo({top:0,behavior:'instant'});
+}
+/* The maker's shop, when the same account sells pieces on the storefront. */
+async function loadProviderPieces(p){
+  const box=$('pvShop'); box.hidden=true;
+  if(!p.shop||!p.shop.productCount)return;
+  try{
+    const {products}=await TroveAPI.api('/api/products?shop='+encodeURIComponent(p.shop.slug));
+    const live=(products||[]).slice(0,8);
+    if(!live.length)return;
+    $('pvShopCount').textContent=`${p.shop.productCount} ${p.shop.productCount===1?'piece':'pieces'} · ${p.shop.name}`;
+    $('pvShopLink').href='/?shop='+encodeURIComponent(p.shop.slug);
+    $('pvPieces').innerHTML=live.map(pr=>{
+      const img=(pr.images&&pr.images[0])||motifUrl(hashOf(pr.name),p.color||'#DBC7BD');
+      return `<a class="pc" href="/?p=${pr.id}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">AED ${Number(pr.price).toLocaleString('en-GB')}</div></div></a>`;
+    }).join('');
+    box.hidden=false;
+  }catch(_){}
 }
 function closeProvider(push=true){
   document.body.classList.remove('pv');$('pview').hidden=true;

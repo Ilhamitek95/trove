@@ -4,8 +4,19 @@ const db = require('../db');
 
 const router = express.Router();
 
+// The same account can run a shop AND a services practice. A shop's public
+// shape carries its approved provider (with live services) so the storefront
+// can cross-link; nothing private crosses over.
+function providerFor(userId) {
+  const p = db.prepare(`SELECT p.slug, p.name,
+      (SELECT COUNT(*) FROM services sv WHERE sv.provider_id = p.id AND sv.status = 'live') AS n
+    FROM service_providers p WHERE p.user_id = ? AND p.status = 'approved'`).get(userId);
+  return p && p.n > 0 ? { slug: p.slug, name: p.name, serviceCount: p.n } : null;
+}
+
 function shape(s) {
   return {
+    provider: providerFor(s.user_id),
     id: s.id,
     name: s.name,
     slug: s.slug,
