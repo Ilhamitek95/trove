@@ -66,26 +66,34 @@
   .promo{background:var(--char);color:var(--cream)}
   .promo .wrap{display:flex;justify-content:center;align-items:center;min-height:38px;padding-top:7px;padding-bottom:7px;font-size:12.5px;letter-spacing:.06em;font-weight:600;text-align:center;line-height:1.5}
   header.top{position:sticky;top:0;z-index:60;background:rgba(253,247,245,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
-  .nav{display:flex;align-items:center;gap:34px;height:84px}
+  .nav{display:flex;align-items:center;gap:26px;height:84px}
   .brand{font-family:var(--font-display);font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
   /* official wordmark asset (drop in docs/img/); the typed name is only the onerror fallback */
   .brand img{height:34px;width:auto;display:block}
   .mn-brand img{height:28px;width:auto;display:block}
   footer .brand img{height:38px;width:auto;display:block}
-  .nav .links{display:flex;gap:30px;margin-left:14px;font-size:13.5px;font-weight:600;letter-spacing:.04em}
-  .nav .links a{padding:4px 0;color:var(--ink-80);position:relative}
+  .nav .links{display:flex;align-items:center;gap:24px;margin-left:10px;font-size:13.5px;font-weight:600;letter-spacing:.04em;flex-shrink:0}
+  .nav .links a{padding:4px 0;color:var(--ink-80);position:relative;white-space:nowrap;line-height:1.3}
   .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
   .nav .links a:hover{color:var(--char)}
   .nav .links a:hover::after{width:100%}
-  .nav .right{margin-left:auto;display:flex;align-items:center;gap:8px}
-  .search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--muted);width:230px;transition:width .25s}
-  .search:focus-within{width:280px;border-color:var(--rose)}
+  .nav .right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--muted);width:210px;transition:width .25s}
+  .search:focus-within{width:250px;border-color:var(--rose)}
   .search input{border:none;outline:none;background:none;flex:1;font-family:inherit;font-size:13px;color:var(--char)}
   .icon-btn{position:relative;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;color:var(--char);transition:background .15s}
   .icon-btn:hover{background:var(--rose-tint)}
   .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--char);color:var(--cream);border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
   .cart-count.hide{display:none}
   .menu-btn,.search-btn{display:none}
+  /* narrow desktops (1024–1180): keep all five links on ONE line by trading the
+     search box for its icon; the box returns below 960 once the links collapse */
+  @media(max-width:1180px){
+    .nav{gap:20px}
+    .nav .links{gap:18px;margin-left:6px}
+    .search{display:none}
+    .search-btn{display:grid}
+  }
 
   /* ---------- MOBILE NAV ---------- */
   .mnav{position:fixed;top:0;left:0;bottom:0;width:330px;max-width:88vw;background:var(--cream);z-index:110;transform:translateX(-103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;display:flex;flex-direction:column;padding:16px 24px calc(24px + env(safe-area-inset-bottom));overflow-y:auto}
@@ -542,6 +550,8 @@
     .browse-layout{grid-template-columns:1fr;gap:0;padding:36px 26px 80px}
     .nav .links{display:none}
     .menu-btn{display:grid}
+    .search{display:flex}
+    .search-btn{display:none}
     .card .add{opacity:1;transform:none;position:static;margin-top:12px;background:var(--char);color:var(--cream)}
     /* filters become a bottom sheet, opened from the sortbar */
     .filters{position:fixed;left:0;right:0;bottom:0;z-index:105;background:var(--cream);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;padding:14px 26px calc(18px + env(safe-area-inset-bottom));transform:translateY(103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;box-shadow:0 -18px 60px -22px rgba(41,39,39,.4)}
