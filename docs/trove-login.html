@@ -283,6 +283,7 @@ async function postAuthDest(){
     const me=await TroveAPI.me();
     if(me&&me.user&&me.user.role==='admin'&&!me.shop) dest='/admin'; // platform owner → admin panel
     else if(me&&me.shop) dest='/sell';
+    else if(me&&me.provider) dest='/provider'; // services provider without a shop → their dashboard
   }catch(_){}
   return dest;
 }

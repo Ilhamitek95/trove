@@ -97,6 +97,41 @@
   @media(max-width:1000px){.dir{grid-template-columns:1fr 1fr}}
   @media(max-width:620px){.dir{grid-template-columns:1fr;gap:10px;margin-top:22px}.dcard{padding:15px 16px 13px;gap:7px}.dcard h3{font-size:19px}.dcard .ex{font-size:12px;line-height:1.55}}
 
+  /* meet the providers — the storefront's maker cards, in the services palette */
+  .provs{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 20px;max-width:1080px;margin:0 auto}
+  .pcard{cursor:pointer;text-align:center;transition:transform .18s}
+  .pcard:active{transform:scale(.98)}
+  .pcard .cover{aspect-ratio:16/9;border-radius:18px;overflow:hidden;position:relative;margin-bottom:-30px;transition:transform .3s}
+  @media(hover:hover){.pcard:hover .cover{transform:translateY(-4px)}}
+  .pcard .av{width:60px;height:60px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:var(--font-display);font-size:26px;color:var(--char);font-weight:600}
+  .pcard h3{font-size:22px;font-weight:600;margin-top:10px;line-height:1.1}
+  .pcard .loc{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:3px}
+  .pcard p{font-size:13.5px;color:var(--ink-80);margin:10px auto 0;max-width:36ch;font-weight:400;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .pcard .pmeta{display:flex;justify-content:center;gap:18px;margin-top:12px;font-size:12px;color:var(--muted);font-weight:600}
+  .pcard .pmeta b{color:var(--char)}
+  .pcats{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin-top:10px}
+  @media(max-width:1000px){.provs{grid-template-columns:1fr 1fr}}
+  @media(max-width:620px){.provs{grid-template-columns:1fr 1fr;gap:22px 12px}.pcard .cover{margin-bottom:-24px}.pcard .av{width:48px;height:48px;font-size:21px;border-width:3px}.pcard h3{font-size:18px}.pcard p{font-size:12.5px;-webkit-line-clamp:2;margin-top:8px}.pcard .pmeta{gap:10px;font-size:11.5px;flex-wrap:wrap}.pcats{gap:4px}.pcats .tagchip{font-size:10px;padding:3px 8px}}
+  .wholink:hover{text-decoration:underline;color:var(--char)}
+
+  /* a provider's own page — the storefront's shop page, for services */
+  body.pv .hero,body.pv main{display:none}
+  .pv-hero{height:230px;position:relative}
+  .pv-back{position:absolute;left:26px;top:18px;font-size:12.5px;font-weight:700;background:rgba(253,247,245,.88);padding:8px 14px;border-radius:999px;backdrop-filter:blur(6px)}
+  .pv-back:hover{background:var(--cream)}
+  .pv-head{text-align:center;margin-top:-44px;position:relative}
+  .pv-av{width:88px;height:88px;border-radius:50%;border:5px solid var(--cream);margin:0 auto;display:grid;place-items:center;font-family:var(--font-display);font-size:38px;font-weight:600;color:var(--char)}
+  .pv-head h1{font-size:clamp(34px,4vw,50px);font-weight:500;margin-top:10px;line-height:1.05}
+  .pv-head .loc{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-top:5px}
+  .pv-head p{font-size:15.5px;color:var(--ink-80);font-weight:400;line-height:1.6;max-width:62ch;margin:14px auto 0}
+  .pv-stats{display:flex;justify-content:center;gap:38px;margin-top:22px}
+  .pv-stats div{text-align:center}
+  .pv-stats b{display:block;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
+  .pv-stats span{font-size:10.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;display:block;margin-top:5px}
+  .pv-body{padding:44px 26px 10px}
+  .pv-note{margin-top:22px;text-align:center;font-size:13.5px;color:var(--muted);font-weight:500}
+  @media(max-width:560px){.pv-hero{height:170px}.pv-back{left:14px;top:12px}.pv-stats{gap:24px}.pv-body{padding:32px 26px 6px}}
+
   /* the services themselves, shown once beneath the directory (filtered by the chosen card) */
   .results{margin-top:30px}
   .results .rhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
@@ -104,6 +139,8 @@
   .results .rhead span{font-size:13px;color:var(--muted);font-weight:600}
   .results .rhead button{font-size:12.5px;font-weight:700;text-decoration:underline;color:var(--muted)}
   .results .rhead button:hover{color:var(--char)}
+  .showall{display:block;margin:18px auto 0;padding:11px 22px;border-radius:999px;border:1.5px dashed rgba(41,39,39,.3);font-size:13px;font-weight:700;background:var(--cream)}
+  .showall:hover{border-color:var(--char)}
   .svgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
   .svcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
   @media(hover:hover){.svcard:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(41,39,39,.09)}}
@@ -116,6 +153,7 @@
   .price{font-family:var(--font-display);font-size:18px;font-weight:600}
   .empty{margin-top:16px;padding:16px 22px;text-align:center;border:1.5px dashed var(--line);border-radius:16px;font-size:13.5px;color:var(--muted);font-weight:500;line-height:1.6}
   .empty a{color:var(--accent-ink);font-weight:700;text-decoration:underline}
+  @media(max-width:620px){.svgrid{grid-template-columns:1fr 1fr;gap:12px}.svtile{height:92px}.svbody{padding:11px 12px 12px;gap:4px}.svbody .t{font-size:15.5px}.svbody .who{font-size:11.5px}.price{font-size:15px}.tagchip{font-size:10px;padding:3px 8px}}
 
   /* provider CTA: one slim strip — the terms are already said above */
   .ctaband{background:var(--char);border-radius:20px;margin:44px 0 0;padding:26px 32px;color:var(--cream);display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap}
@@ -236,7 +274,8 @@
     <nav class="links">
       <a href="/">Shop</a>
       <a href="/services" class="on">Services Marketplace</a>
-      <a href="#how" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'});return false">How it works</a>
+      <a href="#providers" onclick="jumpTo('providers');return false">Providers</a>
+      <a href="#how" onclick="jumpTo('how');return false">How it works</a>
       <a href="/sell">Sell on Trove</a>
     </nav>
     <div class="grow"></div>
@@ -244,6 +283,22 @@
     <a class="btn btn-dark" href="/become-a-provider">Become a provider</a>
   </div>
 </header>
+
+<section id="pview" hidden>
+  <div class="pv-hero" id="pvHero"><a class="pv-back" href="/services" onclick="closeProvider();return false">← All services</a></div>
+  <div class="wrap pv-head">
+    <div class="pv-av" id="pvAv"></div>
+    <h1 id="pvName"></h1>
+    <div class="loc" id="pvLoc"></div>
+    <p id="pvBio"></p>
+    <div class="pv-stats" id="pvStats"></div>
+    <div class="pcats" id="pvCats"></div>
+  </div>
+  <div class="wrap pv-body">
+    <div class="results"><div class="rhead"><h2>What they offer</h2><span id="pvCount"></span></div><div class="svgrid" id="pvGrid"></div></div>
+    <p class="pv-note">Every price here is <span id="pvName2"></span>'s own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile.</p>
+  </div>
+</section>
 
 <section class="hero">
   <div class="wrap lead">
@@ -261,6 +316,16 @@
   <div id="myBookings"></div>
   <div class="dir" id="dir"></div>
   <div id="results"></div>
+
+  <!-- MEET THE PROVIDERS: the storefront's maker cards, each opening a profile page -->
+  <section class="band" id="providers" hidden>
+    <div class="band-head">
+      <span class="eyebrow">The people behind the services</span>
+      <h2>Meet the providers.</h2>
+      <p>Every one reviewed by a real person before they appear here. Open a profile to see everything they offer, in one place.</p>
+    </div>
+    <div class="provs" id="provGrid"></div>
+  </section>
 
   <!-- HOW IT WORKS: booking one | offering one, side by side on the dashed rail -->
   <section class="band" id="how">
@@ -338,13 +403,13 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="config.js"></script>
-<script src="api.js"></script>
+<script src="/config.js"></script>
+<script src="/api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-let TAX=null, SERVICES=[], ME=null, MYBOOKINGS=[];
-let state={audience:'home',cat:null};
+let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[];
+let state={audience:'home',cat:null,showAll:false};
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
 
 function money(c){const n=(c||0)/100;return 'AED '+(Number.isInteger(n)?n.toLocaleString('en-GB'):n.toLocaleString('en-GB',{minimumFractionDigits:2}));}
@@ -359,7 +424,15 @@ const SETTING_LABEL={home:'At your place',studio:"At the provider's studio",remo
    approach as the product marketplace). */
 const TILE_TINTS=['#DBC7BD','#CAD5CC','#FCC998','#BED3DF','#CFDBBE','#F8D7E4'];
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;const cl=v=>Math.max(0,Math.min(255,v));return '#'+((cl(r)<<16)|(cl(g)<<8)|cl(b)).toString(16).padStart(6,'0');}
-function seedOf(s){let h=0;const str=s.title+s.provider.slug;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;return h;}
+function hashOf(str){let h=0;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;return h;}
+function seedOf(s){return hashOf(s.title+s.provider.slug);}
+function motifUrl(seed,c){
+  const c2=shade(c,16),c3=shade(c,-14);
+  const cx=30+(seed%40),cy=35+((seed>>3)%30),r=34+((seed>>5)%18);
+  const cx2=100+((seed>>7)%50),cy2=60+((seed>>9)%40),r2=24+((seed>>11)%16);
+  const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100' preserveAspectRatio='xMidYMid slice'><rect width='160' height='100' fill='${c}'/><ellipse cx='${cx}' cy='${cy}' rx='${r}' ry='${Math.round(r*0.72)}' fill='${c2}' opacity='0.85'/><ellipse cx='${cx2}' cy='${cy2}' rx='${r2}' ry='${Math.round(r2*1.2)}' fill='${c3}' opacity='0.55'/><ellipse cx='${(cx+cx2)>>1}' cy='${100-cy}' rx='${Math.round(r2*0.8)}' ry='${Math.round(r2*0.5)}' fill='${shade(c,28)}' opacity='0.7'/></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 function svTile(s){
   const seed=seedOf(s);
   const c=TILE_TINTS[seed%TILE_TINTS.length];
@@ -384,7 +457,7 @@ function renderAudSwitch(){
       <span class="arr">→</span>
     </button>`;}).join('');
 }
-function setAudience(k){state.audience=k;state.cat=null;renderAll();}
+function setAudience(k){state.audience=k;state.cat=null;state.showAll=false;renderAll();}
 function setCat(slug){
   state.cat=state.cat===slug?null:slug;
   renderDir();renderResults();
@@ -416,7 +489,7 @@ function svCardHTML(s){
     ${svTile(s)}
     <div class="svbody">
       <div class="t">${esc(s.title)}</div>
-      <div class="who">${esc(s.provider.name)} · ${esc(s.provider.location||'Dubai')}</div>
+      <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider('${esc(s.provider.slug)}');return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}</div>
       <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span></div>
     </div>
   </div>`;
@@ -432,9 +505,12 @@ function renderResults(){
   }
   const cat=state.cat?cats.find(c=>c.slug===state.cat):null;
   const list=cat?all.filter(s=>s.category===cat.slug):all;
+  const CAP=8, capped=!cat&&!state.showAll&&list.length>CAP;
+  const shown=capped?list.slice(0,CAP):list;
   el.innerHTML=`<section class="results" id="resultsSec">
     <div class="rhead"><h2>${cat?esc(cat.name):'All services'}</h2><span>${list.length} ${list.length===1?'service':'services'}</span>${cat?'<button onclick="setCat(null)">Show everything</button>':''}</div>
-    <div class="svgrid">${list.map(svCardHTML).join('')}</div>
+    <div class="svgrid">${shown.map(svCardHTML).join('')}</div>
+    ${capped?`<button class="showall" onclick="state.showAll=true;renderResults()">Show all ${list.length} services</button>`:''}
   </section>`;
 }
 
@@ -461,7 +537,60 @@ async function cancelBooking(id){
   }catch(e){toast(e.message||'Could not cancel');}
 }
 
-function renderAll(){renderAudSwitch();renderDir();renderResults();renderMyBookings();}
+function catNames(slugs){return (slugs||[]).map(sl=>{const c=TAX.categories.find(x=>x.slug===sl);return c?c.name:null;}).filter(Boolean);}
+function provCardHTML(p){
+  return `<article class="pcard" onclick="openProvider('${esc(p.slug)}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider('${esc(p.slug)}')}">
+    <div class="cover" style="background:center/cover url(&quot;${motifUrl(hashOf(p.slug),p.color||'#DBC7BD')}&quot;)"></div>
+    <div class="av" style="background:${esc(p.color||'#DBC7BD')}">${esc((p.name||'?')[0])}</div>
+    <h3>${esc(p.name)}</h3>
+    <div class="loc">${esc(p.location||'Dubai')}</div>
+    <p>${esc(p.bio)}</p>
+    <div class="pmeta"><span><b>${p.serviceCount}</b> ${p.serviceCount===1?'service':'services'}</span>${p.fromCents?`<span>from <b>${money(p.fromCents)}</b></span>`:''}</div>
+    <div class="pcats">${catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('')}</div>
+  </article>`;
+}
+/* Providers working in the chosen audience come first; everyone stays listed. */
+function renderProviders(){
+  const band=$('providers');
+  if(!PROVIDERS.length){band.hidden=true;return;}
+  band.hidden=false;
+  const aud=new Set(audCats().map(c=>c.slug));
+  const rel=p=>(p.categories||[]).some(sl=>aud.has(sl))?1:0;
+  $('provGrid').innerHTML=[...PROVIDERS].sort((a,b)=>rel(b)-rel(a)).map(provCardHTML).join('');
+}
+
+/* ---------------- a provider's page: /services/<slug> ---------------- */
+const PV_RE=/^\/services\/([a-z0-9-]+)\/?$/;
+async function openProvider(slug,push=true){
+  let data;
+  try{data=await TroveAPI.api('/api/services/providers/'+encodeURIComponent(slug));}
+  catch(_){toast('That provider isn’t listed');if(!push)closeProvider(false);return;}
+  const p=data.provider;
+  for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
+  $('pvHero').style.background=`center/cover url("${motifUrl(hashOf(p.slug),p.color||'#DBC7BD')}")`;
+  $('pvAv').style.background=p.color||'#DBC7BD';$('pvAv').textContent=(p.name||'?')[0];
+  $('pvName').textContent=p.name;$('pvName2').textContent=p.name;
+  $('pvLoc').textContent=p.location||'Dubai';$('pvBio').textContent=p.bio||'';
+  const emirate=(p.location||'Dubai').split(',').pop().trim();
+  $('pvStats').innerHTML=`<div><b>${p.serviceCount}</b><span>${p.serviceCount===1?'SERVICE':'SERVICES'}</span></div><div><b>${esc(emirate)}</b><span>BASED IN</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>ON TROVE SINCE</span></div>`:''}`;
+  $('pvCats').innerHTML=catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('');
+  $('pvCount').textContent=`${data.services.length} ${data.services.length===1?'service':'services'}`;
+  $('pvGrid').innerHTML=data.services.length?data.services.map(svCardHTML).join('')
+    :`<div class="empty" style="grid-column:1/-1">${esc(p.name)} hasn't listed a service yet — check back soon.</div>`;
+  document.body.classList.add('pv');$('pview').hidden=false;
+  document.title=`${p.name} · Trove Services Marketplace`;
+  if(push)history.pushState({provider:slug},'','/services/'+slug);
+  window.scrollTo({top:0,behavior:'instant'});
+}
+function closeProvider(push=true){
+  document.body.classList.remove('pv');$('pview').hidden=true;
+  document.title='Trove · Services Marketplace';
+  if(push&&PV_RE.test(location.pathname))history.pushState({},'','/services');
+}
+window.addEventListener('popstate',()=>{const m=location.pathname.match(PV_RE);if(m)openProvider(m[1],false);else closeProvider(false);});
+function jumpTo(id){if(document.body.classList.contains('pv'))closeProvider();const el=$(id);if(el&&!el.hidden)el.scrollIntoView({behavior:'smooth'});}
+
+function renderAll(){renderAudSwitch();renderDir();renderResults();renderProviders();renderMyBookings();}
 
 /* ---------------- detail + booking ---------------- */
 let CURRENT=null;
@@ -473,7 +602,7 @@ function openService(id){
   $('svModal').innerHTML=`
     <button class="x" onclick="closeModal()" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <h3>${esc(s.title)}</h3>
-    <div class="who">${esc(s.provider.name)} · ${esc(s.provider.location||'Dubai')}${cat?` · ${esc(cat.name)}`:''}</div>
+    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider('${esc(s.provider.slug)}');return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}${cat?` · ${esc(cat.name)}`:''}</div>
     ${s.description?`<div class="desc">${esc(s.description)}</div>`:''}
     <div class="meta">
       <span class="price">${priceLabel(s)}</span><span style="flex:1"></span>
@@ -546,12 +675,15 @@ async function loadMyBookings(){
 (async function boot(){
   try{TAX=await TroveAPI.api('/api/services/taxonomy');}catch(_){TAX={audiences:[],categories:[]};}
   try{SERVICES=(await TroveAPI.api('/api/services')).services;}catch(_){SERVICES=[];}
+  try{PROVIDERS=(await TroveAPI.api('/api/services/providers')).providers;}catch(_){PROVIDERS=[];}
   try{ME=await TroveAPI.me();}catch(_){ME=null;}
   if(ME&&ME.user){
     const b=$('acctBtn');b.textContent='My account';b.href='/account';
     await loadMyBookings();
   }
   renderAll();
+  const m=location.pathname.match(PV_RE);
+  if(m){history.replaceState({provider:m[1]},'',location.pathname);await openProvider(m[1],false);}
 })();
 </script>
 </body>

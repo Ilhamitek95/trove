@@ -4,6 +4,8 @@
  *
  *   GET  /api/services/taxonomy      the audiences + categories (with examples)
  *   GET  /api/services               live services of approved providers
+ *   GET  /api/services/providers     the approved providers (the makers carousel's counterpart)
+ *   GET  /api/services/providers/:slug  one provider + their live services
  *   POST /api/services/apply         become a provider (new or existing account)
  *   POST /api/services/:id/book      request a booking on one service
  *   GET  /api/services/my-bookings   the signed-in customer's booking requests
@@ -75,6 +77,39 @@ router.get('/', (req, res) => {
       `${s.title} ${s.description} ${s.provider.name}`.toLowerCase().includes(needle));
   }
   res.json({ services: list });
+});
+
+/* ---------------- Providers ---------------- */
+
+const providerCard = (p) => ({
+  ...publicProvider(p),
+  serviceCount: p.service_count || 0,
+  fromCents: p.from_cents || null,
+  since: p.created_at ? String(p.created_at).slice(0, 4) : null,
+});
+const PROVIDER_STATS = `
+  LEFT JOIN (SELECT provider_id, COUNT(*) AS service_count, MIN(price_cents) AS from_cents
+             FROM services WHERE status = 'live' GROUP BY provider_id) st ON st.provider_id = p.id`;
+
+// GET /api/services/providers → approved providers, oldest first, with their
+// live-service count and lowest price. Never any contact details.
+router.get('/providers', (_req, res) => {
+  const rows = db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
+    WHERE p.status = 'approved' ORDER BY p.created_at ASC, p.id ASC`).all();
+  res.json({ providers: rows.map(providerCard) });
+});
+
+// GET /api/services/providers/:slug → one approved provider and their live services.
+router.get('/providers/:slug', (req, res) => {
+  const p = db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
+    WHERE p.slug = ? AND p.status = 'approved'`).get(req.params.slug);
+  if (!p) return res.status(404).json({ error: 'Provider not found' });
+  const services = db.prepare(`
+    SELECT sv.*, p.name AS provider_name, p.slug AS provider_slug,
+           p.location AS provider_location, p.color AS provider_color, p.bio AS provider_bio
+    FROM services sv JOIN service_providers p ON p.id = sv.provider_id
+    WHERE sv.provider_id = ? AND sv.status = 'live' ORDER BY sv.created_at ASC, sv.id ASC`).all(p.id).map(shapeService);
+  res.json({ provider: providerCard(p), services });
 });
 
 /* ---------------- Enrolment ---------------- */

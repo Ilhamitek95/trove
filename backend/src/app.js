@@ -218,6 +218,11 @@ function createApp() {
     }
   }
 
+  // A provider's public page: /services/<slug> serves the services page, which
+  // reads the slug from the URL. Slugs never contain a dot, so asset paths
+  // under /services/ fall through to the 404 instead of getting HTML.
+  app.get('/services/:slug([a-z0-9-]+)', (_req, res) => res.sendFile(path.join(DOCS_DIR, 'trove-services.html')));
+
   app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'] }));
 
   // Seller-uploaded images (shop photos). Kept on the persistent disk in prod.

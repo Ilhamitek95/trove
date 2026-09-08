@@ -7,7 +7,8 @@ const c = (aed) => Math.round(aed * 100);
 
 // Children before parents — a table missing here makes reseeding blow up on a
 // foreign key the moment anyone has exercised that feature locally.
-db.exec(`DELETE FROM reviews; DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM purchase_notes;
+db.exec(`DELETE FROM service_bookings; DELETE FROM services; DELETE FROM service_providers;
+  DELETE FROM reviews; DELETE FROM shipment_events; DELETE FROM shipments; DELETE FROM purchase_notes;
   DELETE FROM return_request_items; DELETE FROM return_requests;
   DELETE FROM settlement_items; DELETE FROM seller_balances; DELETE FROM settlements;
   DELETE FROM webhook_events; DELETE FROM payouts; DELETE FROM order_items; DELETE FROM orders;
@@ -200,7 +201,8 @@ mkReview.run(layla, mug.shop_id, mug.id, demoOrder, 5,
 mkReview.run(layla, mug.shop_id, null, demoOrder, 5,
   'Carefully wrapped, arrived two days early, and Mara answered my personalisation question within the hour.');
 
-console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments).', products.length + 1);
+const providers = require('./demo-providers').ensureDemoProviders(db);
+console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments), %d service providers (1 pending) with 3 booking requests.', products.length + 1, providers);
 console.log('Suppliers: house, Kiln, Ember, Fern = consignment (weekly settlement, payout setup complete); Loom + Folio = connect tier (Rail B, no Stripe account attached).');
 console.log('Kiln has one settlement-eligible credit (delivered 9 days ago, window closed).');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

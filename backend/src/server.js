@@ -31,6 +31,15 @@ if (process.env.ADMIN_EMAIL) {
   }
 }
 
+// Demo service providers: the Services Marketplace's counterpart to the demo
+// shops. Idempotent (keyed on slug), so on a running site it only ever fills
+// in what is missing — see src/demo-providers.js. Runs before the lockdown
+// below so the new accounts get the DEMO_PASSWORD rotation on the same boot.
+{
+  const created = require('./demo-providers').ensureDemoProviders(db);
+  if (created) console.log(`demo providers: created ${created}`);
+}
+
 // Demo-account lockdown: on a public deployment set DEMO_PASSWORD to replace
 // the seeded accounts' well-known "demo1234" password (re-applied every boot,
 // so changing the env changes the password). The house account also loses its
@@ -42,6 +51,7 @@ if (process.env.DEMO_PASSWORD) {
     'layla@email.com', 'hello@trove.com', 'mara@kilnandclay.com',
     'hello@northboundloom.com', 'hello@embergoods.com',
     'hello@fernapothecary.com', 'hello@foliopaper.com', 'nadia@sableandstone.com',
+    ...require('./demo-providers').DEMO_PROVIDER_EMAILS,
   ];
   const hash = hashPassword(process.env.DEMO_PASSWORD);
   const rotate = db.prepare('UPDATE users SET password_hash=? WHERE email=?');
