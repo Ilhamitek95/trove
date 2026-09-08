@@ -80,6 +80,13 @@
   .btn-stripe{background:var(--stripe);color:#fff}
   .btn-stripe:hover{filter:brightness(1.08)}
   .btn-sm{padding:8px 14px;font-size:12px}
+  .svc-terms{display:flex;flex-direction:column;gap:7px;font-size:13px;font-weight:600;color:var(--ink-80)}
+  .svc-consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;font-weight:600;line-height:1.5;cursor:pointer;margin-top:4px}
+  .svc-consent input{margin-top:3px;accent-color:var(--char)}
+  .svc-catbox{display:flex;gap:7px;flex-wrap:wrap}
+  .svc-audlbl{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:8px 0 6px}
+  .svc-catopt{padding:8px 14px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:600;background:var(--paper);transition:.15s;cursor:pointer}
+  .svc-catopt.on{background:var(--char);color:var(--cream);border-color:var(--char)}
 
   /* cards */
   .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:22px}
@@ -496,6 +503,7 @@
     <nav class="menu">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
+      <a class="mitem" data-v="services" onclick="go('services')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Services<span class="pill" id="svcPill" style="display:none">0</span></a>
       <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill">0</span></a>
       <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="pill" id="returnPill" style="display:none">0</span></a>
       <a class="mitem" data-v="analytics" onclick="go('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="6" rx="1"/><rect x="10" y="8" width="4" height="10" rx="1"/><rect x="16" y="4" width="4" height="14" rx="1"/></svg>Shop Analytics</a>
@@ -573,6 +581,35 @@
 
       <!-- ADMIN PAYOUTS (house/admin only) -->
       <div class="view" id="view-adminpayouts"></div>
+
+      <!-- SERVICES: the Services Marketplace side of the same account -->
+      <div class="view" id="view-services">
+        <div id="svcEnable" style="display:none">
+          <div class="card" style="max-width:760px">
+            <h3 style="font-size:24px;font-weight:600;margin-bottom:6px">Offer services too</h3>
+            <p style="font-size:13.5px;color:var(--ink-80);font-weight:400;line-height:1.6;margin-bottom:16px">Workshops, styling, photography, repair, brand work — anything you do beautifully, bookable beside your pieces on the <a href="/services" target="_blank" rel="noopener" style="text-decoration:underline">Services Marketplace</a>. Same account, same dashboard; your services get their own page and every booking request lands here.</p>
+            <div class="svc-terms">
+              <span>✓ No second application — you're already curated</span>
+              <span>✓ AED 30 a month, from the day your services go live</span>
+              <span>✓ No commission on direct bookings · 10% only when paid through Trove</span>
+              <span>✓ Customers' emails never shared; mobile released when you confirm</span>
+            </div>
+            <div class="field" style="margin-top:18px"><label>What will you offer? <span style="text-transform:none;letter-spacing:0;color:var(--taupe);font-weight:600">· pick one to three</span></label><div id="svcCatPicker"><div style="font-size:12.5px;color:var(--muted)">Loading categories…</div></div></div>
+            <div class="field"><label>Planned services <span style="text-transform:none;letter-spacing:0;color:var(--taupe);font-weight:600">· optional</span></label><textarea id="svcPlanned" maxlength="2000" rows="3" placeholder="One per line, e.g.&#10;Hand-building workshop at your home — AED 1,200 per group&#10;Ceramic repair — from AED 180"></textarea></div>
+            <label class="svc-consent"><input type="checkbox" id="svcAgree"><span>I understand the AED 30/month subscription and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
+            <div class="err" id="svcErr" style="display:none;margin-top:12px"></div>
+            <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
+              <button class="btn btn-coral" id="svcEnableBtn" onclick="enableServices()">Switch on services</button>
+              <span style="font-size:12px;color:var(--muted);font-weight:600" id="svcEnableNote"></span>
+            </div>
+          </div>
+        </div>
+        <div id="svcPanel" style="display:none">
+          <div id="ppOverview"></div>
+          <div id="ppServices"></div>
+          <div id="ppBookings"></div>
+        </div>
+      </div>
 
       <!-- STOREFRONT -->
       <div class="view" id="view-storefront">
@@ -742,6 +779,7 @@
 
 <script src="config.js"></script>
 <script src="api.js"></script>
+<script src="provider-panel.js"></script>
 <script>
 /* ---------------- STATE ---------------- */
 let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',payoutType:'managed',bank:{name:'',accountName:'',iban:''},stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
@@ -2016,7 +2054,7 @@ function revealActiveTab(){
   b.scrollTo({left:Math.max(0,on.offsetLeft-(b.clientWidth-on.offsetWidth)/2),behavior:'smooth'});
 }
 const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],returns:['Returns','Buyer requests, Trove decisions'],analytics:['Shop Analytics','How shoppers are finding your work'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],adminpayouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],returns:['Returns','Buyer requests, Trove decisions'],analytics:['Shop Analytics','How shoppers are finding your work'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],services:['Services','Bookable services, beside your pieces'],adminpayouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -2027,9 +2065,60 @@ function go(v){
   const ta=$('topActions');
   if(v==='products')ta.innerHTML=`<button class="btn btn-coral" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add product</button>`;
   else if(v==='overview')ta.innerHTML=`<a class="btn btn-ghost" href="/" target="_blank">View storefront ↗</a>`;
+  else if(v==='services'&&HAS_PROVIDER)ta.innerHTML=`<button class="btn btn-coral" onclick="ProviderPanel.openEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add a service</button>`;
   else ta.innerHTML='';
-  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='adminpayouts')renderAdminPayouts();
+  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='services')renderServicesView(); if(v==='adminpayouts')renderAdminPayouts();
   window.scrollTo(0,0);
+}
+
+/* ---------------- SERVICES (one account, shop + services) ---------------- */
+let HAS_PROVIDER=false, SVC_MOUNTED=false, SVC_TAX=null, SVC_PICKED=[];
+function svcBadge(s){ const p=$('svcPill'); if(!p)return; p.textContent=s.open; p.style.display=s.open?'':'none'; }
+async function renderServicesView(){
+  if(HAS_PROVIDER){
+    $('svcEnable').style.display='none'; $('svcPanel').style.display='';
+    if(SVC_MOUNTED)return;
+    try{
+      await ProviderPanel.init({toast,onChange:svcBadge});
+      ProviderPanel.mountOverview($('ppOverview'));
+      ProviderPanel.mountServices($('ppServices'));
+      ProviderPanel.mountBookings($('ppBookings'));
+      SVC_MOUNTED=true;
+      go('services'); // refresh the top action now the panel is live
+    }catch(e){ $('svcPanel').innerHTML=`<div class="card">${(e.message||'Could not load your services.')}</div>`; }
+    return;
+  }
+  $('svcPanel').style.display='none'; $('svcEnable').style.display='';
+  $('svcEnableNote').textContent=SHOP.status==='approved'?'Goes live straight away — you’re already curated.':'Reviewed together with your shop application.';
+  if(!SVC_TAX){
+    try{ SVC_TAX=await TroveAPI.api('/api/services/taxonomy'); }catch(_){ $('svcCatPicker').innerHTML='<div style="font-size:12.5px;color:var(--muted)">Couldn’t load the categories — refresh to try again.</div>'; return; }
+  }
+  renderSvcPicker();
+}
+function renderSvcPicker(){
+  $('svcCatPicker').innerHTML=SVC_TAX.audiences.map(a=>{
+    const cats=SVC_TAX.categories.filter(c=>c.audience===a.key);
+    return `<div class="svc-audlbl">${a.name} — ${a.sub.toLowerCase()}</div><div class="svc-catbox">${cats.map(c=>`<button type="button" class="svc-catopt ${SVC_PICKED.includes(c.slug)?'on':''}" onclick="toggleSvcCat('${c.slug}')">${c.name}</button>`).join('')}</div>`;
+  }).join('');
+}
+function toggleSvcCat(slug){
+  if(SVC_PICKED.includes(slug))SVC_PICKED=SVC_PICKED.filter(s=>s!==slug);
+  else{ if(SVC_PICKED.length>=3){toast('Three categories is the limit — unpick one first.');return;} SVC_PICKED.push(slug); }
+  renderSvcPicker();
+}
+async function enableServices(){
+  const err=$('svcErr'); err.style.display='none';
+  const show=m=>{err.textContent=m;err.style.display='block';};
+  if(!SVC_PICKED.length)return show('Pick at least one service category.');
+  if(!$('svcAgree').checked)return show('Tick the box — it covers the subscription and the Provider Agreement.');
+  const btn=$('svcEnableBtn'); btn.disabled=true; btn.textContent='Switching on…';
+  try{
+    const r=await TroveAPI.api('/api/seller/enable-services',{method:'POST',body:{categories:SVC_PICKED,plannedServices:$('svcPlanned').value.trim(),agreeSub:true,agreeTerms:true}});
+    HAS_PROVIDER=true;
+    toast(r.provider.status==='approved'?'Services switched on — you’re live':'Services added — reviewed with your shop');
+    await renderServicesView();
+  }catch(e){ show(e.message||'Could not switch on services — try again.'); }
+  btn.disabled=false; btn.textContent='Switch on services';
 }
 
 /* ---------------- BOOT ---------------- */
@@ -2044,6 +2133,7 @@ async function boot(){
   if(!session||!session.user){ location.href='/login'; return; }
   if(!session.shop){ location.href=session.user.role==='admin'?'/admin':'/apply'; return; }   // no shop yet → apply (platform owner → admin panel)
   ME=session.user;
+  HAS_PROVIDER=!!session.provider;
   $('sellerName').textContent=(ME.name||'there').split(' ')[0];
   const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='/login';};
   try{ const {shop}=await TroveAPI.api('/api/seller/me'); applyShop(shop); }catch(_){}

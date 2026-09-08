@@ -101,6 +101,18 @@
      .brandside base rule declared after it (cascade order), so phones were
      getting the full dark brand panel above the form */
   @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
+  .alsobox{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:14px 16px;margin:6px 0 18px}
+  .alsotog{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;font-weight:500;line-height:1.5;cursor:pointer}
+  .alsotog input{margin-top:3px;accent-color:var(--char)}
+  .alsotog b{font-weight:700}
+  .audlbl{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:10px 0 7px}
+  .catbox{display:flex;gap:7px;flex-wrap:wrap}
+  .catopt{padding:9px 15px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:600;background:var(--paper);transition:.15s;cursor:pointer;font-family:inherit;color:inherit}
+  .catopt.on{background:var(--char);color:var(--cream);border-color:var(--char)}
+  .subbox{border:1px solid var(--line);border-radius:14px;background:var(--cream);padding:14px 16px;margin:6px 0 4px}
+  .subbox p{font-size:12.5px;color:var(--ink-80,rgba(41,39,39,.78));font-weight:500;line-height:1.55}
+  .subbox label{display:flex;gap:10px;align-items:flex-start;margin-top:10px;font-size:13px;font-weight:600;cursor:pointer;line-height:1.5}
+  .subbox label input{margin-top:3px;accent-color:var(--char)}
 </style>
 </head>
 <body>
@@ -198,6 +210,18 @@
             <input id="fPhone" placeholder="+971 50 123 4567">
             <div class="help">So our curation team can reach you about your application.</div></div>
         </div>
+        <div class="alsobox">
+          <label class="alsotog"><input type="checkbox" id="fAlso" onchange="toggleAlso()"><span><b>I also offer services.</b> Workshops, styling, photography, repair, brand work — list them on the Services Marketplace from the same account, reviewed together with your shop.</span></label>
+          <div id="alsoWrap" style="display:none">
+            <div class="field" style="margin-top:14px"><label>What will you offer? <span class="opt">· pick one to three</span></label><div id="catPicker"><div class="help">Loading categories…</div></div></div>
+            <div class="field"><label>Planned services</label>
+              <textarea id="fServices" maxlength="2000" placeholder="One per line, e.g.&#10;Pottery hand-building workshop at your home — AED 1,200 per group&#10;Ceramic repair — from AED 180"></textarea></div>
+            <div class="subbox">
+              <p>Services cost <b>AED 30 a month</b> from the day they go live, plus a 10% platform fee only on bookings paid through Trove — direct bookings carry no commission. The service itself is always yours to deliver.</p>
+              <label><input type="checkbox" id="fAgreeSvc"><span>I understand the subscription and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
+            </div>
+          </div>
+        </div>
         <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next coral" id="submitBtn" onclick="submitApp()">Submit application</button></div>
       </div>
 
@@ -206,6 +230,7 @@
         <div class="done-mark">🎉</div>
         <h2>Application received.</h2>
         <p>Thanks <b id="doneName"></b> — <b id="doneShop"></b> is now with our curation team. Every shop on Trove is reviewed by a real person, usually within a day or two.</p>
+        <div class="what" id="doneSvc" style="display:none"><b>Your services too</b><span>Your services practice was added to the same application. Add your first services from the Services tab of your dashboard — they go live with your shop.</span></div>
         <div class="what"><b>While you wait</b><span>You're signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you're approved.</span></div>
         <div class="btnrow"><button class="next" onclick="location.href='/sell'">Set up your shop →</button></div>
       </div>
@@ -219,6 +244,25 @@
 const $=id=>document.getElementById(id);
 let step=1;
 let SIGNED_IN=false;
+let TAX=null, PICKED=[];
+function toggleAlso(){
+  const on=$('fAlso').checked; $('alsoWrap').style.display=on?'block':'none';
+  if(on&&!TAX){
+    TroveAPI.api('/api/services/taxonomy').then(t=>{TAX=t;renderCatPicker();})
+      .catch(()=>{$('catPicker').innerHTML='<div class="help">Couldn’t load the category list — refresh to try again.</div>';});
+  }
+}
+function renderCatPicker(){
+  $('catPicker').innerHTML=TAX.audiences.map(a=>{
+    const cats=TAX.categories.filter(c=>c.audience===a.key);
+    return `<div class="audlbl">${a.name} — ${a.sub.toLowerCase()}</div><div class="catbox">${cats.map(c=>`<button type="button" class="catopt ${PICKED.includes(c.slug)?'on':''}" onclick="toggleCat('${c.slug}')">${c.name}</button>`).join('')}</div>`;
+  }).join('');
+}
+function toggleCat(slug){
+  if(PICKED.includes(slug))PICKED=PICKED.filter(s=>s!==slug);
+  else{ if(PICKED.length>=3){showErr('Three categories is the limit — unpick one first.');return;} PICKED.push(slug); }
+  hideErr();renderCatPicker();
+}
 
 // Signed-in visitors apply with the account they already have: prefill and
 // lock the email, skip the password (the session proves it's their account).
@@ -317,6 +361,12 @@ async function submitApp(){
   if(!$('fProducts').value.trim()){showErr('List at least one thing you’re planning to sell.');return;}
   if(!$('fInsta').value.trim()){showErr('Share your Instagram — it’s how our curation team sees your work.');return;}
   if(!$('fPhone').value.trim()){showErr('Add your WhatsApp number so our curation team can reach you.');return;}
+  const also=$('fAlso').checked;
+  if(also){
+    if(!PICKED.length){showErr('Pick at least one service category — or untick “I also offer services”.');return;}
+    if(!$('fServices').value.trim()){showErr('List at least one service you’re planning to offer.');return;}
+    if(!$('fAgreeSvc').checked){showErr('Tick the services box — it covers the subscription and the Provider Agreement.');return;}
+  }
   const btn=$('submitBtn');const label=btn.textContent;
   btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
   try{
@@ -341,6 +391,23 @@ async function submitApp(){
       licenseNumber:$('fLic').value==='yes'?$('fLicNo').value.trim():'',
       licenseImage,
     }});
+    // Services ride on the same account: the shop application set the
+    // session, so the provider application needs no password.
+    if(also){
+      try{
+        await TroveAPI.api('/api/services/apply',{method:'POST',body:{
+          name:$('fName').value.trim(), email:$('fEmail').value.trim(),
+          providerName:$('fShop').value.trim(), categories:PICKED,
+          location:$('fLoc').value.trim(), about:$('fAbout').value.trim(), experience:$('fExp').value,
+          plannedServices:$('fServices').value.trim(), instagram:$('fInsta').value.trim(),
+          links:$('fLinks').value.trim(), phone:$('fPhone').value.trim(), agreeSub:true, agreeTerms:true,
+        }});
+        $('doneSvc').style.display='';
+      }catch(e){
+        $('doneSvc').style.display='';
+        $('doneSvc').innerHTML=`<b>Your services</b><span>Your shop application is in, but the services part didn’t go through (${(e.message||'error')}). You can switch on services from the Services tab of your dashboard.</span>`;
+      }
+    }
     $('doneName').textContent=$('fName').value.trim().split(' ')[0];
     $('doneShop').textContent=$('fShop').value.trim();
     ['step1','step2','step3'].forEach(id=>$(id).style.display='none');

@@ -23,6 +23,51 @@ function publicShop(shop) {
   return safe;
 }
 
+/* ---------------- Services (one account, shop + services) ---------------- */
+
+// POST /api/seller/enable-services { categories[1..3], agreeSub, agreeTerms }
+// An existing maker adds a services practice to the same account without a
+// second application. The profile is built from the shop (name, story,
+// area, colour, contact) and — owner's decision — goes live immediately when
+// the shop is already approved, since curation is about the person and
+// their work. A pending shop yields a pending practice, approved together.
+router.post('/enable-services', requireSeller, (req, res) => {
+  const tax = require('../service-taxonomy');
+  const config = require('../config');
+  const b = req.body || {};
+  if (db.prepare('SELECT 1 FROM service_providers WHERE user_id = ?').get(req.user.id)) {
+    return res.status(409).json({ code: 'already_provider', error: 'This account already offers services' });
+  }
+  if (b.agreeSub !== true) {
+    return res.status(400).json({ error: `The AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month platform subscription needs your agreement` });
+  }
+  if (b.agreeTerms !== true) return res.status(400).json({ error: 'The Provider Agreement needs your acceptance' });
+  const cats = Array.isArray(b.categories) ? b.categories.map((c) => String(c).trim()).filter(Boolean) : [];
+  if (!cats.length || cats.length > 3) return res.status(400).json({ error: 'Choose one to three service categories' });
+  for (const c of cats) {
+    const err = tax.serviceCategoryError(c);
+    if (err) return res.status(422).json({ error: err.message });
+  }
+  const shop = req.shop;
+  const approved = shop.status === 'approved';
+  const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const base = slugify(shop.slug || shop.name) || 'provider';
+  let slug = base, n = 1;
+  while (db.prepare('SELECT 1 FROM service_providers WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
+  const info = db.prepare(`INSERT INTO service_providers
+      (user_id, name, slug, status, bio, location, categories, color,
+       pitch_services, pitch_experience, pitch_instagram, pitch_links, pitch_phone,
+       sub_agreed_at, sub_started_at, agreement_version, agreement_accepted_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?, datetime('now'), ${approved ? "datetime('now')" : 'NULL'}, ?, datetime('now'))`)
+    .run(req.user.id, shop.name, slug, approved ? 'approved' : 'pending',
+      shop.bio || '', shop.location || '', JSON.stringify(cats.slice(0, 3)), shop.color || '#BD9C8C',
+      String(b.plannedServices || '').trim().slice(0, 2000), shop.pitch_experience || '',
+      shop.pitch_instagram || '', shop.pitch_links || '', shop.pitch_phone || '',
+      config.PROVIDER_AGREEMENT_VERSION);
+  const p = db.prepare('SELECT id, name, slug, status, sub_started_at FROM service_providers WHERE id = ?').get(info.lastInsertRowid);
+  res.status(201).json({ provider: { id: p.id, name: p.name, slug: p.slug, status: p.status, subStartedAt: p.sub_started_at || null } });
+});
+
 /* ---------------- Shop profile ---------------- */
 router.get('/me', requireSeller, (req, res) => res.json({ shop: publicShop(req.shop) }));
 
