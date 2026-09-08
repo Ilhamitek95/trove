@@ -204,6 +204,7 @@
     <div class="logo"><img src="/img/trove-wordmark.svg" alt="trove" style="height:22px;width:auto;display:inline-block;vertical-align:middle" onerror="this.outerHTML='trove'"><span>admin</span></div>
     <div class="who"><div class="av" id="whoAv">T</div><div><div class="nm" id="whoName">—</div><div class="rl">Super admin</div></div></div>
     <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+    <a class="mitem" data-v="members" onclick="go('members')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg>Members<span class="badge zero" id="membersBadge">0</span></a>
     <a class="mitem" data-v="shops" onclick="go('shops')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Shops<span class="badge zero" id="pendBadge">0</span></a>
     <a class="mitem" data-v="providers" onclick="go('providers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 1 0-5.4 5.9L4 17.5V20h2.5l5.3-5.3a4 4 0 0 0 5.9-5.4l-2.9 2.9-2.1-2.1z"/></svg>Providers<span class="badge zero" id="provBadge">0</span></a>
     <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4 12 22 2 12l8.6-8.6a2 2 0 0 1 1.4-.6h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.6 1.4z" transform="scale(.9) translate(1.5 0)"/><circle cx="16" cy="8" r="1.4"/></svg>Products</a>
@@ -232,6 +233,13 @@
         <h3>What shoppers are searching</h3>
         <div class="hint">The last 30 days, busiest first. These terms steer the AI tag writer. <b style="color:var(--accent-ink)">No results</b> means shoppers want something the catalogue doesn't have yet.</div>
         <div id="trendsWrap"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-members">
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>Every member, both sides</h3><div class="hint">One row per account: their shop (pieces) and their services practice side by side, with approvals for each. Anything waiting for you sits at the top. The Shops and Providers tabs keep the full application detail.</div></div>
+        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="membersTable"></table></div>
       </div>
     </div>
 
@@ -343,7 +351,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to refund and collect'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar and footer'],payouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to refund and collect'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar and footer'],payouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -367,7 +375,7 @@ async function reload(){
   try{ RETURNS=(await TroveAPI.api('/api/admin/returns')).returns; }catch(_){ RETURNS=[]; }
   // Site content loads once — later reloads must not clobber unsaved edits.
   if(!CMS){ try{ CMS=await TroveAPI.api('/api/admin/content'); cmsInitEdit(); }catch(_){ CMS=null; } }
-  renderOverview();renderShops();renderProviders();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();
+  renderOverview();renderMembers();renderShops();renderProviders();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();
   reloadPayouts();
 }
 async function reloadPayouts(){
@@ -443,6 +451,40 @@ function applicationFactsHTML(s){
   </div>`;
 }
 
+/* ---------------- members: shop + services on one row ---------------- */
+function memberSideHTML(kind, x){
+  if(!x) return '<span style="color:var(--muted)">—</span>';
+  const pub = kind==='shop' ? `/?shop=${encodeURIComponent(x.slug)}` : `/services/${encodeURIComponent(x.slug)}`;
+  const live = kind==='shop' ? `${x.liveProducts} live piece${x.liveProducts===1?'':'s'}` : `${x.liveServices} live service${x.liveServices===1?'':'s'}`;
+  const acts = kind==='shop' ? shopActions(x) : providerActions(x);
+  return `<div style="display:flex;flex-direction:column;gap:6px;min-width:220px">
+    <div><a href="${pub}" target="_blank" rel="noopener" class="nm" style="text-decoration:underline">${esc(x.name)}</a> <span class="pill ${x.status}">${x.status}</span></div>
+    <div class="sl">${live}${kind==='provider'&&x.openRequests?` · ${x.openRequests} open request${x.openRequests===1?'':'s'}`:''}</div>
+    ${acts?`<div class="actions">${acts}</div>`:''}
+  </div>`;
+}
+function renderMembers(){
+  const by={};
+  const key=o=>(o.owner&&o.owner.email||'').toLowerCase();
+  for(const s of SHOPS){ const k=key(s); (by[k]=by[k]||{email:k,name:s.owner.name,shop:null,provider:null}).shop=s; }
+  for(const p of PROVIDERS){ const k=key(p); (by[k]=by[k]||{email:k,name:p.owner.name,shop:null,provider:null}).provider=p; }
+  const rows=Object.values(by);
+  const waiting=m=>(m.shop&&m.shop.status==='pending'?1:0)+(m.provider&&m.provider.status==='pending'?1:0);
+  const since=m=>[m.shop&&m.shop.createdAt,m.provider&&m.provider.createdAt].filter(Boolean).sort()[0]||'';
+  rows.sort((a,b)=>waiting(b)-waiting(a)||String(since(b)).localeCompare(String(since(a))));
+  const pending=rows.reduce((n,m)=>n+waiting(m),0);
+  const bd=$('membersBadge'); bd.textContent=pending; bd.classList.toggle('zero',!pending);
+  $('membersTable').innerHTML=`<thead><tr><th>Member</th><th>Shop · pieces</th><th>Services practice</th><th>Since</th><th></th></tr></thead>
+    <tbody>${rows.map(m=>`<tr>
+      <td><div class="nm">${esc(m.name||'—')}</div><div class="sl">${esc(m.email)}</div>
+        <div class="sl" style="margin-top:4px">${m.shop&&m.provider?'<span class="pill" style="background:var(--sage-tint);color:var(--char)">shop + services</span>':m.shop?'<span class="pill" style="background:var(--rose-tint);color:var(--char)">shop only</span>':'<span class="pill" style="background:var(--rose-tint);color:var(--char)">services only</span>'}</div></td>
+      <td>${memberSideHTML('shop',m.shop)}</td>
+      <td>${memberSideHTML('provider',m.provider)}</td>
+      <td style="color:var(--muted);white-space:nowrap">${fmtDate(since(m))}</td>
+      <td>${m.shop?`<button class="btn btn-ghost" onclick="viewAsShop(${m.shop.id})" title="Open the seller dashboard as this member">👁 Shop view</button>`:''}</td>
+    </tr>`).join('')}</tbody>`;
+}
+
 /* ---------------- shops ---------------- */
 function shopActions(s){
   if(s.status==='pending') return `<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setShopStatus(${s.id},'rejected',true)">Reject</button>`;
@@ -506,7 +548,7 @@ function providerCardHTML(p){
   return `<div style="border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;background:var(--cream)">
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <div class="shoprow" style="flex:1;min-width:230px">${tile(p)}
-        <div><div class="nm" style="font-size:16px">${esc(p.name)}</div>
+        <div><div class="nm" style="font-size:16px">${esc(p.name)}${p.status==='approved'?` <a href="/services/${encodeURIComponent(p.slug)}" target="_blank" rel="noopener" style="font-size:11.5px;font-weight:700;text-decoration:underline;margin-left:6px">public page ↗</a>`:''}</div>
         <div class="sl">${esc(p.owner.name)} · ${esc(p.owner.email)}</div></div></div>
       <span class="pill ${p.status}">${p.status}</span>
       <div style="font-size:12px;color:var(--muted);font-weight:600">Applied ${fmtDate(p.createdAt)}</div>
