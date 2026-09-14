@@ -632,6 +632,8 @@
             <div class="field"><label>Tagline</label><input id="sfTag" value="Small-batch stoneware, thrown by hand"></div>
             <div class="field"><label>Area</label><input id="sfLoc" placeholder="e.g. Alserkal Avenue, Al Quoz"></div>
             <div class="field"><label>Emirate</label><select id="sfEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
+            <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area — where Quiqup collects your parcels"></div>
+            <div class="field"><label>Pickup phone (courier only)</label><input id="sfPickupTel" placeholder="05X XXX XXXX — the number the driver calls" inputmode="tel"></div>
             <div class="field"><label>About</label><textarea id="sfBio">Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.</textarea></div>
             <div class="field"><label>Shop accent</label><div class="color-row" id="sfColors"></div></div>
             <button class="btn btn-dark" onclick="saveStore()" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save changes</button>
@@ -826,6 +828,7 @@ function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
+    pickupAddress:s.pickup_address||'',pickupPhone:s.pickup_phone||'',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
@@ -860,6 +863,8 @@ function fillStoreForm(){
   if($('sfEmirate'))$('sfEmirate').value=isAD?'Abu Dhabi':'Dubai';
   if($('sfLoc'))$('sfLoc').value=(SHOP.loc||'').replace(/,?\s*(abu dhabi|dubai)(,\s*uae)?\s*$/i,'').trim();
   if($('sfBio'))$('sfBio').value=SHOP.bio||'';
+  if($('sfPickup'))$('sfPickup').value=SHOP.pickupAddress||'';
+  if($('sfPickupTel'))$('sfPickupTel').value=SHOP.pickupPhone||'';
 }
 function composedLoc(){const a=$('sfLoc').value.trim();return a?`${a}, ${$('sfEmirate').value}`:$('sfEmirate').value;}
 async function reloadProducts(){
@@ -1566,8 +1571,16 @@ function undoBtn(s){
 function shipActions(s){
   if(s.status==='cancelled') return `<div class="sc-act" style="color:var(--muted)">This shipment was cancelled.</div>`;
   if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${undoBtn(s)}</div>`;
-  const [ns,label]=SHIP_NEXT[s.status]||[];
-  const track=`<div class="sc-track">
+  let [ns,label]=SHIP_NEXT[s.status]||[];
+  // Courier-booked parcel: the first step hands it to Quiqup for collection,
+  // and the label (Quiqup's barcode) is what goes on the box.
+  const courier=!!s.deliveryRef&&s.carrier==='Quiqup';
+  if(courier&&s.status==='processing') label='Packed · ready for collection';
+  const courierRow=courier?`<div class="sc-act" style="gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px">
+      <span>Quiqup booking <b>${esc(s.deliveryRef)}</b>${s.readyAt?' · handed over '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
+      <a class="btn btn-ghost btn-sm" href="/api/seller/shipments/${s.id}/label" target="_blank" rel="noopener">Print label</a>
+    </div>`:'';
+  const track=courierRow+`<div class="sc-track">
       <div class="field" style="margin:0"><label>Courier</label><input id="ship-carrier-${s.id}" value="${esc(s.carrier)}" placeholder="e.g. Trove Express"></div>
       <div class="field" style="margin:0"><label>Tracking number</label><input id="ship-track-${s.id}" value="${esc(s.trackingNumber)}" placeholder="optional"></div>
       <div class="field" style="margin:0;grid-column:1/-1"><label>Tracking link (optional)</label><input id="ship-url-${s.id}" value="${esc(s.trackingUrl)}" placeholder="https://… so your buyer can follow it"></div>
@@ -2015,7 +2028,8 @@ async function removeShopPhoto(){
   catch(e){ toast(e.message||'Could not remove the photo'); }
 }
 async function saveStore(){
-  const body={name:$('sfName').value.trim(),bio:$('sfBio').value.trim(),location:composedLoc(),color:storeColor};
+  const body={name:$('sfName').value.trim(),bio:$('sfBio').value.trim(),location:composedLoc(),color:storeColor,
+    pickupAddress:$('sfPickup')?$('sfPickup').value.trim():undefined,pickupPhone:$('sfPickupTel')?$('sfPickupTel').value.trim():undefined};
   if(!body.name){toast('Your shop needs a name');return;}
   try{ const {shop}=await TroveAPI.api('/api/seller/me',{method:'PATCH',body}); applyShop(shop); renderProducts(); toast('Storefront saved'); }
   catch(e){ toast(e.message||'Could not save'); }

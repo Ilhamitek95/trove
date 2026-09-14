@@ -85,11 +85,11 @@ test('the shop sees the address it must post to — and no way to ring the buyer
 
 test('the courier booking carries the number Trove holds', async () => {
   const quiqup = require('../src/delivery/quiqup-live');
-  const job = quiqup._job('pickup', {
+  const job = quiqup._order('pickup', {
     id: 7, order_id: 3, public_id: 'TRV-TEST01',
     shipping_json: JSON.stringify(ADDRESS),   // no phone in here, by design
     buyer_phone: '+971501234567',
   }, { name: 'Test Pots', location: 'Al Quoz, Dubai' });
-  assert.equal(job.dropoff.phone, '+971501234567', 'the driver can call ahead');
-  assert.equal(job.pickup.name, 'Test Pots');
+  assert.equal(job.destination.contact_phone, '+971501234567', 'the driver can call ahead');
+  assert.equal(job.origin.contact_name, 'Test Pots');
 });

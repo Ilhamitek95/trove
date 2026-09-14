@@ -31,6 +31,11 @@ function shape(s) {
     carrier: s.carrier || '',
     trackingNumber: s.tracking_number || '',
     trackingUrl: s.tracking_url || '',
+    // Courier booking: the reference the maker sees on the label + whether the
+    // parcel has been handed over (ready_at) — drives the dashboard's
+    // "Ready for collection" step and the label button.
+    deliveryRef: s.delivery_ref || '',
+    readyAt: s.ready_at || null,
     deliveredAt: s.delivered_at || null,
     returnWindowEndsAt: s.return_window_ends_at || null,
     createdAt: s.created_at,

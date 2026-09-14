@@ -72,14 +72,29 @@ router.post('/enable-services', requireSeller, (req, res) => {
 router.get('/me', requireSeller, (req, res) => res.json({ shop: publicShop(req.shop) }));
 
 router.patch('/me', requireSeller, (req, res) => {
-  const { name, bio, location, color } = req.body || {};
+  const { name, bio, location, color, pickupAddress, pickupPhone } = req.body || {};
   if (location != null) {
     const { SERVICE_AREAS, isServiceable } = require('../service-area');
     if (!isServiceable(location))
       return res.status(400).json({ error: `Trove shops are based in ${SERVICE_AREAS.join(' and ')} only` });
   }
-  db.prepare('UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color) WHERE id=?')
-    .run(name, bio, location, color, req.shop.id);
+  // Courier pickup details — where Quiqup collects and whom the driver calls.
+  // Both are courier-facing only (never in the public shop payload).
+  let pickup = null, pickupTel = null;
+  if (pickupAddress != null) {
+    pickup = String(pickupAddress).trim().slice(0, 240);
+    if (pickup && pickup.length < 10) return res.status(400).json({ error: 'Enter the full pickup address — building, street and area' });
+  }
+  if (pickupPhone != null) {
+    const raw = String(pickupPhone).trim();
+    if (raw) {
+      pickupTel = require('../phone').normalizeUAEMobile(raw);
+      if (!pickupTel) return res.status(400).json({ error: 'Enter a UAE mobile number the courier can call' });
+    } else pickupTel = '';
+  }
+  db.prepare(`UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color),
+      pickup_address=COALESCE(?,pickup_address), pickup_phone=COALESCE(?,pickup_phone) WHERE id=?`)
+    .run(name, bio, location, color, pickup, pickupTel, req.shop.id);
   res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
@@ -365,6 +380,21 @@ router.get('/returns', requireSeller, (req, res) => {
 // 'delivered' goes through the shared markDelivered funnel (same path as the
 // courier webhook) so the 7-day return-window clock is stamped exactly once;
 // stepping BACK from delivered is blocked once the credit is in a settlement.
+// Courier label (PDF) for a booked parcel — Quiqup's barcode is what makes
+// the parcel trackable through their depots, so the maker prints this one.
+router.get('/shipments/:id/label', requireSeller, async (req, res, next) => {
+  try {
+    const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
+    if (!sh) return res.status(404).json({ error: 'Shipment not found' });
+    if (!sh.delivery_ref) return res.status(409).json({ error: 'No courier booking on this shipment yet' });
+    const pdf = await require('../delivery').getLabel(sh.id);
+    if (!pdf) return res.status(404).json({ error: 'No label available for this booking' });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="trove-${sh.order_id}-${sh.id}-label.pdf"`);
+    res.send(pdf);
+  } catch (e) { next(e); }
+});
+
 router.patch('/shipments/:id', requireSeller, (req, res, next) => {
   try {
     const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
@@ -389,6 +419,12 @@ router.patch('/shipments/:id', requireSeller, (req, res, next) => {
       }
     })();
     if (status === 'delivered') shipments.markDelivered(sh.id, 'seller');
+    // "Mark as shipped" on a courier-booked parcel = it is packed and can be
+    // collected: hand the order to the courier (once; failures only log —
+    // the maker can still call Quiqup by hand and the stepper stays usable).
+    if (status === 'shipped' && sh.status === 'processing' && sh.delivery_ref && !sh.ready_at) {
+      require('../delivery').markReady(sh.id).catch((e) => console.error('Ready-for-collection failed for shipment', sh.id, e.message));
+    }
 
     const row = db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id);
     res.json({ shipment: shipments.shape(row) });

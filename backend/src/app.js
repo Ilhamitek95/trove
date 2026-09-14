@@ -101,7 +101,8 @@ function createApp() {
     },
     credentials: true,
   }));
-  app.use(express.json({ limit: '6mb' })); // roomy enough for base64 image uploads
+  // rawBody is kept for HMAC-signed courier webhooks (routes/delivery.routes.js).
+  app.use(express.json({ limit: '6mb', verify: (req, _res, buf) => { req.rawBody = buf; } })); // roomy enough for base64 image uploads
   app.use(session({
     store: new SqliteStore(),
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
