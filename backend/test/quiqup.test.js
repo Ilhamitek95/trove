@@ -153,6 +153,23 @@ test('Quiqup order webhook: HMAC-signed state changes drive the shipment; bad si
   assert.deepEqual(await r.json(), { received: true, matched: false });
 });
 
+test('Quiqdash V3 headers: X-Quiqup-Signature over "timestamp.body", idempotency key dedupes', async () => {
+  const { sh } = await paidShipment('TRV-QQ05', 'pi_qq_5');
+  db.prepare('UPDATE shipments SET delivery_ref=? WHERE id=?').run('320001', sh.id);
+  const body = JSON.stringify({ action: 'update', payload: { id: 320001, state: 'out_for_delivery', client_order_id: 1234567 } });
+  const ts = String(Math.floor(Date.now() / 1000));
+  const sig = crypto.createHmac('sha256', 'quiq-hmac-token').update(ts + '.' + body).digest('hex');
+  const post = (key) => fetch(ctx.baseUrl + '/api/delivery/webhook', { method: 'POST', body,
+    headers: { 'Content-Type': 'application/json', 'X-Quiqup-Signature': sig, 'X-Quiqup-Timestamp': ts, 'X-Quiqup-Idempotency-Key': key, 'User-Agent': 'Quiqup-Webhooks/1.0' } });
+  let r = await post('evt_abc');
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { received: true, matched: true });
+  assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'out_for_delivery');
+  r = await post('evt_abc'); // redelivery of the same event
+  assert.deepEqual(await r.json(), { received: true, duplicate: true });
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM shipment_events WHERE shipment_id=? AND status='out_for_delivery'").get(sh.id).n, 1);
+});
+
 test('Quiqdash V3 shape: sha256 HMAC + "order.<event>" names + order under data', async () => {
   const { sh } = await paidShipment('TRV-QQ04', 'pi_qq_4');
   db.prepare('UPDATE shipments SET delivery_ref=? WHERE id=?').run('310001', sh.id);

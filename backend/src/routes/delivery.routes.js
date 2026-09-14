@@ -31,12 +31,15 @@ const NOTES = {
   cancelled: 'Delivery cancelled by the courier',
 };
 
-/* Quiqup signs deliveries with an HMAC over the raw body. The classic
- * docs describe `X-Signature: sha1=…`; the Quiqdash V3 subscriptions
- * (business-ae.quiqup.com → Integrations → Webhooks) issue a 64-hex secret
- * for HMAC-SHA256. Both are accepted, hex or base64, with or without an
- * `algo=` prefix, from any of the header names Quiqup has used. */
-const SIG_HEADERS = ['x-signature', 'x-quiqup-signature', 'x-webhook-signature', 'x-hub-signature-256', 'x-hub-signature'];
+/* Quiqup signs deliveries with an HMAC over the raw body. The classic docs
+ * describe `X-Signature: sha1=…`; Quiqdash V3 subscriptions (business-ae →
+ * Integrations → Webhooks) send a bare hex HMAC-SHA256 in
+ * `X-Quiqup-Signature` alongside `X-Quiqup-Timestamp`, so the timestamp is
+ * tried as a prefix in the usual joins (ts.body, ts:body, ts+body,
+ * ts
+body) as well as body-only. hex or base64, with or without an
+ * `algo=` prefix. */
+const SIG_HEADERS = ['x-quiqup-signature', 'x-signature', 'x-webhook-signature', 'x-hub-signature-256', 'x-hub-signature'];
 function verified(req) {
   const secret = process.env.QUIQUP_WEBHOOK_SECRET;
   if (!secret) return true; // unset = open (local / staging before the secret is configured)
@@ -44,12 +47,14 @@ function verified(req) {
   const header = SIG_HEADERS.map((h) => req.headers[h]).find(Boolean);
   if (!header) return false;
   const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
+  const ts = String(req.headers['x-quiqup-timestamp'] || req.headers['x-timestamp'] || '');
+  const messages = [raw];
+  if (ts) for (const join of ['.', ':', '', '\n']) messages.push(Buffer.concat([Buffer.from(ts + join), raw]));
   // "sha256=abc…", "sha1=abc…", "t=…,v1=abc…" or the bare digest.
   const given = String(header).split(',').map((part) => part.trim().replace(/^(sha256|sha1|v1|s)=/i, '')).filter(Boolean);
   const candidates = [];
-  for (const algo of ['sha256', 'sha1']) {
-    const mac = crypto.createHmac(algo, secret).update(raw);
-    const hex = mac.digest('hex');
+  for (const msg of messages) for (const algo of ['sha256', 'sha1']) {
+    const hex = crypto.createHmac(algo, secret).update(msg).digest('hex');
     candidates.push(hex, Buffer.from(hex, 'hex').toString('base64'));
   }
   return given.some((g) => candidates.some((c) => g.length === c.length && crypto.timingSafeEqual(Buffer.from(g), Buffer.from(c))));
@@ -57,6 +62,13 @@ function verified(req) {
 
 router.post('/webhook', (req, res) => {
   if (!verified(req)) return res.status(401).json({ error: 'Bad webhook signature' });
+  // Quiqup retries on non-2xx and stamps every delivery with an idempotency
+  // key — a repeat is acknowledged without being applied twice.
+  const idem = String(req.headers['x-quiqup-idempotency-key'] || '');
+  if (idem) {
+    const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run('quiqup:' + idem, 'quiqup.order');
+    if (!seen.changes) return res.json({ received: true, duplicate: true });
+  }
   const b = req.body || {};
   // Classic shape: { type:'order', payload:{ id, state } }. Quiqdash V3 names
   // events "order.collected" and may nest the order under data/order/payload.
