@@ -31,22 +31,41 @@ const NOTES = {
   cancelled: 'Delivery cancelled by the courier',
 };
 
+/* Quiqup signs deliveries with an HMAC over the raw body. The classic
+ * docs describe `X-Signature: sha1=…`; the Quiqdash V3 subscriptions
+ * (business-ae.quiqup.com → Integrations → Webhooks) issue a 64-hex secret
+ * for HMAC-SHA256. Both are accepted, hex or base64, with or without an
+ * `algo=` prefix, from any of the header names Quiqup has used. */
+const SIG_HEADERS = ['x-signature', 'x-quiqup-signature', 'x-webhook-signature', 'x-hub-signature-256', 'x-hub-signature'];
 function verified(req) {
   const secret = process.env.QUIQUP_WEBHOOK_SECRET;
-  if (!secret) return true; // unset = open (local / staging before Quiqup issues the token)
-  if (req.headers['x-webhook-secret'] === secret) return true; // legacy shared-secret header
-  const sig = String(req.headers['x-signature'] || '');
+  if (!secret) return true; // unset = open (local / staging before the secret is configured)
+  if (req.headers['x-webhook-secret'] === secret) return true; // shared-secret header (custom header on the subscription)
+  const header = SIG_HEADERS.map((h) => req.headers[h]).find(Boolean);
+  if (!header) return false;
   const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
-  const want = 'sha1=' + crypto.createHmac('sha1', secret).update(raw).digest('hex');
-  return sig.length === want.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(want));
+  // "sha256=abc…", "sha1=abc…", "t=…,v1=abc…" or the bare digest.
+  const given = String(header).split(',').map((part) => part.trim().replace(/^(sha256|sha1|v1|s)=/i, '')).filter(Boolean);
+  const candidates = [];
+  for (const algo of ['sha256', 'sha1']) {
+    const mac = crypto.createHmac(algo, secret).update(raw);
+    const hex = mac.digest('hex');
+    candidates.push(hex, Buffer.from(hex, 'hex').toString('base64'));
+  }
+  return given.some((g) => candidates.some((c) => g.length === c.length && crypto.timingSafeEqual(Buffer.from(g), Buffer.from(c))));
 }
 
 router.post('/webhook', (req, res) => {
   if (!verified(req)) return res.status(401).json({ error: 'Bad webhook signature' });
   const b = req.body || {};
-  const p = (b.type === 'order' && b.payload) ? b.payload : b;
-  const ref = String(p.id || p.ref || p.reference || p.job_id || '');
-  const event = String(p.state || p.event || p.status || '').toLowerCase();
+  // Classic shape: { type:'order', payload:{ id, state } }. Quiqdash V3 names
+  // events "order.collected" and may nest the order under data/order/payload.
+  const p = (b.payload && typeof b.payload === 'object') ? b.payload
+    : (b.data && typeof b.data === 'object') ? (b.data.order || b.data)
+    : (b.order && typeof b.order === 'object') ? b.order : b;
+  const ref = String(p.id || p.order_id || b.order_id || p.ref || p.reference || p.job_id || '');
+  const named = String(b.event || b.event_type || b.type || '').toLowerCase().replace(/^order[._]/, '');
+  const event = String(p.state || p.status || (named !== 'order' ? named : '') || p.event || '').toLowerCase().replace(/^order[._]/, '');
   if (!ref) return res.status(400).json({ error: 'Missing job reference' });
 
   const sh = db.prepare('SELECT * FROM shipments WHERE delivery_ref=?').get(ref);

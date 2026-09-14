@@ -153,6 +153,29 @@ test('Quiqup order webhook: HMAC-signed state changes drive the shipment; bad si
   assert.deepEqual(await r.json(), { received: true, matched: false });
 });
 
+test('Quiqdash V3 shape: sha256 HMAC + "order.<event>" names + order under data', async () => {
+  const { sh } = await paidShipment('TRV-QQ04', 'pi_qq_4');
+  db.prepare('UPDATE shipments SET delivery_ref=? WHERE id=?').run('310001', sh.id);
+  const post = (body, header, value) => fetch(ctx.baseUrl + '/api/delivery/webhook', { method: 'POST',
+    headers: { 'Content-Type': 'application/json', [header]: value }, body });
+  const body = JSON.stringify({ event: 'order.out_for_delivery', data: { order: { id: 310001, tracking_url: 'https://track-parcel.quiqup.com/v3' } } });
+  const hex = crypto.createHmac('sha256', 'quiq-hmac-token').update(body).digest('hex');
+
+  let r = await post(body, 'X-Quiqup-Signature', 'sha256=' + hex);
+  assert.equal(r.status, 200);
+  let row = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+  assert.equal(row.status, 'out_for_delivery');
+  assert.equal(row.tracking_url, 'https://track-parcel.quiqup.com/v3');
+
+  // Bare hex digest in X-Signature also passes; wrong secret does not.
+  const body2 = JSON.stringify({ event: 'order.delivered', order_id: 310001 });
+  r = await post(body2, 'X-Signature', crypto.createHmac('sha256', 'wrong').update(body2).digest('hex'));
+  assert.equal(r.status, 401);
+  r = await post(body2, 'X-Signature', crypto.createHmac('sha256', 'quiq-hmac-token').update(body2).digest('hex'));
+  assert.equal(r.status, 200);
+  assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'delivered');
+});
+
 test('shop pickup address + phone: validated, saved, courier-only', async () => {
   const cookie = await ctx.loginAs('quiq@test.local', 'testpass123');
   let r = await ctx.api('PATCH', '/api/seller/me', { cookie, body: { pickupPhone: '12345' } });
