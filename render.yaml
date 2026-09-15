@@ -1,13 +1,13 @@
 # Render Blueprint — deploys the whole marketplace (API + storefront) as one
 # web service. In the Render dashboard: New + → Blueprint → pick this repo.
 #
-# The Starter plan + disk keeps the SQLite database on persistent storage so
+# The Standard plan (1 CPU / 2 GB — sized for ~10K visitors a day) + disk keeps the SQLite database on persistent storage so
 # accounts, products and orders survive deploys and restarts.
 services:
   - type: web
     name: trove
     runtime: node
-    plan: starter
+    plan: standard
     rootDir: backend
     buildCommand: npm install
     startCommand: npm start
@@ -15,7 +15,7 @@ services:
     disk:
       name: trove-data
       mountPath: /var/data
-      sizeGB: 1
+      sizeGB: 10
     envVars:
       - key: NODE_ENV
         value: production

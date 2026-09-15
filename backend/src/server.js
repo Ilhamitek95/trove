@@ -153,10 +153,35 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       console.error('graduation scan failed:', e);
     }
   }, { timezone: 'Asia/Dubai' });
+
+  // Nightly database backup (03:30 Dubai, the quietest hour) — see backup.js.
+  cron.schedule('30 3 * * *', () => {
+    try {
+      const { file, kept, removed } = require('./backup').run();
+      console.log(`backup: wrote ${file} (${kept} kept${removed.length ? `, pruned ${removed.length}` : ''})`);
+    } catch (e) {
+      console.error('backup failed:', e);
+    }
+  }, { timezone: 'Asia/Dubai' });
+
+  // Hourly session sweep — expired rows otherwise only leave on a restart.
+  cron.schedule('15 * * * *', () => {
+    try {
+      const n = db.prepare('DELETE FROM sessions WHERE expire < ?').run(Date.now()).changes;
+      if (n) console.log(`sessions: swept ${n} expired`);
+    } catch (e) {
+      console.error('session sweep failed:', e);
+    }
+  });
 }
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`trove running on http://localhost:${PORT}`);
   console.log(`  • storefront: http://localhost:${PORT}/`);
   console.log(`  • API:        http://localhost:${PORT}/api/health   (stripe ${getStripe() ? 'configured' : 'OFF'})`);
 });
+// Render's proxy keeps upstream connections open for ~60 s; Node's 5 s default
+// lets the proxy reuse a socket the app has just closed (sporadic 502s under
+// load). Keep ours open longer than the proxy's.
+server.keepAliveTimeout = 65 * 1000;
+server.headersTimeout = 66 * 1000;

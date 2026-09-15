@@ -15,7 +15,13 @@ const fees = require('./fees');
 
 function createApp() {
   const app = express();
+  app.disable('x-powered-by');
   const PORT = process.env.PORT || 4242;
+  const traffic = require('./traffic');
+
+  // gzip/brotli every text response (the storefront HTML alone is ~210 KB
+  // raw, ~40 KB compressed). Mounted first so it wraps everything below.
+  app.use(require('compression')());
   const isProd = process.env.NODE_ENV === 'production';
   const crossSite = process.env.CROSS_SITE === '1';   // set ONLY when the frontend lives on a different domain than this API
 
@@ -115,6 +121,27 @@ function createApp() {
       maxAge: 1000 * 60 * 60 * 24 * 14,
     },
   }));
+
+  /* ---------------- Traffic limits (per client IP) ----------------
+   * Safety net for one process on one instance: a scraper, a bot or a
+   * runaway script cannot starve real shoppers. Ordinary browsing never gets
+   * near these numbers (a page view is ~5 API calls).                       */
+  const MIN = 60 * 1000;
+  app.use('/api', traffic.rateLimit({ windowMs: MIN, max: 600, name: 'requests' }));
+  const authLimiter = traffic.rateLimit({ windowMs: 10 * MIN, max: 30, name: 'sign-in attempts' });
+  app.use('/api/auth', (req, res, next) => (req.method === 'POST' ? authLimiter(req, res, next) : next()));
+  app.use('/api/checkout', traffic.rateLimit({ windowMs: 10 * MIN, max: 60, name: 'checkout requests' }));
+  const beaconLimiter = traffic.rateLimit({ windowMs: MIN, max: 120, name: 'events' });
+  app.use(['/api/track', '/api/search-log'], beaconLimiter);
+  // Public catalogue reads: cache briefly in the browser/CDN. Searches (`q`)
+  // are excluded because each one is logged for the trends feature, and any
+  // signed-in path (my-…) is never cached.
+  const catalogueCache = traffic.publicCache(30);
+  const cacheCatalogue = (req, res, next) =>
+    (req.method === 'GET' && !req.query.q && !/^\/my-/.test(req.path) ? catalogueCache(req, res, next) : next());
+  app.use(['/api/products', '/api/shops', '/api/services'], cacheCatalogue);
+  const siteCache = traffic.publicCache(300);
+  app.use(['/api/config', '/api/content', '/api/legal', '/api/search/popular'], siteCache);
 
   /* ---------------- Routes ---------------- */
   app.get('/api/health', (_req, res) => res.json({ ok: true, stripe: !!getStripe() }));
@@ -237,7 +264,53 @@ function createApp() {
   // under /services/ fall through to the 404 instead of getting HTML.
   app.get('/services/:slug([a-z0-9-]+)', (_req, res) => res.sendFile(path.join(DOCS_DIR, 'trove-services.html')));
 
-  app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'] }));
+  /* ---------------- Search engines ----------------
+   * The public storefront is indexable; the signed-in surfaces (account,
+   * seller/provider dashboards, admin, login) and the API are not. The
+   * sitemap is built from the live catalogue on request.                    */
+  const SITE = () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '');
+  app.get('/robots.txt', (_req, res) => {
+    res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send([
+      'User-agent: *',
+      'Allow: /',
+      'Disallow: /api/',
+      'Disallow: /admin',
+      'Disallow: /account',
+      'Disallow: /sell',
+      'Disallow: /provider',
+      'Disallow: /login',
+      '',
+      `Sitemap: ${SITE()}/sitemap.xml`,
+      '',
+    ].join('\n'));
+  });
+  app.get('/sitemap.xml', (_req, res) => {
+    const base = SITE();
+    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const urls = [];
+    const add = (loc, { changefreq = 'weekly', priority = '0.5', lastmod } = {}) =>
+      urls.push(`<url><loc>${esc(base + loc)}</loc>${lastmod ? `<lastmod>${esc(String(lastmod).slice(0, 10))}</lastmod>` : ''}<changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`);
+    add('/', { changefreq: 'daily', priority: '1.0' });
+    add('/services', { changefreq: 'daily', priority: '0.8' });
+    add('/apply', { changefreq: 'monthly', priority: '0.4' });
+    add('/seller-agreement', { changefreq: 'yearly', priority: '0.2' });
+    add('/provider-agreement', { changefreq: 'yearly', priority: '0.2' });
+    add('/services-terms', { changefreq: 'yearly', priority: '0.2' });
+    for (const s of db.prepare("SELECT slug, created_at FROM shops WHERE status='approved' ORDER BY id").all()) {
+      add(`/?shop=${encodeURIComponent(s.slug)}`, { priority: '0.7', lastmod: s.created_at });
+    }
+    for (const p of db.prepare(`SELECT p.id, p.created_at FROM products p JOIN shops s ON s.id = p.shop_id
+      WHERE p.status='live' AND s.status='approved' ORDER BY p.id`).all()) {
+      add(`/?p=${p.id}`, { priority: '0.6', lastmod: p.created_at });
+    }
+    for (const pr of db.prepare("SELECT slug, created_at FROM service_providers WHERE status='approved' ORDER BY id").all()) {
+      add(`/services/${encodeURIComponent(pr.slug)}`, { priority: '0.7', lastmod: pr.created_at });
+    }
+    res.type('application/xml').set('Cache-Control', 'public, max-age=3600')
+      .send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
+  });
+
+  app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'], setHeaders: traffic.staticHeaders }));
 
   // Seller-uploaded images (shop photos). Kept on the persistent disk in prod.
   app.use('/uploads', express.static(require('./uploads').UPLOADS_DIR, { maxAge: '30d', immutable: true }));

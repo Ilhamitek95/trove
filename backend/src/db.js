@@ -15,6 +15,16 @@ const dbFile = process.env.DB_PATH || path.join(__dirname, '..', 'trove.db');
 const db = new Database(dbFile);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+// Throughput settings for a busy single process: NORMAL sync is safe under
+// WAL (durable across crashes, only an OS power loss can lose the last few
+// ms of writes), a 64 MB page cache keeps the whole catalogue in memory, and
+// busy_timeout lets a write wait for a checkpoint instead of throwing
+// SQLITE_BUSY at a shopper mid-checkout.
+db.pragma('synchronous = NORMAL');
+db.pragma('cache_size = -65536');
+db.pragma('temp_store = MEMORY');
+db.pragma('busy_timeout = 5000');
+db.pragma('mmap_size = 268435456');
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (

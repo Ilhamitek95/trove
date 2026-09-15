@@ -21,7 +21,8 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 
 ## Deploy & hosting
 
-- Render web service `trove`, id `srv-d931flsm0tmc73b0qem0`, Blueprint from `render.yaml`, persistent disk at `/var/data` (SQLite DB + uploads + private docs live there).
+- Render web service `trove`, id `srv-d931flsm0tmc73b0qem0`, Blueprint from `render.yaml`, persistent disk at `/var/data` (SQLite DB + uploads + private docs live there). **Go-live sizing (2026-09-15): Standard plan (1 CPU / 2 GB) + 10 GB disk**, one instance — the disk pins it to one instance, so scale UP (Pro) not out; SQLite on WAL comfortably serves ~10K visitors/day from one process.
+- Traffic hygiene lives in `backend/src/traffic.js` (2026-09-15): gzip/brotli on everything, per-IP rate limits (600 API req/min, 30 sign-in POSTs/10 min, 60 checkout/10 min, 120 beacons/min — `RATE_LIMIT_DISABLED=1` switches them off), short public `Cache-Control` on anonymous catalogue JSON (30 s products/shops/services, 5 min config/content/legal — never on `?q=` searches or `my-…` paths), week-long cache on fonts/images/icons, `no-cache` on HTML. `/robots.txt` + `/sitemap.xml` (built from the live catalogue; `PUBLIC_URL` overrides the base) are served by app.js — public pages are indexable, admin + 404 keep their `noindex` meta. Nightly `VACUUM INTO` backup at 03:30 Dubai → `/var/data/backups/` keeps 7 (`backend/src/backup.js`); hourly expired-session sweep. `test/traffic.test.js` pins all of it.
 - Auto-deploy on push to `main` **misses frequently** — don't wait: right after pushing, trigger a manual deploy via `POST https://api.render.com/v1/services/srv-d931flsm0tmc73b0qem0/deploys` with the `RENDER_API_KEY` user env var. Health check: `/api/health`.
 
 ## Dev gotchas
