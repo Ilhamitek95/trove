@@ -9,8 +9,10 @@
  *
  * Env:
  *   RESEND_API_KEY  switches real sending on
- *   EMAIL_FROM      verified sender, e.g. "Trove <hello@troveathome.com>"
- *                   (the domain must be verified in the Resend dashboard)
+ *   EMAIL_FROM      verified sender, e.g. "Trove <noreply@troveathome.com>"
+ *                   (the domain must be verified in the Resend dashboard).
+ *                   A no-reply address: nobody reads replies, so the
+ *                   templates point people to their account, never "reply".
  *
  * Markup is table-based with inline styles — the only layout every inbox
  * (Gmail, Outlook, Apple Mail, phones) renders the same. Brand rules hold
@@ -19,7 +21,7 @@
  */
 
 const enabled = () => !!process.env.RESEND_API_KEY;
-const from = () => process.env.EMAIL_FROM || 'Trove <hello@troveathome.com>';
+const from = () => process.env.EMAIL_FROM || 'Trove <noreply@troveathome.com>';
 
 async function send({ to, subject, html }) {
   if (!to) return { skipped: true };
@@ -188,7 +190,8 @@ function layout(title, inner, { intro = '', kicker = '', preheader = '', tone = 
       <a href="${SITE_LINK}" style="color:${INK};text-decoration:none;font-weight:700">Shop Trove</a> &nbsp;·&nbsp;
       <a href="${SITE_LINK}/account" style="color:${INK};text-decoration:none;font-weight:700">Your account</a><br>
       Trove · Curated for Living · Dubai, UAE<br>
-      You're receiving this because of an order you placed with Trove.
+      You're receiving this because of an order you placed with Trove.<br>
+      This is an automated email from a no-reply address, so replies aren't read.
     </td></tr>
   </table>
 </td></tr></table>
@@ -231,7 +234,7 @@ function orderConfirmation({ order, items, shops, ship }) {
             : 'Packed by hand and tracked all the way to your door.'}</td>
       </tr></table>`
     + button('Track your order', `${SITE_LINK}/account`)
-    + note('Something not right? Just reply to this email and a person at Trove will help.');
+    + note('Something not right? You can request a return from this order in your account.');
   return {
     subject: `Your Trove order ${order.public_id} is confirmed`,
     html: layout('Your order is confirmed', inner, {
@@ -283,7 +286,7 @@ function returnDeclined({ order, items, declineReason }) {
   const inner =
     itemsBlock(items)
     + panel(`The reason from our team: <b>${esc(declineReason)}</b>`)
-    + p('If you think something here is wrong, just reply to this email and a person will take another look.');
+    + p('The full request and this decision stay with the order in your account.');
   return {
     subject: `About your return request — order ${order.public_id}`,
     html: layout('Your return request', inner, {
