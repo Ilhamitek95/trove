@@ -179,7 +179,25 @@ const server = app.listen(PORT, () => {
   console.log(`trove running on http://localhost:${PORT}`);
   console.log(`  • storefront: http://localhost:${PORT}/`);
   console.log(`  • API:        http://localhost:${PORT}/api/health   (stripe ${getStripe() ? 'configured' : 'OFF'})`);
+  otoBoot();
 });
+
+// OTO courier: confirm the account answers, then point its status + error
+// webhooks at this server (idempotent — safe on every boot). Never blocks.
+function otoBoot() {
+  const delivery = require('./delivery');
+  if (!delivery.isOto()) return console.log(`  • delivery:   ${delivery.mode()}`);
+  const oto = require('./delivery/oto-live');
+  oto.accountInfo()
+    .then((a) => console.log(`  • delivery:   OTO connected (${(a && a.packageName) || 'plan unknown'}, wallet ${a && a.remainingCredit != null ? a.remainingCredit : '?'})`))
+    .then(() => {
+      const secret = process.env.OTO_WEBHOOK_SECRET;
+      const base = process.env.PUBLIC_URL || process.env.CLIENT_URL;
+      if (!secret || !base || !/^https:/.test(base)) return console.warn('OTO webhooks not registered (needs OTO_WEBHOOK_SECRET + an https CLIENT_URL)');
+      return oto.ensureWebhooks(base, secret).then((types) => console.log(`OTO webhooks registered: ${types.join(', ')} → ${base}/api/delivery/oto-webhook`));
+    })
+    .catch((e) => console.error('OTO boot check failed:', e.message));
+}
 // Render's proxy keeps upstream connections open for ~60 s; Node's 5 s default
 // lets the proxy reuse a socket the app has just closed (sporadic 502s under
 // load). Keep ours open longer than the proxy's.

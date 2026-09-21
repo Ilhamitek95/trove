@@ -42,7 +42,10 @@ services:
       #   RAIL_B_ENABLED   leave unset/0 until the Stripe Connect rail is cleared
       #   VAT_REGISTERED   set to 1 once Trove is VAT-registered
       #   GRADUATION_THRESHOLD_AED, COMMISSION_PERCENT  (defaults 12000 / 40)
-      #   QUIQUP_API_KEY, QUIQUP_API_URL, QUIQUP_WEBHOOK_SECRET  (courier; mock until set)
+      #   OTO_REFRESH_TOKEN  courier gateway (tryoto.com → Settings → API Integrations);
+      #                      mock delivery until set. OTO_WEBHOOK_SECRET signs its webhooks.
+      #                      Optional: OTO_DELIVERY_OPTION_ID, OTO_SERVICE_TYPE, OTO_PARCEL_KG/CM
+      #   QUIQUP_CLIENT_ID, QUIQUP_CLIENT_SECRET, QUIQUP_WEBHOOK_SECRET  (old courier, fallback)
       #   ANTHROPIC_API_KEY  switches on Claude-written tag suggestions in the
       #                      seller dashboard (console.anthropic.com → API keys)
       #   AI_TAGS_MODEL      Claude model for tag suggestions (default

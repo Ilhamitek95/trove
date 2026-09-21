@@ -632,7 +632,7 @@
             <div class="field"><label>Tagline</label><input id="sfTag" value="Small-batch stoneware, thrown by hand"></div>
             <div class="field"><label>Area</label><input id="sfLoc" placeholder="e.g. Alserkal Avenue, Al Quoz"></div>
             <div class="field"><label>Emirate</label><select id="sfEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
-            <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area — where Quiqup collects your parcels"></div>
+            <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area — where the courier collects your parcels"></div>
             <div class="field"><label>Pickup phone (courier only)</label><input id="sfPickupTel" placeholder="05X XXX XXXX — the number the driver calls" inputmode="tel"></div>
             <div class="field"><label>About</label><textarea id="sfBio">Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.</textarea></div>
             <div class="field"><label>Shop accent</label><div class="color-row" id="sfColors"></div></div>
@@ -1572,12 +1572,12 @@ function shipActions(s){
   if(s.status==='cancelled') return `<div class="sc-act" style="color:var(--muted)">This shipment was cancelled.</div>`;
   if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${undoBtn(s)}</div>`;
   let [ns,label]=SHIP_NEXT[s.status]||[];
-  // Courier-booked parcel: the first step hands it to Quiqup for collection,
-  // and the label (Quiqup's barcode) is what goes on the box.
-  const courier=!!s.deliveryRef&&s.carrier==='Quiqup';
+  // Courier-booked parcel (Trove books it: OTO or Quiqup): the first step hands
+  // it to the courier for collection, and the courier's label goes on the box.
+  const courier=!!s.deliveryRef;
   if(courier&&s.status==='processing') label='Packed · ready for collection';
   const courierRow=courier?`<div class="sc-act" style="gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px">
-      <span>Quiqup booking <b>${esc(s.deliveryRef)}</b>${s.readyAt?' · handed over '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
+      <span>Courier booking <b>${esc(s.deliveryRef)}</b>${s.readyAt?' · handed over '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
       <a class="btn btn-ghost btn-sm" href="/api/seller/shipments/${s.id}/label" target="_blank" rel="noopener">Print label</a>
     </div>`:'';
   const track=courierRow+`<div class="sc-track">

@@ -238,7 +238,7 @@ function returnLogistics(order, requestId) {
   for (const shopId of shopIds) {
     const sh = db.prepare('SELECT * FROM shipments WHERE order_id=? AND shop_id=?').get(order.id, shopId);
     if (sh && ['shipped', 'out_for_delivery', 'delivered'].includes(sh.status)) {
-      delivery.bookReversePickup(sh.id).then((r) => {
+      delivery.bookReversePickup(sh.id, items.filter((i) => i.shop_id === shopId)).then((r) => {
         db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
           .run(sh.id, sh.status, `Return pickup booked${r && r.ref ? ' · ' + r.ref : ''}`);
       }).catch((e) => console.error('Reverse pickup failed for shipment', sh.id, e.message));

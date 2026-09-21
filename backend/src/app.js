@@ -144,7 +144,7 @@ function createApp() {
   app.use(['/api/config', '/api/content', '/api/legal', '/api/search/popular'], siteCache);
 
   /* ---------------- Routes ---------------- */
-  app.get('/api/health', (_req, res) => res.json({ ok: true, stripe: !!getStripe() }));
+  app.get('/api/health', (_req, res) => res.json({ ok: true, stripe: !!getStripe(), delivery: require('./delivery').mode() }));
   // Public money rules, so the storefront shows the same fees the server charges.
   app.get('/api/config', (_req, res) => res.json({
     currency: process.env.CURRENCY || 'aed',

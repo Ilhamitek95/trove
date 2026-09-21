@@ -380,15 +380,26 @@ router.get('/returns', requireSeller, (req, res) => {
 // 'delivered' goes through the shared markDelivered funnel (same path as the
 // courier webhook) so the 7-day return-window clock is stamped exactly once;
 // stepping BACK from delivered is blocked once the credit is in a settlement.
-// Courier label (PDF) for a booked parcel — Quiqup's barcode is what makes
-// the parcel trackable through their depots, so the maker prints this one.
+// Courier label for a booked parcel — the courier's barcode is what makes the
+// parcel trackable through their depots, so the maker prints this one.
+// Quiqup hands back a PDF (proxied); OTO hosts its label (redirect).
 router.get('/shipments/:id/label', requireSeller, async (req, res, next) => {
   try {
     const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
     if (!sh) return res.status(404).json({ error: 'Shipment not found' });
     if (!sh.delivery_ref) return res.status(409).json({ error: 'No courier booking on this shipment yet' });
     const pdf = await require('../delivery').getLabel(sh.id);
-    if (!pdf) return res.status(404).json({ error: 'No label available for this booking' });
+    if (pdf && pdf.url) return res.redirect(302, pdf.url);
+    if (!pdf) {
+      // The maker opened this in a new tab: a readable page beats raw JSON.
+      if (req.accepts(['json', 'html']) === 'html') {
+        return res.status(404).type('html').send('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Label not ready · Trove</title>'
+          + '<body style="font-family:system-ui,sans-serif;background:#FDF7F5;color:#292727;max-width:520px;margin:12vh auto;padding:0 20px;line-height:1.5">'
+          + '<h1 style="font-weight:500">Your label is on its way</h1><p>The courier prepares the label once you mark the parcel <b>Packed · ready for collection</b>. '
+          + 'If you already have, give it a minute and refresh this page.</p></body>');
+      }
+      return res.status(404).json({ error: 'No label available for this booking' });
+    }
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="trove-${sh.order_id}-${sh.id}-label.pdf"`);
     res.send(pdf);
