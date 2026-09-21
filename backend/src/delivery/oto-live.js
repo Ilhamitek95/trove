@@ -137,14 +137,18 @@ function order(shipment, shop, items = []) {
 }
 
 /* Door-to-door with a courier pickup: never a locker, a counter the buyer
- * visits, or a branch the maker has to drop at. Cheapest wins, after the
- * optional service-type preference. */
+ * visits, or a branch the maker has to drop at — and never a specialist lane
+ * (cold chain, heavy & bulky) unless asked for. Cheapest wins, after the
+ * optional service-type preference; a tie goes to the cheaper return. */
+const SPECIALIST = /^(coldDelivery|heavyAndBulky|electronicAndHeavy)$/;
 function chooseOption(list, prefer = process.env.OTO_SERVICE_TYPE) {
   const ok = (list || []).filter((o) => o && o.deliveryOptionId
     && (!o.deliveryType || /^toCustomerDoorstep/.test(o.deliveryType))
     && !(/dropoff/i.test(String(o.pickupDropoff || '')) && !/pickup/i.test(String(o.pickupDropoff || ''))));
-  const pool = prefer && ok.some((o) => o.serviceType === prefer) ? ok.filter((o) => o.serviceType === prefer) : ok;
-  return pool.sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0))[0] || null;
+  const wanted = prefer && ok.some((o) => o.serviceType === prefer);
+  const pool = wanted ? ok.filter((o) => o.serviceType === prefer) : ok.filter((o) => !SPECIALIST.test(String(o.serviceType || '')));
+  const n = (v) => Number(v) || 0;
+  return pool.sort((a, b) => n(a.price) - n(b.price) || n(a.returnFee) - n(b.returnFee))[0] || null;
 }
 
 async function pickOption(originCity, destinationCity, reverse) {

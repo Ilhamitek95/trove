@@ -152,6 +152,18 @@ test('courier choice: cheapest door-to-door WITH a courier pickup — never lock
   assert.equal(oto._chooseOption(OPTIONS, 'nonexistent').deliveryOptionName, 'iMile', 'unknown preference falls back to cheapest');
   assert.equal(oto._chooseOption(OPTIONS.slice(0, 3), ''), null);
   assert.equal(oto._chooseOption([], ''), null);
+
+  // Real Dubai → Abu Dhabi quote (2026-09-21): Aramex PUDO is drop-off only,
+  // cold chain is a specialist lane, and the AED 17 tie goes to the AED 17 return.
+  const live = [
+    { deliveryOptionId: 10063, deliveryOptionName: 'Aramex PUDO', serviceType: 'pudo', deliveryType: 'pickupByCustomer', pickupDropoff: 'dropoffOnly', price: 13, returnFee: 13 },
+    { deliveryOptionId: 9939, deliveryOptionName: 'AJEX Logistics Next Day Delivery', serviceType: 'express', deliveryType: 'toCustomerDoorstep', pickupDropoff: 'freePickup', price: 17, returnFee: 34 },
+    { deliveryOptionId: 5446, deliveryOptionName: 'Aramex', serviceType: 'express', deliveryType: 'toCustomerDoorstep', pickupDropoff: 'freePickup', price: 17, returnFee: 17 },
+    { deliveryOptionId: 5451, deliveryOptionName: 'Transcorp Cold', serviceType: 'coldDelivery', deliveryType: 'toCustomerDoorstep', pickupDropoff: 'freePickup', price: 16, returnFee: 16 },
+    { deliveryOptionId: 5443, deliveryOptionName: 'Quiqup', serviceType: 'express', deliveryType: 'toCustomerDoorstep', pickupDropoff: 'freePickup', price: 26, returnFee: 26 },
+  ];
+  assert.equal(oto._chooseOption(live, '').deliveryOptionName, 'Aramex');
+  assert.equal(oto._chooseOption(live, 'coldDelivery').deliveryOptionName, 'Transcorp Cold', 'a specialist lane only when asked for');
 });
 
 test('payment books it: pickup location for the maker, then the order in OTO — no courier yet', async () => {
