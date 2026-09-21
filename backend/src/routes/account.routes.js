@@ -65,7 +65,7 @@ router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) =>
     const email = require('../email');
     const msg = email.returnRequested({
       order,
-      items: returns.requestItems(result.id).map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents })),
+      items: returns.requestItems(result.id).map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, image: email.productImage({ images: i.product_images, name: i.name_snapshot }) })),
       money: returns.money(order, result.id),
       reasonLabel: returns.REASONS[req.body.reason] || req.body.reason,
     });

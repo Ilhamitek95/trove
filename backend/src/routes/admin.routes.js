@@ -426,7 +426,7 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
 const returns = require('../returns');
 const email = require('../email');
 const emailItems = (requestId) => returns.requestItems(requestId)
-  .map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents }));
+  .map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, image: email.productImage({ images: i.product_images, name: i.name_snapshot }) }));
 
 router.get('/returns', requireAdmin, (_req, res) => {
   const rows = db.prepare(`

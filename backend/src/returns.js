@@ -48,10 +48,11 @@ function feeCents(order) {
 // The items going back with a request, with their shop for the seller views.
 const reqItemsStmt = db.prepare(`
   SELECT ri.order_item_id, ri.qty, oi.name_snapshot, oi.price_cents, oi.shop_id, oi.transfer_id, oi.options, oi.extras,
-         s.name AS shop_name
+         s.name AS shop_name, p.images AS product_images
   FROM return_request_items ri
   JOIN order_items oi ON oi.id = ri.order_item_id
   JOIN shops s ON s.id = oi.shop_id
+  LEFT JOIN products p ON p.id = oi.product_id
   WHERE ri.request_id = ?`);
 function requestItems(requestId) { return reqItemsStmt.all(requestId); }
 function grossCents(items) { return items.reduce((t, i) => t + i.price_cents * i.qty, 0); }

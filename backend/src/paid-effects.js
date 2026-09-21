@@ -76,8 +76,9 @@ function paidDbEffects(order, groups) {
 function sendConfirmation(order) {
   const email = require('./email');
   const options = require('./options');
-  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, s.name AS shop_name
-    FROM order_items oi JOIN shops s ON s.id = oi.shop_id WHERE oi.order_id=? ORDER BY s.name, oi.id`).all(order.id);
+  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, s.name AS shop_name, p.images
+    FROM order_items oi JOIN shops s ON s.id = oi.shop_id LEFT JOIN products p ON p.id = oi.product_id
+    WHERE oi.order_id=? ORDER BY s.name, oi.id`).all(order.id);
   const extras = require('./extras');
   // Extras are named WITH their prices — the line price already includes them,
   // and the receipt should say why it is more than the listing price.
@@ -86,7 +87,8 @@ function sendConfirmation(order) {
   try { ship = order.shipping_json ? JSON.parse(order.shipping_json) : null; } catch (_) { /* keep the receipt, drop the block */ }
   const msg = email.orderConfirmation({
     order,
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, meta: meta(i) })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, meta: meta(i), shop: i.shop_name,
+      image: email.productImage({ images: i.images, name: i.name_snapshot }) })),
     shops: [...new Set(items.map((i) => i.shop_name))],
     ship,
   });
