@@ -3,6 +3,7 @@ const express = require('express');
 const db = require('../db');
 const { parseTags } = require('../tags');
 const productOptions = require('../options');
+const { stockCover } = require('../stock-images');
 
 const router = express.Router();
 
@@ -21,6 +22,9 @@ function shape(p) {
     stock: p.stock,
     imageSeed: p.image_seed,
     images: parseImages(p.images),
+    // The interim matched photo the storefront shows when there are no
+    // uploads (docs/api.js TROVE_STOCK_IMG), so the native app shows it too.
+    stockImage: stockCover(p.name),
     options: productOptions.parse(p.options),
     // Per-combination availability, so the product page can grey out the
     // glaze that's sold out instead of taking the order and disappointing.

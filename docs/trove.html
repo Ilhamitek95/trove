@@ -1251,6 +1251,7 @@
       <div id="confAcctErr" class="ao-err"></div>
     </div>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a class="btn btn-dark" id="confApp" href="#" style="display:none">Back to the Trove app</a>
       <a class="btn btn-dark" id="confTrack" href="/account#orders">Track your order</a>
       <button class="btn btn-ghost" onclick="go('home')">Continue shopping</button>
     </div>
@@ -2260,13 +2261,16 @@ function lineStillValid(c){
   // grounds to bin it — the basket says so and the buyer decides.
   return !groups.length||!!variantFor(p,c.opts);
 }
+function cleanLines(saved){
+  return (Array.isArray(saved)?saved:[])
+    .map(c=>c&&typeof c==='object'?{pid:Number(c.pid),qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[],extras:Array.isArray(c.extras)?c.extras.filter(x=>typeof x==='string'):[]}:null)
+    .filter(c=>c&&lineStillValid(c));
+}
 function restoreCart(){
   let saved=[];
   try{saved=JSON.parse(localStorage.getItem(CART_KEY)||'[]');}catch(_){return;}
   if(!Array.isArray(saved)||!saved.length)return;
-  const clean=saved
-    .map(c=>c&&typeof c==='object'?{pid:c.pid,qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[],extras:Array.isArray(c.extras)?c.extras.filter(x=>typeof x==='string'):[]}:null)
-    .filter(c=>c&&lineStillValid(c));
+  const clean=cleanLines(saved);
   const dropped=saved.length-clean.length;
   cart=clean; updateCartCount(); renderCart();
   if(dropped)toast(dropped===1?'One piece from your basket is no longer available'
@@ -2467,6 +2471,9 @@ function showConfirmation(orderId){
   const who=((ME&&ME.name)||(lastOrder&&lastOrder.name)||(checkoutPayload().address||{}).name||'').trim().split(' ')[0];
   $('confHead').innerHTML=who?`Thank you, <em>${esc(who)}</em>.`:'Thank you.';
   $('confTrack').style.display=(LIVE&&!ME)?'none':''; // guests have no account to track in
+  const ret=appReturn(); // checked out from the app: offer the way back, carrying the order number
+  $('confApp').style.display=ret?'':'none';
+  if(ret){$('confApp').href=ret+encodeURIComponent(orderId);$('confTrack').className='btn btn-ghost';}
   // Second chance for guests: create the account right on the confirmation page.
   $('confAcct').style.display=(LIVE&&!ME)?'block':'none';
   if(LIVE&&!ME){$('confAcctEmail').value=(lastOrder&&lastOrder.email)||'';$('confAcctPw').value='';}
@@ -2686,6 +2693,29 @@ function linkQuoteShops(){
     sp.replaceWith(a);
   });
 }
+/* Checkout hand-off from the Trove app: /?basket=<json lines>&ret=<return
+ * address> swaps the app's basket in and opens checkout, so payment runs here
+ * on Stripe. The confirmation offers a way back, but only to the app's own
+ * addresses — anything else is ignored rather than followed. */
+const APP_RET_KEY='trove.appReturn';
+const APP_RETURN=[/^trove:\/\/order\/$/,/^https:\/\/trove-app-ub4k\.onrender\.com\/order\/$/,/^http:\/\/localhost:8081\/order\/$/];
+function appReturn(){try{const r=sessionStorage.getItem(APP_RET_KEY)||'';return APP_RETURN.some(re=>re.test(r))?r:'';}catch(_){return '';}}
+function takeAppBasket(){
+  let q;try{q=new URLSearchParams(location.search);}catch(_){return false;}
+  const raw=q.get('basket');
+  if(raw==null)return false;
+  history.replaceState({},'',location.pathname); // a refresh (or Stripe's return) must not re-import it
+  const ret=q.get('ret')||'';
+  try{if(APP_RETURN.some(re=>re.test(ret)))sessionStorage.setItem(APP_RET_KEY,ret);else sessionStorage.removeItem(APP_RET_KEY);}catch(_){}
+  let lines=[];try{lines=JSON.parse(raw);}catch(_){}
+  const clean=cleanLines(lines);
+  cart=clean; updateCartCount(); renderCart();
+  if(!clean.length){toast('The pieces in your app basket are no longer available');return true;}
+  const dropped=(Array.isArray(lines)?lines.length:0)-clean.length;
+  startCheckout();
+  if(dropped)toast(dropped===1?'One piece from your basket is no longer available':`${dropped} pieces from your basket are no longer available`);
+  return true;
+}
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
   applyContent(); linkQuoteShops(); renderHome(); buildCatFilters();
@@ -2694,6 +2724,7 @@ async function boot(){
   restoreCart(); updateCartCount();
   // Deep links from the Services Marketplace: /?shop=<slug> opens a shop
   // page, /?p=<id> a piece. The query is dropped so a refresh is the home.
+  if(takeAppBasket())return;
   try{
     const q=new URLSearchParams(location.search);
     const shopSlug=q.get('shop'), pid=Number(q.get('p'));

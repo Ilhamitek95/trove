@@ -27,4 +27,11 @@ function stockImage(name, px = 144) {
   return id ? `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${px}&h=${px}&q=70` : '';
 }
 
-module.exports = { stockImage, _map: load };
+/** The storefront's own cover URL for a product name (same crop and size as
+ * u() in docs/api.js), or null. The public catalogue hands it to the app. */
+function stockCover(name) {
+  const id = load()[name];
+  return id ? `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=72` : null;
+}
+
+module.exports = { stockImage, stockCover, _map: load };

@@ -17,6 +17,12 @@ test('the stock map is read from the storefront list, not a second copy', () => 
   assert.equal(require('../src/stock-images').stockImage('No Such Piece'), '');
 });
 
+test('stockCover: the storefront cover URL for the app, or null', () => {
+  const { stockCover } = require('../src/stock-images');
+  assert.match(stockCover('Reeded Stoneware Mug'), /^https:\/\/images\.unsplash\.com\/photo-[\w-]+\?auto=format&fit=crop&w=900&q=72$/);
+  assert.equal(stockCover('No Such Piece'), null);
+});
+
 test('productImage: uploaded photo → stock shot → nothing', () => {
   const { productImage } = require('../src/email');
   assert.equal(productImage({ images: '["/uploads/products/p-7-a.jpg"]', name: 'Reeded Stoneware Mug' }), 'https://troveathome.com/uploads/products/p-7-a.jpg');
