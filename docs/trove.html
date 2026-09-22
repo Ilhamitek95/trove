@@ -1015,7 +1015,7 @@
     </aside>
     <div>
       <div class="sortbar">
-        <span class="n"><b id="resCount">0</b> pieces from <b id="shopCount">0</b> shops</span>
+        <span class="n"><b id="resCount">0</b> <span id="resNoun">pieces</span> from <b id="shopCount">0</b> <span id="shopNoun">shops</span></span>
         <button class="f-open-btn" onclick="openFilters()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter</button>
         <select id="sortSel" onchange="renderShop()">
           <option value="feat">Curated</option>
@@ -1610,7 +1610,7 @@ function renderHome(){
     <h3>${v.name}</h3>
     <div class="loc">${v.loc}</div>
     <p>${v.bio}</p>
-    <div class="vmeta"><span><b>${np}</b> pieces</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.provider?`<span><b>${v.provider.serviceCount}</b> ${v.provider.serviceCount===1?'service':'services'}</span>`:''}</div>
+    <div class="vmeta"><span><b>${np}</b> ${np===1?'piece':'pieces'}</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.provider?`<span><b>${v.provider.serviceCount}</b> ${v.provider.serviceCount===1?'service':'services'}</span>`:''}</div>
   </article>`;}).join('');
   $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
   initMakerCarousel();
@@ -1992,7 +1992,8 @@ function renderShop(){
   buildCatFilters();
   buildShopFilter();
   const list=filteredProducts(), shops=new Set(list.map(p=>p.vendor));
-  $('resCount').textContent=list.length; $('shopCount').textContent=shops.size;
+  $('resCount').textContent=list.length; $('resNoun').textContent=list.length===1?'piece':'pieces';
+  $('shopCount').textContent=shops.size; $('shopNoun').textContent=shops.size===1?'shop':'shops';
   if($('sheetApply'))$('sheetApply').textContent=list.length?`Show ${list.length} ${list.length===1?'piece':'pieces'}`:'Show results';
   $('browseTitle').textContent=state.q?`“${state.q}”`:(state.cat==='all'?'Shop all':catLabel());
   $('shopCrumb').innerHTML=crumbHTML();
