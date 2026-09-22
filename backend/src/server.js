@@ -32,10 +32,13 @@ if (process.env.ADMIN_EMAIL) {
 }
 
 // Demo service providers: the Services Marketplace's counterpart to the demo
-// shops. Idempotent (keyed on slug), so on a running site it only ever fills
-// in what is missing — see src/demo-providers.js. Runs before the lockdown
-// below so the new accounts get the DEMO_PASSWORD rotation on the same boot.
-{
+// shops. Idempotent (keyed on slug), so it only ever fills in what is missing
+// — see src/demo-providers.js. Opt-in via DEMO_PROVIDERS=1 (the local seed
+// creates them anyway): the live site was cleared of its demo data on
+// 2026-09-22 (scripts/purge-demo.js) and must not grow them back at boot.
+// Runs before the lockdown below so new accounts get the DEMO_PASSWORD
+// rotation on the same boot.
+if (process.env.DEMO_PROVIDERS === '1') {
   const created = require('./demo-providers').ensureDemoProviders(db);
   if (created) console.log(`demo providers: created ${created}`);
 }

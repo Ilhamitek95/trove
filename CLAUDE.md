@@ -16,7 +16,7 @@ Curated multi-vendor marketplace, Dubai + Abu Dhabi only, currency AED (stored a
 - **Always ship live (owner instruction 2026-09-02):** every change is committed, pushed, deployed on Render, and verified live in the same turn — no local-only stops. Run the tests first; still pause for anything destructive (prod DB writes, unseen migrations).
 - **`PAYOUT_ENC_KEY` (Render env) is irreplaceable** — if lost, all stored seller IBANs are unrecoverable. Never rotate or "clean up" this var.
 - Copy guardrails are CI-enforced (`backend/test/copy-guardrails.test.js`): no carbon-neutral/greenwashing claims, no money-transmission phrases. Never fabricate reviews, ratings, or stats — live mode only shows real data.
-- Prod DB never reseeds once users exist; `npm run seed` is for local dev only.
+- Prod DB never reseeds once users exist; `npm run seed` is for local dev only. **Live demo data was cleared on 2026-09-22** (owner: one shop with one piece + one service provider remain) with `backend/scripts/purge-demo.js` (`npm run purge-demo -- --keep-shop=<slug> --keep-product=<id> --keep-provider=<slug>`; dry run by default, `--yes` backs up via VACUUM INTO then removes; `test/purge.test.js`). Because of that, boot-time demo providers are now opt-in (`DEMO_PROVIDERS=1`, never set on Render) — the local seed still creates them.
 - The user's email is the ONLY admin on prod (bootstrapped from `ADMIN_EMAIL` env). Demo accounts on prod are re-passworded every boot from `DEMO_PASSWORD` env (local dev stays `demo1234`).
 
 ## Deploy & hosting
