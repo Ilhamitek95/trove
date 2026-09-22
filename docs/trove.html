@@ -77,6 +77,8 @@
   .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
   .nav .links a:hover{color:var(--char)}
   .nav .links a:hover::after{width:100%}
+  .nav .links a.on{color:var(--char)}
+  .nav .links a.on::after{width:100%}
   .nav .right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
   .search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--muted);width:210px;transition:width .25s}
   .search:focus-within{width:250px;border-color:var(--rose)}
@@ -2723,14 +2725,22 @@ async function boot(){
   // actually still on sale (restoreCart updates the count itself).
   restoreCart(); updateCartCount();
   // Deep links from the Services Marketplace: /?shop=<slug> opens a shop
-  // page, /?p=<id> a piece. The query is dropped so a refresh is the home.
+  // page, /?p=<id> a piece. The shared header on the other pages lands here
+  // too: /?view=shop[&cat=House] · /?view=sell · /?q=<search> · /?cart=1 ·
+  // /#vendors. The query is dropped so a refresh is the home.
   if(takeAppBasket())return;
   try{
     const q=new URLSearchParams(location.search);
     const shopSlug=q.get('shop'), pid=Number(q.get('p'));
+    const view=q.get('view'), search=q.get('q'), cat=q.get('cat');
     if(shopSlug&&VENDORS[shopSlug])openVendor(shopSlug);
     else if(pid&&PRODUCTS.some(p=>p.id===pid))openPDP(pid);
-    if(shopSlug||pid)history.replaceState({},'',location.pathname);
+    else if(search!=null){if($('searchInput'))$('searchInput').value=search;runSearch(search);}
+    else if(view==='shop')go('shop',cat||'all');
+    else if(view==='sell')go('sell');
+    else if(location.hash==='#vendors')setTimeout(()=>{const v=$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
+    if(q.get('cart'))openCart();
+    if(shopSlug||pid||search!=null||view||q.get('cart'))history.replaceState({},'',location.pathname);
   }catch(_){}
 }
 boot();

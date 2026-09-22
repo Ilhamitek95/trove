@@ -17,6 +17,7 @@
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
     --rose-tint:#F2E9E4; --sage-tint:#E9EFEA;
     --line:rgba(41,39,39,.12); --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+    --line-soft:rgba(41,39,39,.07); --cream-2:#F8F0EA; --shadow:0 18px 50px -28px rgba(41,39,39,.30);
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
@@ -26,22 +27,88 @@
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500}
   .wrap{max-width:1200px;margin:0 auto;padding:0 26px}
 
-  /* header */
-  header{position:sticky;top:0;z-index:40;background:rgba(253,247,245,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .nav{display:flex;align-items:center;gap:22px;height:64px}
-  .brand img{height:24px;width:auto;display:block}
-  .brand{font-family:var(--font-display);font-size:26px;font-weight:600}
-  .nav .links{display:flex;gap:20px;font-size:13.5px;font-weight:600;color:var(--ink-80)}
+  /* ---------- HEADER: the storefront's rules, verbatim (same look on every page) ---------- */
+  .promo{background:var(--char);color:var(--cream);line-height:1.6}
+  .promo .wrap{display:flex;justify-content:center;align-items:center;min-height:38px;padding-top:7px;padding-bottom:7px;font-size:12.5px;letter-spacing:.06em;font-weight:600;text-align:center;line-height:1.5}
+  header.top{position:sticky;top:0;z-index:60;background:rgba(253,247,245,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft);line-height:1.6}
+  /* the storefront's .wrap is 32px wide at the sides (26px on phones); the header keeps that so the two line up exactly */
+  .promo .wrap,header.top .wrap{padding-left:32px;padding-right:32px}
+  .nav{display:flex;align-items:center;gap:26px;height:84px}
+  .brand{font-family:var(--font-display);font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
+  .brand img{height:34px;width:auto;display:block}
+  .mn-brand img{height:28px;width:auto;display:block}
+  .nav .links{display:flex;align-items:center;gap:24px;margin-left:10px;font-size:13.5px;font-weight:600;letter-spacing:.04em;flex-shrink:0}
+  .nav .links a{padding:4px 0;color:var(--ink-80);position:relative;white-space:nowrap;line-height:1.3}
+  .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
   .nav .links a:hover{color:var(--char)}
-  .nav .links a.on{color:var(--char);border-bottom:2px solid var(--coral);padding-bottom:2px}
-  .nav .grow{flex:1}
+  .nav .links a:hover::after{width:100%}
+  .nav .links a.on{color:var(--char)}
+  .nav .links a.on::after{width:100%}
+  .nav .right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+  .search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--muted);width:210px;transition:width .25s}
+  .search:focus-within{width:250px;border-color:var(--rose)}
+  .search input{border:none;outline:none;background:none;flex:1;font-family:inherit;font-size:13px;color:var(--char)}
+  .icon-btn{position:relative;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;color:var(--char);transition:background .15s}
+  .icon-btn:hover,.icon-btn:active{background:var(--rose-tint)}
+  .cart-count{position:absolute;top:3px;right:3px;min-width:17px;height:17px;padding:0 4px;background:var(--char);color:var(--cream);border-radius:999px;font-size:10px;font-weight:700;display:grid;place-items:center;font-family:'Quicksand'}
+  .cart-count.hide{display:none}
+  .menu-btn,.search-btn{display:none}
+  @media(max-width:1180px){
+    .nav{gap:20px}
+    .nav .links{gap:18px;margin-left:6px}
+    .search{display:none}
+    .search-btn{display:grid}
+  }
+  @media(max-width:960px){
+    .nav .links{display:none}
+    .menu-btn{display:grid}
+    .search{display:flex}
+    .search-btn{display:none}
+  }
+  @media(max-width:560px){
+    .promo .wrap,header.top .wrap{padding-left:26px;padding-right:26px}
+    .search{display:none}
+    .search-btn{display:grid}
+    .promo .wrap{font-size:11px}
+    .nav{height:64px;gap:12px}
+    .brand{font-size:29px}
+    .icon-btn{width:40px;height:40px}
+    .nav .right{gap:2px}
+  }
+  /* account menu */
+  .acct-wrap{position:relative}
+  .acct-menu{position:absolute;right:0;top:52px;width:252px;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:8px;opacity:0;visibility:hidden;transform:translateY(-6px);transition:.18s;z-index:80;line-height:1.6}
+  .acct-menu.open{opacity:1;visibility:visible;transform:none}
+  .acct-menu .am-head{display:flex;align-items:center;gap:11px;padding:12px;border-bottom:1px solid var(--line-soft);margin-bottom:6px}
+  .acct-menu .am-av{width:40px;height:40px;border-radius:50%;background:var(--rose);color:var(--char);display:grid;place-items:center;font-family:var(--font-display);font-size:20px;font-weight:600}
+  .acct-menu .am-n{font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1}
+  .acct-menu .am-e{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+  .acct-menu a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--ink-80)}
+  .acct-menu a:hover{background:var(--cream-2);color:var(--char)}
+  .acct-menu a svg{width:16px;height:16px;stroke-width:1.7;opacity:.7}
+  .acct-menu .am-div{height:1px;background:var(--line-soft);margin:6px 4px}
+  .acct-menu a.sell{color:var(--accent-ink)}
+  /* mobile nav (its own scrim; .scrim on this page is the booking modal) */
+  .hdr-scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
+  .hdr-scrim.open{opacity:1;visibility:visible}
+  .mnav{position:fixed;top:0;left:0;bottom:0;width:330px;max-width:88vw;background:var(--cream);z-index:110;transform:translateX(-103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;display:flex;flex-direction:column;padding:16px 24px calc(24px + env(safe-area-inset-bottom));overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;line-height:1.6}
+  .mnav.open{transform:none;visibility:visible}
+  .mn-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .mn-brand{font-family:var(--font-display);font-size:32px;line-height:1}
+  .mn-search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:12px 18px;color:var(--muted);margin-bottom:12px}
+  .mn-search input{border:none;outline:none;background:none;flex:1;min-width:0;font-family:inherit;font-size:16px;color:var(--char)}
+  .mn-link{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 2px;font-family:var(--font-display);font-size:24px;font-weight:600;border-bottom:1px solid var(--line-soft);cursor:pointer}
+  .mn-link:active{background:var(--rose-tint)}
+  .mn-link span{color:var(--taupe);font-size:18px}
+  .mn-foot{margin-top:auto;padding-top:22px;display:flex;flex-direction:column;gap:14px;font-size:14px;font-weight:600;color:var(--ink-80)}
+  .mn-foot a{display:flex;align-items:center;gap:11px}
+  .mn-foot svg{width:17px;height:17px;stroke-width:1.7;opacity:.7}
+  /* buttons (the provider CTA band) */
   .btn{display:inline-block;padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:600;transition:.18s;text-align:center}
   .btn-dark{background:var(--char);color:var(--cream)}
   .btn-dark:hover{background:#3B3737}
   .btn-ghost{border:1px solid var(--line)}
   .btn-ghost:hover{border-color:var(--char)}
-  @media(max-width:700px){.nav .links{display:none}}
-  @media(max-width:560px){.nav{gap:10px}.nav .btn{white-space:nowrap;padding:9px 14px;font-size:12.5px}}
 
   /* hero — the Sell-on-Trove composition: centred, one line of intro, the facts as dashed pills */
   .hero{padding:48px 0 18px}
@@ -290,21 +357,68 @@
 </head>
 <body>
 
-<header>
+<!-- HEADER: the storefront's, with real addresses into it (test/header-sync.test.js keeps the two in step) -->
+<div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 200</div></div>
+<header class="top">
   <div class="wrap nav">
+    <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <a href="/" class="brand" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></a>
     <nav class="links">
-      <a href="/">Shop</a>
+      <a href="/?view=shop">Shop all</a>
+      <a href="/?view=shop&amp;cat=House">Trove Collection</a>
+      <a href="/#vendors">Marketplace</a>
       <a href="/services" class="on">Services Marketplace</a>
-      <a href="#providers" onclick="jumpTo('providers');return false">Providers</a>
-      <a href="#how" onclick="jumpTo('how');return false">How it works</a>
-      <a href="/sell">Sell on Trove</a>
+      <a href="/?view=sell">Sell on Trove</a>
     </nav>
-    <div class="grow"></div>
-    <a class="btn btn-ghost" id="acctBtn" href="/login">Sign in</a>
-    <a class="btn btn-dark" href="/apply?for=services">Become a provider</a>
+    <div class="right">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="searchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
+      </div>
+      <button class="icon-btn search-btn" title="Search" aria-label="Search" onclick="openMenu(true)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <a class="icon-btn" title="Saved" href="/account#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
+      <div class="acct-wrap">
+        <button class="icon-btn" title="Account" onclick="toggleAcct(event)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+        <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
+          <div class="am-head"><div class="am-av" id="amAv">·</div><div><div class="am-n" id="amName">Welcome</div><div class="am-e" id="amEmail">Sign in to your account</div></div></div>
+          <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
+          <a href="/account#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
+          <a href="/account#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
+          <a href="/account#following"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Following</a>
+          <div class="am-div"></div>
+          <a class="sell" href="/sell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>Sell on Trove ↗</a>
+          <a href="/login" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
+        </div>
+      </div>
+      <button class="icon-btn" title="Cart" onclick="openCart()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 2H2"/></svg>
+        <span class="cart-count hide" id="cartCount">0</span>
+      </button>
+    </div>
   </div>
 </header>
+
+<div class="hdr-scrim" id="uiScrim" onclick="closeSheets()"></div>
+<aside class="mnav" id="mnav" aria-label="Menu">
+  <div class="mn-head">
+    <span class="mn-brand"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.mn-brand').textContent='trove'"></span>
+    <button class="icon-btn" aria-label="Close menu" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+  </div>
+  <div class="mn-search">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="mSearchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
+  </div>
+  <a class="mn-link" href="/?view=shop">Shop all<span>→</span></a>
+  <a class="mn-link" href="/?view=shop&amp;cat=House">Trove Collection<span>→</span></a>
+  <a class="mn-link" href="/#vendors">Marketplace<span>→</span></a>
+  <a class="mn-link" href="/services" onclick="closeSheets();return false">Services Marketplace<span>→</span></a>
+  <a class="mn-link" href="/?view=sell">Sell on Trove<span>→</span></a>
+  <div class="mn-foot">
+    <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
+    <a href="/account#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
+    <a href="/account#wishlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items</a>
+  </div>
+</aside>
 
 <section id="pview" hidden>
   <div class="pv-hero" id="pvHero"><a class="pv-back" href="/services" onclick="closeProvider();return false">← All services</a></div>
@@ -438,6 +552,37 @@ const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').r
 let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[];
 let state={audience:'home',cat:null,showAll:false};
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
+
+/* ---------------- shared header ----------------
+ * The storefront's header, so the menu never changes between pages. Its
+ * links are real addresses into the storefront, and the search box, cart
+ * button and menu hand over to it too; the account menu is live here. */
+const CART_KEY='trove.cart.v1';
+function updateCartCount(){let n=0;try{n=(JSON.parse(localStorage.getItem(CART_KEY)||'[]')||[]).reduce((s,c)=>s+(parseInt(c&&c.qty)||0),0);}catch(_){}const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);}
+function openCart(){location.href='/?cart=1';}
+function runSearch(q){location.href='/?q='+encodeURIComponent((q||'').trim());}
+function openMenu(focusSearch){$('mnav').classList.add('open');$('uiScrim').classList.add('open');document.body.style.overflow='hidden';if(focusSearch)setTimeout(()=>$('mSearchInput').focus(),380);}
+function closeSheets(){$('mnav').classList.remove('open');$('uiScrim').classList.remove('open');document.body.style.overflow='';}
+function toggleAcct(e){e.stopPropagation();$('acctMenu').classList.toggle('open');}
+document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.remove('open');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();closeModal();}});
+async function signOut(){await TroveAPI.logout();location.href='/';}
+function renderAuth(){
+  const u=ME&&ME.user;
+  if(u){
+    $('amAv').textContent=((u.name||'?').trim()[0]||'·').toUpperCase();
+    $('amName').textContent=u.name; $('amEmail').textContent=u.email;
+    $('authLabel').textContent='Sign out';
+    $('authLink').removeAttribute('href'); $('authLink').style.cursor='pointer'; $('authLink').onclick=signOut;
+  }else{
+    $('amName').textContent='Welcome'; $('amEmail').textContent='Sign in to your account'; $('amAv').textContent='·';
+    $('authLabel').textContent='Sign in';
+  }
+}
+/* The promo bar shows the same admin-editable line as the storefront. */
+async function loadPromo(){
+  try{const c=await TroveAPI.api('/api/content');document.querySelectorAll('[data-cms]').forEach(el=>{const v=el.dataset.cms.split('.').reduce((o,k)=>(o==null?undefined:o[k]),c);if(typeof v==='string')el.textContent=v;});}catch(_){}
+}
 
 function money(c){const n=(c||0)/100;return 'AED '+(Number.isInteger(n)?n.toLocaleString('en-GB'):n.toLocaleString('en-GB',{minimumFractionDigits:2}));}
 function priceLabel(s){
@@ -722,14 +867,13 @@ async function loadMyBookings(){
   try{MYBOOKINGS=(await TroveAPI.api('/api/services/my-bookings')).bookings;}catch(_){MYBOOKINGS=[];}
 }
 (async function boot(){
+  updateCartCount(); loadPromo();
   try{TAX=await TroveAPI.api('/api/services/taxonomy');}catch(_){TAX={audiences:[],categories:[]};}
   try{SERVICES=(await TroveAPI.api('/api/services')).services;}catch(_){SERVICES=[];}
   try{PROVIDERS=(await TroveAPI.api('/api/services/providers')).providers;}catch(_){PROVIDERS=[];}
   try{ME=await TroveAPI.me();}catch(_){ME=null;}
-  if(ME&&ME.user){
-    const b=$('acctBtn');b.textContent='My account';b.href='/account';
-    await loadMyBookings();
-  }
+  renderAuth();
+  if(ME&&ME.user)await loadMyBookings();
   renderAll();
   const m=location.pathname.match(PV_RE);
   if(m){history.replaceState({provider:m[1]},'',location.pathname);await openProvider(m[1],false);}
