@@ -1783,10 +1783,21 @@ function initParallax(){
 
 /* Makers carousel drive: auto-drift right→left; grab/swipe/fling anywhere; taps still open shops.
  * Re-render safe — handlers bind once to the viewport, the track is re-read each init. */
-const MK={off:0,setW:0,speed:0,dragging:false,hovering:false,vx:0,resumeAt:0,bound:false,lastT:0,track:null};
+const MK={off:0,setW:0,speed:0,dragging:false,hovering:false,vx:0,resumeAt:0,bound:false,lastT:0,track:null,static:false};
+// Fewer makers than fit across the viewport → no marquee: the clone set is
+// hidden and the cards sit still (a lone maker would otherwise show twice and
+// slide forever). Re-checked on resize.
+function settleMakers(){
+  const vp=$('vendorGrid'),set=MK.track&&MK.track.querySelector('.vset'),clone=MK.track&&MK.track.querySelector('.vset[aria-hidden]');
+  if(!vp||!set)return;
+  MK.static=set.getBoundingClientRect().width<=vp.getBoundingClientRect().width+1;
+  if(clone)clone.style.display=MK.static?'none':'';
+  if(MK.static){MK.off=0;MK.vx=0;MK.track.style.transform='';}
+}
 function initMakerCarousel(){
   const vp=$('vendorGrid'); MK.track=vp.querySelector('.vtrack'); if(!MK.track)return;
   const set=MK.track.querySelector('.vset');
+  settleMakers();
   MK.setW=set.getBoundingClientRect().width;
   MK.speed=matchMedia('(prefers-reduced-motion: reduce)').matches?0:MK.setW/Math.max(30,set.children.length*9); // px per second
   if(MK.setW)MK.off=((MK.off%MK.setW)+MK.setW)%MK.setW;
@@ -1797,7 +1808,7 @@ function initMakerCarousel(){
     vp.addEventListener('mouseleave',()=>MK.hovering=false);
   }
   let sx=0,soff=0,moved=0,lastX=0,lastTs=0;
-  vp.addEventListener('pointerdown',e=>{MK.dragging=true;MK.vx=0;moved=0;sx=lastX=e.clientX;soff=MK.off;lastTs=e.timeStamp;try{vp.setPointerCapture(e.pointerId);}catch(_){}});
+  vp.addEventListener('pointerdown',e=>{if(MK.static)return;MK.dragging=true;MK.vx=0;moved=0;sx=lastX=e.clientX;soff=MK.off;lastTs=e.timeStamp;try{vp.setPointerCapture(e.pointerId);}catch(_){}});
   vp.addEventListener('pointermove',e=>{
     if(!MK.dragging)return;
     moved=Math.max(moved,Math.abs(e.clientX-sx));
@@ -1817,13 +1828,13 @@ function initMakerCarousel(){
   };
   vp.addEventListener('pointerup',endDrag);
   vp.addEventListener('pointercancel',endDrag);
-  addEventListener('resize',()=>{const s=MK.track&&MK.track.querySelector('.vset');const w=s&&s.getBoundingClientRect().width;if(w)MK.setW=w;});
+  addEventListener('resize',()=>{settleMakers();const s=MK.track&&MK.track.querySelector('.vset');const w=s&&s.getBoundingClientRect().width;if(w)MK.setW=w;});
   requestAnimationFrame(tickMakers);
 }
 function tickMakers(t){
   requestAnimationFrame(tickMakers);
   const dt=MK.lastT?Math.min(64,t-MK.lastT):16; MK.lastT=t;
-  if(!MK.track||!MK.setW)return;
+  if(!MK.track||!MK.setW||MK.static)return;
   if(!MK.dragging){
     if(Math.abs(MK.vx)>0.02){MK.off-=MK.vx*dt;MK.vx*=Math.pow(.94,dt/16);} // fling momentum, eased out
     else if(!MK.hovering&&t>MK.resumeAt)MK.off+=MK.speed*dt/1000;          // gentle auto drift
