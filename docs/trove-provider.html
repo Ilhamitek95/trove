@@ -19,7 +19,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
-  ::selection{background:var(--coral);color:var(--char)}
+  ::selection{background:var(--rose);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500}
@@ -37,7 +37,7 @@
   .mitem svg{width:17px;height:17px;stroke-width:1.7}
   .mitem:hover{background:var(--rose-tint)}
   .mitem.on{background:var(--char);color:var(--cream)}
-  .badge{margin-left:auto;background:var(--coral);color:var(--char);font-size:10.5px;font-weight:700;min-width:19px;height:19px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
+  .badge{margin-left:auto;background:var(--rose);color:var(--char);font-size:10.5px;font-weight:700;min-width:19px;height:19px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
   .badge.zero{display:none}
   .sfoot{margin-top:auto;padding:10px;display:flex;flex-direction:column;gap:8px;font-size:12.5px;font-weight:600;color:var(--muted)}
   .sfoot a{cursor:pointer}
@@ -136,7 +136,7 @@ async function signOut(){await TroveAPI.logout();window.location.href='/login';}
   // One account, shop + services: point at the other dashboard.
   if(me.shop){
     $('shopLink').style.display='';
-    $('shopNote').innerHTML=`<div class="shopnote">You also run <b>${(me.shop.name||'a shop')}</b> on Trove — your pieces, orders and payouts live in the <a href="/sell">shop dashboard</a>, where this Services tab also appears.</div>`;
+    $('shopNote').innerHTML=`<div class="shopnote">You also run <b>${String(me.shop.name||'a shop').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</b> on Trove — your pieces, orders and payouts live in the <a href="/sell">shop dashboard</a>, where this Services tab also appears.</div>`;
   }
   $('gate').style.display='none';$('shell').style.display='grid';
   buildMobileTabs();

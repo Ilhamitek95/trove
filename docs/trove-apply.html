@@ -18,7 +18,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500;min-height:100vh}
-  ::selection{background:var(--coral);color:var(--char)}
+  ::selection{background:var(--rose);color:var(--char)}
   a{color:inherit}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   h1,h2,h3{font-family:var(--font-display);font-weight:500}
@@ -40,7 +40,7 @@
   .bstep .n{width:26px;height:26px;border-radius:50%;border:1px solid rgba(253,247,245,.3);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;transition:.3s}
   .bstep .t{font-size:14px;font-weight:600;padding-top:3px}
   .bstep.on{color:var(--cream)}
-  .bstep.on .n{background:var(--coral);border-color:var(--coral);color:var(--char)}
+  .bstep.on .n{background:var(--cream);border-color:var(--cream);color:var(--char)}
   .bstep.done{color:rgba(253,247,245,.8)}
   .bstep.done .n{background:rgba(253,247,245,.15);border-color:transparent}
   .deco{position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;border-radius:50%;background:rgba(253,247,245,.07);pointer-events:none}
@@ -84,7 +84,7 @@
   .next{flex:1;padding:15px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;transition:.18s}
   .next:hover{background:#3B3737}
   .next.coral{background:var(--char)}
-  .next.coral:hover{background:var(--coral)}
+  .next.coral:hover{background:#3a3737}
   .back{padding:15px 22px;border-radius:999px;border:1px solid var(--line);font-weight:600;font-size:13.5px}
   .back:hover{border-color:var(--char)}
   .signin{font-size:13px;color:var(--muted);font-weight:600;text-align:center;margin-top:20px}
@@ -202,13 +202,13 @@
         <div class="field"><label id="fAboutLabel">About you &amp; your craft <span class="count" id="aboutCount"></span></label>
           <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you make or do, and how? What makes it special? Write it like you'd tell a friend."></textarea>
           <div class="help">A few honest sentences are perfect — this also becomes your public story.</div></div>
-        <div class="field r-maker"><label>Do you have a UAE trade license?</label>
-          <select id="fLic" onchange="toggleLic()"><option value="no">Not yet — it's just me making things</option><option value="yes">Yes — I have a trade or e-Trader license</option></select>
+        <div class="field r-maker"><label>Do you have a UAE trade licence?</label>
+          <select id="fLic" onchange="toggleLic()"><option value="no">Not yet — it's just me making things</option><option value="yes">Yes — I have a trade or e-Trader licence</option></select>
           <div class="help">You don't need one to sell pieces: Trove buys your pieces from you and resells them. If you do have one, tell us — it unlocks direct per-sale payouts later.</div></div>
         <div id="licWrap" style="display:none" class="r-maker">
           <div class="ftwo">
-            <div class="field"><label>License number</label><input id="fLicNo" placeholder="e.g. CN-1234567"></div>
-            <div class="field"><label>License photo <span class="opt">· optional</span></label><input id="fLicImg" type="file" accept="image/jpeg,image/png,image/webp">
+            <div class="field"><label>Licence number</label><input id="fLicNo" placeholder="e.g. CN-1234567"></div>
+            <div class="field"><label>Licence photo <span class="opt">· optional</span></label><input id="fLicImg" type="file" accept="image/jpeg,image/png,image/webp">
               <div class="help">A clear photo or screenshot (JPG/PNG).</div></div>
           </div>
         </div>
@@ -264,7 +264,8 @@
 <script src="/api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
 let step=1, SIGNED_IN=false, ME=null, TAX=null, PICKED=[];
 let ROLE='maker';   // maker | provider | both
 
@@ -311,7 +312,7 @@ async function loadTax(){
 function renderCatPicker(){
   $('catPicker').innerHTML=TAX.audiences.map(a=>{
     const cats=TAX.categories.filter(c=>c.audience===a.key);
-    return `<div class="audlbl">${esc(a.name)} — ${esc(a.sub.toLowerCase())}</div><div class="catbox">${cats.map(c=>`<button type="button" class="catopt ${PICKED.includes(c.slug)?'on':''}" onclick="toggleCat('${c.slug}')">${esc(c.name)}</button>`).join('')}</div>`;
+    return `<div class="audlbl">${esc(a.name)} — ${esc(a.sub.toLowerCase())}</div><div class="catbox">${cats.map(c=>`<button type="button" class="catopt ${PICKED.includes(c.slug)?'on':''}" onclick="toggleCat(${jsq(c.slug)})">${esc(c.name)}</button>`).join('')}</div>`;
   }).join('');
 }
 function toggleCat(slug){
@@ -379,7 +380,7 @@ function validate(target){
     if(wantsServices()&&!PICKED.length)return 'Pick at least one service category.';
     if(!$('fLoc').value.trim())return 'Tell us where you’re based.';
     if($('fAbout').value.trim().length<30)return 'Tell us a little more about you and your work — a few sentences helps us say yes faster.';
-    if(wantsShop()&&$('fLic').value==='yes'&&!$('fLicNo').value.trim())return 'Add your license number — or switch back to “Not yet”.';
+    if(wantsShop()&&$('fLic').value==='yes'&&!$('fLicNo').value.trim())return 'Add your licence number — or switch back to “Not yet”.';
   }
   return null;
 }
