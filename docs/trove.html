@@ -823,6 +823,12 @@
     .drawer .dbody{padding:6px 20px}
     .dfoot{padding:20px 20px calc(20px + env(safe-area-inset-bottom))}
     .qbtn{width:44px;height:44px}
+    /* phones: the line price sits beside the name, so the 44px quantity buttons fit */
+    .citem{position:relative}
+    .citem .ci{min-width:0}
+    .citem .ci .n{padding-right:74px}
+    .citem .cp{position:absolute;right:0;top:0}
+    .citem .ci .qrow{gap:8px}
     .sortbar select,.fshop,#pdpPersoText{font-size:16px}
     /* sell-on-trove: compact phone rhythm (!important only where inline styles exist) */
     #view-sell .band{padding:38px 0}
