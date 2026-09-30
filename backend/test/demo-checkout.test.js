@@ -142,3 +142,25 @@ test('the demo door closes by itself the moment Stripe is configured', async () 
     process.env.STRIPE_MOCK = '';
   }
 });
+
+test('two demo checkouts race for the last piece: the second completion is a 409 sold_out and nothing is shipped', async () => {
+  const lastOne = db.prepare("INSERT INTO products (shop_id,name,category,price_cents,stock,status) VALUES (?,?,?,?,1,'live')")
+    .run(shopId, 'Only vase', 'Ceramics', 30000).lastInsertRowid;
+  const open = async (cookie) => (await ctx.api('POST', '/api/checkout', {
+    cookie, body: { items: [{ productId: lastOne, qty: 1 }], address: ADDRESS, phone: PHONE } })).data.orderId;
+  // Both checkouts pass the stock check: nothing is reserved until payment.
+  const a = await open(buyerCookie);
+  const b = await open(otherCookie);
+  let r = await ctx.api('POST', '/api/checkout/demo-complete', { cookie: buyerCookie, body: { orderId: a } });
+  assert.equal(r.status, 200, r.text);
+  r = await ctx.api('POST', '/api/checkout/demo-complete', { cookie: otherCookie, body: { orderId: b } });
+  assert.equal(r.status, 409);
+  assert.equal(r.data.code, 'sold_out');
+  assert.match(r.data.error, /Only vase sold out/);
+  const lost = db.prepare('SELECT * FROM orders WHERE public_id=?').get(b);
+  assert.equal(lost.status, 'cancelled');
+  assert.equal(lost.attention, 'oversold');
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM shipments WHERE order_id=?').get(lost.id).c, 0);
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM seller_balances WHERE order_id=?').get(lost.id).c, 0);
+  assert.equal(db.prepare('SELECT stock FROM products WHERE id=?').get(lastOne).stock, 0, 'never negative');
+});

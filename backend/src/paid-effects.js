@@ -20,8 +20,61 @@ function perShopGroups(orderId) {
     WHERE oi.order_id = ? GROUP BY oi.shop_id`).all(orderId);
 }
 
-/** Mark paid + VAT, decrement stock, open shipments, credit the ledger. */
+/**
+ * Take the paid order's pieces out of stock, all or nothing. Every decrement
+ * is conditional (plain pieces: UPDATE … WHERE stock >= qty; pieces with
+ * variations: the combination's own stock, read and written inside the same
+ * write transaction — SQLite runs one writer at a time, so nothing can slip
+ * in between). If any line can't be covered — two buyers paid for the last
+ * one — every decrement rolls back and the shortfall is returned.
+ */
+class Shortfall extends Error {
+  constructor(lines) { super('stock shortfall'); this.lines = lines; }
+}
+function takeStock(order) {
+  const options = require('./options');
+  const take = db.transaction(() => {
+    const short = [];
+    for (const it of db.prepare('SELECT * FROM order_items WHERE order_id=? ORDER BY id').all(order.id)) {
+      const p = db.prepare('SELECT options, variants FROM products WHERE id=?').get(it.product_id);
+      if (!p) { short.push(it); continue; }
+      const chosen = options.parse(it.options);
+      // A piece with variations keeps its stock per combination; products.stock
+      // stays the sum so every sold-out check in the app still reads one number.
+      if (chosen.length && options.parse(p.options).length) {
+        const variants = options.parse(p.variants);
+        const v = variants.find((x) => x.key === options.variantKey(chosen));
+        if (!v || (parseInt(v.stock, 10) || 0) < it.qty) { short.push(it); continue; }
+        v.stock = (parseInt(v.stock, 10) || 0) - it.qty;
+        db.prepare('UPDATE products SET variants=?, stock=? WHERE id=?')
+          .run(JSON.stringify(variants), options.totalStock(variants), it.product_id);
+      } else {
+        const r = db.prepare('UPDATE products SET stock = stock - ? WHERE id=? AND stock >= ?').run(it.qty, it.product_id, it.qty);
+        if (!r.changes) short.push(it);
+      }
+    }
+    if (short.length) throw new Shortfall(short);
+  });
+  try { take(); return []; } catch (e) {
+    if (e instanceof Shortfall) return e.lines;
+    throw e;
+  }
+}
+
+/**
+ * Mark paid + VAT, decrement stock, open shipments, credit the ledger.
+ * Returns { ok: true } — or, when a piece sold out between checkout and
+ * payment, { ok: false, shortfall } after cancelling the order and flagging
+ * it (attention='oversold'): nothing is shipped or credited, and the caller
+ * refunds the payment via unavailablePostEffects.
+ */
 function paidDbEffects(order, groups) {
+  const shortfall = takeStock(order);
+  if (shortfall.length) {
+    db.prepare("UPDATE orders SET status='cancelled', attention='oversold' WHERE id=?").run(order.id);
+    return { ok: false, shortfall };
+  }
+
   const cfg = require('./config');
   // VAT is captured per order once Trove is registered. Prices are
   // VAT-inclusive: consignment rail owes 5/105 of the full amount charged
@@ -33,23 +86,6 @@ function paidDbEffects(order, groups) {
   // Payment success is the moment Trove purchases the goods from its
   // suppliers: title transfers now, and the buyer-facing order is paid.
   db.prepare("UPDATE orders SET status='paid', title_transferred_at=datetime('now'), vat_amount_cents=? WHERE id=?").run(vat, order.id);
-  const options = require('./options');
-  for (const it of db.prepare('SELECT * FROM order_items WHERE order_id=?').all(order.id)) {
-    const p = db.prepare('SELECT options, variants FROM products WHERE id=?').get(it.product_id);
-    const chosen = options.parse(it.options);
-    // A piece with variations keeps its stock per combination; products.stock
-    // stays the sum so every sold-out check in the app still reads one number.
-    if (p && chosen.length && options.parse(p.options).length) {
-      const variants = options.parse(p.variants);
-      const key = options.variantKey(chosen);
-      const v = variants.find((x) => x.key === key);
-      if (v) v.stock = Math.max(0, v.stock - it.qty);
-      db.prepare('UPDATE products SET variants=?, stock=? WHERE id=?')
-        .run(JSON.stringify(variants), options.totalStock(variants), it.product_id);
-    } else {
-      db.prepare('UPDATE products SET stock = MAX(0, stock - ?) WHERE id=?').run(it.qty, it.product_id);
-    }
-  }
   // One shipment per shop, so each supplier fulfils and tracks their own items.
   for (const { shop_id } of db.prepare('SELECT DISTINCT shop_id FROM order_items WHERE order_id=?').all(order.id)) {
     const exists = db.prepare('SELECT id FROM shipments WHERE order_id=? AND shop_id=?').get(order.id, shop_id);
@@ -68,6 +104,48 @@ function paidDbEffects(order, groups) {
       if (g.tier === 'consignment') credit.run(g.shop_id, order.id, fees.split(g.cents).net);
     }
   }
+  return { ok: true };
+}
+
+/**
+ * The order was paid but can't go ahead (a piece sold out first, or the
+ * unpaid-checkout sweep had already cancelled it): refund the whole payment
+ * automatically and tell the buyer. The order stays flagged for admin; if the
+ * refund itself fails the flag says so, and Trove refunds by hand. Returns a
+ * promise (callers fire and forget; tests await it).
+ */
+function unavailablePostEffects(order, lines, stripe, { soldOut = true } = {}) {
+  const flagFailed = soldOut ? 'oversold_refund_failed' : 'refund_failed';
+  const refund = (stripe && order.stripe_payment_intent_id)
+    ? stripe.refunds.create({
+      payment_intent: order.stripe_payment_intent_id,
+      ...(order.rail === 'connect' ? { reverse_transfer: true, refund_application_fee: true } : {}),
+      metadata: { order_id: String(order.id), reason: soldOut ? 'sold_out' : 'expired' },
+    }, { idempotencyKey: `trove-unavailable-${order.id}` }).then(() => {
+      db.prepare("UPDATE orders SET refunded_at=COALESCE(refunded_at, datetime('now')) WHERE id=?").run(order.id);
+      console.warn(`order ${order.public_id}: ${soldOut ? 'sold out before payment' : 'paid after it was cancelled'} — refunded in full automatically`);
+      return true;
+    }).catch((e) => {
+      db.prepare('UPDATE orders SET attention=? WHERE id=?').run(flagFailed, order.id);
+      console.error(`order ${order.public_id}: AUTOMATIC REFUND FAILED — refund by hand in Stripe:`, e.message);
+      return false;
+    })
+    : Promise.resolve(false); // demo mode: no money was taken
+
+  return refund.then((refunded) => {
+    if (!refunded) return refunded;
+    try {
+      const email = require('./email');
+      const msg = email.orderUnavailable({
+        order,
+        soldOut,
+        items: (lines || []).map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents,
+          meta: require('./options').label(i.options) })),
+      });
+      email.send({ to: order.email, ...msg }).catch((e) => console.error('order-unavailable email failed:', e.message));
+    } catch (e) { console.error('order-unavailable email failed:', e.message); }
+    return refunded;
+  });
 }
 
 /** The receipt the confirmation page promises. Fire-and-forget: a mail
@@ -129,4 +207,4 @@ function paidPostEffects(order, groups, stripe) {
   }
 }
 
-module.exports = { perShopGroups, paidDbEffects, paidPostEffects, sendConfirmation };
+module.exports = { perShopGroups, takeStock, paidDbEffects, paidPostEffects, unavailablePostEffects, sendConfirmation };

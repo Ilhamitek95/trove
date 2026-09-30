@@ -68,16 +68,26 @@ function createApp() {
         // changes nothing, Stripe redelivered an event we fully processed —
         // bail out. If anything below throws, the event id rolls back with the
         // rest, so Stripe's retry gets a clean second attempt.
-        const applied = db.transaction(() => {
+        const result = db.transaction(() => {
           const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type);
-          if (!seen.changes) return false;
-          pe.paidDbEffects(order, groups);
-          return true;
+          if (!seen.changes) return null;
+          return pe.paidDbEffects(order, groups);
         })();
 
         // Courier pickups + Rail B leftover transfers — outside the
-        // transaction (network IO), failure never blocks the payment.
-        if (applied) pe.paidPostEffects(order, groups, stripe);
+        // transaction (network IO), failure never blocks the payment. A piece
+        // that sold out before this payment landed means the whole order is
+        // refunded instead (the order is already cancelled and flagged).
+        if (result && result.ok) pe.paidPostEffects(order, groups, stripe);
+        else if (result) pe.unavailablePostEffects(order, result.shortfall, stripe);
+      } else if (order && order.status === 'cancelled' && !order.refunded_at && !order.attention) {
+        // Paid after the unpaid-checkout sweep cancelled it (the PaymentIntent
+        // cancel lost the race): nothing was reserved for it, so refund it.
+        const first = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type).changes;
+        if (first) {
+          db.prepare("UPDATE orders SET attention='paid_after_cancel' WHERE id=?").run(order.id);
+          require('./paid-effects').unavailablePostEffects(order, [], stripe, { soldOut: false });
+        }
       }
     }
 

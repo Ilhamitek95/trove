@@ -298,4 +298,29 @@ function returnDeclined({ order, items, declineReason }) {
   };
 }
 
-module.exports = { enabled, send, productImage, orderConfirmation, returnRequested, returnApproved, returnDeclined };
+/* ---- order we couldn't complete ----
+ * Sent when a payment succeeds but the order can't go ahead — a piece sold
+ * out between checkout and payment (two buyers on the last one), or the
+ * order had already expired. The full amount goes back automatically.
+ * { order, items[{ name, qty, price_cents, meta, image }], soldOut:boolean }
+ */
+function orderUnavailable({ order, items, soldOut = true }) {
+  const inner =
+    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(order.total_cents)}</span><br>is on its way back to your original payment method. Depending on your bank it can take 5–10 business days to appear. You haven't been charged for anything.`)
+    + (items && items.length ? heading(soldOut ? 'No longer available' : 'Your order') + itemsBlock(items) : '')
+    + p(soldOut
+      ? 'Most pieces on Trove are handmade in small numbers, and someone else checked out with the last one moments before your payment went through. We are sorry — the rest of your basket was not sent either, so nothing arrives half-complete.'
+      : 'Your checkout was left open for longer than we can hold an order, so we could not complete it.')
+    + button('Back to the shop', SITE_LINK);
+  return {
+    subject: `We couldn't complete your Trove order ${order.public_id} — full refund on its way`,
+    html: layout("We couldn't complete your order", inner, {
+      tone: 'clay',
+      kicker: `Order <b style="color:${INK}">${esc(order.public_id)}</b>`,
+      intro: `We're sorry — order <b>${esc(order.public_id)}</b> couldn't go ahead, so we have refunded it in full.`,
+      preheader: `Order ${order.public_id}: a full refund of ${aed(order.total_cents)} is on its way.`,
+    }),
+  };
+}
+
+module.exports = { enabled, send, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined };

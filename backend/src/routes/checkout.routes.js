@@ -277,7 +277,13 @@ router.post('/demo-complete', (req, res, next) => {
 
     const pe = require('../paid-effects');
     const groups = pe.perShopGroups(order.id);
-    db.transaction(() => pe.paidDbEffects(order, groups))();
+    const result = db.transaction(() => pe.paidDbEffects(order, groups))();
+    if (!result.ok) {
+      // Someone else took the last one first. Demo mode takes no money, so
+      // there is nothing to refund — the order is simply cancelled.
+      const names = [...new Set(result.shortfall.map((i) => i.name_snapshot))].join(', ');
+      return res.status(409).json({ code: 'sold_out', error: `Sorry — ${names} sold out a moment ago, so this order couldn't go ahead. Nothing has been charged.` });
+    }
     pe.paidPostEffects(order, groups, null);
     // The session stamp survives completion: the confirmation page's
     // create-an-account offer still needs it to /claim the order.

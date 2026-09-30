@@ -355,6 +355,17 @@ addColumn('service_bookings',  'terms_version',         "TEXT DEFAULT ''");  // 
 addColumn('service_bookings',  'commission_cents',      'INTEGER NOT NULL DEFAULT 0'); // Trove's fee when paid through Trove
 addColumn('service_bookings',  'provider_net_cents',    'INTEGER NOT NULL DEFAULT 0'); // the provider's fee on those
 
+// Why an order needs a person to look at it ('' = nothing to do):
+//   oversold               paid, but a piece sold out first — refunded in full
+//   oversold_refund_failed same, but the automatic refund failed: refund by hand
+//   paid_after_cancel      paid after the unpaid-checkout sweep cancelled it — refunded
+//   refund_failed          same, refund failed: refund by hand
+addColumn('orders', 'attention', "TEXT NOT NULL DEFAULT ''");
+// Which courier integration booked the shipment ('oto' | 'quiqup' | 'mock';
+// '' on rows booked before this column — inferred from the reference). Each
+// courier webhook only ever touches its own bookings.
+addColumn('shipments', 'delivery_provider', "TEXT NOT NULL DEFAULT ''");
+
 // Versioned migrations run last, so they always see the full baseline schema
 // (fresh databases included). See src/migrations/index.js.
 require('./migrations').run(db);
