@@ -78,7 +78,6 @@
   /* the typed wordmark (Cormorant) until the official artwork lands in docs/img/ */
   .brand img{height:34px;width:auto;display:block}
   .mn-brand img{height:28px;width:auto;display:block}
-  footer .brand img{height:38px;width:auto;display:block}
   /* keyboard users jump past the header straight to the page */
   .skip{position:absolute;left:12px;top:-80px;z-index:300;background:var(--char);color:var(--cream);padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:700;letter-spacing:.02em}
   .skip:focus{top:12px}
@@ -558,17 +557,22 @@
   .checkout:hover{background:#3B3737}
 
   /* ---------- FOOTER ---------- */
-  footer{background:var(--rose);color:var(--char);padding:80px 0 36px;margin-top:40px}
-  .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:54px;border-bottom:1px solid rgba(41,39,39,.13)}
-  footer .brand{font-size:44px;margin-bottom:18px;display:block}
-  footer p.blurb{font-size:14.5px;max-width:32ch;line-height:1.65;opacity:.78;font-weight:400}
-  footer h5{font-family:'Quicksand';font-size:11.5px;letter-spacing:.08em;font-weight:700;margin-bottom:18px;opacity:.55}
-  footer ul{list-style:none}
-  footer li{margin-bottom:12px}
-  @media(max-width:700px){footer li{margin-bottom:6px}footer li a{display:inline-block;padding:6px 0}.fbot a{display:inline-block;padding:6px 0}}
-  footer a{font-size:14px;font-weight:500;opacity:.82}
-  footer a:hover{opacity:1;color:var(--accent-ink)}
-  .fbot{padding-top:26px;display:flex;justify-content:space-between;font-size:12px;opacity:.6;flex-wrap:wrap;gap:12px;font-weight:500;letter-spacing:.04em}
+  /* ---------- FOOTER: one pattern on every public page (test/header-sync.test.js) ---------- */
+  footer.site{background:var(--rose);color:var(--char);padding:72px 0 34px;margin-top:56px;line-height:1.6}
+  footer.site .wrap{padding-left:32px;padding-right:32px}
+  footer.site .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:46px;border-bottom:1px solid rgba(41,39,39,.16)}
+  footer.site .fbrand{font-family:var(--font-display);font-size:44px;font-weight:500;line-height:1;margin-bottom:18px;display:inline-block;color:var(--char)}
+  footer.site .blurb{font-size:14.5px;max-width:32ch;line-height:1.65;color:#3F3B3B;font-weight:400}
+  footer.site .fh{font-family:'Quicksand',system-ui,sans-serif;font-size:12px;line-height:1.4;letter-spacing:.12em;font-weight:700;margin:0 0 12px;color:var(--eyebrow)}
+  footer.site ul{list-style:none;margin:0;padding:0}
+  footer.site li a{display:inline-flex;align-items:center;min-height:34px;font-size:14px;font-weight:500;color:#3F3B3B}
+  footer.site a:hover{color:var(--char);text-decoration:underline;text-underline-offset:3px}
+  footer.site .fbot{padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;font-weight:500;letter-spacing:.03em;color:#3F3B3B}
+  footer.site .fbot span{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0 6px}
+  footer.site .fbot a{display:inline-flex;align-items:center;min-height:34px;color:inherit;text-decoration:underline;text-underline-offset:3px}
+  html.no-house footer.site .fhouse{display:none}
+  @media(max-width:860px){footer.site .fgrid{grid-template-columns:1fr 1fr;gap:30px 24px}footer.site .fgrid>div:first-child{grid-column:1/-1}}
+  @media(max-width:560px){footer.site{padding:48px 0 26px}footer.site .wrap{padding-left:26px;padding-right:26px}footer.site li a,footer.site .fbot a{min-height:44px}}
 
   /* pointer-events:none — the faded-out toast is still a fixed box over the
      cart drawer's Checkout button on phones and was swallowing the tap */
@@ -608,14 +612,11 @@
     .fgroup{padding-bottom:20px;margin-bottom:20px}
     .fitem{padding:9px 0}
     .pdp{gap:40px;padding:28px 0 70px}
-    .fgrid{grid-template-columns:1fr 1fr;gap:36px 24px}
-    .fgrid>div:first-child{grid-column:1/-1}
     .mquotes{gap:12px}
     #view-sell .steps{grid-template-columns:1fr 1fr;gap:18px 24px}
     #view-sell .faqs{grid-template-columns:1fr;max-width:660px}
     #view-sell .sellcta{display:block;text-align:center}
     #view-sell .sellcta p{margin:0 auto 22px}
-    footer{padding:56px 0 32px}
   }
   @media(max-width:560px){
     .wrap{padding:0 26px}
@@ -1353,18 +1354,18 @@
 </aside>
 
 <!-- FOOTER -->
-<footer>
+<footer class="site">
   <div class="wrap">
     <div class="fgrid">
       <div>
-        <a href="/" class="brand serif" aria-label="Trove — home">trove</a>
+        <a href="/" class="fbrand" aria-label="Trove — home">trove</a>
         <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.</p>
       </div>
-      <div><h5>Shop</h5><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
-      <div><h5>Sell</h5><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
-      <div><h5>About</h5><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></div>
+      <nav aria-label="Shop"><h2 class="fh">Shop</h2><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></nav>
+      <nav aria-label="Sell"><h2 class="fh">Sell</h2><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></nav>
+      <nav aria-label="About"><h2 class="fh">About</h2><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></nav>
     </div>
-    <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span><a href="/privacy" style="color:inherit">Privacy</a> · <a href="/terms" style="color:inherit">Terms</a> · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
+    <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span class="flegal"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/seller-agreement">Seller agreement</a> · <a href="/provider-agreement">Provider agreement</a> · <a href="/services-terms">Services terms</a></span></div>
   </div>
 </footer>
 

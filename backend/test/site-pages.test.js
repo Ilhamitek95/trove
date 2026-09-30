@@ -302,13 +302,13 @@ test('robots.txt no longer blocks the agreements; the sitemap lists the new page
 
 test('no footer on any page links to #, and Privacy · Terms are real links', () => {
   const store = read('trove.html');
-  const footer = store.match(/<footer>[\s\S]*?<\/footer>/)[0];
+  const footer = store.match(/<footer class="site">[\s\S]*?<\/footer>/)[0];
   assert.doesNotMatch(footer, /href="#"/);
   for (const p of ['/privacy', '/terms', '/about', '/about#curation', '/faq', '/contact', '/faq#makers', '/#weekly']) {
     assert.ok(footer.includes(`href="${p}"`), `storefront footer links ${p}`);
   }
   assert.match(store, /<section class="band" id="weekly"/);
-  const services = read('trove-services.html').match(/<footer>[\s\S]*?<\/footer>/)[0];
+  const services = read('trove-services.html').match(/<footer class="site">[\s\S]*?<\/footer>/)[0];
   assert.doesNotMatch(services, /href="#"/);
   for (const p of ['/privacy', '/terms', '/contact', '/about']) assert.ok(services.includes(`href="${p}"`), `services footer links ${p}`);
 });

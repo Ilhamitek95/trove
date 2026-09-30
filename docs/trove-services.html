@@ -115,6 +115,22 @@
   .mn-foot{margin-top:auto;padding-top:22px;display:flex;flex-direction:column;gap:14px;font-size:14px;font-weight:600;color:var(--ink-80)}
   .mn-foot a{display:flex;align-items:center;gap:11px}
   .mn-foot svg{width:17px;height:17px;stroke-width:1.7;opacity:.7}
+  /* ---------- FOOTER: one pattern on every public page (test/header-sync.test.js) ---------- */
+  footer.site{background:var(--rose);color:var(--char);padding:72px 0 34px;margin-top:56px;line-height:1.6}
+  footer.site .wrap{padding-left:32px;padding-right:32px}
+  footer.site .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:46px;border-bottom:1px solid rgba(41,39,39,.16)}
+  footer.site .fbrand{font-family:var(--font-display);font-size:44px;font-weight:500;line-height:1;margin-bottom:18px;display:inline-block;color:var(--char)}
+  footer.site .blurb{font-size:14.5px;max-width:32ch;line-height:1.65;color:#3F3B3B;font-weight:400}
+  footer.site .fh{font-family:'Quicksand',system-ui,sans-serif;font-size:12px;line-height:1.4;letter-spacing:.12em;font-weight:700;margin:0 0 12px;color:var(--eyebrow)}
+  footer.site ul{list-style:none;margin:0;padding:0}
+  footer.site li a{display:inline-flex;align-items:center;min-height:34px;font-size:14px;font-weight:500;color:#3F3B3B}
+  footer.site a:hover{color:var(--char);text-decoration:underline;text-underline-offset:3px}
+  footer.site .fbot{padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;font-weight:500;letter-spacing:.03em;color:#3F3B3B}
+  footer.site .fbot span{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0 6px}
+  footer.site .fbot a{display:inline-flex;align-items:center;min-height:34px;color:inherit;text-decoration:underline;text-underline-offset:3px}
+  html.no-house footer.site .fhouse{display:none}
+  @media(max-width:860px){footer.site .fgrid{grid-template-columns:1fr 1fr;gap:30px 24px}footer.site .fgrid>div:first-child{grid-column:1/-1}}
+  @media(max-width:560px){footer.site{padding:48px 0 26px}footer.site .wrap{padding-left:26px;padding-right:26px}footer.site li a,footer.site .fbot a{min-height:44px}}
   /* buttons (the provider CTA band) */
   .btn{display:inline-block;padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:600;transition:.18s;text-align:center}
   .btn-dark{background:var(--char);color:var(--cream)}
@@ -391,9 +407,6 @@
   @media(max-width:960px){.faqs{grid-template-columns:1fr;max-width:660px}}
   @media(max-width:560px){.faq summary{padding:14px 2px;font-size:14.5px}.faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}}
 
-  footer{border-top:1px solid var(--line);margin-top:44px;padding:30px 0 40px;font-size:12.5px;color:var(--muted);font-weight:500}
-  footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;line-height:1.9}
-  footer a{text-decoration:underline;display:inline-block;padding:6px 0}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%)}
 </style>
@@ -583,10 +596,18 @@
 </div>
 </main>
 
-<footer>
+<footer class="site">
   <div class="wrap">
-    <span>© 2026 Trove · Dubai, UAE</span>
-    <span><a href="/shop">The shop</a> · <a href="/apply?for=services">Become a provider</a> · <a href="/faq#services">Help</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/services-terms">Services terms</a> · <a href="/provider-agreement">Provider agreement</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span>
+    <div class="fgrid">
+      <div>
+        <a href="/" class="fbrand" aria-label="Trove — home">trove</a>
+        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.</p>
+      </div>
+      <nav aria-label="Shop"><h2 class="fh">Shop</h2><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></nav>
+      <nav aria-label="Sell"><h2 class="fh">Sell</h2><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></nav>
+      <nav aria-label="About"><h2 class="fh">About</h2><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></nav>
+    </div>
+    <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span class="flegal"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/seller-agreement">Seller agreement</a> · <a href="/provider-agreement">Provider agreement</a> · <a href="/services-terms">Services terms</a></span></div>
   </div>
 </footer>
 

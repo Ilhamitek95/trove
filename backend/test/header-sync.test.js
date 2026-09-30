@@ -10,6 +10,10 @@
  * The Services Marketplace shipped with its own hand-built header and the
  * menu changed on every click between the two pages. This is the check
  * that keeps that from coming back.
+ *
+ * The footer is held to the same rule: one pattern (the storefront's rose
+ * four-column footer), copied verbatim by the Services page and by every
+ * server-rendered page. Only the admin-editable lines may differ in text.
  */
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
@@ -36,6 +40,9 @@ const block = (html, re, what, file) => {
 const PROMO = /<div class="promo">[\s\S]*?<\/div><\/div>/;
 const HEADER = /<header class="top">[\s\S]*?<\/header>/;
 const MNAV = /<aside class="mnav"[\s\S]*?<\/aside>/;
+const FOOTER = /<footer class="site">[\s\S]*?<\/footer>/;
+// The footer's two CMS lines (blurb, legal line) carry whatever the admin wrote.
+const footerSkeleton = (s) => skeleton(s.replace(/(data-cms="[^"]*">)[^<]*/g, '$1'));
 
 // Everything but the addresses: hrefs and inline handlers go, so do the
 // "you are here" marker and whitespace differences.
@@ -84,6 +91,11 @@ for (const file of PAGES) {
     assert.deepEqual(on, ['/services']);
   });
 
+  test(`${file}: the footer is the storefront's, link for link`, () => {
+    assert.equal(footerSkeleton(block(html, FOOTER, 'footer', file)), footerSkeleton(block(store, FOOTER, 'footer', 'trove.html')), `${file}: footer differs from the storefront`);
+    assert.equal(block(html, FOOTER, 'footer', file), block(store, FOOTER, 'footer', 'trove.html'), `${file}: footer is not a verbatim copy`);
+  });
+
   test(`${file}: the promo bar carries the CMS default and is wired to it`, () => {
     const promo = block(html, PROMO, 'promo bar', file);
     assert.match(promo, /data-cms="site\.promo\.text"/);
@@ -113,8 +125,21 @@ for (const p of RENDERED) {
       assert.ok(!/onclick/.test(tag), `${p}: a mobile menu link still has an in-page handler: ${tag}`);
     }
     assert.match(html, /<script src="\/site-chrome\.js"><\/script>/, 'the header handlers are loaded');
+    assert.equal(footerSkeleton(block(html, FOOTER, 'footer', p)), footerSkeleton(block(store, FOOTER, 'footer', 'trove.html')), `${p}: footer differs from the storefront`);
+    assert.equal((html.match(/<footer\b/g) || []).length, 1, `${p}: exactly one footer`);
   });
 }
+
+test('every footer link is a real address, and the footer names each legal document', () => {
+  const footer = block(store, FOOTER, 'footer', 'trove.html');
+  for (const [tag] of footer.matchAll(/<a\b[^>]*>/g)) {
+    const href = (tag.match(/href="([^"]*)"/) || [])[1];
+    assert.ok(href && href !== '#' && !/onclick/.test(tag), `footer link without a real address: ${tag}`);
+  }
+  for (const p of ['/privacy', '/terms', '/seller-agreement', '/provider-agreement', '/services-terms', '/returns', '/contact']) {
+    assert.ok(footer.includes(`href="${p}"`), `footer links ${p}`);
+  }
+});
 
 test('the storefront answers the addresses the shared header uses', () => {
   // The other pages' header links land on these; the boot code must route them.

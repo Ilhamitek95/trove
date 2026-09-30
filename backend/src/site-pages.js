@@ -9,7 +9,7 @@
  * The header is the storefront's: it is copied at render time from
  * docs/trove-services.html (which test/header-sync.test.js already keeps
  * identical to the storefront), so these pages can never drift from it.
- * The footer is shared by all of them (and mirrors the storefront's).
+ * The footer is copied the same way: one pattern on every public page.
  *
  * The same sources feed /llms.txt and /llms-full.txt, and the Organization
  * structured data carries the company details the owner fills in at
@@ -82,11 +82,13 @@ function chrome() {
   if (cssStart < 0 || cssEnd < cssStart || hStart < 0 || hEnd < 0) {
     throw new Error('site-pages: the shared header could not be found in docs/trove-services.html');
   }
+  const footer = (html.match(/<footer class="site">[\s\S]*?<\/footer>/) || [])[0];
+  if (!footer) throw new Error('site-pages: the shared footer could not be found in docs/trove-services.html');
   const header = html.slice(hStart, hEnd + '</aside>'.length)
     // no "you are here" marker: none of these pages is in the menu
     .replace('<a href="/services" class="on">', '<a href="/services">')
     .replace('<a class="mn-link" href="/services" onclick="closeSheets();return false">', '<a class="mn-link" href="/services">');
-  _chrome = { css: html.slice(cssStart, cssEnd), header };
+  _chrome = { css: html.slice(cssStart, cssEnd), header, footer };
   _chromeStamp = stamp;
   return _chrome;
 }
@@ -251,41 +253,14 @@ const PAGE_CSS = `
     .cform{padding:18px}
     .cform .row2,.direct{grid-template-columns:1fr}
   }
-  /* footer: the storefront's */
-  footer.site{background:var(--rose);color:var(--char);padding:70px 0 34px;margin-top:60px;line-height:1.6}
-  footer.site .wrap{padding-left:32px;padding-right:32px}
-  footer.site .fgrid{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:44px;padding-bottom:48px;border-bottom:1px solid rgba(41,39,39,.13)}
-  footer.site .fbrand{font-family:var(--font-display);font-size:44px;font-weight:500;line-height:1;margin-bottom:18px;display:block}
-  footer.site p.blurb{font-size:14.5px;max-width:32ch;line-height:1.65;opacity:.78;font-weight:400}
-  footer.site h5{font-family:'Quicksand';font-size:11.5px;letter-spacing:.08em;font-weight:700;margin-bottom:18px;opacity:.55;text-transform:none}
-  footer.site ul{list-style:none}
-  footer.site li{margin-bottom:12px}
-  footer.site a{font-size:14px;font-weight:500;opacity:.82}
-  footer.site a:hover{opacity:1}
-  footer.site .fbot{padding-top:24px;display:flex;justify-content:space-between;font-size:12px;opacity:.7;flex-wrap:wrap;gap:12px;font-weight:500;letter-spacing:.04em}
-  footer.site .fbot a{font-size:12px;text-decoration:underline}
-  html.no-house footer.site .fhouse{display:none}
-  @media(max-width:860px){footer.site .fgrid{grid-template-columns:1fr 1fr;gap:34px 24px}footer.site .fgrid>div:first-child{grid-column:1/-1}}
-  @media(max-width:560px){footer.site{padding:52px 0 30px}footer.site .wrap{padding-left:26px;padding-right:26px}footer.site li{margin-bottom:4px}footer.site li a{display:inline-block;padding:6px 0}footer.site .fbot a{display:inline-block;padding:4px 0}}
 `;
 
-/** The shared site footer (these pages and, in markup, the storefront's). */
+/** The shared site footer, copied from the Services page with the CMS lines filled in. */
 function footerHtml(siteContent) {
   const f = (siteContent && siteContent.site && siteContent.site.footer) || content.DEFAULTS['site.footer'];
-  return `<footer class="site">
-  <div class="wrap">
-    <div class="fgrid">
-      <div>
-        <a href="/" class="fbrand" aria-label="Trove — home">trove</a>
-        <p class="blurb">${esc(f.blurb)}</p>
-      </div>
-      <div><h5>Shop</h5><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
-      <div><h5>Sell</h5><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
-      <div><h5>About</h5><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></div>
-    </div>
-    <div class="fbot"><span>${esc(f.legal)}</span><span><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/seller-agreement">Seller agreement</a></span></div>
-  </div>
-</footer>`;
+  return chrome().footer
+    .replace(/(<p class="blurb" data-cms="site\.footer\.blurb">)[^<]*(<\/p>)/, (m, a, b) => a + esc(f.blurb) + b)
+    .replace(/(<span data-cms="site\.footer\.legal">)[^<]*(<\/span>)/, (m, a, b) => a + esc(f.legal) + b);
 }
 
 function shell({ base, pathName, title, description, h1, sub = '', crumb = '', body, ld = [], extraHead = '', script = '' }) {
