@@ -420,6 +420,17 @@ addColumn('orders', 'attention', "TEXT NOT NULL DEFAULT ''");
 // courier webhook only ever touches its own bookings.
 addColumn('shipments', 'delivery_provider', "TEXT NOT NULL DEFAULT ''");
 
+// Last-modified stamps for the public catalogue (the sitemap's <lastmod>).
+// A trigger stamps every UPDATE, so no route has to remember to; rows never
+// updated since this column arrived fall back to created_at. SQLite leaves
+// recursive triggers off, so the trigger's own UPDATE does not fire it again.
+for (const t of ['shops', 'products', 'service_providers', 'services']) {
+  addColumn(t, 'updated_at', 'TEXT');
+  db.exec(`CREATE TRIGGER IF NOT EXISTS ${t}_touch AFTER UPDATE ON ${t} FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
+    BEGIN UPDATE ${t} SET updated_at = datetime('now') WHERE id = NEW.id; END`);
+}
+
 // Versioned migrations run last, so they always see the full baseline schema
 // (fresh databases included). See src/migrations/index.js.
 require('./migrations').run(db);

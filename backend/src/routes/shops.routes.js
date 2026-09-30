@@ -36,8 +36,7 @@ const RATING_JOIN = `
              FROM reviews WHERE status = 'published' GROUP BY shop_id) rv ON rv.shop_id = s.id`;
 
 // GET /api/shops  → every shop with its live-product count (house brand first)
-router.get('/', (_req, res) => {
-  const rows = db.prepare(`
+const approvedShops = () => db.prepare(`
     SELECT s.*, COUNT(p.id) AS product_count, rv.avg_rating, rv.rating_count
     FROM shops s
     LEFT JOIN products p ON p.shop_id = s.id AND p.status = 'live'
@@ -45,8 +44,9 @@ router.get('/', (_req, res) => {
     WHERE s.status = 'approved'
     GROUP BY s.id
     ORDER BY s.is_house DESC, s.created_at ASC
-  `).all();
-  res.json({ shops: rows.map(shape) });
+  `).all().map(shape);
+router.get('/', (_req, res) => {
+  res.json({ shops: approvedShops() });
 });
 
 // GET /api/shops/:slug → one shop profile
@@ -66,5 +66,8 @@ router.get('/:slug/reviews', (req, res) => {
   const reviews = require('../reviews');
   res.json({ summary: reviews.shopSummary(s.id), reviews: reviews.forShop(s.id) });
 });
+
+// The same public shape for the server-rendered storefront pages (src/seo.js).
+router.publicData = { approvedShops };
 
 module.exports = router;

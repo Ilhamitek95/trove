@@ -73,14 +73,14 @@ router.get('/taxonomy', (_req, res) => {
 });
 
 // GET /api/services?category=&audience=&q= → live listings, approved providers only.
-router.get('/', (req, res) => {
-  const rows = db.prepare(`
+const liveServices = () => db.prepare(`
     SELECT sv.*, p.name AS provider_name, p.slug AS provider_slug,
            p.location AS provider_location, p.color AS provider_color, p.bio AS provider_bio
     FROM services sv JOIN service_providers p ON p.id = sv.provider_id
     WHERE sv.status = 'live' AND p.status = 'approved'
-    ORDER BY sv.created_at DESC`).all();
-  let list = rows.map(shapeService);
+    ORDER BY sv.created_at DESC`).all().map(shapeService);
+router.get('/', (req, res) => {
+  let list = liveServices();
   const { category, audience, q } = req.query;
   if (category) list = list.filter((s) => s.category === category);
   if (audience) list = list.filter((s) => s.audience === audience);
@@ -115,23 +115,28 @@ const PROVIDER_STATS = `
 
 // GET /api/services/providers → approved providers, oldest first, with their
 // live-service count and lowest price. Never any contact details.
+const approvedProviders = () => db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
+    WHERE p.status = 'approved' ORDER BY p.created_at ASC, p.id ASC`).all().map(providerCard);
 router.get('/providers', (_req, res) => {
-  const rows = db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
-    WHERE p.status = 'approved' ORDER BY p.created_at ASC, p.id ASC`).all();
-  res.json({ providers: rows.map(providerCard) });
+  res.json({ providers: approvedProviders() });
 });
 
 // GET /api/services/providers/:slug → one approved provider and their live services.
-router.get('/providers/:slug', (req, res) => {
+function providerPage(slug) {
   const p = db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
-    WHERE p.slug = ? AND p.status = 'approved'`).get(req.params.slug);
-  if (!p) return res.status(404).json({ error: 'Provider not found' });
+    WHERE p.slug = ? AND p.status = 'approved'`).get(slug);
+  if (!p) return null;
   const services = db.prepare(`
     SELECT sv.*, p.name AS provider_name, p.slug AS provider_slug,
            p.location AS provider_location, p.color AS provider_color, p.bio AS provider_bio
     FROM services sv JOIN service_providers p ON p.id = sv.provider_id
     WHERE sv.provider_id = ? AND sv.status = 'live' ORDER BY sv.created_at ASC, sv.id ASC`).all(p.id).map(shapeService);
-  res.json({ provider: providerCard(p), services });
+  return { provider: providerCard(p), services };
+}
+router.get('/providers/:slug', (req, res) => {
+  const page = providerPage(req.params.slug);
+  if (!page) return res.status(404).json({ error: 'Provider not found' });
+  res.json(page);
 });
 
 /* ---------------- Enrolment ---------------- */
@@ -372,5 +377,9 @@ router.post('/booking/:code/pay', async (req, res, next) => {
     res.json(r);
   } catch (e) { next(e); }
 });
+
+// The same public shapes, for the server-rendered Services pages (src/seo.js):
+// what a crawler reads is exactly what the page's own script renders.
+router.publicData = { liveServices, approvedProviders, providerPage };
 
 module.exports = router;

@@ -79,4 +79,10 @@ router.get('/:id/reviews', (req, res) => {
   res.json({ summary: reviews.productSummary(p.id), reviews: reviews.forProduct(p.id) });
 });
 
+// The same public shape for the server-rendered storefront pages (src/seo.js).
+router.publicData = {
+  liveProducts: () => db.prepare(BASE + ' ORDER BY p.created_at DESC').all().map(shape),
+  liveProduct: (id) => { const p = db.prepare(BASE + ' AND p.id = ?').get(id); return p ? shape(p) : null; },
+};
+
 module.exports = router;
