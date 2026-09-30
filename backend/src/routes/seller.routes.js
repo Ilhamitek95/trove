@@ -310,6 +310,11 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     const catErr = require('../categories').categoryError(b.category, { house: !!req.shop.is_house });
     if (catErr) return res.status(422).json({ error: catErr.message });
   }
+  // A piece an admin hid stays hidden: the shop can still edit it, but only
+  // Trove can put it back on sale (the admin products view lifts the hide).
+  if (p.admin_hidden_at && b.status != null && b.status !== 'hidden') {
+    return res.status(409).json({ code: 'admin_hidden', error: 'Hidden by Trove — contact us to put this piece back on sale' });
+  }
   // Validated before the first write, so a rejected save changes nothing.
   const pf = productFields(b, true);
   if (pf.error) return res.status(400).json({ error: pf.error });

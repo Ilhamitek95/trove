@@ -84,7 +84,7 @@ router.get('/products', requireAdmin, (_req, res) => {
     ORDER BY p.created_at DESC`).all();
   res.json({ products: rows.map((p) => ({
     id: p.id, name: p.name, description: p.description, category: p.category,
-    priceCents: p.price_cents, stock: p.stock, status: p.status,
+    priceCents: p.price_cents, stock: p.stock, status: p.status, adminHidden: !!p.admin_hidden_at,
     imageSeed: p.image_seed, tags: parseTags(p.tags), createdAt: p.created_at,
     images: (() => { try { const v = JSON.parse(p.images || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } })(),
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, color: p.color, image: p.shop_image, isHouse: !!p.is_house, status: p.shop_status },
@@ -106,6 +106,11 @@ router.patch('/products/:id', requireAdmin, (req, res) => {
   }
   db.prepare('UPDATE products SET status=COALESCE(?,status), category=COALESCE(?,category) WHERE id=?')
     .run(b.status, b.category, p.id);
+  // An admin hide is a moderation lock: the seller sees 'Hidden by Trove'
+  // and can't put the piece back on sale. Only an admin status change
+  // (live or draft) lifts it.
+  if (b.status === 'hidden') db.prepare("UPDATE products SET admin_hidden_at=COALESCE(admin_hidden_at, datetime('now')) WHERE id=?").run(p.id);
+  else if (b.status !== undefined) db.prepare('UPDATE products SET admin_hidden_at=NULL WHERE id=?').run(p.id);
   if (b.tags !== undefined)
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });

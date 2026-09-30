@@ -862,7 +862,7 @@ const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
 /* "Gift wrap (+AED 15) · Gift message" — the extras the buyer ticked; their
    cost is already inside the line price. */
 const exText=x=>(x||[]).map(e=>e.price?`${e.name} (+AED ${e.price.toLocaleString()})`:e.name).join(' · ');
-function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),extras:parseTagsCol(p.extras),
+function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,adminHidden:!!p.admin_hidden_at,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),extras:parseTagsCol(p.extras),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:safeColor(s.color),image:safeImg(s.image),status:s.status||'approved',
@@ -988,7 +988,9 @@ function renderProducts(){
       <td>${(p.options||[]).length
         ? `<span class="ps" title="Stock is kept per combination">${Number(p.stock)||0} across ${p.variants.length} choice${p.variants.length===1?'':'s'}</span>`
         : `<input class="stock-input" type="number" value="${Number(p.stock)||0}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
-      <td><span class="pill-st ${esc(p.status)}" onclick="cycleStatus(${p.id})"${waiting&&p.status==='live'?' title="Goes on sale once your shop is approved"':''}>${waiting&&p.status==='live'?'ready':esc(p.status)}</span></td>
+      <td>${p.adminHidden
+        ? `<span class="pill-st hidden" style="cursor:help" title="Trove has taken this piece off sale. Contact us to put it back." onclick="toast('Hidden by Trove — contact us to put it back on sale')">Hidden by Trove — contact us</span>`
+        : `<span class="pill-st ${esc(p.status)}" onclick="cycleStatus(${p.id})"${waiting&&p.status==='live'?' title="Goes on sale once your shop is approved"':''}>${waiting&&p.status==='live'?'ready':esc(p.status)}</span>`}</td>
       <td><div class="rowact">
         <button class="iact" title="Edit" onclick="openEdit(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
         <button class="iact del" title="Delete" onclick="delProduct(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
@@ -1009,7 +1011,7 @@ async function setStock(id,val){const stock=Math.max(0,parseInt(val)||0);
   try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{stock}}); }catch(e){ toast(e.message); }
   await reloadProducts();
 }
-async function cycleStatus(id){const p=products.find(x=>x.id===id);const order=['live','draft','hidden'];const status=order[(order.indexOf(p.status)+1)%3];
+async function cycleStatus(id){const p=products.find(x=>x.id===id);if(p.adminHidden){toast('Hidden by Trove — contact us to put it back on sale');return;}const order=['live','draft','hidden'];const status=order[(order.indexOf(p.status)+1)%3];
   try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{status}}); toast(status==='live'&&SHOP.status!=='approved'?`${p.name} is ready — it goes on sale once your shop is approved`:`${p.name} is now ${status}`); }catch(e){ toast(e.message); }
   await reloadProducts();
 }
@@ -1321,6 +1323,9 @@ $('drawerSave').onclick=async()=>{
     compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
     tags:drawerTags,personalization:readPerso(),images:drawerImages,
     options:drawerOptionsPayload(),variants:drawerVariants,extras:drawerExtrasPayload()};
+  // A piece Trove hid keeps its status: edits save, going live is Trove's call.
+  const editingP=editingId&&products.find(x=>x.id===editingId);
+  if(editingP&&editingP.adminHidden) delete body.status;
   const btn=$('drawerSave'), was=btn.textContent;
   btn.disabled=true;btn.textContent=editingId?'Saving…':'Adding…';
   try{
