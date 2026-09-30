@@ -17,9 +17,9 @@
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --peach:#FCC998; --blush:#F8D7E4;
     --moss:#CFDBBE; --sky:#BED3DF; --paper:#FFFCFA; --rose-tint:#F2E9E4; --cream-2:#F8F0EA;
     --line:rgba(41,39,39,.10); --line-soft:rgba(41,39,39,.06);
-    --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+    --muted:rgba(41,39,39,.72); --ink-80:rgba(41,39,39,.78); /* .72 = 5.8:1 on cream (WCAG AA) */
     --green:#292727; --green-bg:#E4ECE5; --sky-text:#292727; /* status ink: Charcoal on tinted surfaces */
-    --r:16px; --shadow:0 16px 44px -28px rgba(41,39,39,.30);
+    --r:18px; --shadow:0 18px 50px -28px rgba(41,39,39,.30); /* same card radius and shadow as the storefront */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
@@ -47,6 +47,7 @@
   .mitem.on{background:var(--rose-tint);color:var(--char)}
   .mitem.on::before{content:"";position:absolute;left:-18px;top:9px;bottom:9px;width:3px;background:var(--coral);border-radius:0 3px 3px 0}
   .mitem svg{width:18px;height:18px;stroke-width:1.7}
+  .mitem .pill:empty,.mitem .pill.zero{display:none}
   .mitem .pill{margin-left:auto;background:var(--rose);color:var(--char);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 6px}
   .side .foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
   .side .foot a{font-size:13px;font-weight:600;color:var(--ink-80);padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:10px}
@@ -104,6 +105,7 @@
   .ql .ic{width:38px;height:38px;border-radius:10px;background:var(--rose-tint);display:grid;place-items:center;color:var(--accent-ink);margin-bottom:12px}
   .ql .ic svg{width:19px;height:19px;stroke-width:1.7}
   .ql .t{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.05}
+  .ql{text-align:left;font:inherit;color:inherit;width:100%}
   .ql .d{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px}
 
   /* order cards */
@@ -117,9 +119,9 @@
   .opill{font-size:11px;font-weight:700;letter-spacing:.04em;padding:6px 14px;border-radius:999px}
   .opill.delivered{background:var(--green-bg);color:var(--green)}
   .opill.shipped{background:var(--sky);color:var(--sky-text)}
-  .opill.processing{background:var(--peach);color:#946321}
+  .opill.processing{background:var(--peach);color:var(--char)}
   .oc-body{padding:18px 22px}
-  .oc-shop{font-size:11px;letter-spacing:.05em;color:var(--taupe);font-weight:700;display:flex;align-items:center;gap:7px;margin:6px 0 12px}
+  .oc-shop{font-size:11px;letter-spacing:.05em;color:var(--ink-80);font-weight:700;display:flex;align-items:center;gap:7px;margin:6px 0 12px}
   .oc-shop .gem{width:7px;height:7px;background:var(--coral);transform:rotate(45deg);border-radius:1px}
   .oline{display:flex;align-items:center;gap:14px;margin-bottom:12px}
   .oline .im{width:50px;height:60px;border-radius:9px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
@@ -147,13 +149,15 @@
   .pcard .ph img{position:absolute;inset:0;filter:saturate(.9)}
   .pcard .heart{position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:50%;background:rgba(253,247,245,.92);display:grid;place-items:center;color:var(--accent-ink);transition:.15s}
   .pcard .heart:hover{background:var(--paper);transform:scale(1.08)}
-  .pcard .vr{font-size:10.5px;letter-spacing:.05em;color:var(--taupe);font-weight:700}
+  .pcard .vr{font-size:10.5px;letter-spacing:.05em;color:var(--ink-80);font-weight:700}
   .pcard h3{font-size:19px;font-weight:600;line-height:1.1;margin:4px 0 6px}
   .pcard .row{display:flex;justify-content:space-between;align-items:center}
   .pcard .price{font-weight:600;font-size:14px}
   .empty-state{text-align:center;padding:70px 20px}
   .empty-state .big{font-family:var(--font-display);font-size:30px;font-weight:500;margin-bottom:6px}
-  .empty-state p{color:var(--muted);font-weight:500;margin-bottom:20px}
+  .empty-state p{color:var(--muted);font-weight:500;margin:0 auto 20px;max-width:46ch;line-height:1.6}
+  .empty-state .es-ic{width:56px;height:56px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;margin:0 auto 14px;color:var(--char)}
+  .card.empty-state{padding:48px 22px}
 
   /* address + payment rows */
   .twocol{display:grid;grid-template-columns:1fr 1fr;gap:18px}
@@ -197,8 +201,8 @@
   .form-card{max-width:560px}
   .field{margin-bottom:18px}
   .field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:7px}
-  .field input{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
-  .field input:focus{border-color:var(--char)}
+  .field input,.field select{width:100%;border:1px solid var(--line);border-radius:11px;padding:12px 14px;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
+  .field input:focus,.field select:focus{border-color:var(--char)}
   .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--line-soft)}
   .toggle-row:last-child{border:none}
@@ -215,14 +219,14 @@
   /* drawer */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.3s}
   .scrim.open{opacity:1;visibility:visible}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
-  .drawer.open{transform:none}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:94vw;background:var(--cream);z-index:100;transform:translateX(100%);visibility:hidden;transition:transform .38s cubic-bezier(.4,0,.2,1),visibility .38s;display:flex;flex-direction:column}
+  .drawer.open{transform:none;visibility:visible}
   .drawer .dhead{padding:24px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
   .drawer .dhead h3{font-size:26px;font-weight:500}
   .drawer .dbody{flex:1;overflow-y:auto;padding:24px 28px}
   .drawer .dfoot{padding:18px 28px;border-top:1px solid var(--line);display:flex;gap:12px;background:var(--paper)}
   .drawer .dfoot .btn{flex:1;justify-content:center;padding:14px}
-  .iact{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--muted)}
+  .iact{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;color:var(--muted)}
   .iact:hover{background:var(--rose-tint);color:var(--char)}
 
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;z-index:130;opacity:0;transition:.32s;box-shadow:var(--shadow);pointer-events:none}
@@ -258,6 +262,7 @@
   .starpick button{font-size:31px;line-height:1;color:#DCCFC6;cursor:pointer;transition:.12s;background:none;border:none;padding:2px}
   .starpick button.on{color:var(--coral)}
   .starpick button:hover{transform:scale(1.12)}
+  .rev-modal .rtlbl{display:block;font-size:12px;color:var(--muted);font-weight:700;margin:14px 0 6px}
   .rev-modal textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;resize:vertical;min-height:96px}
   .rev-photos{display:flex;gap:9px;margin-top:12px;flex-wrap:wrap}
   .rev-photos .ph{width:74px;height:74px;border-radius:10px;position:relative;overflow:hidden;border:1px solid var(--line)}
@@ -276,7 +281,7 @@
   .rti .pr{color:var(--char);font-weight:700;white-space:nowrap}
   .rti.off{cursor:default;opacity:.55}
   .rti .lk{font-size:11.5px;color:var(--muted);white-space:nowrap}
-  .rti select{border:1px solid var(--line);border-radius:8px;padding:3px 6px;font:inherit;font-size:12.5px;background:#fff;color:var(--char)}
+  .rti select{border:1px solid var(--line);border-radius:8px;padding:6px 8px;font:inherit;font-size:12.5px;background:var(--paper);color:var(--char)}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   .mhead{display:none}
@@ -307,21 +312,44 @@
   @media(max-width:560px){
     .content{padding-top:22px}
     input,select,textarea{font-size:16px!important}
+    .rev-scrim{padding:0;place-items:end stretch}
+    .rev-modal{width:100%;max-width:none;max-height:92vh;border-radius:20px 20px 0 0;padding:22px 20px calc(18px + env(safe-area-inset-bottom))}
+    .rev-modal .mact{flex-wrap:wrap}
+    .rev-modal .mact .btn{flex:1 1 40%;justify-content:center;min-height:48px}
+    .rev-modal .mact>span{display:none}
+    .rti{flex-wrap:wrap;row-gap:8px;padding:12px 13px}
+    .rti .nm{white-space:normal;flex:1 1 calc(100% - 32px)}
+    .rti select{margin-left:27px;min-height:40px}
+    .rti .pr{margin-left:auto}
+    .rti.off .lk{margin-left:27px}
+    .rev-photos .ph,.rev-photos .addph{width:80px;height:80px}
+    .rev-photos .ph button{width:30px;height:30px;font-size:14px}
+    .oc-foot .btn,.addr-card .acts a{min-height:44px;display:inline-flex;align-items:center}
+    .order-card .oc-head{gap:14px 22px}
+    .myrev .racts a{display:inline-block;padding:13px 4px}
+    .track a,.dhint a,.dhint button{display:inline-block;padding:13px 0;margin:-13px 0}
+    .rti select{min-height:44px}
   }
+  /* ---------- accessibility ---------- */
+  :focus-visible{outline:2px solid var(--char);outline-offset:2px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char)!important;outline-offset:1px}
+  .rti:focus-within{box-shadow:inset 0 0 0 2px var(--char)}
+  @media(max-width:920px){.btn,.mh-btn{min-height:44px}.starpick button{min-width:44px;min-height:44px}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}.ql:hover{transform:none}}
 </style>
 </head>
 <body>
 <div class="app">
   <!-- SIDEBAR -->
-  <aside class="side" id="sideMenu">
-    <button class="side-close" aria-label="Close menu" onclick="closeMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+  <aside class="side" id="sideMenu" aria-label="Account menu">
+    <button class="side-close" aria-label="Close menu" onclick="closeMenu()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <a class="logo serif" href="/" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('.logo').textContent='trove'"></a>
     <div class="user-card">
-      <div class="av" id="uAv">·</div>
+      <div class="av" id="uAv" aria-hidden="true"></div>
       <div class="nm" id="uName"></div>
       <div class="em" id="uEmail"></div>
     </div>
-    <nav class="menu">
+    <nav class="menu" aria-label="Account">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="ordPill">0</span></a>
       <a class="mitem" data-v="addresses" onclick="go('addresses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Addresses</a>
@@ -336,7 +364,7 @@
   <!-- MAIN -->
   <div class="main">
     <div class="mhead">
-      <button class="mh-btn" aria-label="Open menu" onclick="openMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
+      <button class="mh-btn" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="sideMenu" onclick="openMenu()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu</button>
       <span class="mh-sec" id="mhSec">Overview</span>
     </div>
     <div class="topbar">
@@ -356,10 +384,10 @@
         </div>
         <div class="card track" style="display:none"></div>
         <div class="quick-links">
-          <div class="ql" onclick="go('orders')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg></div><div class="t">Your orders</div><div class="d">Track & reorder</div></div>
-          <div class="ql" onclick="location.href='/'"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg></div><div class="t">Keep shopping</div><div class="d">Back to the shop</div></div>
-          <div class="ql" onclick="go('addresses')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="t">Addresses</div><div class="d">Where we ship</div></div>
-          <div class="ql" onclick="go('details')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div class="t">My details</div><div class="d">Profile & prefs</div></div>
+          <button type="button" class="ql" onclick="go('orders')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg></div><div class="t">Your orders</div><div class="d">Track, return &amp; review</div></button>
+          <a class="ql" href="/"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg></div><div class="t">Keep shopping</div><div class="d">Back to the shop</div></a>
+          <button type="button" class="ql" onclick="go('addresses')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="t">Addresses</div><div class="d">Where we deliver</div></button>
+          <button type="button" class="ql" onclick="go('details')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div class="t">My details</div><div class="d">Profile &amp; password</div></button>
         </div>
       </div>
 
@@ -369,7 +397,7 @@
       <!-- ADDRESSES -->
       <div class="view" id="view-addresses">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <span style="font-size:13px;color:var(--muted);font-weight:600">Where your orders are shipped.</span>
+          <span style="font-size:13px;color:var(--muted);font-weight:600">Where your orders are delivered.</span>
           <button class="btn btn-coral btn-sm" onclick="openAddr()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add address</button>
         </div>
         <div class="twocol" id="addrList"></div>
@@ -407,24 +435,24 @@
 <!-- DRAWER -->
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
 <div class="scrim" id="menuScrim" onclick="closeMenu()"></div>
-<aside class="drawer" id="drawer">
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
   <div class="dhead"><h3 id="drawerTitle">Add address</h3>
-    <button class="iact" onclick="closeDrawer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    <button class="iact" aria-label="Close" onclick="closeDrawer()"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="dbody" id="drawerBody"></div>
   <div class="dfoot"><button class="btn btn-ghost" onclick="closeDrawer()">Cancel</button><button class="btn btn-coral" id="drawerSave">Save</button></div>
 </aside>
 
 <div class="rev-scrim" id="revScrim" onclick="if(event.target===this)closeReview()">
-  <div class="rev-modal">
+  <div class="rev-modal" role="dialog" aria-modal="true" aria-labelledby="rvTitle">
     <h3 id="rvTitle">Rate &amp; review</h3>
     <div class="sub" id="rvSub"></div>
-    <div class="starpick" id="rvStars"></div>
-    <textarea id="rvBody" maxlength="2000" placeholder="What was it like — the quality, the details, the unboxing? (optional)"></textarea>
+    <div class="starpick" id="rvStars" role="radiogroup" aria-label="Your rating"></div>
+    <textarea id="rvBody" aria-label="Your review (optional)" maxlength="2000" placeholder="What was it like — the quality, the details, the unboxing? (optional)"></textarea>
     <div class="rev-photos" id="rvPhotos"></div>
-    <input type="file" id="rvFile" accept="image/*" multiple style="display:none" onchange="revAddFiles(this.files)">
-    <div style="display:flex;gap:10px;align-items:center;margin-top:20px">
-      <a id="rvDelete" style="display:none;cursor:pointer;color:var(--accent-ink);font-size:13px;font-weight:700" onclick="deleteReview()">Remove review</a>
+    <input type="file" id="rvFile" accept="image/*" multiple style="display:none" tabindex="-1" aria-hidden="true" onchange="revAddFiles(this.files)">
+    <div class="mact" style="display:flex;gap:10px;align-items:center;margin-top:20px">
+      <a id="rvDelete" href="#" role="button" style="display:none;cursor:pointer;color:var(--accent-ink);font-size:13px;font-weight:700;padding:12px 0" onclick="deleteReview();return false">Remove review</a>
       <span style="flex:1"></span>
       <button class="btn btn-ghost" onclick="closeReview()">Cancel</button>
       <button class="btn btn-coral" id="rvSave" onclick="saveReview()">Share review</button>
@@ -433,11 +461,12 @@
 </div>
 
 <div class="rev-scrim" id="retScrim" onclick="if(event.target===this)closeReturn()">
-  <div class="rev-modal">
-    <h3>Request a return</h3>
+  <div class="rev-modal" role="dialog" aria-modal="true" aria-labelledby="rtTitle">
+    <h3 id="rtTitle">Request a return</h3>
     <div class="sub" id="rtSub"></div>
-    <div style="font-size:12px;color:var(--muted);font-weight:600;margin:0 0 6px">What's going back? (tick each item)</div>
-    <div class="rtitems" id="rtItems"></div>
+    <div class="rtlbl" id="rtItemsLbl" style="margin-top:0">What's going back? Tick each item</div>
+    <div class="rtitems" id="rtItems" role="group" aria-labelledby="rtItemsLbl"></div>
+    <label class="rtlbl" for="rtReason">Reason</label>
     <select id="rtReason" class="rtfield" onchange="updateRtMoney()">
       <option value="">Why are you returning it?</option>
       <option value="changed-mind">Changed my mind</option>
@@ -445,12 +474,13 @@
       <option value="wrong-item">Wrong item received</option>
       <option value="not-as-described">Not as described</option>
     </select>
+    <label class="rtlbl" for="rtDetails">What happened?</label>
     <textarea id="rtDetails" maxlength="1000" placeholder="Tell us what went wrong — a sentence or two is plenty."></textarea>
-    <div style="font-size:12px;color:var(--muted);font-weight:600;margin:12px 0 6px">Photos of the item (at least one)</div>
-    <div class="rev-photos" id="rtPhotos"></div>
-    <input type="file" id="rtFile" accept="image/*" multiple style="display:none" onchange="retAddFiles(this.files)">
-    <div class="rtmoney" id="rtMoney"></div>
-    <div style="display:flex;gap:10px;align-items:center;margin-top:20px">
+    <div class="rtlbl" id="rtPhotosLbl">Photos of the item · at least one</div>
+    <div class="rev-photos" id="rtPhotos" role="group" aria-labelledby="rtPhotosLbl"></div>
+    <input type="file" id="rtFile" accept="image/*" multiple style="display:none" tabindex="-1" aria-hidden="true" onchange="retAddFiles(this.files)">
+    <div class="rtmoney" id="rtMoney" aria-live="polite"></div>
+    <div class="mact" style="display:flex;gap:10px;align-items:center;margin-top:20px">
       <span style="flex:1"></span>
       <button class="btn btn-ghost" onclick="closeReturn()">Cancel</button>
       <button class="btn btn-coral" id="rtSave" onclick="saveReturn()">Send request</button>
@@ -458,7 +488,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
 <script src="api.js"></script>
@@ -486,6 +516,53 @@ function img(seed){
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
+
+/* ---------- ACCESSIBILITY HELPERS ----------
+ * Modal: the address drawer, the review and return dialogs and the phone
+ * menu move focus in, keep Tab inside, close on Esc and hand focus back.
+ * autoLabel: a visible label next to its control becomes its label. */
+const Modal=(()=>{
+  const stack=[];
+  const SEL='a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const focusables=el=>[...el.querySelectorAll(SEL)].filter(n=>n.getClientRects().length&&getComputedStyle(n).visibility!=='hidden');
+  document.addEventListener('keydown',e=>{
+    const top=stack[stack.length-1]; if(!top)return;
+    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();top.onEsc();return;}
+    if(e.key!=='Tab')return;
+    const f=focusables(top.el); if(!f.length){e.preventDefault();return;}
+    const first=f[0], last=f[f.length-1], a=document.activeElement;
+    if(!top.el.contains(a)){e.preventDefault();(e.shiftKey?last:first).focus();}
+    else if(e.shiftKey&&a===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&a===last){e.preventDefault();first.focus();}
+  },true);
+  return {
+    open(el,onEsc,focusEl){
+      if(stack.some(s=>s.el===el))return;
+      stack.push({el,onEsc,ret:document.activeElement});
+      el.removeAttribute('aria-hidden');
+      setTimeout(()=>{const t=focusEl||focusables(el)[0];if(t)t.focus({preventScroll:true});},60);
+    },
+    close(el){
+      const i=stack.findIndex(s=>s.el===el); if(i<0)return;
+      const [s]=stack.splice(i,1);
+      if(s.ret&&s.ret.focus&&document.contains(s.ret))s.ret.focus({preventScroll:true});
+    },
+  };
+})();
+function autoLabel(){
+  document.querySelectorAll('label:not([for])').forEach(l=>{
+    if(l.querySelector('input,select,textarea'))return;
+    const nx=l.nextElementSibling; if(!nx)return;
+    let c=nx.matches('input,select,textarea')?nx:null;
+    if(!c){const inner=nx.querySelectorAll('input:not([type=hidden]),select,textarea');if(inner.length===1)c=inner[0];}
+    if(!c)return;
+    if(!c.id)c.id='fld-'+Math.random().toString(36).slice(2,9);
+    l.htmlFor=c.id;
+  });
+}
+new MutationObserver(autoLabel).observe(document.body,{childList:true,subtree:true});
+document.querySelectorAll('.mitem[data-v]').forEach(a=>{a.setAttribute('href','#'+a.dataset.v);a.querySelectorAll('svg').forEach(s=>s.setAttribute('aria-hidden','true'));});
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.mitem[href^="#"]');if(a)e.preventDefault();});
 let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
 /* ---------- ORDERS ---------- */
@@ -524,7 +601,7 @@ function orderStatusLabel(o){
   return ['Processing','processing'];
 }
 function renderOrders(){
-  if(!orders.length){ $('ordersList').innerHTML=`<div class="empty-state"><div class="big">No orders yet</div><p>When you buy something it'll appear here, ready to track.</p><a class="btn btn-coral" href="/">Start shopping</a></div>`; return; }
+  if(!orders.length){ $('ordersList').innerHTML=`<div class="card empty-state"><div class="es-ic" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg></div><div class="big">No orders yet</div><p>When you buy something it appears here — track each parcel, request a return within 15 days of delivery and review what you loved.</p><a class="btn btn-coral" href="/">Start shopping</a></div>`; return; }
   $('ordersList').innerHTML=orders.map(o=>{
     const [label,cls]=orderStatusLabel(o);
     const sh=o.shipments||[];
@@ -603,8 +680,8 @@ function renderAddr(){
     ${a.def?'<span class="badge">Default</span>':''}
     <h4>${esc(a.label)}</h4>
     <p>${esc(a.name)}<br>${esc(a.line)}<br>${esc(a.city)}<br>${esc(a.country)}${a.phone?'<br>'+esc(a.phone):''}</p>
-    <div class="acts"><a onclick="openAddr(${Number(a.id)})">Edit</a>${!a.def?`<a onclick="setDefAddr(${Number(a.id)})">Set default</a><a class="danger" onclick="delAddr(${Number(a.id)})">Delete</a>`:''}</div>
-  </div>`).join('')+`<div class="add-tile" onclick="openAddr()"><div class="inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg><div>Add a new address</div></div></div>`;
+    <div class="acts"><a href="#" role="button" onclick="openAddr(${Number(a.id)});return false">Edit</a>${!a.def?`<a href="#" role="button" onclick="setDefAddr(${Number(a.id)});return false">Set default</a><a href="#" role="button" class="danger" onclick="delAddr(${Number(a.id)});return false">Delete</a>`:''}</div>
+  </div>`).join('')+`<button type="button" class="add-tile" onclick="openAddr()"><div class="inner"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg><div>Add a new address</div></div></button>`;
 }
 async function setDefAddr(id){ try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'PATCH',body:{isDefault:true}}); await reloadAddresses(); toast('Default address updated'); }catch(e){ toast(e.message||'Could not update'); } }
 async function delAddr(id){ if(!confirm('Delete this address?'))return; try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'DELETE'}); await reloadAddresses(); toast('Address deleted'); }catch(e){ toast(e.message||'Could not delete'); } }
@@ -616,13 +693,13 @@ function openAddr(id){
   const isAD=/abu dhabi/i.test(a.city||''); const emirate=isAD?'Abu Dhabi':'Dubai';
   const area=(a.city||'').replace(/,?\s*(abu dhabi|dubai)\s*$/i,'').trim();
   $('drawerBody').innerHTML=`
-    <div class="field"><label>Label</label><input id="aLabel" value="${esc(a.label||'')}" placeholder="Home, Work…"></div>
-    <div class="field"><label>Full name</label><input id="aName" value="${esc(a.name||(ME&&ME.name)||'')}" placeholder="Recipient's name"></div>
-    <div class="field"><label>Address</label><input id="aLine" value="${esc(a.line||'')}" placeholder="Street, building, apt"></div>
-    <div class="field"><label>Area</label><input id="aCity" value="${esc(area)}" placeholder="e.g. Dubai Marina, Khalifa City"></div>
-    <div class="field"><label>Emirate</label><select id="aEmirate"><option${emirate==='Dubai'?' selected':''}>Dubai</option><option${emirate==='Abu Dhabi'?' selected':''}>Abu Dhabi</option></select>
+    <div class="field"><label for="aLabel">Label</label><input id="aLabel" value="${esc(a.label||'')}" placeholder="Home, Work…"></div>
+    <div class="field"><label for="aName">Full name</label><input id="aName" autocomplete="name" value="${esc(a.name||(ME&&ME.name)||'')}" placeholder="Recipient's name"></div>
+    <div class="field"><label for="aLine">Address</label><input id="aLine" autocomplete="street-address" value="${esc(a.line||'')}" placeholder="Street, building, apt"></div>
+    <div class="field"><label for="aCity">Area</label><input id="aCity" value="${esc(area)}" placeholder="e.g. Dubai Marina, Khalifa City"></div>
+    <div class="field"><label for="aEmirate">Emirate</label><select id="aEmirate"><option${emirate==='Dubai'?' selected':''}>Dubai</option><option${emirate==='Abu Dhabi'?' selected':''}>Abu Dhabi</option></select>
       <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">We currently deliver in Dubai &amp; Abu Dhabi only.</div></div>
-    <div class="field"><label>Phone</label><input id="aPhone" value="${esc(a.phone||'')}"></div>`;
+    <div class="field"><label for="aPhone">Phone</label><input id="aPhone" type="tel" autocomplete="tel" value="${esc(a.phone||'')}"></div>`;
   $('drawerSave').onclick=saveAddr; openDrawer();
 }
 async function saveAddr(){
@@ -639,8 +716,8 @@ async function saveAddr(){
 }
 
 /* ---------- DRAWER ---------- */
-function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
-function closeDrawer(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
+function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';Modal.open($('drawer'),closeDrawer,$('aLabel'));}
+function closeDrawer(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';$('drawer').setAttribute('aria-hidden','true');Modal.close($('drawer'));}
 
 /* ---------- RATINGS & REVIEWS ---------- */
 let reviewables={products:[],shops:[]}, myReviews=[];
@@ -686,22 +763,22 @@ function renderMyReviews(){
         <span class="rw">${fmtDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
       ${r.body?`<p>${esc(r.body)}</p>`:''}
       ${r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}">`).join('')}</div>`:''}
-      <div class="racts"><a onclick="editReview(${Number(r.id)})">Edit</a><a onclick="confirmDeleteReview(${Number(r.id)})" style="color:var(--muted)">Remove</a></div>
+      <div class="racts"><a href="#" role="button" onclick="editReview(${Number(r.id)});return false">Edit</a><a href="#" role="button" onclick="confirmDeleteReview(${Number(r.id)});return false" style="color:var(--muted)">Remove</a></div>
     </div>`).join('')}</div>`;
 }
 function renderRvStars(){
-  $('rvStars').innerHTML=[1,2,3,4,5].map(i=>`<button type="button" class="${i<=rvRating?'on':''}" onclick="rvRating=${i};renderRvStars()" title="${i} star${i===1?'':'s'}">${i<=rvRating?'★':'☆'}</button>`).join('');
+  $('rvStars').innerHTML=[1,2,3,4,5].map(i=>`<button type="button" role="radio" aria-checked="${i===rvRating}" aria-label="${i} star${i===1?'':'s'}" class="${i<=rvRating?'on':''}" onclick="rvRating=${i};renderRvStars();$('rvStars').children[${i-1}].focus()" title="${i} star${i===1?'':'s'}">${i<=rvRating?'★':'☆'}</button>`).join('');
 }
 function renderRvPhotos(){
   const w=$('rvPhotos');w.innerHTML='';
   rvImages.forEach((u,i)=>{
     const d=document.createElement('div');d.className='ph';
     const im=document.createElement('img');im.src=u;d.appendChild(im);
-    const x=document.createElement('button');x.type='button';x.textContent='×';x.onclick=()=>{rvImages.splice(i,1);renderRvPhotos();};
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Remove photo '+(i+1));x.onclick=()=>{rvImages.splice(i,1);renderRvPhotos();};
     d.appendChild(x);w.appendChild(d);
   });
   if(rvImages.length<3){
-    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';
+    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';b.setAttribute('aria-label','Add a photo');
     b.onclick=()=>$('rvFile').click();w.appendChild(b);
   }
 }
@@ -733,12 +810,13 @@ function openReview(target){
   rvTarget.existingId=existing?existing.id:null;
   renderRvStars();renderRvPhotos();
   $('revScrim').classList.add('open');
+  Modal.open($('revScrim'),closeReview,$('rvStars').querySelector('button'));
 }
 function editReview(id){
   const r=myReviews.find(x=>x.id===id);if(!r)return;
   openReview(r.productId?{productId:r.productId,name:r.productName,sub:r.shopName}:{shopId:r.shopId,name:r.shopName,sub:'Shop review'});
 }
-function closeReview(){$('revScrim').classList.remove('open');rvTarget=null;}
+function closeReview(){$('revScrim').classList.remove('open');rvTarget=null;Modal.close($('revScrim'));}
 async function saveReview(){
   if(!rvTarget)return;
   if(!rvRating){toast('Tap a star rating first');return;}
@@ -763,12 +841,6 @@ async function confirmDeleteReview(id){
   try{await TroveAPI.api('/api/account/reviews/'+id,{method:'DELETE'});toast('Review removed');await reloadReviews();}
   catch(e){toast(e.message||'Could not remove it');}
 }
-document.addEventListener('keydown',(e)=>{
-  if(e.key!=='Escape')return;
-  if($('revScrim').classList.contains('open'))closeReview();
-  if($('retScrim').classList.contains('open'))closeReturn();
-  if($('sideMenu').classList.contains('open'))closeMenu();
-});
 
 /* ---------- RETURNS ----------
  * Unit-level returns: tick the items going back (and how many of each), a
@@ -811,8 +883,9 @@ function openReturn(orderId){
   $('rtReason').value=''; $('rtDetails').value='';
   renderRtItems(); updateRtMoney(); renderRtPhotos();
   $('retScrim').classList.add('open');
+  Modal.open($('retScrim'),closeReturn);
 }
-function closeReturn(){$('retScrim').classList.remove('open');rtOrder=null;}
+function closeReturn(){$('retScrim').classList.remove('open');rtOrder=null;Modal.close($('retScrim'));}
 function renderRtItems(){
   const items=(rtOrder.returns.items||[]);
   $('rtItems').innerHTML=items.map(i=>{
@@ -823,7 +896,7 @@ function renderRtItems(){
     if(!(i.available>0))return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='requested'?'already requested':'already returned'}</span></label>`;
     const on=rtPicked.has(i.id), n=rtPicked.get(i.id)||i.available;
     // More than one unit left on the line → pick how many go back.
-    const qty=i.available>1?`<select onclick="event.stopPropagation()" onchange="setRtQty(${Number(i.id)},this.value)" aria-label="How many">${Array.from({length:i.available},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===n?'selected':''}>${k} of ${i.available}</option>`).join('')}</select>`:'';
+    const qty=i.available>1?`<select onclick="event.stopPropagation()" onchange="setRtQty(${Number(i.id)},this.value)" aria-label="How many ${esc(i.name)} go back">${Array.from({length:i.available},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===n?'selected':''}>${k} of ${i.available}</option>`).join('')}</select>`:'';
     return `<label class="rti"><input type="checkbox" ${on?'checked':''} onchange="toggleRtItem(${Number(i.id)},this.checked)"><span class="nm">${nm}</span>${qty}<span class="pr">${aed(i.price*(on?n:i.available))}</span></label>`;
   }).join('');
 }
@@ -854,11 +927,11 @@ function renderRtPhotos(){
   rtImages.forEach((u,i)=>{
     const d=document.createElement('div');d.className='ph';
     const im=document.createElement('img');im.src=u;d.appendChild(im);
-    const x=document.createElement('button');x.type='button';x.textContent='×';x.onclick=()=>{rtImages.splice(i,1);renderRtPhotos();};
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.setAttribute('aria-label','Remove photo '+(i+1));x.onclick=()=>{rtImages.splice(i,1);renderRtPhotos();};
     d.appendChild(x);w.appendChild(d);
   });
   if(rtImages.length<3){
-    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';
+    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';b.setAttribute('aria-label','Add a photo');
     b.onclick=()=>$('rtFile').click();w.appendChild(b);
   }
 }
@@ -897,12 +970,14 @@ async function withdrawReturn(orderId,requestId){
 }
 
 /* ---------- ROUTER ---------- */
-const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, return and review'],addresses:['Addresses','Where we ship'],details:['My details','Your profile']};
+const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, return and review'],addresses:['Addresses','Where we deliver'],details:['My details','Your profile']};
 /* mobile: the sidebar itself slides in as a collapsible menu (.side.open);
  * same elements as desktop, so active-state toggles and sign-out just work */
-function openMenu(){$('sideMenu').classList.add('open');$('menuScrim').classList.add('open');document.body.style.overflow='hidden';}
+function openMenu(){$('sideMenu').classList.add('open');$('menuScrim').classList.add('open');document.body.style.overflow='hidden';$('menuBtn').setAttribute('aria-expanded','true');Modal.open($('sideMenu'),closeMenu,$('sideMenu').querySelector('.side-close'));}
 function closeMenu(){
-  $('sideMenu').classList.remove('open');$('menuScrim').classList.remove('open');
+  const wasOpen=$('sideMenu').classList.contains('open');
+  $('sideMenu').classList.remove('open');$('menuScrim').classList.remove('open');$('menuBtn').setAttribute('aria-expanded','false');
+  if(wasOpen)Modal.close($('sideMenu'));
   if(!$('drawer').classList.contains('open'))document.body.style.overflow='';
 }
 window.addEventListener('resize',()=>{if(window.innerWidth>920)closeMenu();});
@@ -911,7 +986,7 @@ function go(v){
   closeMenu();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
-  document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
+  document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
   $('mhSec').textContent=TITLES[v][0];
   if(v==='orders')renderOrders(); if(v==='addresses')renderAddr();
@@ -921,7 +996,7 @@ function go(v){
 /* ---------- DATA LOADING + BOOT ---------- */
 async function reloadOrders(){
   try{ const {orders:o}=await TroveAPI.api('/api/account/orders'); orders=o||[]; }catch(_){ orders=[]; }
-  if($('ordPill'))$('ordPill').textContent=orders.length;
+  if($('ordPill')){$('ordPill').textContent=orders.length;$('ordPill').classList.toggle('zero',!orders.length);}
 }
 async function reloadAddresses(){
   try{ const {addresses:a}=await TroveAPI.api('/api/account/addresses'); addresses=(a||[]).map(x=>({id:x.id,label:x.label,name:x.name,line:x.line,city:x.city,country:x.country,phone:x.phone,def:!!x.is_default})); }catch(_){ addresses=[]; }
