@@ -17,7 +17,7 @@
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
     --rose-tint:#F2E9E4; --line:rgba(41,39,39,.1); --line-soft:rgba(41,39,39,.06);
-    --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78); --green:#292727; /* status ink: Charcoal on tinted surfaces */
+    --muted:rgba(41,39,39,.72); --ink-80:rgba(41,39,39,.78); --green:#292727; /* muted .72 = 5.8:1 on cream (WCAG AA) */ /* status ink: Charcoal on tinted surfaces */
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
@@ -37,7 +37,7 @@
   .mitem svg{width:17px;height:17px;stroke-width:1.7}
   .mitem.on{color:var(--char);background:var(--rose-tint);border-left-color:var(--coral)}
   .mitem .badge{margin-left:auto;background:var(--rose);color:var(--char);font-size:10.5px;font-weight:700;min-width:19px;height:19px;border-radius:999px;display:grid;place-items:center;padding:0 6px}
-  .mitem .badge.zero{background:var(--rose-tint);color:var(--muted)}
+  .mitem .badge.zero{display:none}
   .sfoot{margin-top:auto;padding:14px 24px;font-size:12.5px;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:9px}
   .sfoot a{cursor:pointer}
   .sfoot a:hover{color:var(--char)}
@@ -54,7 +54,7 @@
   .stat .k{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:700}
   .stat .v{font-family:var(--font-display);font-size:30px;font-weight:600;margin-top:6px}
   .stat .n{font-size:11.5px;color:var(--muted);font-weight:600}
-  .stat.hot{border-color:var(--coral);background:#FDF3EF}
+  .stat.hot{border-color:var(--rose);background:#FDF3EF}
   .stat.hot .v{color:var(--accent-ink)}
 
   .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}
@@ -76,6 +76,7 @@
     #membersTable td>div{min-width:0!important;max-width:100%}
     #membersTable .actions{justify-content:flex-start}
     #providersWrap a,#membersTable .sl a{display:inline-block;padding:5px 0}
+    .pvstory{grid-template-columns:1fr!important}
   }
 
   /* ---------- MOBILE ---------- */
@@ -99,9 +100,16 @@
     .mtabs::after{content:'❯';position:sticky;right:0;flex:0 0 44px;margin-left:-44px;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;padding-right:3px;background:linear-gradient(270deg,var(--cream) 40%,rgba(253,247,245,0));color:var(--accent-ink);font-size:15px;z-index:2;pointer-events:none;transition:opacity .2s}
     .mtabs.at-start::before{opacity:0}
     .mtabs.at-end::after{opacity:0}
-    /* wide tables scroll inside their card */
+    /* wide tables scroll inside their own container: ids and dates stay on
+       one line and a soft edge shows there is more to the right */
     .card{overflow-x:auto}
-    .tbl{min-width:560px}
+    .tbl{min-width:640px}
+    .tbl th,.tbl td:first-child,.tbl td:last-child{white-space:nowrap}
+    .tscroll{overflow-x:auto;background:linear-gradient(90deg,var(--paper) 30%,rgba(255,252,250,0)) left/28px 100% no-repeat local,linear-gradient(270deg,var(--paper) 30%,rgba(255,252,250,0)) right/28px 100% no-repeat local,radial-gradient(farthest-side at 0 50%,rgba(41,39,39,.14),transparent) left/12px 100% no-repeat scroll,radial-gradient(farthest-side at 100% 50%,rgba(41,39,39,.14),transparent) right/12px 100% no-repeat scroll}
+    .btn,.mtabs .mitem,.rchip{min-height:44px}
+    .cmsitem .ibtns button,.cmspick .pk button{min-width:36px;min-height:36px}
+    .sfoot a{padding:10px 0}
+    #providersWrap a,#membersTable a.nm,#pendingList a{display:inline-block;padding:14px 0}
     select{max-width:100%}
     /* CMS editor: list add-rows wrap instead of poking past the edge */
     .cmsf div{flex-wrap:wrap}
@@ -109,7 +117,13 @@
   }
   @media(max-width:560px){
     input,select,textarea{font-size:16px!important}
+    .modal{padding:22px 20px}
   }
+  /* ---- accessibility ---- */
+  :focus-visible{outline:2px solid var(--char);outline-offset:2px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char)!important;outline-offset:1px}
+  .mtabs .mitem.on:focus-visible{outline-offset:3px}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 
   .shoprow{display:flex;align-items:center;gap:12px;min-width:200px}
   .shoprow .tile{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-size:20px;font-weight:600;overflow:hidden}
@@ -118,13 +132,13 @@
   .house-tag{font-size:9px;letter-spacing:.1em;background:var(--char);color:var(--cream);padding:2px 7px;border-radius:999px;font-weight:700;margin-left:6px;vertical-align:middle}
 
   .pill{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:700;padding:4px 10px;border-radius:999px;display:inline-block}
-  .pill.pending{background:#FCEBE4;color:var(--accent-ink)}
-  .pill.approved{background:#E5EEE6;color:#4C7A52}
-  .pill.rejected{background:#F0E9E6;color:#9C6B5B}
-  .pill.suspended{background:#EDEAE7;color:var(--muted)}
-  .pill.paid{background:#E3ECF4;color:#4A6C8C}
-  .pill.fulfilled{background:#E5EEE6;color:#4C7A52}
-  .pill.cancelled,.pill.failed{background:#EDEAE7;color:var(--muted)}
+  /* one pill system across the dashboards: charcoal ink on a tint (every pair ≥ 12:1) */
+  .pill{background:var(--rose-tint);color:var(--char)}
+  .pill.pending{background:#FCEBE4;color:var(--char)}
+  .pill.approved,.pill.fulfilled,.pill.live,.pill.published{background:#E4ECE5;color:var(--char)}
+  .pill.rejected,.pill.refunded{background:#F0E9E6;color:var(--char)}
+  .pill.suspended,.pill.cancelled,.pill.failed,.pill.hidden{background:#EDEAE7;color:var(--char)}
+  .pill.paid{background:#E3ECF4;color:var(--char)}
 
   .btn{display:inline-flex;align-items:center;gap:7px;border-radius:999px;font-weight:700;font-size:12px;padding:8px 15px;transition:.15s;letter-spacing:.02em}
   .btn-coral{background:var(--char);color:var(--cream)}
@@ -205,7 +219,7 @@
   .cmsbadge{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;font-weight:800;background:var(--rose-tint);color:var(--accent-ink);border-radius:999px;padding:4px 10px}
   .cmsbadge.dirty{background:var(--sage);color:var(--char)}
   .rprev{font-family:var(--font-display);font-size:20px;line-height:1.15;color:var(--char);margin-top:7px;padding:8px 12px;background:var(--paper);border:1px dashed var(--line);border-radius:10px}
-  .rprev em{font-style:normal;color:var(--coral)}
+  .rprev em{font-style:normal;color:var(--char);text-decoration:underline;text-decoration-color:var(--coral);text-decoration-thickness:2px;text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -215,7 +229,7 @@
 <div class="shell" id="shell" style="display:none">
   <aside class="side">
     <div class="logo"><img src="/img/trove-wordmark.svg" alt="trove" style="height:22px;width:auto;display:inline-block;vertical-align:middle" onerror="this.outerHTML='trove'"><span>admin</span></div>
-    <div class="who"><div class="av" id="whoAv">T</div><div><div class="nm" id="whoName">—</div><div class="rl">Super admin</div></div></div>
+    <div class="who"><div class="av" id="whoAv" aria-hidden="true">T</div><div><div class="nm" id="whoName">—</div><div class="rl">Super admin</div></div></div>
     <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
     <a class="mitem" data-v="members" onclick="go('members')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.6"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg>Members<span class="badge zero" id="membersBadge">0</span></a>
     <a class="mitem" data-v="shops" onclick="go('shops')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Shops<span class="badge zero" id="pendBadge">0</span></a>
@@ -228,12 +242,12 @@
     <a class="mitem" data-v="messages" onclick="go('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages<span class="badge zero" id="msgBadge">0</span></a>
     <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Trove payouts</a>
     <div class="sfoot">
-      <a href="/" target="_blank">View storefront ↗</a>
-      <a onclick="signOut()">Sign out</a>
+      <a href="/" target="_blank" rel="noopener">View storefront ↗</a>
+      <a href="/login" onclick="signOut();return false">Sign out</a>
     </div>
   </aside>
   <main>
-    <nav class="mtabs" id="mtabs"></nav>
+    <nav class="mtabs" id="mtabs" aria-label="Admin sections"></nav>
     <div class="top"><div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub"></div></div></div>
 
     <div class="view active" id="view-overview">
@@ -253,32 +267,32 @@
     <div class="view" id="view-members">
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px"><h3>Every member, both sides</h3><div class="hint">One row per account: their shop (pieces) and their services practice side by side, with approvals for each. Anything waiting for you sits at the top. The Shops and Providers tabs keep the full application detail.</div></div>
-        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="membersTable"></table></div>
+        <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="membersTable"></table></div>
       </div>
     </div>
 
     <div class="view" id="view-shops">
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px"><h3>All shops</h3><div class="hint">Approve, reject or suspend any shop — only approved shops appear on the storefront.</div></div>
-        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="shopsTable"></table></div>
+        <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="shopsTable"></table></div>
       </div>
     </div>
 
     <div class="view" id="view-providers">
-      <div class="card">
-        <h3>Service providers</h3>
-        <div class="hint">The Services Marketplace — approve, reject or suspend providers. Only approved providers appear on the public Services Marketplace. Listing is free during launch (the AED 30/month fee starts later, with 30 days' notice to providers). Every provider accepts the Provider Agreement (their services are their own responsibility) — the version and date show on the card.</div>
-        <div id="providersWrap"></div>
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>Service providers</h3>
+        <div class="hint">The Services Marketplace — approve, reject or suspend providers. Only approved providers appear on the public Services Marketplace. Listing is free during launch (the AED 30/month fee starts later, with 30 days' notice to providers). Every provider accepts the Provider Agreement (their services are their own responsibility) — the version and date show on the card.</div></div>
+        <div id="providersWrap" style="padding:10px 22px 22px"></div>
       </div>
-      <div class="card">
-        <h3>Bookings paid through Trove</h3>
-        <div class="hint">Trove is the customer's contracting party on these: the customer pays Trove by card, Trove keeps the 10% platform fee and owes the provider the rest. Refund gives the customer their full payment back (a booking that hasn't happened yet is cancelled with it). Anything flagged needs you — a failed refund is refunded by hand in Stripe, then here.</div>
-        <div id="svcBookingsWrap"><div class="empty">Loading…</div></div>
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>Bookings paid through Trove</h3>
+        <div class="hint">Trove is the customer's contracting party on these: the customer pays Trove by card, Trove keeps the 10% platform fee and owes the provider the rest. Refund gives the customer their full payment back (a booking that hasn't happened yet is cancelled with it). Anything flagged needs you — a failed refund is refunded by hand in Stripe, then here.</div></div>
+        <div id="svcBookingsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
-      <div class="card">
-        <h3>Provider fees owed</h3>
-        <div class="hint">What providers are owed for bookings paid through Trove — payable once they mark a booking done, or 3 days after the service date. Providers have no payout details of their own yet: pay by bank transfer (to their shop's account where they have one), then mark it paid here.</div>
-        <div id="svcCreditsWrap"><div class="empty">Loading…</div></div>
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>Provider fees owed</h3>
+        <div class="hint">What providers are owed for bookings paid through Trove — payable once they mark a booking done, or 3 days after the service date. Providers have no payout details of their own yet: pay by bank transfer (to their shop's account where they have one), then mark it paid here.</div></div>
+        <div id="svcCreditsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
     </div>
 
@@ -286,16 +300,16 @@
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap">
           <div><h3>Every product</h3><div class="hint" style="margin-bottom:8px">Hide anything that shouldn't be on the storefront, fix categories, and keep tags sharp — shoppers find products through them.</div></div>
-          <input id="prodFilter" placeholder="Filter by name, shop, tag…" oninput="renderProducts()" style="font:inherit;font-size:13px;padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);outline:none;min-width:230px;margin-bottom:10px">
+          <input id="prodFilter" aria-label="Filter products" placeholder="Filter by name, shop, tag…" oninput="renderProducts()" style="font:inherit;font-size:13px;padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);outline:none;min-width:230px;margin-bottom:10px">
         </div>
-        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="productsTable"></table></div>
+        <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="productsTable"></table></div>
       </div>
     </div>
 
     <div class="view" id="view-orders">
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px"><h3>All orders</h3><div class="hint">Every order across the marketplace, newest first.</div></div>
-        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="ordersTable"></table></div>
+        <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="ordersTable"></table></div>
       </div>
     </div>
 
@@ -305,11 +319,11 @@
         <div class="revbar">
           <div class="rchips" id="revStatusChips"></div>
           <div class="rchips" id="revStarChips"></div>
-          <select id="revShopSel" onchange="renderReviews()"><option value="all">All shops</option></select>
-          <input id="revSearch" placeholder="Search review text, buyer, product…" oninput="renderReviews()">
+          <select id="revShopSel" aria-label="Filter reviews by shop" onchange="renderReviews()"><option value="all">All shops</option></select>
+          <input id="revSearch" aria-label="Search reviews" placeholder="Search review text, buyer, product…" oninput="renderReviews()">
           <span class="rcount" id="revCount"></span>
         </div>
-        <div style="padding:0 10px 10px;overflow-x:auto"><table class="tbl" id="reviewsTable"></table></div>
+        <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="reviewsTable"></table></div>
       </div>
     </div>
 
@@ -342,16 +356,16 @@
 </div>
 
 <div class="mscrim" id="tagScrim" onclick="if(event.target===this)closeTagModal()">
-  <div class="modal">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="tmName">
     <h3 id="tmName">Tags</h3>
     <div class="hint" id="tmShop" style="margin-bottom:0"></div>
-    <div class="tagbox" id="tmBox" onclick="$('tmIn').focus()"><input id="tmIn" placeholder="Type a tag, press Enter"></div>
+    <div class="tagbox" id="tmBox" onclick="$('tmIn').focus()"><input id="tmIn" aria-label="Add a tag" placeholder="Type a tag, press Enter"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
       <div class="hint" style="margin:0">Up to 12 — these power search on the storefront.</div>
       <button class="btn btn-ghost" id="tmAI" style="display:none;white-space:nowrap" onclick="tmSuggest()">✨ Suggest with Claude</button>
     </div>
     <div class="tagsug" id="tmSug">
-      <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a onclick="tmAddAll()">Add all</a><a onclick="tmDismiss()">Dismiss</a></div>
+      <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a href="#" role="button" onclick="tmAddAll();return false">Add all</a><a href="#" role="button" onclick="tmDismiss();return false">Dismiss</a></div>
       <div class="chips" id="tmSugChips"></div>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
@@ -361,7 +375,7 @@
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
 <script src="api.js"></script>
@@ -378,6 +392,34 @@ const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
 function money(c){const n=(c||0)/100;return Number.isInteger(n)?aed(n):'AED '+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+
+/* ---------------- accessibility helpers ----------------
+ * The tag editor is a real dialog (focus in, Tab kept inside, Esc closes,
+ * focus back to the button that opened it); a visible label next to a
+ * control becomes its programmatic label, including in rendered rows; the
+ * menu items are links so they can be reached with Tab. */
+let TM_RET=null;
+function trapTab(e,root){
+  if(e.key!=='Tab')return;
+  const f=[...root.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select,textarea')].filter(n=>n.getClientRects().length);
+  if(!f.length)return;
+  if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f[f.length-1].focus();}
+  else if(!e.shiftKey&&document.activeElement===f[f.length-1]){e.preventDefault();f[0].focus();}
+}
+function autoLabel(){
+  document.querySelectorAll('label:not([for])').forEach(l=>{
+    if(l.querySelector('input,select,textarea'))return;
+    const nx=l.nextElementSibling; if(!nx)return;
+    let c=nx.matches('input,select,textarea')?nx:null;
+    if(!c){const inner=nx.querySelectorAll('input:not([type=hidden]),select,textarea');if(inner.length===1)c=inner[0];}
+    if(!c)return;
+    if(!c.id)c.id='fld-'+Math.random().toString(36).slice(2,9);
+    l.htmlFor=c.id;
+  });
+}
+new MutationObserver(autoLabel).observe(document.body,{childList:true,subtree:true});
+document.querySelectorAll('.side .mitem[data-v]').forEach(a=>{a.setAttribute('href','#'+a.dataset.v);a.querySelectorAll('svg').forEach(s=>s.setAttribute('aria-hidden','true'));});
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.mitem[href^="#"]');if(a)e.preventDefault();});
 let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
 function tile(s){
@@ -392,7 +434,7 @@ const TITLES={overview:['Overview','The whole marketplace at a glance'],members:
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
-  document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
+  document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});
   revealActiveTab();
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
 }
@@ -466,7 +508,7 @@ function applicationCardHTML(s){
       <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Fortnightly payout'}</span>
     </div>
     ${applicationFactsHTML(s)}
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+    <div class="pvstory" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
       <div><div style="font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:5px">Their story</div>
         <div style="font-size:13px;line-height:1.6;font-weight:500">${s.bio?multiline(s.bio):'<span style="color:var(--muted)">Nothing written yet.</span>'}</div></div>
       <div><div style="font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:5px">Planning to sell</div>
@@ -604,7 +646,7 @@ function providerCardHTML(p){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;margin-top:10px;padding:12px 14px;background:var(--paper);border:1px solid var(--line);border-radius:12px">
       ${facts.map(([k,v])=>`<div style="font-size:12.5px"><span style="letter-spacing:.04em;color:var(--muted);font-weight:700;font-size:10px;display:block">${k}</span><b>${esc(v)}</b></div>`).join('')}
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
+    <div class="pvstory" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
       <div><div style="font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:5px">Their story</div>
         <div style="font-size:13px;line-height:1.6;font-weight:500">${p.bio?multiline(p.bio):'<span style="color:var(--muted)">Nothing written yet.</span>'}</div></div>
       <div><div style="font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:5px">Planning to offer</div>
@@ -743,18 +785,20 @@ function openTagModal(id,autoSuggest){
   $('tmAI').style.display=AI_TAGS?'':'none';
   $('tmIn').value='';
   renderTmTags();
+  TM_RET=document.activeElement;
   $('tagScrim').classList.add('open');
+  setTimeout(()=>$('tmIn').focus(),30);
   $('tmIn').focus();
   if(autoSuggest&&AI_TAGS)tmSuggest();
 }
-function closeTagModal(){$('tagScrim').classList.remove('open');tmId=null;}
+function closeTagModal(){$('tagScrim').classList.remove('open');tmId=null;if(TM_RET&&TM_RET.focus&&document.contains(TM_RET))TM_RET.focus();TM_RET=null;}
 function renderTmTags(){
   const box=$('tmBox'), input=$('tmIn');
   box.querySelectorAll('.tg').forEach(el=>el.remove());
   tmTags.forEach((t,i)=>{
     const chip=document.createElement('span');chip.className='tg';
     chip.appendChild(document.createTextNode(t));
-    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';x.setAttribute('aria-label','Remove tag '+t);
     x.onclick=(e)=>{e.stopPropagation();tmTags.splice(i,1);renderTmTags();};
     chip.appendChild(x);box.insertBefore(chip,input);
   });
@@ -783,7 +827,7 @@ $('tmIn').addEventListener('keydown',(e)=>{
   if(e.key==='Enter'||e.key===','){e.preventDefault();tmAddTag(e.target.value);e.target.value='';}
   else if(e.key==='Backspace'&&!e.target.value&&tmTags.length){tmTags.pop();renderTmTags();}
 });
-document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&$('tagScrim').classList.contains('open'))closeTagModal();});
+document.addEventListener('keydown',(e)=>{if(!$('tagScrim').classList.contains('open'))return;if(e.key==='Escape')closeTagModal();else trapTab(e,$('tagScrim').querySelector('.modal'));});
 async function tmSuggest(){
   const btn=$('tmAI'), was=btn.textContent;
   btn.classList.add('thinking');btn.textContent='Thinking…';
@@ -991,7 +1035,7 @@ function cmsField(key,path,label,kind,val){
     ?`<textarea ${on}>${esc(val)}</textarea>`
     :`<input value="${esc(val)}" ${on}>`;
   const prev=kind==='rich'?`<div class="rprev">${cmsRichPrev(val)}</div>`:'';
-  return `<div class="cmsf"><span class="flab">${label}${hint}</span>${inp}${prev}</div>`;
+  return `<div class="cmsf"><label class="flab">${label}${hint}</label>${inp}${prev}</div>`;
 }
 function cmsListHTML(spec){
   const key=spec.key,L=spec.list,arr=CMS_EDIT[key][L.field];
@@ -1000,8 +1044,8 @@ function cmsListHTML(spec){
       ?L.item.map(([f,lab,kind])=>cmsField(key,`${L.field}.${i}.${f}`,lab,kind,item[f])).join('')
       :cmsField(key,`${L.field}.${i}`,'Text',null,item);
     const btns=L.fixed?'':`<div class="ibtns">
-        ${i>0?`<button onclick="cmsMove('${key}','${L.field}',${i},-1)" title="Move up">↑</button>`:''}
-        ${i<arr.length-1?`<button onclick="cmsMove('${key}','${L.field}',${i},1)" title="Move down">↓</button>`:''}
+        ${i>0?`<button onclick="cmsMove('${key}','${L.field}',${i},-1)" title="Move up" aria-label="Move up">↑</button>`:''}
+        ${i<arr.length-1?`<button onclick="cmsMove('${key}','${L.field}',${i},1)" title="Move down" aria-label="Move down">↓</button>`:''}
         ${arr.length>L.min?`<button onclick="cmsRemove('${key}','${L.field}',${i})">Remove</button>`:''}
       </div>`;
     return `<div class="cmsitem"><div class="ihead"><b>${L.label} ${i+1}</b>${btns}</div>${fields}</div>`;
@@ -1030,14 +1074,14 @@ function cmsPickerHTML(spec){
   const chips=ids.map((id,i)=>{
     const open=CMS_CROP&&CMS_CROP.key===key&&CMS_CROP.id===id;
     const cropBtn=spec.picker.crop?`<button class="crop-btn ${open?'on':''}" onclick="cmsCropToggle('${key}',${id})">Crop</button>`:'';
-    return `<span class="pk">${esc(byId[id]?byId[id].name:'#'+id)}${cropBtn}<button onclick="cmsPickRemove('${key}',${i})" title="Remove">×</button></span>`;
+    return `<span class="pk">${esc(byId[id]?byId[id].name:'#'+id)}${cropBtn}<button onclick="cmsPickRemove('${key}',${i})" title="Remove" aria-label="Remove ${esc(byId[id]?byId[id].name:'#'+id)}">×</button></span>`;
   }).join('');
   const opts=live.filter(p=>!ids.includes(p.id)).map(p=>`<option value="${p.id}">${esc(p.name)} — ${esc(p.shop.name)}</option>`).join('');
   const editor=CMS_CROP&&CMS_CROP.key===key&&byId[CMS_CROP.id]?cmsCropEditorHTML(spec,byId[CMS_CROP.id]):'';
   return `<div class="cmsf"><span class="flab">${spec.picker.note}</span>
     <div class="cmspick">${chips||`<span style="font-size:12px;color:var(--muted);font-weight:600">${spec.picker.auto}</span>`}</div>
     ${editor}
-    ${ids.length<max&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsPickAdd('${key}','${sel}')">Add</button></div>`:''}
+    ${ids.length<max&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" aria-label="Add to this list" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsPickAdd('${key}','${sel}')">Add</button></div>`:''}
   </div>`;
 }
 function cmsPickAdd(key,sel){
@@ -1107,11 +1151,11 @@ function cmsShopPickerHTML(spec){
   const open=SHOPS.filter(s=>s.status==='approved'&&!s.isHouse);
   const bySlug={};SHOPS.forEach(s=>bySlug[s.slug]=s);
   const sel='cmsShopSel-'+key.replace(/\W/g,'_');
-  const chips=slugs.map((sl,i)=>`<span class="pk">${esc(bySlug[sl]?bySlug[sl].name:sl)}<button onclick="cmsShopRemove('${key}',${i})" title="Remove">×</button></span>`).join('');
+  const chips=slugs.map((sl,i)=>`<span class="pk">${esc(bySlug[sl]?bySlug[sl].name:sl)}<button onclick="cmsShopRemove('${key}',${i})" title="Remove" aria-label="Remove ${esc(bySlug[sl]?bySlug[sl].name:sl)}">×</button></span>`).join('');
   const opts=open.filter(s=>!slugs.includes(s.slug)).map(s=>`<option value="${esc(s.slug)}">${esc(s.name)} — ${esc(s.location||'')}</option>`).join('');
   return `<div class="cmsf"><span class="flab">${spec.shopPicker.note}</span>
     <div class="cmspick">${chips||`<span style="font-size:12px;color:var(--muted);font-weight:600">${spec.shopPicker.auto}</span>`}</div>
-    ${slugs.length<8&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsShopAdd('${key}','${sel}')">Add</button></div>`:''}
+    ${slugs.length<8&&opts?`<div style="display:flex;gap:8px"><select id="${sel}" aria-label="Add to this list" style="flex:1;font:inherit;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream)">${opts}</select><button class="btn btn-ghost" onclick="cmsShopAdd('${key}','${sel}')">Add</button></div>`:''}
   </div>`;
 }
 function cmsShopAdd(key,sel){const v=$(sel).value;const slugs=CMS_EDIT[key].shopSlugs||(CMS_EDIT[key].shopSlugs=[]);if(v&&!slugs.includes(v))slugs.push(v);cmsDirty(key);renderCms();}
@@ -1163,11 +1207,11 @@ function renderMessages(){
   const badge=$('msgBadge'); if(badge){badge.textContent=open;badge.classList.toggle('zero',!open);}
   const w=$('msgWrap'); if(!w)return;
   w.innerHTML=MESSAGES.length?MESSAGES.map(m=>`
-    <div style="border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px${m.handledAt?';opacity:.62':''}">
+    <div style="border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;background:var(--cream)${m.handledAt?';opacity:.7':''}">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <span class="pill ${m.handledAt?'approved':'pending'}">${m.handledAt?'done':'new'}</span>
         <b style="font-size:13.5px">${esc(m.name)}</b>
-        <a href="mailto:${esc(m.email)}" style="color:var(--muted);font-size:12.5px;font-weight:600;text-decoration:underline">${esc(m.email)}</a>
+        <a href="mailto:${esc(m.email)}" style="color:var(--muted);font-size:12.5px;font-weight:600;text-decoration:underline;display:inline-block;padding:6px 0">${esc(m.email)}</a>
         <span style="color:var(--muted);font-size:12.5px;font-weight:600">${esc(m.topicLabel)}${m.orderRef?' · '+esc(m.orderRef):''}</span>
         <span style="color:var(--muted);font-size:12px;margin-left:auto">${fmtDate(m.createdAt)}</span>
       </div>
