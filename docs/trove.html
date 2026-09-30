@@ -471,6 +471,8 @@
   .vhead h1,.vhead [data-vh]{font-size:clamp(38px,5vw,56px);font-weight:400;display:flex;align-items:center;justify-content:center;gap:12px}
   .vhead .loc{font-size:12.5px;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:6px}
   .vhead p{font-size:16px;color:var(--ink-80);max-width:56ch;margin:18px auto 0;font-weight:400}
+  .vhead .vmeta-line{font-size:13.5px;letter-spacing:.02em;color:var(--muted);font-weight:600;margin-top:8px;line-height:1.6}
+  .vpanel{background:radial-gradient(circle at 22% 30%,rgba(253,247,245,.55),transparent 58%),linear-gradient(160deg,var(--t1),var(--t0))}
   .vhead .vstats{display:flex;justify-content:center;gap:54px;margin-top:30px}
   .vhead .vstats b{font-family:var(--font-display);font-size:32px;font-weight:600;display:block;line-height:1}
   .vhead .vstats span{font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:600}
@@ -1224,15 +1226,11 @@
   <div class="wrap vhead">
     <div class="lav" id="vLav"></div>
     <h2 id="vName" data-vh="vendor"></h2>
-    <div class="loc" id="vLoc"></div>
+    <div class="vmeta-line" id="vMeta"></div>
     <p id="vBio"></p>
-    <div class="vstats">
-      <div><b id="vProds"></b><span id="vProdsLbl">Pieces</span></div>
-      <div id="vRateWrap"><b id="vRate"></b><span>Rating</span></div>
-    </div>
   </div>
   <div class="wrap" style="padding:56px 32px 40px">
-    <div class="band-head left"><div><span class="eyebrow">From this shop</span><h2 style="font-size:38px">The collection</h2></div></div>
+    <div class="band-head left"><div><span class="eyebrow">From this shop</span><h2 style="font-size:38px" id="vPiecesHead">Pieces by this maker</h2></div></div>
     <div class="pgrid" id="vendorProducts"></div>
   </div>
   <div class="wrap" id="vendorServices" style="display:none;padding:0 32px 60px">
@@ -2377,15 +2375,20 @@ function track(kind,body){
 function openVendor(key){
   track('shop_view',{shop:key});
   const v=VENDORS[key];
-  $('vheroGrad').style=v.img?`background:center/cover no-repeat url("${v.img}")`:grad(v.color);
-  if(v.img){$('vLav').style.background=`center/cover no-repeat url("${v.img}")`;$('vLav').textContent='';}
-  else{$('vLav').style.background=v.color;$('vLav').textContent=(v.name||'?')[0];}
+  // The maker's own photo, else a calm panel in their colour — never a stock stand-in.
+  const own=ownImg(v), c=safeColor(v.color);
+  $('vheroGrad').className='grad'+(own?'':' vpanel');
+  $('vheroGrad').style=own?`background:center/cover no-repeat url("${own}")`:`--t0:${c};--t1:${shade(c,24)}`;
+  if(own){$('vLav').style.background=`center/cover no-repeat url("${own}")`;$('vLav').textContent='';}
+  else{$('vLav').style.background=c;$('vLav').textContent=(v.name||'?')[0];}
   $('vName').innerHTML=`${esc(v.name)}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
-  $('vLoc').textContent=v.loc; $('vBio').textContent=v.bio;
+  $('vBio').textContent=v.bio||'';
   const vp=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===key).length;
-  $('vProds').textContent=vp; $('vProdsLbl').textContent=vp===1?'Piece':'Pieces';
-  $('vRateWrap').style.display=v.rating?'':'none'; $('vRate').textContent=v.rating?v.rating+'★':'';
+  const since=sinceLabel(v);
+  $('vMeta').textContent=[v.house?'':v.loc,since?'On Trove since '+since:'',vp+' '+(vp===1?'piece':'pieces'),v.rating?`${v.rating}★ from ${v.ratingCount} ${v.ratingCount===1?'review':'reviews'}`:''].filter(Boolean).join(' · ');
+  $('vPiecesHead').textContent='Pieces by '+v.name;
   const prods=PRODUCTS.filter(p=>p.vendor===key);
+  $('vendorProducts').className='pgrid'+(prods.length&&prods.length<=3?' few':'')+(prods.length===1?' one':'');
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
   loadShopReviews(key);
   loadShopServices(key);

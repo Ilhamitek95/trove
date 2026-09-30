@@ -465,17 +465,25 @@ function renderMaker(base, slug) {
   const list = liveProducts().filter((p) => p.shop.slug === s.slug);
   let html = activate(storefront(), 'vendor');
   html = fill(html, 'vName', esc(s.name));
-  html = fill(html, 'vLoc', esc(s.location || ''));
+  const since = sinceLabel(s.joined);
+  const rating = s.rating ? `${s.rating.avg}★ from ${s.rating.count} ${s.rating.count === 1 ? 'review' : 'reviews'}` : '';
+  html = fill(html, 'vMeta', esc([s.isHouse ? '' : s.location, since ? `On Trove since ${since}` : '', `${list.length} ${list.length === 1 ? 'piece' : 'pieces'}`, rating].filter(Boolean).join(' · ')));
   html = fill(html, 'vBio', esc(s.bio || ''));
-  html = fill(html, 'vProds', String(list.length));
-  html = html.replace(/(<span id="vProdsLbl">)[^<]*(<\/span>)/, `$1${list.length === 1 ? 'Piece' : 'Pieces'}$2`);
-  html = fill(html, 'vLav', s.image ? '' : esc((s.name || '?')[0]));
+  html = text(html, 'vPiecesHead', `Pieces by ${s.name}`);
+  // the maker's own photo, else the calm colour panel (a stock stand-in reads as unrelated)
+  const own = safeImg(s.image) && !/^https:\/\/images\.unsplash\.com\//.test(s.image) ? s.image : '';
+  const c = safeColor(s.color);
+  html = own ? attr(html, 'vheroGrad', 'style', `background:center/cover no-repeat url("${own}")`)
+    : attr(attr(html, 'vheroGrad', 'class', 'grad vpanel'), 'vheroGrad', 'style', `--t0:${c};--t1:${shade(c, 24)}`);
+  html = attr(html, 'vLav', 'style', own ? `background:center/cover no-repeat url("${own}")` : `background:${c}`);
+  html = fill(html, 'vLav', own ? '' : esc((s.name || '?')[0]));
+  if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="vendorProducts">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="vendorProducts">`);
   html = fill(html, 'vendorProducts', list.length ? list.map((p) => cardHtml(p, s)).join('')
     : '<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>');
   const title = `${s.name}${s.location ? `, ${s.location}` : ''} · Maker on Trove`;
   const description = compose(`${list.length} ${list.length === 1 ? 'piece' : 'pieces'} by ${s.name}${s.location ? `, ${s.location}` : ''}. `,
     s.bio || '', ' Delivered across Dubai and Abu Dhabi.');
-  const image = safeImg(s.image) ? abs(base, s.image) : (list[0] && coverOf(list[0]) ? abs(base, coverOf(list[0])) : '');
+  const image = own ? abs(base, own) : (list[0] && coverOf(list[0]) ? abs(base, coverOf(list[0])) : '');
   const maker = {
     '@type': 'Organization',
     '@id': `${url}#maker`,

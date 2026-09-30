@@ -112,3 +112,23 @@ test('a piece: one photo has no thumbnail rail, details come only from real fiel
   assert.doesNotMatch(page, /Sold &amp; shipped by/);
   assert.equal(rawH1(page), 1);
 });
+
+/* ---------------- a maker's page ---------------- */
+test('a maker: Pieces by <maker>, a meta line with the joined month, the calm panel instead of a stock cover', async () => {
+  db.prepare("UPDATE shops SET image = 'https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=900&q=72' WHERE slug = 'kiln-and-clay'").run();
+  const joined = db.prepare("SELECT created_at FROM shops WHERE slug = 'kiln-and-clay'").get().created_at;
+  const month = new Date(String(joined).slice(0, 7) + '-01T00:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const page = noScripts((await get('/makers/kiln-and-clay')).text);
+  assert.match(page, /id="vPiecesHead">Pieces by Kiln &amp; Clay</);
+  assert.doesNotMatch(page, />The collection</);
+  assert.match(page, new RegExp(`id="vMeta">Alserkal Avenue, Dubai · On Trove since ${month} · 1 piece( · [0-9.]+★ from [0-9]+ reviews?)?<`));
+  assert.doesNotMatch(page, /1 Pieces/);
+  assert.match(page, /<div class="grad vpanel" id="vheroGrad" style="--t0:#[0-9A-Fa-f]{6};--t1:#[0-9a-f]{6}"/, 'a stock shop image is not shown as the maker cover');
+  assert.doesNotMatch(page, /images\.unsplash\.com\/photo-1470058869958/);
+  assert.match(page, /<div class="pgrid few one" id="vendorProducts">/);
+  assert.match(page, /class="illus">Illustrative photo</);
+  // the API hands over the joined month for the storefront's own drawing
+  const { data } = await ctx.api('GET', '/api/shops/kiln-and-clay');
+  assert.match(data.shop.joined, /^\d{4}-\d{2}$/);
+  assert.match(store, /\$\('vPiecesHead'\)\.textContent='Pieces by '\+v\.name/);
+});
