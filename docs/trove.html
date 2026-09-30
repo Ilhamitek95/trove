@@ -280,6 +280,8 @@
   .card .add{position:absolute;left:14px;right:14px;bottom:14px;padding:12px;border-radius:11px;background:rgba(253,247,245,.94);backdrop-filter:blur(6px);color:var(--char);font-weight:600;font-size:13px;letter-spacing:.04em;opacity:0;transform:translateY(8px);transition:.25s;display:flex;align-items:center;justify-content:center;gap:8px}
   .card:hover .add{opacity:1;transform:none}
   .card .add:hover{background:var(--char);color:var(--cream)}
+  .card:focus-within .add{opacity:1;transform:none}
+  .card .add.add-row{display:none}
   .card .add.added{background:var(--char);color:var(--cream);opacity:1;transform:none}
   .card .vrow{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
   .card .vrow.is-house{color:var(--accent-ink)} /* is-house, not house — .house is the Collection band */
@@ -443,6 +445,15 @@
   .sortbar .n b{color:var(--char)}
   .sortbar select{font-family:inherit;font-weight:600;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:11px 18px;background:var(--paper);color:var(--char);letter-spacing:.03em}
 
+  /* a short shelf: bigger cards, and no filter rail when nothing can be filtered */
+  .pgrid.few{grid-template-columns:repeat(3,1fr);gap:40px 32px}
+  .no-filters .browse-layout{grid-template-columns:1fr}
+  .no-filters .filters,.no-filters .f-open-btn{display:none!important}
+  .fgroup[hidden]{display:none}
+  @media(max-width:960px){.pgrid.few{grid-template-columns:repeat(2,1fr);gap:28px 18px}}
+  @media(max-width:560px){.pgrid.few.one{grid-template-columns:1fr}.pgrid.few.one .card h3{font-size:24px}}
+  @media(hover:none) and (min-width:961px){.card .ph .add{display:none}.card .add.add-row{display:flex;position:relative;left:auto;right:auto;bottom:auto;z-index:3;opacity:1;transform:none;margin-top:12px;min-height:44px;width:100%;background:var(--char);color:var(--cream)}}
+
   /* ---------- VENDOR ---------- */
   .svc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
   .svc-card{display:flex;flex-direction:column;gap:6px;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--paper);transition:.18s}
@@ -585,6 +596,8 @@
      than three pieces become 'The first pieces' (html.few-pieces); with no
      Trove Collection yet, the Collection band gives way to a real maker. */
   .illus{position:absolute;top:12px;right:12px;z-index:3;background:rgba(253,247,245,.94);color:var(--char);font-size:12px;font-weight:600;letter-spacing:.02em;line-height:1.3;padding:4px 10px;border-radius:999px;pointer-events:none}
+  .card .illus{top:auto;right:auto;bottom:12px;left:12px}
+  @media(max-width:560px){.card .illus{bottom:8px;left:8px;font-size:12px;padding:3px 8px}}
   .hstage.solo .hs-deck{-webkit-mask-image:none;mask-image:none;cursor:auto}
   .hstage.solo .hs-bar{visibility:hidden}
   .hsolo{position:absolute;inset:0;display:block;border-radius:26px;overflow:hidden;background:var(--rose);box-shadow:0 30px 60px -34px rgba(41,39,39,.5)}
@@ -677,7 +690,9 @@
     .menu-btn{display:grid}
     .search{display:flex}
     .search-btn{display:none}
-    .card .add{opacity:1;transform:none;position:relative;margin-top:12px;background:var(--char);color:var(--cream)}
+    /* touch: the quick add sits under the price, never over the photo */
+    .card .ph .add{display:none}
+    .card .add.add-row{display:flex;position:relative;left:auto;right:auto;bottom:auto;z-index:3;opacity:1;transform:none;margin-top:12px;min-height:44px;width:100%;background:var(--char);color:var(--cream)}
     /* filters become a bottom sheet, opened from the sortbar */
     .filters{position:fixed;left:0;right:0;bottom:0;z-index:105;background:var(--cream);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;padding:14px 26px calc(18px + env(safe-area-inset-bottom));transform:translateY(103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;box-shadow:0 -18px 60px -22px rgba(41,39,39,.4)}
     .filters::before{content:"";display:block;width:44px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
@@ -730,7 +745,7 @@
     .pgrid{gap:22px 14px}
     .card h3{font-size:18px}
     .card .ph{margin-bottom:10px}
-    .card .add{margin-top:9px;padding:11px}
+    .card .add.add-row{margin-top:10px;padding:11px}
     .cat-mosaic{grid-auto-rows:168px;gap:12px}
     .cat{padding:14px 15px;border-radius:18px}
     .cat.feat{padding:18px}
@@ -1130,15 +1145,15 @@
   <div class="wrap browse-layout">
     <aside class="filters" id="filtersPanel" aria-label="Filters" tabindex="-1">
       <div class="f-head"><h3 class="serif">Filter</h3><button class="icon-btn" aria-label="Close filters" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
-      <div class="fgroup"><h4>Category</h4><div id="catFilters"></div></div>
-      <div class="fgroup"><h4>Seller</h4>
+      <div class="fgroup" id="fgCat"><h4>Category</h4><div id="catFilters"></div></div>
+      <div class="fgroup" id="fgSeller"><h4>Seller</h4>
         <label class="fitem fhouse"><input type="checkbox" id="fltHouse" onchange="setHouseFilter(this.checked)"> Trove Collection only</label>
         <select id="fltShop" class="fshop" aria-label="Shop" onchange="setShopFilter(this.value)"><option value="all">All shops</option></select>
       </div>
-      <div class="fgroup"><h4>Offers</h4>
+      <div class="fgroup" id="fgOffers"><h4>Offers</h4>
         <label class="fitem"><input type="checkbox" id="fltSale" onchange="setSaleFilter(this.checked)"> On sale only</label>
       </div>
-      <div class="fgroup" style="border:none"><h4>Price</h4>
+      <div class="fgroup" id="fgPrice" style="border:none"><h4>Price</h4>
         <label class="fitem"><input type="radio" name="pr" data-pr="0-9999" onchange="setPrice(0,9999)" checked> Any price</label>
         <label class="fitem"><input type="radio" name="pr" data-pr="0-80" onchange="setPrice(0,80)"> Under AED 80</label>
         <label class="fitem"><input type="radio" name="pr" data-pr="80-200" onchange="setPrice(80,200)"> AED 80–200</label>
@@ -1742,6 +1757,7 @@ function productCard(p,eager,crop){
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
       ${p.rating?`<span class="stars">${stars(p.rating)}<span>${esc(p.rating)}</span></span>`:''}
     </div>
+    <button class="add add-row" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to basket</button>
   </article>`;
 }
 
@@ -2113,17 +2129,40 @@ function matchesFilters(p,skip){
   return catOk&&houseOk&&shopOk&&saleOk&&priceOk&&qOk;
 }
 let CAT_FILTERS=[];
+const inPillar=p=>state.cat!=='House'||!!(VENDORS[p.vendor]&&VENDORS[p.vendor].house);
+/* Only offer a filter that can change something: a group with a single
+ * choice hides, and with none left the rail and the Filter button go too. */
+const PRICE_BANDS=[[0,80],[80,200],[200,9999]];
+function syncFilterGroups(){
+  const makers=Object.keys(VENDORS).filter(k=>!VENDORS[k].house&&PRODUCTS.some(p=>p.vendor===k));
+  const house=PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house);
+  const bands=PRICE_BANDS.filter(([a,b])=>PRODUCTS.some(p=>p.price>=a&&p.price<=b)).length;
+  const show={
+    fgCat:CAT_FILTERS.length>2||state.cat!=='all',
+    fgSeller:makers.length>1||(house&&makers.length>0)||state.shop!=='all'||state.houseOnly,
+    fgOffers:PRODUCTS.some(p=>p.was)||state.sale,
+    fgPrice:bands>1||state.min!==0||state.max!==9999,
+  };
+  for(const [id,on] of Object.entries(show))$(id).hidden=!on;
+  $('fltShop').hidden=makers.length<2&&state.shop==='all';
+  document.body.classList.toggle('no-filters',!Object.values(show).some(Boolean));
+  // Top rated waits until real ratings exist.
+  const rated=PRODUCTS.some(p=>p.rating), opt=$('sortSel').querySelector('option[value="rating"]');
+  if(opt){opt.hidden=!rated;opt.disabled=!rated;}
+  if(!rated&&$('sortSel').value==='rating')$('sortSel').value='feat';
+}
 function buildCatFilters(){
   const known=CATS.map(c=>c.name);
   const extra=[...new Set(PRODUCTS.map(p=>p.cat))].filter(c=>c&&!known.includes(c)).sort();
   // Live mode hides shelves with nothing on them (same rule as the home tiles);
   // the selected category always stays listed so it can be un-picked.
-  const cats=['all',...known,...extra].filter(c=>c==='all'||c===state.cat||!LIVE||PRODUCTS.some(p=>p.cat===c));
+  const cats=['all',...known,...extra].filter(c=>c==='all'||c===state.cat||!LIVE||PRODUCTS.some(p=>p.cat===c&&inPillar(p)));
   CAT_FILTERS=cats;
   $('catFilters').innerHTML=cats.map((c,i)=>{
     // Counts respect the active search + other filters, so a category never
     // promises pieces the current search can't deliver.
-    const ct=PRODUCTS.filter(p=>(c==='all'||p.cat===c)&&matchesFilters(p,{cat:1})).length;
+    // …and the pillar being browsed: inside the Trove Collection, only its pieces count.
+    const ct=PRODUCTS.filter(p=>(c==='all'||p.cat===c)&&inPillar(p)&&matchesFilters(p,{cat:1})).length;
     return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat=CAT_FILTERS[${i}];renderShop();shelfAddress(true)"> ${c==='all'?'All categories':esc(c)}<span class="c">${ct}</span></label>`;
   }).join('');
 }
@@ -2253,6 +2292,7 @@ async function fillPopularSearches(){
 function renderShop(){
   buildCatFilters();
   buildShopFilter();
+  syncFilterGroups();
   const list=filteredProducts(), shops=new Set(list.map(p=>p.vendor));
   $('resCount').textContent=list.length; $('resNoun').textContent=list.length===1?'piece':'pieces';
   $('shopCount').textContent=shops.size; $('shopNoun').textContent=shops.size===1?'shop':'shops';
@@ -2261,6 +2301,7 @@ function renderShop(){
   $('shopCrumb').innerHTML=crumbHTML();
   $('searchChip').innerHTML=state.q?`<span class="schip">Searching for <b>“${esc(state.q)}”</b><button onclick="clearSearch()" aria-label="Clear search">×</button></span>`:'';
   $('shopGrid').innerHTML=list.length?list.map(productCard).join(''):emptyStateHTML();
+  $('shopGrid').className='pgrid'+(list.length&&list.length<=3?' few':'')+(list.length===1?' one':'');
   if(!list.length)fillPopularSearches();
 }
 

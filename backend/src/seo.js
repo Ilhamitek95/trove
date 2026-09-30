@@ -196,10 +196,12 @@ function cardHtml(p, vendor) {
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
   return `<article class="card">
-    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}</div>
+    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}
+      <button class="add" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">Add to basket</button></div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
     <div class="foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span></div>
+    <button class="add add-row" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">Add to basket</button>
   </article>`;
 }
 
@@ -291,6 +293,15 @@ function categoryFromSlug(slug, list) {
   return categoryNames(list).find((c) => slugify(c) === slug) || null;
 }
 
+/** Mirrors the storefront's syncFilterGroups(): is any filter group worth showing? */
+function hasFilters(all) {
+  const makers = new Set(all.filter((p) => !p.shop.isHouse).map((p) => p.shop.slug));
+  const house = all.some((p) => p.shop.isHouse);
+  const bands = [[0, 80], [80, 200], [200, 9999]].filter(([a, b]) => all.some((p) => p.price >= a && p.price <= b)).length;
+  return new Set(all.map((p) => p.category)).size > 1 || makers.size > 1 || (house && makers.size > 0)
+    || all.some((p) => p.compareAt) || bands > 1;
+}
+
 /**
  * /shop and /shop/<category>. Returns { html } or { notFound }. A search
  * (?q=) is the same page, canonical to the shelf and kept out of the index.
@@ -306,6 +317,8 @@ function renderShop(base, slug, { search } = {}) {
   html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, `$1${esc(label)}$2`);
   html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, `$1<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? '<span>Shop all</span>' : `<a href="/shop">Shop all</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}$2`);
   html = fill(html, 'shopGrid', list.map((p) => cardHtml(p, byShop[p.shop.slug])).join(''));
+  if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="shopGrid">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="shopGrid">`);
+  if (cat === 'all' && !search && !hasFilters(all)) html = html.replace('<body>', '<body class="no-filters">');
   const shopN = new Set(list.map((p) => p.shop.slug)).size;
   html = text(html, 'resCount', String(list.length));
   html = text(html, 'resNoun', list.length === 1 ? 'piece' : 'pieces');

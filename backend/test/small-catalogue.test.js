@@ -67,3 +67,22 @@ test('one piece: the server draws the editorial hero and The first piece, marks 
   assert.equal((noScripts(html).match(/class="illus">Illustrative photo</g) || []).length, 2);
   assert.equal(rawH1(noScripts(html)), 1);
 });
+
+/* ---------------- the shelf (/shop) ---------------- */
+test('the shelf: filters that can change nothing hide, a short shelf gets a bigger grid, quick add sits under the price', async () => {
+  // (runs after the one-piece test above: one live piece)
+  const html = (await get('/shop')).text;
+  assert.match(html, /<body class="no-filters">/, 'one piece: nothing to filter, no rail');
+  assert.match(html, /<div class="pgrid few one" id="shopGrid">/);
+  assert.match(noScripts(html), /<button class="add add-row" onclick="event\.stopPropagation\(\);addToCart\(\d+,this\)">Add to basket<\/button>/);
+  for (const id of ['fgCat', 'fgSeller', 'fgOffers', 'fgPrice']) assert.match(store, new RegExp(`class="fgroup" id="${id}"`));
+  assert.match(store, /const inPillar=p=>state\.cat!=='House'/, 'facet counts follow the pillar');
+  assert.match(store, /opt\.hidden=!rated;opt\.disabled=!rated;/, 'Top rated waits for real ratings');
+  assert.match(store, /\.card \.ph \.add\{display:none\}/, 'touch: no quick add over the photo');
+  // many pieces again: the rail is back
+  db.prepare("UPDATE products SET status = 'live' WHERE status = 'hidden'").run();
+  const many = (await get('/shop')).text;
+  assert.doesNotMatch(many, /<body class="no-filters">/);
+  assert.match(many, /<div class="pgrid" id="shopGrid">/);
+  db.prepare("UPDATE products SET status = 'hidden' WHERE id != ?").run(MUG().id);
+});
