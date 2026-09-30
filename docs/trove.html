@@ -1500,30 +1500,49 @@ function checkoutPayload(){
 /* Accepts what people actually type (050 123 4567, +971 50 123 4567, …).
    The server normalises and has the final say — this is just fast feedback. */
 const isUAEMobile=v=>/^5\d{8}$/.test(String(v||'').replace(/[\s().-]/g,'').replace(/^\+?971/,'').replace(/^0/,''));
+/* The call that opens the payment form carries only what is already valid.
+   The form mounts while the buyer is still typing, so a half-typed mobile or
+   address would get a 400 and leave the form stuck; both reach the order
+   through /api/checkout/update just before the card is charged. */
+function intentPayload(){
+  const p=checkoutPayload();
+  if(!isUAEMobile(p.phone))delete p.phone;
+  const a=p.address;
+  if(!a||!a.name||!a.line||!inServiceArea(a.emirate||a.city))delete p.address;
+  return p;
+}
 
-async function mountPaymentElement(){
-  const status=$('payStatus');
+let payMounting=null;
+function mountPaymentElement(){
+  if(!payMounting)payMounting=doMountPayment().finally(()=>{payMounting=null;});
+  return payMounting;
+}
+async function doMountPayment(){
+  const status=$('payStatus'); if(!status)return;
   try{
     if(!payIntent&&!/^\S+@\S+\.\S+$/.test($('coEmail').value.trim())){
       status.textContent='Enter your email above to load the payment form.';
-      return; // retried by the coEmail change listener below
+      return; // retried by the change listener below
     }
+    status.textContent=payIntent?'':'Preparing secure payment…';
     await loadStripeJs();
     if(!stripeJs) stripeJs=window.Stripe(TroveAPI.stripeKey);
     if(!payIntent){
-      status.textContent='Preparing secure payment…';
-      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
-      payIntent=data;
+      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:intentPayload()});
       stripeElements=stripeJs.elements({clientSecret:data.clientSecret});
       payElement=stripeElements.create('payment');
+      payIntent=data;
     }
     try{payElement.unmount();}catch(_){/* not mounted yet */}
     payElement.mount('#payment-element');
     status.textContent='';
-  }catch(e){ status.textContent=e.message; }
+  }catch(e){ status.textContent=e.message||'The payment form could not load — please try again.'; }
 }
+/* Any contact or address field settling is another chance to load a form
+   that has not loaded yet — nothing stays stuck on one failed attempt. */
+const PAY_RETRY_FIELDS=['coEmail','coPhone','coNewName','coNewLine','coNewCity','coNewEmirate'];
 document.addEventListener('change',e=>{
-  if(e.target&&e.target.id==='coEmail'&&paymentsLive()&&!payIntent)mountPaymentElement();
+  if(e.target&&PAY_RETRY_FIELDS.includes(e.target.id)&&paymentsLive()&&!payIntent)mountPaymentElement();
 });
 
 /* A failed image gets two retries with a cache-buster before giving up —
@@ -2522,7 +2541,16 @@ async function placeOrder(){
   }
   if(!(await ensureGuestAccount()))return;
   if(paymentsLive()){
-    if(!payIntent||!stripeElements){toast('The payment form is still loading — one moment');return;}
+    if(!payIntent||!stripeElements){
+      // The form never loaded (or an earlier attempt failed): try again now,
+      // with everything the buyer has filled in, and let them add the card.
+      await mountPaymentElement();
+      const ps=$('payStatus');
+      if(!payIntent){toast((ps&&ps.textContent)||'The payment form could not load — please try again');return;}
+      toast('Add your card details to finish');
+      const pe=$('payment-element'); if(pe)pe.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
     const btn=document.querySelector('.co-place');
     btn.disabled=true;btn.style.opacity=.6;
     // Write the final email + address onto the order before taking payment —
@@ -2610,7 +2638,7 @@ async function loadCatalog(){
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
+      return {id:Number(p.id),name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}
