@@ -241,9 +241,9 @@
             <div class="help">So our curation team can reach you.</div></div>
         </div>
         <div class="subbox r-provider">
-          <div class="fee" id="subFee">AED 30 <small>/ month</small></div>
-          <p>Services cost a flat subscription from the day they go live, plus a 10% platform fee only on bookings paid through Trove — direct bookings carry no commission. Nothing is due until you're approved, and card billing starts when Trove's card payments launch. The service itself is always yours to deliver.</p>
-          <label><input type="checkbox" id="fAgreeSvc"><span>I understand the subscription and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
+          <div class="fee" id="subFee">Free <small>during launch</small></div>
+          <p><span id="subFeeNote">Free during launch — the AED 30/month listing fee starts later; we'll give you 30 days' notice.</span> The only other cost is a 10% platform fee on bookings paid through Trove — direct bookings carry no commission. The service itself is always yours to deliver.</p>
+          <label><input type="checkbox" id="fAgreeSvc"><span>I understand how the listing fee works and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
         </div>
         <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next coral" id="submitBtn" onclick="submitApp()">Submit application</button></div>
       </div>
@@ -279,7 +279,7 @@ const COPY={
   provider:{eyebrow:'Become a provider',title:'Tell us what you <em>do</em>.',s2:'Your practice',s3:"What you'll offer",
     s2Title:'Now, your practice.',s2Lede:'Who you are, what you do, and where you do it.',
     name:'Practice or studio name',exp:'How long have you been at it?',about:'About you &amp; your work',
-    s3Title:'What will you offer?',s3Lede:'List the services you\'re planning to offer — rough ideas and rough prices are fine.',roleHelp:'A page on the Services Marketplace, booking requests to your dashboard, AED 30 a month and no commission on direct bookings.'},
+    s3Title:'What will you offer?',s3Lede:'List the services you\'re planning to offer — rough ideas and rough prices are fine.',roleHelp:'A page on the Services Marketplace, booking requests to your dashboard, free to list during launch and no commission on direct bookings.'},
   both:{eyebrow:'Open your shop &amp; practice',title:'Tell us what you <em>make</em> — and do.',s2:'Your shop &amp; practice',s3:"What you'll sell &amp; offer",
     s2Title:'Now, your shop and practice.',s2Lede:'One name, one story — pieces on the storefront and services on the Services Marketplace.',
     name:'Shop &amp; practice name',exp:'How long have you been at it?',about:'About you &amp; your work',
@@ -306,7 +306,8 @@ function setRole(r){
 async function loadTax(){
   try{
     TAX=await TroveAPI.api('/api/services/taxonomy');
-    if(TAX.providerSubFeeCents)$('subFee').innerHTML='AED '+Math.round(TAX.providerSubFeeCents/100)+' <small>/ month</small>';
+    // Free during launch (owner, 2026-09-30): the fee shown is the one that starts later.
+    if(TAX.providerSubFeeCents)$('subFeeNote').textContent='Free during launch — the AED '+Math.round(TAX.providerSubFeeCents/100)+'/month listing fee starts later; we\'ll give you 30 days\' notice.';
     renderCatPicker();
   }catch(_){ $('catPicker').innerHTML='<div class="help">Couldn’t load the category list — refresh to try again.</div>'; }
 }
@@ -422,7 +423,7 @@ async function submitApp(){
   if(wantsShop()&&!$('fInsta').value.trim()){showErr('Share your Instagram — it’s how our curation team sees your work.');return;}
   if(!wantsShop()&&!$('fInsta').value.trim()&&!$('fLinks').value.trim()){showErr('Share your Instagram or a portfolio link — it’s how our curation team sees your work.');return;}
   if(!$('fPhone').value.trim()){showErr('Add your WhatsApp number so our curation team can reach you.');return;}
-  if(wantsServices()&&!$('fAgreeSvc').checked){showErr('Tick the services box — it covers the subscription and the Provider Agreement.');return;}
+  if(wantsServices()&&!$('fAgreeSvc').checked){showErr('Tick the services box — it covers the listing fee and the Provider Agreement.');return;}
   const btn=$('submitBtn');const label=btn.textContent;
   btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
   const name=$('fName').value.trim(), email=$('fEmail').value.trim(), practice=$('fShop').value.trim();
@@ -455,7 +456,7 @@ async function submitApp(){
     const what=ROLE==='maker'?`<b>${esc(practice)}</b> is now with our curation team`:ROLE==='provider'?`<b>${esc(practice)}</b> is now with our curation team`:`<b>${esc(practice)}</b> — your shop and your services practice — is now with our curation team`;
     $('doneText').innerHTML=`Thanks <b>${esc(first)}</b> — ${what}. Every maker and provider on Trove is reviewed by a real person, usually within a day or two.`;
     $('doneWait').textContent=ROLE==='provider'
-      ?'You\'re signed in already. Add your services and set your prices now — everything goes live the moment you\'re approved, and your subscription only starts then too.'
+      ?'You\'re signed in already. Add your services and set your prices now — everything goes live the moment you\'re approved, and listing is free during launch.'
       :ROLE==='both'?'You\'re signed in already. Set up your storefront, add your first pieces, and add your services from the Services tab — everything goes live the moment you\'re approved.'
       :'You\'re signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you\'re approved.';
     if(servicesWarn){$('doneWarn').style.display='';$('doneWarn').innerHTML=`<b>Your services</b><span>Your shop application is in, but the services part didn’t go through (${esc(servicesWarn)}). You can switch on services from the Services tab of your dashboard.</span>`;}

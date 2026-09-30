@@ -267,8 +267,18 @@
     <div class="view" id="view-providers">
       <div class="card">
         <h3>Service providers</h3>
-        <div class="hint">The Services Marketplace — approve, reject or suspend providers. Only approved providers appear on the public Services Marketplace; the monthly subscription starts at first approval. Every provider accepts the Provider Agreement (their services are their own responsibility) — the version and date show on the card.</div>
+        <div class="hint">The Services Marketplace — approve, reject or suspend providers. Only approved providers appear on the public Services Marketplace. Listing is free during launch (the AED 30/month fee starts later, with 30 days' notice to providers). Every provider accepts the Provider Agreement (their services are their own responsibility) — the version and date show on the card.</div>
         <div id="providersWrap"></div>
+      </div>
+      <div class="card">
+        <h3>Bookings paid through Trove</h3>
+        <div class="hint">Trove is the customer's contracting party on these: the customer pays Trove by card, Trove keeps the 10% platform fee and owes the provider the rest. Refund gives the customer their full payment back (a booking that hasn't happened yet is cancelled with it). Anything flagged needs you — a failed refund is refunded by hand in Stripe, then here.</div>
+        <div id="svcBookingsWrap"><div class="empty">Loading…</div></div>
+      </div>
+      <div class="card">
+        <h3>Provider fees owed</h3>
+        <div class="hint">What providers are owed for bookings paid through Trove — payable once they mark a booking done, or 3 days after the service date. Providers have no payout details of their own yet: pay by bank transfer (to their shop's account where they have one), then mark it paid here.</div>
+        <div id="svcCreditsWrap"><div class="empty">Loading…</div></div>
       </div>
     </div>
 
@@ -572,7 +582,7 @@ function providerActions(p){
   return `<button class="btn btn-green" onclick="setProviderStatus(${p.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setProviderStatus(${p.id},'pending')">Back to review</button>`;
 }
 function providerCardHTML(p){
-  const facts=[['Experience',p.pitchExperience],['WhatsApp',p.pitchPhone],['Listings',`${p.liveServices} live of ${p.services}`],['Bookings',`${p.bookings} total · ${p.openRequests} open`],['Subscription',p.subStartedAt?('since '+fmtDate(p.subStartedAt)):'starts at approval'],['Provider Agreement',p.agreementVersion?`${p.agreementVersion} · ${fmtDate(p.agreementAcceptedAt)}`:'not accepted']].filter(f=>f[1]);
+  const facts=[['Experience',p.pitchExperience],['WhatsApp',p.pitchPhone],['Listings',`${p.liveServices} live of ${p.services}`],['Bookings',`${p.bookings} total · ${p.openRequests} open`],['Listing fee','free during launch'+(p.subStartedAt?' · approved '+fmtDate(p.subStartedAt):'')],['Provider Agreement',p.agreementVersion?`${p.agreementVersion} · ${fmtDate(p.agreementAcceptedAt)}`:'not accepted']].filter(f=>f[1]);
   return `<div style="border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:14px;background:var(--cream)">
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
       <div class="shoprow" style="flex:1;min-width:230px">${tile(p)}
@@ -603,6 +613,47 @@ function renderProviders(){
   const b=$('provBadge');b.textContent=pending;b.classList.toggle('zero',!pending);
   $('providersWrap').innerHTML=PROVIDERS.length?PROVIDERS.map(providerCardHTML).join('')
     :'<div class="empty">No provider applications yet — they arrive from the Become-a-provider page.</div>';
+  loadServiceMoney();
+}
+
+/* ---------------- bookings paid through Trove + provider fees ---------------- */
+const SVC_ATTN={refund_failed:'Refund failed — refund by hand in Stripe',paid_after_cancel:'Paid after it was cancelled — refunded automatically'};
+async function loadServiceMoney(){
+  let bookings=[],credits={eligible:[],excluded:[]};
+  try{bookings=(await TroveAPI.api('/api/admin/service-bookings')).bookings.filter(b=>b.paymentMethod==='trove'&&(b.paidAt||b.attention||b.status==='awaiting_payment'));}catch(_){}
+  try{credits=await TroveAPI.api('/api/admin/service-credits');}catch(_){}
+  $('svcBookingsWrap').innerHTML=bookings.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Booking</th><th>Customer</th><th>Date</th><th>Paid</th><th>Provider's fee</th><th>Status</th><th></th></tr></thead><tbody>${bookings.map(b=>`<tr>
+      <td><b>${esc(b.code)}</b><br><span style="font-size:12px;color:var(--muted)">${esc(b.title)} · ${esc(b.providerName)}</span></td>
+      <td>${esc(b.customer.name)}<br><span style="font-size:12px;color:var(--muted)">${esc(b.customer.email)}</span></td>
+      <td>${esc(b.serviceDate||'')}</td>
+      <td>${b.paidAt?money(b.amountCents):'<span style="color:var(--muted)">awaiting payment</span>'}${b.refundedAt?'<br><span class="pill rejected">refunded</span>':''}</td>
+      <td>${b.paidAt?money(b.providerNetCents):''}</td>
+      <td><span class="pill">${esc(b.status)}</span>${b.attention?`<br><span style="font-size:12px;font-weight:700">${esc(SVC_ATTN[b.attention]||b.attention)}</span>`:''}</td>
+      <td>${b.paidAt&&!b.refundedAt?`<button class="btn btn-ghost btn-sm" onclick="refundServiceBooking(${Number(b.id)})">Refund</button>`:''}</td>
+    </tr>`).join('')}</tbody></table></div>`
+    :'<div class="empty">No bookings paid through Trove yet.</div>';
+  const rows=[...(credits.eligible||[]),...(credits.excluded||[])].filter(r=>r.netCents>0);
+  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed now</th><th>Pay to</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
+      <td><b>${esc(r.name)}</b>${r.owner?`<br><span style="font-size:12px;color:var(--muted)">${esc(r.owner.email)}</span>`:''}</td>
+      <td>${r.bookings.map(b=>esc(b.code)).join(', ')}</td>
+      <td><b>${money(r.netCents)}</b>${r.debitCents?`<br><span style="font-size:12px;color:var(--muted)">after ${money(-r.debitCents)} refund adjustments</span>`:''}</td>
+      <td>${r.payTo?`${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}`:'<span style="color:var(--muted)">no payout details yet</span>'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)},${Number(r.netCents)})">Mark paid</button></td>
+    </tr>`).join('')}</tbody></table></div>`
+    :'<div class="empty">Nothing owed to providers right now.</div>';
+}
+async function refundServiceBooking(id){
+  if(!confirm('Refund this booking in full to the customer’s card? If it hasn’t happened yet it is cancelled too.'))return;
+  try{await TroveAPI.api(`/api/admin/service-bookings/${id}/refund`,{method:'POST',body:{}});toast('Refunded in full');}
+  catch(e){toast(e.message||'Could not refund');}
+  loadServiceMoney();
+}
+async function markProviderPaid(id,cents){
+  const ref=prompt(`Mark ${money(cents)} as paid by bank transfer? Enter the transfer reference:`,'Trove service fees');
+  if(ref===null)return;
+  try{await TroveAPI.api(`/api/admin/service-credits/${id}/paid`,{method:'POST',body:{reference:ref}});toast('Marked paid');}
+  catch(e){toast(e.message||'Could not mark paid');}
+  loadServiceMoney();
 }
 async function setProviderStatus(id,status,confirmFirst){
   const p=PROVIDERS.find(x=>x.id===id);

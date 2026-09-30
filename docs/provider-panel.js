@@ -3,10 +3,10 @@
  * One dashboard, two homes: /provider (accounts that only offer services)
  * and the Services tab of the seller dashboard (/sell — accounts that run a
  * shop too). Both pages mount the same three sections, so the listings
- * editor, the bookings inbox and the subscription card never drift apart.
+ * editor, the bookings inbox and the listing-fee card never drift apart.
  *
  *   await ProviderPanel.init({ toast, onChange })   // loads profile, taxonomy, data
- *   ProviderPanel.mountOverview(el)                 // status banner + stats + subscription
+ *   ProviderPanel.mountOverview(el)                 // status banner + stats + listing fee + fees owed
  *   ProviderPanel.mountServices(el)                 // editor + listings
  *   ProviderPanel.mountBookings(el)                 // requests / confirmed / history
  *   ProviderPanel.openEditor()                      // "+ Add a service"
@@ -16,7 +16,7 @@
  */
 (function () {
   'use strict';
-  const PP = { provider: null, tax: null, services: [], bookings: [], editing: null, els: {}, opts: {} };
+  const PP = { provider: null, tax: null, services: [], bookings: [], editing: null, confirming: null, els: {}, opts: {} };
   const $ = (id) => document.getElementById(id);
   // Every API string that reaches innerHTML goes through esc().
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -55,6 +55,10 @@
 .pp .pp-pill.live,.pp .pp-pill.confirmed,.pp .pp-pill.approved{background:var(--sage-tint,#E9EFEA)}
 .pp .pp-pill.completed{background:var(--sage,#CAD5CC)}
 .pp .pp-pill.hidden,.pp .pp-pill.declined,.pp .pp-pill.cancelled{background:#F0EBE8;color:var(--muted,rgba(41,39,39,.62))}
+.pp .pp-pill.awaiting_payment{background:#FCEBE4}
+.pp .pp-confirm{margin-top:12px;border-top:1px solid var(--line,rgba(41,39,39,.12));padding-top:12px}
+.pp .pp-confirm .pp-field{margin-bottom:10px}
+.pp .pp-paid{font-weight:700;color:var(--char,#292727)}
 .pp .pp-row{display:flex;gap:14px;align-items:center;border:1px solid var(--line,rgba(41,39,39,.12));border-radius:14px;padding:14px 16px;margin-bottom:10px;flex-wrap:wrap;background:var(--cream,#FDF7F5)}
 .pp .pp-row .grow{flex:1;min-width:200px}
 .pp .pp-row .t{font-weight:700;font-size:14px}
@@ -94,7 +98,7 @@
   function stats() {
     return {
       open: PP.bookings.filter((b) => b.status === 'requested').length,
-      upcoming: PP.bookings.filter((b) => b.status === 'confirmed').length,
+      upcoming: PP.bookings.filter((b) => ['confirmed', 'awaiting_payment'].includes(b.status)).length,
       done: PP.bookings.filter((b) => b.status === 'completed').length,
       live: PP.services.filter((s) => s.status === 'live').length,
       total: PP.services.length,
@@ -123,9 +127,15 @@
       : st === 'suspended' ? '<div class="pp-banner bad">Your services profile is suspended and your services are off the public page. Get in touch with the Trove team.</div>'
       : `<div class="pp-banner good">You’re live — your services are on the public <a href="/services/${esc(p.slug)}" target="_blank" rel="noopener" style="text-decoration:underline">Services Marketplace</a>.</div>`;
     const fee = p.subscription ? p.subscription.feeCents : 3000;
-    const subHint = p.subscription && p.subscription.startedAt
-      ? `Running since ${fmtDate(p.subscription.startedAt)}. No commission on direct bookings; a ${pct()}% platform fee only on bookings paid through Trove. Card billing begins when Trove's card payments launch; you'll be told before the first charge.`
-      : `Nothing to pay yet — the subscription starts the day your profile is approved. No commission on direct bookings; a ${pct()}% platform fee only on bookings paid through Trove.`;
+    // Owner, 2026-09-30: free during launch — nothing is running or billed.
+    const subHint = `The ${esc(money(fee))}/month listing fee starts later; we'll give you 30 days' notice before it does. No commission on direct bookings; a ${pct()}% platform fee only on bookings paid through Trove.`;
+    const e = p.earnings || {};
+    const owed = num(e.payableCents) + num(e.pendingCents);
+    const earnLine = owed || num(e.paidCents)
+      ? `<div class="pp-card"><h3>Your fees from Trove bookings</h3>
+          <div class="pp-fee">${esc(money(owed))} <small>owed to you</small></div>
+          <div class="pp-hint" style="margin:8px 0 0">${num(e.payableCents) > 0 ? `${esc(money(num(e.payableCents)))} is payable in the next settlement run; the rest` : 'It'} becomes payable once you mark the booking done (or 3 days after the service date). ${num(e.paidCents) ? `${esc(money(num(e.paidCents)))} paid to you so far.` : ''}</div></div>`
+      : '';
     const ag = p.agreement || {};
     const agLine = ag.version
       ? `<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement ${esc(ag.version)}</a> accepted ${fmtDate(ag.acceptedAt)} — your services are your own responsibility; Trove lists them.`
@@ -137,11 +147,11 @@
         <div class="pp-stat"><div class="k">Confirmed</div><div class="v">${num(s.upcoming)}</div><div class="n">bookings ahead</div></div>
         <div class="pp-stat"><div class="k">Completed</div><div class="v">${num(s.done)}</div><div class="n">services delivered</div></div>
       </div>
-      <div class="pp-card"><h3>Your subscription</h3>
-        <div class="pp-fee">${esc(money(fee))} <small>/ month</small></div>
+      <div class="pp-card"><h3>Your listing fee</h3>
+        <div class="pp-fee">Free <small>during launch</small></div>
         <div class="pp-hint" style="margin-top:8px">${subHint}</div>
         <div class="pp-hint" style="margin:0">${agLine}</div>
-      </div></div>`;
+      </div>${earnLine}</div>`;
   }
 
   /* ---------------- services ---------------- */
@@ -253,34 +263,71 @@
   }
 
   /* ---------------- bookings ---------------- */
+  const PILL = { requested: 'new request', awaiting_payment: 'awaiting payment', confirmed: 'confirmed', completed: 'done', declined: 'declined', cancelled: 'cancelled' };
+  function todayIso() { return new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 10); }
+  function fmtDay(d) { const t = new Date(String(d) + 'T00:00:00Z'); return isNaN(t) ? String(d) : t.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); }
+  // How the booking is paid. 'Paid through Trove' only once the money is in.
+  function payLine(b) {
+    if (b.paymentMethod !== 'trove') return 'Settled directly with the customer';
+    const fee = b.amountCents ? `your fee ${money(b.providerNetCents)} after a ${pct()}% platform fee` : `your fee is the price less a ${pct()}% platform fee`;
+    if (b.refunded) return 'Refunded to the customer — no fee is due';
+    if (b.paid) return `<span class="pp-paid">Paid through Trove</span> · ${fee}`;
+    if (b.status === 'awaiting_payment') return `Awaiting the customer’s card payment · ${fee}`;
+    if (b.status === 'requested') return `The customer will pay through Trove by card once you confirm · ${fee}`;
+    return 'Not paid';
+  }
+  function confirmForm(b) {
+    const trove = b.paymentMethod === 'trove';
+    const needPrice = trove && b.priceType !== 'fixed';
+    const priceHint = b.priceType === 'hourly' ? `hours × ${money(b.priceCents)}` : `from ${money(b.priceCents)}`;
+    return `<div class="pp-confirm" id="ppCf${num(b.id)}">
+      <div class="pp-err" id="ppCfErr${num(b.id)}"></div>
+      <div class="pp-two">
+        <div class="pp-field"><label>Service date${trove ? '' : ' <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>'}</label><input type="date" id="ppCfDate${num(b.id)}" min="${todayIso()}"></div>
+        ${needPrice ? `<div class="pp-field"><label>Final price (AED) · ${esc(priceHint)}</label><input type="number" min="1" step="0.01" inputmode="decimal" id="ppCfPrice${num(b.id)}"></div>` : ''}
+      </div>
+      <div class="pp-hint" style="margin:0 0 10px">${trove
+        ? `The customer pays Trove this ${needPrice ? 'price' : `listed price (${money(b.priceCents)})`} by card through a secure link; you get their mobile once it’s paid. Your fee is the price less the ${pct()}% platform fee.`
+        : 'The customer settles with you directly. You get their mobile as soon as you confirm.'}</div>
+      <div class="pp-bkacts" style="margin-top:0">
+        <button class="pp-btn pp-green" onclick="ProviderPanel.sendConfirm(${num(b.id)})">Confirm booking</button>
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.openConfirm(null)">Back</button></div>
+    </div>`;
+  }
   function bkCard(b) {
-    const pay = b.paymentMethod === 'trove' ? `Paid through Trove · your fee ${money(b.providerNetCents)} after a ${pct()}% platform fee` : 'Settled directly with the customer';
-    const when = b.preferredDate ? `<b>When:</b> ${esc(b.preferredDate)}<br>` : '';
+    const pay = payLine(b);
+    const when = b.serviceDate ? `<b>Date:</b> ${esc(fmtDay(b.serviceDate))}<br>` : (b.preferredDate ? `<b>When:</b> ${esc(b.preferredDate)}<br>` : '');
+    const price = b.amountCents ? money(b.amountCents) : priceLabel(b);
     const phone = b.phone ? `<b>Mobile:</b> <a href="tel:${esc(String(b.phone).replace(/[^+\d]/g, ''))}" style="text-decoration:underline">${esc(b.phone)}</a><br>` : '';
     const notes = b.notes ? `<b>Brief:</b> ${esc(b.notes)}<br>` : '';
     return `<div class="pp-bk">
-      <div class="pp-bkhead"><span class="t">${esc(b.title)}</span><span class="code">${esc(b.code)}</span><span style="flex:1"></span><span class="pp-pill ${esc(b.status)}">${esc(b.status)}</span></div>
+      <div class="pp-bkhead"><span class="t">${esc(b.title)}</span><span class="code">${esc(b.code)}</span><span style="flex:1"></span><span class="pp-pill ${esc(b.status)}">${esc(PILL[b.status] || b.status)}</span></div>
       <div class="pp-bkbody">
-        <b>${esc(b.customerName)}</b> · ${esc(b.area)} · ${priceLabel(b)} · ${pay}<br>
+        <b>${esc(b.customerName)}</b> · ${esc(b.area)} · ${price} · ${pay}<br>
         ${when}${phone}${notes}
-        <span style="color:var(--muted,rgba(41,39,39,.62));font-size:11.5px">Requested ${fmtDate(b.createdAt)}${b.status === 'requested' ? ' · the customer’s mobile appears once you confirm' : ''}</span>
+        ${b.declineReason && ['declined', 'cancelled'].includes(b.status) ? `<b>Note:</b> ${esc(b.declineReason)}<br>` : ''}
+        <span style="color:var(--muted,rgba(41,39,39,.62));font-size:11.5px">Requested ${fmtDate(b.createdAt)}${b.status === 'requested' ? ' · the customer’s mobile appears once the booking is secured' : ''}${b.status === 'awaiting_payment' ? ' · the customer’s mobile appears once they’ve paid' : ''}</span>
       </div>
-      ${b.status === 'requested' ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-green" onclick="ProviderPanel.actBooking(${num(b.id)},'confirm')">✓ Confirm</button>
+      ${b.status === 'requested' && PP.confirming === b.id ? confirmForm(b) : ''}
+      ${b.status === 'requested' && PP.confirming !== b.id ? `<div class="pp-bkacts">
+        <button class="pp-btn pp-green" onclick="ProviderPanel.openConfirm(${num(b.id)})">✓ Confirm</button>
         <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">Decline</button></div>` : ''}
+      ${b.status === 'awaiting_payment' ? `<div class="pp-bkacts">
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">Withdraw</button></div>` : ''}
       ${b.status === 'confirmed' ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">Mark as done</button></div>` : ''}
+        <button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">Mark as done</button>
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.cancelBooking(${num(b.id)})">Cancel booking</button></div>` : ''}
     </div>`;
   }
   function renderBookings() {
     const el = PP.els.bookings; if (!el) return;
     const open = PP.bookings.filter((b) => b.status === 'requested');
-    const upcoming = PP.bookings.filter((b) => b.status === 'confirmed');
-    const rest = PP.bookings.filter((b) => !['requested', 'confirmed'].includes(b.status));
+    const upcoming = PP.bookings.filter((b) => ['awaiting_payment', 'confirmed'].includes(b.status));
+    const rest = PP.bookings.filter((b) => !['requested', 'awaiting_payment', 'confirmed'].includes(b.status));
     el.innerHTML = `<div class="pp">
-      <div class="pp-card"><h3>New requests</h3><div class="pp-hint">Confirm to take the booking — you’ll get the customer’s mobile to arrange the details. Decline with a short note if it’s not one for you.</div>
+      <div class="pp-card"><h3>New requests</h3><div class="pp-hint">Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.</div>
         ${open.length ? open.map(bkCard).join('') : '<div class="pp-empty">No new requests right now. Requests from the Services Marketplace land here.</div>'}</div>
-      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: your fee is paid after you mark the booking done.</div>
+      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid in Trove’s settlement run after you mark the booking done. If you have to cancel, the customer is refunded in full.</div>
         ${upcoming.length ? upcoming.map(bkCard).join('') : '<div class="pp-empty">Nothing confirmed yet.</div>'}</div>
       <div class="pp-card"><h3>History</h3>
         ${rest.length ? rest.map(bkCard).join('') : '<div class="pp-empty">Completed, declined and cancelled bookings end up here.</div>'}</div>
@@ -292,6 +339,38 @@
       toast(action === 'confirm' ? 'Booking confirmed' : 'Marked as done');
       await reloadBookings(); refresh();
     } catch (e) { toast(e.message || 'Could not update'); }
+  }
+  function openConfirm(id) { PP.confirming = id; renderBookings(); }
+  async function sendConfirm(id) {
+    const b = PP.bookings.find((x) => x.id === id); if (!b) return;
+    const err = $('ppCfErr' + id); err.style.display = 'none';
+    const show = (m) => { err.textContent = m; err.style.display = 'block'; };
+    const date = $('ppCfDate' + id).value;
+    const body = { action: 'confirm' };
+    if (date) body.serviceDate = date;
+    else if (b.paymentMethod === 'trove') return show('Set the date of the service.');
+    const priceEl = $('ppCfPrice' + id);
+    if (priceEl) {
+      const cents = Math.round(Number(priceEl.value) * 100);
+      if (!Number.isFinite(cents) || cents < 100) return show('Set the final price for this booking.');
+      body.priceCents = cents;
+    }
+    try {
+      await api('/api/provider/bookings/' + id, { method: 'PATCH', body });
+      PP.confirming = null;
+      toast(b.paymentMethod === 'trove' ? 'Confirmed — we’ve sent the customer a link to pay' : 'Booking confirmed');
+      await reloadBookings(); refresh();
+    } catch (e) { show(e.message || 'Could not confirm — try again.'); }
+  }
+  async function cancelBooking(id) {
+    const b = PP.bookings.find((x) => x.id === id); if (!b) return;
+    const reason = prompt(b.paid ? 'Cancel this booking? The customer is refunded in full and no fee is due. A short note for them (optional):' : 'Cancel this booking? A short note for the customer (optional):', '');
+    if (reason === null) return;
+    try {
+      await api('/api/provider/bookings/' + id, { method: 'PATCH', body: { action: 'cancel', reason } });
+      toast(b.paid ? 'Booking cancelled — the customer is refunded' : 'Booking cancelled');
+      await reloadBookings(); refresh();
+    } catch (e) { toast(e.message || 'Could not cancel'); }
   }
   async function declineBooking(id) {
     const reason = prompt('A short note for the customer (optional):', '');
@@ -312,6 +391,7 @@
     init(opts) { PP.opts = opts || {}; injectCss(); return load(); },
     mountOverview, mountServices, mountBookings, refresh, stats,
     openEditor, closeEditor, saveService, toggleLive, deleteService, actBooking, declineBooking,
+    openConfirm, sendConfirm, cancelBooking,
     get provider() { return PP.provider; },
   };
 })();

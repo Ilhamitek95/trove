@@ -263,6 +263,35 @@
   .pill.declined,.pill.cancelled{background:#F0EBE8;color:var(--muted)}
   .linkbtn{font-size:12.5px;font-weight:700;color:var(--muted);text-decoration:underline;padding:8px 6px;margin:-8px -6px}
   .linkbtn:hover{color:var(--char)}
+  .pill.awaiting_payment{background:#FCEBE4}
+  .bkcard .acts{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .bkcard .paylink{font-size:12.5px;font-weight:700;background:var(--char);color:var(--cream);padding:8px 16px;border-radius:999px}
+
+  /* a booking's private page: /services/booking/<code>?t=… and /services/pay/<code>-<token> */
+  body.bv .hero,body.bv main{display:none}
+  .bv-wrap{max-width:660px;margin:0 auto;padding:34px 26px 30px}
+  .bv-back{display:inline-block;font-size:12.5px;font-weight:700;color:var(--muted);padding:8px 0;margin-bottom:10px}
+  .bv-back:hover{color:var(--char)}
+  .bv-card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:30px 30px 26px}
+  .bv-card .kick{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+  .bv-card h1{font-size:clamp(30px,4vw,40px);line-height:1.08;margin-top:8px}
+  .bv-card .lede{font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.65;margin-top:10px}
+  .bv-rows{margin:20px 0 4px;border-top:1px solid var(--line)}
+  .bv-rows div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .bv-rows span{color:var(--muted);font-weight:600}
+  .bv-rows b{font-weight:700;text-align:right}
+  .bv-amount{font-family:var(--font-display);font-size:34px;font-weight:600;margin-top:18px}
+  .bv-pay{margin-top:16px}
+  #bv-payment-element{margin:14px 0 12px}
+  .bv-status{font-size:13px;color:var(--muted);font-weight:600;line-height:1.5;margin:8px 0 12px}
+  .bv-status:empty{margin:0}
+  .bv-note{font-size:12.5px;color:var(--muted);font-weight:500;line-height:1.6;margin-top:14px}
+  .bv-note a{text-decoration:underline;font-weight:700;display:inline-block;padding:5px 0;margin:-5px 0}
+  .bv-cancel{display:block;margin:18px auto 0;font-size:13px;font-weight:700;color:var(--muted);text-decoration:underline;padding:10px}
+  .bv-cancel:hover{color:var(--char)}
+  .bv-flag{background:var(--sage-tint);border-radius:14px;padding:13px 16px;font-size:13.5px;font-weight:600;line-height:1.55;margin-top:16px}
+  .bv-flag.warm{background:#FCEBE4}
+  @media(max-width:560px){.bv-wrap{padding:22px 16px 20px}.bv-card{padding:22px 18px 20px;border-radius:18px}.bv-rows div{font-size:13.5px}}
 
   /* modal */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.45);z-index:60;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 16px}
@@ -445,6 +474,13 @@
   </div>
 </section>
 
+<section id="bkview" hidden>
+  <div class="bv-wrap">
+    <a class="bv-back" href="/services">← The Services Marketplace</a>
+    <div class="bv-card" id="bvCard"><div class="bv-status">Loading your booking…</div></div>
+  </div>
+</section>
+
 <section class="hero">
   <div class="wrap lead">
     <span class="eyebrow">Services Marketplace · Dubai &amp; Abu Dhabi</span>
@@ -487,17 +523,17 @@
           <div class="step"><span class="dot">i</span><div><h4>Find your service</h4><p>Browse by what you need — for your home, your celebration, or your brand. Every provider is reviewed by a real person before they appear here.</p></div></div>
           <div class="step"><span class="dot">ii</span><div><h4>Send a request</h4><p>A date that suits you, a few lines on what you have in mind, and how you'd like to pay. Just a name, email and UAE mobile.</p></div></div>
           <div class="step"><span class="dot">iii</span><div><h4>They confirm</h4><p>The provider accepts and reaches you on your mobile to agree the details — time, place, and the final scope. Your email stays with Trove.</p></div></div>
-          <div class="step"><span class="dot">iv</span><div><h4>Enjoy, then settle</h4><p>Settle directly with the provider — bank transfer or cash, as you agree — or pay through Trove by card once they confirm, arriving with our card payments. Either way it's the listed price, nothing added.</p></div></div>
+          <div class="step"><span class="dot">iv</span><div><h4>Enjoy, then settle</h4><p>Settle directly with the provider — bank transfer or cash, as you agree — or pay Trove by card once they confirm the date and price, through a secure link we email you. Either way it's the provider's price, nothing added.</p></div></div>
         </div>
       </div>
       <div class="lane">
         <div class="lane-h"><span class="ofic" style="background:#F8D7E4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/></svg></span><span><b>Offering one</b><small>For providers</small></span></div>
-        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>AED 30 a month</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No commission on direct bookings</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>10% only when paid through Trove</span></div>
+        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free to list during launch</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No commission on direct bookings</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>10% only when paid through Trove</span></div>
         <div class="steps">
           <div class="step"><span class="dot">i</span><div><h4>Tell us what you do</h4><p>A ten-minute application about you and your work, written like a chat. A real person reviews it, usually within a day or two, and only approved providers are listed — so your name sits beside work worth being beside.</p></div></div>
-          <div class="step"><span class="dot">ii</span><div><h4>List your services</h4><p>Price each one the way you actually charge — fixed, from, or per hour — and say where it happens: their place, your studio, or remote. Build it in your dashboard while you're still in review; approval makes it public, and that's the day your subscription starts. Nothing is owed before it.</p></div></div>
-          <div class="step"><span class="dot">iii</span><div><h4>Requests arrive</h4><p>Each shows the customer's name, area, preferred date and a brief. Confirm and their mobile is released so you can arrange the visit; until then their contact stays private, and their email stays with Trove. Decline with a short note — no penalty.</p></div></div>
-          <div class="step"><span class="dot">iv</span><div><h4>Do the work, get paid</h4><p>Direct bookings are settled between you and the customer — bank transfer or cash — and carry no commission. Bookings paid through Trove by card, arriving with card payments, carry a 10% platform fee; Trove pays you the other 90% once you mark the booking done. Every booking keeps a snapshot of the listed price, and the service itself is always your responsibility — Trove lists it.</p></div></div>
+          <div class="step"><span class="dot">ii</span><div><h4>List your services</h4><p>Price each one the way you actually charge — fixed, from, or per hour — and say where it happens: their place, your studio, or remote. Build it in your dashboard while you're still in review; approval makes it public. Listing is free during launch.</p></div></div>
+          <div class="step"><span class="dot">iii</span><div><h4>Requests arrive</h4><p>Each shows the customer's name, area, preferred date and a brief. Confirm with the date (and your final price, for starting-price or hourly work). Their mobile is released once the booking is secured — on your confirmation for a direct booking, on their card payment for one paid through Trove; their email stays with Trove. Decline with a short note — no penalty.</p></div></div>
+          <div class="step"><span class="dot">iv</span><div><h4>Do the work, get paid</h4><p>Direct bookings are settled between you and the customer — bank transfer or cash — and carry no commission. Bookings paid through Trove by card carry a 10% platform fee; Trove pays you the other 90% in its settlement run once you mark the booking done. Every booking keeps a snapshot of the listed price, and the service itself is always your responsibility — Trove lists it.</p></div></div>
         </div>
       </div>
     </div>
@@ -511,7 +547,7 @@
     </div>
     <div class="faqs">
       <details class="faq"><summary>What does it cost to offer services?<span class="faq-tg">+</span></summary>
-        <div class="faq-a">A flat AED 30 a month, plus a 10% platform fee only on bookings the customer pays through Trove by card. Direct bookings — bank transfer or cash between you and the customer — carry no commission and no listing fees. The subscription starts only when your profile is approved, and card billing begins when Trove's card payments launch; you'll be told before the first charge.</div></details>
+        <div class="faq-a">Free during launch — the AED 30/month listing fee starts later, and we'll give you 30 days' notice before it does. The only other cost is a 10% platform fee on bookings the customer pays through Trove by card. Direct bookings — bank transfer or cash between you and the customer — carry no commission.</div></details>
       <details class="faq"><summary>Who is responsible for the service?<span class="faq-tg">+</span></summary>
         <div class="faq-a">The provider, always. Trove lists the service and passes on the request; it doesn't perform, supervise or guarantee it. The <a href="/provider-agreement" style="text-decoration:underline">Provider Agreement</a> and the <a href="/services-terms" style="text-decoration:underline">Services Terms</a> both say so plainly — read them before you apply or book.</div></details>
       <details class="faq"><summary>Why can't I see the customer's number straight away?<span class="faq-tg">+</span></summary>
@@ -523,7 +559,7 @@
       <details class="faq"><summary>I sell pieces on Trove — can I offer services too?<span class="faq-tg">+</span></summary>
         <div class="faq-a">Yes, and it's a natural pairing: one account can run a maker shop and a services practice side by side. A potter who sells bowls can host hand-building workshops; a photographer who shoots for makers can list family shoots at home.</div></details>
       <details class="faq"><summary>Do customers need an account to book?<span class="faq-tg">+</span></summary>
-        <div class="faq-a">No — anyone can send a request with just a name, email and UAE mobile. Signed-in customers get a little extra: every request tracked on this page under "Your bookings", with one-tap cancel while it's still open.</div></details>
+        <div class="faq-a">No — anyone can send a request with just a name, email and UAE mobile. We email you a private link to follow the booking, pay for it if you chose card, and cancel it before the service day. Signed-in customers also see every request on this page under "Your bookings".</div></details>
     </div>
   </section>
 
@@ -561,7 +597,7 @@ const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
 /* Provider colours are user-supplied: only a #hex reaches a style. */
 const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#DBC7BD';
 const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
-let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[];
+let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[], CFG=null;
 let state={audience:'home',cat:null,showAll:false};
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
 
@@ -709,22 +745,32 @@ function renderResults(){
 function renderMyBookings(){
   const el=$('myBookings');
   if(!ME||!MYBOOKINGS.length){el.innerHTML='';return;}
-  const STATUS={requested:['Waiting for the provider','pill'],confirmed:['Confirmed','pill confirmed'],completed:['Done','pill completed'],declined:['Declined','pill declined'],cancelled:['Cancelled','pill cancelled']};
+  const STATUS={requested:['Waiting for the provider','pill'],awaiting_payment:['Confirmed · pay to secure','pill awaiting_payment'],confirmed:['Confirmed','pill confirmed'],completed:['Done','pill completed'],declined:['Declined','pill declined'],cancelled:['Cancelled','pill cancelled']};
   el.innerHTML=`<div class="mybook"><h3>Your bookings</h3>${MYBOOKINGS.map(b=>{
     const st=STATUS[b.status]||[b.status,'pill'];
     return `<div class="bkcard">
       <div class="grow"><div class="t">${esc(b.title)} · ${esc(b.providerName)}</div>
-      <div class="s">${esc(b.code)}${b.preferredDate?` · ${esc(b.preferredDate)}`:''} · ${b.paymentMethod==='trove'?'Paying through Trove':'Settling directly with the provider'}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
+      <div class="s">${esc(b.code)}${b.serviceDate?` · ${esc(fmtDay(b.serviceDate))}`:(b.preferredDate?` · ${esc(b.preferredDate)}`:'')}${b.amountCents?` · ${money(b.amountCents)}`:''} · ${payWord(b)}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
       <span class="${st[1]}">${esc(st[0])}</span>
-      ${['requested','confirmed'].includes(b.status)?`<button class="linkbtn" onclick="cancelBooking(${Number(b.id)})">Cancel</button>`:''}
+      <span class="acts">${b.payPath?`<a class="paylink" href="${esc(b.payPath)}">Pay ${money(b.amountCents)}</a>`:''}
+      ${b.viewPath?`<a class="linkbtn" href="${esc(b.viewPath)}">Details</a>`:''}
+      ${b.canCancel?`<button class="linkbtn" onclick="cancelBooking(${Number(b.id)},${b.paid?1:0},${Number(b.amountCents)||0})">Cancel</button>`:''}</span>
     </div>`;}).join('')}</div>`;
 }
 
-async function cancelBooking(id){
-  if(!confirm('Cancel this booking request?'))return;
+/* How a booking is paid, in the customer's words. */
+function payWord(b){
+  if(b.paymentMethod!=='trove')return 'Settling directly with the provider';
+  if(b.refunded)return 'Refunded in full';
+  if(b.paid)return 'Paid through Trove';
+  return 'Paying through Trove by card';
+}
+function fmtDay(d){const t=new Date(String(d)+'T00:00:00Z');return isNaN(t)?String(d):t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}
+async function cancelBooking(id,paid,amount){
+  if(!confirm(paid?`Cancel this booking? The ${money(amount)} you paid comes back to your card in full.`:'Cancel this booking?'))return;
   try{
-    await TroveAPI.api('/api/services/bookings/'+id+'/cancel',{method:'POST'});
-    toast('Booking cancelled');
+    const r=await TroveAPI.api('/api/services/bookings/'+id+'/cancel',{method:'POST'});
+    toast(r&&r.refunded?'Booking cancelled — refund on its way':'Booking cancelled');
     await loadMyBookings();renderMyBookings();
   }catch(e){toast(e.message||'Could not cancel');}
 }
@@ -809,7 +855,9 @@ function openService(id){
   const s=SERVICES.find(x=>x.id===id);if(!s)return;
   CURRENT=s;
   const cat=TAX.categories.find(c=>c.slug===s.category);
-  const paymentsLive=TroveAPI.paymentsEnabled;
+  // Card payment is offered only when the SERVER says it can take one (and
+  // the page can show the card form) — the server refuses it otherwise.
+  const paymentsLive=!!(CFG&&CFG.serviceCardPayments)&&!!TroveAPI.stripeKey;
   $('svModal').innerHTML=`
     <button class="x" onclick="closeModal()" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <h3>${esc(s.title)}</h3>
@@ -835,7 +883,7 @@ function openService(id){
       <div class="field"><label>Tell them about it</label><textarea id="bkNotes" maxlength="1000" placeholder="What you have in mind, how many people, anything they should know."></textarea></div>
       <div class="payrow">
         <label class="payopt"><input type="radio" name="bkPay" value="direct" checked><span><b>Settle directly with the provider</b><span>Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.</span></span></label>
-        <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="trove" ${paymentsLive?'':'disabled'}><span><b>Pay through Trove by card</b><span>${paymentsLive?'Pay once the provider confirms. Refunded in full if the service isn’t delivered.':'Coming with Trove’s card payments — settle directly for now.'}</span></span></label>
+        <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="trove" ${paymentsLive?'':'disabled'}><span><b>Pay through Trove by card</b><span>${paymentsLive?'Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.':'Card payment isn’t available right now — please settle directly for now.'}</span></span></label>
       </div>
       <label class="terms"><input type="checkbox" id="bkTerms"><span>I accept the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a> — the provider, not Trove, is responsible for the service.</span></label>
       <button class="submit" id="bkSubmit" onclick="submitBooking()">Send booking request</button>
@@ -858,6 +906,7 @@ async function submitBooking(){
   if(!$('bkPhone').value.trim())return show('Add a UAE mobile so the provider can reach you once they confirm.');
   if(!$('bkTerms').checked)return show('Please accept the Services Terms — they say plainly that the provider, not Trove, is responsible for the service.');
   const btn=$('bkSubmit');btn.disabled=true;btn.textContent='Sending…';
+  const trove=((document.querySelector('input[name=bkPay]:checked')||{}).value)==='trove';
   try{
     const r=await TroveAPI.api('/api/services/'+CURRENT.id+'/book',{method:'POST',body:{
       name:$('bkName').value.trim(),
@@ -872,14 +921,128 @@ async function submitBooking(){
     $('bookForm').innerHTML=`<div class="booked">
       <div class="mark">✓</div>
       <h4>Request sent.</h4>
-      <p>Your booking <span class="code">${esc(r.booking.code)}</span> is with ${esc(CURRENT.provider.name)}. Once they confirm, they'll reach you on your mobile to arrange the details.</p>
-      ${ME&&ME.user?'':'<p style="font-size:12.5px;color:var(--muted)">Have a Trove account? Sign in before your next booking to track them all in one place.</p>'}
+      <p>Your booking <span class="code">${esc(r.booking.code)}</span> is with ${esc(CURRENT.provider.name)}. ${trove?'Nothing is charged yet — once they confirm the date and price, we email you a secure link to pay.':'Once they confirm, they’ll reach you on your mobile to arrange the details.'}</p>
+      <p style="font-size:12.5px;color:var(--muted)">We’ve emailed you a private link to follow, pay for or cancel this booking.${r.booking.viewPath?` <a href="${esc(r.booking.viewPath)}" style="text-decoration:underline;font-weight:700">View it now</a>`:''}</p>
     </div>`;
     if(ME&&ME.user){await loadMyBookings();renderMyBookings();}
   }catch(e){
     btn.disabled=false;btn.textContent='Send booking request';
     show(e.message||'Something went wrong — please try again.');
   }
+}
+
+/* ---------------- a booking's private page ----------------
+ * /services/booking/<code>?t=<token> (view + cancel) and
+ * /services/pay/<code>-<token> (pay) — the links in the customer's emails.
+ * No account needed: the token in the address is the key. */
+const BV_RE=/^\/services\/booking\/(SRV-[0-9A-Fa-f]{6})\/?$/;
+const PAY_RE=/^\/services\/pay\/(SRV-[0-9A-F]{6})-([0-9a-f]{32})\/?$/;
+let BV=null, bvStripe=null, bvElements=null;
+function loadStripeJs(){
+  return new Promise((resolve,reject)=>{
+    if(window.Stripe)return resolve();
+    const s=document.createElement('script');s.src='https://js.stripe.com/v3/';
+    s.onload=resolve;s.onerror=()=>reject(new Error('Could not load the payment form. Check your connection and refresh.'));
+    document.head.appendChild(s);
+  });
+}
+async function fetchBooking(){
+  const r=await TroveAPI.api(`/api/services/booking/${encodeURIComponent(BV.code)}?t=${encodeURIComponent(BV.t)}`);
+  BV.b=r.booking;return BV.b;
+}
+async function openBookingView(code,t,wantPay){
+  document.body.classList.add('bv');$('bkview').hidden=false;
+  document.title='Your booking · Trove';
+  BV={code,t,b:null};
+  try{await fetchBooking();}
+  catch(_){
+    $('bvCard').innerHTML='<div class="kick">BOOKING</div><h1>We couldn’t find that booking.</h1><p class="lede">Check you opened the whole link from your email — it’s private to your booking. Still stuck? Contact Trove with your booking code.</p>';
+    return;
+  }
+  // Back from a card check (3-D Secure): Stripe adds these to the return address.
+  const qs=new URLSearchParams(location.search);
+  if(qs.get('redirect_status')==='succeeded'&&!BV.b.paid){renderBookingView();return waitForPaid();}
+  renderBookingView();
+  if(BV.b.canPay&&wantPay)mountBookingPay();
+}
+function bvHeadline(b){
+  const who=esc(b.providerName);
+  switch(b.status){
+    case 'requested':return ['Waiting for '+who, b.paymentMethod==='trove'
+      ?`Your request is with ${who}. Nothing is charged yet — once they confirm the date and price, we email you a secure link to pay.`
+      :`Your request is with ${who}. Once they confirm, they’ll reach you on your mobile to arrange the details.`];
+    case 'awaiting_payment':return ['Confirmed — pay to secure it',`${who} has accepted your request. Pay by card to secure the booking; once it’s paid, they get your mobile to arrange the details.`];
+    case 'confirmed':return [b.paid?'Paid and secured':'Confirmed', b.paid
+      ?`Thank you — your payment is in, and ${who} has your mobile to arrange the details. If the service isn’t delivered, Trove refunds you in full.`
+      :`${who} has your mobile and will be in touch to arrange the details. You settle with them directly.`];
+    case 'completed':return ['Done','This booking is marked as done. We hope it was lovely.'];
+    case 'declined':return ['Not this time',`${who} can’t take this booking.${b.declineReason?` Their note: “${esc(b.declineReason)}”`:''}`];
+    case 'cancelled':return ['Cancelled',b.cancelledBy==='customer'?'You cancelled this booking.':`This booking was cancelled${b.cancelledBy==='provider'?' by '+who:''}.${b.declineReason?` “${esc(b.declineReason)}”`:''}`];
+    default:return [esc(b.status),''];
+  }
+}
+function renderBookingView(){
+  const b=BV.b;const [h,lede]=bvHeadline(b);
+  const rows=[['Service',esc(b.title)],['With',`<a href="/services/${esc(b.providerSlug)}" style="text-decoration:underline">${esc(b.providerName)}</a>`],['Where',esc(b.area)],
+    b.serviceDate?['Date',esc(fmtDay(b.serviceDate))]:(b.preferredDate?['You asked for',esc(b.preferredDate)]:null),
+    ['Price',b.amountCents?money(b.amountCents):priceLabel(b)],['Paying',esc(payWord(b))]].filter(Boolean);
+  let refundNote='';
+  if(b.refunded)refundNote=`<div class="bv-flag">${money(b.refundCents||b.amountCents)} is on its way back to your card. Depending on your bank it can take 5–10 business days to appear.</div>`;
+  else if(b.paid&&['cancelled','declined'].includes(b.status))refundNote='<div class="bv-flag warm">You paid for this booking, so it will be refunded in full — you’ll get an email when it’s done.</div>';
+  let pay='';
+  if(b.status==='awaiting_payment'&&!b.paid){
+    pay=b.canPay?`<div class="bv-pay"><div class="bv-amount">${money(b.amountCents)}</div>
+      <div id="bv-payment-element"></div><div class="bv-status" id="bvPayStatus"></div>
+      <button class="submit" id="bvPayBtn" onclick="payBooking()">Pay by card</button>
+      <div class="bv-note">Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a>.</div></div>`
+      :'<div class="bv-flag warm">Card payment isn’t available right now — please try again a little later.</div>';
+  }
+  $('bvCard').innerHTML=`<div class="kick">BOOKING ${esc(b.code)}</div><h1>${h}</h1><p class="lede">${lede}</p>
+    <div class="bv-rows">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>
+    ${refundNote}${pay}
+    ${b.canCancel?`<button class="bv-cancel" onclick="cancelFromLink()">Cancel this booking</button>`:''}
+    ${!b.canCancel&&['confirmed','awaiting_payment'].includes(b.status)?'<div class="bv-note">The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.</div>':''}`;
+}
+async function mountBookingPay(){
+  const st=$('bvPayStatus'),btn=$('bvPayBtn');if(!st)return;
+  st.textContent='Preparing secure payment…';btn.disabled=true;
+  try{
+    if(!TroveAPI.stripeKey)throw new Error('Card payments are unavailable on this page right now — please try again later.');
+    const s=await TroveAPI.api(`/api/services/booking/${encodeURIComponent(BV.code)}/pay`,{method:'POST',body:{t:BV.t}});
+    await loadStripeJs();
+    if(!bvStripe)bvStripe=window.Stripe(TroveAPI.stripeKey);
+    bvElements=bvStripe.elements({clientSecret:s.clientSecret});
+    bvElements.create('payment').mount('#bv-payment-element');
+    st.textContent='';btn.textContent='Pay '+money(s.amountCents);btn.disabled=false;
+  }catch(e){st.textContent=e.message||'The payment form could not load — please try again.';btn.disabled=false;btn.textContent='Try again';}
+}
+async function payBooking(){
+  if(!bvElements)return mountBookingPay();
+  const st=$('bvPayStatus'),btn=$('bvPayBtn');
+  btn.disabled=true;st.textContent='';
+  const back=`${location.origin}/services/booking/${BV.code}?t=${BV.t}`;
+  const {error}=await bvStripe.confirmPayment({elements:bvElements,confirmParams:{return_url:back},redirect:'if_required'});
+  if(error){st.textContent=error.message;btn.disabled=false;return;}
+  waitForPaid();
+}
+/* The webhook marks the booking paid a moment after the card goes through. */
+async function waitForPaid(){
+  const st=$('bvPayStatus');if(st)st.textContent='Payment received — confirming your booking…';
+  for(let i=0;i<20;i++){
+    try{if((await fetchBooking()).paid)break;}catch(_){}
+    await new Promise(r=>setTimeout(r,1500));
+  }
+  renderBookingView();
+  if(!BV.b.paid)$('bvCard').insertAdjacentHTML('beforeend','<div class="bv-flag">Your payment is being confirmed — this can take a minute. We’ll email you as soon as it’s done.</div>');
+}
+async function cancelFromLink(){
+  const b=BV.b;
+  if(!confirm(b.paid?`Cancel this booking? The ${money(b.amountCents)} you paid comes back to your card in full.`:'Cancel this booking?'))return;
+  try{
+    const r=await TroveAPI.api(`/api/services/booking/${encodeURIComponent(BV.code)}/cancel`,{method:'POST',body:{t:BV.t}});
+    BV.b=r.booking;renderBookingView();
+    toast(r.refunded?'Booking cancelled — refund on its way':'Booking cancelled');
+  }catch(e){toast(e.message||'Could not cancel');}
 }
 
 /* ---------------- boot ---------------- */
@@ -892,9 +1055,13 @@ async function loadMyBookings(){
   try{SERVICES=(await TroveAPI.api('/api/services')).services;}catch(_){SERVICES=[];}
   try{PROVIDERS=(await TroveAPI.api('/api/services/providers')).providers;}catch(_){PROVIDERS=[];}
   try{ME=await TroveAPI.me();}catch(_){ME=null;}
+  try{CFG=await TroveAPI.config();}catch(_){CFG=null;}
   renderAuth();
   if(ME&&ME.user)await loadMyBookings();
   renderAll();
+  const bv=location.pathname.match(BV_RE), pay=location.pathname.match(PAY_RE);
+  if(bv)return openBookingView(bv[1].toUpperCase(),new URLSearchParams(location.search).get('t')||'',false);
+  if(pay)return openBookingView(pay[1],pay[2],true);
   const m=location.pathname.match(PV_RE);
   if(m){history.replaceState({provider:m[1]},'',location.pathname);await openProvider(m[1],false);}
 })();

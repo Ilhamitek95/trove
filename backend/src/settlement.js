@@ -111,6 +111,10 @@ function preview(runStart = nowSql()) {
     excluded,
     totalNetCents: eligible.reduce((s, r) => s + r.netCents, 0),
     commissionPercent: fees.COMMISSION_PERCENT,
+    // Service providers' fees for bookings paid through Trove, payable in the
+    // same run (src/service-credits.js). Shown here; paid from /admin until
+    // providers have payout details of their own.
+    serviceCredits: require('./service-credits').preview(runStart),
   };
 }
 
