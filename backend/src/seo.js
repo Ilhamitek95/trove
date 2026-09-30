@@ -394,6 +394,27 @@ function productLd(base, p, url) {
   return JSON.parse(JSON.stringify(ld)); // drops the undefined keys
 }
 
+/** 'September 2026' from a shop's joined month ('YYYY-MM'), or ''. */
+function sinceLabel(joined) {
+  if (!/^\d{4}-\d{2}$/.test(joined || '')) return '';
+  return new Date(`${joined}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+/** The PDP's Details + About the maker, as the storefront's pdpAccHTML() draws them (real fields only). */
+function pdpAccHtml(p, v) {
+  const aed = (n) => Number(n).toLocaleString('en-US');
+  const rows = [['Category', p.category]];
+  (p.options || []).forEach((g) => rows.push([g.name, g.values.join(', ')]));
+  if ((p.extras || []).length) rows.push(['Extras', p.extras.map((e) => e.name + (e.price ? ` (+AED ${aed(e.price)})` : '')).join(', ')]);
+  const per = p.personalization;
+  if (per) rows.push(['Personalisation', `${per.required ? 'Required' : 'Optional'}, up to ${per.maxLen} characters`]);
+  rows.push(['Trove reference', `TRV-${p.id}`]);
+  const house = !!p.shop.isHouse;
+  const since = sinceLabel(v.joined);
+  const meta = [house ? '' : v.location, since ? `On Trove since ${since}` : ''].filter(Boolean).join(' · ');
+  return `<details class="acc" open><summary>Details<span class="faq-tg" aria-hidden="true">+</span></summary><dl class="acc-dl">${rows.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl></details>`
+    + `<details class="acc"><summary>${house ? 'About the Trove Collection' : 'About the maker'}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(p.shop.name)}</b>${meta ? `<div class="acc-meta">${esc(meta)}</div>` : ''}${v.bio ? `<p>${esc(v.bio)}</p>` : ''}<a class="link-more" href="${esc(makerUrl(p.shop.slug))}">Visit ${esc(p.shop.name)} →</a></div></details>`;
+}
+
 /** /pieces/<ref>. Returns { html } | { redirect } | { notFound }. */
 function renderPiece(base, ref) {
   const m = String(ref || '').match(/^(\d{1,12})(?:-([a-z0-9-]*))?$/i);
@@ -410,12 +431,15 @@ function renderPiece(base, ref) {
   html = fill(html, 'pdpCrumb', `<a href="${esc(shopUrl(p.category))}">${esc(catName)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`);
   html = attr(html, 'pdpGrad', 'style', `background:${safeColor(p.shop.color)}`);
   if (cover) html = attr(attr(html, 'pdpImg', 'src', cover), 'pdpImg', 'alt', p.name);
+  // one picture: no thumbnail rail; a stock stand-in says so
+  if ((p.images || []).length < 2) html = html.replace('<div class="gallery" id="pdpGallery">', '<div class="gallery one" id="pdpGallery">');
+  if (isStock(p)) html = html.replace('<span class="illus" id="pdpIllus" hidden>', '<span class="illus" id="pdpIllus">');
   html = attr(html, 'pdpVendorLink', 'href', makerUrl(p.shop.slug));
   html = fill(html, 'pdpVendorLink', esc(p.shop.name));
   html = fill(html, 'pdpName', esc(p.name));
   html = fill(html, 'pdpPrice', `${p.compareAt ? `<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${money(p.compareAt)}</s>` : ''}${money(p.price)}`);
   html = fill(html, 'pdpDesc', esc(p.description || ''));
-  html = fill(html, 'pdpSoldName', `<a href="${esc(makerUrl(p.shop.slug))}">${esc(p.shop.name)}</a>`);
+  html = fill(html, 'pdpAcc', pdpAccHtml(p, vendor));
   const title = `${p.name} by ${p.shop.name} · Trove`;
   const description = compose(`${money(p.price)} from ${p.shop.name}${vendor.location ? `, ${vendor.location}` : ''}. `,
     p.description || '', ' Delivered across Dubai and Abu Dhabi.');

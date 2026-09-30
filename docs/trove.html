@@ -533,6 +533,47 @@
   .sold-card .st .l{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:600}
   .sold-card .st .nm{font-family:var(--font-display);font-size:22px;font-weight:600;display:flex;align-items:center;gap:7px;line-height:1.1;margin-top:2px}
 
+
+  /* ---------- PDP: made by, delivery list, details accordion, phone buy bar ---------- */
+  .pdp .gallery.one{grid-template-columns:1fr}
+  .pdp .gallery.one .thumbs{display:none}
+  .pdp-by{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.02em;line-height:1.6}
+  .pdp-by .vlink{color:var(--char);text-decoration:underline;text-underline-offset:3px;font-size:13px;letter-spacing:.02em}
+  .perso-in{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);resize:vertical}
+  .perso-in:focus{border-color:var(--char)}
+  .perso-note{font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.55;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--rose-tint)}
+  .ship-list{list-style:none;display:grid;gap:10px;padding:18px 20px;background:var(--rose-tint);border-radius:16px;margin:0}
+  .ship-list li{display:flex;gap:12px;align-items:center;font-size:14px;color:var(--char);font-weight:500;line-height:1.45}
+  .ship-list svg{width:20px;height:20px;flex-shrink:0}
+  .ship-more{display:inline-flex;min-height:44px;align-items:center;font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;color:var(--char)}
+  .pdp-acc{margin-top:14px;border-top:1px solid var(--line)}
+  .pdp-acc:empty{display:none}
+  .acc{border-bottom:1px solid var(--line)}
+  .acc summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:56px;padding:12px 2px;font-size:15.5px;font-weight:700}
+  .acc summary::-webkit-details-marker{display:none}
+  .acc .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;transition:transform .25s}
+  .acc[open] .faq-tg{transform:rotate(45deg)}
+  .acc-dl{display:grid;gap:9px;padding:0 2px 20px;margin:0}
+  .acc-dl div{display:grid;grid-template-columns:150px 1fr;gap:12px;font-size:14px;line-height:1.5}
+  .acc-dl dt{color:var(--muted);font-weight:600}
+  .acc-dl dd{font-weight:500;color:var(--char);margin:0}
+  .acc-body{padding:0 2px 20px;font-size:14.5px;color:var(--ink-80);line-height:1.7;font-weight:400}
+  .acc-mk{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--char);display:block;line-height:1.2}
+  .acc-meta{font-size:13px;color:var(--muted);font-weight:600;margin:2px 0 8px}
+  .acc-body p{margin:0 0 10px}
+  .pdp-bar{display:none}
+  @media(max-width:960px){
+    .pdp-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;align-items:center;gap:14px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:rgba(253,247,245,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+    body.pdp-bar-on .pdp-bar{transform:none}
+    .pdp-bar .pb-t{flex:1;min-width:0;display:flex;flex-direction:column}
+    .pdp-bar .pb-n{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pdp-bar .pb-p{font-size:13.5px;font-weight:600}
+    .pdp-bar .btn{padding:13px 22px;min-height:46px;flex-shrink:0}
+    body.pdp-bar-on .toast{bottom:calc(90px + env(safe-area-inset-bottom))}
+    body.pdp-bar-on footer.site{padding-bottom:110px}
+  }
+  @media(max-width:560px){.acc-dl div{grid-template-columns:118px 1fr}}
+
   /* ---------- CART ---------- */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
   .scrim.open{opacity:1;visibility:visible}
@@ -1211,12 +1252,12 @@
   </div>
   <div class="wrap">
     <div class="pdp">
-      <div class="gallery">
+      <div class="gallery" id="pdpGallery">
         <div class="thumbs" id="pdpThumbs"></div>
-        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="imgRetry(this)"></div>
+        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="imgRetry(this)"><span class="illus" id="pdpIllus" hidden>Illustrative photo</span></div>
       </div>
       <div class="info">
-        <a class="vlink" id="pdpVendorLink" href="#"></a>
+        <div class="pdp-by">Made by <a class="vlink" id="pdpVendorLink" href="#"></a> · Sold and delivered by Trove</div>
         <h2 id="pdpName" data-vh="pdp"></h2>
         <div class="stars" id="pdpStars"></div>
         <div class="pricerow"><span class="price" id="pdpPrice"></span></div>
@@ -1225,23 +1266,22 @@
         <div id="pdpStockNote" class="optleft" style="display:none"></div>
         <div id="pdpExtras"></div>
         <div id="pdpPerso" style="display:none;margin:18px 0 4px">
-          <div class="lbl" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:12px;letter-spacing:.06em;background:var(--rose-tint);color:var(--accent-ink);padding:3px 8px;border-radius:999px;font-weight:700"></span></div>
+          <label class="lbl" for="pdpPersoText" style="display:flex;align-items:center;gap:8px">Personalisation <span id="pdpPersoTag" style="font-size:12px;letter-spacing:.06em;background:var(--rose-tint);color:var(--accent-ink);padding:3px 8px;border-radius:999px;font-weight:700"></span></label>
           <div id="pdpPersoPrompt" style="font-size:13px;color:var(--muted);font-weight:500;margin:2px 0 8px"></div>
-          <textarea id="pdpPersoText" rows="2" maxlength="256" oninput="persoCount()" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);outline:none;resize:vertical" placeholder="Type it exactly as you'd like it"></textarea>
+          <textarea id="pdpPersoText" class="perso-in" rows="2" maxlength="256" oninput="persoCount()" aria-describedby="pdpPersoPrompt pdpPersoNote" placeholder="Type it exactly as you'd like it"></textarea>
           <div id="pdpPersoCount" style="font-size:12px;color:var(--muted);font-weight:600;text-align:right;margin-top:4px"></div>
+          <p class="perso-note" id="pdpPersoNote">Made just for you, so a personalised piece can be returned only if it arrives faulty, damaged, wrong or not as described. Everything else on Trove has 15-day returns.</p>
         </div>
         <div class="buyrow">
           <button class="btn btn-dark" id="pdpAdd">Add to basket</button>
         </div>
-        <div class="ship">
-          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>
-          <div><b>Trove-fulfilled · arrives in 3–6 days</b>15-day returns — collection is free on orders over AED 200, and always free if a piece arrives faulty, wrong or not as described.</div>
-        </div>
-        <div class="sold-card" id="pdpSoldCard">
-          <div class="sav" id="pdpSav"></div>
-          <div class="st"><div class="l">Sold &amp; shipped by</div><div class="nm" id="pdpSoldName"></div></div>
-          <span class="link-more">Visit shop →</span>
-        </div>
+        <ul class="ship-list" aria-label="Delivery and returns">
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg><span>Arrives in 3–6 days across Dubai &amp; Abu Dhabi</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg><span id="pdpFreeLine">Free delivery on orders over AED 200</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg><span>15-day returns, collection free if a piece is faulty</span></li>
+        </ul>
+        <a class="ship-more" href="/returns">Delivery &amp; returns in full</a>
+        <div class="pdp-acc" id="pdpAcc"></div>
       </div>
     </div>
   </div>
@@ -1250,6 +1290,9 @@
     <div class="rev-list" id="pdpRevList"></div>
   </div>
 </div>
+
+<!-- phones: the buy button follows the shopper once the main one scrolls away -->
+<div class="pdp-bar" id="pdpBar" aria-hidden="true"><div class="pb-t"><span class="pb-n" id="pbName"></span><span class="pb-p" id="pbPrice"></span></div><button class="btn btn-dark" id="pbAdd" tabindex="-1" onclick="$('pdpAdd').click()">Add to basket</button></div>
 
 <!-- SELL -->
 <div class="view" id="view-sell">
@@ -2374,9 +2417,12 @@ function openPDP(id){
   $('pdpGrad').style=grad(V.color);
   // Real seller photos when they exist, else the matched stock shot, else
   // three motif-tile variations.
-  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):STOCK_IMG[p.name]?[STOCK_IMG[p.name]]:[img(p.seed),img(p.seed+'a'),img(p.seed+'b')];
-  $('pdpImg').src=pdpSrcs[0];
-  $('pdpThumbs').innerHTML=pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
+  // (the motif tile is one image: no invented variations of it)
+  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):STOCK_IMG[p.name]?[STOCK_IMG[p.name]]:[img(p.seed)];
+  $('pdpImg').src=pdpSrcs[0]; $('pdpImg').alt=p.name;
+  $('pdpGallery').classList.toggle('one',pdpSrcs.length<2);
+  $('pdpIllus').hidden=!pIsStock(p);
+  $('pdpThumbs').innerHTML=pdpSrcs.length<2?'':pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
   $('pdpVendorLink').textContent=V.name;
   $('pdpVendorLink').href=makerUrl(p.vendor);
   $('pdpName').textContent=p.name;
@@ -2401,26 +2447,44 @@ function openPDP(id){
   const addBtn=$('pdpAdd'); addBtn.textContent='Add to basket'; addBtn.className='btn btn-dark';
   addBtn.onclick=()=>{
     const picked=chosenOptions(p);
-    if(picked.missing){toast(`Choose a ${picked.missing.toLowerCase()} before adding this to your basket`);return;}
+    if(picked.missing){toast(`Choose a ${picked.missing.toLowerCase()} before adding this to your basket`);$('pdpOptions').scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});return;}
     let note='';
     if(per){
       note=$('pdpPersoText').value.trim();
-      if(per.required&&!note){toast('Add your personalisation first — the maker needs it.');$('pdpPersoText').focus();return;}
+      if(per.required&&!note){toast('Add your personalisation first — the maker needs it.');$('pdpPersoText').scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});$('pdpPersoText').focus({preventScroll:true});return;}
     }
     addToCart(p.id,addBtn,note,picked.value,chosenExtras(p));
   };
   // Renders the chips and settles the price, the stock line and the button —
   // after the button is wired, so it owns the final label.
   renderPdpOptions();
-  if(V.img){$('pdpSav').style.background=`center/cover no-repeat url("${V.img}")`;$('pdpSav').textContent='';}
-  else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=(V.name||'?')[0];}
-  $('pdpSoldName').textContent=V.name;
-  $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
+  $('pdpFreeLine').textContent='Free delivery on orders over AED '+(FEES.freeDeliveryThresholdCents/100).toLocaleString();
+  $('pdpAcc').innerHTML=pdpAccHTML(p);
+  $('pbName').textContent=p.name;
   loadProductReviews(p.id);
   setAddress(pieceUrl(p),`${p.name} by ${V.name} · Trove`,`${aed(p.price)} from ${V.name}${V.loc?', '+V.loc:''}. ${p.desc?clip(p.desc,70)+' ':''}Delivered across Dubai and Abu Dhabi.`);
   showView('pdp'); jumpTop();
 }
 let pdpSrcs=[];
+/* Details + About the maker: only what the shop has actually told us — no
+ * invented dimensions, care or lead times. */
+function pdpAccHTML(p){
+  const V=VENDORS[p.vendor], rows=[['Category',p.cat]];
+  (p.options||[]).forEach(g=>rows.push([g.name,g.values.join(', ')]));
+  if((p.extras||[]).length)rows.push(['Extras',p.extras.map(e=>e.name+(e.price?` (+AED ${e.price.toLocaleString()})`:'')).join(', ')]);
+  if(p.perso)rows.push(['Personalisation',(p.perso.required?'Required':'Optional')+`, up to ${p.perso.maxLen} characters`]);
+  rows.push(['Trove reference','TRV-'+p.id]);
+  const since=sinceLabel(V), meta=[V.house?'':V.loc,since?'On Trove since '+since:''].filter(Boolean).join(' · ');
+  return `<details class="acc" open><summary>Details<span class="faq-tg" aria-hidden="true">+</span></summary><dl class="acc-dl">${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></details>`
+    +`<details class="acc"><summary>${V.house?'About the Trove Collection':'About the maker'}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(V.name)}</b>${meta?`<div class="acc-meta">${esc(meta)}</div>`:''}${V.bio?`<p>${esc(V.bio)}</p>`:''}<a class="link-more" href="${esc(makerUrl(p.vendor))}">Visit ${esc(V.name)} →</a></div></details>`;
+}
+/* The phone buy bar shows while the real button is off screen. */
+let pdpBarIO=null;
+function watchPdpBar(){
+  if(!('IntersectionObserver' in window))return;
+  if(!pdpBarIO)pdpBarIO=new IntersectionObserver(es=>es.forEach(e=>document.body.classList.toggle('pdp-bar-on',!e.isIntersecting&&state.view==='pdp')),{threshold:0});
+  pdpBarIO.unobserve($('pdpAdd')); pdpBarIO.observe($('pdpAdd')); // a fresh first reading for this piece
+}
 function swapMain(i,el){$('pdpImg').src=pdpSrcs[i]||pdpSrcs[0];document.querySelectorAll('.thumbs .t').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
 
 /* PDP option picking — one value per group, nothing preselected.
@@ -2472,6 +2536,7 @@ function updatePdpAvailability(){
   note.textContent=show; note.style.display=show?'':'none';
   btn.disabled=!!soldOut;
   btn.textContent=soldOut?'Sold out':'Add to basket';
+  $('pbAdd').disabled=!!soldOut; $('pbAdd').textContent=btn.textContent; $('pbPrice').innerHTML=$('pdpPrice').innerHTML;
   btn.style.opacity=soldOut?.5:1;
   btn.style.cursor=soldOut?'not-allowed':'';
 }
@@ -2906,7 +2971,8 @@ async function confCreateAccount(){
 let toastT;
 function toast(m){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
-function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;syncHeadings(v);}
+function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;syncHeadings(v);
+  if(v==='pdp')watchPdpBar(); else document.body.classList.remove('pdp-bar-on');}
 /* One h1 heading on the page: the active view's title. The others step down to h2
  * while their view is hidden (the server sends the page the same way). */
 function syncHeadings(v){

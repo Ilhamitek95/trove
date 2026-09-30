@@ -86,3 +86,29 @@ test('the shelf: filters that can change nothing hide, a short shelf gets a bigg
   assert.match(many, /<div class="pgrid" id="shopGrid">/);
   db.prepare("UPDATE products SET status = 'hidden' WHERE id != ?").run(MUG().id);
 });
+
+/* ---------------- a piece (PDP) ---------------- */
+test('a piece: one photo has no thumbnail rail, details come only from real fields, Trove is the seller of record', async () => {
+  const mug = MUG();
+  const html = (await get(`/pieces/${mug.id}-reeded-stoneware-mug`)).text;
+  const page = noScripts(html);
+  assert.match(page, /<div class="gallery one" id="pdpGallery">/);
+  assert.match(page, /<span class="illus" id="pdpIllus">Illustrative photo<\/span>/);
+  assert.match(page, /Made by <a class="vlink" id="pdpVendorLink" href="\/makers\/kiln-and-clay">Kiln &amp; Clay<\/a> · Sold and delivered by Trove/);
+  // the accordion: Details + About the maker, nothing invented
+  assert.match(page, /<details class="acc" open><summary>Details/);
+  assert.match(page, /<dt>Category<\/dt><dd>Ceramics<\/dd>/);
+  assert.match(page, /<dt>Trove reference<\/dt><dd>TRV-\d+<\/dd>/);
+  assert.match(page, /<summary>About the maker/);
+  for (const invented of [/Dimensions/, /Dishwasher/i, /Care<\/summary>/, /Lead time/]) assert.doesNotMatch(page, invented);
+  // personalised pieces: the returns rule is said under the field, which is 16px on phones
+  assert.match(store, /can be returned only if it arrives faulty, damaged, wrong or not as described\. Everything else on Trove has 15-day returns\./);
+  assert.match(store, /<textarea id="pdpPersoText" class="perso-in"/);
+  assert.match(store, /#pdpPersoText\{font-size:16px\}|,#pdpPersoText\{font-size:16px\}/);
+  assert.match(store, /<label class="lbl" for="pdpPersoText"/);
+  // delivery facts as a short list; the phone buy bar
+  assert.match(page, /<ul class="ship-list" aria-label="Delivery and returns">/);
+  assert.match(store, /<div class="pdp-bar" id="pdpBar" aria-hidden="true">/);
+  assert.doesNotMatch(page, /Sold &amp; shipped by/);
+  assert.equal(rawH1(page), 1);
+});
