@@ -422,3 +422,18 @@ test('the storefront routes clean addresses in the page: pushState, popstate and
     assert.doesNotMatch(html, /(href="|'|`)\/\?(p|shop|view)=/, `${f} links only to clean addresses`);
   }
 });
+
+test('the storefront and every Services view send exactly one <h1> in the raw page, scripts included', async () => {
+  // A crawler that reads the source (or a naive audit) counts <h1 anywhere, so
+  // not even the page's own script may carry a literal one.
+  const pr = db.prepare("SELECT slug FROM service_providers WHERE status = 'approved' LIMIT 1").get();
+  for (const u of ['/services', `/services/${pr.slug}`, '/', '/shop', seo.pieceUrl(livePiece())]) {
+    const html = (await get(u)).text;
+    assert.equal((html.match(/<h1[\s>]/g) || []).length, 1, `${u}: raw <h1> count`);
+    assert.equal(h1s(html).length, 1, `${u}: rendered <h1> count`);
+  }
+  const dir = (await get('/services')).text;
+  assert.match(h1s(dir)[0], /Skilled hands/);
+  const one = (await get(`/services/${pr.slug}`)).text;
+  assert.match(one, /<h1 id="pvName"[^>]*>[^<]+<\/h1>/, 'the provider name is the page heading');
+});

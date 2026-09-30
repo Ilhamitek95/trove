@@ -215,7 +215,8 @@
   /* a provider's own page — the storefront's shop page, for services */
   body.pv .hero,body.pv #dirMain{display:none}
   .pv-hero{height:230px;position:relative}
-  .pv-back{position:absolute;left:26px;top:18px;font-size:12.5px;font-weight:700;background:rgba(253,247,245,.88);padding:8px 14px;border-radius:999px;backdrop-filter:blur(6px)}
+  .pv-back-wrap{padding-top:18px}
+  .pv-back{display:inline-flex;align-items:center;min-height:40px;font-size:12.5px;font-weight:700;background:rgba(253,247,245,.9);padding:8px 16px;border-radius:999px;backdrop-filter:blur(6px)}
   .pv-back:hover{background:var(--cream)}
   .pv-head{text-align:center;margin-top:-44px;position:relative}
   .pv-av{width:88px;height:88px;border-radius:50%;border:5px solid var(--cream);margin:0 auto;display:grid;place-items:center;font-family:var(--font-display);font-size:38px;font-weight:600;color:var(--char)}
@@ -240,7 +241,7 @@
   .pc .pcp{font-size:12.5px;font-weight:700;margin-top:4px}
   .pcard .also{display:inline-block;margin-top:10px;font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--rose-tint);padding:4px 10px;border-radius:999px}
   @media(max-width:620px){.pcgrid{grid-template-columns:1fr 1fr;gap:10px}}
-  @media(max-width:560px){.pv-hero{height:170px}.pv-back{left:14px;top:12px}.pv-stats{gap:24px}.pv-body{padding:32px 26px 6px}}
+  @media(max-width:560px){.pv-hero{height:170px}.pv-back-wrap{padding-top:12px}.pv-stats{gap:24px}.pv-body{padding:32px 26px 6px}}
 
   /* the services themselves, shown once beneath the directory (filtered by the chosen card) */
   .results{margin-top:30px}
@@ -254,7 +255,28 @@
   .svgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
   .svcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
   @media(hover:hover){.svcard:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(41,39,39,.09)}}
-  .svtile{height:130px;position:relative}
+  /* no photos yet: one calm brand tile for every service, named by its category */
+  .svtile{height:96px;position:relative;display:flex;align-items:flex-end;padding:14px 16px;background:radial-gradient(circle at 86% 18%,rgba(253,247,245,.85),transparent 56%),linear-gradient(160deg,#F2E9E4,#E7D9D1);border-bottom:1px solid var(--line-soft)}
+  .svtile::before{content:"";position:absolute;top:16px;left:16px;width:9px;height:9px;background:var(--char);opacity:.28;transform:rotate(45deg);border-radius:1px}
+  .svt-cat{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.1;color:var(--char);max-width:90%}
+  .vpanel{background:radial-gradient(circle at 22% 30%,rgba(253,247,245,.55),transparent 58%),linear-gradient(160deg,var(--t1),var(--t0))}
+  .svbody .meta .sv-req{margin-left:8px;padding:8px 16px;min-height:36px;border-radius:999px;background:var(--char);color:var(--cream);font-size:12.5px;font-weight:700;letter-spacing:.02em}
+  .svbody .meta .sv-req:hover{background:#3B3737}
+  /* categories nobody offers yet fold into one strip */
+  .dir.one .dcard{grid-column:1/-1}
+  .dir.one .dcard .ex{max-width:110ch}
+  .soon{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px 22px;flex-wrap:wrap;padding:18px 22px;border:1.5px dashed rgba(41,39,39,.26);border-radius:18px;background:var(--cream)}
+  .soon b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.15}
+  .soon p{font-size:13px;color:var(--muted);font-weight:500;line-height:1.55;margin-top:4px;max-width:70ch}
+  .soon a{display:inline-flex;align-items:center;min-height:44px;padding:0 20px;border-radius:999px;background:var(--char);color:var(--cream);font-size:13px;font-weight:700;white-space:nowrap}
+  .hiw4{max-width:880px;margin:0 auto;display:grid;gap:4px}
+  .hrow{display:grid;grid-template-columns:38px 190px 1fr;gap:16px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line)}
+  .hrow:last-child{border-bottom:0}
+  .hrow .ofic{width:38px;height:38px}
+  .hrow .ofic svg{width:19px;height:19px}
+  .hrow b{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.15}
+  .hrow span.t{font-size:14px;color:var(--ink-80);font-weight:500;line-height:1.5}
+  @media(max-width:620px){.hrow{grid-template-columns:38px 1fr;gap:4px 14px}.hrow span.t{grid-column:2}.soon{padding:16px 18px}.soon a{width:100%;justify-content:center}}
   .svbody{padding:15px 17px 17px;display:flex;flex-direction:column;gap:6px;flex:1}
   .svbody .t{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
   .svbody .who{font-size:12.5px;color:var(--muted);font-weight:600}
@@ -263,7 +285,7 @@
   .price{font-family:var(--font-display);font-size:18px;font-weight:600}
   .empty{margin-top:16px;padding:16px 22px;text-align:center;border:1.5px dashed var(--line);border-radius:16px;font-size:13.5px;color:var(--muted);font-weight:500;line-height:1.6}
   .empty a{color:var(--accent-ink);font-weight:700;text-decoration:underline}
-  @media(max-width:620px){.svgrid{grid-template-columns:1fr 1fr;gap:12px}.svtile{height:92px}.svbody{padding:11px 12px 12px;gap:4px}.svbody .t{font-size:15.5px}.svbody .who{font-size:11.5px}.price{font-size:15px}.tagchip{font-size:11px;padding:4px 9px}}
+  @media(max-width:620px){.svgrid{grid-template-columns:1fr 1fr;gap:12px}.svtile{height:70px;padding:10px 12px}.svtile::before{display:none}.svt-cat{font-size:14px;line-height:1.15}.svbody{padding:11px 12px 12px;gap:4px}.svbody .t{font-size:15.5px}.svbody .who{font-size:11.5px}.price{font-size:15px}.tagchip{font-size:11px;padding:4px 9px}}
 
   /* provider CTA: one slim strip — the terms are already said above */
   .ctaband{background:var(--char);border-radius:20px;margin:44px 0 0;padding:26px 32px;color:var(--cream);display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap}
@@ -298,7 +320,7 @@
   .bv-back:hover{color:var(--char)}
   .bv-card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:30px 30px 26px}
   .bv-card .kick{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700}
-  .bv-card h1{font-size:clamp(30px,4vw,40px);line-height:1.08;margin-top:8px}
+  .bv-card h1,.bv-card h2{font-size:clamp(30px,4vw,40px);line-height:1.08;margin-top:8px}
   .bv-card .lede{font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.65;margin-top:10px}
   .bv-rows{margin:20px 0 4px;border-top:1px solid var(--line)}
   .bv-rows div{display:flex;justify-content:space-between;gap:16px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
@@ -479,7 +501,7 @@
 
 <main id="main">
 <section id="pview" hidden>
-  <div class="pv-hero" id="pvHero"><a class="pv-back" href="/services" onclick="closeProvider();return false">← All services</a></div>
+  <div class="pv-hero" id="pvHero"><div class="wrap pv-back-wrap"><a class="pv-back" href="/services" onclick="closeProvider();return false">← All services</a></div></div>
   <div class="wrap pv-head">
     <div class="pv-av" id="pvAv"></div>
     <h2 id="pvName"></h2>
@@ -510,7 +532,7 @@
     <h1 class="hero-t">Skilled hands, <span>at your place</span>.</h1>
     <p>Trove's makers and creatives, bookable. Made-to-order, repairs, styling and workshops for your home; photography, design and shop support for your brand.</p>
     <div class="h-terms">
-      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay your way</span>
+      <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span>
     </div>
     <div class="audswitch" id="audSwitch"></div>
   </div>
@@ -535,30 +557,14 @@
   <section class="band" id="how">
     <div class="band-head">
       <span class="eyebrow">How it works</span>
-      <h2>No baskets, no checkout — a service is a conversation.</h2>
-      <p>You send a request, the provider confirms, and the details are arranged between you. You pay the listed price either way — directly to the provider, or through Trove by card. The provider is responsible for the service; Trove lists it.</p>
+      <h2>A service is a conversation.</h2>
+      <p>The provider is responsible for the service; Trove lists it.</p>
     </div>
-    <div class="hiw">
-      <div class="lane">
-        <div class="lane-h"><span class="ofic" style="background:#CAD5CC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><span><b>Booking one</b><small>For customers</small></span></div>
-        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay your way</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span></div>
-        <div class="steps">
-          <div class="step"><span class="dot">i</span><div><h4>Find your service</h4><p>Browse by what you need — for your home, your celebration, or your brand. Every provider is reviewed by a real person before they appear here.</p></div></div>
-          <div class="step"><span class="dot">ii</span><div><h4>Send a request</h4><p>A date that suits you, a few lines on what you have in mind, and how you'd like to pay. Just a name, email and UAE mobile.</p></div></div>
-          <div class="step"><span class="dot">iii</span><div><h4>They confirm</h4><p>The provider accepts and reaches you on your mobile to agree the details — time, place, and the final scope. Your email stays with Trove.</p></div></div>
-          <div class="step"><span class="dot">iv</span><div><h4>Enjoy, then settle</h4><p>Settle directly with the provider — bank transfer or cash, as you agree — or pay Trove by card once they confirm the date and price, through a secure link we email you. Either way it's the provider's price, nothing added.</p></div></div>
-        </div>
-      </div>
-      <div class="lane">
-        <div class="lane-h"><span class="ofic" style="background:#F8D7E4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/></svg></span><span><b>Offering one</b><small>For providers</small></span></div>
-        <div class="h-terms"><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free to list during launch</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No commission on direct bookings</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>10% only when paid through Trove</span></div>
-        <div class="steps">
-          <div class="step"><span class="dot">i</span><div><h4>Tell us what you do</h4><p>A ten-minute application about you and your work, written like a chat. A real person reviews it, usually within a day or two, and only approved providers are listed — so your name sits beside work worth being beside.</p></div></div>
-          <div class="step"><span class="dot">ii</span><div><h4>List your services</h4><p>Price each one the way you actually charge — fixed, from, or per hour — and say where it happens: their place, your studio, or remote. Build it in your dashboard while you're still in review; approval makes it public. Listing is free during launch.</p></div></div>
-          <div class="step"><span class="dot">iii</span><div><h4>Requests arrive</h4><p>Each shows the customer's name, area, preferred date and a brief. Confirm with the date (and your final price, for starting-price or hourly work). Their mobile is released once the booking is secured — on your confirmation for a direct booking, on their card payment for one paid through Trove; their email stays with Trove. Decline with a short note — no penalty.</p></div></div>
-          <div class="step"><span class="dot">iv</span><div><h4>Do the work, get paid</h4><p>Direct bookings are settled between you and the customer — bank transfer or cash — and carry no commission. Bookings paid through Trove by card carry a 10% platform fee; Trove pays you the other 90% in its settlement run once you mark the booking done. Every booking keeps a snapshot of the listed price, and the service itself is always your responsibility — Trove lists it.</p></div></div>
-        </div>
-      </div>
+    <div class="hiw4">
+      <div class="hrow"><span class="ofic" style="background:#CAD5CC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"/><path d="m21 21-4.3-4.3"/></svg></span><b>Find a service</b><span class="t">Every provider is reviewed by a real person before they appear here.</span></div>
+      <div class="hrow"><span class="ofic" style="background:#F8D7E4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12 20 4l-4 16-4-7z"/><path d="m12 13 8-9"/></svg></span><b>Send a request</b><span class="t">A date, a few lines and how you'd like to pay. No account needed.</span></div>
+      <div class="hrow"><span class="ofic" style="background:#BED3DF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"/></svg></span><b>They confirm</b><span class="t">The provider accepts and calls you on your mobile. Your email stays with Trove.</span></div>
+      <div class="hrow"><span class="ofic" style="background:#CFDBBE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span><b>Settle your way</b><span class="t">Pay the provider directly, or pay Trove by card once they confirm the date and price.</span></div>
     </div>
   </section>
 
@@ -695,10 +701,8 @@ const SETTING_LABEL={home:'At your place',studio:"At the provider's studio",remo
 
 /* Deterministic brand-motif tile per service (no photography yet — same
    approach as the product marketplace). */
-const TILE_TINTS=['#DBC7BD','#CAD5CC','#FCC998','#BED3DF','#CFDBBE','#F8D7E4'];
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;const cl=v=>Math.max(0,Math.min(255,v));return '#'+((cl(r)<<16)|(cl(g)<<8)|cl(b)).toString(16).padStart(6,'0');}
 function hashOf(str){let h=0;for(let i=0;i<str.length;i++)h=(h*31+str.charCodeAt(i))>>>0;return h;}
-function seedOf(s){return hashOf(s.title+s.provider.slug);}
 function motifUrl(seed,c){
   const c2=shade(c,16),c3=shade(c,-14);
   const cx=30+(seed%40),cy=35+((seed>>3)%30),r=34+((seed>>5)%18);
@@ -706,14 +710,10 @@ function motifUrl(seed,c){
   const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100' preserveAspectRatio='xMidYMid slice'><rect width='160' height='100' fill='${c}'/><ellipse cx='${cx}' cy='${cy}' rx='${r}' ry='${Math.round(r*0.72)}' fill='${c2}' opacity='0.85'/><ellipse cx='${cx2}' cy='${cy2}' rx='${r2}' ry='${Math.round(r2*1.2)}' fill='${c3}' opacity='0.55'/><ellipse cx='${(cx+cx2)>>1}' cy='${100-cy}' rx='${Math.round(r2*0.8)}' ry='${Math.round(r2*0.5)}' fill='${shade(c,28)}' opacity='0.7'/></svg>`;
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
+/* One calm brand tile for every service without photos, named by its category. */
 function svTile(s){
-  const seed=seedOf(s);
-  const c=TILE_TINTS[seed%TILE_TINTS.length];
-  const c2=shade(c,16),c3=shade(c,-14);
-  const cx=30+(seed%40),cy=35+((seed>>3)%30),r=34+((seed>>5)%18);
-  const cx2=100+((seed>>7)%50),cy2=60+((seed>>9)%40),r2=24+((seed>>11)%16);
-  const svg=`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><rect width='160' height='100' fill='${c}'/><ellipse cx='${cx}' cy='${cy}' rx='${r}' ry='${Math.round(r*0.72)}' fill='${c2}' opacity='0.85'/><ellipse cx='${cx2}' cy='${cy2}' rx='${r2}' ry='${Math.round(r2*1.2)}' fill='${c3}' opacity='0.55'/><ellipse cx='${(cx+cx2)>>1}' cy='${100-cy}' rx='${Math.round(r2*0.8)}' ry='${Math.round(r2*0.5)}' fill='${shade(c,28)}' opacity='0.7'/></svg>`;
-  return `<div class="svtile" style="background:center/cover url(&quot;data:image/svg+xml;utf8,${encodeURIComponent(svg)}&quot;)"></div>`;
+  const cat=TAX&&TAX.categories.find(c=>c.slug===s.category);
+  return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat?cat.name:'Service')}</span></div>`;
 }
 
 /* ---------------- rendering ---------------- */
@@ -742,7 +742,11 @@ function audCats(){return TAX.categories.filter(c=>c.audience===state.audience);
    offers it yet. The services themselves render once, below, so the page
    never repeats an empty state six times. */
 function renderDir(){
-  $('dir').innerHTML=audCats().map(c=>{
+  // Categories nobody offers yet fold into one 'Coming soon' strip instead of
+  // a card each; they only get their own card once a service lands in them.
+  const cats=audCats(), live=cats.filter(c=>SERVICES.some(s=>s.category===c.slug)), empty=cats.filter(c=>!live.includes(c));
+  $('dir').className='dir'+(live.length===1?' one':'');
+  $('dir').innerHTML=live.map(c=>{
     const list=SERVICES.filter(s=>s.category===c.slug), n=list.length;
     const min=n?Math.min(...list.map(s=>s.priceCents||0)):0;
     const on=state.cat===c.slug;
@@ -754,7 +758,10 @@ function renderDir(){
         ?`<span class="from">${min?'From '+money(min):''}</span><span class="go">${on?'Showing below ↓':'See services →'}</span>`
         :`<span></span><a href="/apply?for=services" onclick="event.stopPropagation()">Offer this →</a>`}</div>
     </div>`;
-  }).join('');
+  }).join('')+(empty.length?soonStrip(empty):'');
+}
+function soonStrip(empty){
+  return `<div class="soon"><div><b>Coming soon</b><p>${empty.map(c=>esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">Offer a service →</a></div>`;
 }
 
 function svCardHTML(s){
@@ -763,7 +770,7 @@ function svCardHTML(s){
     <div class="svbody">
       <div class="t">${esc(s.title)}</div>
       <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}</div>
-      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span></div>
+      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span><button type="button" class="sv-req" aria-label="Request ${esc(s.title)}" onclick="event.stopPropagation();openService(${Number(s.id)})">Request</button></div>
     </div>
   </div>`;
 }
@@ -823,7 +830,7 @@ async function cancelBooking(id,paid,amount){
 function catNames(slugs){return (slugs||[]).map(sl=>{const c=TAX.categories.find(x=>x.slug===sl);return c?c.name:null;}).filter(Boolean);}
 function provCardHTML(p){
   return `<article class="pcard" onclick="if(event.metaKey||event.ctrlKey||event.shiftKey)return;openProvider(${jsq(p.slug)});return false" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider(${jsq(p.slug)})}">
-    <div class="cover" style="background:center/cover url(&quot;${esc(motifUrl(hashOf(p.slug),safeColor(p.color)))}&quot;)"></div>
+    <div class="cover vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}"></div>
     <div class="av" style="background:${safeColor(p.color)}">${esc((p.name||'?')[0])}</div>
     <h3><a class="pcard-link" href="/services/${esc(encodeURIComponent(p.slug))}" tabindex="-1">${esc(p.name)}</a></h3>
     <div class="loc">${esc(p.location||'Dubai')}</div>
@@ -851,7 +858,7 @@ async function openProvider(slug,push=true){
   catch(_){toast('That provider isn’t listed');if(!push)closeProvider(false);return;}
   const p=data.provider;
   for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
-  $('pvHero').style.background=`center/cover url("${motifUrl(hashOf(p.slug),safeColor(p.color))}")`;
+  $('pvHero').className='pv-hero vpanel'; $('pvHero').style.cssText=`--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}`;
   $('pvAv').style.background=safeColor(p.color);$('pvAv').textContent=(p.name||'?')[0];
   pageH1('pv');
   $('pvName').textContent=p.name;
@@ -991,6 +998,7 @@ async function submitBooking(){
 const BV_RE=/^\/services\/booking\/(SRV-[0-9A-Fa-f]{6})\/?$/;
 const PAY_RE=/^\/services\/pay\/(SRV-[0-9A-F]{6})-([0-9a-f]{32})\/?$/;
 let BV=null, bvStripe=null, bvElements=null;
+const BV_H='h1'; // the booking card's heading tag, named here so the page source carries a single top heading
 function loadStripeJs(){
   return new Promise((resolve,reject)=>{
     if(window.Stripe)return resolve();
@@ -1009,7 +1017,7 @@ async function openBookingView(code,t,wantPay){
   BV={code,t,b:null};
   try{await fetchBooking();}
   catch(_){
-    $('bvCard').innerHTML='<div class="kick">BOOKING</div><h1>We couldn’t find that booking.</h1><p class="lede">Check you opened the whole link from your email — it’s private to your booking. Still stuck? Contact Trove with your booking code.</p>';
+    $('bvCard').innerHTML=`<div class="kick">BOOKING</div><${BV_H}>We couldn’t find that booking.</${BV_H}><p class="lede">Check you opened the whole link from your email — it’s private to your booking. Still stuck? Contact Trove with your booking code.</p>`;
     return;
   }
   // Back from a card check (3-D Secure): Stripe adds these to the return address.
@@ -1050,7 +1058,7 @@ function renderBookingView(){
       <div class="bv-note">Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a>.</div></div>`
       :'<div class="bv-flag warm">Card payment isn’t available right now — please try again a little later.</div>';
   }
-  $('bvCard').innerHTML=`<div class="kick">BOOKING ${esc(b.code)}</div><h1>${h}</h1><p class="lede">${lede}</p>
+  $('bvCard').innerHTML=`<div class="kick">BOOKING ${esc(b.code)}</div><${BV_H}>${h}</${BV_H}><p class="lede">${lede}</p>
     <div class="bv-rows">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>
     ${refundNote}${pay}
     ${b.canCancel?`<button class="bv-cancel" onclick="cancelFromLink()">Cancel this booking</button>`:''}

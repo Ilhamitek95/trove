@@ -132,3 +132,23 @@ test('a maker: Pieces by <maker>, a meta line with the joined month, the calm pa
   assert.match(data.shop.joined, /^\d{4}-\d{2}$/);
   assert.match(store, /\$\('vPiecesHead'\)\.textContent='Pieces by '\+v\.name/);
 });
+
+/* ---------------- the Services Marketplace ---------------- */
+test('services: a brand tile per service, a Request button, empty categories folded into one strip', async () => {
+  db.prepare("UPDATE service_providers SET status = 'pending' WHERE slug != 'noor-letters'").run();
+  const page = noScripts((await get('/services')).text);
+  assert.match(page, /<div class="dir one" id="dir">/, 'one live category spans the row');
+  assert.equal((page.match(/class="cnt none">Be the first</g) || []).length, 0, 'no Be the first card per empty category');
+  assert.match(page, /<div class="soon"><div><b>Coming soon<\/b><p>[^<]*Care &amp; repair[^<]*<\/p><\/div><a href="\/apply\?for=services">Offer a service →<\/a><\/div>/);
+  assert.match(page, /<div class="svtile" aria-hidden="true"><span class="svt-cat">Made to order &amp; personalisation<\/span><\/div>/);
+  assert.doesNotMatch(page, /class="svtile" style="background:center\/cover url/, 'no pastel blob tiles');
+  assert.match(page, /<button type="button" class="sv-req" aria-label="Request [^"]+" onclick="event\.stopPropagation\(\);openService\(\d+\)">Request<\/button>/);
+  // two trust chips, four one-line steps
+  const hero = page.match(/<section class="hero">[\s\S]*?<\/section>/)[0];
+  assert.equal((hero.match(/<span><svg/g) || []).length, 2);
+  assert.equal((page.match(/<div class="hrow">/g) || []).length, 4);
+  assert.doesNotMatch(page, /Booking one|Offering one/);
+  const prov = noScripts((await get('/services/noor-letters')).text);
+  assert.match(prov, /<div class="pv-hero vpanel" id="pvHero" style="--t0:#[0-9A-Fa-f]{3,6};--t1:#[0-9a-f]{6}"><div class="wrap pv-back-wrap"><a class="pv-back"/);
+  assert.match(prov, /class="sv-req"/);
+});

@@ -562,7 +562,6 @@ function priceLabel(s) {
   if (s.priceType === 'hourly') return moneyCents(s.priceCents) + ' / hour';
   return moneyCents(s.priceCents);
 }
-const TILE_TINTS = ['#DBC7BD', '#CAD5CC', '#FCC998', '#BED3DF', '#CFDBBE', '#F8D7E4'];
 function shade(hex, p) {
   const n = parseInt(hex.slice(1), 16);
   const cl = (v) => Math.max(0, Math.min(255, v));
@@ -577,9 +576,8 @@ function motifSvg(seed, c, slice) {
 }
 const motifUrl = (seed, c) => `data:image/svg+xml;utf8,${encodeURIComponent(motifSvg(seed, c, true))}`;
 function svTile(s) {
-  const seed = hashOf(s.title + s.provider.slug);
-  const c = TILE_TINTS[seed % TILE_TINTS.length];
-  return `<div class="svtile" style="background:center/cover url(&quot;data:image/svg+xml;utf8,${encodeURIComponent(motifSvg(seed, c, false))}&quot;)"></div>`;
+  const cat = tax.bySlug(s.category);
+  return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat ? cat.name : 'Service')}</span></div>`;
 }
 const catNames = (slugs) => (slugs || []).map((sl) => { const c = tax.bySlug(sl); return c ? c.name : null; }).filter(Boolean);
 function svCardHtml(s) {
@@ -588,13 +586,13 @@ function svCardHtml(s) {
     <div class="svbody">
       <div class="t">${esc(s.title)}</div>
       <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || 'Dubai')}</div>
-      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting] || '')}</span></div>
+      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting] || '')}</span><button type="button" class="sv-req" aria-label="Request ${esc(s.title)}" onclick="event.stopPropagation();openService(${Number(s.id)})">Request</button></div>
     </div>
   </div>`;
 }
 function provCardHtml(p) {
   return `<article class="pcard" role="link" tabindex="0">
-    <div class="cover" style="background:center/cover url(&quot;${esc(motifUrl(hashOf(p.slug), safeColor(p.color)))}&quot;)"></div>
+    <div class="cover vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}"></div>
     <div class="av" style="background:${safeColor(p.color)}">${esc((p.name || '?')[0])}</div>
     <h3><a class="pcard-link" href="${esc(providerUrl(p.slug))}">${esc(p.name)}</a></h3>
     <div class="loc">${esc(p.location || 'Dubai')}</div>
@@ -624,7 +622,9 @@ function directoryMarkup(html) {
     </button>`;
   }).join('');
   const cats = tax.SERVICE_CATEGORIES.filter((c) => c.audience === audience);
-  const dir = cats.map((c) => {
+  const live = cats.filter((c) => services.some((s) => s.category === c.slug));
+  const empty = cats.filter((c) => !live.includes(c));
+  const dir = live.map((c) => {
     const list = services.filter((s) => s.category === c.slug); const n = list.length;
     const min = n ? Math.min(...list.map((s) => s.priceCents || 0)) : 0;
     return `<div class="dcard ${n ? 'live' : ''} ">
@@ -635,7 +635,7 @@ function directoryMarkup(html) {
     ? `<span class="from">${min ? 'From ' + moneyCents(min) : ''}</span><span class="go">See services →</span>`
     : '<span></span><a href="/apply?for=services">Offer this →</a>'}</div>
     </div>`;
-  }).join('');
+  }).join('') + (empty.length ? `<div class="soon"><div><b>Coming soon</b><p>${empty.map((c) => esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">Offer a service →</a></div>` : '');
   const all = services.filter((s) => cats.some((c) => c.slug === s.category));
   let results;
   if (!all.length) {
@@ -649,6 +649,7 @@ function directoryMarkup(html) {
   </section>`;
   }
   let out = fill(html, 'audSwitch', aud);
+  if (live.length === 1) out = out.replace('<div class="dir" id="dir">', '<div class="dir one" id="dir">');
   out = fill(out, 'dir', dir);
   out = fill(out, 'results', results);
   if (providers.length) {
@@ -692,7 +693,7 @@ function renderProvider(base, slug) {
   html = html.replace('<body>', '<body class="pv">').replace('<section id="pview" hidden>', '<section id="pview">')
     .replace(/<h1 class="hero-t"([^>]*)>([\s\S]*?)<\/h1>/, '<h2 class="hero-t"$1>$2</h2>')
     .replace(/<h2 id="pvName"([^>]*)><\/h2>/, '<h1 id="pvName"$1></h1>');
-  html = attr(html, 'pvHero', 'style', `background:center/cover url("${motifUrl(hashOf(p.slug), safeColor(p.color))}")`);
+  html = attr(attr(html, 'pvHero', 'class', 'pv-hero vpanel'), 'pvHero', 'style', `--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}`);
   html = attr(html, 'pvAv', 'style', `background:${safeColor(p.color)}`);
   html = fill(html, 'pvAv', esc((p.name || '?')[0]));
   html = fill(html, 'pvName', esc(p.name));
