@@ -351,6 +351,7 @@ function productLd(base, p, url) {
   const images = (p.images || []).map(safeImg).filter(Boolean).map((u) => abs(base, u));
   if (!images.length && safeImg(p.stockImage)) images.push(p.stockImage);
   const f = require('./pages/facts').facts();
+  const est = p.estimate || require('./lead-times').estimate(p.leadDays);
   const ld = {
     '@type': 'Product',
     '@id': `${url}#product`,
@@ -377,10 +378,12 @@ function productLd(base, p, url) {
         '@type': 'OfferShippingDetails',
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'AE' },
         shippingRate: { '@type': 'MonetaryAmount', currency: 'AED', value: Number(p.price) > fees.FREE_DELIVERY_THRESHOLD_CENTS / 100 ? 0 : fees.DELIVERY_FEE_CENTS / 100 },
+        // Handling = this piece's make/pack time (the maker sets it);
+        // transit = the courier's window. Together: the estimate the page shows.
         deliveryTime: {
           '@type': 'ShippingDeliveryTime',
-          handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 2, unitCode: 'DAY' },
-          transitTime: { '@type': 'QuantitativeValue', minValue: 3, maxValue: 6, unitCode: 'DAY' },
+          handlingTime: { '@type': 'QuantitativeValue', minValue: est.leadDays, maxValue: est.leadDays, unitCode: 'DAY' },
+          transitTime: { '@type': 'QuantitativeValue', minValue: est.transitMinDays, maxValue: est.transitMaxDays, unitCode: 'DAY' },
         },
       },
       hasMerchantReturnPolicy: {
@@ -399,6 +402,18 @@ function sinceLabel(joined) {
   if (!/^\d{4}-\d{2}$/.test(joined || '')) return '';
   return new Date(`${joined}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
+/* Per-piece delivery lines — the storefront's shipLine()/leadLine() say
+ * exactly the same (test/lead-times.test.js pins both). */
+function leadLine(lead) {
+  const n = Number(lead) || fees.LEAD_DAYS_DEFAULT;
+  return `${n} day${n === 1 ? '' : 's'} after your order`;
+}
+function shipLine(p) {
+  const est = p.estimate || require('./lead-times').estimate(p.leadDays);
+  return est.leadDays > fees.LEAD_DAYS_DEFAULT
+    ? `Arrives in ${est.label} · made for you, ready to send in ${est.leadDays} days`
+    : `Arrives in ${est.label} across Dubai & Abu Dhabi`;
+}
 /** The PDP's Details + About the maker, as the storefront's pdpAccHTML() draws them (real fields only). */
 function pdpAccHtml(p, v) {
   const aed = (n) => Number(n).toLocaleString('en-US');
@@ -407,6 +422,7 @@ function pdpAccHtml(p, v) {
   if ((p.extras || []).length) rows.push(['Extras', p.extras.map((e) => e.name + (e.price ? ` (+AED ${aed(e.price)})` : '')).join(', ')]);
   const per = p.personalization;
   if (per) rows.push(['Personalisation', `${per.required ? 'Required' : 'Optional'}, up to ${per.maxLen} characters`]);
+  rows.push(['Ready to send in', leadLine(p.leadDays)]);
   const house = !!p.shop.isHouse;
   const since = sinceLabel(v.joined);
   const meta = [house ? '' : v.location, since ? `On Trove since ${since}` : ''].filter(Boolean).join(' · ');
@@ -439,6 +455,7 @@ function renderPiece(base, ref) {
   html = fill(html, 'pdpPrice', `${p.compareAt ? `<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${money(p.compareAt)}</s>` : ''}${money(p.price)}`);
   html = fill(html, 'pdpDesc', esc(p.description || ''));
   html = fill(html, 'pdpAcc', pdpAccHtml(p, vendor));
+  html = text(html, 'pdpShipLine', shipLine(p));
   const title = `${p.name} by ${p.shop.name} · Trove`;
   const description = compose(`${money(p.price)} from ${p.shop.name}${vendor.location ? `, ${vendor.location}` : ''}. `,
     p.description || '', ' Delivered across Dubai and Abu Dhabi.');

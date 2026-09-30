@@ -210,7 +210,11 @@ const dubaiDate = (sqlTime) => {
  * { order, items[{ name, qty, price_cents, meta, image, shop }], shops[], ship }
  * with money in fils on the order row.
  */
-function orderConfirmation({ order, items, shops, ship }) {
+function orderConfirmation({ order, items, shops, ship, estimate }) {
+  // The order's delivery estimate (src/lead-times.js orderEstimate): the
+  // slowest piece's make time + the courier's window. Older callers without
+  // one get the standard 2-day make time.
+  const est = estimate || require('./lead-times').orderEstimate([]);
   const many = shops.length > 1;
   const first = ship && ship.name ? `, ${esc(String(ship.name).split(' ')[0])}` : '';
   const who = many ? 'The shops are' : `${esc(shops[0] || 'The shop')} is`;
@@ -229,9 +233,11 @@ function orderConfirmation({ order, items, shops, ship }) {
         ${ship ? `<td class="stack" width="50%" valign="top" style="padding:18px 20px;font-family:${SANS};font-size:14.5px;line-height:1.6;color:${INK}">
           ${label('Delivering to')}${esc(ship.name)}<br>${esc(ship.line)}${ship.line2 ? '<br>' + esc(ship.line2) : ''}<br>${esc(ship.city)}</td>` : ''}
         <td class="stack" width="50%" valign="top" style="padding:18px 20px;font-family:${SANS};font-size:14.5px;line-height:1.6;color:${INK}">
-          ${label('Arriving')}<b>In 3–6 days</b><br>${many
+          ${label('Arriving')}<b>In ${esc(est.label)}</b><br>${est.separately
+            ? `Pieces arrive separately as each is ready — ${shops.length} parcels, each shop packs its own, all tracked together in one place.`
+            : many
             ? `In ${shops.length} parcels — each shop packs its own, all tracked together in one place.`
-            : 'Packed by hand and tracked all the way to your door.'}</td>
+            : est.leadDays > 2 ? `Made or finished for you by hand, then tracked all the way to your door.` : 'Packed by hand and tracked all the way to your door.'}</td>
       </tr></table>`
     + button('Track your order', `${SITE_LINK}/account`)
     + note('Something not right? You can request a return from this order in your account.');
@@ -240,7 +246,7 @@ function orderConfirmation({ order, items, shops, ship }) {
     html: layout('Your order is confirmed', inner, {
       kicker: `Order <b style="color:${INK}">${esc(order.public_id)}</b>${date ? ' · ' + date : ''}`,
       intro: `Thank you${first}. ${who} preparing your ${items.length > 1 ? 'pieces' : 'piece'} now, and you can follow every step from your account.`,
-      preheader: `Order ${order.public_id} is confirmed — ${aed(order.total_cents)}, arriving in 3–6 days.`,
+      preheader: `Order ${order.public_id} is confirmed — ${aed(order.total_cents)}, arriving in ${est.label}.`,
     }),
   };
 }
@@ -664,14 +670,16 @@ function applicationRejected({ kind = 'shop', name, businessName, adminNote = ''
  * New order to pack — to the shop owner, listing ONLY their pieces. By design
  * it carries no buyer email, phone or address: Trove books the courier, which
  * holds the delivery details itself.
- * { shopName, ownerName, publicId, items[{ name, qty, price_cents, meta, image }], packByDays, link }
+ * { shopName, ownerName, publicId, items[{ name, qty, price_cents, meta, image }], packBy, link }
+ * packBy is the concrete day ('Friday 2 October'): the day the order was
+ * paid plus the longest make/pack time among THIS shop's pieces in it.
  */
-function orderToPack({ shopName, ownerName, publicId, items, packByDays = 2, link }) {
+function orderToPack({ shopName, ownerName, publicId, items, packBy, link }) {
   const units = items.reduce((t, i) => t + i.qty, 0);
   const inner =
     heading(units > 1 ? 'Pieces to pack' : 'Piece to pack')
     + itemsBlock(items)
-    + panel(`<b>Please pack ${units > 1 ? 'them' : 'it'} within ${packByDays} days</b> in your own packaging, then tap <b>Packed · ready for collection</b> on the order in your dashboard. Our courier collects from your pickup address, so the buyer receives it inside our 3–6 day delivery promise.`)
+    + panel(`<b>Please pack by ${esc(packBy)}</b> in your own packaging, then tap <b>Packed · ready for collection</b> on the order in your dashboard. That date comes from the make and pack time you set on ${units > 1 ? 'these pieces' : 'this piece'}, and it is the time the buyer was shown. Our courier collects from your pickup address and takes it on to the buyer.`)
     + button('Open the order', esc(link))
     + note('Trove arranges the courier and looks after the customer, so there is nobody to contact — everything you need is on the order.');
   return {
@@ -680,12 +688,59 @@ function orderToPack({ shopName, ownerName, publicId, items, packByDays = 2, lin
       kicker: `Order <b style="color:${INK}">${esc(publicId)}</b> · ${esc(shopName)}`,
       intro: `Good news, ${firstNameOr(ownerName)} — ${units > 1 ? `${units} pieces` : 'a piece'} from your shop just sold.`,
       reason: "You're receiving this because you sell on Trove.",
-      preheader: `Order ${publicId}: please pack within ${packByDays} days.`,
+      preheader: `Order ${publicId}: please pack by ${packBy}.`,
+    }),
+  };
+}
+
+/**
+ * Pack-by reminder — to the maker, once, when the pack-by day has gone and
+ * the parcel is not yet marked Packed. Like the new-order email it carries
+ * nothing about the buyer.
+ * { shopName, ownerName, publicId, items[{ name, qty }], packBy, link }
+ */
+function packReminder({ shopName, ownerName, publicId, items, packBy, link }) {
+  const list = items.map((i) => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ');
+  const inner =
+    panel(`Order <b>${esc(publicId)}</b> was due to be packed by <b>${esc(packBy)}</b>: ${list}.`)
+    + p('If it is ready, tap <b>Packed · ready for collection</b> on the order so our courier can come for it. If it needs a little longer, let us know through the Contact page on troveathome.com when it will be ready, so we can keep the buyer in the picture.')
+    + button('Open the order', esc(link));
+  return {
+    subject: `Reminder: order ${publicId} is due to be packed`,
+    html: layout('A parcel is waiting to be packed', inner, {
+      tone: 'clay',
+      kicker: `Order <b style="color:${INK}">${esc(publicId)}</b> · ${esc(shopName)}`,
+      intro: `Hello ${firstNameOr(ownerName)}, a quick nudge about an order from your shop.`,
+      reason: "You're receiving this because you sell on Trove.",
+      preheader: `Order ${publicId} was due to be packed by ${packBy}.`,
+    }),
+  };
+}
+
+/**
+ * To Trove's admin, once, when a parcel is two days past its pack-by day and
+ * still not marked Packed — time to call the maker and update the buyer.
+ * { shopName, publicId, items[{ name, qty }], packBy, link }
+ */
+function packOverdueAdmin({ shopName, publicId, items, packBy, link }) {
+  const list = items.map((i) => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ');
+  const inner =
+    panel(`<b>${esc(shopName)}</b> was due to pack order <b>${esc(publicId)}</b> by <b>${esc(packBy)}</b> and has not marked it Packed. The maker was reminded when the day passed.<br>${list}`)
+    + p('Worth a call to the maker, and a note to the buyer if the parcel will be late.')
+    + button('Open the admin', esc(link));
+  return {
+    subject: `Overdue: ${shopName} has not packed order ${publicId}`,
+    html: layout('A parcel is two days late', inner, {
+      tone: 'clay',
+      kicker: `Order <b style="color:${INK}">${esc(publicId)}</b>`,
+      reason: "You're receiving this because you run Trove.",
+      preheader: `${shopName}: order ${publicId} was due to be packed by ${packBy}.`,
     }),
   };
 }
 
 Object.assign(module.exports, {
+  packReminder, packOverdueAdmin,
   passwordReset, welcomeVerify, passwordChanged,
   applicationReceived, applicationAlert, applicationApproved, applicationRejected, orderToPack,
 });

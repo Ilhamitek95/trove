@@ -21,6 +21,19 @@ const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.price_cents, o
 const firstImage = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) && v[0] ? v[0] : null; } catch (_) { return null; } };
 const eventsStmt = db.prepare('SELECT status, note, created_at FROM shipment_events WHERE shipment_id=? ORDER BY id ASC');
 
+/** Not packed and its pack-by day has gone. */
+function packOverdue(s) {
+  if (!s.pack_by_at || s.status !== 'processing' || s.ready_at) return false;
+  return require('./lead-times').fromSql(s.pack_by_at).getTime() < Date.now();
+}
+/** { from, to } ISO instants for the buyer: pack-by day + the courier window. */
+function arrivalWindow(packBySql) {
+  const fees = require('./fees');
+  const t = require('./lead-times').fromSql(packBySql).getTime();
+  const day = 86400000;
+  return { from: new Date(t + fees.COURIER_TRANSIT_MIN_DAYS * day).toISOString(), to: new Date(t + fees.COURIER_TRANSIT_MAX_DAYS * day).toISOString() };
+}
+
 // Shape a shipment row (optionally joined with shop name/color/is_house) for the API.
 function shape(s) {
   const items = itemsStmt.all(s.order_id, s.shop_id);
@@ -38,6 +51,13 @@ function shape(s) {
     readyAt: s.ready_at || null,
     deliveredAt: s.delivered_at || null,
     returnWindowEndsAt: s.return_window_ends_at || null,
+    // Make/pack time: the day this shop should have the parcel packed by
+    // (end of that Dubai day), whether that day has gone without it being
+    // packed, and the buyer's arrival window (pack-by + the courier's 1–4
+    // days). See src/lead-times.js.
+    packBy: s.pack_by_at || null,
+    packOverdue: packOverdue(s),
+    expected: s.pack_by_at ? arrivalWindow(s.pack_by_at) : null,
     createdAt: s.created_at,
     updatedAt: s.updated_at,
     shop: { id: s.shop_id, name: s.shop_name, color: s.color, isHouse: !!s.is_house },
@@ -118,4 +138,4 @@ function assertUndoable(sh) {
   }
 }
 
-module.exports = { FLOW, LABELS, shape, noteFor, deriveOrderStatus, markDelivered, assertUndoable };
+module.exports = { FLOW, LABELS, shape, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };

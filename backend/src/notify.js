@@ -77,8 +77,16 @@ const shopDecided = (shopId, status) => safely('shop-decision', () => decided('s
 const providerDecided = (providerId, status) => safely('provider-decision', () => decided('provider', providerRow(providerId), status));
 
 /* ---- orders ---- */
-// How long a maker has to pack a sold piece (owner can tune via env).
+// Fallback only: a shipment booked before per-piece make/pack times
+// (2026-09-30) has no pack_by_at of its own. Everything newer carries a
+// concrete date — order paid + the slowest of that shop's pieces.
 const packByDays = () => Math.max(1, parseInt(process.env.PACK_BY_DAYS, 10) || 2);
+/** The shop's pack-by moment on this order (SQLite UTC text). */
+function packByFor(order, shopId) {
+  const sh = db.prepare('SELECT pack_by_at FROM shipments WHERE order_id=? AND shop_id=?').get(order.id, shopId);
+  if (sh && sh.pack_by_at) return sh.pack_by_at;
+  return require('./lead-times').packByAt(order.title_transferred_at || order.created_at, packByDays());
+}
 
 /**
  * One email per shop in a paid order, to the shop owner, listing only that
@@ -101,12 +109,39 @@ const ordersToPack = (order) => safely('order-to-pack', () => {
     }));
     return deliver('order-to-pack', s.owner_email, email().orderToPack({
       shopName: s.name, ownerName: s.owner_name, publicId: order.public_id, items,
-      packByDays: packByDays(), link: `${accounts.siteUrl()}/sell?view=orders`,
+      packBy: require('./lead-times').dubaiDay(packByFor(order, s.id)), link: `${accounts.siteUrl()}/sell?view=orders`,
     }));
   }));
 });
 
+/* ---- pack-by reminders (hourly sweep, src/order-sweep.js) ---- */
+function shipmentFacts(shipmentId) {
+  return db.prepare(`SELECT sh.*, o.public_id, s.name AS shop_name, u.email AS owner_email, u.name AS owner_name
+    FROM shipments sh JOIN orders o ON o.id = sh.order_id JOIN shops s ON s.id = sh.shop_id JOIN users u ON u.id = s.user_id
+    WHERE sh.id = ?`).get(shipmentId);
+}
+const packItems = (sh) => db.prepare('SELECT name_snapshot AS name, qty FROM order_items WHERE order_id=? AND shop_id=? ORDER BY id').all(sh.order_id, sh.shop_id);
+/** To the maker: the pack-by day has gone and the parcel is not marked Packed. */
+const packReminder = (shipmentId) => safely('pack-reminder', () => {
+  const sh = shipmentFacts(shipmentId);
+  if (!sh) return null;
+  return deliver('pack-reminder', sh.owner_email, email().packReminder({
+    shopName: sh.shop_name, ownerName: sh.owner_name, publicId: sh.public_id, items: packItems(sh),
+    packBy: require('./lead-times').dubaiDay(sh.pack_by_at), link: `${accounts.siteUrl()}/sell?view=orders`,
+  }));
+});
+/** To the admin: two days past the pack-by day, still not packed. */
+const packOverdueAdmin = (shipmentId) => safely('pack-overdue-admin', () => {
+  const sh = shipmentFacts(shipmentId);
+  if (!sh) return null;
+  return deliver('pack-overdue-admin', accounts.adminEmail(), email().packOverdueAdmin({
+    shopName: sh.shop_name, publicId: sh.public_id, items: packItems(sh),
+    packBy: require('./lead-times').dubaiDay(sh.pack_by_at), link: `${accounts.siteUrl()}/admin`,
+  }));
+});
+
 module.exports = {
+  packReminder, packOverdueAdmin, packByFor,
   welcomeVerify, passwordReset, passwordChanged,
   shopApplied, providerApplied, shopDecided, providerDecided, ordersToPack, packByDays,
 };

@@ -50,6 +50,15 @@ const fees = {
   SETTLEMENT_INTERVAL_DAYS: num(process.env.SETTLEMENT_INTERVAL_DAYS, 14),
   SETTLEMENT_ANCHOR_DATE: /^\d{4}-\d{2}-\d{2}$/.test(process.env.SETTLEMENT_ANCHOR_DATE || '')
     ? process.env.SETTLEMENT_ANCHOR_DATE : '2026-10-06', // a Tuesday
+  // Delivery time (owner, 2026-09-30: 'handmade things take longer'). Each
+  // piece carries its maker's make/pack time (products.lead_days, whole
+  // calendar days); the buyer's estimate is that time plus the courier's
+  // window below. A 2-day piece therefore shows 3–6 days, as before.
+  COURIER_TRANSIT_MIN_DAYS: num(process.env.COURIER_TRANSIT_MIN_DAYS, 1),
+  COURIER_TRANSIT_MAX_DAYS: num(process.env.COURIER_TRANSIT_MAX_DAYS, 4),
+  LEAD_DAYS_DEFAULT: 2,  // every existing piece, until its maker says otherwise
+  LEAD_DAYS_MIN: 1,
+  LEAD_DAYS_MAX: 42,     // made to order: up to six weeks
 };
 
 // Deprecated alias — old readers still get the same number.

@@ -4,6 +4,7 @@ const db = require('../db');
 const { parseTags } = require('../tags');
 const productOptions = require('../options');
 const { stockCover } = require('../stock-images');
+const leadTimes = require('../lead-times');
 
 const router = express.Router();
 
@@ -36,6 +37,11 @@ function shape(p) {
     personalization: p.personalization_enabled
       ? { required: !!p.personalization_required, prompt: p.personalization_prompt || '', maxLen: p.personalization_char_limit || 256 }
       : null,
+    // Make/pack time and the buyer's delivery estimate built on it
+    // (src/lead-times.js): { leadDays, transitMinDays, transitMaxDays,
+    // minDays, maxDays, label: '3–6 days' }. The app can adopt it as is.
+    leadDays: leadTimes.leadOf(p.lead_days),
+    estimate: leadTimes.estimate(p.lead_days),
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, image: p.shop_image || null, isHouse: !!p.is_house },
   };
 }

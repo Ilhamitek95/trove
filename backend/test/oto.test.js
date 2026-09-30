@@ -386,5 +386,5 @@ test('return refund waits for OTO: approval books createReturnShipment, reverseP
   assert.equal(done.status, 'refunded');
   assert.ok(done.collected_at);
   assert.equal(refunds(), before + 1, 'refunded once the courier has it');
-  assert.equal(ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').at(-1).params.amount, 20000, 'faulty piece: no collection fee');
+  assert.equal(ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').at(-1).params.amount, 23000, 'faulty piece: no collection fee, and the whole order back for a fault refunds its AED 30 delivery too');
 });

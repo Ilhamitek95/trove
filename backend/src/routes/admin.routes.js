@@ -12,6 +12,7 @@
 const express = require('express');
 const db = require('../db');
 const { requireAdmin, publicUser, startSession } = require('../middleware');
+const shipments = require('../shipments');
 
 const router = express.Router();
 
@@ -315,7 +316,15 @@ router.get('/orders', requireAdmin, (_req, res) => {
     FROM orders o
     WHERE o.status != 'pending' AND NOT (o.status = 'cancelled' AND o.attention = '' AND o.title_transferred_at IS NULL)
     ORDER BY o.created_at DESC, o.id DESC LIMIT 200`).all();
+  // Each shop parcel's pack-by day, and whether it has gone unpacked.
+  const shipStmt = db.prepare(`SELECT sh.id, sh.status, sh.ready_at, sh.pack_by_at, s.name AS shop_name
+    FROM shipments sh JOIN shops s ON s.id = sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);
   res.json({ orders: rows.map((o) => ({
+    parcels: shipStmt.all(o.id).map((sh) => ({
+      shop: sh.shop_name, status: sh.status, packBy: sh.pack_by_at || null,
+      packed: sh.status !== 'processing' || !!sh.ready_at,
+      packOverdue: !o.refunded_at && ['paid'].includes(o.status) && shipments.packOverdue(sh),
+    })),
     // Trove is the merchant of record: support and the courier desk reach the
     // customer from here. Sellers get neither the email nor the phone.
     publicId: o.public_id, email: o.email, phone: o.phone || '', status: o.status,

@@ -184,6 +184,12 @@ function createApp() {
     serviceFeeCents: fees.SERVICE_FEE_CENTS,
     deliveryFeeCents: fees.DELIVERY_FEE_CENTS,
     freeDeliveryThresholdCents: fees.FREE_DELIVERY_THRESHOLD_CENTS,
+    // Delivery estimate = a piece's make/pack time (leadDays) + this window.
+    courierTransitMinDays: fees.COURIER_TRANSIT_MIN_DAYS,
+    courierTransitMaxDays: fees.COURIER_TRANSIT_MAX_DAYS,
+    leadDaysDefault: fees.LEAD_DAYS_DEFAULT,
+    leadDaysMin: fees.LEAD_DAYS_MIN,
+    leadDaysMax: fees.LEAD_DAYS_MAX,
     commissionPercent: fees.COMMISSION_PERCENT,
     platformFeePercent: fees.PLATFORM_FEE_PERCENT, // deprecated alias of commissionPercent
     railBEnabled: require('./config').railBEnabled(),

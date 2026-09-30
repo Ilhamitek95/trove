@@ -330,7 +330,7 @@
 
     <div class="view" id="view-returns">
       <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Buyers pick the items (and units) going back, a reason and photos, within 15 days of delivery. Approving books the courier collection; the refund goes back to their card once the courier has collected the item, and only then do the shops' credits reverse. The AED 30 collection fee applies only to 'changed my mind' on orders of AED 200 and below — tick or untick it to override. The original delivery fee is never refunded. Declines go back to the buyer with your reason.</div></div>
+        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Buyers pick the items (and units) going back, a reason and photos, within 15 days of delivery. Approving books the courier collection; the refund goes back to their card once the courier has collected the item, and only then do the shops' credits reverse. The AED 30 collection fee applies only to 'changed my mind' on orders of AED 200 and below — tick or untick it to override. It is charged per request, so pieces sent back together pay it once. The original delivery fee is refunded only when the whole order comes back for a fault (the request that completes the order, with every returned unit a fault) — the second tick box overrides that either way. Declines go back to the buyer with your reason.</div></div>
         <div id="returnsWrap" style="padding:14px 22px 22px"></div>
       </div>
     </div>
@@ -1259,12 +1259,22 @@ async function markMessage(id,handled){
 }
 
 /* ---------------- orders ---------------- */
+/* Each shop parcel still to pack: its pack-by day (order paid + the slowest
+ * of that shop's make times), red once it has gone. The maker is emailed when
+ * it passes and admin two days later (hourly sweep). */
+function packByCell(o){
+  const day=s=>new Date(String(s).replace(' ','T')+'Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Dubai'});
+  const open=(o.parcels||[]).filter(p=>!p.packed&&p.packBy&&!o.refundedAt&&o.status==='paid');
+  if(!open.length)return '';
+  const many=(o.parcels||[]).length>1;
+  return open.map(p=>`<div style="font-size:12px;font-weight:700;margin-top:3px;color:${p.packOverdue?'#B3261E':'var(--muted)'}">${p.packOverdue?'Overdue · ':''}Pack by ${esc(day(p.packBy))}${many?' · '+esc(p.shop):''}</div>`).join('');
+}
 function renderOrders(){
   $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Shops</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
     <tbody>${ORDERS.length?ORDERS.map(o=>`<tr>
       <td style="font-weight:700">${esc(o.publicId)}</td>
       <td style="color:var(--muted)">${esc(o.email)}${o.phone?`<div style="font-size:12px">${esc(o.phone)}</div>`:''}</td>
-      <td>${o.shops.map(esc).join(', ')}</td>
+      <td>${o.shops.map(esc).join(', ')}${packByCell(o)}</td>
       <td>${o.itemCount}</td>
       <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(o.totalCents)}</td>
       <td>${o.refundedAt?`<span class="pill rejected">refunded</span>`:`<span class="pill ${esc(o.status)}">${esc(o.status)}</span>`}${o.attention?`<div style="font-size:12px;font-weight:700;color:#B3261E;margin-top:4px">${esc(({oversold:'Sold out after payment — refunded automatically',oversold_refund_failed:'Sold out after payment — REFUND BY HAND',paid_after_cancel:'Paid after it was cancelled — refunded automatically',refund_failed:'Automatic refund failed — REFUND BY HAND'})[o.attention]||o.attention)}</div>`:''}</td>

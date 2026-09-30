@@ -87,10 +87,15 @@ function paidDbEffects(order, groups) {
   // suppliers: title transfers now, and the buyer-facing order is paid.
   db.prepare("UPDATE orders SET status='paid', title_transferred_at=datetime('now'), vat_amount_cents=? WHERE id=?").run(vat, order.id);
   // One shipment per shop, so each supplier fulfils and tracks their own items.
-  for (const { shop_id } of db.prepare('SELECT DISTINCT shop_id FROM order_items WHERE order_id=?').all(order.id)) {
+  // Its pack-by date = today (the day the order is paid) + the slowest of
+  // THAT shop's pieces in the order (make/pack time snapshotted at checkout).
+  const { packByAt } = require('./lead-times');
+  const paidAt = db.prepare("SELECT datetime('now') AS t").get().t;
+  for (const { shop_id, lead } of db.prepare(`SELECT oi.shop_id, MAX(COALESCE(oi.lead_days, p.lead_days, ?)) AS lead
+      FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id=? GROUP BY oi.shop_id`).all(fees.LEAD_DAYS_DEFAULT, order.id)) {
     const exists = db.prepare('SELECT id FROM shipments WHERE order_id=? AND shop_id=?').get(order.id, shop_id);
     if (!exists) {
-      const r = db.prepare("INSERT INTO shipments (order_id, shop_id, status) VALUES (?,?, 'processing')").run(order.id, shop_id);
+      const r = db.prepare("INSERT INTO shipments (order_id, shop_id, status, pack_by_at) VALUES (?,?, 'processing', ?)").run(order.id, shop_id, packByAt(paidAt, lead));
       db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'processing', 'Order received — preparing your items')").run(r.lastInsertRowid);
     }
   }
@@ -154,7 +159,8 @@ function unavailablePostEffects(order, lines, stripe, { soldOut = true } = {}) {
 function sendConfirmation(order) {
   const email = require('./email');
   const options = require('./options');
-  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, s.name AS shop_name, p.images
+  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, s.name AS shop_name, p.images,
+      oi.shop_id, COALESCE(oi.lead_days, p.lead_days) AS lead_days
     FROM order_items oi JOIN shops s ON s.id = oi.shop_id LEFT JOIN products p ON p.id = oi.product_id
     WHERE oi.order_id=? ORDER BY s.name, oi.id`).all(order.id);
   const extras = require('./extras');
@@ -169,6 +175,7 @@ function sendConfirmation(order) {
       image: email.productImage({ images: i.images, name: i.name_snapshot }) })),
     shops: [...new Set(items.map((i) => i.shop_name))],
     ship,
+    estimate: require('./lead-times').orderEstimate(items),
   });
   email.send({ to: order.email, ...msg }).catch((e) => console.error('order-confirmation email failed:', e.message));
 }

@@ -120,7 +120,7 @@ router.post('/', async (req, res, next) => {
       if (!Number.isFinite(unitPrice) || unitPrice <= 0)
         return res.status(400).json({ error: `${p.name} can't be bought right now — please remove it from your basket` });
 
-      const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: unitPrice, qty, personalization: perso, options: JSON.stringify(chosen.value), extras: JSON.stringify(picked.value) };
+      const line = { product_id: p.id, shop_id: p.shop_id, lead_days: p.lead_days, name: p.name, price_cents: unitPrice, qty, personalization: perso, options: JSON.stringify(chosen.value), extras: JSON.stringify(picked.value) };
       lines.push(line);
       subtotal += unitPrice * qty;
     }
@@ -167,8 +167,9 @@ router.post('/', async (req, res, next) => {
           const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
             VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail);
           const oid = info.lastInsertRowid;
-          const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options,extras) VALUES (?,?,?,?,?,?,?,?,?)');
-          for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options, l.extras);
+          // lead_days is snapshotted so a later edit never moves this order's promise.
+          const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options,extras,lead_days) VALUES (?,?,?,?,?,?,?,?,?,?)');
+          for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options, l.extras, l.lead_days ?? null);
           return oid;
         })();
         break;

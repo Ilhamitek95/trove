@@ -43,4 +43,35 @@ async function sweepUnpaid({ olderThanHours = 24, stripe = require('./stripe').g
   return { cancelled, skipped };
 }
 
-module.exports = { sweepUnpaid };
+/**
+ * Pack-by reminders (owner, 2026-09-30), from the same hourly job. Every
+ * paid shipment carries pack_by_at (the end of the Dubai day it should be
+ * packed by — see src/lead-times.js). Still 'processing' and not handed to
+ * the courier once that has passed →
+ *   - the maker is emailed once (stamp pack_reminder_at), and
+ *   - two days after it, the admin is emailed once (stamp pack_escalated_at).
+ * The stamp is written BEFORE the email goes, so a slow or failed send can
+ * never make it fire twice. Orders refunded or no longer paid are skipped.
+ */
+const ESCALATE_AFTER_DAYS = 2;
+async function sweepPackBy({ now = null } = {}) {
+  const notify = require('./notify');
+  const at = now || db.prepare("SELECT datetime('now') AS t").get().t;
+  const base = `FROM shipments sh JOIN orders o ON o.id = sh.order_id
+    WHERE sh.status = 'processing' AND sh.ready_at IS NULL AND sh.pack_by_at IS NOT NULL
+      AND o.status = 'paid' AND o.refunded_at IS NULL`;
+  const due = db.prepare(`SELECT sh.id ${base} AND sh.pack_reminder_at IS NULL AND sh.pack_by_at < ?`).all(at);
+  const late = db.prepare(`SELECT sh.id ${base} AND sh.pack_escalated_at IS NULL
+    AND datetime(sh.pack_by_at, '+${ESCALATE_AFTER_DAYS} days') < ?`).all(at);
+  const jobs = [];
+  for (const { id } of due) {
+    if (db.prepare("UPDATE shipments SET pack_reminder_at=datetime('now') WHERE id=? AND pack_reminder_at IS NULL").run(id).changes) jobs.push(notify.packReminder(id));
+  }
+  for (const { id } of late) {
+    if (db.prepare("UPDATE shipments SET pack_escalated_at=datetime('now') WHERE id=? AND pack_escalated_at IS NULL").run(id).changes) jobs.push(notify.packOverdueAdmin(id));
+  }
+  await Promise.all(jobs);
+  return { reminded: due.length, escalated: late.length };
+}
+
+module.exports = { sweepUnpaid, sweepPackBy, ESCALATE_AFTER_DAYS };

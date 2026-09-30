@@ -148,7 +148,11 @@ test('a paid order emails each maker only their own pieces and never the buyer c
   assert.match(loomMail[0].html, /Wool Throw/);
   assert.ok(!loomMail[0].html.includes('Speckled Mug'));
   for (const m of [...potsMail, ...loomMail]) {
-    assert.match(m.html, /within 2 days/, 'pack-by guidance');
+    // A concrete day: paid today + the standard 2-day make time (per-shop
+    // dates for pieces with their own times: test/lead-times.test.js).
+    const lt = require('../src/lead-times');
+    const due = lt.dubaiDay(lt.packByAt(null, 2));
+    assert.ok(m.html.includes(`Please pack by ${due}`), 'pack-by guidance');
     assert.ok(m.html.includes('https://trove.test/sell?view=orders'), 'link to the order');
     for (const secret of ['amal.buyer@test.local', 'amal.buyer', '765 4321', '7654321', 'Harbour Views', 'Amal', 'Rashid']) {
       assert.ok(!m.html.includes(secret) && !m.subject.includes(secret), `maker email leaks ${secret}`);

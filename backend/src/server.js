@@ -201,6 +201,10 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       .then(({ cancelled, skipped }) => { if (cancelled || skipped) console.log(`unpaid checkouts: cancelled ${cancelled}, left ${skipped} for the payment webhook`); })
       .catch((e) => console.error('unpaid checkout sweep failed:', e))
       .finally(() => { sweepingOrders = false; });
+    // Pack-by reminders: maker once when the day passes, admin once two days on.
+    require('./order-sweep').sweepPackBy()
+      .then(({ reminded, escalated }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); })
+      .catch((e) => console.error('pack-by sweep failed:', e));
   });
 }
 

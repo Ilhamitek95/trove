@@ -6,6 +6,7 @@ const { requireStripe } = require('../stripe');
 const fees = require('../fees');
 const shipments = require('../shipments');
 const uploads = require('../uploads');
+const leadTimes = require('../lead-times');
 
 const router = express.Router();
 const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
@@ -274,11 +275,17 @@ router.post('/products', requireSeller, (req, res) => {
   if (optErr) return res.status(400).json({ error: optErr });
   const extErr = productExtras.extrasError(extras);
   if (extErr) return res.status(400).json({ error: extErr });
+  // Make/pack time: the dashboard always sends it (a required field there);
+  // an API caller that leaves it out gets the default, unconfirmed.
+  const leadErr = leadTimes.leadDaysError((req.body || {}).leadDays);
+  if (leadErr) return res.status(400).json({ error: leadErr });
   const opt = optionCols(options, variants, f.stock);
+  const lead = (req.body || {}).leadDays === undefined ? null : Number(req.body.leadDays);
   const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,extras,
-      personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, f.name, f.description, category, f.price_cents, f.compare_at_cents ?? null, opt.stock, f.status, f.image_seed,
-      JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization));
+      personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit,lead_days,lead_days_confirmed)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, f.name, f.description, category, f.price_cents, f.compare_at_cents ?? null, opt.stock, f.status, f.image_seed,
+      JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization),
+      lead ?? fees.LEAD_DAYS_DEFAULT, lead == null ? 0 : 1);
   if (images !== undefined && images.length) {
     try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
     catch (e) {
@@ -328,6 +335,8 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   if (optErr) return res.status(400).json({ error: optErr });
   const extErr = productExtras.extrasError(b.extras);
   if (extErr) return res.status(400).json({ error: extErr });
+  const leadErr = leadTimes.leadDaysError(b.leadDays);
+  if (leadErr) return res.status(400).json({ error: leadErr });
   if (b.images !== undefined) {
     const imgErr = imagesError(b.images);
     if (imgErr) return res.status(400).json({ error: imgErr });
@@ -343,6 +352,10 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   }
   if (b.tags !== undefined) {
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
+  }
+  // Saving a time (even the same one) counts as the maker confirming it.
+  if (b.leadDays !== undefined) {
+    db.prepare('UPDATE products SET lead_days=?, lead_days_confirmed=1 WHERE id=?').run(Number(b.leadDays), p.id);
   }
   if (b.extras !== undefined) {
     db.prepare('UPDATE products SET extras=? WHERE id=?').run(JSON.stringify(productExtras.normalize(b.extras)), p.id);
@@ -365,6 +378,17 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   }
   if (b.images !== undefined) applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images));
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
+});
+
+// POST /api/seller/products/confirm-lead-times { ids?: number[] } — the
+// dashboard banner's one tap: 'these pieces really are ready in the time
+// shown'. Confirms the listed pieces (or every unconfirmed one) as they are.
+router.post('/products/confirm-lead-times', requireSeller, (req, res) => {
+  const ids = Array.isArray((req.body || {}).ids) ? req.body.ids.map(Number).filter(Number.isInteger) : null;
+  const r = ids
+    ? db.prepare(`UPDATE products SET lead_days_confirmed=1 WHERE shop_id=? AND lead_days_confirmed=0 AND id IN (${ids.map(() => '?').join(',') || 'NULL'})`).run(req.shop.id, ...ids)
+    : db.prepare('UPDATE products SET lead_days_confirmed=1 WHERE shop_id=? AND lead_days_confirmed=0').run(req.shop.id);
+  res.json({ ok: true, confirmed: r.changes });
 });
 
 router.delete('/products/:id', requireSeller, (req, res) => {

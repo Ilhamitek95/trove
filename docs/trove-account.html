@@ -568,6 +568,15 @@ let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add(
 /* ---------- ORDERS ---------- */
 const ORDER_STATUS={paid:['Processing','processing'],fulfilled:['On the way','shipped'],cancelled:['Cancelled','processing'],failed:['Payment failed','processing']};
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); }
+/* Expected arrival for a parcel still on its way: its maker's pack-by day +
+ * the courier's 1–4 days (server-fed as s.expected = { from, to }). */
+function expectedLine(s){
+  if(!s||!s.expected||['delivered','cancelled'].includes(s.status))return '';
+  if(new Date(s.expected.to).getTime()<Date.now())return ''; // running late: the timeline speaks, not a date gone by
+  const f=d=>new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'short',timeZone:'Asia/Dubai'});
+  const a=f(s.expected.from), b=f(s.expected.to);
+  return `<div class="ship-note ship-eta">Expected ${a===b?esc(a):esc(a)+' – '+esc(b)}</div>`;
+}
 /* ---------- shipment tracking ---------- */
 const SHIP_FLOW=['processing','shipped','out_for_delivery','delivered'];
 const SHIP_STEP={processing:'Processing',shipped:'Shipped',out_for_delivery:'Out for delivery',delivered:'Delivered'};
@@ -617,6 +626,7 @@ function renderOrders(){
           <div class="ship-hd"><span class="oc-shop"><span class="gem"></span>${esc(s.shop?s.shop.name:'Shop')}</span><span class="opill ${SHIP_PILL[s.status]||'processing'}">${esc(s.statusLabel)}</span></div>
           ${shipTracker(s.status)}
           ${last?`<div class="ship-note">${esc(last.note||last.label)}${last.at?' · '+fmtDate(last.at):''}</div>`:''}
+          ${expectedLine(s)}
           ${tn}
           <div class="ship-items">${items}</div>
         </div>`;
@@ -909,7 +919,13 @@ function updateRtMoney(){
   const r=rtOrder.returns, reason=$('rtReason').value;
   const picked=(r.items||[]).filter(i=>rtPicked.has(i.id));
   const perso=picked.some(i=>i.personalised)&&reason==='changed-mind';
-  if(!picked.length){ $('rtMoney').innerHTML=`Tick at least one item above — your refund figure appears here.`; return; }
+  // The collection fee is per return request: say so whenever it could apply
+  // (a fee on this order, change of mind or no reason yet) and there is more
+  // than one piece still here to send back.
+  const units=(r.items||[]).reduce((t,i)=>t+(i.available>0?i.available:0),0);
+  const together=r.fee>0&&(!reason||reason==='changed-mind')&&units>1
+    ?`<span class="rt-once" style="display:block;margin-top:8px"><b>Returning more than one piece?</b> Send them back together and the ${aed(r.fee)} collection fee is charged once.</span>`:'';
+  if(!picked.length){ $('rtMoney').innerHTML=`Tick at least one item above — your refund figure appears here.`+together; return; }
   if(perso){ $('rtMoney').innerHTML=`<b>Personalised pieces can only be returned if they arrive faulty or damaged, are the wrong item, or are not as described.</b> Untick the personalised piece or pick the reason that fits.`; return; }
   const gross=picked.reduce((t,i)=>t+i.price*(rtPicked.get(i.id)||1),0);
   const feeApplies=reason==='changed-mind'&&r.fee>0;
@@ -919,11 +935,6 @@ function updateRtMoney(){
   const all=(r.items||[]).every(i=>!(i.available>0)||(rtPicked.get(i.id)||0)>=i.available);
   const delivery=fault&&all&&r.wholeOrderFaultDelivery>0?Number(r.wholeOrderFaultDelivery):0;
   const refund=Math.max(0,gross-(feeApplies?r.fee:0))+delivery;
-  // The collection fee is per return request: say so whenever it could apply
-  // and there is more than one piece on the order.
-  const units=(r.items||[]).reduce((t,i)=>t+(i.available>0?i.available:0),0);
-  const together=r.fee>0&&(!reason||reason==='changed-mind')&&units>1
-    ?`<span class="rt-once" style="display:block;margin-top:8px"><b>Returning more than one piece?</b> Send them back together and the ${aed(r.fee)} collection fee is charged once.</span>`:'';
   $('rtMoney').innerHTML=`You'll get <b>${aed(refund)}</b> back to your card once our courier has collected the item. `
     +(feeApplies?`Changing your mind on an order of AED 200 and below costs ${aed(r.fee)} for the collection — it's already deducted from that figure. `
       :reason?`Collection is free for this return. `:(r.fee?`Collection is free if the item is faulty or damaged, the wrong item or not as described; changing your mind on this order costs ${aed(r.fee)}. `:`Collection is free for this order. `))

@@ -269,6 +269,17 @@
   .dprev-name{font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.15;margin:2px 0 5px;overflow-wrap:break-word}
   .dprev-name.empty{color:var(--muted);font-weight:500}
   .dprev-price{font-size:13.5px;font-weight:700}
+  .dprev-eta{font-size:12px;font-weight:600;color:var(--muted);margin-top:3px}
+  .lead-row{display:flex;align-items:center;gap:10px}
+  .lead-row input{max-width:110px}
+  .lead-unit{font-size:13.5px;font-weight:600;color:var(--ink-80)}
+  .lead-picks{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+  .lead-picks button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;transition:.15s}
+  .lead-picks button.on{border-color:var(--char);background:var(--char);color:var(--cream)}
+  .lead-eta{margin-top:8px;font-size:12.5px;font-weight:700;color:var(--char)}
+  .lead-badge{display:inline-block;margin-left:6px;border:1px solid var(--line);background:var(--rose-tint);color:var(--char);border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;cursor:pointer}
+  .pack-by{font-size:12.5px;font-weight:700;color:var(--char)}
+  .pack-by.late{color:var(--accent-ink)}
   .dprev-price s{color:var(--muted);font-weight:500;font-size:12px;margin-left:7px}
   .dprev-note{font-size:11px;color:var(--muted);font-weight:500;margin-top:7px}
   .mny{position:relative}
@@ -669,6 +680,7 @@
       <!-- PRODUCTS -->
       <div class="view" id="view-products">
         <div class="sec-head"><span class="n"><b id="prodCount">0</b> <span id="prodNoun">products</span> · click any price or stock to edit · you keep <span class="keepPct">60</span>% of each price</span></div>
+        <div id="leadBanner"></div>
         <div class="card" style="padding:6px 0">
           <table class="tbl" id="prodTable"></table>
         </div>
@@ -801,6 +813,7 @@
         <div class="dprev-cat" id="dpvCat">Ceramics</div>
         <div class="dprev-name empty" id="dpvName">Your product name</div>
         <div class="dprev-price"><span id="dpvPrice">AED 0</span><s id="dpvCompare" style="display:none"></s></div>
+        <div class="dprev-eta" id="dpvEta">Buyers will see: Arrives in 3–6 days</div>
       </div>
     </div>
     <div class="dprev-note">Live preview — roughly how it appears in your shop. Your first photo is the cover; without one, a colour tile stands in.</div>
@@ -844,6 +857,12 @@
       <div class="hint" style="margin:-10px 0 18px">Fill the was-price only for a genuine markdown — it shows crossed out next to your price, with a Sale badge.</div>
       <div class="field" id="dStockField"><label for="dStock">Stock</label><input id="dStock" type="number" min="0" placeholder="0">
         <div class="hint">How many you can sell right now — 0 shows as sold out. Adding choices below moves this to a count per combination.</div></div>
+      <div class="field" id="dLeadField"><label for="dLead">Ready to send in</label>
+        <div class="lead-row"><input id="dLead" type="number" min="1" max="42" step="1" inputmode="numeric" required aria-describedby="dLeadHint dLeadEta"><span class="lead-unit">days</span></div>
+        <div class="lead-picks" role="group" aria-label="Quick picks"><button type="button" data-d="2" onclick="pickLead(2)">2 days</button><button type="button" data-d="5" onclick="pickLead(5)">5 days</button><button type="button" data-d="7" onclick="pickLead(7)">7 days</button><button type="button" data-d="14" onclick="pickLead(14)">14 days</button><button type="button" data-d="21" onclick="pickLead(21)">21 days</button></div>
+        <div class="ferr"></div>
+        <div class="hint" id="dLeadHint">How long you need to make or finish and pack this piece after it's ordered. Made-to-order pieces can take up to 6 weeks.</div>
+        <div class="lead-eta" id="dLeadEta" aria-live="polite"></div></div>
       <div class="dfee" id="dFee" aria-live="polite"><span class="keep">You keep <span class="keepPct">60</span>% · AED <span id="dFeeKeep">0</span></span>Trove buys the piece from you at your price minus <span id="dFeePct">40</span>% — on a AED <span id="dFeeBase">0</span> price that is AED <span id="dFeeKeep2">0</span> to you. Trove's 40% pays for photography, marketing, delivery and payments.</div>
     </div>
 
@@ -1010,7 +1029,12 @@ const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
    cost is already inside the line price. */
 const exText=x=>(x||[]).map(e=>e.price?`${e.name} (+AED ${e.price.toLocaleString()})`:e.name).join(' · ');
 function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,adminHidden:!!p.admin_hidden_at,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),extras:parseTagsCol(p.extras),
-  perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
+  perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256},
+  lead:Number(p.lead_days)||2,leadConfirmed:!!p.lead_days_confirmed}; }
+/* Make/pack time → the buyer's estimate: lead + the courier's 1–4 days (from
+ * /api/config), the same sum the storefront and backend/src/lead-times.js do. */
+let TRANSIT={min:1,max:4};
+function etaLabel(lead){const l=Math.max(1,parseInt(lead,10)||2),a=l+TRANSIT.min,b=l+TRANSIT.max;return a===b?a+' days':a+'–'+b+' days';}
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:safeColor(s.color),image:safeImg(s.image),status:s.status||'approved',
     pickupAddress:s.pickup_address||'',pickupPhone:s.pickup_phone||'',
@@ -1092,7 +1116,7 @@ function renderOverview(){
   if(deltas[0]){deltas[0].textContent=ORDER_SUMMARY&&ORDER_SUMMARY.refundedCents?('after '+aed(ORDER_SUMMARY.refundedCents/100)+' refunded'):'paid, less refunds';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
-  $('ovBanner').innerHTML = agreementBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
+  $('ovBanner').innerHTML = agreementBannerHTML() + leadBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
   renderOverviewChart();
   $('poAvail').textContent=aed(net);
   $('poDate').textContent=managed ? (SETTLE.nextRunDate?runDayLabel(SETTLE.nextRunDate)+' · by Trove':'Every other Tuesday · by Trove') : (sc.payoutsEnabled?'On your Stripe schedule':'—');
@@ -1129,12 +1153,13 @@ function renderProducts(){
   // A shop still under review has nothing on show yet — a piece set to live
   // is ready, and goes on sale the moment the shop is approved.
   const waiting=SHOP.status!=='approved';
+  $('leadBanner').innerHTML=leadBannerHTML();
   if(!products.length){ $('prodTable').innerHTML=`<tbody><tr><td style="padding:30px 16px;color:var(--muted);font-weight:600">No products yet — add your first piece with the button above.</td></tr></tbody>`; return; }
   $('prodTable').innerHTML=`
     <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
     <tbody>${products.map(p=>`<tr>
       <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${esc(safeImg(p.images&&p.images[0])||img(p.seed))}" onerror="this.style.display='none'"></div>
-        <div><div class="pn">${esc(p.name)}</div><div class="ps">${Number(p.stock)||0} in stock</div></div></div></td>
+        <div><div class="pn">${esc(p.name)}</div><div class="ps">${Number(p.stock)||0} in stock · ready in ${Number(p.lead)||2} day${Number(p.lead)===1?'':'s'}${p.leadConfirmed?'':` <span class="lead-badge" role="button" tabindex="0" title="Still at the standard 2 days — check it" onclick="openEdit(${p.id})" onkeydown="if(event.key==='Enter'){event.preventDefault();openEdit(${p.id})}">Confirm make time</span>`}</div></div></div></td>
       <td style="color:var(--muted);font-weight:600">${esc(p.cat)}</td>
       <td><span class="price-edit" role="button" tabindex="0" aria-label="Price ${aed(p.price)} — edit" onclick="editPrice(${p.id},this)" onkeydown="if(event.key==='Enter'){event.preventDefault();editPrice(${p.id},this)}">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
       <td>${(p.options||[]).length
@@ -1423,16 +1448,26 @@ function updateDrawerPreview(){   // NB: distinct name — updatePreview() furth
   $('dpvCat').textContent=$('dCat').value;
   const v=parseFloat($('dPrice').value)||0, c=parseFloat($('dCompare').value)||0;
   $('dpvPrice').textContent=money(Math.round(v*100));
+  updateLeadEta();
   const sale=v>0&&c>v;
   $('dpvSale').classList.toggle('show',sale);
   $('dpvCompare').style.display=sale?'inline':'none';
   if(sale)$('dpvCompare').textContent=money(Math.round(c*100));
 }
+/* 'Ready to send in': whole days 1–42, quick picks, live buyer estimate. */
+function leadVal(){const n=Number($('dLead').value);return $('dLead').value.trim()!==''&&Number.isInteger(n)&&n>=1&&n<=42?n:null;}
+function updateLeadEta(){
+  const n=leadVal();
+  document.querySelectorAll('.lead-picks button').forEach(b=>b.classList.toggle('on',Number(b.dataset.d)===n));
+  const line=n?'Buyers will see: Arrives in '+etaLabel(n):'Buyers will see the delivery time once you set this';
+  $('dLeadEta').textContent=line; $('dpvEta').textContent=line;
+}
+function pickLead(d){$('dLead').value=d;drawerDirty=true;$('dLeadField').classList.remove('bad');updateLeadEta();}
 function clearFieldErrors(){document.querySelectorAll('#drawer .field.bad').forEach(f=>f.classList.remove('bad'));}
 function fieldError(inputId,msg){const f=$(inputId).closest('.field');f.classList.add('bad');const e=f.querySelector('.ferr');if(e)e.textContent=msg;}
 
 function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('drawerSub').textContent='Takes about a minute — you can always save it as a draft.';$('drawerSave').textContent='Add product';
-  $('dName').value='';$('dDesc').value='';fillCatOptions();$('dCat').selectedIndex=0;$('dPrice').value='';$('dCompare').value='';$('dStock').value='';
+  $('dName').value='';$('dDesc').value='';fillCatOptions();$('dCat').selectedIndex=0;$('dPrice').value='';$('dCompare').value='';$('dStock').value='';$('dLead').value=2;
   drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   drawerImages=[];renderDrawerPhotos();
   drawerOptions=[];drawerVariants=[];drawerStockMemory=new Map();renderDrawerOptions();
@@ -1440,7 +1475,7 @@ function openAdd(){editingId=null;$('drawerTitle').textContent='Add product';$('
   fillPerso(null);setSegStatus('live');updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   $('drawerTitle').textContent='Edit product';$('drawerSub').textContent='Tweak anything — nothing changes until you save.';$('drawerSave').textContent='Save changes';
-  $('dName').value=p.name;$('dDesc').value=p.desc||'';fillCatOptions();ensureCatOption(p.cat);$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;
+  $('dName').value=p.name;$('dDesc').value=p.desc||'';fillCatOptions();ensureCatOption(p.cat);$('dCat').value=p.cat;$('dPrice').value=p.price;$('dCompare').value=p.compare||'';$('dStock').value=p.stock;$('dLead').value=p.lead||2;
   drawerTags=(p.tags||[]).slice();suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
   drawerImages=(p.images||[]).slice();renderDrawerPhotos();
   drawerOptions=(p.options||[]).map(g=>({name:g.name,values:(g.values||[]).slice()}));
@@ -1457,6 +1492,7 @@ function updateFee(){const v=parseFloat($('dPrice').value)||0,keep=Math.round(v*
 $('dPrice').addEventListener('input',()=>{updateFee();updateDrawerPreview();});
 $('dCompare').addEventListener('input',updateDrawerPreview);
 $('dName').addEventListener('input',updateDrawerPreview);
+$('dLead').addEventListener('input',updateLeadEta);
 /* any edit marks the drawer dirty and clears that field's error */
 $('drawer').addEventListener('input',(e)=>{drawerDirty=true;const f=e.target.closest('.field');if(f)f.classList.remove('bad');});
 $('drawer').addEventListener('change',()=>{drawerDirty=true;});
@@ -1470,12 +1506,14 @@ $('drawerSave').onclick=async()=>{
   if(!name){fieldError('dName','Every piece needs a name.');bad=true;}
   if(isNaN(price)||price<=0){fieldError('dPrice','Set a price above 0.');bad=true;}
   if(compare!==null&&(isNaN(compare)||compare<=price)){fieldError('dCompare','A was-price only works above your price — or leave it empty.');bad=true;}
+  const lead=leadVal();
+  if(!lead){fieldError('dLead','Set how many days you need — a whole number from 1 to 42.');bad=true;}
   if(bad){const f=document.querySelector('#drawer .field.bad');f.scrollIntoView({behavior:'smooth',block:'center'});const inp=f.querySelector('input,textarea,select');if(inp)inp.focus({preventScroll:true});return;}
   if($('dTagIn').value.trim()){addDrawerTag($('dTagIn').value);$('dTagIn').value='';}   // catch a half-typed tag
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
     compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
     tags:drawerTags,personalization:readPerso(),images:drawerImages,
-    options:drawerOptionsPayload(),variants:drawerVariants,extras:drawerExtrasPayload()};
+    options:drawerOptionsPayload(),variants:drawerVariants,extras:drawerExtrasPayload(),leadDays:lead};
   // A piece Trove hid keeps its status: edits save, going live is Trove's call.
   const editingP=editingId&&products.find(x=>x.id===editingId);
   if(editingP&&editingP.adminHidden) delete body.status;
@@ -1526,6 +1564,14 @@ const ORDER_FILTER_LABELS=[['all','All'],['action','Needs action'],['transit','I
 function shipFilterKey(s){return s.status==='processing'?'action':(s.status==='shipped'||s.status==='out_for_delivery')?'transit':s.status==='delivered'?'done':'other';}
 function setOrderFilter(f){orderFilter=f;renderOrders();}
 function toggleShip(id){if(expandedShips.has(id))expandedShips.delete(id);else expandedShips.add(id);renderOrders();}
+/* Pack-by day for a parcel still to pack: the day the order was paid plus
+ * the longest make time among this shop's pieces in it (server-fed). Past
+ * it without 'Packed' = overdue — Trove's hourly sweep emails a reminder. */
+function packByDay(s){return new Date(String(s).replace(' ','T')+'Z').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'Asia/Dubai'});}
+function packByHTML(o){
+  if(!o.packBy||o.status!=='processing'||o.readyAt)return '';
+  return o.packOverdue?`<span class="pack-by late">Overdue · pack by ${esc(packByDay(o.packBy))}</span>`:`<span class="pack-by">Pack by ${esc(packByDay(o.packBy))}</span>`;
+}
 function shipRowHTML(o){
   const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
   const perso=(o.items||[]).some(i=>i.personalization);
@@ -1537,7 +1583,7 @@ function shipRowHTML(o){
   return `<div class="card ship-row" onclick="toggleShip(${Number(o.id)})">
       <span class="order-pill ${shipPill(o.status)}">${esc(o.statusLabel)}</span>
       <div style="min-width:0"><div class="sr-id">${esc(o.order?o.order.publicId:'')}</div>
-        <div class="sr-sub">${esc(name)} · ${units} item${units===1?'':'s'} · ${aed(o.itemTotal||0)}${perso?' · <span class="sr-perso">✎ personalised</span>':''}${retFlag}</div></div>
+        <div class="sr-sub">${esc(name)} · ${units} item${units===1?'':'s'} · ${aed(o.itemTotal||0)}${perso?' · <span class="sr-perso">✎ personalised</span>':''}${retFlag}${packByHTML(o)?' · '+packByHTML(o):''}</div></div>
       <span class="sr-date">${fmtDate(o.order?o.order.createdAt:o.createdAt)}</span>
       <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
     </div>`;
@@ -1555,7 +1601,7 @@ function shipCardHTML(o){
     </div>`).join('');
   return `<div class="card ship-card">
     <div class="sc-head" onclick="toggleShip(${Number(o.id)})" title="Collapse">
-      <div><div class="up" style="margin:0">Order</div><div class="sc-id">${esc(o.order?o.order.publicId:'')}</div><div class="sc-sub">Placed ${fmtDateTime(o.order?o.order.createdAt:o.createdAt)}</div></div>
+      <div><div class="up" style="margin:0">Order</div><div class="sc-id">${esc(o.order?o.order.publicId:'')}</div><div class="sc-sub">Placed ${fmtDateTime(o.order?o.order.createdAt:o.createdAt)}${packByHTML(o)?' · '+packByHTML(o):''}</div></div>
       <span class="order-pill ${shipPill(o.status)}" style="margin-left:auto">${esc(o.statusLabel)}</span>
       <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
     </div>
@@ -1845,6 +1891,21 @@ function graduationBannerHTML(){
     <p>${flagged
       ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">Apply for an e-Trader licence ↗</a>'
       :'You applied with a trade licence. Once the Trove team verifies it, we\'ll set up direct per-sale payouts for you — no action needed.'}</p></div></div>`;
+}
+/* Per-piece make times (2026-09-30): pieces listed before the field existed
+   sit at the standard 2 days until their maker confirms or changes them —
+   a gentle prompt, shown on Products and the Overview. */
+function leadBannerHTML(){
+  const todo=products.filter(p=>!p.leadConfirmed);
+  if(!todo.length)return '';
+  return `<div class="banner" id="leadBannerCard"><div class="bi" style="background:var(--sage,#CAD5CC);color:var(--char)"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 3h5"/></svg></div>
+    <div><h4>How long does each piece take you?</h4><p>Every piece now shows buyers its own delivery time: your make and pack time, plus 1–4 days with our courier. ${todo.length===1?'One piece still shows':`${todo.length} pieces still show`} the standard 2 days (arrives in 3–6 days). If something takes longer, open it and set <b>Ready to send in</b> — look for <b>Confirm make time</b> next to it on Products.</p></div>
+    <button class="btn btn-coral" onclick="confirmLeadTimes(this)">They're all ready in 2 days</button></div>`;
+}
+async function confirmLeadTimes(btn){
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{ await TroveAPI.api('/api/seller/products/confirm-lead-times',{method:'POST',body:{ids:products.filter(p=>!p.leadConfirmed).map(p=>p.id)}}); toast('Thanks — make times confirmed'); await reloadProducts(); renderOverview(); }
+  catch(e){ toast(e.message||'Could not save'); if(btn){btn.disabled=false;btn.textContent="They're all ready in 2 days";} }
 }
 /* A newer Seller Agreement: a gentle prompt, never a block — selling and
    settlement carry on while it is showing. */
@@ -2320,7 +2381,7 @@ function pvPieceHTML(p){
         ${opts}${extras}${perso}
         <div class="pvw-stock">${stock?(stock<=3?`Only ${stock} left`:'In stock'):'Sold out'} · ${esc(p.cat||'')}</div>
         <button type="button" class="btn btn-dark pvw-add" disabled title="Preview only">Add to basket</button>
-        <div class="pvw-note">Sold and delivered by Trove · arrives in 3–6 days</div>
+        <div class="pvw-note">Sold and delivered by Trove · arrives in ${esc(etaLabel(p.lead))}${p.lead>2?` · made for you, ready to send in ${Number(p.lead)} days`:''}</div>
       </div>
     </div>
     <div class="pvw-foot"><button type="button" class="btn btn-ghost btn-sm" onclick="openPreview('shop')">← The whole shop</button>
@@ -2463,7 +2524,8 @@ async function boot(){
   buildMobileTabs();
   await Promise.all([reloadProducts(), reloadOrders(), reloadReturns(), reloadAnalytics()]);
   // Claude-written tag suggestions: only show the button when the server has a key.
-  TroveAPI.config().then(c=>{ if(c&&c.aiTagsEnabled)$('dTagAI').style.display=''; }).catch(()=>{});
+  TroveAPI.config().then(c=>{ if(c&&c.aiTagsEnabled)$('dTagAI').style.display='';
+    if(c&&c.courierTransitMinDays)TRANSIT={min:Number(c.courierTransitMinDays),max:Number(c.courierTransitMaxDays)||4}; }).catch(()=>{});
   fillStoreForm();
   const params=new URLSearchParams(location.search);
   if(params.get('connect')){ await refreshStripeStatus(); go('payments'); }
