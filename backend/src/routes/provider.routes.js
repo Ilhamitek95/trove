@@ -48,13 +48,19 @@ router.get('/me', (req, res) => res.json({ provider: providerMe(req.provider) })
 
 router.patch('/me', (req, res) => {
   const b = req.body || {};
-  const clean = (v, max) => String(v || '').trim().slice(0, max);
   const updates = {};
-  if (b.bio !== undefined) updates.bio = clean(b.bio, 2000);
+  const v = require('../validate');
+  if (b.bio !== undefined) {
+    const r = v.longText(b.bio, { label: 'Your story', max: v.LIMITS.bio });
+    if (r.error) return res.status(400).json({ error: r.error });
+    updates.bio = r.value;
+  }
   if (b.name !== undefined) {
-    const name = clean(b.name, 80);
+    const name = String(b.name || '').trim();
     if (!name) return res.status(400).json({ error: 'Your practice needs a name' });
-    updates.name = name;
+    const r = v.shortText(name, { label: 'Practice name', max: v.LIMITS.shopName });
+    if (r.error) return res.status(400).json({ error: r.error });
+    updates.name = r.value;
   }
   if (b.categories !== undefined) {
     const cats = Array.isArray(b.categories) ? b.categories.map((c) => String(c).trim()).filter(Boolean) : [];
@@ -80,9 +86,11 @@ function serviceFields(b, partial) {
   const out = {};
   const has = (k) => b[k] !== undefined;
   if (!partial || has('title')) {
-    const title = String(b.title || '').trim().slice(0, 90);
+    const title = String(b.title || '').trim();
     if (!title) return { error: 'Give the service a name' };
-    out.title = title;
+    const r = require('../validate').shortText(title, { label: 'Service name', max: 90 });
+    if (r.error) return { error: r.error };
+    out.title = r.value;
   }
   if (!partial || has('category')) {
     const err = tax.serviceCategoryError(b.category);
@@ -107,7 +115,11 @@ function serviceFields(b, partial) {
     out.setting = st;
   }
   if (has('description')) out.description = String(b.description || '').trim().slice(0, 2000);
-  if (has('duration')) out.duration = String(b.duration || '').trim().slice(0, 60);
+  if (has('duration')) {
+    const r = require('../validate').shortText(b.duration, { label: 'Duration', max: 60, optional: true });
+    if (r.error) return { error: r.error };
+    out.duration = r.value;
+  }
   if (has('status')) {
     if (!['live', 'hidden'].includes(b.status)) return { error: 'status must be live or hidden' };
     out.status = b.status;

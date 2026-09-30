@@ -73,16 +73,38 @@ router.get('/me', requireSeller, (req, res) => res.json({ shop: publicShop(req.s
 
 router.patch('/me', requireSeller, (req, res) => {
   const { name, bio, location, color, pickupAddress, pickupPhone } = req.body || {};
+  const v = require('../validate');
+  // Everything here ends up on the storefront or in the admin panel, so the
+  // shapes are strict: short fields carry no markup, colour is #RRGGBB.
+  let cleanName = null, cleanBio = null, cleanLocation = null;
+  if (name != null) {
+    const r = v.shortText(name, { label: 'Shop name', max: v.LIMITS.shopName });
+    if (r.error) return res.status(400).json({ error: r.error });
+    cleanName = r.value;
+  }
+  if (bio != null) {
+    const r = v.longText(bio, { label: 'Your story', max: v.LIMITS.bio });
+    if (r.error) return res.status(400).json({ error: r.error });
+    cleanBio = r.value;
+  }
   if (location != null) {
     const { SERVICE_AREAS, isServiceable } = require('../service-area');
-    if (!isServiceable(location))
+    const r = v.shortText(location, { label: 'Location', max: v.LIMITS.location });
+    if (r.error) return res.status(400).json({ error: r.error });
+    if (!isServiceable(r.value))
       return res.status(400).json({ error: `Trove shops are based in ${SERVICE_AREAS.join(' and ')} only` });
+    cleanLocation = r.value;
+  }
+  if (color != null && !v.isHexColour(color)) {
+    return res.status(400).json({ error: 'Choose a colour as a hex code, like #BD9C8C' });
   }
   // Courier pickup details — where Quiqup collects and whom the driver calls.
   // Both are courier-facing only (never in the public shop payload).
   let pickup = null, pickupTel = null;
   if (pickupAddress != null) {
-    pickup = String(pickupAddress).trim().slice(0, 240);
+    pickup = String(pickupAddress).trim();
+    if (pickup.length > v.LIMITS.pickupAddress) return res.status(400).json({ error: `The pickup address must be ${v.LIMITS.pickupAddress} characters or fewer` });
+    if (v.hasMarkup(pickup)) return res.status(400).json({ error: "The pickup address can't contain < or >" });
     if (pickup && pickup.length < 10) return res.status(400).json({ error: 'Enter the full pickup address — building, street and area' });
   }
   if (pickupPhone != null) {
@@ -94,7 +116,7 @@ router.patch('/me', requireSeller, (req, res) => {
   }
   db.prepare(`UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color),
       pickup_address=COALESCE(?,pickup_address), pickup_phone=COALESCE(?,pickup_phone) WHERE id=?`)
-    .run(name, bio, location, color, pickup, pickupTel, req.shop.id);
+    .run(cleanName, cleanBio, cleanLocation, color == null ? null : color, pickup, pickupTel, req.shop.id);
   res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
@@ -126,7 +148,60 @@ router.post('/me/image', requireSeller, (req, res, next) => {
 });
 
 /* ---------------- Products ---------------- */
-const toCents = (v) => (v == null || v === '' ? null : Math.round(Number(v) * 100));
+
+/**
+ * Validate the core product fields. `partial` (PATCH) only checks what was
+ * sent; null/undefined there means "leave as it is" (compareAt: null or ''
+ * clears it). Returns { error } or { fields } with the column values — any
+ * field not being written is undefined.
+ */
+function productFields(b, partial) {
+  const v = require('../validate');
+  const has = (k) => b[k] !== undefined && b[k] !== null;
+  const out = {};
+  if (!partial || has('name')) {
+    const r = v.shortText(b.name, { label: 'Product name', max: v.LIMITS.productName });
+    if (r.error) return { error: r.error };
+    out.name = r.value;
+  }
+  if (has('description') || !partial) {
+    const r = v.longText(b.description, { label: 'Description', max: v.LIMITS.description });
+    if (r.error) return { error: r.error };
+    out.description = r.value;
+  }
+  if (!partial || has('price')) {
+    const r = v.priceCents(b.price, { label: 'Price' });
+    if (r.error) return { error: r.error };
+    out.price_cents = r.cents;
+  }
+  if (b.compareAt !== undefined) {
+    const r = v.priceCents(b.compareAt, { label: 'The compare-at price', required: false });
+    if (r.error) return { error: r.error };
+    out.compare_at_cents = r.cents;
+  }
+  if (has('stock') || !partial) {
+    const raw = has('stock') ? b.stock : 0;
+    const err = v.stockError(raw);
+    if (err) return { error: err };
+    out.stock = Number(raw);
+  }
+  if (has('status') || !partial) {
+    const st = has('status') ? b.status : 'draft';
+    if (!v.PRODUCT_STATUSES.includes(st)) return { error: 'Status must be live, draft or hidden' };
+    out.status = st;
+  }
+  if (has('imageSeed') || !partial) {
+    const seed = has('imageSeed') ? String(b.imageSeed) : 'new';
+    if (!/^[A-Za-z0-9_-]{1,40}$/.test(seed)) return { error: 'imageSeed must be letters, digits, - or _' };
+    out.image_seed = seed;
+  }
+  if (b.personalization && typeof b.personalization === 'object' && v.hasMarkup(b.personalization.prompt)) {
+    return { error: "The personalisation prompt can't contain < or >" };
+  }
+  const optErr = v.optionsMarkupError(b.options) || v.extrasMarkupError(b.extras) || v.variantsError(b.variants);
+  if (optErr) return { error: optErr };
+  return { fields: out };
+}
 
 /* Product photos: up to 4, first is the cover. The client sends the FULL
    array each save — data URLs for new photos mixed with /uploads URLs for
@@ -179,8 +254,10 @@ function optionCols(options, variantsFromClient, plainStock) {
 }
 
 router.post('/products', requireSeller, (req, res) => {
-  const { name, description = '', category = 'Home & Living', price, compareAt, stock = 0, status = 'draft', imageSeed = 'new', personalization, tags, images, options, variants, extras } = req.body || {};
-  if (!name || price == null) return res.status(400).json({ error: 'name and price are required' });
+  const { category = 'Home & Living', personalization, tags, images, options, variants, extras } = req.body || {};
+  const pf = productFields(req.body || {}, false);
+  if (pf.error) return res.status(400).json({ error: pf.error });
+  const f = pf.fields;
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
   if (images !== undefined) {
@@ -191,10 +268,10 @@ router.post('/products', requireSeller, (req, res) => {
   if (optErr) return res.status(400).json({ error: optErr });
   const extErr = productExtras.extrasError(extras);
   if (extErr) return res.status(400).json({ error: extErr });
-  const opt = optionCols(options, variants, stock);
+  const opt = optionCols(options, variants, f.stock);
   const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,extras,
       personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, name, description, category, toCents(price), toCents(compareAt), opt.stock, status, imageSeed,
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, f.name, f.description, category, f.price_cents, f.compare_at_cents ?? null, opt.stock, f.status, f.image_seed,
       JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization));
   if (images !== undefined && images.length) {
     try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
@@ -233,15 +310,22 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     if (catErr) return res.status(422).json({ error: catErr.message });
   }
   // Validated before the first write, so a rejected save changes nothing.
+  const pf = productFields(b, true);
+  if (pf.error) return res.status(400).json({ error: pf.error });
+  const f = pf.fields;
   const optErr = productOptions.optionsError(b.options);
   if (optErr) return res.status(400).json({ error: optErr });
   const extErr = productExtras.extrasError(b.extras);
   if (extErr) return res.status(400).json({ error: extErr });
+  if (b.images !== undefined) {
+    const imgErr = imagesError(b.images);
+    if (imgErr) return res.status(400).json({ error: imgErr });
+  }
   db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
     price_cents=COALESCE(?,price_cents), compare_at_cents=?, stock=COALESCE(?,stock), status=COALESCE(?,status) WHERE id=?`)
-    .run(b.name, b.description, b.category, toCents(b.price),
-         b.compareAt === undefined ? p.compare_at_cents : toCents(b.compareAt),
-         b.stock, b.status, p.id);
+    .run(f.name ?? null, f.description ?? null, b.category ?? null, f.price_cents ?? null,
+         f.compare_at_cents === undefined ? p.compare_at_cents : f.compare_at_cents,
+         f.stock ?? null, f.status ?? null, p.id);
   if (b.personalization !== undefined) {
     db.prepare(`UPDATE products SET personalization_enabled=?, personalization_required=?, personalization_prompt=?, personalization_char_limit=? WHERE id=?`)
       .run(...persoCols(b.personalization), p.id);
@@ -260,7 +344,7 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     // Dropping the variations falls back to what the grid added up to, so a
     // shop that simplifies a listing doesn't find it silently sold out.
     const hadVariants = productOptions.parse(p.options).length;
-    const plainStock = b.stock == null ? (hadVariants ? productOptions.totalStock(p.variants) : p.stock) : b.stock;
+    const plainStock = f.stock == null ? (hadVariants ? productOptions.totalStock(p.variants) : p.stock) : f.stock;
     const opt = optionCols(groups, carry, plainStock);
     db.prepare('UPDATE products SET options=?, variants=?, stock=? WHERE id=?').run(opt.options, opt.variants, opt.stock, p.id);
   } else if (b.stock !== undefined && productOptions.parse(p.options).length) {
@@ -268,11 +352,7 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     // stock box in the products table doesn't apply, so hold the derived sum.
     db.prepare('UPDATE products SET stock=? WHERE id=?').run(productOptions.totalStock(p.variants), p.id);
   }
-  if (b.images !== undefined) {
-    const imgErr = imagesError(b.images);
-    if (imgErr) return res.status(400).json({ error: imgErr });
-    applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images));
-  }
+  if (b.images !== undefined) applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images));
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });
 
@@ -465,7 +545,8 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
     if (issue && !/^\d{4}-\d{2}-\d{2}$/.test(issue)) return res.status(400).json({ error: 'Emirates ID issue date must be YYYY-MM-DD' });
 
     const iban = String(b.iban || '').replace(/\s+/g, '').toUpperCase();
-    if (!/^AE\d{21}$/.test(iban)) return res.status(400).json({ error: 'Enter a valid UAE IBAN (AE followed by 21 digits)' });
+    const ibanErr = require('../validate').ibanError(iban);
+    if (ibanErr) return res.status(400).json({ error: ibanErr });
     const accountName = String(b.accountName || '').trim().slice(0, 120);
     const bankName = String(b.bankName || '').trim().slice(0, 120);
     if (!accountName || !bankName) return res.status(400).json({ error: 'Bank name and the account holder name are required' });

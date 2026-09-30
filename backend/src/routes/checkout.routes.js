@@ -29,7 +29,10 @@ const shipSnapshot = (address) => {
   return rest;
 };
 const CURRENCY = () => process.env.CURRENCY || 'aed';
-const publicId = () => 'TRV-' + crypto.randomBytes(2).toString('hex').toUpperCase() + Math.floor(Math.random() * 90 + 10);
+const defaultPublicId = () => 'TRV-' + crypto.randomBytes(2).toString('hex').toUpperCase() + Math.floor(Math.random() * 90 + 10);
+let publicId = defaultPublicId;
+const PUBLIC_ID_ATTEMPTS = 8;
+const isPublicIdClash = (e) => e && /UNIQUE constraint failed: orders\.public_id/.test(e.message || '');
 
 /**
  * POST /api/checkout
@@ -107,6 +110,10 @@ router.post('/', async (req, res, next) => {
       const picked = extras.selectionError(p.extras, it.extras, p.name);
       if (picked.error) return res.status(400).json({ error: picked.error });
       unitPrice += extras.totalCents(picked.value);
+      // Belt and braces behind the seller-side price rules: a line that would
+      // take money OFF the order (or give a piece away) never reaches payment.
+      if (!Number.isFinite(unitPrice) || unitPrice <= 0)
+        return res.status(400).json({ error: `${p.name} can't be bought right now — please remove it from your basket` });
 
       const line = { product_id: p.id, shop_id: p.shop_id, name: p.name, price_cents: unitPrice, qty, personalization: perso, options: JSON.stringify(chosen.value), extras: JSON.stringify(picked.value) };
       lines.push(line);
@@ -144,16 +151,26 @@ router.post('/', async (req, res, next) => {
       }
     }
 
-    // Persist a pending order + items in one transaction.
-    const pid = publicId();
-    const orderId = db.transaction(() => {
-      const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
-        VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail);
-      const oid = info.lastInsertRowid;
-      const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options,extras) VALUES (?,?,?,?,?,?,?,?,?)');
-      for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options, l.extras);
-      return oid;
-    })();
+    // Persist a pending order + items in one transaction. The public id is
+    // short and random, so a clash with an earlier order is possible: roll a
+    // new one and try again rather than failing the checkout.
+    let pid, orderId;
+    for (let attempt = 1; ; attempt++) {
+      pid = publicId();
+      try {
+        orderId = db.transaction(() => {
+          const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
+            VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail);
+          const oid = info.lastInsertRowid;
+          const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options,extras) VALUES (?,?,?,?,?,?,?,?,?)');
+          for (const l of lines) ins.run(oid, l.product_id, l.shop_id, l.name, l.price_cents, l.qty, l.personalization, l.options, l.extras);
+          return oid;
+        })();
+        break;
+      } catch (e) {
+        if (!isPublicIdClash(e) || attempt >= PUBLIC_ID_ATTEMPTS) throw e;
+      }
+    }
 
     // Demo-payments mode: hand back the order for /checkout/demo-complete.
     // The session stamp is the ownership proof (demo orders have no client
@@ -270,3 +287,5 @@ router.post('/demo-complete', (req, res, next) => {
 });
 
 module.exports = router;
+// Test hook: swap the public-id generator (null restores the default).
+module.exports.setPublicIdGenerator = (fn) => { publicId = fn || defaultPublicId; };
