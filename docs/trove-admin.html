@@ -225,6 +225,7 @@
     <a class="mitem" data-v="reviews" onclick="go('reviews')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Reviews</a>
     <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="badge zero" id="retBadge">0</span></a>
     <a class="mitem" data-v="sitecontent" onclick="go('sitecontent')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Site content</a>
+    <a class="mitem" data-v="messages" onclick="go('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages<span class="badge zero" id="msgBadge">0</span></a>
     <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Trove payouts</a>
     <div class="sfoot">
       <a href="/" target="_blank">View storefront ↗</a>
@@ -317,6 +318,13 @@
       <div id="cmsWrap"></div>
     </div>
 
+    <div class="view" id="view-messages">
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>Contact form messages</h3><div class="hint">Everything sent through troveathome.com/contact. Each message is also emailed to you (to CONTACT_EMAIL, else the company email in Site content, else your admin email). Reply from your own inbox, then tick it off here.</div></div>
+        <div id="msgWrap" style="padding:14px 22px 22px"></div>
+      </div>
+    </div>
+
     <div class="view" id="view-payouts">
       <div id="payoutsWrap"></div>
     </div>
@@ -370,7 +378,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to refund and collect'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar and footer'],payouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to refund and collect'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -392,9 +400,10 @@ async function reload(){
   try{ TRENDS=(await TroveAPI.api('/api/admin/search-trends')).terms; }catch(_){ TRENDS=[]; }
   try{ REVIEWS=(await TroveAPI.api('/api/admin/reviews')).reviews; }catch(_){ REVIEWS=[]; }
   try{ RETURNS=(await TroveAPI.api('/api/admin/returns')).returns; }catch(_){ RETURNS=[]; }
+  try{ MESSAGES=(await TroveAPI.api('/api/contact/messages')).messages; }catch(_){ MESSAGES=[]; }
   // Site content loads once — later reloads must not clobber unsaved edits.
   if(!CMS){ try{ CMS=await TroveAPI.api('/api/admin/content'); cmsInitEdit(); }catch(_){ CMS=null; } }
-  renderOverview();renderMembers();renderShops();renderProviders();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();
+  renderOverview();renderMembers();renderShops();renderProviders();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();renderMessages();
   reloadPayouts();
 }
 async function reloadPayouts(){
@@ -849,6 +858,7 @@ async function declineReturn(id){
 /* ---------------- site content (homepage + sell copy CMS) ---------------- */
 let CMS=null, CMS_EDIT={}, CMS_DIRTY={};
 const CMS_SPEC=[
+  {key:'site.company',label:'Company details — shown on About, Contact, Terms and Privacy, and to search engines. Leave a field blank to hide it; with every field blank the pages say the details are being finalised',fields:[['legalName','Legal entity name (as on the trade licence)'],['tradeLicence','Trade licence number'],['licenceAuthority','Licensing authority (e.g. Dubai DET)'],['address','Registered address','area'],['email','Customer support email (also receives contact form messages)'],['whatsapp','WhatsApp / phone, e.g. +971 50 123 4567'],['vatTrn','VAT TRN (only once VAT-registered)']],page:'/about'},
   {key:'site.promo',label:'Storefront — Announcement bar',fields:[['text','Bar text']]},
   {key:'home.hero',label:'Homepage — Hero',fields:[['eyebrow','Eyebrow'],['h1','Big heading','rich'],['lead','Intro paragraph','area'],['ctaShop','Dark button label'],['ctaSell','Text link label'],['tagLine','Collection pointer — small line'],['tagName','Collection pointer — name'],['stageLabel','Carousel label']],picker:{note:'Hero pieces — up to 8, shown in this order on the carousel. Leave empty for the automatic mix (Collection and Marketplace pieces, alternating).',auto:'Automatic — Collection and Marketplace pieces, alternating',crop:'4 / 5'}},
   {key:'home.marquee',label:'Homepage — Highlights strip',list:{field:'items',fixed:true,label:'Highlight',item:[['head','Heading'],['sub','Small line']]}},
@@ -1017,7 +1027,7 @@ function renderCms(){
   if(!CMS){w.innerHTML='<div class="empty">Could not load the site content — refresh to try again.</div>';return;}
   w.innerHTML=CMS_SPEC.map(spec=>{
     const overridden=!!CMS.overrides[spec.key];
-    const page=spec.key.startsWith('sell.')?'/sell':'/';
+    const page=spec.page||(spec.key.startsWith('sell.')?'/?view=sell':'/');
     const fields=(spec.fields||[]).map(([f,lab,kind])=>cmsField(spec.key,f,lab,kind,CMS_EDIT[spec.key][f])).join('');
     return `<div class="cmscard">
       <div class="chead"><h3>${spec.label}</h3>${overridden?'<span class="cmsbadge">customised</span>':''}
@@ -1050,6 +1060,32 @@ async function cmsReset(key){
     toast('Back to the original copy');
     renderCms();
   }catch(e){ toast(e.message||'Could not reset that section'); }
+}
+
+/* ---------------- contact form messages ---------------- */
+let MESSAGES=[];
+function renderMessages(){
+  const open=MESSAGES.filter(m=>!m.handledAt).length;
+  const badge=$('msgBadge'); if(badge){badge.textContent=open;badge.classList.toggle('zero',!open);}
+  const w=$('msgWrap'); if(!w)return;
+  w.innerHTML=MESSAGES.length?MESSAGES.map(m=>`
+    <div style="border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px${m.handledAt?';opacity:.62':''}">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="pill ${m.handledAt?'approved':'pending'}">${m.handledAt?'done':'new'}</span>
+        <b style="font-size:13.5px">${esc(m.name)}</b>
+        <a href="mailto:${esc(m.email)}" style="color:var(--muted);font-size:12.5px;font-weight:600;text-decoration:underline">${esc(m.email)}</a>
+        <span style="color:var(--muted);font-size:12.5px;font-weight:600">${esc(m.topicLabel)}${m.orderRef?' · '+esc(m.orderRef):''}</span>
+        <span style="color:var(--muted);font-size:12px;margin-left:auto">${fmtDate(m.createdAt)}</span>
+      </div>
+      <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;margin:10px 0 12px">${esc(m.message)}</div>
+      <button class="btn btn-ghost" onclick="markMessage(${m.id},${m.handledAt?'false':'true'})">${m.handledAt?'Mark as new':'Mark as done'}</button>
+    </div>`).join(''):'<div class="empty">No messages yet — they appear here the moment someone uses the contact form.</div>';
+}
+async function markMessage(id,handled){
+  try{
+    await TroveAPI.api('/api/contact/messages/'+id,{method:'PATCH',body:{handled}});
+    MESSAGES=(await TroveAPI.api('/api/contact/messages')).messages; renderMessages();
+  }catch(e){ toast(e.message||'Could not update that message'); }
 }
 
 /* ---------------- orders ---------------- */

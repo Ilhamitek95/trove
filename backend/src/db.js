@@ -276,6 +276,22 @@ CREATE TABLE IF NOT EXISTS site_content (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Messages sent through the /contact form. Stored first, then emailed to the
+-- owner (fire-and-forget), so a failed email never loses a message; the
+-- admin reads and ticks them off in /admin → Messages. See routes/contact.routes.js.
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL,
+  email       TEXT NOT NULL,
+  topic       TEXT NOT NULL DEFAULT 'other',
+  order_ref   TEXT NOT NULL DEFAULT '',
+  message     TEXT NOT NULL,
+  user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  handled_at  TEXT,
+  created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_contact_created ON contact_messages(created_at);
+
 -- Services marketplace (2026-09): providers enrol via /apply (pieces, services or both),
 -- an admin approves them, and they list in-person services (taxonomy in
 -- src/service-taxonomy.js). Trove takes no cut of the service price —

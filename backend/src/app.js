@@ -148,6 +148,9 @@ function createApp() {
   // The two other doors that create or extend an account share that budget.
   app.post(['/api/services/apply', '/api/seller/enable-services'], authLimiter);
   app.use('/api/checkout', traffic.rateLimit({ windowMs: 10 * MIN, max: 60, name: 'checkout requests' }));
+  // The contact form emails the owner: a handful per visitor is plenty.
+  const contactLimiter = traffic.rateLimit({ windowMs: 10 * MIN, max: 5, name: 'messages' });
+  app.post('/api/contact', contactLimiter);
   const beaconLimiter = traffic.rateLimit({ windowMs: MIN, max: 120, name: 'events' });
   app.use(['/api/track', '/api/search-log'], beaconLimiter);
   // Public catalogue reads: cache briefly in the browser/CDN. Searches (`q`)
@@ -210,17 +213,13 @@ function createApp() {
     res.json(require('./content').getPublic());
   });
   // Legal documents, served with their hash so acceptance is verifiable.
-  const LEGAL = {
-    'seller-agreement': () => require('./config').AGREEMENT_VERSION,
-    'provider-agreement': () => require('./config').PROVIDER_AGREEMENT_VERSION,
-    'services-terms': () => require('./config').SERVICES_TERMS_VERSION,
-  };
+  // Each version comes from config.js (see src/site-pages.js LEGAL), and the
+  // same file is rendered into the page at /terms, /privacy, /seller-agreement…
+  const sitePages = require('./site-pages');
   app.get('/api/legal/:doc', (req, res) => {
-    const v = LEGAL[req.params.doc];
-    if (!v) return res.status(404).json({ error: 'Not found' });
-    const fs = require('fs');
-    const markdown = fs.readFileSync(path.join(__dirname, '..', 'legal', `${req.params.doc}-${v()}.md`), 'utf8');
-    res.json({ version: v(), markdown, sha256: require('./crypto').sha256(markdown) });
+    const d = sitePages.legalDoc(req.params.doc);
+    if (!d) return res.status(404).json({ error: 'Not found' });
+    res.json({ version: d.version, markdown: d.markdown, sha256: d.sha256 });
   });
 
   app.use('/api/auth', require('./routes/auth.routes'));
@@ -233,6 +232,7 @@ function createApp() {
   app.use('/api/delivery', require('./routes/delivery.routes'));
   app.use('/api/services', require('./routes/services.routes'));
   app.use('/api/provider', require('./routes/provider.routes'));
+  app.use('/api/contact', require('./routes/contact.routes'));
 
   // Unknown /api/* path → JSON 404 (so the SPA fallback below never swallows API calls).
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
@@ -256,9 +256,6 @@ function createApp() {
     '/sell': 'trove-seller.html',
     '/apply': 'trove-apply.html',
     '/admin': 'trove-admin.html',
-    '/seller-agreement': 'seller-agreement.html',
-    '/provider-agreement': 'provider-agreement.html',
-    '/services-terms': 'services-terms.html',
     '/services': 'trove-services.html',
     '/provider': 'trove-provider.html',
   };
@@ -275,6 +272,42 @@ function createApp() {
       });
     }
   }
+
+  /* ---------------- Server-rendered public pages ----------------
+   * About, Contact, Help centre, Delivery & Returns and the legal documents
+   * (src/site-pages.js): real text in the HTML, the shared header + footer,
+   * canonical, Open Graph and Organization structured data.              */
+  const html = (res, body) => res.type('html').set('Cache-Control', 'no-cache').send(body);
+  const SITE_BASE = () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '');
+  app.get('/about', (_req, res) => html(res, sitePages.renderAbout(SITE_BASE())));
+  app.get('/contact', (req, res) => html(res, sitePages.renderContact(SITE_BASE(), {
+    sent: req.query.sent === '1',
+    error: typeof req.query.error === 'string' ? req.query.error.slice(0, 200) : '',
+  })));
+  app.get('/faq', (_req, res) => html(res, sitePages.renderFaq(SITE_BASE())));
+  app.get(['/returns', '/delivery-returns'], (_req, res) => html(res, sitePages.renderReturns(SITE_BASE())));
+  for (const name of Object.keys(sitePages.LEGAL)) {
+    const d = sitePages.LEGAL[name];
+    app.get(d.path, (_req, res) => html(res, sitePages.renderLegal(SITE_BASE(), name)));
+  }
+  // Old and obvious addresses land on the right page.
+  const REDIRECTS = {
+    '/seller-agreement.html': '/seller-agreement', '/provider-agreement.html': '/provider-agreement', '/services-terms.html': '/services-terms',
+    '/how-curation-works': '/about#curation', '/our-story': '/about', '/help': '/faq', '/help-centre': '/faq',
+    '/delivery': '/returns', '/shipping': '/returns', '/terms-of-sale': '/terms', '/privacy-policy': '/privacy',
+  };
+  for (const [from, to] of Object.entries(REDIRECTS)) app.get(from, (_req, res) => res.redirect(301, to));
+
+  // The storefront, with the Organization structured data (company details
+  // from Site content) added to its head. Re-read only when the file changes.
+  const fsx = require('fs');
+  let storeCache = { stamp: 0, html: '' };
+  app.get('/', (_req, res) => {
+    const file = path.join(DOCS_DIR, 'trove.html');
+    const stamp = fsx.statSync(file).mtimeMs;
+    if (stamp !== storeCache.stamp) storeCache = { stamp, html: fsx.readFileSync(file, 'utf8') };
+    html(res, sitePages.injectStorefrontLd(storeCache.html, SITE_BASE()));
+  });
 
   // A provider's public page: /services/<slug> serves the services page, which
   // reads the slug from the URL. Slugs never contain a dot, so asset paths
@@ -296,6 +329,9 @@ function createApp() {
       'Disallow: /sell',
       'Disallow: /provider',
       'Disallow: /login',
+      // /sell and /provider are prefix rules; the agreements are public.
+      'Allow: /seller-agreement',
+      'Allow: /provider-agreement',
       '',
       `Sitemap: ${SITE()}/sitemap.xml`,
       '',
@@ -310,6 +346,12 @@ function createApp() {
     add('/', { changefreq: 'daily', priority: '1.0' });
     add('/services', { changefreq: 'daily', priority: '0.8' });
     add('/apply', { changefreq: 'monthly', priority: '0.4' });
+    add('/about', { changefreq: 'monthly', priority: '0.6' });
+    add('/returns', { changefreq: 'monthly', priority: '0.5' });
+    add('/faq', { changefreq: 'monthly', priority: '0.5' });
+    add('/contact', { changefreq: 'yearly', priority: '0.4' });
+    add('/terms', { changefreq: 'yearly', priority: '0.3' });
+    add('/privacy', { changefreq: 'yearly', priority: '0.3' });
     add('/seller-agreement', { changefreq: 'yearly', priority: '0.2' });
     add('/provider-agreement', { changefreq: 'yearly', priority: '0.2' });
     add('/services-terms', { changefreq: 'yearly', priority: '0.2' });
@@ -326,6 +368,10 @@ function createApp() {
     res.type('application/xml').set('Cache-Control', 'public, max-age=3600')
       .send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
   });
+
+  // For AI answer engines: a short, accurate summary and the full help text.
+  app.get('/llms.txt', (_req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(sitePages.llmsTxt(SITE())));
+  app.get('/llms-full.txt', (_req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(sitePages.llmsFullTxt(SITE())));
 
   app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'], setHeaders: traffic.staticHeaders }));
 

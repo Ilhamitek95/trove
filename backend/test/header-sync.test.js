@@ -11,12 +11,12 @@
  * menu changed on every click between the two pages. This is the check
  * that keeps that from coming back.
  */
-const { test } = require('node:test');
+const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { testEnv } = require('./helpers');
+const { testEnv, startApp } = require('./helpers');
 testEnv({});
 
 const { DEFAULTS } = require('../src/content');
@@ -88,6 +88,31 @@ for (const file of PAGES) {
     const promo = block(html, PROMO, 'promo bar', file);
     assert.match(promo, /data-cms="site\.promo\.text"/);
     assert.ok(promo.includes(DEFAULTS['site.promo'].text.replace(/&/g, '&amp;')));
+  });
+}
+
+/* The server-rendered pages (src/site-pages.js: About, Contact, Help centre,
+ * Delivery & Returns and the legal documents) copy the header out of
+ * trove-services.html when they render. Check what they actually send. */
+const RENDERED = ['/about', '/contact', '/faq', '/returns', '/terms', '/privacy', '/seller-agreement', '/provider-agreement', '/services-terms'];
+let app;
+before(async () => { app = await startApp(); });
+after(async () => { if (app) await app.close(); });
+
+for (const p of RENDERED) {
+  test(`${p}: the rendered page carries the storefront's promo bar, header and mobile menu, with no "you are here" marker`, async () => {
+    const res = await app.api('GET', p);
+    assert.equal(res.status, 200);
+    const html = res.text;
+    for (const [re, what] of [[PROMO, 'promo bar'], [HEADER, 'header'], [MNAV, 'mobile menu']]) {
+      assert.equal(skeleton(block(html, re, what, p)), skeleton(block(store, re, what, 'trove.html')), `${p}: ${what} differs from the storefront`);
+    }
+    assert.doesNotMatch(block(html, HEADER, 'header', p), / class="on"/);
+    assert.deepEqual(labels(block(html, /<nav class="links">[\s\S]*?<\/nav>/, 'desktop links', p)), ['Shop all', 'Trove Collection', 'Marketplace', 'Services Marketplace', 'Sell on Trove']);
+    for (const [tag] of block(html, MNAV, 'mobile menu', p).matchAll(/<a\b[^>]*class="mn-link"[^>]*>/g)) {
+      assert.ok(!/onclick/.test(tag), `${p}: a mobile menu link still has an in-page handler: ${tag}`);
+    }
+    assert.match(html, /<script src="\/site-chrome\.js"><\/script>/, 'the header handlers are loaded');
   });
 }
 
