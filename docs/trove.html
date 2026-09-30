@@ -855,6 +855,21 @@
     .mq-feat .mqh{margin:18px 0 0}
     .mq-feat .mqh svg{width:48px;height:48px}
   }
+
+  /* phones: every control gets a 44px hit area (the look stays the same) */
+  @media(max-width:960px){
+    .brand{display:inline-flex;align-items:center;min-height:44px}
+    .crumb a{display:inline-block;padding:14px 0;margin:-14px 0}
+    .txt-link,.link-more,.vlink,.wholink,.pcard-link{position:relative}
+    .txt-link::before,.link-more::before,.vlink::before,.wholink::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:44px;transform:translateY(-50%)}
+  }
+  @media(max-width:960px){
+    .hs-dot{position:relative}
+    .hs-dot::before{content:"";position:absolute;left:-4px;right:-4px;top:50%;height:44px;transform:translateY(-50%)}
+    .hs-dots{gap:10px}
+    .optchip{min-height:44px}
+    .f-open-btn,.sortbar select,.pt{min-height:44px}
+  }
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto}}
 
   /* supplemental tokens */
