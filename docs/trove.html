@@ -1038,7 +1038,7 @@
     <div class="loc" id="vLoc"></div>
     <p id="vBio"></p>
     <div class="vstats">
-      <div><b id="vProds"></b><span>Pieces</span></div>
+      <div><b id="vProds"></b><span id="vProdsLbl">Pieces</span></div>
       <div id="vRateWrap"><b id="vRate"></b><span>Rating</span></div>
     </div>
   </div>
@@ -1432,7 +1432,16 @@ function img(seed){
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 function aed(n){return 'AED '+n.toLocaleString();}
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/* Every API or CMS string that reaches innerHTML goes through esc(). */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+/* A value for an inline handler: a JSON string literal, HTML-escaped, so a
+   quote in a shop slug or category can never close the handler's string. */
+const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
+/* Shop colours are seller-supplied: only a #hex ever reaches a style. */
+const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#DBC7BD';
+/* Image addresses: our own uploads, https or an inline image, nothing that
+   could close a CSS url() or run as script. */
+const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
 /* illustrated maker portraits for the testimonial cards (cycled by index) */
 const MAKER_AVATARS=[
   '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg>',
@@ -1552,15 +1561,15 @@ function productCard(p,eager,crop){
   return `<article class="card" onclick="openPDP(${p.id})">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${pImg(p)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
+      <img src="${esc(pImg(p))}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
       ${p.was?`<span class="sale">Sale</span>`:''}
-      <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
+      <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to basket</button>
     </div>
-    <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${V.name}</div>
-    <h3>${p.name}</h3>
+    <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
+    <h3>${esc(p.name)}</h3>
     <div class="foot">
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
-      ${p.rating?`<span class="stars">${stars(p.rating)}<span>${p.rating}</span></span>`:''}
+      ${p.rating?`<span class="stars">${stars(p.rating)}<span>${esc(p.rating)}</span></span>`:''}
     </div>
   </article>`;
 }
@@ -1591,7 +1600,7 @@ function renderHome(){
   house=house.slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
   $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${pImg(p)}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${esc(pImg(p))}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
   stagger($('houseGallery'),.1);
 
   // Every maker rides the carousel (admin can hand-pick and order them);
@@ -1604,13 +1613,14 @@ function renderHome(){
   }
   const makerCards=vs.map(([k,v])=>{
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
-    return `<article class="vcard" onclick="openVendor('${k}')">
-    <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${v.img||img('shop-'+k)}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
-    <div class="av" style="${v.img?`background:center/cover no-repeat url('${v.img}')`:`background:${v.color}`}">${v.img?'':v.name[0]}</div>
-    <h3>${v.name}</h3>
-    <div class="loc">${v.loc}</div>
-    <p>${v.bio}</p>
-    <div class="vmeta"><span><b>${np}</b> ${np===1?'piece':'pieces'}</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.provider?`<span><b>${v.provider.serviceCount}</b> ${v.provider.serviceCount===1?'service':'services'}</span>`:''}</div>
+    const sc=v.provider?Number(v.provider.serviceCount)||0:0;
+    return `<article class="vcard" onclick="openVendor(${jsq(k)})">
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${esc(v.img||img('shop-'+k))}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
+    <div class="av" style="${v.img?`background:center/cover no-repeat url('${esc(v.img)}')`:`background:${v.color}`}">${v.img?'':esc((v.name||'?')[0])}</div>
+    <h3>${esc(v.name)}</h3>
+    <div class="loc">${esc(v.loc)}</div>
+    <p>${esc(v.bio)}</p>
+    <div class="vmeta"><span><b>${Number(np)||0}</b> ${np===1?'piece':'pieces'}</span>${v.rating?`<span><b>${esc(v.rating)}★</b></span>`:''}${v.provider?`<span><b>${sc}</b> ${sc===1?'service':'services'}</span>`:''}</div>
   </article>`;}).join('');
   $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
   initMakerCarousel();
@@ -1645,7 +1655,7 @@ function renderHeroDeck(){
   HC.items=heroPicks(); HC.n=HC.items.length; HC.i=0;
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
     return `<article class="hc" data-k="${k}" onclick="hcTap(${k})" aria-label="${esc(p.name)}">
-      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${pImg(p)}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
       <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3>${esc(p.name)}</h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></div></div>
     </article>`;}).join('');
@@ -1727,11 +1737,11 @@ function renderCatMosaic(){
   if(tabs){ const pillars=new Set(CATS.filter(c=>PRODUCTS.some(p=>p.cat===c.name)).map(c=>c.pillar)); tabs.style.display=pillars.size>1?'':'none'; }
   $('catRail').innerHTML=list.map(c=>{
     const cls='cat'+(feat.has(c.name)?' feat':wide.has(c.name)?' wide':'');
-    const stack=c.items.slice(0,3).map(p=>`<img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
+    const stack=c.items.slice(0,3).map(p=>`<img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
     const count=`${c.n} ${c.n===1?'piece':'pieces'}`;
-    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="#" onclick="go('shop','${esc(c.name).replace(/'/g,'&#39;')}');return false" aria-label="${esc(c.name)} — ${count}">
+    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="#" onclick="go('shop',${jsq(c.name)});return false" aria-label="${esc(c.name)} — ${count}">
       <div class="cat-bg"></div><span class="blob"></span>
-      <span class="pillar">${c.pillar}</span>
+      <span class="pillar">${esc(c.pillar)}</span>
       <div class="stack">${stack}</div>
       <div class="cat-foot"><div><span class="ico">${CAT_ICON[c.name]||''}</span><div class="name">${esc(c.name)}</div><div class="ct">${count}</div></div><span class="arrow">${CAT_ARROW}</span></div>
     </a>`;}).join('');
@@ -1857,17 +1867,19 @@ function matchesFilters(p,skip){
   const qOk=skip.q||!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q);
   return catOk&&houseOk&&shopOk&&saleOk&&priceOk&&qOk;
 }
+let CAT_FILTERS=[];
 function buildCatFilters(){
   const known=CATS.map(c=>c.name);
   const extra=[...new Set(PRODUCTS.map(p=>p.cat))].filter(c=>c&&!known.includes(c)).sort();
   // Live mode hides shelves with nothing on them (same rule as the home tiles);
   // the selected category always stays listed so it can be un-picked.
   const cats=['all',...known,...extra].filter(c=>c==='all'||c===state.cat||!LIVE||PRODUCTS.some(p=>p.cat===c));
-  $('catFilters').innerHTML=cats.map(c=>{
+  CAT_FILTERS=cats;
+  $('catFilters').innerHTML=cats.map((c,i)=>{
     // Counts respect the active search + other filters, so a category never
     // promises pieces the current search can't deliver.
     const ct=PRODUCTS.filter(p=>(c==='all'||p.cat===c)&&matchesFilters(p,{cat:1})).length;
-    return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat='${c}';renderShop()"> ${c==='all'?'All categories':c}<span class="c">${ct}</span></label>`;
+    return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat=CAT_FILTERS[${i}];renderShop()"> ${c==='all'?'All categories':esc(c)}<span class="c">${ct}</span></label>`;
   }).join('');
 }
 // House checkbox and maker dropdown are mutually exclusive — a maker is by
@@ -1886,7 +1898,7 @@ function buildShopFilter(){
   if(state.shop!=='all'&&makers.indexOf(state.shop)<0)state.shop='all';
   sel.innerHTML=`<option value="all">All shops</option>`+makers.map(k=>{
     const ct=PRODUCTS.filter(p=>p.vendor===k&&matchesFilters(p,{shop:1,house:1})).length;
-    return `<option value="${k}" ${k===state.shop?'selected':''}>${esc(VENDORS[k].name)} (${ct})</option>`;
+    return `<option value="${esc(k)}" ${k===state.shop?'selected':''}>${esc(VENDORS[k].name)} (${ct})</option>`;
   }).join('');
 }
 // The price radios and house checkbox are static markup — after any
@@ -2033,10 +2045,11 @@ function openVendor(key){
   const v=VENDORS[key];
   $('vheroGrad').style=v.img?`background:center/cover no-repeat url("${v.img}")`:grad(v.color);
   if(v.img){$('vLav').style.background=`center/cover no-repeat url("${v.img}")`;$('vLav').textContent='';}
-  else{$('vLav').style.background=v.color;$('vLav').textContent=v.name[0];}
-  $('vName').innerHTML=`${v.name}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
+  else{$('vLav').style.background=v.color;$('vLav').textContent=(v.name||'?')[0];}
+  $('vName').innerHTML=`${esc(v.name)}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
   $('vLoc').textContent=v.loc; $('vBio').textContent=v.bio;
-  $('vProds').textContent=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===key).length;
+  const vp=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===key).length;
+  $('vProds').textContent=vp; $('vProdsLbl').textContent=vp===1?'Piece':'Pieces';
   $('vRateWrap').style.display=v.rating?'':'none'; $('vRate').textContent=v.rating?v.rating+'★':'';
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
@@ -2055,8 +2068,8 @@ async function loadShopServices(key){
     const price=s=>s.priceType==='from'?'From AED '+(s.priceCents/100).toLocaleString():s.priceType==='hourly'?'AED '+(s.priceCents/100).toLocaleString()+' / hour':'AED '+(s.priceCents/100).toLocaleString();
     const where={home:'At your place',studio:'At their studio',remote:'Remote'};
     $('vSvcHead').textContent='Services by '+provider.name;
-    $('vSvcLink').href='/services/'+provider.slug;
-    $('vSvcList').innerHTML=services.map(s=>`<a class="svc-card" href="/services/${provider.slug}"><span class="svc-t">${s.title}</span><span class="svc-m"><b>${price(s)}</b> · ${where[s.setting]||''}</span><span class="svc-go">Book on the Services Marketplace →</span></a>`).join('');
+    $('vSvcLink').href='/services/'+encodeURIComponent(provider.slug);
+    $('vSvcList').innerHTML=services.map(s=>`<a class="svc-card" href="/services/${esc(encodeURIComponent(provider.slug))}"><span class="svc-t">${esc(s.title)}</span><span class="svc-m"><b>${esc(price(s))}</b> · ${where[s.setting]||''}</span><span class="svc-go">Book on the Services Marketplace →</span></a>`).join('');
     wrap.style.display='';
   }catch(_){}
 }
@@ -2065,17 +2078,17 @@ async function loadShopServices(key){
 function openPDP(id){
   const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
   track('product_view',{productId:id});   // before showView, so source is where the shopper clicked from
-  $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
+  $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop',${jsq(p.cat)});return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   // Real seller photos when they exist, else the matched stock shot, else
   // three motif-tile variations.
   pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):STOCK_IMG[p.name]?[STOCK_IMG[p.name]]:[img(p.seed),img(p.seed+'a'),img(p.seed+'b')];
   $('pdpImg').src=pdpSrcs[0];
   $('pdpThumbs').innerHTML=pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
-  $('pdpVendorLink').innerHTML=`${V.name}`;
+  $('pdpVendorLink').textContent=V.name;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
-  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} review${p.reviews===1?'':'s'}</span>`:'';
+  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${esc(p.rating)} · ${Number(p.reviews)||0} review${p.reviews===1?'':'s'}</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
   // Tags stay out of sight (they still power search); for SEO they live in structured data only.
@@ -2096,7 +2109,7 @@ function openPDP(id){
     $('pdpPersoPrompt').textContent=per.prompt||'Tell the maker what you’d like added.';
     const ta=$('pdpPersoText'); ta.value=''; ta.maxLength=per.maxLen||256; persoCount();
   }
-  const addBtn=$('pdpAdd'); addBtn.textContent='Add to cart'; addBtn.className='btn btn-dark';
+  const addBtn=$('pdpAdd'); addBtn.textContent='Add to basket'; addBtn.className='btn btn-dark';
   addBtn.onclick=()=>{
     const picked=chosenOptions(p);
     if(picked.missing){toast(`Choose a ${picked.missing.toLowerCase()} before adding this to your Trove`);return;}
@@ -2111,7 +2124,7 @@ function openPDP(id){
   // after the button is wired, so it owns the final label.
   renderPdpOptions();
   if(V.img){$('pdpSav').style.background=`center/cover no-repeat url("${V.img}")`;$('pdpSav').textContent='';}
-  else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=V.name[0];}
+  else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=(V.name||'?')[0];}
   $('pdpSoldName').textContent=V.name;
   $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
   loadProductReviews(p.id);
@@ -2168,7 +2181,7 @@ function updatePdpAvailability(){
     :(left!=null&&left>0&&left<=3)?`Only ${left} left${groups.length?' of this one':''}.`:'';
   note.textContent=show; note.style.display=show?'':'none';
   btn.disabled=!!soldOut;
-  btn.textContent=soldOut?'Sold out':'Add to cart';
+  btn.textContent=soldOut?'Sold out':'Add to basket';
   btn.style.opacity=soldOut?.5:1;
   btn.style.cursor=soldOut?'not-allowed':'';
 }
@@ -2178,7 +2191,7 @@ let pdpExtraPick={};
 function renderPdpExtras(){
   const p=pdpProduct, list=(p&&p.extras)||[];
   $('pdpExtras').innerHTML=list.length?`<div class="optgroup"><div class="lbl">Extras</div><div class="optchips">${
-    list.map((e,i)=>`<button type="button" class="optchip${pdpExtraPick[i]?' on':''}" onclick="toggleExtra(${i})">${pdpExtraPick[i]?'✓ ':''}${esc(e.name)}${e.price?` +AED ${e.price.toLocaleString()}`:''}</button>`).join('')}</div></div>`:'';
+    list.map((e,i)=>`<button type="button" class="optchip${pdpExtraPick[i]?' on':''}" onclick="toggleExtra(${i})">${pdpExtraPick[i]?'✓ ':''}${esc(e.name)}${e.price?` +AED ${esc(e.price.toLocaleString())}`:''}</button>`).join('')}</div></div>`:'';
 }
 function toggleExtra(i){pdpExtraPick[i]=!pdpExtraPick[i];renderPdpExtras();updatePdpAvailability();}
 const chosenExtras=p=>(p.extras||[]).filter((e,i)=>pdpExtraPick[i]).map(e=>e.name);
@@ -2220,9 +2233,9 @@ function revDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'
 function reviewCardHTML(r){
   return `<div class="rev">
     ${r.productName?`<div class="rprod">${esc(r.productName)}</div>`:''}
-    <div class="rhead"><span class="rstars">${stars(r.rating)}</span><span class="rwho">${esc(r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
+    <div class="rhead"><span class="rstars">${stars(Number(r.rating)||0)}</span><span class="rwho">${esc(r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
     ${r.body?`<p>${esc(r.body)}</p>`:''}
-    ${r.images&&r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}" alt="Buyer photo" loading="lazy" onclick="window.open('${esc(u)}','_blank')">`).join('')}</div>`:''}
+    ${r.images&&r.images.length?`<div class="rimgs">${r.images.map(safeImg).filter(Boolean).map(u=>`<img src="${esc(u)}" alt="Buyer photo" loading="lazy" onclick="window.open(this.src,'_blank','noopener')">`).join('')}</div>`:''}
   </div>`;
 }
 async function loadProductReviews(id){
@@ -2231,7 +2244,7 @@ async function loadProductReviews(id){
   try{
     const {summary,reviews}=await TroveAPI.api('/api/products/'+id+'/reviews');
     if(!reviews.length)return;
-    $('pdpRevHead').innerHTML=`${summary.avg} <span style="color:var(--coral);font-size:26px;letter-spacing:3px;vertical-align:2px">${stars(summary.avg)}</span> <span style="font-size:17px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${summary.count} review${summary.count===1?'':'s'}</span>`;
+    $('pdpRevHead').innerHTML=`${esc(summary.avg)} <span style="color:var(--coral);font-size:26px;letter-spacing:3px;vertical-align:2px">${stars(Number(summary.avg)||0)}</span> <span style="font-size:17px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${Number(summary.count)||0} review${summary.count===1?'':'s'}</span>`;
     $('pdpRevList').innerHTML=reviews.map(reviewCardHTML).join('');
     wrap.style.display='';
   }catch(_){}
@@ -2240,9 +2253,9 @@ async function loadShopReviews(slug){
   const wrap=$('vendorReviews'); wrap.style.display='none';
   if(!LIVE)return;
   try{
-    const {summary,reviews}=await TroveAPI.api('/api/shops/'+slug+'/reviews');
+    const {summary,reviews}=await TroveAPI.api('/api/shops/'+encodeURIComponent(slug)+'/reviews');
     if(!reviews.length)return;
-    $('vRevHead').innerHTML=`What buyers say <span style="font-size:18px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${summary.avg}★ from ${summary.count} review${summary.count===1?'':'s'}</span>`;
+    $('vRevHead').innerHTML=`What buyers say <span style="font-size:18px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${esc(summary.avg)}★ from ${Number(summary.count)||0} review${summary.count===1?'':'s'}</span>`;
     $('vRevList').innerHTML=reviews.map(reviewCardHTML).join('');
     wrap.style.display='';
   }catch(_){}
@@ -2335,13 +2348,13 @@ function renderCart(){
   let html='';
   Object.entries(groups).forEach(([v,items])=>{
     const V=VENDORS[v];
-    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
+    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${esc(V.name)}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+esc(String(V.loc||'').split(',')[0])}</span></div>`;
     items.forEach(({p,qty,note,opts,extras,idx})=>{
       const unit=unitPrice(p,opts)+extrasPrice(p,extras), have=unitStock(p,opts);
       const short=have!=null&&have<qty;
       html+=`<div class="citem">
-        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
-        <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
+        <div class="ci"><div class="n">${esc(p.name)}</div><div class="v">${esc(V.name)}</div>
           ${(opts&&opts.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(opts))}</div>`:''}
           ${(extras&&extras.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(exLabel(p,extras))}</div>`:''}
           ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
@@ -2448,12 +2461,12 @@ function renderCheckout(){
   // addresses — saved ones outside Dubai/Abu Dhabi can't be delivered to
   $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>{
     const ok=inServiceArea(a.city);
-    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
+    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${esc(a.label)}</b> · ${esc(a.name)}<br><span style="color:var(--muted)">${esc(a.line)}, ${esc(a.city)}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
   }).join('')
     +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
-  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
+  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?esc(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
   // delivery grouped by shop
-  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>3–6 days</b></div>`;}).join('')
+  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${esc(V.name)} · ${V.house?'Trove-fulfilled':'ships from '+esc(String(V.loc||'').split(',')[0])}</span><b>3–6 days</b></div>`;}).join('')
     +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">Trove currently delivers across Dubai &amp; Abu Dhabi.</div>`;
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
@@ -2469,8 +2482,8 @@ function renderCheckout(){
   // summary
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
-    html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
+    html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${esc(V.name)}</div>`;
+    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${esc(p.name)}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -2494,7 +2507,7 @@ function showConfirmation(orderId){
   $('confOrdId').textContent='Order '+orderId;
   $('confShip').innerHTML=`<div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
-      return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · arrives 3–6 days</div></div></div>`;}).join('');
+      return `<div class="sg"><div class="d" style="${grad(V.color)}">${esc((V.name||'?')[0])}</div><div><div style="font-weight:700;font-size:14px">${esc(V.name)}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · arrives 3–6 days</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
   showView('confirm');jumpTop();
 }
@@ -2594,10 +2607,10 @@ async function loadCatalog(){
   try{
     const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
     VENDORS={};
-    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
-      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
+      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
+      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: using demo data —',e.message);}
