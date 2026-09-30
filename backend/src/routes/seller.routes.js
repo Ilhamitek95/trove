@@ -403,6 +403,25 @@ const latestShopReturnStmt = () => db.prepare(`
     WHERE ri.request_id = rr.id AND oi.shop_id = ?)
   ORDER BY rr.created_at DESC, rr.id DESC LIMIT 1`);
 
+/**
+ * 'Revenue · 30d' on the seller overview: the list value of this shop's
+ * pieces on paid orders placed in the last 30 days, NET of refunds — a
+ * whole-order refund drops the order, a refunded return drops just the
+ * units that went back. Gross list prices (the buyer-facing number), in fils.
+ */
+function revenueSummary(shopId, days = 30) {
+  const row = db.prepare(`
+    SELECT COALESCE(SUM(oi.price_cents * oi.qty), 0) AS gross,
+           COALESCE(SUM(CASE WHEN o.refunded_at IS NOT NULL THEN oi.price_cents * oi.qty
+             ELSE oi.price_cents * MIN(oi.qty, COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
+               JOIN return_requests rr ON rr.id = ri.request_id
+               WHERE ri.order_item_id = oi.id AND rr.status = 'refunded'), 0)) END), 0) AS refunded
+    FROM order_items oi JOIN orders o ON o.id = oi.order_id
+    WHERE oi.shop_id = ? AND o.status IN ('paid','fulfilled')
+      AND o.created_at >= datetime('now', ?)`).get(shopId, `-${days} days`);
+  return { days, grossCents: row.gross, refundedCents: row.refunded, revenueCents: row.gross - row.refunded };
+}
+
 // The buyer's email is deliberately NOT selected here. Trove is the merchant of
 // record, so a shop never needs to contact the customer directly — the packing
 // name and ship-to address are all a maker needs to fulfil. Keeping the address
@@ -417,7 +436,7 @@ router.get('/orders', requireSeller, (req, res) => {
     WHERE sh.shop_id = ?
     ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
   const latestReq = latestShopReturnStmt();
-  res.json({ orders: rows.map((r) => {
+  res.json({ summary: revenueSummary(req.shop.id), orders: rows.map((r) => {
     const rr = latestReq.get(r.order_id, req.shop.id);
     return {
       ...shipments.shape(r),

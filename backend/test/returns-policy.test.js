@@ -292,3 +292,43 @@ test('return emails tell the new order of events', () => {
   const rf = email.returnRefunded({ order, items, money });
   assert.match(rf.subject, /refund is on its way/);
 });
+
+test("seller 'Revenue · 30d' excludes refunded amounts (returned units and whole-order refunds)", async () => {
+  const sellerCookie = await ctx.loginAs('maker@test.local', 'testpass123');
+  const summary = async () => (await ctx.api('GET', '/api/seller/orders', { cookie: sellerCookie })).data.summary;
+  const s0 = await summary();
+  assert.equal(s0.days, 30);
+  assert.equal(s0.revenueCents, s0.grossCents - s0.refundedCents);
+
+  const o = mkOrder({ lines: [{ name: 'Mug', cents: 12500, qty: 2 }] });
+  const s1 = await summary();
+  assert.equal(s1.revenueCents - s0.revenueCents, 25000, 'a new paid order counts in full');
+
+  // One of the two mugs comes back and is refunded.
+  await ask(o.pid, { items: [{ id: o.itemIds[0], qty: 1 }] });
+  const row = await adminRow(o.pid);
+  await ctx.api('POST', `/api/admin/returns/${row.id}/approve`, { cookie: adminCookie });
+  let s2 = await summary();
+  assert.equal(s2.revenueCents, s1.revenueCents, 'approved but not yet refunded still counts');
+  await ctx.api('POST', '/api/delivery/mock/collect-return', { body: { requestId: row.id } });
+  s2 = await summary();
+  assert.equal(s1.revenueCents - s2.revenueCents, 12500, 'the refunded unit drops out');
+  assert.equal(s2.refundedCents - s1.refundedCents, 12500);
+
+  // A whole-order refund drops the whole order.
+  const w = mkOrder({ lines: [{ name: 'Vase', cents: 40000 }] });
+  const s3 = await summary();
+  const res = await ctx.api('POST', `/api/admin/orders/${w.pid}/refund`, { cookie: adminCookie });
+  assert.equal(res.status, 200, res.text);
+  const s4 = await summary();
+  assert.equal(s3.revenueCents - s4.revenueCents, 40000);
+  // ... and reverses the rest of its VAT with a credit note.
+  const ord = db.prepare('SELECT * FROM orders WHERE id=?').get(w.id);
+  assert.equal(ord.vat_reversed_cents, ord.vat_amount_cents);
+  assert.equal(ord.credit_note_ref, `CN-${w.pid}`);
+
+  // Orders older than 30 days are outside the window.
+  const old = mkOrder({ lines: [{ name: 'Old', cents: 10000 }] });
+  db.prepare("UPDATE orders SET created_at=datetime('now','-31 days') WHERE id=?").run(old.id);
+  assert.equal((await summary()).revenueCents, s4.revenueCents);
+});

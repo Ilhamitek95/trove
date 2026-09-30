@@ -912,10 +912,11 @@ async function reloadProducts(){
   try{ const {products:ps}=await TroveAPI.api('/api/seller/products'); products=(ps||[]).map(mapProduct); }catch(_){ products=[]; }
   renderProducts(); renderOverview();
 }
+var ORDER_SUMMARY=null;
 async function reloadOrders(){
   // Each row is one shipment (this shop's items within an order), with an `order` summary attached.
-  try{ const {orders:o}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; }
-  catch(_){ orders=[]; }
+  try{ const {orders:o,summary}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; ORDER_SUMMARY=summary||null; }
+  catch(_){ orders=[]; ORDER_SUMMARY=null; }
   // The sidebar count belongs to the orders load, not to opening Products —
   // it used to sit in renderProducts() and read 0 until you happened to go there.
   const openOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
@@ -930,7 +931,9 @@ async function refreshStripeStatus(){
 function renderOverview(){
   const live=products.filter(p=>p.status==='live').length;
   const drafts=products.filter(p=>p.status==='draft').length;
-  const revenue=orders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+(o.itemTotal||0),0);
+  // Revenue · 30d comes from the server: paid orders of the last 30 days, less
+  // anything refunded (whole orders and returned units alike).
+  const revenue=ORDER_SUMMARY?ORDER_SUMMARY.revenueCents/100:0;
   const sc=SHOP.stripeStatus;
   const managed=SETTLE.tier!=='connect';
   const net=managed ? (SETTLE.payableCents/100) : revenue*(1-feePct()/100);
@@ -941,7 +944,7 @@ function renderOverview(){
   $('stPayout').textContent=aed(net);
   $('stPayoutSub').textContent=managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
-  if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
+  if(deltas[0]){deltas[0].textContent=ORDER_SUMMARY&&ORDER_SUMMARY.refundedCents?('after '+aed(ORDER_SUMMARY.refundedCents/100)+' refunded'):'paid, less refunds';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
   $('ovBanner').innerHTML = agreementBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
