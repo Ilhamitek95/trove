@@ -35,6 +35,8 @@ function facts() {
     makerShare: 100 - fees.COMMISSION_PERCENT,
     providerSub: aed(fees.PROVIDER_SUB_FEE_CENTS),
     serviceCommission: fees.SERVICE_COMMISSION_PERCENT,
+    providerPayer: require('../service-credits').payerName(), // who sends provider transfers (PROVIDER_PAYER_NAME)
+    providerGraceDays: require('../service-credits').GRACE_DAYS,
     deliveryDays: '3–6 days',
     areas: 'Dubai and Abu Dhabi',
   };

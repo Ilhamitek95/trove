@@ -141,10 +141,22 @@ not delivered.
 
 ### How do I offer my services on Trove?
 
-Apply at [Offer your services](/apply?for=services). Providers pay a
-platform subscription of ${f.providerSub} a month. On bookings paid through
-Trove, Trove keeps ${f.serviceCommission}% of the price. See the
+Apply at [Offer your services](/apply?for=services). Listing is free during
+launch: the ${f.providerSub} monthly platform subscription starts later, with
+30 days' notice. On bookings paid through Trove, Trove keeps
+${f.serviceCommission}% of the price. See the
 [Provider Agreement](/provider-agreement).
+
+### How do providers get paid for bookings paid through Trove?
+
+By bank transfer from **${f.providerPayer} on Trove's behalf**, so look for
+that name on your statement. Your fee (the price less Trove's
+${f.serviceCommission}% platform fee) becomes payable once you mark the
+booking done, or ${f.providerGraceDays} days after the service date if you have not. Add your bank
+details under Payouts in your provider dashboard; each fee there shows when it
+becomes payable and, once sent, the date and the transfer reference. Direct
+bookings are settled between you and the customer, so Trove pays nothing on
+them.
 
 ## Your account and your data {#account}
 
