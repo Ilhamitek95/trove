@@ -234,3 +234,27 @@ test('payout setup refuses an IBAN with a bad checksum (400) before anything is 
   assert.match(r.data.error, /IBAN/);
   assert.equal(shop().iban_encrypted, null);
 });
+
+test('application answers, booking requests and delivery addresses refuse markup', async () => {
+  let r = await ctx.api('POST', '/api/auth/register', { body: {
+    role: 'seller', email: 'app2@test.local', name: 'App Two', password: 'longenough1', shopName: 'App Two Pots',
+    instagram: '@x', phone: '0501234567', location: 'Dubai', experience: '<img src=x onerror=1>',
+  } });
+  assert.equal(r.status, 400);
+  r = await ctx.api('POST', '/api/checkout', { body: { items: [{ productId: 1, qty: 1 }], email: 'b@test.local', phone: PHONE,
+    address: { ...ADDRESS, line: '1 Marina <script>alert(1)</script>' } } });
+  assert.equal(r.status, 400);
+  assert.match(r.data.error, /< or >/);
+  r = await ctx.api('POST', '/api/seller/me/license', { cookie, body: { licenseNumber: '12345<b>' } });
+  assert.equal(r.status, 400);
+});
+
+test('a booking request with markup in its short fields is refused', async () => {
+  const made = await ctx.api('POST', '/api/provider/services', { cookie, body: { title: 'Wheel class', category: 'workshops', priceCents: 10000 } });
+  assert.equal(made.status, 201, made.text);
+  const book = (over) => ctx.api('POST', `/api/services/${made.data.service.id}/book`, { body: {
+    name: 'Guest', email: 'g@test.local', phone: '0501234567', area: 'Dubai Marina, Dubai', agreeTerms: true, ...over } });
+  assert.equal((await book({ name: '<img src=x onerror=1>' })).status, 400);
+  assert.equal((await book({ preferredDate: 'Sat <script>' })).status, 400);
+  assert.equal((await book({})).status, 201);
+});

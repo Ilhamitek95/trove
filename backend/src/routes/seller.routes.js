@@ -127,6 +127,7 @@ router.patch('/me', requireSeller, (req, res) => {
 router.post('/me/license', requireSeller, (req, res) => {
   const num = String((req.body || {}).licenseNumber || '').trim().slice(0, 60);
   if (num.length < 4) return res.status(400).json({ error: 'Enter your license number as it appears on the document' });
+  if (require('../validate').hasMarkup(num)) return res.status(400).json({ error: "A licence number can't contain < or >" });
   if (num !== req.shop.license_number) {
     db.prepare('UPDATE shops SET license_number=?, connect_queue=1, license_verified_at=NULL WHERE id=?')
       .run(num, req.shop.id);

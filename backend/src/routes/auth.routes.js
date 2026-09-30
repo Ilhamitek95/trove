@@ -53,6 +53,11 @@ router.post('/register', (req, res, next) => {
     return res.status(400).json({ error: 'Instagram is required for a shop application' });
   if (wantsShop && !String(req.body.phone || '').trim())
     return res.status(400).json({ error: 'A WhatsApp number is required for a shop application' });
+  // The application's short answers are shown in the admin review queue.
+  if (wantsShop) {
+    const bad = validate.markupField(req.body, ['category', 'experience', 'maker', 'channels', 'capacity', 'links', 'instagram', 'phone', 'licenseNumber', 'location']);
+    if (bad) return res.status(400).json({ error: "Application answers can't contain < or >" });
+  }
   // Trove is Dubai & Abu Dhabi only — sellers included.
   if (wantsShop) {
     const { SERVICE_AREAS, isServiceable } = require('../service-area');

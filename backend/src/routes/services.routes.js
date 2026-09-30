@@ -149,7 +149,11 @@ router.post('/apply', (req, res, next) => {
   if (pnCheck.error) return res.status(400).json({ error: pnCheck.error });
 
   // Everything is validated BEFORE any write, so a failed application never
-  // leaves behind an account without a profile.
+  // leaves behind an account without a profile. Short answers are shown in
+  // the admin review queue, so they carry no markup.
+  if (v.markupField(b, ['experience', 'instagram', 'links', 'phone', 'location'])) {
+    return res.status(400).json({ error: "Application answers can't contain < or >" });
+  }
   if (b.agreeSub !== true) {
     return res.status(400).json({ error: `The AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month platform subscription needs your agreement to apply` });
   }
@@ -252,6 +256,10 @@ router.post('/:id(\\d+)/book', (req, res) => {
   const name = String(b.name || '').trim().slice(0, 80);
   const email = String(b.email || '').trim().toLowerCase().slice(0, 120);
   if (!name) return res.status(400).json({ error: 'Please tell us your name' });
+  // The request lands in the provider's inbox: short fields carry no markup.
+  if (require('../validate').markupField(b, ['name', 'area', 'preferredDate'])) {
+    return res.status(400).json({ error: "Your request can't contain < or >" });
+  }
   if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: 'That email doesn’t look right — mind checking it?' });
   const phone = normalizeUAEMobile(b.phone);
   if (!phone) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });

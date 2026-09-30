@@ -23,6 +23,10 @@ function phoneFrom(body) {
   return norm ? { phone: norm } : { error: BAD_PHONE };
 }
 /* Belt and braces: a phone must never end up inside shipping_json. */
+/* The delivery address reaches the shop's order view: no markup in it. */
+const ADDRESS_FIELDS = ['name', 'line', 'line2', 'city', 'emirate', 'area', 'country', 'notes'];
+const BAD_ADDRESS = "The delivery address can't contain < or >";
+const addressHasMarkup = (address) => !!require('../validate').markupField(address, ADDRESS_FIELDS);
 const shipSnapshot = (address) => {
   if (!address) return null;
   const { phone, ...rest } = address;
@@ -51,6 +55,7 @@ router.post('/', async (req, res, next) => {
     // The address can arrive later via /checkout/update (the payment form
     // mounts before the form is filled) — but if one is given, it must be
     // inside the service area.
+    if (address && addressHasMarkup(address)) return res.status(400).json({ error: BAD_ADDRESS });
     if (address && !isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
     // Resolve the signed-in buyer ONCE, and only if they still exist: a
     // session outliving its user (deleted account, reseeded dev database)
@@ -225,6 +230,7 @@ router.post('/update', (req, res) => {
     return res.status(403).json({ error: 'Not your order' });
   if (!address || !String(address.name || '').trim() || !String(address.line || '').trim())
     return res.status(400).json({ error: 'A delivery name and address are required' });
+  if (addressHasMarkup(address)) return res.status(400).json({ error: BAD_ADDRESS });
   if (!isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
   // This is the last stop before the card is charged, so the courier number
   // has to be here — whether it arrived with the original call or not.

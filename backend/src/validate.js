@@ -120,6 +120,17 @@ function extrasMarkupError(extras) {
   return null;
 }
 
+/**
+ * The first of `keys` whose value (in `obj`) carries markup, or null. For
+ * the short free-text fields other people see: application answers in the
+ * admin review queue, a delivery address in the shop's order view, a
+ * booking request in the provider's inbox.
+ */
+function markupField(obj, keys) {
+  if (!obj || typeof obj !== 'object') return null;
+  return keys.find((k) => obj[k] != null && typeof obj[k] !== 'object' && hasMarkup(obj[k])) || null;
+}
+
 const MIN_PASSWORD = 8;
 const PASSWORD_ERROR = `Choose a password of at least ${MIN_PASSWORD} characters`;
 const passwordError = (pw) => (typeof pw !== 'string' || pw.length < MIN_PASSWORD ? PASSWORD_ERROR : null);
@@ -142,5 +153,5 @@ function ibanError(raw) {
 module.exports = {
   LIMITS, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MAX_STOCK, PRODUCT_STATUSES, MIN_PASSWORD, PASSWORD_ERROR,
   hasMarkup, shortText, longText, isHexColour, priceCents, stockError, variantsError,
-  optionsMarkupError, extrasMarkupError, passwordError, ibanError,
+  optionsMarkupError, extrasMarkupError, markupField, passwordError, ibanError,
 };
