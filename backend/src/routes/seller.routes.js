@@ -493,6 +493,28 @@ router.patch('/shipments/:id', requireSeller, (req, res, next) => {
     const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
     if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
 
+    // A courier-booked parcel (Trove booked it: delivery_ref set) is the
+    // courier's to move once it leaves the maker: the shop can only say it is
+    // packed (shipped = ready for collection) or step that back. Out for
+    // delivery and delivered come from the courier's webhook — delivered
+    // starts the return window and the payout clock, so a shop must never be
+    // able to set it — and the courier/tracking details Trove booked can't be
+    // overwritten. An admin in shop view keeps the full stepper for fixes.
+    //
+    // A shipment WITHOUT a booking (the courier booking failed, or it predates
+    // courier bookings) keeps the full manual stepper: nobody else can confirm
+    // it, and the maker arranges that delivery by hand.
+    if (sh.delivery_ref && !req.session.impersonatorId) {
+      const PACKING = ['processing', 'shipped'];
+      if (status && status !== sh.status && (!PACKING.includes(status) || !PACKING.includes(sh.status))) {
+        return res.status(400).json({ code: 'courier_managed', error: 'The courier updates this parcel from collection onwards — you can only mark it packed or step that back' });
+      }
+      const changed = (v, cur) => v != null && String(v).trim() !== String(cur || '').trim();
+      if (changed(carrier, sh.carrier) || changed(trackingNumber, sh.tracking_number) || changed(trackingUrl, sh.tracking_url)) {
+        return res.status(400).json({ code: 'courier_managed', error: 'Trove booked the courier for this parcel, so its courier and tracking details can’t be changed here' });
+      }
+    }
+
     const undoingDelivery = sh.status === 'delivered' && status && status !== 'delivered';
     if (undoingDelivery) shipments.assertUndoable(sh); // 409 once settled
 

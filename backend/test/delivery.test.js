@@ -79,11 +79,16 @@ test('courier webhook by job reference marks delivered', async () => {
   assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'delivered');
 });
 
+// Undo is a manual-shipment feature: a parcel with no courier booking is the
+// maker's to step (a courier-booked one is the courier's — see below).
+const unbook = (id) => db.prepare("UPDATE shipments SET delivery_ref='' WHERE id=?").run(id);
+
 test('seller can undo an unsettled delivery; stamps clear and order reverts', async () => {
   const oid = mkPaidWebhookOrder('TRV-DEL04', 'pi_del_4');
   await ctx.postWebhook({ id: 'evt_del_4', type: 'payment_intent.succeeded', data: { object: { id: 'pi_del_4', metadata: { order_id: String(oid) } } } });
   await sleep(80);
   const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
+  unbook(sh.id);
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh.id } });
 
   const cookie = await ctx.loginAs('maker@test.local', 'testpass123');
@@ -104,6 +109,7 @@ test('undo is blocked once the credit is swept into a settlement (409)', async (
   await ctx.postWebhook({ id: 'evt_del_5', type: 'payment_intent.succeeded', data: { object: { id: 'pi_del_5', metadata: { order_id: String(oid) } } } });
   await sleep(80);
   const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
+  unbook(sh.id);
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh.id } });
 
   // Simulate the settlement sweep (the engine lands in the next workstream).
@@ -114,5 +120,72 @@ test('undo is blocked once the credit is swept into a settlement (409)', async (
   const undo = await ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie, body: { status: 'shipped' } });
   assert.equal(undo.status, 409);
   assert.match(undo.data.error, /settlement/i);
+  assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'delivered');
+});
+
+test('courier-booked parcel: the shop can only mark it packed (or step that back) and cannot touch courier or tracking', async () => {
+  const oid = mkPaidWebhookOrder('TRV-DEL06', 'pi_del_6');
+  await ctx.postWebhook({ id: 'evt_del_6', type: 'payment_intent.succeeded', data: { object: { id: 'pi_del_6', metadata: { order_id: String(oid) } } } });
+  await sleep(80);
+  const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
+  assert.ok(sh.delivery_ref);
+  const cookie = await ctx.loginAs('maker@test.local', 'testpass123');
+  const patch = (body) => ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie, body });
+
+  for (const status of ['delivered', 'out_for_delivery']) {
+    const r = await patch({ status });
+    assert.equal(r.status, 400, status);
+    assert.equal(r.data.code, 'courier_managed');
+  }
+  let r = await patch({ carrier: 'Seller Own Van' });
+  assert.equal(r.status, 400);
+  r = await patch({ trackingNumber: 'FAKE-1' });
+  assert.equal(r.status, 400);
+  r = await patch({ trackingUrl: 'https://evil.example/track' });
+  assert.equal(r.status, 400);
+  const still = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+  assert.equal(still.status, 'processing');
+  assert.equal(still.delivered_at, null);
+  assert.equal(still.return_window_ends_at, null);
+  assert.equal(still.carrier, sh.carrier);
+
+  // Packed, sending the unchanged courier fields the dashboard always sends: fine.
+  r = await patch({ status: 'shipped', carrier: sh.carrier, trackingNumber: sh.tracking_number, trackingUrl: sh.tracking_url });
+  assert.equal(r.status, 200, r.text);
+  r = await patch({ status: 'processing' });
+  assert.equal(r.status, 200, 'stepping packed back is allowed');
+
+  // Once the courier has it out for delivery, the shop can't pull it back.
+  await ctx.api('POST', '/api/delivery/webhook', { body: { ref: sh.delivery_ref, event: 'out_for_delivery' } });
+  r = await patch({ status: 'shipped' });
+  assert.equal(r.status, 400);
+  assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'out_for_delivery');
+});
+
+test('courier-booked parcel: an admin in shop view can still correct it', async () => {
+  const oid = mkPaidWebhookOrder('TRV-DEL07', 'pi_del_7');
+  await ctx.postWebhook({ id: 'evt_del_7', type: 'payment_intent.succeeded', data: { object: { id: 'pi_del_7', metadata: { order_id: String(oid) } } } });
+  await sleep(80);
+  const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
+  const { hashPassword } = require('../src/middleware');
+  db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('adm-del@test.local',?,'A','admin')").run(hashPassword('adminpass123'));
+  const adminCookie = await ctx.loginAs('adm-del@test.local', 'adminpass123');
+  const imp = await ctx.api('POST', `/api/admin/impersonate/${shopId}`, { cookie: adminCookie });
+  assert.equal(imp.status, 200);
+  const cookie = (imp.headers.get('set-cookie') || '').split(';')[0];
+  const r = await ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie, body: { status: 'delivered' } });
+  assert.equal(r.status, 200, r.text);
+  assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'delivered');
+});
+
+test('a shipment without a courier booking keeps the manual stepper, delivered included', async () => {
+  const oid = mkPaidWebhookOrder('TRV-DEL08', 'pi_del_8');
+  await ctx.postWebhook({ id: 'evt_del_8', type: 'payment_intent.succeeded', data: { object: { id: 'pi_del_8', metadata: { order_id: String(oid) } } } });
+  await sleep(80);
+  const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
+  unbook(sh.id);
+  const cookie = await ctx.loginAs('maker@test.local', 'testpass123');
+  const r = await ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie, body: { status: 'delivered', carrier: 'Own van' } });
+  assert.equal(r.status, 200, r.text);
   assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'delivered');
 });
