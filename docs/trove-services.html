@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  em,i,cite{font-style:normal} /* brand: no italics anywhere, not even the browser default */
   :root{
     --font-display:'Cormorant',Georgia,serif;
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
@@ -21,7 +22,12 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
-  ::selection{background:var(--coral);color:var(--char)}
+  ::selection{background:var(--rose);color:var(--char)}
+  /* Mirrors the storefront: no wishlist or following yet, and no Trove
+     Collection link while the Collection is empty (html.no-house). The header
+     skeleton itself stays identical (test/header-sync.test.js). */
+  a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
+  html.no-house header.top a[href*="cat=House"],html.no-house .mnav a[href*="cat=House"]{display:none!important}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500}
@@ -138,7 +144,7 @@
   @media(hover:hover){.audbtn:hover{border-color:var(--char);transform:translateY(-2px)}.audbtn:hover .arr{transform:translateX(3px)}}
   .audbtn.on{background:var(--char);color:var(--cream);border-color:var(--char)}
   .audbtn.on small{color:rgba(253,247,245,.72)}
-  .audbtn.on .arr{color:var(--coral)}
+  .audbtn.on .arr{color:var(--rose)}
   @media(max-width:560px){
     .hero{padding:40px 0 16px}
     .audswitch{grid-template-columns:1fr;gap:9px;margin-top:20px}
@@ -390,7 +396,7 @@
           <a href="/login" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
         </div>
       </div>
-      <button class="icon-btn" title="Cart" onclick="openCart()">
+      <button class="icon-btn" title="Basket" onclick="openCart()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 2H2"/></svg>
         <span class="cart-count hide" id="cartCount">0</span>
       </button>
@@ -548,7 +554,13 @@
 <script src="/api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+/* Every API string that reaches innerHTML goes through esc(). */
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+/* A value for an inline handler: a JSON string literal, HTML-escaped. */
+const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
+/* Provider colours are user-supplied: only a #hex reaches a style. */
+const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#DBC7BD';
+const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
 let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[];
 let state={audience:'home',cat:null,showAll:false};
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
@@ -578,6 +590,14 @@ function renderAuth(){
     $('amName').textContent='Welcome'; $('amEmail').textContent='Sign in to your account'; $('amAv').textContent='·';
     $('authLabel').textContent='Sign in';
   }
+}
+/* No Trove Collection pieces yet → the header's Collection link hides, as it
+   does on the storefront. Only decided on a real answer from the API. */
+async function markNoHouse(){
+  try{
+    const {shops}=await TroveAPI.api('/api/shops');
+    document.documentElement.classList.toggle('no-house',!(shops||[]).some(s=>s.isHouse&&s.productCount>0));
+  }catch(_){}
 }
 /* The promo bar shows the same admin-editable line as the storefront. */
 async function loadPromo(){
@@ -623,7 +643,7 @@ const AUD_ICON={
 function renderAudSwitch(){
   $('audSwitch').innerHTML=TAX.audiences.map(a=>{
     const ic=AUD_ICON[a.key]||{tint:'#DBC7BD',svg:'<circle cx="12" cy="12" r="7"/>'};
-    return `<button class="audbtn ${state.audience===a.key?'on':''}" onclick="setAudience('${a.key}')" aria-pressed="${state.audience===a.key}">
+    return `<button class="audbtn ${state.audience===a.key?'on':''}" onclick="setAudience(${jsq(a.key)})" aria-pressed="${state.audience===a.key}">
       <span class="ofic" style="background:${ic.tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</svg></span>
       <span><b>${esc(a.name)}</b><small>${esc(a.sub)}</small></span>
       <span class="arr">→</span>
@@ -645,7 +665,7 @@ function renderDir(){
     const list=SERVICES.filter(s=>s.category===c.slug), n=list.length;
     const min=n?Math.min(...list.map(s=>s.priceCents||0)):0;
     const on=state.cat===c.slug;
-    return `<div class="dcard ${n?'live':''} ${on?'on':''}" ${n?`onclick="setCat('${c.slug}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setCat('${c.slug}')}" role="button" tabindex="0" aria-pressed="${on}"`:''}>
+    return `<div class="dcard ${n?'live':''} ${on?'on':''}" ${n?`onclick="setCat(${jsq(c.slug)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setCat(${jsq(c.slug)})}" role="button" tabindex="0" aria-pressed="${on}"`:''}>
       <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n?'':'none'}">${n?`${n} ${n===1?'service':'services'}`:'Be the first'}</span></div>
       <div class="blurb">${esc(c.blurb)}</div>
       <p class="ex">${c.examples.map(esc).join(' · ')}</p>
@@ -657,11 +677,11 @@ function renderDir(){
 }
 
 function svCardHTML(s){
-  return `<div class="svcard" onclick="openService(${s.id})">
+  return `<div class="svcard" onclick="openService(${Number(s.id)})">
     ${svTile(s)}
     <div class="svbody">
       <div class="t">${esc(s.title)}</div>
-      <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider('${esc(s.provider.slug)}');return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}</div>
+      <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}</div>
       <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span></div>
     </div>
   </div>`;
@@ -695,8 +715,8 @@ function renderMyBookings(){
     return `<div class="bkcard">
       <div class="grow"><div class="t">${esc(b.title)} · ${esc(b.providerName)}</div>
       <div class="s">${esc(b.code)}${b.preferredDate?` · ${esc(b.preferredDate)}`:''} · ${b.paymentMethod==='trove'?'Paying through Trove':'Settling directly with the provider'}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
-      <span class="${st[1]}">${st[0]}</span>
-      ${['requested','confirmed'].includes(b.status)?`<button class="linkbtn" onclick="cancelBooking(${b.id})">Cancel</button>`:''}
+      <span class="${st[1]}">${esc(st[0])}</span>
+      ${['requested','confirmed'].includes(b.status)?`<button class="linkbtn" onclick="cancelBooking(${Number(b.id)})">Cancel</button>`:''}
     </div>`;}).join('')}</div>`;
 }
 
@@ -711,13 +731,13 @@ async function cancelBooking(id){
 
 function catNames(slugs){return (slugs||[]).map(sl=>{const c=TAX.categories.find(x=>x.slug===sl);return c?c.name:null;}).filter(Boolean);}
 function provCardHTML(p){
-  return `<article class="pcard" onclick="openProvider('${esc(p.slug)}')" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider('${esc(p.slug)}')}">
-    <div class="cover" style="background:center/cover url(&quot;${motifUrl(hashOf(p.slug),p.color||'#DBC7BD')}&quot;)"></div>
-    <div class="av" style="background:${esc(p.color||'#DBC7BD')}">${esc((p.name||'?')[0])}</div>
+  return `<article class="pcard" onclick="openProvider(${jsq(p.slug)})" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider(${jsq(p.slug)})}">
+    <div class="cover" style="background:center/cover url(&quot;${esc(motifUrl(hashOf(p.slug),safeColor(p.color)))}&quot;)"></div>
+    <div class="av" style="background:${safeColor(p.color)}">${esc((p.name||'?')[0])}</div>
     <h3>${esc(p.name)}</h3>
     <div class="loc">${esc(p.location||'Dubai')}</div>
     <p>${esc(p.bio)}</p>
-    <div class="pmeta"><span><b>${p.serviceCount}</b> ${p.serviceCount===1?'service':'services'}</span>${p.fromCents?`<span>from <b>${money(p.fromCents)}</b></span>`:''}</div>
+    <div class="pmeta"><span><b>${Number(p.serviceCount)||0}</b> ${p.serviceCount===1?'service':'services'}</span>${p.fromCents?`<span>from <b>${money(p.fromCents)}</b></span>`:''}</div>
     <div class="pcats">${catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('')}</div>
     ${p.shop&&p.shop.productCount?`<span class="also">Also sells pieces · ${esc(p.shop.name)}</span>`:''}
   </article>`;
@@ -740,12 +760,12 @@ async function openProvider(slug,push=true){
   catch(_){toast('That provider isn’t listed');if(!push)closeProvider(false);return;}
   const p=data.provider;
   for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
-  $('pvHero').style.background=`center/cover url("${motifUrl(hashOf(p.slug),p.color||'#DBC7BD')}")`;
-  $('pvAv').style.background=p.color||'#DBC7BD';$('pvAv').textContent=(p.name||'?')[0];
+  $('pvHero').style.background=`center/cover url("${motifUrl(hashOf(p.slug),safeColor(p.color))}")`;
+  $('pvAv').style.background=safeColor(p.color);$('pvAv').textContent=(p.name||'?')[0];
   $('pvName').textContent=p.name;$('pvName2').textContent=p.name;
   $('pvLoc').textContent=p.location||'Dubai';$('pvBio').textContent=p.bio||'';
   const emirate=(p.location||'Dubai').split(',').pop().trim();
-  $('pvStats').innerHTML=`<div><b>${p.serviceCount}</b><span>${p.serviceCount===1?'SERVICE':'SERVICES'}</span></div><div><b>${esc(emirate)}</b><span>BASED IN</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>ON TROVE SINCE</span></div>`:''}`;
+  $('pvStats').innerHTML=`<div><b>${Number(p.serviceCount)||0}</b><span>${p.serviceCount===1?'SERVICE':'SERVICES'}</span></div><div><b>${esc(emirate)}</b><span>BASED IN</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>ON TROVE SINCE</span></div>`:''}`;
   $('pvCats').innerHTML=catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('');
   $('pvCount').textContent=`${data.services.length} ${data.services.length===1?'service':'services'}`;
   $('pvGrid').innerHTML=data.services.length?data.services.map(svCardHTML).join('')
@@ -753,7 +773,7 @@ async function openProvider(slug,push=true){
   loadProviderPieces(p);
   document.body.classList.add('pv');$('pview').hidden=false;
   document.title=`${p.name} · Trove Services Marketplace`;
-  if(push)history.pushState({provider:slug},'','/services/'+slug);
+  if(push)history.pushState({provider:slug},'','/services/'+encodeURIComponent(slug));
   window.scrollTo({top:0,behavior:'instant'});
 }
 /* The maker's shop, when the same account sells pieces on the storefront. */
@@ -767,8 +787,8 @@ async function loadProviderPieces(p){
     $('pvShopCount').textContent=`${p.shop.productCount} ${p.shop.productCount===1?'piece':'pieces'} · ${p.shop.name}`;
     $('pvShopLink').href='/?shop='+encodeURIComponent(p.shop.slug);
     $('pvPieces').innerHTML=live.map(pr=>{
-      const img=(pr.images&&pr.images[0])||motifUrl(hashOf(pr.name),p.color||'#DBC7BD');
-      return `<a class="pc" href="/?p=${pr.id}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">AED ${Number(pr.price).toLocaleString('en-GB')}</div></div></a>`;
+      const img=safeImg(pr.images&&pr.images[0])||motifUrl(hashOf(pr.name),safeColor(p.color));
+      return `<a class="pc" href="/?p=${Number(pr.id)}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">AED ${Number(pr.price).toLocaleString('en-GB')}</div></div></a>`;
     }).join('');
     box.hidden=false;
   }catch(_){}
@@ -793,7 +813,7 @@ function openService(id){
   $('svModal').innerHTML=`
     <button class="x" onclick="closeModal()" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <h3>${esc(s.title)}</h3>
-    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider('${esc(s.provider.slug)}');return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}${cat?` · ${esc(cat.name)}`:''}</div>
+    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}${cat?` · ${esc(cat.name)}`:''}</div>
     ${s.description?`<div class="desc">${esc(s.description)}</div>`:''}
     <div class="meta">
       <span class="price">${priceLabel(s)}</span><span style="flex:1"></span>
@@ -867,7 +887,7 @@ async function loadMyBookings(){
   try{MYBOOKINGS=(await TroveAPI.api('/api/services/my-bookings')).bookings;}catch(_){MYBOOKINGS=[];}
 }
 (async function boot(){
-  updateCartCount(); loadPromo();
+  updateCartCount(); loadPromo(); markNoHouse();
   try{TAX=await TroveAPI.api('/api/services/taxonomy');}catch(_){TAX={audiences:[],categories:[]};}
   try{SERVICES=(await TroveAPI.api('/api/services')).services;}catch(_){SERVICES=[];}
   try{PROVIDERS=(await TroveAPI.api('/api/services/providers')).providers;}catch(_){PROVIDERS=[];}

@@ -18,7 +18,9 @@
   'use strict';
   const PP = { provider: null, tax: null, services: [], bookings: [], editing: null, els: {}, opts: {} };
   const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  // Every API string that reaches innerHTML goes through esc().
+  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const num = (n) => Number(n) || 0;
   const api = (p, o) => TroveAPI.api(p, o);
   function money(c) { const n = (c || 0) / 100; return 'AED ' + (Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { minimumFractionDigits: 2 })); }
   function priceLabel(s) { if (s.priceType === 'from') return 'From ' + money(s.priceCents); if (s.priceType === 'hourly') return money(s.priceCents) + ' / hour'; return money(s.priceCents); }
@@ -130,13 +132,13 @@
       : `<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — your services are your own responsibility; Trove lists them.`;
     el.innerHTML = `<div class="pp">${banner}
       <div class="pp-cards">
-        <div class="pp-stat"><div class="k">Live services</div><div class="v">${s.live}</div><div class="n">of ${s.total} listed</div></div>
-        <div class="pp-stat"><div class="k">New requests</div><div class="v">${s.open}</div><div class="n">waiting for your reply</div></div>
-        <div class="pp-stat"><div class="k">Confirmed</div><div class="v">${s.upcoming}</div><div class="n">bookings ahead</div></div>
-        <div class="pp-stat"><div class="k">Completed</div><div class="v">${s.done}</div><div class="n">services delivered</div></div>
+        <div class="pp-stat"><div class="k">Live services</div><div class="v">${num(s.live)}</div><div class="n">of ${num(s.total)} listed</div></div>
+        <div class="pp-stat"><div class="k">New requests</div><div class="v">${num(s.open)}</div><div class="n">waiting for your reply</div></div>
+        <div class="pp-stat"><div class="k">Confirmed</div><div class="v">${num(s.upcoming)}</div><div class="n">bookings ahead</div></div>
+        <div class="pp-stat"><div class="k">Completed</div><div class="v">${num(s.done)}</div><div class="n">services delivered</div></div>
       </div>
       <div class="pp-card"><h3>Your subscription</h3>
-        <div class="pp-fee">AED ${Math.round(fee / 100)} <small>/ month</small></div>
+        <div class="pp-fee">${esc(money(fee))} <small>/ month</small></div>
         <div class="pp-hint" style="margin-top:8px">${subHint}</div>
         <div class="pp-hint" style="margin:0">${agLine}</div>
       </div></div>`;
@@ -155,7 +157,7 @@
           <select id="ppEdSetting"><option value="home">At the customer's place</option><option value="studio">At my studio</option><option value="remote">Remote</option></select></div>
       </div>
       <div class="pp-three">
-        <div class="pp-field"><label>Price (AED)</label><input id="ppEdPrice" type="number" min="1" step="1" placeholder="350"></div>
+        <div class="pp-field"><label>Price (AED)</label><input id="ppEdPrice" type="number" min="1" step="0.01" inputmode="decimal" placeholder="350"></div>
         <div class="pp-field"><label>Price works as</label>
           <select id="ppEdPriceType"><option value="fixed">Fixed price</option><option value="from">Starting price</option><option value="hourly">Per hour</option></select></div>
         <div class="pp-field"><label>How long? <span style="text-transform:none;letter-spacing:0;color:var(--taupe,#BD9C8C);font-weight:600">· optional</span></label><input id="ppEdDuration" maxlength="60" placeholder="e.g. 2–3 hours"></div>
@@ -176,7 +178,7 @@
   function fillCatSelect() {
     const sel = $('ppEdCat'); if (!sel || !PP.tax) return;
     sel.innerHTML = PP.tax.audiences.map((a) =>
-      `<optgroup label="${esc(a.name)} — ${esc(a.sub)}">${PP.tax.categories.filter((c) => c.audience === a.key).map((c) => `<option value="${c.slug}">${esc(c.name)}</option>`).join('')}</optgroup>`).join('');
+      `<optgroup label="${esc(a.name)} — ${esc(a.sub)}">${PP.tax.categories.filter((c) => c.audience === a.key).map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('')}</optgroup>`).join('');
   }
   function renderServices() {
     const list = $('ppSvList'); if (!list) return;
@@ -184,10 +186,10 @@
       <div class="pp-row">
         <div class="grow"><div class="t">${esc(s.title)}</div>
           <div class="s">${esc(catName(s.category))} · ${priceLabel(s)}${s.duration ? ` · ${esc(s.duration)}` : ''} · ${esc(SETTING_LABEL[s.setting] || '')}</div></div>
-        <span class="pp-pill ${s.status}">${s.status}</span>
-        <button class="pp-link" onclick="ProviderPanel.openEditor(${s.id})">Edit</button>
-        <button class="pp-link" onclick="ProviderPanel.toggleLive(${s.id})">${s.status === 'live' ? 'Hide' : 'Make live'}</button>
-        <button class="pp-link" onclick="ProviderPanel.deleteService(${s.id})">Delete</button>
+        <span class="pp-pill ${esc(s.status)}">${esc(s.status)}</span>
+        <button class="pp-link" onclick="ProviderPanel.openEditor(${num(s.id)})">Edit</button>
+        <button class="pp-link" onclick="ProviderPanel.toggleLive(${num(s.id)})">${s.status === 'live' ? 'Hide' : 'Make live'}</button>
+        <button class="pp-link" onclick="ProviderPanel.deleteService(${num(s.id)})">Delete</button>
       </div>`).join('')
       : '<div class="pp-empty">Nothing listed yet — add your first service and it’s ready the moment you’re approved.</div>';
   }
@@ -200,7 +202,9 @@
     $('ppEdName').value = E ? E.title : '';
     $('ppEdCat').value = E ? E.category : ((PP.provider.categories || [])[0] || PP.tax.categories[0].slug);
     $('ppEdSetting').value = E ? E.setting : 'home';
-    $('ppEdPrice').value = E ? Math.round(E.priceCents / 100) : '';
+    // Fils kept exactly: AED 12.50 reopens as 12.50, so saving another edit
+    // never quietly changes the price.
+    $('ppEdPrice').value = E ? (E.priceCents % 100 ? (E.priceCents / 100).toFixed(2) : String(E.priceCents / 100)) : '';
     $('ppEdPriceType').value = E ? E.priceType : 'fixed';
     $('ppEdDuration').value = E ? E.duration : '';
     $('ppEdDesc').value = E ? E.description : '';
@@ -252,20 +256,20 @@
   function bkCard(b) {
     const pay = b.paymentMethod === 'trove' ? `Paid through Trove · your fee ${money(b.providerNetCents)} after a ${pct()}% platform fee` : 'Settled directly with the customer';
     const when = b.preferredDate ? `<b>When:</b> ${esc(b.preferredDate)}<br>` : '';
-    const phone = b.phone ? `<b>Mobile:</b> <a href="tel:${esc(b.phone)}" style="text-decoration:underline">${esc(b.phone)}</a><br>` : '';
+    const phone = b.phone ? `<b>Mobile:</b> <a href="tel:${esc(String(b.phone).replace(/[^+\d]/g, ''))}" style="text-decoration:underline">${esc(b.phone)}</a><br>` : '';
     const notes = b.notes ? `<b>Brief:</b> ${esc(b.notes)}<br>` : '';
     return `<div class="pp-bk">
-      <div class="pp-bkhead"><span class="t">${esc(b.title)}</span><span class="code">${esc(b.code)}</span><span style="flex:1"></span><span class="pp-pill ${b.status}">${b.status}</span></div>
+      <div class="pp-bkhead"><span class="t">${esc(b.title)}</span><span class="code">${esc(b.code)}</span><span style="flex:1"></span><span class="pp-pill ${esc(b.status)}">${esc(b.status)}</span></div>
       <div class="pp-bkbody">
         <b>${esc(b.customerName)}</b> · ${esc(b.area)} · ${priceLabel(b)} · ${pay}<br>
         ${when}${phone}${notes}
         <span style="color:var(--muted,rgba(41,39,39,.62));font-size:11.5px">Requested ${fmtDate(b.createdAt)}${b.status === 'requested' ? ' · the customer’s mobile appears once you confirm' : ''}</span>
       </div>
       ${b.status === 'requested' ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-green" onclick="ProviderPanel.actBooking(${b.id},'confirm')">✓ Confirm</button>
-        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${b.id})">Decline</button></div>` : ''}
+        <button class="pp-btn pp-green" onclick="ProviderPanel.actBooking(${num(b.id)},'confirm')">✓ Confirm</button>
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">Decline</button></div>` : ''}
       ${b.status === 'confirmed' ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${b.id},'complete')">Mark as done</button></div>` : ''}
+        <button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">Mark as done</button></div>` : ''}
     </div>`;
   }
   function renderBookings() {

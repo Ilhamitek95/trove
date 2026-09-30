@@ -9,10 +9,11 @@
 <meta name="description" content="Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Display: Cormorant (Google Fonts; italic 400 loaded only for the hero accent word) · Body: Quicksand -->
-<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,400;0,500;0,600;1,400&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Display: Cormorant (Google Fonts; upright 400/500/600 only — no italics anywhere) · Body: Quicksand -->
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>document.documentElement.classList.add('js')</script>
 <style>
+  em,i,cite{font-style:normal} /* brand: no italics anywhere, not even the browser default */
   :root{
     --font-display:'Cormorant',Georgia,serif;
     /* brand palette — 2026 brand book */
@@ -112,6 +113,19 @@
 
   .view{display:none}
   .view.active{display:block;animation:fade .32s ease}
+  /* No wishlist or following yet. The header is one skeleton on every page
+     (test/header-sync.test.js), so their links are hidden here, not removed. */
+  a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
+  /* No Trove Collection pieces yet (html.no-house, set at boot from the live
+     catalogue): nothing points shoppers at an empty shelf. */
+  html.no-house .hero-tag,html.no-house #heroShopBtn,html.no-house .house-band,html.no-house .fhouse,
+  html.no-house .nav .links a[onclick*="'House'"],html.no-house .mn-link[onclick*="'House'"]{display:none!important}
+  /* The shop could not be loaded (never a stand-in catalogue on the live site). */
+  .outage{padding:96px 0 120px;text-align:center}
+  .outage h1{font-size:clamp(34px,4.5vw,50px);font-weight:400;line-height:1.05;margin-bottom:14px}
+  .outage p{color:var(--ink-80);font-weight:400;max-width:44ch;margin:0 auto 26px}
+  .outage .note{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:16px}
+  body.outage-mode .view{display:none!important}
   @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 
   /* ---------- HERO ---------- */
@@ -119,7 +133,7 @@
   .hero .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:44px;align-items:center}
   .hero .lead .eyebrow{margin-bottom:22px;display:block}
   .hero h1{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
-  .hero h1 em{font-style:italic;color:var(--coral)} /* the one sanctioned italic: the hero accent word */
+  .hero h1 em{font-style:normal;color:var(--coral)} /* the hero accent word: Orange, upright like everything else */
   .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
   .hero .ctas{display:flex;align-items:center;gap:24px}
   /* first paint: the copy settles in line by line — short, eased, once */
@@ -333,6 +347,14 @@
   .qhead{margin:0 auto 28px;text-align:center}
   .qsub{margin:14px auto 0;max-width:52ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
   .mquotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .mqband[hidden]{display:none}
+  .fterms{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .fterm{background:var(--paper);border-radius:16px;padding:20px 20px 18px;box-shadow:0 14px 34px -22px rgba(41,39,39,.3)}
+  .fterm b{font-family:var(--font-display);font-size:20px;font-weight:600;display:block;line-height:1.15;margin-bottom:6px}
+  .fterm p{font-size:13.5px;line-height:1.6;color:var(--ink-80);font-weight:400;margin:0}
+  .fcta{text-align:center;margin-top:26px}
+  @media(max-width:960px){.fterms{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.fterms{grid-template-columns:1fr;gap:10px}.fcta .btn{width:100%;justify-content:center}}
   .mq{background:var(--paper);border-radius:18px;padding:24px 22px;margin:0;box-shadow:0 14px 34px -20px rgba(41,39,39,.3)}
   .mqh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
@@ -504,6 +526,7 @@
   .vendor-group .vg-head .ship-note{margin-left:auto;text-transform:none;letter-spacing:0;color:var(--muted);font-weight:500}
   .citem{display:flex;gap:16px;margin-bottom:18px}
   .citem .cimg{width:70px;height:86px;border-radius:11px;overflow:hidden;flex-shrink:0;position:relative;background:var(--rose)}
+  .citem .cimg img,.co-li .im img{position:absolute;inset:0;z-index:1} /* the colour tile must never cover the photo */
   .citem .ci{flex:1}
   .citem .ci .n{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
   .citem .ci .v{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
@@ -874,13 +897,20 @@
           <a href="/login" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
         </div>
       </div>
-      <button class="icon-btn" title="Cart" onclick="openCart()">
+      <button class="icon-btn" title="Basket" onclick="openCart()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 2H2"/></svg>
         <span class="cart-count hide" id="cartCount">0</span>
       </button>
     </div>
   </div>
 </header>
+
+<div class="outage" id="outage" hidden><div class="wrap">
+  <h1>We're having trouble loading the shop.</h1>
+  <p>Something between us and Trove didn't answer just now. It's usually back within a minute — nothing in your basket is lost.</p>
+  <button class="btn btn-dark" onclick="location.reload()">Retry</button>
+  <div class="note" id="outageNote"></div>
+</div></div>
 
 <!-- HOME -->
 <div class="view active" id="view-home">
@@ -891,8 +921,8 @@
         <h1 data-cms-rich="home.hero.h1">Curated<br>for <em>Living</em>.</h1>
         <p data-cms="home.hero.lead">Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
         <div class="ctas">
-          <button class="btn btn-dark" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
-          <a class="txt-link" data-cms="home.hero.ctaSell" href="#" onclick="go('shop','all');return false">Explore the Marketplace</a>
+          <button class="btn btn-dark" id="heroShopBtn" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
+          <a class="txt-link" id="heroMarketLink" data-cms="home.hero.ctaSell" href="#" onclick="go('shop','all');return false">Explore the Marketplace</a>
         </div>
         <a class="hero-tag" href="#" onclick="go('shop','House');return false" title="Shop the Trove Collection"><span class="d"></span><span><span class="l" data-cms="home.hero.tagLine">Our own line</span><span class="n" data-cms="home.hero.tagName">Trove Collection →</span></span></a>
       </div>
@@ -942,7 +972,7 @@
 
   <section class="band" style="padding-top:0">
     <div class="wrap">
-      <div class="house rv">
+      <div class="house house-band rv">
         <div class="copy">
           <span class="eyebrow" data-cms="home.collection.eyebrow">The Trove Collection · Designed by Trove</span>
           <h2 data-cms-rich="home.collection.h2">Our own, made well.</h2>
@@ -999,7 +1029,7 @@
       <div class="f-head"><h3 class="serif">Filter</h3><button class="icon-btn" aria-label="Close filters" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
       <div class="fgroup"><h4>Category</h4><div id="catFilters"></div></div>
       <div class="fgroup"><h4>Seller</h4>
-        <label class="fitem"><input type="checkbox" id="fltHouse" onchange="setHouseFilter(this.checked)"> Trove Collection only</label>
+        <label class="fitem fhouse"><input type="checkbox" id="fltHouse" onchange="setHouseFilter(this.checked)"> Trove Collection only</label>
         <select id="fltShop" class="fshop" onchange="setShopFilter(this.value)"><option value="all">All shops</option></select>
       </div>
       <div class="fgroup"><h4>Offers</h4>
@@ -1038,7 +1068,7 @@
     <div class="loc" id="vLoc"></div>
     <p id="vBio"></p>
     <div class="vstats">
-      <div><b id="vProds"></b><span>Pieces</span></div>
+      <div><b id="vProds"></b><span id="vProdsLbl">Pieces</span></div>
       <div id="vRateWrap"><b id="vRate"></b><span>Rating</span></div>
     </div>
   </div>
@@ -1083,8 +1113,7 @@
           <div id="pdpPersoCount" style="font-size:11.5px;color:var(--muted);font-weight:600;text-align:right;margin-top:4px"></div>
         </div>
         <div class="buyrow">
-          <button class="btn btn-dark" id="pdpAdd">Add to cart</button>
-          <button class="btn btn-ghost">Save</button>
+          <button class="btn btn-dark" id="pdpAdd">Add to basket</button>
         </div>
         <div class="ship">
           <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h11v8H3zM14 10h4l3 3v2h-7z"/><circle cx="7" cy="17" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg>
@@ -1135,15 +1164,21 @@
   </section>
     <section class="band" style="padding-top:0">
     <div class="wrap">
-      <div class="mqband">
+      <!-- Maker quotes: real, consented words only (Site content → Maker testimonials).
+           Hidden until one exists; the founding-makers panel stands in until then. -->
+      <div class="mqband" id="quotesBand" hidden>
         <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2><p class="qsub" data-cms="sell.quotes.sub">Independent makers run their own shops on Trove. Here's how it feels from the studio side.</p></div>
-        <div class="mquotes" id="quotesList">
-          <figure class="mq mq-feat"><blockquote>For years my pottery stayed in cupboards, because selling felt like a second job I didn't have time for — a licence, couriers, a shopfront. Trove takes all of that on. I photograph a piece, set my price and get back to my wheel; when something sells, the courier collects it from my door. My work sits in homes across the Emirates now, and I still spend my days exactly where I want to be — in the studio.</blockquote><figcaption class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg><div class="who"><b>Mara</b><span>Kiln &amp; Clay, Dubai</span></div></figcaption></figure>
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CAD5CC"/><path d="M12 42V24c0-8 5-13 12-13s12 5 12 13v18z" fill="#3B2E26"/><circle cx="24" cy="24" r="7.5" fill="#D8A87E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#292727"/></svg><div class="who"><b>Nadia</b><span>Sable &amp; Stone, Abu Dhabi</span></div></div><blockquote>I'd only ever sold at weekend markets. On Trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.</blockquote></figure>
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FDF7F5"/><path d="M24 7c8.5 0 13 6.5 13 14.5S32 37 24 37s-13-7.5-13-15.5S15.5 7 24 7z" fill="#FCC998"/><circle cx="24" cy="24" r="7" fill="#B07B4F"/><path d="M10 48c1.5-8 7-11.5 14-11.5S36.5 40 38 48z" fill="#CAD5CC"/></svg><div class="who"><b>Yasmin</b><span>Fern Apothecary, Abu Dhabi</span></div></div><blockquote>The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.</blockquote></figure>
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#BED3DF"/><path d="M13 22c0-7.5 4.8-12 11-12s11 4.5 11 12l-1 3.4c-1.7-4.2-4.7-6.2-10-6.2s-8.3 2-10 6.2z" fill="#33261E"/><circle cx="24" cy="25" r="7.5" fill="#CE9868"/><path d="M17 27c.3 5 3 8 7 8s6.7-3 7-8c1.4 5.8-1.2 10.6-7 10.6S15.6 32.8 17 27z" fill="#33261E"/><path d="M10 48c1.2-8 6.8-12 14-12s12.8 4 14 12z" fill="#3B2E26"/></svg><div class="who"><b>Saeed</b><span>Ember Goods, Dubai</span></div></div><blockquote>Selling online always felt like someone else's world — we've worked leather and brass in Deira for years. The application really is written like a chat, and we listed our first four pieces the same evening.</blockquote></figure>
-          <figure class="mq"><div class="mqh"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#CFDBBE"/><path d="M12.5 34c-2.5-10 .5-23 11.5-23s14 13 11.5 23l-4.3-.6c1.6-4.8 1.8-9.8.4-13-2.5 2.4-12.2 2.7-15.2.3-1.4 3.2-1.2 8-.4 12.7z" fill="#7A4A2B"/><circle cx="24" cy="25" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg><div class="who"><b>Lena</b><span>Northbound Loom, Dubai</span></div></div><blockquote>Knitwear is slow work, and I worried a marketplace would push me to churn pieces out. It's the opposite — you choose how many orders a month you're comfortable with, and Trove has respected that number ever since.</blockquote></figure>
+        <div class="mquotes" id="quotesList"></div>
+      </div>
+      <div class="mqband founding" id="foundingBand">
+        <div class="band-head qhead"><span class="eyebrow">Founding makers wanted</span><h2>Be one of our first makers.</h2><p class="qsub">Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first. The arrangement, plainly:</p></div>
+        <div class="fterms">
+          <div class="fterm"><b>You keep 60%</b><p>You set the price. When a piece sells, Trove buys it from you at 60% of that price, paid out weekly.</p></div>
+          <div class="fterm"><b>Trove photographs</b><p>Our photographer shoots your pieces so they look their best — or use your own photos if you prefer.</p></div>
+          <div class="fterm"><b>Trove markets</b><p>The advertising, social media and featured placements are on us. You never pay for promotion.</p></div>
+          <div class="fterm"><b>Trove delivers</b><p>Our courier collects each sold piece from your door. You pack it in your own packaging and hand it over.</p></div>
         </div>
+        <div class="fcta"><button class="btn btn-dark" onclick="location.href='/apply'">Apply as a founding maker</button></div>
       </div>
     </div>
   </section>
@@ -1181,7 +1216,7 @@
 <!-- CHECKOUT -->
 <div class="view" id="view-checkout">
   <div class="co-wrap">
-    <span class="co-back" onclick="openCart()">← Back to cart</span>
+    <span class="co-back" onclick="openCart()">← Back to basket</span>
     <h1 style="font-size:clamp(34px,4vw,48px);font-weight:400;margin-bottom:28px">Checkout</h1>
     <div class="co-grid">
       <div>
@@ -1218,7 +1253,7 @@
         <div class="co-step">
           <div class="sh"><span class="num">4</span><h3>Payment</h3></div>
           <div id="coPaySaved"></div>
-          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="payNote">Payments are processed securely by Stripe. Trove is the seller of record for your whole order. In this prototype no charge is made.</span></div>
+          <div class="stripe-note"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span id="payNote">Payments are processed securely by Stripe. Trove is the seller of record for your whole order.</span></div>
         </div>
       </div>
       <div>
@@ -1308,7 +1343,7 @@
         <span class="brand serif"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></span>
         <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
       </div>
-      <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li><a href="#" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li></ul></div>
+      <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li class="fhouse"><a href="#" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li></ul></div>
       <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
     </div>
@@ -1432,7 +1467,16 @@ function img(seed){
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 function aed(n){return 'AED '+n.toLocaleString();}
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/* Every API or CMS string that reaches innerHTML goes through esc(). */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+/* A value for an inline handler: a JSON string literal, HTML-escaped, so a
+   quote in a shop slug or category can never close the handler's string. */
+const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
+/* Shop colours are seller-supplied: only a #hex ever reaches a style. */
+const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#DBC7BD';
+/* Image addresses: our own uploads, https or an inline image, nothing that
+   could close a CSS url() or run as script. */
+const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
 /* illustrated maker portraits for the testimonial cards (cycled by index) */
 const MAKER_AVATARS=[
   '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#F2E9E4"/><circle cx="24" cy="9" r="5" fill="#4A3A30"/><path d="M13 26c0-8 4.5-13 11-13s11 5 11 13v4H13z" fill="#4A3A30"/><circle cx="24" cy="24" r="7.5" fill="#E9C3A5"/><path d="M9 48c1.2-8.5 7-12.5 15-12.5S37.8 39.5 39 48z" fill="#BD9C8C"/></svg>',
@@ -1491,30 +1535,49 @@ function checkoutPayload(){
 /* Accepts what people actually type (050 123 4567, +971 50 123 4567, …).
    The server normalises and has the final say — this is just fast feedback. */
 const isUAEMobile=v=>/^5\d{8}$/.test(String(v||'').replace(/[\s().-]/g,'').replace(/^\+?971/,'').replace(/^0/,''));
+/* The call that opens the payment form carries only what is already valid.
+   The form mounts while the buyer is still typing, so a half-typed mobile or
+   address would get a 400 and leave the form stuck; both reach the order
+   through /api/checkout/update just before the card is charged. */
+function intentPayload(){
+  const p=checkoutPayload();
+  if(!isUAEMobile(p.phone))delete p.phone;
+  const a=p.address;
+  if(!a||!a.name||!a.line||!inServiceArea(a.emirate||a.city))delete p.address;
+  return p;
+}
 
-async function mountPaymentElement(){
-  const status=$('payStatus');
+let payMounting=null;
+function mountPaymentElement(){
+  if(!payMounting)payMounting=doMountPayment().finally(()=>{payMounting=null;});
+  return payMounting;
+}
+async function doMountPayment(){
+  const status=$('payStatus'); if(!status)return;
   try{
     if(!payIntent&&!/^\S+@\S+\.\S+$/.test($('coEmail').value.trim())){
       status.textContent='Enter your email above to load the payment form.';
-      return; // retried by the coEmail change listener below
+      return; // retried by the change listener below
     }
+    status.textContent=payIntent?'':'Preparing secure payment…';
     await loadStripeJs();
     if(!stripeJs) stripeJs=window.Stripe(TroveAPI.stripeKey);
     if(!payIntent){
-      status.textContent='Preparing secure payment…';
-      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
-      payIntent=data;
+      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:intentPayload()});
       stripeElements=stripeJs.elements({clientSecret:data.clientSecret});
       payElement=stripeElements.create('payment');
+      payIntent=data;
     }
     try{payElement.unmount();}catch(_){/* not mounted yet */}
     payElement.mount('#payment-element');
     status.textContent='';
-  }catch(e){ status.textContent=e.message; }
+  }catch(e){ status.textContent=e.message||'The payment form could not load — please try again.'; }
 }
+/* Any contact or address field settling is another chance to load a form
+   that has not loaded yet — nothing stays stuck on one failed attempt. */
+const PAY_RETRY_FIELDS=['coEmail','coPhone','coNewName','coNewLine','coNewCity','coNewEmirate'];
 document.addEventListener('change',e=>{
-  if(e.target&&e.target.id==='coEmail'&&paymentsLive()&&!payIntent)mountPaymentElement();
+  if(e.target&&PAY_RETRY_FIELDS.includes(e.target.id)&&paymentsLive()&&!payIntent)mountPaymentElement();
 });
 
 /* A failed image gets two retries with a cache-buster before giving up —
@@ -1552,15 +1615,15 @@ function productCard(p,eager,crop){
   return `<article class="card" onclick="openPDP(${p.id})">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${pImg(p)}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
+      <img src="${esc(pImg(p))}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
       ${p.was?`<span class="sale">Sale</span>`:''}
-      <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to cart</button>
+      <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to basket</button>
     </div>
-    <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${V.name}</div>
-    <h3>${p.name}</h3>
+    <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
+    <h3>${esc(p.name)}</h3>
     <div class="foot">
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
-      ${p.rating?`<span class="stars">${stars(p.rating)}<span>${p.rating}</span></span>`:''}
+      ${p.rating?`<span class="stars">${stars(p.rating)}<span>${esc(p.rating)}</span></span>`:''}
     </div>
   </article>`;
 }
@@ -1591,7 +1654,7 @@ function renderHome(){
   house=house.slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
   $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${pImg(p)}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${esc(pImg(p))}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
   stagger($('houseGallery'),.1);
 
   // Every maker rides the carousel (admin can hand-pick and order them);
@@ -1604,13 +1667,14 @@ function renderHome(){
   }
   const makerCards=vs.map(([k,v])=>{
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
-    return `<article class="vcard" onclick="openVendor('${k}')">
-    <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${v.img||img('shop-'+k)}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
-    <div class="av" style="${v.img?`background:center/cover no-repeat url('${v.img}')`:`background:${v.color}`}">${v.img?'':v.name[0]}</div>
-    <h3>${v.name}</h3>
-    <div class="loc">${v.loc}</div>
-    <p>${v.bio}</p>
-    <div class="vmeta"><span><b>${np}</b> ${np===1?'piece':'pieces'}</span>${v.rating?`<span><b>${v.rating}★</b></span>`:''}${v.provider?`<span><b>${v.provider.serviceCount}</b> ${v.provider.serviceCount===1?'service':'services'}</span>`:''}</div>
+    const sc=v.provider?Number(v.provider.serviceCount)||0:0;
+    return `<article class="vcard" onclick="openVendor(${jsq(k)})">
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${esc(v.img||img('shop-'+k))}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
+    <div class="av" style="${v.img?`background:center/cover no-repeat url('${esc(v.img)}')`:`background:${v.color}`}">${v.img?'':esc((v.name||'?')[0])}</div>
+    <h3>${esc(v.name)}</h3>
+    <div class="loc">${esc(v.loc)}</div>
+    <p>${esc(v.bio)}</p>
+    <div class="vmeta"><span><b>${Number(np)||0}</b> ${np===1?'piece':'pieces'}</span>${v.rating?`<span><b>${esc(v.rating)}★</b></span>`:''}${v.provider?`<span><b>${sc}</b> ${sc===1?'service':'services'}</span>`:''}</div>
   </article>`;}).join('');
   $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
   initMakerCarousel();
@@ -1645,7 +1709,7 @@ function renderHeroDeck(){
   HC.items=heroPicks(); HC.n=HC.items.length; HC.i=0;
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
     return `<article class="hc" data-k="${k}" onclick="hcTap(${k})" aria-label="${esc(p.name)}">
-      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${pImg(p)}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
       <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3>${esc(p.name)}</h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></div></div>
     </article>`;}).join('');
@@ -1727,11 +1791,11 @@ function renderCatMosaic(){
   if(tabs){ const pillars=new Set(CATS.filter(c=>PRODUCTS.some(p=>p.cat===c.name)).map(c=>c.pillar)); tabs.style.display=pillars.size>1?'':'none'; }
   $('catRail').innerHTML=list.map(c=>{
     const cls='cat'+(feat.has(c.name)?' feat':wide.has(c.name)?' wide':'');
-    const stack=c.items.slice(0,3).map(p=>`<img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
+    const stack=c.items.slice(0,3).map(p=>`<img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
     const count=`${c.n} ${c.n===1?'piece':'pieces'}`;
-    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="#" onclick="go('shop','${esc(c.name).replace(/'/g,'&#39;')}');return false" aria-label="${esc(c.name)} — ${count}">
+    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="#" onclick="go('shop',${jsq(c.name)});return false" aria-label="${esc(c.name)} — ${count}">
       <div class="cat-bg"></div><span class="blob"></span>
-      <span class="pillar">${c.pillar}</span>
+      <span class="pillar">${esc(c.pillar)}</span>
       <div class="stack">${stack}</div>
       <div class="cat-foot"><div><span class="ico">${CAT_ICON[c.name]||''}</span><div class="name">${esc(c.name)}</div><div class="ct">${count}</div></div><span class="arrow">${CAT_ARROW}</span></div>
     </a>`;}).join('');
@@ -1857,17 +1921,19 @@ function matchesFilters(p,skip){
   const qOk=skip.q||!q||(p.name+' '+p.cat+' '+VENDORS[p.vendor].name+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q);
   return catOk&&houseOk&&shopOk&&saleOk&&priceOk&&qOk;
 }
+let CAT_FILTERS=[];
 function buildCatFilters(){
   const known=CATS.map(c=>c.name);
   const extra=[...new Set(PRODUCTS.map(p=>p.cat))].filter(c=>c&&!known.includes(c)).sort();
   // Live mode hides shelves with nothing on them (same rule as the home tiles);
   // the selected category always stays listed so it can be un-picked.
   const cats=['all',...known,...extra].filter(c=>c==='all'||c===state.cat||!LIVE||PRODUCTS.some(p=>p.cat===c));
-  $('catFilters').innerHTML=cats.map(c=>{
+  CAT_FILTERS=cats;
+  $('catFilters').innerHTML=cats.map((c,i)=>{
     // Counts respect the active search + other filters, so a category never
     // promises pieces the current search can't deliver.
     const ct=PRODUCTS.filter(p=>(c==='all'||p.cat===c)&&matchesFilters(p,{cat:1})).length;
-    return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat='${c}';renderShop()"> ${c==='all'?'All categories':c}<span class="c">${ct}</span></label>`;
+    return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat=CAT_FILTERS[${i}];renderShop()"> ${c==='all'?'All categories':esc(c)}<span class="c">${ct}</span></label>`;
   }).join('');
 }
 // House checkbox and maker dropdown are mutually exclusive — a maker is by
@@ -1886,7 +1952,7 @@ function buildShopFilter(){
   if(state.shop!=='all'&&makers.indexOf(state.shop)<0)state.shop='all';
   sel.innerHTML=`<option value="all">All shops</option>`+makers.map(k=>{
     const ct=PRODUCTS.filter(p=>p.vendor===k&&matchesFilters(p,{shop:1,house:1})).length;
-    return `<option value="${k}" ${k===state.shop?'selected':''}>${esc(VENDORS[k].name)} (${ct})</option>`;
+    return `<option value="${esc(k)}" ${k===state.shop?'selected':''}>${esc(VENDORS[k].name)} (${ct})</option>`;
   }).join('');
 }
 // The price radios and house checkbox are static markup — after any
@@ -1959,6 +2025,11 @@ function emptyStateHTML(){
       sub='Loosen the price, seller or sale filter and the pieces will reappear.';
       actions=btn('resetFilters()','Reset filters',1);
       recs=inCat.slice(0,n); recHead=`From ${esc(catLabel())}`;
+    }else if(state.cat==='House'){
+      head='Our own line lands soon';
+      sub='The Trove Collection is still in the workshop. In the meantime, these pieces from our makers are worth a look.';
+      actions=btn("go('shop')",'Shop everything',1);
+      recs=[...PRODUCTS].sort((a,b)=>(+b.rating||0)-(+a.rating||0)).slice(0,n);
     }else if(state.cat!=='all'){
       head=`Nothing in ${esc(catLabel())} just yet`;
       sub='Makers are stocking this shelf — in the meantime, these are worth a look.';
@@ -2033,10 +2104,11 @@ function openVendor(key){
   const v=VENDORS[key];
   $('vheroGrad').style=v.img?`background:center/cover no-repeat url("${v.img}")`:grad(v.color);
   if(v.img){$('vLav').style.background=`center/cover no-repeat url("${v.img}")`;$('vLav').textContent='';}
-  else{$('vLav').style.background=v.color;$('vLav').textContent=v.name[0];}
-  $('vName').innerHTML=`${v.name}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
+  else{$('vLav').style.background=v.color;$('vLav').textContent=(v.name||'?')[0];}
+  $('vName').innerHTML=`${esc(v.name)}${v.house?' <svg class="verified" width="22" height="22" viewBox="0 0 16 16" fill="var(--coral)"><path d="M8 1l2 5h5l-4 3 1.5 5L8 16l-3.5 3 1.5-5-4-3h5z" transform="scale(.9) translate(.8 0)"/></svg>':''}`;
   $('vLoc').textContent=v.loc; $('vBio').textContent=v.bio;
-  $('vProds').textContent=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===key).length;
+  const vp=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===key).length;
+  $('vProds').textContent=vp; $('vProdsLbl').textContent=vp===1?'Piece':'Pieces';
   $('vRateWrap').style.display=v.rating?'':'none'; $('vRate').textContent=v.rating?v.rating+'★':'';
   const prods=PRODUCTS.filter(p=>p.vendor===key);
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
@@ -2055,8 +2127,8 @@ async function loadShopServices(key){
     const price=s=>s.priceType==='from'?'From AED '+(s.priceCents/100).toLocaleString():s.priceType==='hourly'?'AED '+(s.priceCents/100).toLocaleString()+' / hour':'AED '+(s.priceCents/100).toLocaleString();
     const where={home:'At your place',studio:'At their studio',remote:'Remote'};
     $('vSvcHead').textContent='Services by '+provider.name;
-    $('vSvcLink').href='/services/'+provider.slug;
-    $('vSvcList').innerHTML=services.map(s=>`<a class="svc-card" href="/services/${provider.slug}"><span class="svc-t">${s.title}</span><span class="svc-m"><b>${price(s)}</b> · ${where[s.setting]||''}</span><span class="svc-go">Book on the Services Marketplace →</span></a>`).join('');
+    $('vSvcLink').href='/services/'+encodeURIComponent(provider.slug);
+    $('vSvcList').innerHTML=services.map(s=>`<a class="svc-card" href="/services/${esc(encodeURIComponent(provider.slug))}"><span class="svc-t">${esc(s.title)}</span><span class="svc-m"><b>${esc(price(s))}</b> · ${where[s.setting]||''}</span><span class="svc-go">Book on the Services Marketplace →</span></a>`).join('');
     wrap.style.display='';
   }catch(_){}
 }
@@ -2065,17 +2137,17 @@ async function loadShopServices(key){
 function openPDP(id){
   const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
   track('product_view',{productId:id});   // before showView, so source is where the shopper clicked from
-  $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop','${esc(p.cat)}');return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
+  $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop',${jsq(p.cat)});return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   // Real seller photos when they exist, else the matched stock shot, else
   // three motif-tile variations.
   pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):STOCK_IMG[p.name]?[STOCK_IMG[p.name]]:[img(p.seed),img(p.seed+'a'),img(p.seed+'b')];
   $('pdpImg').src=pdpSrcs[0];
   $('pdpThumbs').innerHTML=pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
-  $('pdpVendorLink').innerHTML=`${V.name}`;
+  $('pdpVendorLink').textContent=V.name;
   $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
   $('pdpName').textContent=p.name;
-  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${p.rating} · ${p.reviews} review${p.reviews===1?'':'s'}</span>`:'';
+  $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${esc(p.rating)} · ${Number(p.reviews)||0} review${p.reviews===1?'':'s'}</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
   // Tags stay out of sight (they still power search); for SEO they live in structured data only.
@@ -2096,7 +2168,7 @@ function openPDP(id){
     $('pdpPersoPrompt').textContent=per.prompt||'Tell the maker what you’d like added.';
     const ta=$('pdpPersoText'); ta.value=''; ta.maxLength=per.maxLen||256; persoCount();
   }
-  const addBtn=$('pdpAdd'); addBtn.textContent='Add to cart'; addBtn.className='btn btn-dark';
+  const addBtn=$('pdpAdd'); addBtn.textContent='Add to basket'; addBtn.className='btn btn-dark';
   addBtn.onclick=()=>{
     const picked=chosenOptions(p);
     if(picked.missing){toast(`Choose a ${picked.missing.toLowerCase()} before adding this to your Trove`);return;}
@@ -2111,7 +2183,7 @@ function openPDP(id){
   // after the button is wired, so it owns the final label.
   renderPdpOptions();
   if(V.img){$('pdpSav').style.background=`center/cover no-repeat url("${V.img}")`;$('pdpSav').textContent='';}
-  else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=V.name[0];}
+  else{$('pdpSav').style.background=V.color;$('pdpSav').textContent=(V.name||'?')[0];}
   $('pdpSoldName').textContent=V.name;
   $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
   loadProductReviews(p.id);
@@ -2168,7 +2240,7 @@ function updatePdpAvailability(){
     :(left!=null&&left>0&&left<=3)?`Only ${left} left${groups.length?' of this one':''}.`:'';
   note.textContent=show; note.style.display=show?'':'none';
   btn.disabled=!!soldOut;
-  btn.textContent=soldOut?'Sold out':'Add to cart';
+  btn.textContent=soldOut?'Sold out':'Add to basket';
   btn.style.opacity=soldOut?.5:1;
   btn.style.cursor=soldOut?'not-allowed':'';
 }
@@ -2178,7 +2250,7 @@ let pdpExtraPick={};
 function renderPdpExtras(){
   const p=pdpProduct, list=(p&&p.extras)||[];
   $('pdpExtras').innerHTML=list.length?`<div class="optgroup"><div class="lbl">Extras</div><div class="optchips">${
-    list.map((e,i)=>`<button type="button" class="optchip${pdpExtraPick[i]?' on':''}" onclick="toggleExtra(${i})">${pdpExtraPick[i]?'✓ ':''}${esc(e.name)}${e.price?` +AED ${e.price.toLocaleString()}`:''}</button>`).join('')}</div></div>`:'';
+    list.map((e,i)=>`<button type="button" class="optchip${pdpExtraPick[i]?' on':''}" onclick="toggleExtra(${i})">${pdpExtraPick[i]?'✓ ':''}${esc(e.name)}${e.price?` +AED ${esc(e.price.toLocaleString())}`:''}</button>`).join('')}</div></div>`:'';
 }
 function toggleExtra(i){pdpExtraPick[i]=!pdpExtraPick[i];renderPdpExtras();updatePdpAvailability();}
 const chosenExtras=p=>(p.extras||[]).filter((e,i)=>pdpExtraPick[i]).map(e=>e.name);
@@ -2220,9 +2292,9 @@ function revDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'
 function reviewCardHTML(r){
   return `<div class="rev">
     ${r.productName?`<div class="rprod">${esc(r.productName)}</div>`:''}
-    <div class="rhead"><span class="rstars">${stars(r.rating)}</span><span class="rwho">${esc(r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
+    <div class="rhead"><span class="rstars">${stars(Number(r.rating)||0)}</span><span class="rwho">${esc(r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
     ${r.body?`<p>${esc(r.body)}</p>`:''}
-    ${r.images&&r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}" alt="Buyer photo" loading="lazy" onclick="window.open('${esc(u)}','_blank')">`).join('')}</div>`:''}
+    ${r.images&&r.images.length?`<div class="rimgs">${r.images.map(safeImg).filter(Boolean).map(u=>`<img src="${esc(u)}" alt="Buyer photo" loading="lazy" onclick="window.open(this.src,'_blank','noopener')">`).join('')}</div>`:''}
   </div>`;
 }
 async function loadProductReviews(id){
@@ -2231,7 +2303,7 @@ async function loadProductReviews(id){
   try{
     const {summary,reviews}=await TroveAPI.api('/api/products/'+id+'/reviews');
     if(!reviews.length)return;
-    $('pdpRevHead').innerHTML=`${summary.avg} <span style="color:var(--coral);font-size:26px;letter-spacing:3px;vertical-align:2px">${stars(summary.avg)}</span> <span style="font-size:17px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${summary.count} review${summary.count===1?'':'s'}</span>`;
+    $('pdpRevHead').innerHTML=`${esc(summary.avg)} <span style="color:var(--coral);font-size:26px;letter-spacing:3px;vertical-align:2px">${stars(Number(summary.avg)||0)}</span> <span style="font-size:17px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${Number(summary.count)||0} review${summary.count===1?'':'s'}</span>`;
     $('pdpRevList').innerHTML=reviews.map(reviewCardHTML).join('');
     wrap.style.display='';
   }catch(_){}
@@ -2240,9 +2312,9 @@ async function loadShopReviews(slug){
   const wrap=$('vendorReviews'); wrap.style.display='none';
   if(!LIVE)return;
   try{
-    const {summary,reviews}=await TroveAPI.api('/api/shops/'+slug+'/reviews');
+    const {summary,reviews}=await TroveAPI.api('/api/shops/'+encodeURIComponent(slug)+'/reviews');
     if(!reviews.length)return;
-    $('vRevHead').innerHTML=`What buyers say <span style="font-size:18px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${summary.avg}★ from ${summary.count} review${summary.count===1?'':'s'}</span>`;
+    $('vRevHead').innerHTML=`What buyers say <span style="font-size:18px;color:var(--muted);font-family:'Quicksand';font-weight:600">· ${esc(summary.avg)}★ from ${Number(summary.count)||0} review${summary.count===1?'':'s'}</span>`;
     $('vRevList').innerHTML=reviews.map(reviewCardHTML).join('');
     wrap.style.display='';
   }catch(_){}
@@ -2335,13 +2407,13 @@ function renderCart(){
   let html='';
   Object.entries(groups).forEach(([v,items])=>{
     const V=VENDORS[v];
-    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${V.name}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span></div>`;
+    html+=`<div class="vendor-group"><div class="vg-head"><span class="gem"></span>${esc(V.name)}<span class="ship-note">${V.house?'Trove-fulfilled':'ships from '+esc(String(V.loc||'').split(',')[0])}</span></div>`;
     items.forEach(({p,qty,note,opts,extras,idx})=>{
       const unit=unitPrice(p,opts)+extrasPrice(p,extras), have=unitStock(p,opts);
       const short=have!=null&&have<qty;
       html+=`<div class="citem">
-        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
-        <div class="ci"><div class="n">${p.name}</div><div class="v">${V.name}</div>
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
+        <div class="ci"><div class="n">${esc(p.name)}</div><div class="v">${esc(V.name)}</div>
           ${(opts&&opts.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(opts))}</div>`:''}
           ${(extras&&extras.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(exLabel(p,extras))}</div>`:''}
           ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(note)}”</div>`:''}
@@ -2448,12 +2520,12 @@ function renderCheckout(){
   // addresses — saved ones outside Dubai/Abu Dhabi can't be delivered to
   $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>{
     const ok=inServiceArea(a.city);
-    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${a.label}</b> · ${a.name}<br><span style="color:var(--muted)">${a.line}, ${a.city}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
+    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast('We deliver in Dubai and Abu Dhabi only')`}"><div class="radio"></div><div><b>${esc(a.label)}</b> · ${esc(a.name)}<br><span style="color:var(--muted)">${esc(a.line)}, ${esc(a.city)}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">Outside our delivery area</span>'}</div></div>`;
   }).join('')
     +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>Use a new address</b></div></div>`;
-  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
+  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label>Full name</label><input id="coNewName" placeholder="Your name" value="${ME?esc(ME.name||''):''}"></div><div class="co-field"><label>Address</label><input id="coNewLine" placeholder="Street, building, apt"></div><div class="co-two"><div class="co-field"><label>Area</label><input id="coNewCity" placeholder="e.g. Dubai Marina, Khalifa City"></div><div class="co-field"><label>Emirate</label><select id="coNewEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div></div></div>`:'';
   // delivery grouped by shop
-  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${V.name} · ${V.house?'Trove-fulfilled':'ships from '+V.loc.split(',')[0]}</span><b>3–6 days</b></div>`;}).join('')
+  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${esc(V.name)} · ${V.house?'Trove-fulfilled':'ships from '+esc(String(V.loc||'').split(',')[0])}</span><b>3–6 days</b></div>`;}).join('')
     +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">Trove currently delivers across Dubai &amp; Abu Dhabi.</div>`;
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
@@ -2469,8 +2541,8 @@ function renderCheckout(){
   // summary
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
-    html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${V.name}</div>`;
-    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${pImg(p)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${p.name}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
+    html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${esc(V.name)}</div>`;
+    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${esc(p.name)}</div><div class="qt">Qty ${qty}${(opts&&opts.length)?` · ${esc(optLabel(opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -2494,7 +2566,7 @@ function showConfirmation(orderId){
   $('confOrdId').textContent='Order '+orderId;
   $('confShip').innerHTML=`<div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px">${n} shipment${n>1?'s':''} · tracked together</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
-      return `<div class="sg"><div class="d" style="${grad(V.color)}">${V.name[0]}</div><div><div style="font-weight:700;font-size:14px">${V.name}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · arrives 3–6 days</div></div></div>`;}).join('');
+      return `<div class="sg"><div class="d" style="${grad(V.color)}">${esc((V.name||'?')[0])}</div><div><div style="font-weight:700;font-size:14px">${esc(V.name)}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · arrives 3–6 days</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
   showView('confirm');jumpTop();
 }
@@ -2509,7 +2581,16 @@ async function placeOrder(){
   }
   if(!(await ensureGuestAccount()))return;
   if(paymentsLive()){
-    if(!payIntent||!stripeElements){toast('The payment form is still loading — one moment');return;}
+    if(!payIntent||!stripeElements){
+      // The form never loaded (or an earlier attempt failed): try again now,
+      // with everything the buyer has filled in, and let them add the card.
+      await mountPaymentElement();
+      const ps=$('payStatus');
+      if(!payIntent){toast((ps&&ps.textContent)||'The payment form could not load — please try again');return;}
+      toast('Add your card details to finish');
+      const pe=$('payment-element'); if(pe)pe.scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
     const btn=document.querySelector('.co-place');
     btn.disabled=true;btn.style.opacity=.6;
     // Write the final email + address onto the order before taking payment —
@@ -2549,6 +2630,7 @@ async function placeOrder(){
     finally{btn.disabled=false;btn.style.opacity=1;}
     return;
   }
+  if(!IS_LOCAL){toast('We can’t take orders just now — please refresh and try again');return;}
   lastOrder={email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
   showConfirmation('TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10));
 }
@@ -2588,19 +2670,36 @@ function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList
 function jumpTop(){try{window.scrollTo({top:0,left:0,behavior:'instant'});}catch(_){window.scrollTo(0,0);}}
 function go(v,cat){if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';renderShop();showView('shop');}else showView(v);jumpTop();}
 
-/* ---------------- BOOT: live data + auth, with demo fallback ---------------- */
+/* ---------------- BOOT: live data + auth ----------------
+ * The demo catalogue above is for a developer's own machine only. On the real
+ * site a failed load is retried twice, then the page says so plainly and
+ * offers Retry: never a stand-in catalogue, never a pretend order. */
+const IS_LOCAL=location.protocol==='file:'||/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+let OUTAGE=false;
 async function loadCatalog(){
-  if(!(await TroveAPI.health())) return;            // no backend reachable → keep demo data
+  for(let attempt=0;attempt<3&&!LIVE;attempt++){
+    if(attempt)await new Promise(r=>setTimeout(r,1200*attempt));
+    await fetchCatalog();
+  }
+  if(!LIVE&&!IS_LOCAL){OUTAGE=true;VENDORS={};PRODUCTS=[];}
+}
+function showOutage(){
+  document.body.classList.add('outage-mode');
+  $('outage').hidden=false;
+  jumpTop();
+}
+async function fetchCatalog(){
+  if(!(await TroveAPI.health())) return;            // no backend reachable (local dev keeps the demo data)
   try{
     const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
     VENDORS={};
-    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:s.color,img:s.image||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
-      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:p.shop.color,bio:'',prods:0,since:null,rating:null,ratingCount:0};
-      return {id:p.id,name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:p.images||[],tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
+      if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
+      return {id:Number(p.id),name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
     });
     LIVE=true;
-  }catch(e){console.warn('trove: using demo data —',e.message);}
+  }catch(e){console.warn('trove: catalogue did not load —',e.message);}
 }
 async function loadAuth(){
   let session=null;
@@ -2683,14 +2782,22 @@ function applyContent(){
   }
   const faq=cmsGet('sell.faq.items');
   if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
-  const mq=cmsGet('sell.quotes.items');
-  if(Array.isArray(mq))$('quotesList').innerHTML=mq.map((q,i)=>{
+  // Only real makers' words: the five invented quotes that once shipped as
+  // defaults are dropped even if a saved override still carries them (the
+  // server filters them too). No quotes → the founding-makers panel stays.
+  const mq=(cmsGet('sell.quotes.items')||[]).filter(q=>q&&q.quote&&q.name&&!isSeededQuote(q));
+  $('quotesBand').hidden=!mq.length; $('foundingBand').hidden=!!mq.length;
+  if(mq.length)$('quotesList').innerHTML=mq.map((q,i)=>{
     const av=MAKER_AVATARS[i%MAKER_AVATARS.length];
     const who=`<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div>`;
     return i===0
       ?`<figure class="mq mq-feat"><blockquote>${esc(q.quote)}</blockquote><figcaption class="mqh">${av}${who}</figcaption></figure>`
       :`<figure class="mq"><div class="mqh">${av}${who}</div><blockquote>${esc(q.quote)}</blockquote></figure>`;
   }).join('');
+}
+function isSeededQuote(q){
+  const n=String(q.name||'').trim().toLowerCase(), s=String(q.shop||'').trim().toLowerCase();
+  return [['mara','kiln & clay'],['nadia','sable & stone'],['yasmin','fern apothecary'],['saeed','ember goods'],['lena','northbound loom']].some(([a,b])=>n===a&&s.startsWith(b));
 }
 /* upgrade testimonial shop lines to links when the named shop exists in the
  * catalogue (matched by name, so it works in demo, local and prod alike;
@@ -2732,6 +2839,14 @@ function takeAppBasket(){
 }
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
+  // The saved basket is left untouched: restoring it against an empty
+  // catalogue would drop every line.
+  if(OUTAGE){showOutage();return;}
+  // No Trove Collection pieces yet: hide every door to that shelf and let the
+  // marketplace lead the hero.
+  const noHouse=LIVE&&!PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house);
+  document.documentElement.classList.toggle('no-house',noHouse);
+  if(noHouse){const m=$('heroMarketLink');if(m)m.className='btn btn-dark';}
   applyContent(); linkQuoteShops(); renderHome(); buildCatFilters();
   // After the catalogue, so a saved basket can be checked against what's
   // actually still on sale (restoreCart updates the count itself).

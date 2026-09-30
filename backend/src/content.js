@@ -122,13 +122,9 @@ const DEFAULTS = {
     eyebrow: 'From our makers',
     heading: 'In their words.',
     sub: "Independent makers run their own shops on Trove. Here's how it feels from the studio side.",
-    items: [
-      { quote: "For years my pottery stayed in cupboards, because selling felt like a second job I didn't have time for — a licence, couriers, a shopfront. Trove takes all of that on. I photograph a piece, set my price and get back to my wheel; when something sells, the courier collects it from my door. My work sits in homes across the Emirates now, and I still spend my days exactly where I want to be — in the studio.", name: 'Mara', shop: 'Kiln & Clay, Dubai' },
-      { quote: "I'd only ever sold at weekend markets. On Trove my jewellery sits beside work I genuinely admire, and a real person answers whenever I have a question.", name: 'Nadia', shop: 'Sable & Stone, Abu Dhabi' },
-      { quote: "The dashboard shows exactly what's coming in the weekly payout — no guesswork, no chasing. I spend that time pouring candles instead.", name: 'Yasmin', shop: 'Fern Apothecary, Abu Dhabi' },
-      { quote: "Selling online always felt like someone else's world — we've worked leather and brass in Deira for years. The application really is written like a chat, and we listed our first four pieces the same evening.", name: 'Saeed', shop: 'Ember Goods, Dubai' },
-      { quote: "Knitwear is slow work, and I worried a marketplace would push me to churn pieces out. It's the opposite — you choose how many orders a month you're comfortable with, and Trove has respected that number ever since.", name: 'Lena', shop: 'Northbound Loom, Dubai' },
-    ],
+    // Real, consented quotes only — added by the admin once a maker gives one.
+    // The storefront shows a founding-makers panel while this list is empty.
+    items: [],
   },
   'sell.faq': {
     eyebrow: 'Good to know',
@@ -165,8 +161,26 @@ const LIST_BOUNDS = {
   'sell.hero.facts': [2, 6],
   'sell.steps.items': [2, 6],
   'sell.offer.items': [3, 8],
-  'sell.quotes.items': [1, 6],
+  'sell.quotes.items': [0, 6],
   'sell.faq.items': [1, 12],
+};
+
+// Shape of one entry for lists whose default is empty (nothing to copy it from).
+const LIST_ITEM_SHAPES = {
+  'sell.quotes.items': { quote: '', name: '', shop: '' },
+};
+
+/* The sell page once shipped five invented maker quotes as its defaults, and
+ * a saved override can still carry them. They are never served: only a
+ * real maker's words appear. Matched on maker name and shop together. */
+const SEEDED_QUOTES = [
+  ['mara', 'kiln & clay'], ['nadia', 'sable & stone'], ['yasmin', 'fern apothecary'],
+  ['saeed', 'ember goods'], ['lena', 'northbound loom'],
+];
+const isSeededQuote = (q) => {
+  const name = String((q && q.name) || '').trim().toLowerCase();
+  const shop = String((q && q.shop) || '').trim().toLowerCase();
+  return SEEDED_QUOTES.some(([n, s]) => name === n && shop.startsWith(s));
 };
 
 class ContentError extends Error {}
@@ -233,7 +247,8 @@ function validateSection(section, value) {
       if (v.length < min || v.length > max) {
         bad(min === max ? `"${key}" must have exactly ${min} items` : `"${key}" needs ${min}–${max} items`);
       }
-      const itemDef = dv[0];
+      const itemDef = dv.length ? dv[0] : LIST_ITEM_SHAPES[`${section}.${key}`];
+      if (itemDef === undefined) bad(`"${key}" can't be edited`);
       clean[key] = v.map((item) => {
         if (typeof itemDef === 'string') return checkString(section, key, item);
         if (!item || typeof item !== 'object') bad(`Each "${key}" entry must have its fields filled in`);
@@ -266,6 +281,8 @@ function getPublic() {
     // defaults underlie every override, so a field added later is never missing from a section saved earlier
     (out[page] = out[page] || {})[key] = ov[s] ? { ...DEFAULTS[s], ...ov[s] } : DEFAULTS[s];
   }
+  const q = out.sell && out.sell.quotes;
+  if (q && Array.isArray(q.items)) out.sell.quotes = { ...q, items: q.items.filter((it) => !isSeededQuote(it)) };
   return out;
 }
 
@@ -282,4 +299,4 @@ function reset(section) {
   db.prepare('DELETE FROM site_content WHERE section=?').run(section);
 }
 
-module.exports = { DEFAULTS, SECTIONS, getPublic, overrides, save, reset, ContentError };
+module.exports = { DEFAULTS, SECTIONS, getPublic, overrides, save, reset, ContentError, isSeededQuote };

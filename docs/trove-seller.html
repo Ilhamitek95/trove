@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  em,i,cite{font-style:normal} /* brand: no italics anywhere, not even the browser default */
   :root{
     --font-display:'Cormorant',Georgia,serif;
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
@@ -25,7 +26,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
        -webkit-font-smoothing:antialiased;font-weight:500;line-height:1.5}
-  ::selection{background:var(--coral);color:var(--char)}
+  ::selection{background:var(--rose);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   img{display:block;width:100%;height:100%;object-fit:cover}
@@ -52,7 +53,7 @@
   .mitem.on{background:var(--rose-tint);color:var(--char)}
   .mitem.on::before{content:"";position:absolute;left:-18px;top:9px;bottom:9px;width:3px;background:var(--coral);border-radius:0 3px 3px 0}
   .mitem svg{width:18px;height:18px;stroke-width:1.7}
-  .mitem .pill{margin-left:auto;background:var(--coral);color:var(--char);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
+  .mitem .pill{margin-left:auto;background:var(--rose);color:var(--char);font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;display:grid;place-items:center;padding:0 5px}
   .side .foot{margin-top:auto;padding:14px 10px 2px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);font-weight:600}
   .side .foot a:hover{color:var(--accent-ink)}
 
@@ -102,6 +103,7 @@
   .banner h4{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--cream)}
   .banner p{font-size:13px;opacity:.8;margin-top:2px}
   .banner .btn{margin-left:auto;flex-shrink:0}
+  .banner .btn-coral{background:var(--cream);color:var(--char)} .banner .btn-coral:hover{background:#fff}
 
   /* overview layout */
   .ov-row{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-top:18px}
@@ -138,6 +140,7 @@
   .tbl tr:hover td{background:var(--cream-2)}
   .prod-cell{display:flex;align-items:center;gap:13px}
   .prod-cell .th{width:46px;height:54px;border-radius:9px;overflow:hidden;position:relative;flex-shrink:0;background:var(--rose)}
+  .prod-cell .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1} /* the colour tile must never cover the photo */
   .prod-cell .pn{font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1.1}
   .prod-cell .ps{font-size:11px;color:var(--muted);font-weight:600}
   .price-edit{display:inline-flex;align-items:center;gap:6px;font-family:var(--font-display);font-size:18px;font-weight:600;cursor:pointer;padding:4px 8px;border-radius:8px;transition:.15s;border:1px solid transparent}
@@ -158,7 +161,7 @@
   .iact.del:hover{background:#F6E2DB;color:var(--accent-ink)}
 
   .order-pill{font-size:11px;font-weight:700;letter-spacing:.04em;padding:5px 12px;border-radius:999px}
-  .order-pill.new{background:var(--coral);color:var(--char)}
+  .order-pill.new{background:var(--rose);color:var(--char)}
   .order-pill.fulfilled{background:var(--green-bg);color:var(--green)}
   .order-pill.shipped{background:var(--sky);color:#2E5871}
 
@@ -198,7 +201,7 @@
   .tagbox:focus-within{border-color:var(--taupe)}
   .tagbox .tg{display:inline-flex;align-items:center;gap:7px;background:rgba(195,209,199,.35);border:1px solid rgba(195,209,199,.9);border-radius:99px;padding:5px 7px 5px 12px;font-size:13px;font-weight:600;color:var(--char)}
   .tagbox .tg button{border:0;background:rgba(41,39,39,.08);color:var(--char);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
-  .tagbox .tg button:hover{background:var(--coral);color:var(--char)}
+  .tagbox .tg button:hover{background:var(--rose);color:var(--char)}
   .tagbox input{border:0;outline:0;background:none;flex:1;min-width:130px;font:inherit;font-size:13.5px;padding:4px 2px}
   /* buyer choices (Colour, Size…) — one card per group, values as chips */
   .optg{border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:10px;background:var(--paper)}
@@ -357,6 +360,30 @@
     .card{overflow-x:auto}
     .tbl{min-width:560px}
   }
+  /* phones: a banner's button drops under its text instead of squeezing it
+     to one word a line */
+  @media(max-width:620px){
+    .banner{flex-wrap:wrap;gap:12px 14px;padding:18px}
+    .banner>div:not(.bi){flex:1 1 0;min-width:0}
+    .banner .btn{margin-left:0;flex:1 1 100%;justify-content:center}
+    /* products: each row becomes a card, so stock, status and the edit and
+       delete buttons are on screen instead of past the right edge */
+    .card:has(#prodTable){overflow-x:visible}
+    #prodTable{min-width:0}
+    #prodTable thead{display:none}
+    #prodTable tbody tr{display:grid;grid-template-columns:1fr auto;gap:10px 12px;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+    #prodTable tbody tr:last-child{border-bottom:none}
+    #prodTable tbody tr:hover td{background:none}
+    #prodTable td{padding:0;border:none}
+    #prodTable td:nth-child(1){grid-column:1/-1}
+    #prodTable td:nth-child(2){align-self:center;font-size:12.5px}
+    #prodTable td:nth-child(3){justify-self:end;align-self:center}
+    #prodTable td:nth-child(4){align-self:center}
+    #prodTable td:nth-child(5){justify-self:end;align-self:center}
+    #prodTable td:nth-child(6){grid-column:1/-1}
+    #prodTable td:nth-child(6) .rowact{justify-content:flex-start}
+    #prodTable td:only-child{grid-column:1/-1}
+  }
   @media(max-width:560px){
     .content{padding-top:20px}
     input,select,textarea{font-size:16px!important}
@@ -430,7 +457,7 @@
   .sc-sec-label{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:8px}
   .sc-li{display:flex;align-items:center;gap:12px;padding:7px 0}
   .sc-li .th{width:44px;height:54px;border-radius:8px;overflow:hidden;position:relative;flex-shrink:0;background:var(--rose-tint)}
-  .sc-li .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .sc-li .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1}
   .sc-li .nm{font-family:var(--font-display);font-size:16px;font-weight:600;line-height:1.15}
   .sc-li .q{font-size:12px;color:var(--muted);font-weight:600;margin-top:1px}
   .sc-li .pr{margin-left:auto;font-weight:700;font-size:13.5px}
@@ -444,7 +471,7 @@
   .sc-step{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
   .sc-step .d{width:22px;height:22px;border-radius:50%;background:var(--paper);border:2px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted);z-index:2}
   .sc-step.done .d{background:var(--green);border-color:var(--green);color:var(--cream)}
-  .sc-step.now .d{background:var(--coral);border-color:var(--coral);color:var(--char)}
+  .sc-step.now .d{background:var(--rose);border-color:var(--rose);color:var(--char)}
   .sc-step .l{font-size:10.5px;font-weight:700;margin-top:7px;color:var(--muted);text-align:center}
   .sc-step.done .l,.sc-step.now .l{color:var(--char)}
   .sc-step .ln{position:absolute;top:10px;left:50%;width:100%;height:2px;background:var(--line);z-index:1}
@@ -496,15 +523,15 @@
   <aside class="side">
     <div class="logo"><span class="w serif"><img src="/img/trove-wordmark.svg" alt="trove" style="height:26px;width:auto;display:block" onerror="this.closest('.w').textContent='trove'"></span><span class="t">sellers</span></div>
     <div class="shop-switch" onclick="go('storefront')">
-      <div class="av" id="sideAv">K</div>
-      <div><div class="nm" id="sideShop">Kiln &amp; Clay</div><div class="st" id="sideStatus">Live shop</div></div>
+      <div class="av" id="sideAv">·</div>
+      <div><div class="nm" id="sideShop"></div><div class="st" id="sideStatus"></div></div>
       <svg class="ch" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
     </div>
     <nav class="menu">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
       <a class="mitem" data-v="services" onclick="go('services')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Services<span class="pill" id="svcPill" style="display:none">0</span></a>
-      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill">0</span></a>
+      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill" style="display:none">0</span></a>
       <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="pill" id="returnPill" style="display:none">0</span></a>
       <a class="mitem" data-v="analytics" onclick="go('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="6" rx="1"/><rect x="10" y="8" width="4" height="10" rx="1"/><rect x="16" y="4" width="4" height="14" rx="1"/></svg>Shop Analytics</a>
       <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
@@ -555,7 +582,7 @@
 
       <!-- PRODUCTS -->
       <div class="view" id="view-products">
-        <div class="sec-head"><span class="n"><b id="prodCount">0</b> products · click any price or stock to edit</span></div>
+        <div class="sec-head"><span class="n"><b id="prodCount">0</b> <span id="prodNoun">products</span> · click any price or stock to edit</span></div>
         <div class="card" style="padding:6px 0">
           <table class="tbl" id="prodTable"></table>
         </div>
@@ -589,7 +616,7 @@
             <h3 style="font-size:24px;font-weight:600;margin-bottom:6px">Offer services too</h3>
             <p style="font-size:13.5px;color:var(--ink-80);font-weight:400;line-height:1.6;margin-bottom:16px">Workshops, styling, photography, repair, brand work — anything you do beautifully, bookable beside your pieces on the <a href="/services" target="_blank" rel="noopener" style="text-decoration:underline">Services Marketplace</a>. Same account, same dashboard; your services get their own page and every booking request lands here.</p>
             <div class="svc-terms">
-              <span>✓ No second application — you're already curated</span>
+              <span id="svcCurated">✓ No second application — reviewed with your shop</span>
               <span>✓ AED 30 a month, from the day your services go live</span>
               <span>✓ No commission on direct bookings · 10% only when paid through Trove</span>
               <span>✓ Customers' emails never shared; mobile released when you confirm</span>
@@ -628,13 +655,12 @@
                 </div>
               </div>
             </div>
-            <div class="field"><label>Shop name</label><input id="sfName" value="Kiln & Clay"></div>
-            <div class="field"><label>Tagline</label><input id="sfTag" value="Small-batch stoneware, thrown by hand"></div>
+            <div class="field"><label>Shop name</label><input id="sfName"></div>
             <div class="field"><label>Area</label><input id="sfLoc" placeholder="e.g. Alserkal Avenue, Al Quoz"></div>
             <div class="field"><label>Emirate</label><select id="sfEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
             <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area — where the courier collects your parcels"></div>
             <div class="field"><label>Pickup phone (courier only)</label><input id="sfPickupTel" placeholder="05X XXX XXXX — the number the driver calls" inputmode="tel"></div>
-            <div class="field"><label>About</label><textarea id="sfBio">Small-batch stoneware thrown and glazed by hand. Each piece is a little different — that's the point.</textarea></div>
+            <div class="field"><label>About</label><textarea id="sfBio"></textarea></div>
             <div class="field"><label>Shop accent</label><div class="color-row" id="sfColors"></div></div>
             <button class="btn btn-dark" onclick="saveStore()" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save changes</button>
           </div>
@@ -811,7 +837,19 @@ function img(seed){
 }
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
 function money(c){const n=(c||0)/100; return Number.isInteger(n)?aed(n):'AED '+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/* Every API string that reaches innerHTML goes through esc(). */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+/* A value for an inline handler: a JSON string literal, HTML-escaped. */
+const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
+const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#BD9C8C';
+const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
+/* The shop's standing, in the sidebar and wherever "live" would mislead. */
+function shopStatusLabel(){
+  if(SHOP.status==='pending')return 'Under review';
+  if(SHOP.status==='rejected')return 'Not approved';
+  if(SHOP.status==='suspended')return 'Suspended';
+  return SHOP.stripeStatus&&SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
+}
 let toastT;
 function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
@@ -827,7 +865,7 @@ const exText=x=>(x||[]).map(e=>e.price?`${e.name} (+AED ${e.price.toLocaleString
 function mapProduct(p){ return {id:p.id,name:p.name,cat:p.category,price:p.price_cents/100,compare:p.compare_at_cents?p.compare_at_cents/100:null,stock:p.stock,status:p.status,seed:p.image_seed,images:parseTagsCol(p.images),desc:p.description,sales:null,tags:parseTagsCol(p.tags),options:parseTagsCol(p.options),variants:parseTagsCol(p.variants),extras:parseTagsCol(p.extras),
   perso:{enabled:!!p.personalization_enabled,required:!!p.personalization_required,prompt:p.personalization_prompt||'',maxLen:p.personalization_char_limit||256}}; }
 function applyShop(s){
-  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:s.color||'#BD9C8C',image:s.image||'',status:s.status||'approved',
+  SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:safeColor(s.color),image:safeImg(s.image),status:s.status||'approved',
     pickupAddress:s.pickup_address||'',pickupPhone:s.pickup_phone||'',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
@@ -839,7 +877,7 @@ function applyShop(s){
   $('sideShop').textContent=SHOP.name;
   if(SHOP.image){$('sideAv').style.background=`center/cover no-repeat url("${SHOP.image}")`;$('sideAv').textContent='';}
   else{$('sideAv').textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();$('sideAv').style.background=SHOP.color;}
-  $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
+  $('sideStatus').textContent=shopStatusLabel();
   fillCatOptions();
 }
 /* Brand taxonomy — the house line and the marketplace list their own categories. */
@@ -857,7 +895,6 @@ function ensureCatOption(cat){ // legacy categories stay editable until re-picke
 }
 function fillStoreForm(){
   if($('sfName'))$('sfName').value=SHOP.name||'';
-  if($('sfTag'))$('sfTag').value='';
   // Location is stored as "Area, Emirate" — split it back into the two fields.
   const isAD=/abu dhabi/i.test(SHOP.loc||'');
   if($('sfEmirate'))$('sfEmirate').value=isAD?'Abu Dhabi':'Dubai';
@@ -877,7 +914,8 @@ async function reloadOrders(){
   catch(_){ orders=[]; }
   // The sidebar count belongs to the orders load, not to opening Products —
   // it used to sit in renderProducts() and read 0 until you happened to go there.
-  $('orderPill').textContent=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
+  const openOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
+  $('orderPill').textContent=openOrders; $('orderPill').style.display=openOrders?'':'none';
   renderOrders(); renderOverview();
 }
 async function refreshStripeStatus(){
@@ -895,6 +933,7 @@ function renderOverview(){
   $('stRev').textContent=aed(revenue);
   $('stOrders').textContent=new Set(orders.map(o=>o.order&&o.order.publicId)).size;
   $('stProducts').textContent=live;
+  $('stProducts').previousElementSibling.textContent=SHOP.status==='approved'?'Live products':'Ready for launch';
   $('stPayout').textContent=aed(net);
   $('stPayoutSub').textContent=managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
@@ -908,9 +947,9 @@ function renderOverview(){
   if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Tuesdays' : 'Your Stripe schedule';
   $('ovOrders').innerHTML = orders.length
     ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
-        <td style="font-weight:700">${o.order?o.order.publicId:''}</td><td>${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
+        <td style="font-weight:700">${esc(o.order?o.order.publicId:'')}</td><td>${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
         <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${aed(o.itemTotal)}</td>
-        <td style="text-align:right"><span class="order-pill ${shipPill(o.status)}">${o.statusLabel}</span></td></tr>`).join('')}</tbody>`
+        <td style="text-align:right"><span class="order-pill ${shipPill(o.status)}">${esc(o.statusLabel)}</span></td></tr>`).join('')}</tbody>`
     : `<tbody><tr><td style="color:var(--muted);padding:18px;font-weight:600">No orders yet.</td></tr></tbody>`;
 }
 
@@ -934,19 +973,22 @@ function renderOverviewChart(){
 
 /* ---------------- PRODUCTS ---------------- */
 function renderProducts(){
-  $('prodCount').textContent=products.length;
+  $('prodCount').textContent=products.length; $('prodNoun').textContent=products.length===1?'product':'products';
+  // A shop still under review has nothing on show yet — a piece set to live
+  // is ready, and goes on sale the moment the shop is approved.
+  const waiting=SHOP.status!=='approved';
   if(!products.length){ $('prodTable').innerHTML=`<tbody><tr><td style="padding:30px 16px;color:var(--muted);font-weight:600">No products yet — add your first piece with the button above.</td></tr></tbody>`; return; }
   $('prodTable').innerHTML=`
     <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th></th></tr></thead>
     <tbody>${products.map(p=>`<tr>
-      <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${(p.images&&p.images[0])?esc(p.images[0]):img(p.seed)}" onerror="this.style.display='none'"></div>
-        <div><div class="pn">${p.name}</div><div class="ps">${p.stock} in stock</div></div></div></td>
-      <td style="color:var(--muted);font-weight:600">${p.cat}</td>
+      <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${esc(safeImg(p.images&&p.images[0])||img(p.seed))}" onerror="this.style.display='none'"></div>
+        <div><div class="pn">${esc(p.name)}</div><div class="ps">${Number(p.stock)||0} in stock</div></div></div></td>
+      <td style="color:var(--muted);font-weight:600">${esc(p.cat)}</td>
       <td><span class="price-edit" onclick="editPrice(${p.id},this)">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
       <td>${(p.options||[]).length
-        ? `<span class="ps" title="Stock is kept per combination">${p.stock} across ${p.variants.length} choice${p.variants.length===1?'':'s'}</span>`
-        : `<input class="stock-input" type="number" value="${p.stock}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
-      <td><span class="pill-st ${p.status}" onclick="cycleStatus(${p.id})">${p.status}</span></td>
+        ? `<span class="ps" title="Stock is kept per combination">${Number(p.stock)||0} across ${p.variants.length} choice${p.variants.length===1?'':'s'}</span>`
+        : `<input class="stock-input" type="number" value="${Number(p.stock)||0}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
+      <td><span class="pill-st ${esc(p.status)}" onclick="cycleStatus(${p.id})"${waiting&&p.status==='live'?' title="Goes on sale once your shop is approved"':''}>${waiting&&p.status==='live'?'ready':esc(p.status)}</span></td>
       <td><div class="rowact">
         <button class="iact" title="Edit" onclick="openEdit(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
         <button class="iact del" title="Delete" onclick="delProduct(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
@@ -968,7 +1010,7 @@ async function setStock(id,val){const stock=Math.max(0,parseInt(val)||0);
   await reloadProducts();
 }
 async function cycleStatus(id){const p=products.find(x=>x.id===id);const order=['live','draft','hidden'];const status=order[(order.indexOf(p.status)+1)%3];
-  try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{status}}); toast(`${p.name} is now ${status}`); }catch(e){ toast(e.message); }
+  try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{status}}); toast(status==='live'&&SHOP.status!=='approved'?`${p.name} is ready — it goes on sale once your shop is approved`:`${p.name} is now ${status}`); }catch(e){ toast(e.message); }
   await reloadProducts();
 }
 async function delProduct(id){const p=products.find(x=>x.id===id);if(!confirm(`Delete "${p.name}"? This can't be undone.`))return;
@@ -1218,7 +1260,8 @@ function readPerso(){return {enabled:$('dPerso').checked,required:document.query
   prompt:$('dPersoPrompt').value.trim(),maxLen:parseInt($('dPersoLimit').value)||256};}
 /* live preview + inline validation */
 function updateDrawerPreview(){   // NB: distinct name — updatePreview() further down is the storefront-settings preview
-  $('dImg').style=drawerImages[0]?`background:center/cover no-repeat url("${drawerImages[0]}")`:grad(SHOP.color);
+  const cover=safeImg(drawerImages[0]);
+  $('dImg').style=cover?`background:center/cover no-repeat url("${cover}")`:grad(SHOP.color);
   const name=$('dName').value.trim();
   $('dpvName').textContent=name||'Your product name';
   $('dpvName').classList.toggle('empty',!name);
@@ -1252,8 +1295,9 @@ function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   drawerExtras=(p.extras||[]).map(e=>({name:e.name,priceCents:e.priceCents||0}));renderDrawerExtras();
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 const STATUS_HINT={live:'Shoppers can see and buy it as soon as you save.',draft:'Only you can see it — finish it and go live whenever you like.'};
-function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=STATUS_HINT[drawerStatus];drawerDirty=true;}
-function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;$('dStatusHint').textContent=STATUS_HINT[s];}
+const statusHint=s=>s==='live'&&SHOP.status!=='approved'?'Your shop is under review — it goes on sale the moment your shop is approved.':STATUS_HINT[s];
+function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=statusHint(drawerStatus);drawerDirty=true;}
+function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;$('dStatusHint').textContent=statusHint(s);}
 function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeePct').textContent=feePct();$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*(1-feePct()/100));}
 $('dPrice').addEventListener('input',()=>{updateFee();updateDrawerPreview();});
 $('dCompare').addEventListener('input',updateDrawerPreview);
@@ -1282,7 +1326,7 @@ $('drawerSave').onclick=async()=>{
   try{
     if(editingId) await TroveAPI.api('/api/seller/products/'+editingId,{method:'PATCH',body});
     else { body.imageSeed='new'+Math.floor(Math.random()*9999); await TroveAPI.api('/api/seller/products',{method:'POST',body}); }
-    toast(editingId?'Changes saved':(drawerStatus==='draft'?'Saved as a draft — go live whenever you like':'Added — it\'s live in your shop'));
+    toast(editingId?'Changes saved':(drawerStatus==='draft'?'Saved as a draft — go live whenever you like':SHOP.status!=='approved'?'Saved — it goes live the moment your shop is approved':'Added — it\'s live in your shop'));
     drawerDirty=false; closeDrawer(true); await reloadProducts();
   }catch(e){ toast(e.message||'Could not save product'); }
   finally{ btn.disabled=false;btn.textContent=was; }
@@ -1332,9 +1376,9 @@ function shipRowHTML(o){
   const rr=o.returnRequest;
   const retFlag=rr&&rr.status==='requested'?' · <span class="sr-ret">↩ return requested</span>'
     :rr&&rr.status==='approved'?' · <span class="sr-ret">↩ return approved</span>':'';
-  return `<div class="card ship-row" onclick="toggleShip(${o.id})">
-      <span class="order-pill ${shipPill(o.status)}">${o.statusLabel}</span>
-      <div style="min-width:0"><div class="sr-id">${o.order?o.order.publicId:''}</div>
+  return `<div class="card ship-row" onclick="toggleShip(${Number(o.id)})">
+      <span class="order-pill ${shipPill(o.status)}">${esc(o.statusLabel)}</span>
+      <div style="min-width:0"><div class="sr-id">${esc(o.order?o.order.publicId:'')}</div>
         <div class="sr-sub">${esc(name)} · ${units} item${units===1?'':'s'} · ${aed(o.itemTotal||0)}${perso?' · <span class="sr-perso">✎ personalised</span>':''}${retFlag}</div></div>
       <span class="sr-date">${fmtDate(o.order?o.order.createdAt:o.createdAt)}</span>
       <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -1344,17 +1388,17 @@ function shipCardHTML(o){
   const gross=o.itemTotal||0, fee=gross*feePct()/100, net=gross-fee;
   const units=(o.items||[]).reduce((n,i)=>n+i.qty,0);
   const items=(o.items||[]).map(i=>`<div class="sc-li">
-      <div class="th"><div style="position:absolute;inset:0;${grad((o.shop&&o.shop.color)||'#BD9C8C')}"></div>${(i.image||i.seed)?`<img src="${i.image?esc(i.image):img(i.seed)}" onerror="this.style.display='none'">`:''}</div>
-      <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each</div>
+      <div class="th"><div style="position:absolute;inset:0;${grad(safeColor(o.shop&&o.shop.color))}"></div>${(i.image||i.seed)?`<img src="${esc(safeImg(i.image)||img(i.seed))}" onerror="this.style.display='none'">`:''}</div>
+      <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0} · ${aed(i.price)} each</div>
         ${optLabel(i.options)?`<div class="q" style="color:var(--accent-ink);font-weight:700">${esc(optLabel(i.options))}</div>`:''}
         ${exText(i.extras)?`<div class="q" style="color:var(--accent-ink);font-weight:700">+ ${esc(exText(i.extras))}</div>`:''}
         ${i.personalization?`<div class="q" style="color:var(--accent-ink);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
       <div class="pr">${aed(i.price*i.qty)}</div>
     </div>`).join('');
   return `<div class="card ship-card">
-    <div class="sc-head" onclick="toggleShip(${o.id})" title="Collapse">
-      <div><div class="up" style="margin:0">Order</div><div class="sc-id">${o.order?o.order.publicId:''}</div><div class="sc-sub">Placed ${fmtDateTime(o.order?o.order.createdAt:o.createdAt)}</div></div>
-      <span class="order-pill ${shipPill(o.status)}" style="margin-left:auto">${o.statusLabel}</span>
+    <div class="sc-head" onclick="toggleShip(${Number(o.id)})" title="Collapse">
+      <div><div class="up" style="margin:0">Order</div><div class="sc-id">${esc(o.order?o.order.publicId:'')}</div><div class="sc-sub">Placed ${fmtDateTime(o.order?o.order.createdAt:o.createdAt)}</div></div>
+      <span class="order-pill ${shipPill(o.status)}" style="margin-left:auto">${esc(o.statusLabel)}</span>
       <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
     </div>
     <div class="sc-cols">
@@ -1385,7 +1429,7 @@ function rrItemsLine(rr){
 }
 function returnStripHTML(o){
   const rr=o.returnRequest; if(!rr)return'';
-  const photos=(rr.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
+  const photos=(rr.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
   const note=rr.status==='requested'?`Trove is reviewing it — nothing for you to do yet. If it's approved, ${aed(rr.creditImpact||0)} of this sale's credit reverses.`
     :rr.status==='approved'?`Return approved — the courier will bring the item${(rr.items||[]).length>1?'s':''} back, and ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.`
     :"Trove declined the request — nothing changes for you.";
@@ -1475,7 +1519,7 @@ function renderAnalytics(){
 
   const rows=a.products.length
     ? a.products.map(p=>`<tr>
-        <td style="font-weight:700">${esc(p.name)}${p.status!=='live'?` <span class="pill-st ${p.status}" style="cursor:default;margin-left:6px">${p.status}</span>`:''}</td>
+        <td style="font-weight:700">${esc(p.name)}${p.status!=='live'?` <span class="pill-st ${esc(p.status)}" style="cursor:default;margin-left:6px">${esc(p.status)}</span>`:''}</td>
         <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${p.views}</td>
         <td>${p.adds}</td>
         <td>${p.units}</td>
@@ -1527,9 +1571,9 @@ function renderReturnsView(){
     return;
   }
   wrap.innerHTML=returnRequests.map(r=>{
-    const photos=(r.images||[]).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
+    const photos=(r.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
     const items=(r.items||[]).map(i=>`<div class="sc-li" style="padding:8px 0">
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${i.qty} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
         <div class="pr" style="margin-left:auto">${aed(i.price*i.qty)}</div>
       </div>`).join('');
     const state=r.status==='requested'
@@ -1539,7 +1583,7 @@ function renderReturnsView(){
       : `Declined by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — nothing changes for you.${r.declineReason?' Reason given to the buyer: “'+esc(r.declineReason)+'”':''}`;
     return `<div class="card" style="margin-bottom:14px${r.status!=='requested'?';opacity:.78':''}">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':r.status}</span>
+        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':esc(r.status)}</span>
         <b style="font-size:13.5px">${esc(r.order?r.order.publicId:'')}</b>
         <span style="color:var(--muted);font-size:12px;margin-left:auto">requested ${fmtDate(r.createdAt)}</span>
       </div>
@@ -1566,7 +1610,7 @@ function renderOrders(){
 const SHIP_PREV={shipped:'processing',out_for_delivery:'shipped',delivered:'out_for_delivery'};
 function undoBtn(s){
   if(!SHIP_PREV[s.status])return'';
-  return `<button class="btn btn-ghost btn-sm" onclick="undoShip(${s.id},'${s.status}')" title="Step back if you clicked too soon">↩ Undo</button>`;
+  return `<button class="btn btn-ghost btn-sm" onclick="undoShip(${Number(s.id)},${jsq(s.status)})" title="Step back if you clicked too soon">↩ Undo</button>`;
 }
 function shipActions(s){
   if(s.status==='cancelled') return `<div class="sc-act" style="color:var(--muted)">This shipment was cancelled.</div>`;
@@ -1578,7 +1622,7 @@ function shipActions(s){
   if(courier&&s.status==='processing') label='Packed · ready for collection';
   const courierRow=courier?`<div class="sc-act" style="gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px">
       <span>Courier booking <b>${esc(s.deliveryRef)}</b>${s.readyAt?' · handed over '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
-      <a class="btn btn-ghost btn-sm" href="/api/seller/shipments/${s.id}/label" target="_blank" rel="noopener">Print label</a>
+      <a class="btn btn-ghost btn-sm" href="/api/seller/shipments/${Number(s.id)}/label" target="_blank" rel="noopener">Print label</a>
     </div>`:'';
   const track=courierRow+`<div class="sc-track">
       <div class="field" style="margin:0"><label>Courier</label><input id="ship-carrier-${s.id}" value="${esc(s.carrier)}" placeholder="e.g. Trove Express"></div>
@@ -1586,8 +1630,8 @@ function shipActions(s){
       <div class="field" style="margin:0;grid-column:1/-1"><label>Tracking link (optional)</label><input id="ship-url-${s.id}" value="${esc(s.trackingUrl)}" placeholder="https://… so your buyer can follow it"></div>
     </div>`;
   return track+`<div class="sc-act">
-      ${ns?`<button class="btn btn-coral btn-sm" onclick="advanceShip(${s.id},'${ns}')">${label}</button>`:''}
-      <button class="btn btn-ghost btn-sm" onclick="advanceShip(${s.id},'${s.status}')">Save tracking</button>
+      ${ns?`<button class="btn btn-coral btn-sm" onclick="advanceShip(${Number(s.id)},${jsq(ns)})">${label}</button>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="advanceShip(${Number(s.id)},${jsq(s.status)})">Save tracking</button>
       ${undoBtn(s)}
     </div>`;
 }
@@ -1629,13 +1673,13 @@ function graduationBannerHTML(){
   return `<div class="banner"><div class="bi" style="background:var(--sage,#CAD5CC)">↑</div>
     <div><h4>${flagged?'Your shop has outgrown the starter tier':'Direct payouts are on the way'}</h4>
     <p>${flagged
-      ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader license you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">Apply for an e-Trader license ↗</a>'
-      :'You applied with a trade license. Once the Trove team verifies it, we\'ll set up direct per-sale payouts for you — no action needed.'}</p></div></div>`;
+      ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">Apply for an e-Trader licence ↗</a>'
+      :'You applied with a trade licence. Once the Trove team verifies it, we\'ll set up direct per-sale payouts for you — no action needed.'}</p></div></div>`;
 }
 function bannerHTML(managed, sc){
   if(managed){
     return (SETTLE.payoutSetupComplete || (SHOP.bank && SHOP.bank.iban)) ? '' :
-      `<div class="banner"><div class="bi" style="background:var(--coral)">T</div>
+      `<div class="banner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
         <div><h4>Finish your payout setup</h4><p>Add your bank details so Trove can pay for the pieces it buys from you — until then you're left out of the weekly settlement run.</p></div>
         <button class="btn btn-coral" onclick="go('payments')">Set up payouts</button></div>`;
   }
@@ -1690,7 +1734,7 @@ function renderConnectUI(sc){
       <h2>${sc.connected?'Finish your Stripe onboarding':'Direct payouts are being set up'}</h2>
       <p>${sc.connected
         ?'Your direct-payout account exists but onboarding isn’t finished — pick up where you left off.'
-        :'The Trove team creates your direct-payout account once your license is verified. We\'ll let you know when it\'s ready.'}</p>
+        :'The Trove team creates your direct-payout account once your licence is verified. We\'ll let you know when it\'s ready.'}</p>
       ${sc.connected?`<button class="btn btn-stripe" id="connectBtn" style="padding:15px 34px" onclick="connectStripe()">Continue onboarding</button>
       <div class="demo-note"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>You'll be taken to Stripe's secure onboarding.</div>`:''}
     </div>`;
@@ -1773,7 +1817,7 @@ function payoutSetupCard(){
     <div class="field"><label>IBAN</label><input id="bkIban" placeholder="AE followed by 21 digits"></div>
     ${SHOP.needsId?`
     <div class="up" style="margin-top:18px">Identity verification</div>
-    <div class="demo-note" style="margin:6px 0 12px">You sell under Trove's consignment model without a trade license, so Trove keeps a copy of your Emirates ID and your home address on record. The photos are stored encrypted and only Trove's admin can view them.</div>
+    <div class="demo-note" style="margin:6px 0 12px">You sell under Trove's consignment model without a trade licence, so Trove keeps a copy of your Emirates ID and your home address on record. The photos are stored encrypted and only Trove's admin can view them.</div>
     <input type="file" id="psEidFrontFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="pickIdPhoto('front',this.files[0]);this.value=''">
     <input type="file" id="psEidBackFile" accept="image/jpeg,image/png,image/webp" style="display:none" onchange="pickIdPhoto('back',this.files[0]);this.value=''">
     <div class="ftwo">
@@ -1856,7 +1900,7 @@ async function renderAdminPayouts(){
   v.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600">Loading settlements…</div>`;
   let preview={eligible:[],excluded:[],totalNetCents:0}, hist={settlements:[]};
   try{ preview=await TroveAPI.api('/api/admin/settlements/preview'); }
-  catch(e){ v.innerHTML=`<div class="card" style="color:var(--accent-ink);font-weight:600">${e.message||'Could not load settlements'}</div>`; return; }
+  catch(e){ v.innerHTML=`<div class="card" style="color:var(--accent-ink);font-weight:600">${esc(e.message||'Could not load settlements')}</div>`; return; }
   try{ hist=await TroveAPI.api('/api/admin/settlements'); }catch(_){}
   const owed=preview.eligible||[], held=preview.excluded||[], runs=hist.settlements||[];
   const due=`
@@ -1883,8 +1927,8 @@ async function renderAdminPayouts(){
       ${runs.length?runs.map(st=>`
         <div style="padding:14px 22px;border-bottom:1px solid var(--line)">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <strong>Run ${st.runDate}</strong>
-            <span class="order-pill ${st.status==='paid'?'fulfilled':'new'}">${st.status}</span>
+            <strong>Run ${esc(st.runDate)}</strong>
+            <span class="order-pill ${st.status==='paid'?'fulfilled':'new'}">${esc(st.status)}</span>
             <span style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(st.totalCents)}</span>
             <span style="flex:1"></span>
             <a class="btn btn-ghost btn-sm" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(renderAdminPayouts,1200)">Bank CSV</a>
@@ -2099,11 +2143,12 @@ async function renderServicesView(){
       ProviderPanel.mountBookings($('ppBookings'));
       SVC_MOUNTED=true;
       go('services'); // refresh the top action now the panel is live
-    }catch(e){ $('svcPanel').innerHTML=`<div class="card">${(e.message||'Could not load your services.')}</div>`; }
+    }catch(e){ $('svcPanel').innerHTML=`<div class="card">${esc(e.message||'Could not load your services.')}</div>`; }
     return;
   }
   $('svcPanel').style.display='none'; $('svcEnable').style.display='';
   $('svcEnableNote').textContent=SHOP.status==='approved'?'Goes live straight away — you’re already curated.':'Reviewed together with your shop application.';
+  $('svcCurated').textContent=SHOP.status==='approved'?'✓ No second application — you’re already curated':'✓ No second application — reviewed together with your shop';
   if(!SVC_TAX){
     try{ SVC_TAX=await TroveAPI.api('/api/services/taxonomy'); }catch(_){ $('svcCatPicker').innerHTML='<div style="font-size:12.5px;color:var(--muted)">Couldn’t load the categories — refresh to try again.</div>'; return; }
   }
@@ -2112,7 +2157,7 @@ async function renderServicesView(){
 function renderSvcPicker(){
   $('svcCatPicker').innerHTML=SVC_TAX.audiences.map(a=>{
     const cats=SVC_TAX.categories.filter(c=>c.audience===a.key);
-    return `<div class="svc-audlbl">${a.name} — ${a.sub.toLowerCase()}</div><div class="svc-catbox">${cats.map(c=>`<button type="button" class="svc-catopt ${SVC_PICKED.includes(c.slug)?'on':''}" onclick="toggleSvcCat('${c.slug}')">${c.name}</button>`).join('')}</div>`;
+    return `<div class="svc-audlbl">${esc(a.name)} — ${esc(String(a.sub||'').toLowerCase())}</div><div class="svc-catbox">${cats.map(c=>`<button type="button" class="svc-catopt ${SVC_PICKED.includes(c.slug)?'on':''}" onclick="toggleSvcCat(${jsq(c.slug)})">${esc(c.name)}</button>`).join('')}</div>`;
   }).join('');
 }
 function toggleSvcCat(slug){
@@ -2154,7 +2199,7 @@ async function boot(){
   if(session.impersonating){ $('impShopName').textContent=SHOP.name||'the shop'; $('impBar').classList.add('on'); }
   await refreshStripeStatus();
   await reloadPayouts();
-  $('sideStatus').textContent=SHOP.stripeStatus.chargesEnabled?'Live · Stripe connected':'Live shop';
+  $('sideStatus').textContent=shopStatusLabel();
   if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
   buildMobileTabs();
   await Promise.all([reloadProducts(), reloadOrders(), reloadReturns(), reloadAnalytics()]);
