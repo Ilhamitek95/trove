@@ -36,10 +36,10 @@ before(async () => {
 after(async () => { await ctx.close(); });
 
 test('legal documents are served with a version and hash, and their pages exist', async () => {
-  for (const [doc, needle] of [['provider-agreement', 'not the provider of your services'], ['services-terms', 'Trove is not the provider']]) {
+  for (const [doc, needle, version] of [['provider-agreement', 'not the provider of your services', 'v1'], ['services-terms', 'Trove is not the provider', 'v2']]) {
     const r = await api('GET', '/api/legal/' + doc);
     assert.equal(r.status, 200);
-    assert.equal(r.data.version, 'v1');
+    assert.equal(r.data.version, version);
     assert.ok(r.data.markdown.includes(needle), `${doc} says it plainly`);
     assert.match(r.data.sha256, /^[0-9a-f]{64}$/);
     const page = await api('GET', '/' + doc);
@@ -54,7 +54,7 @@ test('config exposes the services commission and document versions', async () =>
   const { data } = await api('GET', '/api/config');
   assert.equal(data.serviceCommissionPercent, 10);
   assert.equal(data.providerAgreementVersion, 'v1');
-  assert.equal(data.servicesTermsVersion, 'v1');
+  assert.equal(data.servicesTermsVersion, 'v2');
 });
 
 test('applying requires the Provider Agreement and records the accepted version', async () => {
@@ -89,7 +89,7 @@ test('a booking requires the Services Terms and records the version', async () =
   r = await api('POST', `/api/services/${serviceId}/book`, { body: { ...BOOK, paymentMethod: 'direct' } });
   assert.equal(r.status, 201);
   const bk = db.prepare('SELECT * FROM service_bookings WHERE code=?').get(r.data.booking.code);
-  assert.equal(bk.terms_version, 'v1');
+  assert.equal(bk.terms_version, 'v2');
   assert.equal(bk.payment_method, 'direct');
   assert.equal(bk.commission_cents, 0);
   assert.equal(bk.provider_net_cents, 0);
