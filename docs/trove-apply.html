@@ -15,7 +15,7 @@
     --font-display:'Cormorant',Georgia,serif;
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
-    --rose-tint:#F2E9E4; --line:rgba(41,39,39,.12); --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+    --rose-tint:#F2E9E4; --line:rgba(41,39,39,.12); --muted:rgba(41,39,39,.72); /* .72 = 5.8:1 on cream (WCAG AA) */ --ink-80:rgba(41,39,39,.78);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500;min-height:100vh}
@@ -25,26 +25,26 @@
   h1,h2,h3{font-family:var(--font-display);font-weight:500}
 
   .shell{display:grid;grid-template-columns:minmax(340px,44%) 1fr;min-height:100vh}
-  @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
 
-  /* left brand panel */
-  .brandside{background:var(--char);padding:56px 60px;display:flex;flex-direction:column;position:relative;overflow:hidden}
-  .brandside .logo{font-family:var(--font-display);font-size:38px;font-weight:600;color:var(--cream)}
-  .brandside .logo a{text-decoration:none}
+  /* left brand panel — the same rose panel as /login (one auth layout) */
+  .brandside{background:var(--rose);color:var(--char);padding:56px 60px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .brandside .logo{font-family:var(--font-display);font-size:38px;font-weight:600;color:var(--char)}
+  .brandside .logo a{text-decoration:none;display:inline-block}
   .bmid{margin-top:12vh;max-width:30ch}
-  .bmid .eyebrow{font-size:12px;letter-spacing:.12em;color:rgba(253,247,245,.8);font-weight:700;display:block;margin-bottom:18px}
-  .bmid h1{font-family:var(--font-display);font-size:clamp(36px,3.6vw,54px);line-height:1.04;font-weight:400;color:var(--cream)}
-  .bmid h1 em{font-style:normal;color:var(--rose)}
-  .bmid p{font-size:15px;color:rgba(253,247,245,.75);font-weight:400;margin-top:18px;line-height:1.65}
+  .bmid .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--char);font-weight:700;display:block;margin-bottom:18px}
+  .bmid h1{font-family:var(--font-display);font-size:clamp(36px,3.6vw,54px);line-height:1.04;font-weight:400;color:var(--char)}
+  /* accent word: charcoal with a soft cream underline, as on /login */
+  .bmid h1 em{font-style:normal;color:var(--char);text-decoration:underline;text-decoration-color:var(--paper);text-decoration-thickness:.07em;text-underline-offset:.14em}
+  .bmid p{font-size:15px;color:var(--ink-80);font-weight:500;margin-top:18px;line-height:1.65}
   .bsteps{margin-top:46px;display:flex;flex-direction:column;gap:18px}
-  .bstep{display:flex;gap:14px;align-items:flex-start;color:rgba(253,247,245,.55);transition:color .3s}
-  .bstep .n{width:26px;height:26px;border-radius:50%;border:1px solid rgba(253,247,245,.3);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;transition:.3s}
+  .bstep{display:flex;gap:14px;align-items:flex-start;color:var(--ink-80);transition:color .3s}
+  .bstep .n{width:26px;height:26px;border-radius:50%;border:1px solid rgba(41,39,39,.35);display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0;transition:.3s}
   .bstep .t{font-size:14px;font-weight:600;padding-top:3px}
-  .bstep.on{color:var(--cream)}
-  .bstep.on .n{background:var(--cream);border-color:var(--cream);color:var(--char)}
-  .bstep.done{color:rgba(253,247,245,.8)}
-  .bstep.done .n{background:rgba(253,247,245,.15);border-color:transparent}
-  .deco{position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;border-radius:50%;background:rgba(253,247,245,.07);pointer-events:none}
+  .bstep.on{color:var(--char)}
+  .bstep.on .n{background:var(--char);border-color:var(--char);color:var(--cream)}
+  .bstep.done .n{background:rgba(253,247,245,.6);border-color:transparent}
+  .deco{position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;border-radius:50%;background:rgba(253,247,245,.25);pointer-events:none}
+  .mprop,.mstep{display:none}
 
   /* right form panel */
   .formside{display:flex;align-items:center;justify-content:center;padding:44px 28px}
@@ -56,7 +56,7 @@
   .form .lede{font-size:14px;color:var(--muted);font-weight:500;margin:8px 0 26px;line-height:1.55}
   .field{margin-bottom:16px}
   .field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:7px}
-  .field label .opt{color:var(--taupe);text-transform:none;letter-spacing:0;font-weight:600}
+  .field label .opt{color:var(--muted);text-transform:none;letter-spacing:0;font-weight:600}
   .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:13px 15px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none;transition:.15s}
   .field textarea{resize:vertical;min-height:104px;line-height:1.55}
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--char)}
@@ -92,16 +92,23 @@
   .signin a{color:var(--accent-ink);font-weight:700}
 
   /* success */
-  .done-mark{width:74px;height:74px;border-radius:50%;background:var(--sage);display:grid;place-items:center;font-size:32px;margin-bottom:22px}
+  .done-mark{width:74px;height:74px;border-radius:50%;background:var(--sage);color:var(--char);display:grid;place-items:center;font-size:30px;font-weight:700;margin-bottom:22px}
   .done h2{font-size:36px}
   .done p{font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.65;margin:14px 0 8px}
   .done .what{margin:20px 0;padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
   .done .what b{display:block;font-size:13.5px;margin-bottom:4px}
   .done .what span{font-size:13px;color:var(--muted);font-weight:500;line-height:1.5}
-  /* re-asserted here: the same rule near the top of the sheet loses to the
-     .brandside base rule declared after it (cascade order), so phones were
-     getting the full dark brand panel above the form */
-  @media(max-width:860px){.shell{grid-template-columns:1fr}.brandside{display:none}}
+  /* phones: the rose strip shrinks to the wordmark (home) and one line of
+     what Trove offers; the step name moves above the progress bar */
+  @media(max-width:860px){
+    .shell{grid-template-columns:1fr;grid-template-rows:auto 1fr;align-content:start}
+    .brandside{padding:18px 24px 16px;display:block}
+    .brandside .logo a{padding:8px 0}
+    .bmid,.deco{display:none}
+    .mprop{display:block;font-size:13.5px;font-weight:600;color:var(--char);line-height:1.45;margin-top:4px}
+    .formside{align-items:flex-start}
+    .mstep{display:block;font-size:12px;letter-spacing:.05em;font-weight:700;color:var(--char);margin:-10px 0 10px}
+  }
   .roles{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
   .role{display:flex;flex-direction:column;align-items:flex-start;gap:8px;text-align:left;padding:12px 12px 11px;border-radius:14px;border:1.5px solid var(--line);background:var(--paper);transition:.18s;color:var(--char)}
   .role b{display:block;font-family:var(--font-display);font-size:18px;font-weight:600;line-height:1.05}
@@ -123,12 +130,18 @@
   .subbox p{font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.55;margin-top:8px}
   .subbox label{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;font-weight:600;cursor:pointer;line-height:1.5}
   .subbox label input{margin-top:3px;accent-color:var(--char)}
+  /* ---- accessibility ---- */
+  :focus-visible{outline:2px solid var(--char);outline-offset:2px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char)!important;outline-offset:1px}
+  .pweye{width:44px;height:44px;right:2px}
+  @media(max-width:860px){.catopt,.back,.next{min-height:44px}.signin a{display:inline-block;padding:14px 4px;margin:-14px 0}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <div class="shell">
   <aside class="brandside">
-    <div class="logo"><a href="/" aria-label="Trove — home"><img src="/img/trove-wordmark-cream.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('a').textContent='trove'"></a></div>
+    <div class="logo"><a href="/" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('a').textContent='trove'"></a></div>
     <div class="bmid">
       <span class="eyebrow" id="bEyebrow">Join Trove</span>
       <h1 id="bTitle">Tell us what you <em>make</em>.</h1>
@@ -140,39 +153,41 @@
         <div class="bstep" id="bs3"><span class="n">3</span><span class="t" id="bs3t">What you'll sell</span></div>
       </div>
     </div>
+    <p class="mprop" id="mProp">Keep 60% · we photograph, market and deliver</p>
     <div class="deco"></div>
   </aside>
 
   <div class="formside">
     <div class="form" id="form">
-      <div class="crumbs"><div class="c on" id="c1"></div><div class="c" id="c2"></div><div class="c" id="c3"></div></div>
-      <div class="err" id="err"></div>
+      <div class="mstep" id="mStep" aria-live="polite">Step 1 of 3 · About you</div>
+      <div class="crumbs" aria-hidden="true"><div class="c on" id="c1"></div><div class="c" id="c2"></div><div class="c" id="c3"></div></div>
+      <div class="err" id="err" role="alert"></div>
 
       <!-- STEP 1: who you are + what you're bringing -->
       <div id="step1">
         <h2>First, about you.</h2>
         <p class="lede">One account for everything you do on Trove — pieces, services, or both.</p>
         <div class="note" id="signedNote">You're signed in as <b id="signedWho"></b> — this will be added to your account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
-        <div class="field"><label>What are you bringing to Trove?</label>
-          <div class="roles" id="roles">
-            <button type="button" class="role on" data-role="maker" onclick="setRole('maker')">
-              <span class="ric" style="background:#DBC7BD"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span>
+        <div class="field"><label id="rolesLabel">What are you bringing to Trove?</label>
+          <div class="roles" id="roles" role="group" aria-labelledby="rolesLabel">
+            <button type="button" class="role on" aria-pressed="true" data-role="maker" onclick="setRole('maker')">
+              <span class="ric" style="background:#DBC7BD"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span>
               <span><b>Pieces</b><small>I make things to sell</small></span>
             </button>
-            <button type="button" class="role" data-role="provider" onclick="setRole('provider')">
-              <span class="ric" style="background:#F8D7E4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/></svg></span>
+            <button type="button" class="role" aria-pressed="false" data-role="provider" onclick="setRole('provider')">
+              <span class="ric" style="background:#F8D7E4"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/></svg></span>
               <span><b>Services</b><small>Workshops, styling, photography…</small></span>
             </button>
-            <button type="button" class="role" data-role="both" onclick="setRole('both')">
-              <span class="ric" style="background:#CAD5CC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg></span>
+            <button type="button" class="role" aria-pressed="false" data-role="both" onclick="setRole('both')">
+              <span class="ric" style="background:#CAD5CC"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg></span>
               <span><b>Both</b><small>Pieces and services, one account</small></span>
             </button>
           </div>
           <div class="help" id="roleHelp"></div>
         </div>
-        <div class="field"><label>Your name</label><input id="fName" placeholder="Your full name" autocomplete="name"></div>
-        <div class="field"><label>Email</label><input id="fEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
-        <div class="field" id="passField"><label>Password</label>
+        <div class="field"><label for="fName">Your name</label><input id="fName" placeholder="Your full name" autocomplete="name"></div>
+        <div class="field"><label for="fEmail">Email</label><input id="fEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
+        <div class="field" id="passField"><label for="fPass">Password</label>
           <div class="pw"><input id="fPass" type="password" placeholder="At least 8 characters" autocomplete="new-password">
             <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('fPass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div>
           <div class="help">You can sign in and prepare everything while your application is reviewed. Already on Trove? Use your existing email and password — we'll add this to your account.</div></div>
@@ -184,32 +199,32 @@
       <div id="step2" style="display:none">
         <h2 id="s2Title">Now, your shop.</h2>
         <p class="lede" id="s2Lede">This is what our curation team reads first — tell us who you are and what you do.</p>
-        <div class="field"><label id="fNameLabel">Shop name</label><input id="fShop" placeholder="e.g. Kiln &amp; Clay"><div class="help" id="fNameHelp" style="display:none">One name for your shop and your services practice.</div></div>
+        <div class="field"><label id="fNameLabel" for="fShop">Shop name</label><input id="fShop" placeholder="e.g. Kiln &amp; Clay"><div class="help" id="fNameHelp" style="display:none">One name for your shop and your services practice.</div></div>
         <div class="ftwo r-maker">
-          <div class="field"><label>What do you mainly make?</label>
+          <div class="field"><label for="fCat">What do you mainly make?</label>
             <select id="fCat"><option>Home &amp; Living</option><option>Wall Art &amp; Prints</option><option>Ceramics</option><option>Stationery</option><option>Jewellery</option><option>Personalised Gifts</option><option>Children's</option><option>Pet Accessories</option><option>Wellness &amp; Self-Care</option><option>Accessories</option><option>Seasonal</option><option>Handmade Crafts</option><option>Other</option></select></div>
-          <div class="field"><label>Who makes your products?</label>
+          <div class="field"><label for="fMaker">Who makes your products?</label>
             <select id="fMaker"><option>I make everything myself</option><option>Me and a small team</option><option>I design, a workshop produces</option></select></div>
         </div>
-        <div class="field r-provider"><label>What services will you offer? <span class="opt">· pick one to three</span></label>
-          <div id="catPicker"><div class="help">Loading categories…</div></div></div>
+        <div class="field r-provider"><label id="catLabel">What services will you offer? <span class="opt">· pick one to three</span></label>
+          <div id="catPicker" role="group" aria-labelledby="catLabel"><div class="help">Loading categories…</div></div></div>
         <div class="ftwo">
-          <div class="field"><label>Where are you based?</label>
+          <div class="field"><label for="fLoc">Where are you based?</label>
             <select id="fLoc"><option>Dubai, UAE</option><option>Abu Dhabi, UAE</option></select>
             <div class="help">Trove is open in Dubai &amp; Abu Dhabi for now.</div></div>
-          <div class="field"><label id="fExpLabel">How long have you been making?</label>
+          <div class="field"><label id="fExpLabel" for="fExp">How long have you been making?</label>
             <select id="fExp"><option>Just starting out</option><option>Under a year</option><option>1–3 years</option><option>3+ years</option></select></div>
         </div>
-        <div class="field"><label id="fAboutLabel">About you &amp; your craft <span class="count" id="aboutCount"></span></label>
+        <div class="field"><label id="fAboutLabel" for="fAbout">About you &amp; your craft <span class="count" id="aboutCount"></span></label>
           <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you make or do, and how? What makes it special? Write it like you'd tell a friend."></textarea>
           <div class="help">A few honest sentences are perfect — this also becomes your public story.</div></div>
-        <div class="field r-maker"><label>Do you have a UAE trade licence?</label>
+        <div class="field r-maker"><label for="fLic">Do you have a UAE trade licence?</label>
           <select id="fLic" onchange="toggleLic()"><option value="no">Not yet — it's just me making things</option><option value="yes">Yes — I have a trade or e-Trader licence</option></select>
           <div class="help">You don't need one to sell pieces: Trove buys your pieces from you and resells them. If you do have one, tell us — it unlocks direct per-sale payouts later.</div></div>
         <div id="licWrap" style="display:none" class="r-maker">
           <div class="ftwo">
-            <div class="field"><label>Licence number</label><input id="fLicNo" placeholder="e.g. CN-1234567"></div>
-            <div class="field"><label>Licence photo <span class="opt">· optional</span></label><input id="fLicImg" type="file" accept="image/jpeg,image/png,image/webp">
+            <div class="field"><label for="fLicNo">Licence number</label><input id="fLicNo" placeholder="e.g. CN-1234567"></div>
+            <div class="field"><label for="fLicImg">Licence photo <span class="opt">· optional</span></label><input id="fLicImg" type="file" accept="image/jpeg,image/png,image/webp">
               <div class="help">A clear photo or screenshot (JPG/PNG).</div></div>
           </div>
         </div>
@@ -220,24 +235,24 @@
       <div id="step3" style="display:none">
         <h2 id="s3Title">What will you sell?</h2>
         <p class="lede" id="s3Lede">Rough ideas and rough prices are fine — we just want a feel for your range.</p>
-        <div class="field r-maker"><label>Planned products</label>
+        <div class="field r-maker"><label for="fProducts">Planned products</label>
           <textarea id="fProducts" maxlength="2000" placeholder="One per line, e.g.&#10;Hand-thrown stoneware mugs — AED 60–80&#10;Speckled serving bowls&#10;Small-batch glazed planters"></textarea></div>
-        <div class="field r-provider"><label>Planned services</label>
+        <div class="field r-provider"><label for="fServices">Planned services</label>
           <textarea id="fServices" maxlength="2000" placeholder="One per line, e.g.&#10;Pottery hand-building workshop at your home — AED 1,200 per group&#10;Nursery wall mural — from AED 900&#10;Gallery-wall hanging — AED 450"></textarea></div>
         <div class="ftwo r-maker">
-          <div class="field"><label>Where do you sell today?</label>
+          <div class="field"><label for="fChannels">Where do you sell today?</label>
             <select id="fChannels"><option>Not selling yet</option><option>Instagram / WhatsApp</option><option>Markets &amp; pop-ups</option><option>My own website</option><option>Another website</option></select></div>
-          <div class="field"><label>Orders you could handle monthly</label>
+          <div class="field"><label for="fCap">Orders you could handle monthly</label>
             <select id="fCap"><option>Up to 10</option><option>10–30</option><option>30–100</option><option>100+</option></select></div>
         </div>
-        <div class="field"><label>Instagram <span class="opt r-provider-only">· or a portfolio link below</span></label>
+        <div class="field"><label for="fInsta">Instagram <span class="opt r-provider-only">· or a portfolio link below</span></label>
           <input id="fInsta" placeholder="@yourwork or instagram.com/yourwork">
           <div class="help">The fastest way for our curation team to see your work.</div></div>
         <div class="ftwo">
-          <div class="field"><label>Website or portfolio <span class="opt">· optional</span></label>
+          <div class="field"><label for="fLinks">Website or portfolio <span class="opt">· optional</span></label>
             <input id="fLinks" placeholder="yourwork.com"></div>
-          <div class="field"><label>WhatsApp</label>
-            <input id="fPhone" placeholder="+971 50 123 4567">
+          <div class="field"><label for="fPhone">WhatsApp</label>
+            <input id="fPhone" type="tel" autocomplete="tel" placeholder="+971 50 123 4567">
             <div class="help">So our curation team can reach you.</div></div>
         </div>
         <div class="subbox r-provider">
@@ -250,7 +265,7 @@
 
       <!-- SUCCESS -->
       <div id="stepDone" style="display:none" class="done">
-        <div class="done-mark">🎉</div>
+        <div class="done-mark" aria-hidden="true">✓</div>
         <h2>Application received.</h2>
         <p id="doneText"></p>
         <div class="what" id="doneWarn" style="display:none"></div>
@@ -272,27 +287,27 @@ let ROLE='maker';   // maker | provider | both
 
 /* ---------------- the three doors ---------------- */
 const COPY={
-  maker:{eyebrow:'Open your shop',title:'Tell us what you <em>make</em>.',s2:'Your shop',s3:"What you'll sell",
+  maker:{prop:'Keep 60% · we photograph, market and deliver',eyebrow:'Open your shop',title:'Tell us what you <em>make</em>.',s2:'Your shop',s3:"What you'll sell",
     s2Title:'Now, your shop.',s2Lede:'This is what our curation team reads first — tell us who you are and what you make.',
     name:'Shop name',exp:'How long have you been making?',about:'About you &amp; your craft',
     s3Title:'What will you sell?',s3Lede:'List the pieces you\'re planning to sell — rough ideas are fine.',roleHelp:'A shop on the storefront. Trove buys your pieces from you and resells them — photography, delivery, payments and customer care included.'},
-  provider:{eyebrow:'Become a provider',title:'Tell us what you <em>do</em>.',s2:'Your practice',s3:"What you'll offer",
+  provider:{prop:'Free during launch · keep 100% of direct bookings',eyebrow:'Become a provider',title:'Tell us what you <em>do</em>.',s2:'Your practice',s3:"What you'll offer",
     s2Title:'Now, your practice.',s2Lede:'Who you are, what you do, and where you do it.',
     name:'Practice or studio name',exp:'How long have you been at it?',about:'About you &amp; your work',
     s3Title:'What will you offer?',s3Lede:'List the services you\'re planning to offer — rough ideas and rough prices are fine.',roleHelp:'A page on the Services Marketplace, booking requests to your dashboard, free to list during launch and no commission on direct bookings.'},
-  both:{eyebrow:'Open your shop &amp; practice',title:'Tell us what you <em>make</em> — and do.',s2:'Your shop &amp; practice',s3:"What you'll sell &amp; offer",
+  both:{prop:'Keep 60% on pieces · keep 100% of direct bookings',eyebrow:'Open your shop &amp; practice',title:'Tell us what you <em>make</em> — and do.',s2:'Your shop &amp; practice',s3:"What you'll sell &amp; offer",
     s2Title:'Now, your shop and practice.',s2Lede:'One name, one story — pieces on the storefront and services on the Services Marketplace.',
     name:'Shop &amp; practice name',exp:'How long have you been at it?',about:'About you &amp; your work',
     s3Title:'What will you sell and offer?',s3Lede:'Pieces and services — rough ideas and rough prices are fine.',roleHelp:'Both, on one account: a shop for your pieces and a page for your services, reviewed together, one dashboard.'},
 };
 function setRole(r){
   ROLE=r;
-  document.querySelectorAll('.role').forEach(b=>b.classList.toggle('on',b.dataset.role===r));
+  document.querySelectorAll('.role').forEach(b=>{b.classList.toggle('on',b.dataset.role===r);b.setAttribute('aria-pressed',String(b.dataset.role===r));});
   const c=COPY[r];
-  $('bEyebrow').innerHTML=c.eyebrow;$('bTitle').innerHTML=c.title;$('bs2t').innerHTML=c.s2;$('bs3t').innerHTML=c.s3;
+  $('mProp').textContent=c.prop;$('bEyebrow').innerHTML=c.eyebrow;$('bTitle').innerHTML=c.title;$('bs2t').innerHTML=c.s2;$('bs3t').innerHTML=c.s3;
   $('s2Title').textContent=c.s2Title;$('s2Lede').textContent=c.s2Lede;
   $('fNameLabel').innerHTML=c.name;$('fNameHelp').style.display=r==='both'?'block':'none';
-  $('fExpLabel').textContent=c.exp;$('fAboutLabel').innerHTML=c.about+' <span class="count" id="aboutCount"></span>';
+  $('fExpLabel').textContent=c.exp;setStepLabel();$('fAboutLabel').innerHTML=c.about+' <span class="count" id="aboutCount"></span>';
   $('s3Title').textContent=c.s3Title;$('s3Lede').textContent=c.s3Lede;$('roleHelp').textContent=c.roleHelp;
   document.querySelectorAll('.r-maker').forEach(el=>el.style.display=(r==='maker'||r==='both')?'':'none');
   document.querySelectorAll('.r-provider').forEach(el=>el.style.display=(r==='provider'||r==='both')?'':'none');
@@ -314,7 +329,7 @@ async function loadTax(){
 function renderCatPicker(){
   $('catPicker').innerHTML=TAX.audiences.map(a=>{
     const cats=TAX.categories.filter(c=>c.audience===a.key);
-    return `<div class="audlbl">${esc(a.name)} — ${esc(a.sub.toLowerCase())}</div><div class="catbox">${cats.map(c=>`<button type="button" class="catopt ${PICKED.includes(c.slug)?'on':''}" onclick="toggleCat(${jsq(c.slug)})">${esc(c.name)}</button>`).join('')}</div>`;
+    return `<div class="audlbl">${esc(a.name)} — ${esc(a.sub.toLowerCase())}</div><div class="catbox">${cats.map(c=>`<button type="button" class="catopt ${PICKED.includes(c.slug)?'on':''}" aria-pressed="${PICKED.includes(c.slug)}" onclick="toggleCat(${jsq(c.slug)})">${esc(c.name)}</button>`).join('')}</div>`;
   }).join('');
 }
 function toggleCat(slug){
@@ -364,6 +379,8 @@ function togglePw(id,btn){
   btn.setAttribute('aria-label',show?'Hide password':'Show password');
 }
 function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';window.scrollTo(0,0);}
+/* Phones lose the step list in the brand panel, so the step name sits above the bar. */
+function setStepLabel(){const names=[null,'About you',$('bs2t').textContent,$('bs3t').textContent];$('mStep').textContent=`Step ${step} of 3 · ${names[step]}`;}
 function hideErr(){$('err').style.display='none';}
 function countAbout(){const v=$('fAbout').value;const c=$('aboutCount');if(c)c.textContent=v.length?v.length+' / 2000':'';}
 function toggleLic(){ $('licWrap').style.display=$('fLic').value==='yes'?'block':'none'; }
@@ -412,7 +429,9 @@ function toStep(target){
     $('c'+i).classList.toggle('on',i<=target);
     const bs=$('bs'+i);bs.classList.toggle('on',i===target);bs.classList.toggle('done',i<target);
   });
+  setStepLabel();
   window.scrollTo(0,0);
+  const h=$('step'+target).querySelector('h2');if(h){h.tabIndex=-1;h.focus({preventScroll:true});}
 }
 
 /* ---------------- submit: one form, one account ---------------- */
@@ -461,7 +480,7 @@ async function submitApp(){
       :'You\'re signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you\'re approved.';
     if(servicesWarn){$('doneWarn').style.display='';$('doneWarn').innerHTML=`<b>Your services</b><span>Your shop application is in, but the services part didn’t go through (${esc(servicesWarn)}). You can switch on services from the Services tab of your dashboard.</span>`;}
     ['step1','step2','step3'].forEach(id=>$(id).style.display='none');
-    document.querySelector('.crumbs').style.display='none';
+    document.querySelector('.crumbs').style.display='none';$('mStep').style.display='none';
     ['bs1','bs2','bs3'].forEach(id=>{$(id).classList.add('done');$(id).classList.remove('on');});
     $('stepDone').style.display='block';
     window.scrollTo(0,0);
