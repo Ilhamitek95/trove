@@ -25,12 +25,29 @@ function requireAuth(req, res, next) {
   next();
 }
 
-// Requires the user to own a shop (role seller/both). Attaches req.shop.
+/**
+ * The shop this account runs from the seller dashboard. A maker: their own.
+ * An admin: the Trove Collection (shops.is_house = 1) — "house mode", the
+ * owner running Trove's own line as themselves, still an admin everywhere
+ * else (no impersonation, no second account). An admin without a house shop
+ * falls back to any shop they own.
+ */
+function dashboardShopFor(user) {
+  if (user && user.role === 'admin') {
+    const house = db.prepare('SELECT * FROM shops WHERE is_house = 1 ORDER BY id LIMIT 1').get();
+    if (house) return house;
+  }
+  return user ? db.prepare('SELECT * FROM shops WHERE user_id = ? ORDER BY id LIMIT 1').get(user.id) : null;
+}
+
+// Requires a shop to run (see dashboardShopFor). Attaches req.shop, and
+// req.houseMode when it is the Trove Collection.
 function requireSeller(req, res, next) {
   requireAuth(req, res, () => {
-    const shop = db.prepare('SELECT * FROM shops WHERE user_id = ?').get(req.user.id);
+    const shop = dashboardShopFor(req.user);
     if (!shop) return res.status(403).json({ error: 'No shop on this account' });
     req.shop = shop;
+    req.houseMode = !!shop.is_house;
     next();
   });
 }
@@ -75,4 +92,4 @@ function startSession(req, fields, { keep = ['pendingOrderId'] } = {}) {
   });
 }
 
-module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin };
+module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor };

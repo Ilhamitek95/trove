@@ -124,10 +124,12 @@
   /* No wishlist or following yet. The header is one skeleton on every page
      (test/header-sync.test.js), so their links are hidden here, not removed. */
   a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
-  /* No Trove Collection pieces yet (html.no-house, set at boot from the live
-     catalogue): nothing points shoppers at an empty shelf. */
-  html.no-house .hero-tag,html.no-house #heroShopBtn,html.no-house .house-section,html.no-house .fhouse,
-  html.no-house header.top a[href="/shop/trove-collection"],html.no-house .mnav a[href="/shop/trove-collection"]{display:none!important}
+  /* No Trove Collection pieces yet (html.house-soon, set by the server and at
+     boot): the Collection stays everywhere, and its band says what is coming. */
+  .house .soon-copy,.house .soon-panel{display:none}
+  html.house-soon .house .live-copy,html.house-soon .house .gallery{display:none}
+  html.house-soon .house .soon-copy{display:block}
+  html.house-soon .house .soon-panel{display:flex}
   /* The shop could not be loaded (never a stand-in catalogue on the live site). */
   .outage{padding:96px 0 120px;text-align:center}
   .outage h1,.outage h2{font-size:clamp(34px,4.5vw,50px);font-weight:400;line-height:1.05;margin-bottom:14px}
@@ -301,6 +303,11 @@
   .house p{color:var(--char);opacity:.82;max-width:40ch;font-weight:400;font-size:16px;margin-bottom:30px}
   .house .pts{display:flex;flex-direction:column;gap:16px;margin-bottom:36px}
   .house .pts div b{font-family:var(--font-display);font-size:22px;font-weight:600;display:block;line-height:1.25}
+  .house .soon-panel{position:relative;min-height:420px;background:var(--char);color:var(--cream);flex-direction:column;align-items:center;justify-content:center;gap:22px;text-align:center;padding:48px 32px}
+  .house .soon-panel .mark{width:74px;height:74px;border-radius:20px;border:1px solid rgba(253,247,245,.28);display:grid;place-items:center}
+  .house .soon-panel .mark::after{content:"";width:20px;height:20px;background:var(--cream);transform:rotate(45deg);border-radius:2px}
+  .house .soon-panel b{font-family:var(--font-display);font-size:clamp(30px,3vw,40px);font-weight:500;line-height:1.05}
+  .house .soon-panel span:last-child{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;opacity:.78}
   .house .pts div span{font-size:13px;line-height:1.55;color:var(--char);opacity:.72;font-weight:500;max-width:44ch;display:block}
   /* tile geometry is fixed by the grid (rows split the column height; images
      sit absolute inside) so layout never depends on whether an image loaded */
@@ -446,11 +453,8 @@
   .sortbar .n b{color:var(--char)}
   .sortbar select{font-family:inherit;font-weight:600;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:11px 18px;background:var(--paper);color:var(--char);letter-spacing:.03em}
 
-  /* a short shelf: bigger cards, and no filter rail when nothing can be filtered */
+  /* a short shelf: bigger cards (the filter rail stays) */
   .pgrid.few{grid-template-columns:repeat(3,1fr);gap:40px 32px}
-  .no-filters .browse-layout{grid-template-columns:1fr}
-  .no-filters .filters,.no-filters .f-open-btn{display:none!important}
-  .fgroup[hidden]{display:none}
   @media(max-width:960px){.pgrid.few{grid-template-columns:repeat(2,1fr);gap:28px 18px}}
   @media(max-width:560px){.pgrid.few.one{grid-template-columns:1fr}.pgrid.few.one .card h3{font-size:24px}}
   @media(hover:none) and (min-width:961px){.card .ph .add{display:none}.card .add.add-row{display:flex;position:relative;left:auto;right:auto;bottom:auto;z-index:3;opacity:1;transform:none;margin-top:12px;min-height:44px;width:100%;background:var(--char);color:var(--cream)}}
@@ -625,7 +629,6 @@
   footer.site .fbot{padding-top:20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 18px;font-size:12.5px;font-weight:500;letter-spacing:.03em;color:#3F3B3B}
   footer.site .fbot span{display:inline-flex;align-items:center;flex-wrap:wrap;gap:0 6px}
   footer.site .fbot a{display:inline-flex;align-items:center;min-height:34px;color:inherit;text-decoration:underline;text-underline-offset:3px}
-  html.no-house footer.site .fhouse{display:none}
   @media(max-width:860px){footer.site .fgrid{grid-template-columns:1fr 1fr;gap:30px 24px}footer.site .fgrid>div:first-child{grid-column:1/-1}}
   @media(max-width:560px){footer.site{padding:48px 0 26px}footer.site .wrap{padding-left:26px;padding-right:26px}footer.site li a,footer.site .fbot a{min-height:44px}}
 
@@ -721,6 +724,7 @@
     /* stacked: square tiles inset to the copy's own margins */
     .house .gallery{grid-template-rows:auto auto;gap:10px;padding:0 60px 44px}
     .house .gallery .g{aspect-ratio:1/1;min-height:0;border-radius:16px}
+    .house .soon-panel{min-height:0;margin:0 60px 44px;border-radius:20px;padding:40px 28px}
     .pgrid{grid-template-columns:repeat(2,1fr)}
     .marquee .wrap{grid-template-columns:1fr 1fr;gap:18px}
     .marquee .mk{justify-content:flex-start}
@@ -801,6 +805,7 @@
     .pill-tabs{margin:-10px 0 22px}
     .pt{padding:8px 14px;font-size:12.5px}
     .house .gallery{gap:9px;padding:0 30px 36px}
+    .house .soon-panel{margin:0 30px 36px;padding:32px 22px;gap:16px}
     .house .gallery .g{border-radius:14px}
     .house .gallery .gname{font-size:10px;padding:5px 9px;left:8px;bottom:8px;max-width:calc(100% - 16px)}
     .step{gap:14px}
@@ -1146,7 +1151,7 @@
   <section class="band house-section" style="padding-top:0">
     <div class="wrap">
       <div class="house house-band rv">
-        <div class="copy">
+        <div class="copy live-copy">
           <span class="eyebrow" data-cms="home.collection.eyebrow">The Trove Collection · Designed by Trove</span>
           <h2 data-cms-rich="home.collection.h2">Our own, made well.</h2>
           <p data-cms="home.collection.intro">Timeless pieces designed to become part of your everyday home. Designed by Trove, made with quality materials and considered details — created to feel at home from the moment they arrive.</p>
@@ -1157,12 +1162,20 @@
           </div>
           <button class="btn btn-coral" data-cms="home.collection.cta" onclick="go('shop','House')">Shop the Collection</button>
         </div>
+        <!-- Before the first Collection piece (html.house-soon): what is coming, and where to shop meanwhile -->
+        <div class="copy soon-copy">
+          <span class="eyebrow">The Trove Collection · Coming soon</span>
+          <h2>The Trove Collection — our own line — is on its way.</h2>
+          <p>Homeware we design ourselves and make with partner studios. Until the first pieces land, the Trove Marketplace is full of handmade pieces from independent makers across the UAE.</p>
+          <a class="btn btn-dark" href="/shop">Explore the Marketplace</a>
+        </div>
         <div class="gallery" id="houseGallery"></div>
+        <div class="soon-panel" aria-hidden="true"><span class="mark"></span><b>Our own line</b><span>Coming soon</span></div>
       </div>
     </div>
   </section>
 
-  <!-- No Trove Collection yet: a real maker's story takes the Collection's place (renderMakerStory) -->
+  <!-- One maker: a real maker's story takes the one-card carousel's place (renderMakerStory) -->
   <section class="band" id="makerStory" style="padding-top:0" hidden>
     <div class="wrap"><div class="story" id="storyInner"></div></div>
   </section>
@@ -1935,14 +1948,13 @@ function firstPieceHTML(p){
     </div>
   </article>`;
 }
-/* No Trove Collection yet: the space goes to a real maker — name, place, their
- * own words, straight from the shop. With one maker, this replaces the
- * one-card carousel too (and /#vendors lands here). */
+/* One maker so far: instead of a one-card carousel, their story — name,
+ * place, their own words, straight from the shop (and /#vendors lands here).
+ * It sits beside the Collection band, never in its place. */
 function renderMakerStory(){
   const sec=$('makerStory'), vendors=$('vendors');
   const makers=Object.entries(VENDORS).filter(([k,v])=>!v.house&&(v.prods==null?PRODUCTS.some(p=>p.vendor===k):v.prods>0));
-  const noHouse=document.documentElement.classList.contains('no-house');
-  if(!LIVE||!noHouse||!makers.length){sec.hidden=true;vendors.hidden=false;return;}
+  if(!LIVE||makers.length!==1){sec.hidden=true;vendors.hidden=false;return;}
   makers.sort((a,b)=>(b[1].prods||0)-(a[1].prods||0));
   const [k,v]=makers[0];
   const n=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
@@ -1957,7 +1969,7 @@ function renderMakerStory(){
       <div class="story-acts"><a class="btn btn-dark" href="${esc(makerUrl(k))}">Visit ${esc(v.name)}</a>${v.provider?`<a class="txt-link" href="/services/${esc(encodeURIComponent(v.provider.slug))}">Book their services</a>`:''}</div>
     </div>`;
   sec.hidden=false;
-  vendors.hidden=makers.length===1;
+  vendors.hidden=true;
 }
 /* The one-piece hero: the piece, large, with its maker and where it was made. */
 function heroSoloHTML(p){
@@ -2221,23 +2233,11 @@ function matchesFilters(p,skip){
 }
 let CAT_FILTERS=[];
 const inPillar=p=>state.cat!=='House'||!!(VENDORS[p.vendor]&&VENDORS[p.vendor].house);
-/* Only offer a filter that can change something: a group with a single
- * choice hides, and with none left the rail and the Filter button go too. */
-const PRICE_BANDS=[[0,80],[80,200],[200,9999]];
+/* The full filter rail is always there (owner, 2026-09-30): Category, Seller
+ * (Trove Collection only + the shop list), Offers and Price, on the desktop
+ * rail and in the phone sheet alike, even while a group has one choice. */
 function syncFilterGroups(){
-  const makers=Object.keys(VENDORS).filter(k=>!VENDORS[k].house&&PRODUCTS.some(p=>p.vendor===k));
-  const house=PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house);
-  const bands=PRICE_BANDS.filter(([a,b])=>PRODUCTS.some(p=>p.price>=a&&p.price<=b)).length;
-  const show={
-    fgCat:CAT_FILTERS.length>2||state.cat!=='all',
-    fgSeller:makers.length>1||(house&&makers.length>0)||state.shop!=='all'||state.houseOnly,
-    fgOffers:PRODUCTS.some(p=>p.was)||state.sale,
-    fgPrice:bands>1||state.min!==0||state.max!==9999,
-  };
-  for(const [id,on] of Object.entries(show))$(id).hidden=!on;
-  $('fltShop').hidden=makers.length<2&&state.shop==='all';
-  document.body.classList.toggle('no-filters',!Object.values(show).some(Boolean));
-  // Top rated waits until real ratings exist.
+  // Top rated waits until real ratings exist: with none it would sort nothing.
   const rated=PRODUCTS.some(p=>p.rating), opt=$('sortSel').querySelector('option[value="rating"]');
   if(opt){opt.hidden=!rated;opt.disabled=!rated;}
   if(!rated&&$('sortSel').value==='rating')$('sortSel').value='feat';
@@ -2346,7 +2346,7 @@ function emptyStateHTML(){
       sub='Loosen the price, seller or sale filter and the pieces will reappear.';
       actions=btn('resetFilters()','Reset filters',1);
       recs=inCat.slice(0,n); recHead=`From ${esc(catLabel())}`;
-    }else if(state.cat==='House'){
+    }else if(state.cat==='House'||(state.houseOnly&&!PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house))){
       head='Our own line lands soon';
       sub='The Trove Collection is still in the workshop. In the meantime, these pieces from our makers are worth a look.';
       actions=btn("go('shop')",'Shop everything',1);
@@ -2423,6 +2423,8 @@ function track(kind,body){
 
 /* VENDOR */
 function openVendor(key){
+  // The Trove Collection is not a maker: its page is its shelf.
+  if(VENDORS[key]&&VENDORS[key].house){go('shop','House');return;}
   track('shop_view',{shop:key});
   const v=VENDORS[key];
   // The maker's own photo, else a calm panel in their colour — never a stock stand-in.
@@ -3075,7 +3077,7 @@ function catFromSlug(sl){
   return [...new Set([...CATS.map(c=>c.name),...PRODUCTS.map(p=>p.cat)])].find(c=>c&&slugify(c)===sl)||null;
 }
 function pieceUrl(p){const s=slugify(p.name);return '/pieces/'+p.id+(s?'-'+s:'');}
-function makerUrl(k){return '/makers/'+encodeURIComponent(k);}
+function makerUrl(k){return VENDORS[k]&&VENDORS[k].house?'/shop/trove-collection':'/makers/'+encodeURIComponent(k);}
 function shopUrl(cat){return !cat||cat==='all'?'/shop':'/shop/'+catSlug(cat);}
 function clip(s,n){n=n||158;const t=String(s||'').replace(/\s+/g,' ').trim();if(t.length<=n)return t;const c=t.slice(0,n-1);return c.slice(0,Math.max(c.lastIndexOf(' '),n-20)).replace(/[\s,;:.–—-]+$/,'')+'…';}
 let ROUTING=false; // true while a view is rebuilt from the address (boot, Back/Forward): nothing is pushed
@@ -3319,27 +3321,15 @@ function takeAppBasket(){
   if(dropped)toast(dropped===1?'One piece from your basket is no longer available':`${dropped} pieces from your basket are no longer available`);
   return true;
 }
-const NO_HOUSE_COPY={
-  lead:'Discover handcrafted homeware from independent makers across the UAE, each piece chosen by hand for the Trove Marketplace.',
-  blurb:'Handcrafted homeware from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.',
-};
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
   // The saved basket is left untouched: restoring it against an empty
   // catalogue would drop every line.
   if(OUTAGE){showOutage();return;}
-  // No Trove Collection pieces yet: hide every door to that shelf and let the
-  // marketplace lead the hero.
-  const noHouse=LIVE&&!PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house);
-  document.documentElement.classList.toggle('no-house',noHouse);
-  if(noHouse){const m=$('heroMarketLink');if(m)m.className='btn btn-dark';}
-  applyContent();
-  // …and no copy promises that shelf: a hero or footer line (default or
-  // admin-edited) that names the Trove Collection gives way to one that doesn't.
-  if(noHouse){
-    const swap={'home.hero.lead':NO_HOUSE_COPY.lead,'site.footer.blurb':NO_HOUSE_COPY.blurb};
-    for(const [k,v] of Object.entries(swap)){const el=[...document.querySelectorAll('[data-cms]')].find(e=>e.dataset.cms===k);if(el&&/Trove Collection/i.test(el.textContent))el.textContent=v;}
-  } linkQuoteShops(); renderHome(); buildCatFilters();
+  // No Trove Collection pieces yet: the Collection stays in view everywhere
+  // (nav, hero, footer, filters) and its band and shelf say it is on its way.
+  document.documentElement.classList.toggle('house-soon',LIVE&&!PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house));
+  applyContent(); linkQuoteShops(); renderHome(); buildCatFilters();
   // After the catalogue, so a saved basket can be checked against what's
   // actually still on sale (restoreCart updates the count itself).
   restoreCart(); updateCartCount();

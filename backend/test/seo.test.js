@@ -145,7 +145,7 @@ test('unknown and unapproved makers are a real 404; a capitalised slug folds to 
     assert.equal(res.status, 404, u);
     assert.match(res.headers.get('x-robots-tag') || '', /noindex/);
   }
-  const s = db.prepare("SELECT slug FROM shops WHERE status = 'approved' LIMIT 1").get();
+  const s = db.prepare("SELECT slug FROM shops WHERE status = 'approved' AND is_house = 0 LIMIT 1").get(); // (the Collection's page is its shelf)
   const res = await get(`/Makers/${s.slug.toUpperCase()}/`);
   assert.equal(res.status, 301);
   assert.equal(res.headers.get('location'), `/makers/${s.slug}`);
@@ -194,7 +194,7 @@ test('the maker pitch has its own crawlable address: /sell-on-trove', async () =
 /* ---------------- old addresses ---------------- */
 test('the old query addresses 301 to the clean ones, keeping the parameters that matter', async () => {
   const p = livePiece();
-  const s = db.prepare("SELECT slug FROM shops WHERE status = 'approved' LIMIT 1").get();
+  const s = db.prepare("SELECT slug FROM shops WHERE status = 'approved' AND is_house = 0 LIMIT 1").get(); // (the Collection's page is its shelf)
   const cases = [
     [`/?p=${p.id}`, seo.pieceUrl(p)],
     [`/?p=${p.id}&utm_source=wa`, `${seo.pieceUrl(p)}?utm_source=wa`],
@@ -284,7 +284,7 @@ test('the services directory is server-rendered: categories, services and provid
 /* ---------------- site-wide head tags ---------------- */
 const PUBLIC = () => {
   const p = livePiece();
-  const s = db.prepare("SELECT slug FROM shops WHERE status = 'approved' LIMIT 1").get();
+  const s = db.prepare("SELECT slug FROM shops WHERE status = 'approved' AND is_house = 0 LIMIT 1").get(); // (the Collection's page is its shelf)
   const pr = db.prepare("SELECT slug FROM service_providers WHERE status = 'approved' LIMIT 1").get();
   return ['/', '/shop', '/shop/ceramics', seo.pieceUrl(p), `/makers/${s.slug}`, '/sell-on-trove', '/services', `/services/${pr.slug}`,
     '/about', '/faq', '/returns', '/contact', '/terms', '/privacy', '/seller-agreement', '/apply'];

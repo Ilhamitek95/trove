@@ -124,17 +124,6 @@
     a.setAttribute('role', 'button'); a.tabIndex = 0;
     a.onclick = async function () { try { await TroveAPI.logout(); } catch (_) {} location.href = '/'; };
   }
-  /* No Trove Collection pieces yet → the header's Collection link hides, as
-     it does on the storefront. Only decided on a real answer from the API. */
-  async function markNoHouse() {
-    if (!window.TroveAPI) return;
-    try {
-      var r = await TroveAPI.api('/api/shops');
-      document.documentElement.classList.toggle('no-house', !((r && r.shops) || []).some(function (s) { return s.isHouse && s.productCount > 0; }));
-    } catch (_) {}
-  }
-
   updateCartCount();
   renderAuth();
-  markNoHouse();
 })();

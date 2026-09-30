@@ -16,7 +16,8 @@ function providerFor(userId) {
 
 function shape(s) {
   return {
-    provider: providerFor(s.user_id),
+    // (the Trove Collection is Trove's own line, never a services practice)
+    provider: s.is_house ? null : providerFor(s.user_id),
     id: s.id,
     name: s.name,
     slug: s.slug,

@@ -26,7 +26,18 @@ function publicShop(shop) {
   const current = require('../config').AGREEMENT_VERSION;
   safe.currentAgreementVersion = current;
   safe.agreementUpdateDue = !!(shop.agreement_accepted_at && shop.agreement_version !== current);
+  // The Trove Collection is Trove's own line: no agreement, ID checks or payouts.
+  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false });
   return safe;
+}
+
+// Maker-only steps (Seller Agreement, payout and ID setup, licence, services
+// practice) do not apply to the Trove Collection: Trove keeps its sales.
+function notHouse(req, res, next) {
+  if (req.shop && req.shop.is_house) {
+    return res.status(409).json({ code: 'house_shop', error: 'The Trove Collection is Trove’s own line — there is no agreement, payout or ID setup for it' });
+  }
+  next();
 }
 
 /* ---------------- Services (one account, shop + services) ---------------- */
@@ -37,7 +48,7 @@ function publicShop(shop) {
 // area, colour, contact) and — owner's decision — goes live immediately when
 // the shop is already approved, since curation is about the person and
 // their work. A pending shop yields a pending practice, approved together.
-router.post('/enable-services', requireSeller, (req, res) => {
+router.post('/enable-services', requireSeller, notHouse, (req, res) => {
   const tax = require('../service-taxonomy');
   const config = require('../config');
   const b = req.body || {};
@@ -130,7 +141,7 @@ router.patch('/me', requireSeller, (req, res) => {
 // here — until now licenses could only enter via the application wizard.
 // Every change resets verification so Trove re-checks the new number, and
 // connect_queue puts the shop in the admin graduation queue for that check.
-router.post('/me/license', requireSeller, (req, res) => {
+router.post('/me/license', requireSeller, notHouse, (req, res) => {
   const num = String((req.body || {}).licenseNumber || '').trim().slice(0, 60);
   if (num.length < 4) return res.status(400).json({ error: 'Enter your license number as it appears on the document' });
   if (require('../validate').hasMarkup(num)) return res.status(400).json({ error: "A licence number can't contain < or >" });
@@ -403,6 +414,7 @@ router.delete('/products/:id', requireSeller, (req, res) => {
 
 // A return request as this shop sees it: only ITS items ride along, plus the
 // value of those items and the purchase credit that reverses on approval.
+const isHouseShop = (shopId) => !!(db.prepare('SELECT is_house FROM shops WHERE id=?').get(shopId) || {}).is_house;
 function shopReturnShape(rr, shopId) {
   const returns = require('../returns');
   const items = returns.requestItems(rr.id).filter((i) => i.shop_id === shopId);
@@ -415,7 +427,8 @@ function shopReturnShape(rr, shopId) {
     images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
     items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, lineQty: i.line_qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
     itemsTotal: gross / 100,
-    creditImpact: fees.split(gross).net / 100,
+    // (the Trove Collection has no maker credit to reverse)
+    creditImpact: isHouseShop(shopId) ? 0 : fees.split(gross).net / 100,
     declineReason: rr.decline_reason || null,
     createdAt: rr.created_at,
     decidedAt: rr.decided_at || null,
@@ -609,7 +622,7 @@ router.patch('/payout', requireSeller, (_req, res) => {
   res.status(410).json({ error: 'This endpoint has been replaced by POST /api/seller/payout-setup' });
 });
 
-router.post('/payout-setup', requireSeller, (req, res, next) => {
+router.post('/payout-setup', requireSeller, notHouse, (req, res, next) => {
   try {
     const pcrypto = require('../crypto');
     const cfg = require('../config');
@@ -687,7 +700,7 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
 // Agreement (after a version bump). Records the version, the time and a hash
 // of the exact text accepted — the same three facts payout setup records.
 // Deliberately separate from payout setup: no bank details are re-asked.
-router.post('/agreement', requireSeller, (req, res) => {
+router.post('/agreement', requireSeller, notHouse, (req, res) => {
   if ((req.body || {}).accept !== true) return res.status(400).json({ error: 'Tick the box to accept the Seller Agreement' });
   const cfg = require('../config');
   const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);
@@ -760,7 +773,7 @@ router.get('/connect/status', requireSeller, async (req, res, next) => {
 
 // POST /api/seller/connect/onboarding-link -> resume the hosted onboarding
 // for an account the admin already created via the graduation flow.
-router.post('/connect/onboarding-link', requireSeller, async (req, res, next) => {
+router.post('/connect/onboarding-link', requireSeller, notHouse, async (req, res, next) => {
   try {
     if (!req.shop.stripe_account_id) return res.status(409).json({ error: 'Trove sets up direct payouts after your license is verified — nothing to continue yet' });
     const stripe = requireStripe();

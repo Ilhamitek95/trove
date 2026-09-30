@@ -273,9 +273,10 @@ function shell({ base, pathName, title, description, h1, sub = '', crumb = '', b
   );
   const url = base + pathName;
   const fullTitle = `${title} · Trove`;
-  const noHouse = !hasHousePieces();
+  // The Trove Collection link stays in the header and footer even before its
+  // first piece (its shelf says what is coming).
   return `<!doctype html>
-<html lang="en"${noHouse ? ' class="no-house"' : ''}>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

@@ -96,7 +96,7 @@ test('sitemap.xml lists the public pages, approved shops, live pieces and approv
   assert.match(res.text, /<loc>https:\/\/troveathome\.com\/<\/loc>/);
   assert.match(res.text, /<loc>https:\/\/troveathome\.com\/services<\/loc>/);
   const db = app.db;
-  const shop = db.prepare("SELECT slug FROM shops WHERE status='approved' LIMIT 1").get();
+  const shop = db.prepare("SELECT slug FROM shops WHERE status='approved' AND is_house=0 LIMIT 1").get();
   assert.ok(shop, 'seed has an approved shop');
   assert.ok(res.text.includes(`<loc>https://troveathome.com/makers/${shop.slug}</loc>`));
   const live = db.prepare(`SELECT p.id, p.name FROM products p JOIN shops s ON s.id = p.shop_id

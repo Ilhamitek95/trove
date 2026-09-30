@@ -60,6 +60,12 @@
   .card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:18px}
   .card h3{font-size:21px;margin-bottom:4px}
   .card .hint{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:14px}
+  /* The Trove Collection: the owner's own shop, one click from Overview and Shops */
+  .house-card{display:flex;align-items:center;gap:16px 22px;flex-wrap:wrap;background:var(--rose);border-color:transparent}
+  .house-card .hc-copy{flex:1;min-width:240px}
+  .house-card .hint{margin-bottom:0;color:var(--char);opacity:.78}
+  .house-card .hc-acts{display:flex;gap:10px;flex-wrap:wrap}
+  .house-card .btn{font-size:13px;padding:10px 18px}
 
   .tbl{width:100%;border-collapse:collapse;font-size:13px}
   .tbl th{text-align:left;font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;padding:10px 10px;border-bottom:1px solid var(--line)}
@@ -251,6 +257,7 @@
     <div class="top"><div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub"></div></div></div>
 
     <div class="view active" id="view-overview">
+      <div class="house-slot"></div>
       <div class="cards" id="statCards"></div>
       <div class="card">
         <h3>Waiting for your review</h3>
@@ -272,6 +279,7 @@
     </div>
 
     <div class="view" id="view-shops">
+      <div class="house-slot"></div>
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px"><h3>All shops</h3><div class="hint">Approve, reject or suspend any shop — only approved shops appear on the storefront.</div></div>
         <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="shopsTable"></table></div>
@@ -457,7 +465,37 @@ async function reload(){
   // Site content loads once — later reloads must not clobber unsaved edits.
   if(!CMS){ try{ CMS=await TroveAPI.api('/api/admin/content'); cmsInitEdit(); }catch(_){ CMS=null; } }
   renderOverview();renderMembers();renderShops();renderProviders();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();renderMessages();
+  reloadHouse();
   reloadPayouts();
+}
+
+/* ---------------- the Trove Collection (the owner's own shop) ----------------
+ * Run from the seller dashboard as yourself: /sell opens the Collection for an
+ * admin ("house mode") without leaving the admin account. */
+let HOUSE;
+async function reloadHouse(){
+  try{ HOUSE=(await TroveAPI.api('/api/admin/house-shop')).shop; }catch(_){ HOUSE=undefined; }
+  renderHouseCards();
+}
+function renderHouseCards(){
+  let html='';
+  if(HOUSE){
+    const n=HOUSE.liveProducts, facts=[
+      n?`${n} ${n===1?'piece':'pieces'} on the storefront`:'No pieces on sale yet: the shelf says our own line lands soon',
+      HOUSE.pickupReady?'courier pickup ready':'add a pickup address and phone before the first sale',
+      'Trove keeps every sale in full'];
+    html=`<div class="card house-card"><div class="hc-copy"><h3>Trove Collection · your own shop</h3><div class="hint">${esc(facts.join(' · '))}</div></div>
+      <div class="hc-acts"><a class="btn btn-dark" href="/sell">Manage Trove Collection</a><a class="btn btn-ghost" href="/shop/trove-collection" target="_blank" rel="noopener">View the shelf ↗</a></div></div>`;
+  }else if(HOUSE===null){
+    html=`<div class="card house-card"><div class="hc-copy"><h3>Trove Collection · your own shop</h3><div class="hint">Not set up yet. It is created for your account, approved, with no pieces.</div></div>
+      <div class="hc-acts"><button class="btn btn-dark" onclick="createHouse(this)">Create the Trove Collection</button></div></div>`;
+  }
+  document.querySelectorAll('.house-slot').forEach(el=>{el.innerHTML=html;});
+}
+async function createHouse(btn){
+  if(btn){btn.disabled=true;btn.textContent='Creating…';}
+  try{ await TroveAPI.api('/api/admin/house-shop',{method:'POST'}); toast('The Trove Collection is ready'); await reload(); }
+  catch(e){ toast(e.message||'Could not create the Trove Collection'); if(btn){btn.disabled=false;btn.textContent='Create the Trove Collection';} }
 }
 async function reloadPayouts(){
   try{ PREVIEW=await TroveAPI.api('/api/admin/settlements/preview'); }catch(_){ PREVIEW={eligible:[],excluded:[],totalNetCents:0}; }
@@ -593,7 +631,7 @@ function shopRowHTML(s){
     <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Fortnightly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
     <td>${idCellHTML(s)}</td>
     <td><span class="pill ${esc(s.status)}">${esc(s.status)}</span></td>
-    <td><div class="actions"><button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>${shopActions(s)}</div></td>
+    <td><div class="actions">${s.isHouse?`<a class="btn btn-dark" href="/sell" title="Run your own shop from the seller dashboard">Manage</a>`:`<button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>`}${shopActions(s)}</div></td>
   </tr>`;
 }
 function renderShops(){
@@ -617,6 +655,8 @@ An optional note for them (leave empty for none):`,''); if(note===null)return; }
 // "Shop view": become the shop owner for this session and open their
 // dashboard. The bar on /sell (or just coming back to /admin) ends it.
 async function viewAsShop(id){
+  // The Trove Collection is yours: open it as yourself (house mode).
+  if((SHOPS||[]).some(s=>s.id===id&&s.isHouse)){ window.location.href='/sell'; return; }
   try{
     await TroveAPI.api('/api/admin/impersonate/'+id,{method:'POST'});
     window.location.href='/sell';

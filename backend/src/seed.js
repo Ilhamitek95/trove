@@ -32,7 +32,7 @@ function shop(email, ownerName, shopName, slug, bio, location, color, isHouse, p
     payout.type || 'managed', payout.bankName || '', payout.accountName || '', payout.iban || '').lastInsertRowid;
 }
 
-const house = shop('hello@trove.com', 'Trove', 'Trove Collection', 'trove-label',
+const house = shop('hello@trove.com', 'Trove', 'Trove Collection', 'trove-collection',
   'Our own line — designed by Trove, made with quality materials and considered details. The standard we hold the marketplace to.',
   'In-house · Dubai', '#292727', true,
   { type: 'managed', bankName: 'Emirates NBD', accountName: 'Trove Marketplace FZ-LLC', iban: 'AE600260001015079130500' });

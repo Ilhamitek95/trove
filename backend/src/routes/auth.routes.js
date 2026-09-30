@@ -304,7 +304,9 @@ router.post('/stop-impersonating', (req, res, next) => {
 // GET /api/auth/me  -> current user + whether they have a shop or a
 // service-provider profile (every page's boot reads this one shape).
 function sessionShape(req) {
-  const shop = db.prepare('SELECT id, name, slug FROM shops WHERE user_id = ?').get(req.user.id);
+  // The admin's dashboard shop is the Trove Collection (house mode, middleware.js).
+  const own = require('../middleware').dashboardShopFor(req.user);
+  const shop = own ? { id: own.id, name: own.name, slug: own.slug, ...(own.is_house ? { isHouse: true } : {}) } : null;
   const provider = db.prepare('SELECT id, name, slug, status FROM service_providers WHERE user_id = ?').get(req.user.id);
   return { user: publicUser(req.user), shop: shop || null, provider: provider || null, impersonating: !!req.session.impersonatorId };
 }

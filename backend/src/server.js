@@ -114,6 +114,13 @@ if (process.env.DEMO_PASSWORD) {
 // summary is at GET /api/admin/maintenance/qa-cleanup. See src/qa-cleanup.js.
 require('./qa-cleanup').bootOnce(db, { stripe: require('./stripe').getStripe() });
 
+// The Trove Collection, the owner's own shop (2026-09-30): re-created once
+// when no house shop exists, owned by the ADMIN_EMAIL account (after the
+// admin bootstrap above). Guarded by the 'house-shop-2026-09-30' marker; a
+// skip (no admin account yet) is logged and retried next boot. See
+// src/house-shop.js.
+require('./house-shop').bootOnce(db);
+
 const { createApp } = require('./app');
 const { getStripe } = require('./stripe');
 

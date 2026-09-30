@@ -323,13 +323,13 @@ test('checkout and sign-up say what the customer agrees to, with links', () => {
   assert.match(login, /\$\('regAgree'\)\.style\.display=registering\?'block':'none'/, 'shown only while signing up');
 });
 
-test('the hero never promises the Trove Collection when it is empty', () => {
+test('the default copy never promises Collection pieces; the Collection is never hidden (owner, 2026-09-30)', () => {
   const { DEFAULTS } = require('../src/content');
   assert.doesNotMatch(DEFAULTS['home.hero'].lead, /Trove Collection/);
   assert.doesNotMatch(DEFAULTS['site.footer'].blurb, /Trove Collection/);
   const store = read('trove.html');
-  const lead = store.match(/const NO_HOUSE_COPY=\{[\s\S]*?\};/);
-  assert.ok(lead, 'runtime copy for an empty Collection exists');
-  assert.doesNotMatch(lead[0], /Trove Collection/);
-  assert.match(store, /if\(noHouse\)\{\s*const swap=/, 'swapped in when the Collection is empty');
+  assert.doesNotMatch(store, /no-house|NO_HOUSE_COPY/, 'no runtime hiding of the Collection');
+  // before its first piece the band says what is coming instead
+  assert.match(store, /<div class="copy soon-copy">[\s\S]*?The Trove Collection — our own line — is on its way\.[\s\S]*?<a class="btn btn-dark" href="\/shop">Explore the Marketplace<\/a>/);
+  assert.match(store, /head='Our own line lands soon'/);
 });
