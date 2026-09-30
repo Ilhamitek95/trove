@@ -6,7 +6,7 @@
  * editor, the bookings inbox and the listing-fee card never drift apart.
  *
  *   await ProviderPanel.init({ toast, onChange })   // loads profile, taxonomy, data
- *   ProviderPanel.mountOverview(el)                 // status banner + stats + listing fee + fees owed
+ *   ProviderPanel.mountOverview(el)                 // status banner + stats + listing fee + payouts
  *   ProviderPanel.mountServices(el)                 // editor + listings
  *   ProviderPanel.mountBookings(el)                 // requests / confirmed / history
  *   ProviderPanel.openEditor()                      // "+ Add a service"
@@ -16,7 +16,7 @@
  */
 (function () {
   'use strict';
-  const PP = { provider: null, tax: null, services: [], bookings: [], editing: null, confirming: null, els: {}, opts: {} };
+  const PP = { provider: null, tax: null, services: [], bookings: [], payout: null, payoutEditing: false, editing: null, confirming: null, els: {}, opts: {} };
   const $ = (id) => document.getElementById(id);
   // Every API string that reaches innerHTML goes through esc().
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -86,6 +86,17 @@
 .pp .pp-bkacts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
 .pp .pp-empty{padding:20px;border:1.5px dashed var(--line,rgba(41,39,39,.12));border-radius:14px;font-size:13px;color:var(--muted,rgba(41,39,39,.72));font-weight:500;line-height:1.6}
 .pp .pp-actions{display:flex;gap:10px;justify-content:flex-end}
+.pp .pp-bank{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border:1px solid var(--line,rgba(41,39,39,.12));border-radius:14px;padding:14px 16px;background:var(--cream,#FDF7F5);margin-bottom:14px}
+.pp .pp-bank .grow{flex:1;min-width:200px;font-size:13px;line-height:1.6}
+.pp .pp-bank .iban{font-weight:700;letter-spacing:.04em}
+.pp .pp-sub{font-size:11.5px;letter-spacing:.05em;color:var(--muted,rgba(41,39,39,.72));font-weight:700;margin:18px 0 8px}
+.pp .pp-cr{display:flex;gap:4px 12px;align-items:baseline;flex-wrap:wrap;border-bottom:1px solid var(--line,rgba(41,39,39,.12));padding:10px 0;font-size:13px}
+.pp .pp-cr:last-child{border-bottom:0}
+.pp .pp-cr .grow{flex:1;min-width:190px}
+.pp .pp-cr .code{font-size:11.5px;color:var(--muted,rgba(41,39,39,.72));font-weight:700;letter-spacing:.04em}
+.pp .pp-cr .amt{font-weight:700;white-space:nowrap}
+.pp .pp-cr .st{font-size:12px;font-weight:600;color:var(--muted,rgba(41,39,39,.72));flex-basis:100%}
+.pp .pp-cr .st.paid{color:var(--char,#292727)}
 
 .pp .pp-catbox{display:flex;gap:7px;flex-wrap:wrap}
 .pp .pp-catopt{padding:9px 14px;border-radius:999px;border:1px solid var(--line,rgba(41,39,39,.12));font:inherit;font-size:12.5px;font-weight:600;background:var(--cream,#FDF7F5);color:var(--char,#292727);cursor:pointer}
@@ -151,10 +162,12 @@
   /* ---------------- data ---------------- */
   async function reloadServices() { PP.services = (await api('/api/provider/services')).services; }
   async function reloadBookings() { PP.bookings = (await api('/api/provider/bookings')).bookings; }
+  // Payouts load on their own: a hiccup there never blocks the dashboard.
+  async function reloadPayout() { try { PP.payout = await api('/api/provider/payout'); } catch (_) { PP.payout = null; } }
   async function load() {
     const [prov, tax] = await Promise.all([api('/api/provider/me'), api('/api/services/taxonomy')]);
     PP.provider = prov.provider; PP.tax = tax;
-    await Promise.all([reloadServices(), reloadBookings()]);
+    await Promise.all([reloadServices(), reloadBookings(), reloadPayout()]);
     changed();
   }
   function refresh() { renderOverview(); renderServices(); renderBookings(); changed(); }
@@ -170,18 +183,16 @@
     const fee = p.subscription ? p.subscription.feeCents : 3000;
     // Owner, 2026-09-30: free during launch — nothing is running or billed.
     const subHint = `The ${esc(money(fee))}/month listing fee starts later; we'll give you 30 days' notice before it does. No commission on direct bookings; a ${pct()}% platform fee only on bookings paid through Trove.`;
-    const e = p.earnings || {};
-    const owed = num(e.payableCents) + num(e.pendingCents);
-    const earnLine = owed || num(e.paidCents)
-      ? `<div class="pp-card"><h3>Your fees from Trove bookings</h3>
-          <div class="pp-fee">${esc(money(owed))} <small>owed to you</small></div>
-          <div class="pp-hint" style="margin:8px 0 0">${num(e.payableCents) > 0 ? `${esc(money(num(e.payableCents)))} is payable in the next settlement run; the rest` : 'It'} becomes payable once you mark the booking done (or 3 days after the service date). ${num(e.paidCents) ? `${esc(money(num(e.paidCents)))} paid to you so far.` : ''}</div></div>`
+    const earnLine = payoutsCard();
+    const po = PP.payout;
+    const payBanner = po && po.needsDetails
+      ? `<div class="pp-banner pending" id="ppPayBanner">You have a booking paid through Trove — add your bank details under <a href="#ppPayouts" onclick="ProviderPanel.focusPayouts(event)" style="text-decoration:underline">Payouts</a> so we can send your fee.</div>`
       : '';
     const ag = p.agreement || {};
     const agLine = ag.version
       ? `<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement ${esc(ag.version)}</a> accepted ${fmtDate(ag.acceptedAt)} — your services are your own responsibility; Trove lists them.`
       : `<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — your services are your own responsibility; Trove lists them.`;
-    el.innerHTML = `<div class="pp">${banner}
+    el.innerHTML = `<div class="pp">${payBanner}${banner}
       <div class="pp-cards">
         <div class="pp-stat"><div class="k">Live services</div><div class="v">${num(s.live)}</div><div class="n">of ${num(s.total)} listed</div></div>
         <div class="pp-stat"><div class="k">New requests</div><div class="v">${num(s.open)}</div><div class="n">waiting for your reply</div></div>
@@ -195,6 +206,83 @@
       </div>${earnLine}${profileCard()}</div>`;
   }
 
+
+  /* ---------------- payouts ----------------
+   * GET/PUT /api/provider/payout. Fees for bookings paid through Trove are
+   * paid by bank transfer from the payer the server names (Serein
+   * Consultancy) on Trove's behalf. The server only ever sends the masked
+   * IBAN; "Use my shop's bank details" copies them server-side. */
+  function creditStatus(c) {
+    if (c.status === 'paid') return `<span class="st paid">Paid on ${esc(fmtDay(c.paidOn))}${c.reference ? ` · reference ${esc(c.reference)}` : ''}${c.payer ? ` · from ${esc(c.payer)}` : ''}</span>`;
+    if (c.status === 'payable') return `<span class="st">Payable on ${esc(fmtDay(c.payableOn || todayIso()))} · goes out with the next transfer</span>`;
+    if (c.status === 'refunded') return '<span class="st">Refunded to the customer — no fee is due</span>';
+    if (c.status === 'deducted') return '<span class="st">Deducted from your next transfer (a paid booking was later refunded)</span>';
+    return `<span class="st">Waiting${c.payableOn ? ` · payable on ${esc(fmtDay(c.payableOn))}, or once you mark it done` : ' · payable once you mark it done'}</span>`;
+  }
+  function payoutsCard() {
+    const po = PP.payout; if (!po) return '';
+    const e = po.earnings || {};
+    const owed = num(e.payableCents) + num(e.pendingCents);
+    const d = po.details;
+    const payerLine = `Your fee is paid by bank transfer from ${esc(po.payerName)} on Trove’s behalf — look for that name on your statement.`;
+    const shopBtn = po.shopDetails
+      ? `<button type="button" class="pp-btn pp-ghost" id="ppPayShop" onclick="ProviderPanel.usePayoutShop()">Use my shop’s bank details (${esc(po.shopDetails.bankName)} · ${esc(po.shopDetails.iban)})</button>`
+      : '';
+    const bank = d && !PP.payoutEditing
+      ? `<div class="pp-bank" id="ppPayView"><div class="grow"><b>${esc(d.accountName)}</b> · ${esc(d.bankName)}<br><span class="iban">${esc(d.iban)}</span>${d.source === 'shop' ? ' · copied from your shop' : ''}</div>
+          <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(true)">Change bank details</button></div>`
+      : `<div id="ppPayForm">
+          <div class="pp-err" id="ppPayErr" role="alert"></div>
+          <div class="pp-two">
+            <div class="pp-field"><label for="ppPayHolder">Account holder name</label><input id="ppPayHolder" maxlength="120" autocomplete="name" placeholder="As it appears on your bank account"></div>
+            <div class="pp-field"><label for="ppPayBank">Bank name</label><input id="ppPayBank" maxlength="120" placeholder="e.g. Emirates NBD"></div>
+          </div>
+          <div class="pp-field"><label for="ppPayIban">IBAN</label><input id="ppPayIban" maxlength="34" autocomplete="off" spellcheck="false" placeholder="AE07 0331 2345 6789 0123 456"></div>
+          <div class="pp-hint" style="margin-top:-4px">A UAE IBAN in your own name (AE followed by 21 digits). We store it encrypted and only ever show the last four digits.</div>
+          <div class="pp-actions" style="flex-wrap:wrap">${shopBtn}${d ? '<button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(false)">Cancel</button>' : ''}
+            <button type="button" class="pp-btn pp-dark" id="ppPaySave" onclick="ProviderPanel.savePayout()">Save bank details</button></div>
+        </div>`;
+    const list = (po.credits || []).length
+      ? (po.credits || []).map((c) => `<div class="pp-cr"><div class="grow"><b>${esc(c.title)}</b> <span class="code">${esc(c.code)}</span>${c.serviceDate ? ` · ${esc(fmtDay(c.serviceDate))}` : ''}</div>
+          <span class="amt">${c.amountCents < 0 ? '−' + esc(money(-c.amountCents)) : esc(money(c.amountCents))}</span>${creditStatus(c)}</div>`).join('')
+      : '<div class="pp-empty">No fees yet. When a customer pays for a booking through Trove, your fee appears here with the date it becomes payable.</div>';
+    return `<div class="pp-card" id="ppPayouts" tabindex="-1"><h3>Payouts</h3>
+      <div class="pp-hint">${payerLine} Each fee becomes payable once you mark the booking done, or ${num(po.graceDays) || 3} days after the service date.</div>
+      ${owed || num(e.paidCents) ? `<div class="pp-fee" style="margin-bottom:6px">${esc(money(owed))} <small>owed to you${num(e.payableCents) > 0 ? ` · ${esc(money(num(e.payableCents)))} payable now` : ''}${num(e.paidCents) ? ` · ${esc(money(num(e.paidCents)))} paid so far` : ''}</small></div>` : ''}
+      <div class="pp-sub">Bank details</div>${bank}
+      <div class="pp-sub">Your fees</div>${list}
+    </div>`;
+  }
+  function editPayout(on) { PP.payoutEditing = !!on; renderOverview(); const f = $(on ? 'ppPayHolder' : 'ppPayouts'); if (f) f.focus(); }
+  function focusPayouts(ev) {
+    if (ev) ev.preventDefault();
+    const el = $('ppPayouts'); if (!el) return;
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    const f = $('ppPayHolder') || el; f.focus({ preventScroll: true });
+  }
+  async function putPayout(body, btnId, busy) {
+    const err = $('ppPayErr'); if (err) err.style.display = 'none';
+    const show = (m) => { if (err) { err.textContent = m; err.style.display = 'block'; } else toast(m); };
+    const btn = $(btnId); const label = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = busy; }
+    try {
+      PP.payout = await api('/api/provider/payout', { method: 'PUT', body });
+      PP.payoutEditing = false;
+      toast('Bank details saved'); renderOverview();
+      return;
+    } catch (e) { show(e.message || 'Could not save — try again.'); }
+    const b2 = $(btnId); if (b2) { b2.disabled = false; b2.textContent = label; }
+  }
+  function savePayout() {
+    const holder = $('ppPayHolder').value.trim(), bank = $('ppPayBank').value.trim();
+    const iban = $('ppPayIban').value.replace(/\s+/g, '').toUpperCase();
+    const err = $('ppPayErr');
+    const show = (m) => { err.textContent = m; err.style.display = 'block'; };
+    if (!holder || !bank) return show('Add the account holder name and the bank name.');
+    if (!/^AE\d{21}$/.test(iban)) return show('Enter a valid UAE IBAN (AE followed by 21 digits).');
+    return putPayout({ accountName: holder, bankName: bank, iban }, 'ppPaySave', 'Saving…');
+  }
+  function usePayoutShop() { return putPayout({ useShop: true }, 'ppPayShop', 'Copying…'); }
 
   /* ---------------- public profile (name, story, categories) ----------------
    * PATCH /api/provider/me accepts name, bio and categories — location is set
@@ -479,7 +567,7 @@
     el.innerHTML = `<div class="pp">
       <div class="pp-card"><h3>New requests</h3><div class="pp-hint">Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.</div>
         ${open.length ? open.map(bkCard).join('') : '<div class="pp-empty">No new requests right now. Requests from the Services Marketplace land here.</div>'}</div>
-      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid in Trove’s settlement run after you mark the booking done. If you have to cancel, the customer is refunded in full.</div>
+      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid by bank transfer after you mark the booking done (see Payouts on your overview). If you have to cancel, the customer is refunded in full.</div>
         ${upcoming.length ? upcoming.map(bkCard).join('') : '<div class="pp-empty">Nothing confirmed yet.</div>'}</div>
       <div class="pp-card"><h3>History</h3>
         ${rest.length ? rest.map(bkCard).join('') : '<div class="pp-empty">Completed, declined and cancelled bookings end up here.</div>'}</div>
@@ -545,6 +633,7 @@
     openEditor, closeEditor, saveService, toggleLive, deleteService, actBooking, declineBooking,
     openConfirm, sendConfirm, cancelBooking,
     toggleProfCat, saveProfile, openPreview, closePreview,
+    savePayout, usePayoutShop, editPayout, focusPayouts,
     get provider() { return PP.provider; },
   };
 })();
