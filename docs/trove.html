@@ -69,10 +69,13 @@
   header.top{position:sticky;top:0;z-index:60;background:rgba(253,247,245,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--line-soft)}
   .nav{display:flex;align-items:center;gap:26px;height:84px}
   .brand{font-family:var(--font-display);font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
-  /* official wordmark asset (drop in docs/img/); the typed name is only the onerror fallback */
+  /* the typed wordmark (Cormorant) until the official artwork lands in docs/img/ */
   .brand img{height:34px;width:auto;display:block}
   .mn-brand img{height:28px;width:auto;display:block}
   footer .brand img{height:38px;width:auto;display:block}
+  /* keyboard users jump past the header straight to the page */
+  .skip{position:absolute;left:12px;top:-80px;z-index:300;background:var(--char);color:var(--cream);padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:700;letter-spacing:.02em}
+  .skip:focus{top:12px}
   .nav .links{display:flex;align-items:center;gap:24px;margin-left:10px;font-size:13.5px;font-weight:600;letter-spacing:.04em;flex-shrink:0}
   .nav .links a{padding:4px 0;color:var(--ink-80);position:relative;white-space:nowrap;line-height:1.3}
   .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
@@ -122,7 +125,7 @@
   html.no-house .nav .links a[onclick*="'House'"],html.no-house .mn-link[onclick*="'House'"]{display:none!important}
   /* The shop could not be loaded (never a stand-in catalogue on the live site). */
   .outage{padding:96px 0 120px;text-align:center}
-  .outage h1{font-size:clamp(34px,4.5vw,50px);font-weight:400;line-height:1.05;margin-bottom:14px}
+  .outage h1,.outage h2{font-size:clamp(34px,4.5vw,50px);font-weight:400;line-height:1.05;margin-bottom:14px}
   .outage p{color:var(--ink-80);font-weight:400;max-width:44ch;margin:0 auto 26px}
   .outage .note{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:16px}
   body.outage-mode .view{display:none!important}
@@ -132,8 +135,8 @@
   .hero{padding:46px 0 26px;position:relative}
   .hero .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:44px;align-items:center}
   .hero .lead .eyebrow{margin-bottom:22px;display:block}
-  .hero h1{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
-  .hero h1 em{font-style:normal;color:var(--coral)} /* the hero accent word: Orange, upright like everything else */
+  .hero h1,.hero [data-vh]{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
+  .hero h1 em,.hero [data-vh] em{font-style:normal;color:var(--coral)} /* the hero accent word: Orange, upright like everything else */
   .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
   .hero .ctas{display:flex;align-items:center;gap:24px}
   /* first paint: the copy settles in line by line — short, eased, once */
@@ -259,7 +262,11 @@
 
   /* product grid + card */
   .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
-  .card{cursor:pointer;display:flex;flex-direction:column}
+  .card{cursor:pointer;display:flex;flex-direction:column;position:relative}
+  .card-link::after,.vcard-link::after{content:"";position:absolute;inset:0;z-index:2}
+  .card .add{z-index:3}
+  .card-link:focus-visible,.vcard-link:focus-visible{outline:none}
+  .card:focus-within,.vcard:focus-within{outline:2px solid var(--char);outline-offset:6px;border-radius:16px}
   .card .ph{position:relative;aspect-ratio:4/5;overflow:hidden;border-radius:16px;background:var(--rose);margin-bottom:15px}
   .card .ph .grad{position:absolute;inset:0}
   .card .ph img{position:absolute;inset:0;filter:saturate(.9);transition:transform .6s}
@@ -293,7 +300,7 @@
      sit absolute inside) so layout never depends on whether an image loaded */
   .house .gallery{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0}
   .house .gallery.two{grid-template-rows:1fr}
-  .house .gallery .g{position:relative;overflow:hidden;min-height:170px;cursor:pointer}
+  .house .gallery .g{position:relative;overflow:hidden;min-height:170px;cursor:pointer;display:block}
   .house .gallery .g .grad{position:absolute;inset:0}
   .house .gallery .g img{position:absolute;inset:0;z-index:1;filter:saturate(.9);transition:transform .45s ease}
   .house .gallery .g:hover img{transform:scale(1.05)}
@@ -309,7 +316,7 @@
   .vtrack{display:flex;width:max-content;will-change:transform}
   .vset{display:flex;gap:30px;padding-right:30px;flex:0 0 auto}
   .vset .vcard{width:360px;flex:0 0 360px}
-  .vcard{cursor:pointer;text-align:center}
+  .vcard{cursor:pointer;text-align:center;position:relative}
   .vcard .cover{aspect-ratio:16/10;border-radius:18px;overflow:hidden;position:relative;margin-bottom:-34px;transition:transform .3s}
   .vcard:hover .cover{transform:translateY(-4px)}
   .vcard .cover .grad{position:absolute;inset:0}
@@ -407,7 +414,7 @@
   .browse-head{text-align:center;padding:56px 0 8px}
   .crumb{font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-bottom:14px}
   .crumb a:hover{color:var(--accent-ink)}
-  .browse-head h1{font-size:clamp(38px,5vw,60px);font-weight:400}
+  .browse-head h1,.browse-head [data-vh]{font-size:clamp(38px,5vw,60px);font-weight:400}
   .browse-layout{display:grid;grid-template-columns:220px 1fr;gap:48px;padding:48px 0 100px}
   .filters h4{font-family:'Quicksand';font-size:11.5px;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:0 0 16px}
   .fgroup{padding-bottom:28px;margin-bottom:28px;border-bottom:1px solid var(--line)}
@@ -447,7 +454,7 @@
   .vhero::after{content:"";position:absolute;inset:0;background:linear-gradient(transparent 40%,var(--cream))}
   .vhead{position:relative;text-align:center;margin-top:-90px;z-index:5}
   .vhead .lav{width:104px;height:104px;border-radius:50%;border:5px solid var(--cream);margin:0 auto 18px;display:grid;place-items:center;font-family:var(--font-display);font-size:46px;color:var(--cream);font-weight:600}
-  .vhead h1{font-size:clamp(38px,5vw,56px);font-weight:400;display:flex;align-items:center;justify-content:center;gap:12px}
+  .vhead h1,.vhead [data-vh]{font-size:clamp(38px,5vw,56px);font-weight:400;display:flex;align-items:center;justify-content:center;gap:12px}
   .vhead .loc{font-size:12.5px;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-top:6px}
   .vhead p{font-size:16px;color:var(--ink-80);max-width:56ch;margin:18px auto 0;font-weight:400}
   .vhead .vstats{display:flex;justify-content:center;gap:54px;margin-top:30px}
@@ -467,7 +474,7 @@
   .pdp .info{padding-top:14px}
   .pdp .info .vlink{font-size:11.5px;letter-spacing:.06em;color:var(--taupe);font-weight:600;display:inline-flex;align-items:center;gap:8px}
   .pdp .info .vlink:hover{color:var(--accent-ink)}
-  .pdp .info h1{font-size:clamp(40px,4.5vw,58px);line-height:1.0;font-weight:400;margin:14px 0 14px}
+  .pdp .info h1,.pdp .info [data-vh]{font-size:clamp(40px,4.5vw,58px);line-height:1.0;font-weight:400;margin:14px 0 14px}
   .pdp .stars{margin-bottom:18px}
   .pdp .pricerow .price{font-size:26px;font-weight:600}
   .pdp .desc{color:var(--ink-80);font-size:16px;line-height:1.75;margin:22px 0 28px;max-width:50ch;font-weight:400}
@@ -585,7 +592,7 @@
     .menu-btn{display:grid}
     .search{display:flex}
     .search-btn{display:none}
-    .card .add{opacity:1;transform:none;position:static;margin-top:12px;background:var(--char);color:var(--cream)}
+    .card .add{opacity:1;transform:none;position:relative;margin-top:12px;background:var(--char);color:var(--cream)}
     /* filters become a bottom sheet, opened from the sortbar */
     .filters{position:fixed;left:0;right:0;bottom:0;z-index:105;background:var(--cream);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;padding:14px 26px calc(18px + env(safe-area-inset-bottom));transform:translateY(103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;box-shadow:0 -18px 60px -22px rgba(41,39,39,.4)}
     .filters::before{content:"";display:block;width:44px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
@@ -619,7 +626,7 @@
     .nav .right{gap:2px}
     .hero{padding:26px 0 8px}
     .hero .wrap{gap:24px}
-    .hero h1{font-size:clamp(42px,12.5vw,52px)}
+    .hero h1,.hero [data-vh]{font-size:clamp(42px,12.5vw,52px)}
     .hero .lead .eyebrow{margin-bottom:16px}
     .hero .lead p{margin:16px 0 22px;font-size:16px}
     .hero .ctas{flex-wrap:wrap;gap:14px}
@@ -670,7 +677,7 @@
     .pdp .thumbs{flex-direction:row;order:2}
     .pdp .thumbs .t{width:62px;flex:0 0 62px}
     .pdp .info{padding-top:0}
-    .pdp .info h1{font-size:clamp(34px,9.5vw,44px)}
+    .pdp .info h1,.pdp .info [data-vh]{font-size:clamp(34px,9.5vw,44px)}
     .rev .rimgs img{width:64px;height:64px}
     .drawer .dhead{padding:20px 20px 16px}
     .drawer .dbody{padding:6px 20px}
@@ -679,7 +686,7 @@
     .sortbar select,.fshop,#pdpPersoText{font-size:16px}
     /* sell-on-trove: compact phone rhythm (!important only where inline styles exist) */
     #view-sell .band{padding:38px 0}
-    #view-sell h1{font-size:clamp(36px,10.5vw,42px)!important;margin:12px 0 0!important}
+    #view-sell h1,#view-sell [data-vh]{font-size:clamp(36px,10.5vw,42px)!important;margin:12px 0 0!important}
     #view-sell section:first-of-type .wrap>p{font-size:15px!important;margin:16px auto 22px!important}
     #view-sell .band-head{margin-bottom:20px}
     #view-sell .band-head h2{font-size:clamp(26px,7.5vw,32px)}
@@ -789,8 +796,8 @@
   /* confirmation */
   .confirm{max-width:620px;margin:0 auto;padding:70px 32px 90px;text-align:center}
   .confirm .check{width:74px;height:74px;border-radius:50%;background:var(--green-bg);color:var(--green);display:grid;place-items:center;margin:0 auto 24px}
-  .confirm h1{font-size:clamp(40px,5vw,58px);font-weight:400;line-height:1.0}
-  .confirm h1 em{font-style:normal;color:var(--coral)}
+  .confirm h1,.confirm [data-vh]{font-size:clamp(40px,5vw,58px);font-weight:400;line-height:1.0}
+  .confirm h1 em,.confirm [data-vh] em{font-style:normal;color:var(--coral)}
   .confirm .lede{font-size:16px;color:var(--ink-80);font-weight:400;margin:14px 0 6px}
   .confirm .ordid{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--char)}
   .confirm .ship-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:30px 0}
@@ -865,19 +872,20 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <!-- HEADER -->
 <div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 200</div></div>
 <header class="top">
   <div class="wrap nav">
     <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-    <a href="#" class="brand" aria-label="Trove — home" onclick="go('home');return false"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></a>
+    <a href="/" class="brand" aria-label="Trove — home">trove</a>
     <nav class="links">
-      <a href="#" onclick="go('shop','all');return false">Shop all</a>
-      <a href="#" onclick="go('shop','House');return false">Trove Collection</a>
-      <a href="#" onclick="go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),60);return false">Marketplace</a>
+      <a href="/shop">Shop all</a>
+      <a href="/shop/trove-collection">Trove Collection</a>
+      <a href="/#vendors">Marketplace</a>
       <a href="/services">Services Marketplace</a>
-      <a href="#" onclick="go('sell');return false">Sell on Trove</a>
+      <a href="/sell-on-trove">Sell on Trove</a>
     </nav>
     <div class="right">
       <div class="search">
@@ -907,8 +915,9 @@
   </div>
 </header>
 
+<main id="main">
 <div class="outage" id="outage" hidden><div class="wrap">
-  <h1>We're having trouble loading the shop.</h1>
+  <h2>We're having trouble loading the shop.</h2>
   <p>Something between us and Trove didn't answer just now. It's usually back within a minute — nothing in your basket is lost.</p>
   <button class="btn btn-dark" onclick="location.reload()">Retry</button>
   <div class="note" id="outageNote"></div>
@@ -920,13 +929,13 @@
     <div class="wrap">
       <div class="lead">
         <span class="eyebrow" data-cms="home.hero.eyebrow">Thoughtfully gathered</span>
-        <h1 data-cms-rich="home.hero.h1">Curated<br>for <em>Living</em>.</h1>
+        <h1 data-cms-rich="home.hero.h1" data-vh="home">Curated<br>for <em>Living</em>.</h1>
         <p data-cms="home.hero.lead">Discover handcrafted homeware from independent makers across the UAE, each piece chosen by hand for the Trove Marketplace.</p>
         <div class="ctas">
           <button class="btn btn-dark" id="heroShopBtn" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
-          <a class="txt-link" id="heroMarketLink" data-cms="home.hero.ctaSell" href="#" onclick="go('shop','all');return false">Explore the Marketplace</a>
+          <a class="txt-link" id="heroMarketLink" data-cms="home.hero.ctaSell" href="/shop">Explore the Marketplace</a>
         </div>
-        <a class="hero-tag" href="#" onclick="go('shop','House');return false" title="Shop the Trove Collection"><span class="d"></span><span><span class="l" data-cms="home.hero.tagLine">Our own line</span><span class="n" data-cms="home.hero.tagName">Trove Collection →</span></span></a>
+        <a class="hero-tag" href="/shop/trove-collection" title="Shop the Trove Collection"><span class="d"></span><span><span class="l" data-cms="home.hero.tagLine">Our own line</span><span class="n" data-cms="home.hero.tagName">Trove Collection →</span></span></a>
       </div>
       <!-- The shelf: featured pieces fanned on a stage. Admin-picked (Site content → Hero)
            or an automatic Collection / Marketplace mix — see renderHeroDeck(). -->
@@ -966,7 +975,7 @@
     <div class="wrap">
       <div class="band-head left rv">
         <div><span class="eyebrow" data-cms="home.weekly.eyebrow">The weekly edit</span><h2 data-cms="home.weekly.heading">This week's finds</h2></div>
-        <a class="link-more" data-cms="home.weekly.linkLabel" href="#" onclick="go('shop','all');return false">Shop everything →</a>
+        <a class="link-more" data-cms="home.weekly.linkLabel" href="/shop">Shop everything →</a>
       </div>
       <div class="pgrid" id="trendingGrid"></div>
     </div>
@@ -1022,8 +1031,8 @@
 <!-- SHOP -->
 <div class="view" id="view-shop">
   <div class="browse-head"><div class="wrap">
-    <div class="crumb" id="shopCrumb"><a href="#" onclick="go('home');return false">Trove</a> &nbsp;/&nbsp; <span>Shop all</span></div>
-    <h1 id="browseTitle">Shop all</h1>
+    <div class="crumb" id="shopCrumb"><a href="/">Trove</a> &nbsp;/&nbsp; <span>Shop all</span></div>
+    <h2 id="browseTitle" data-vh="shop">Shop all</h2>
     <div id="searchChip"></div>
   </div></div>
   <div class="wrap browse-layout">
@@ -1066,7 +1075,7 @@
   <div class="vhero"><div class="grad" id="vheroGrad"></div></div>
   <div class="wrap vhead">
     <div class="lav" id="vLav"></div>
-    <h1 id="vName"></h1>
+    <h2 id="vName" data-vh="vendor"></h2>
     <div class="loc" id="vLoc"></div>
     <p id="vBio"></p>
     <div class="vstats">
@@ -1091,7 +1100,7 @@
 <!-- PDP -->
 <div class="view" id="view-pdp">
   <div class="wrap" style="padding-top:28px">
-    <div class="crumb"><a href="#" onclick="go('home');return false">Trove</a> &nbsp;/&nbsp; <a href="#" onclick="go('shop','all');return false">Shop all</a> &nbsp;/&nbsp; <span id="pdpCrumb"></span></div>
+    <div class="crumb"><a href="/">Trove</a> &nbsp;/&nbsp; <a href="/shop">Shop all</a> &nbsp;/&nbsp; <span id="pdpCrumb"></span></div>
   </div>
   <div class="wrap">
     <div class="pdp">
@@ -1101,7 +1110,7 @@
       </div>
       <div class="info">
         <a class="vlink" id="pdpVendorLink" href="#"></a>
-        <h1 id="pdpName"></h1>
+        <h2 id="pdpName" data-vh="pdp"></h2>
         <div class="stars" id="pdpStars"></div>
         <div class="pricerow"><span class="price" id="pdpPrice"></span></div>
         <p class="desc" id="pdpDesc"></p>
@@ -1140,7 +1149,7 @@
   <section class="band">
     <div class="wrap" style="text-align:center;max-width:760px">
       <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on Trove</span>
-      <h1 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1">You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h1>
+      <h2 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1" data-vh="sell">You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h2>
       <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:18px auto 26px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href='/apply'">Start your application</button>
@@ -1219,7 +1228,7 @@
 <div class="view" id="view-checkout">
   <div class="co-wrap">
     <span class="co-back" onclick="openCart()">← Back to basket</span>
-    <h1 style="font-size:clamp(34px,4vw,48px);font-weight:400;margin-bottom:28px">Checkout</h1>
+    <h2 style="font-size:clamp(34px,4vw,48px);font-weight:400;margin-bottom:28px" data-vh="checkout">Checkout</h2>
     <div class="co-grid">
       <div>
         <div class="co-step">
@@ -1276,7 +1285,7 @@
 <div class="view" id="view-confirm">
   <div class="confirm">
     <div class="check"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg></div>
-    <h1 id="confHead">Thank you.</h1>
+    <h2 id="confHead" data-vh="confirm">Thank you.</h2>
     <p class="lede">Your order is in. A receipt is on its way to your email.</p>
     <div class="ordid" id="confOrdId"></div>
     <div class="ship-card" id="confShip"></div>
@@ -1297,23 +1306,24 @@
     </div>
   </div>
 </div>
+</main>
 
 <!-- MOBILE MENU -->
 <div class="scrim" id="uiScrim" onclick="closeSheets()"></div>
 <aside class="mnav" id="mnav" aria-label="Menu">
   <div class="mn-head">
-    <span class="mn-brand"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.mn-brand').textContent='trove'"></span>
+    <span class="mn-brand">trove</span>
     <button class="icon-btn" aria-label="Close menu" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="mn-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
     <input id="mSearchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
   </div>
-  <a class="mn-link" onclick="closeSheets();go('shop','all')">Shop all<span>→</span></a>
-  <a class="mn-link" onclick="closeSheets();go('shop','House')">Trove Collection<span>→</span></a>
-  <a class="mn-link" onclick="closeSheets();go('home');setTimeout(()=>document.getElementById('vendors').scrollIntoView({behavior:'smooth'}),80)">Marketplace<span>→</span></a>
+  <a class="mn-link" href="/shop">Shop all<span>→</span></a>
+  <a class="mn-link" href="/shop/trove-collection">Trove Collection<span>→</span></a>
+  <a class="mn-link" href="/#vendors">Marketplace<span>→</span></a>
   <a class="mn-link" href="/services">Services Marketplace<span>→</span></a>
-  <a class="mn-link" onclick="closeSheets();go('sell')">Sell on Trove<span>→</span></a>
+  <a class="mn-link" href="/sell-on-trove">Sell on Trove<span>→</span></a>
   <div class="mn-foot">
     <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
     <a href="/account#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
@@ -1343,11 +1353,11 @@
   <div class="wrap">
     <div class="fgrid">
       <div>
-        <span class="brand serif"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></span>
+        <a href="/" class="brand serif" aria-label="Trove — home">trove</a>
         <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.</p>
       </div>
-      <div><h5>Shop</h5><ul><li><a href="/?view=shop" onclick="go('shop','all');return false">All categories</a></li><li class="fhouse"><a href="/?view=shop&amp;cat=House" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly" onclick="go('home');setTimeout(()=>{const w=document.getElementById('weekly');if(w)w.scrollIntoView({behavior:'smooth'});},60);return false">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
-      <div><h5>Sell</h5><ul><li><a href="/?view=sell" onclick="go('sell');return false">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
+      <div><h5>Shop</h5><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
+      <div><h5>Sell</h5><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></div>
     </div>
     <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span><a href="/privacy" style="color:inherit">Privacy</a> · <a href="/terms" style="color:inherit">Terms</a> · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
@@ -1356,8 +1366,8 @@
 
 <div class="toast" id="toast"><span id="toastMsg"></span></div>
 
-<script src="config.js"></script>
-<script src="api.js"></script>
+<script src="/config.js"></script>
+<script src="/api.js"></script>
 <script>
 /* ---------------- DATA ---------------- */
 let VENDORS = {
@@ -1615,7 +1625,7 @@ function cropCss(sec,p){
  * `crop` (a cropCss string) is only ever passed by homepage sections. */
 function productCard(p,eager,crop){
   const V=VENDORS[p.vendor], house=V.house;
-  return `<article class="card" onclick="openPDP(${p.id})">
+  return `<article class="card">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
       <img src="${esc(pImg(p))}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
@@ -1623,7 +1633,7 @@ function productCard(p,eager,crop){
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to basket</button>
     </div>
     <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
-    <h3>${esc(p.name)}</h3>
+    <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
     <div class="foot">
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
       ${p.rating?`<span class="stars">${stars(p.rating)}<span>${esc(p.rating)}</span></span>`:''}
@@ -1656,8 +1666,8 @@ function renderHome(){
   }
   house=house.slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
-  $('houseGallery').innerHTML=house.map(p=>`<div class="g" onclick="openPDP(${p.id})">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${esc(pImg(p))}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></div>`).join('');
+  $('houseGallery').innerHTML=house.map(p=>`<a class="g" href="${esc(pieceUrl(p))}">
+    <div class="grad" style="${grad('#292727')}"></div><img src="${esc(pImg(p))}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></a>`).join('');
   stagger($('houseGallery'),.1);
 
   // Every maker rides the carousel (admin can hand-pick and order them);
@@ -1671,15 +1681,15 @@ function renderHome(){
   const makerCards=vs.map(([k,v])=>{
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
     const sc=v.provider?Number(v.provider.serviceCount)||0:0;
-    return `<article class="vcard" onclick="openVendor(${jsq(k)})">
+    return `<article class="vcard">
     <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${esc(v.img||img('shop-'+k))}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
     <div class="av" style="${v.img?`background:center/cover no-repeat url('${esc(v.img)}')`:`background:${v.color}`}">${v.img?'':esc((v.name||'?')[0])}</div>
-    <h3>${esc(v.name)}</h3>
+    <h3><a class="vcard-link" href="${esc(makerUrl(k))}">${esc(v.name)}</a></h3>
     <div class="loc">${esc(v.loc)}</div>
     <p>${esc(v.bio)}</p>
     <div class="vmeta"><span><b>${Number(np)||0}</b> ${np===1?'piece':'pieces'}</span>${v.rating?`<span><b>${esc(v.rating)}★</b></span>`:''}${v.provider?`<span><b>${sc}</b> ${sc===1?'service':'services'}</span>`:''}</div>
   </article>`;}).join('');
-  $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards}</div></div>`;
+  $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards.replace(/<a class="vcard-link"/g,'<a tabindex="-1" class="vcard-link"')}</div></div>`;
   initMakerCarousel();
   renderHeroDeck(); initReveal(); initParallax();
 }
@@ -1711,9 +1721,9 @@ function renderHeroDeck(){
   const deck=$('heroDeck'); if(!deck)return;
   HC.items=heroPicks(); HC.n=HC.items.length; HC.i=0;
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
-    return `<article class="hc" data-k="${k}" onclick="hcTap(${k})" aria-label="${esc(p.name)}">
+    return `<article class="hc" data-k="${k}" onclick="hcTap(${k},event)" aria-label="${esc(p.name)}">
       <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
-      <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3>${esc(p.name)}</h3>
+      <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3><a href="${esc(pieceUrl(p))}" tabindex="-1">${esc(p.name)}</a></h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></div></div>
     </article>`;}).join('');
   $('hsDots').innerHTML=HC.items.map((p,k)=>`<button class="hs-dot" aria-label="Piece ${k+1} of ${HC.n}" onclick="hcGo(${k})"><i></i></button>`).join('');
@@ -1734,7 +1744,12 @@ function hcLayout(){
     c.setAttribute('aria-hidden',d===0?'false':'true');
   }
 }
-function hcTap(k){ if(k===HC.i){const p=HC.items[k];if(p)openPDP(p.id);} else hcGo(k); }
+function hcTap(k,e){
+  // A modified click on the centre card's link opens it in a new tab as usual.
+  if(e&&k===HC.i&&(e.metaKey||e.ctrlKey||e.shiftKey)&&e.target.closest('a'))return;
+  if(e)e.preventDefault();
+  if(k===HC.i){const p=HC.items[k];if(p)openPDP(p.id);} else hcGo(k);
+}
 function hcGo(k){ if(!HC.n||k===HC.i)return; HC.i=((k%HC.n)+HC.n)%HC.n; hcLayout(); hcDots(); hcPlay(); }
 function hcStep(n,auto){ if(HC.n<2)return; HC.i=((HC.i+n)%HC.n+HC.n)%HC.n; hcLayout(); hcDots(); if(!auto)hcPlay(); }
 function hcDots(){
@@ -1796,7 +1811,7 @@ function renderCatMosaic(){
     const cls='cat'+(feat.has(c.name)?' feat':wide.has(c.name)?' wide':'');
     const stack=c.items.slice(0,3).map(p=>`<img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
     const count=`${c.n} ${c.n===1?'piece':'pieces'}`;
-    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="#" onclick="go('shop',${jsq(c.name)});return false" aria-label="${esc(c.name)} — ${count}">
+    return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="${esc(shopUrl(c.name))}" aria-label="${esc(c.name)} — ${count}">
       <div class="cat-bg"></div><span class="blob"></span>
       <span class="pillar">${esc(c.pillar)}</span>
       <div class="stack">${stack}</div>
@@ -1936,7 +1951,7 @@ function buildCatFilters(){
     // Counts respect the active search + other filters, so a category never
     // promises pieces the current search can't deliver.
     const ct=PRODUCTS.filter(p=>(c==='all'||p.cat===c)&&matchesFilters(p,{cat:1})).length;
-    return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat=CAT_FILTERS[${i}];renderShop()"> ${c==='all'?'All categories':esc(c)}<span class="c">${ct}</span></label>`;
+    return `<label class="fitem${ct?'':' dim'}"><input type="radio" name="catf" ${c===state.cat?'checked':''} onchange="state.cat=CAT_FILTERS[${i}];renderShop();shelfAddress(true)"> ${c==='all'?'All categories':esc(c)}<span class="c">${ct}</span></label>`;
   }).join('');
 }
 // House checkbox and maker dropdown are mutually exclusive — a maker is by
@@ -1978,10 +1993,10 @@ function filteredProducts(){
 function catLabel(){return state.cat==='House'?'Trove Collection':state.cat;}
 function crumbHTML(){
   const sep=' &nbsp;/&nbsp; ';
-  const bits=[`<a href="#" onclick="go('home');return false">Trove</a>`];
+  const bits=[`<a href="/">Trove</a>`];
   if(state.cat==='all'&&!state.q){bits.push('<span>Shop all</span>');return bits.join(sep);}
-  bits.push(`<a href="#" onclick="go('shop');return false">Shop all</a>`);
-  if(state.cat!=='all')bits.push(state.q?`<a href="#" onclick="clearSearch();return false">${esc(catLabel())}</a>`:`<span>${esc(catLabel())}</span>`);
+  bits.push(`<a href="/shop">Shop all</a>`);
+  if(state.cat!=='all')bits.push(state.q?`<a href="${esc(shopUrl(state.cat))}">${esc(catLabel())}</a>`:`<span>${esc(catLabel())}</span>`);
   if(state.q)bits.push(`<span>“${esc(state.q)}”</span>`);
   return bits.join(sep);
 }
@@ -2117,6 +2132,7 @@ function openVendor(key){
   $('vendorProducts').innerHTML=prods.length?prods.map(productCard).join(''):'<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>';
   loadShopReviews(key);
   loadShopServices(key);
+  setAddress(makerUrl(key),`${v.name}${v.loc?', '+v.loc:''} · Maker on Trove`,`${vp} ${vp===1?'piece':'pieces'} by ${v.name}${v.loc?', '+v.loc:''}. ${v.bio?clip(v.bio,70)+' ':''}Delivered across Dubai and Abu Dhabi.`);
   showView('vendor'); jumpTop();
 }
 /* The maker's services, when the same account runs a practice on the
@@ -2140,7 +2156,7 @@ async function loadShopServices(key){
 function openPDP(id){
   const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
   track('product_view',{productId:id});   // before showView, so source is where the shopper clicked from
-  $('pdpCrumb').innerHTML=`<a href="#" onclick="go('shop',${jsq(p.cat)});return false">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
+  $('pdpCrumb').innerHTML=`<a href="${esc(shopUrl(p.cat))}">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   // Real seller photos when they exist, else the matched stock shot, else
   // three motif-tile variations.
@@ -2148,17 +2164,14 @@ function openPDP(id){
   $('pdpImg').src=pdpSrcs[0];
   $('pdpThumbs').innerHTML=pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
   $('pdpVendorLink').textContent=V.name;
-  $('pdpVendorLink').onclick=(e)=>{e.preventDefault();openVendor(p.vendor);};
+  $('pdpVendorLink').href=makerUrl(p.vendor);
   $('pdpName').textContent=p.name;
   $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${esc(p.rating)} · ${Number(p.reviews)||0} review${p.reviews===1?'':'s'}</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
   $('pdpDesc').textContent=p.desc;
-  // Tags stay out of sight (they still power search); for SEO they live in structured data only.
-  let ld=document.getElementById('pdpLd');
-  if(!ld){ld=document.createElement('script');ld.type='application/ld+json';ld.id='pdpLd';document.head.appendChild(ld);}
-  ld.textContent=JSON.stringify({'@context':'https://schema.org','@type':'Product',name:p.name,description:p.desc,
-    keywords:(p.tags||[]).join(', '),brand:{'@type':'Brand',name:VENDORS[p.vendor].name},
-    offers:{'@type':'Offer',priceCurrency:'AED',price:p.price,availability:'https://schema.org/InStock'}});
+  // Tags stay out of sight (they still power search). The structured data
+  // (Product, Offer, breadcrumbs) comes with the page from the server at
+  // /pieces/<id>-<slug>, which is the address crawlers read.
   // Options the shop actually offers — nothing is preselected, so the buyer
   // makes a real choice and the maker knows which piece to send.
   pdpChoice={}; pdpProduct=p;
@@ -2190,6 +2203,7 @@ function openPDP(id){
   $('pdpSoldName').textContent=V.name;
   $('pdpSoldCard').onclick=()=>openVendor(p.vendor);
   loadProductReviews(p.id);
+  setAddress(pieceUrl(p),`${p.name} by ${V.name} · Trove`,`${aed(p.price)} from ${V.name}${V.loc?', '+V.loc:''}. ${p.desc?clip(p.desc,70)+' ':''}Delivered across Dubai and Abu Dhabi.`);
   showView('pdp'); jumpTop();
 }
 let pdpSrcs=[];
@@ -2449,6 +2463,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();close
 
 /* SEARCH + ACCOUNT MENU */
 function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');jumpTop();
+  shelfAddress();
   // Report the search (anonymously — just the words + hit count) so trending
   // terms can steer the AI tag writer. Tag taps run through here too.
   if(state.q&&LIVE){try{TroveAPI.api('/api/search-log',{method:'POST',body:{q:state.q,results:filteredProducts().length}}).catch(()=>{});}catch(_){}}
@@ -2465,7 +2480,11 @@ function startCheckout(){
   // optional "create an account" offer (only when a real backend is live).
   if(LIVE&&!ME){SAVED_ADDR=[];coNewAddr=true;coAddr=-1;}
   $('coAcctBox').style.display=(LIVE&&!ME)?'block':'none';
-  closeCart();renderCheckout();showView('checkout');jumpTop();
+  closeCart();renderCheckout();
+  // Checkout is a step, not a page: it gets its own history entry (so Back
+  // returns to where the shopper was) but keeps the address it started from.
+  setAddress(location.pathname+location.search,'Checkout · Trove',null,{v:'checkout'});
+  showView('checkout');jumpTop();
 }
 function toggleCoAcct(){
   const on=$('coAcctChk').checked;
@@ -2571,6 +2590,7 @@ function showConfirmation(orderId){
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
       return `<div class="sg"><div class="d" style="${grad(V.color)}">${esc((V.name||'?')[0])}</div><div><div style="font-weight:700;font-size:14px">${esc(V.name)}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${ct} item${ct>1?'s':''} · arrives 3–6 days</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
+  setAddress(location.pathname+location.search,'Thank you · Trove',null,{v:'confirm',replace:true});
   showView('confirm');jumpTop();
 }
 async function placeOrder(){
@@ -2666,12 +2686,122 @@ async function confCreateAccount(){
 let toastT;
 function toast(m){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
-function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;}
+function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;syncHeadings(v);}
+/* One h1 heading on the page: the active view's title. The others step down to h2
+ * while their view is hidden (the server sends the page the same way). */
+function syncHeadings(v){
+  document.querySelectorAll('[data-vh]').forEach(el=>{
+    const want=el.dataset.vh===v?'H1':'H2';
+    if(el.tagName===want)return;
+    const n=document.createElement(want);
+    for(const a of el.attributes)n.setAttribute(a.name,a.value);
+    while(el.firstChild)n.appendChild(el.firstChild);
+    el.replaceWith(n);
+  });
+}
 /* Jump straight to the top on view changes — html{scroll-behavior:smooth}
  * would otherwise animate the scroll on every navigation, which reads as lag
  * (worst on phones). Smooth stays for in-page anchors only. */
 function jumpTop(){try{window.scrollTo({top:0,left:0,behavior:'instant'});}catch(_){window.scrollTo(0,0);}}
-function go(v,cat){if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';renderShop();showView('shop');}else showView(v);jumpTop();}
+function go(v,cat){
+  if(v==='shop'){state.q='';if($('searchInput'))$('searchInput').value='';state.cat=cat||'all';renderShop();showView('shop');shelfAddress();}
+  else{
+    showView(v);
+    if(v==='home')setAddress('/',HOME_TITLE,HOME_DESC);
+    else if(v==='sell')setAddress('/sell-on-trove','Sell your handmade pieces on Trove','Open a shop on Trove: nothing to pay up front, you set every price, and Trove handles photography, delivery and customer care across Dubai and Abu Dhabi.');
+  }
+  jumpTop();
+}
+
+/* ---------------- ADDRESSES ----------------
+ * Every view has its own address, served by the server with its own title,
+ * description and text (backend/src/seo.js, whose slugify() this mirrors):
+ *   /  ·  /shop  ·  /shop/<category>  ·  /pieces/<id>-<slug>  ·  /makers/<slug>  ·  /sell-on-trove
+ * Moving between views pushes a history entry, so Back returns to the view
+ * before; links are real <a href>s and a plain click is handled in the page
+ * (a ctrl/cmd/middle click opens a new tab as normal). */
+const HOME_TITLE='Trove · Curated homeware by independent makers in Dubai & Abu Dhabi';
+const HOME_DESC='Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Free delivery on orders over AED 200.';
+function slugify(s){return String(s==null?'':s).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/['\u2019]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80).replace(/-+$/,'');}
+function catSlug(c){return c==='House'?'trove-collection':slugify(c);}
+function catFromSlug(sl){
+  if(sl==='trove-collection')return 'House';
+  return [...new Set([...CATS.map(c=>c.name),...PRODUCTS.map(p=>p.cat)])].find(c=>c&&slugify(c)===sl)||null;
+}
+function pieceUrl(p){const s=slugify(p.name);return '/pieces/'+p.id+(s?'-'+s:'');}
+function makerUrl(k){return '/makers/'+encodeURIComponent(k);}
+function shopUrl(cat){return !cat||cat==='all'?'/shop':'/shop/'+catSlug(cat);}
+function clip(s,n){n=n||158;const t=String(s||'').replace(/\s+/g,' ').trim();if(t.length<=n)return t;const c=t.slice(0,n-1);return c.slice(0,Math.max(c.lastIndexOf(' '),n-20)).replace(/[\s,;:.–—-]+$/,'')+'…';}
+let ROUTING=false; // true while a view is rebuilt from the address (boot, Back/Forward): nothing is pushed
+function setMeta(sel,attr,val){let m=document.head.querySelector(sel);if(!m)return;m.setAttribute(attr,val);}
+function setAddress(url,title,desc,opts){
+  opts=opts||{};
+  if(title){document.title=title;setMeta('meta[property="og:title"]','content',title);}
+  if(desc){setMeta('meta[name="description"]','content',desc);setMeta('meta[property="og:description"]','content',desc);}
+  const clean=url.split('?')[0];
+  setMeta('link[rel="canonical"]','href',location.origin+clean);
+  setMeta('meta[property="og:url"]','content',location.origin+clean);
+  const st={trove:1,v:opts.v||null};
+  if(ROUTING||opts.replace){history.replaceState(st,'',url+(ROUTING?location.hash:''));return;}
+  // Remember where the shopper was on this entry, so Back lands there.
+  try{history.replaceState({...(history.state||{}),trove:1,y:window.scrollY},'');}catch(_){}
+  if(url===location.pathname+location.search&&!opts.v)history.replaceState(st,'',url);
+  else history.pushState(st,'',url);
+}
+/* The shelf's address follows the chosen category and search. */
+function shelfAddress(replace){
+  const label=state.q?`Search: ${state.q}`:(state.cat==='all'?'Shop all homeware':catLabel());
+  setAddress(shopUrl(state.cat)+(state.q?'?q='+encodeURIComponent(state.q):''),`${label} · Trove`,
+    state.cat==='all'?'Every piece on Trove: handmade and designed pieces from independent makers, delivered across Dubai and Abu Dhabi.':`${catLabel()} on Trove: pieces handmade by independent makers, delivered across Dubai and Abu Dhabi.`,
+    {replace:!!replace});
+}
+/* Show the view an address names. Returns false when this page cannot (an
+ * unknown piece or maker) — the caller then lets the server answer. */
+function routeTo(path,search,hash,st){
+  const q=new URLSearchParams(search||'');
+  let m;
+  if(st&&st.v==='checkout'&&cart.length){renderCheckout();showView('checkout');document.title='Checkout · Trove';jumpTop();return true;}
+  if((m=path.match(/^\/pieces\/(\d+)/))){const id=+m[1];if(!PRODUCTS.some(p=>p.id===id))return false;openPDP(id);return true;}
+  if((m=path.match(/^\/makers\/([^/]+)\/?$/))){let k;try{k=decodeURIComponent(m[1]);}catch(_){return false;}if(!VENDORS[k])return false;openVendor(k);return true;}
+  if(path==='/shop'||path.startsWith('/shop/')){
+    const sl=path.slice(6).replace(/\/$/,''), cat=sl?catFromSlug(sl):'all';
+    if(!cat)return false;
+    if(q.get('q')!=null){if($('searchInput'))$('searchInput').value=q.get('q');runSearch(q.get('q'));if(cat!=='all'){state.cat=cat;renderShop();}}
+    else go('shop',cat);
+    return true;
+  }
+  if(path==='/sell-on-trove'){go('sell');return true;}
+  if(path==='/'){
+    go('home');
+    const id=(hash||'').slice(1);
+    if(id==='vendors'||id==='weekly')setTimeout(()=>{const el=$(id);if(el)el.scrollIntoView({behavior:'smooth'});},ROUTING?120:60);
+    return true;
+  }
+  return false;
+}
+/* Back / Forward: rebuild the view the address names, and put the scroll back. */
+window.addEventListener('popstate',e=>{
+  if(OUTAGE)return;
+  closeSheets();closeCart();
+  ROUTING=true;
+  let ok=false;
+  try{ok=routeTo(location.pathname,location.search,location.hash,e.state);}finally{ROUTING=false;}
+  if(!ok){location.reload();return;}
+  const y=e.state&&e.state.y;
+  if(y)requestAnimationFrame(()=>window.scrollTo(0,y));
+});
+/* Links into the storefront's own views are handled here on a plain click. */
+function isViewPath(p){return p==='/'||p==='/shop'||/^\/shop\/[a-z0-9-]+\/?$/.test(p)||/^\/pieces\/\d+(-[a-z0-9-]*)?$/.test(p)||/^\/makers\/[^/]+\/?$/.test(p)||p==='/sell-on-trove';}
+document.addEventListener('click',e=>{
+  if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||OUTAGE)return;
+  const a=e.target.closest&&e.target.closest('a[href]');
+  if(!a||(a.target&&a.target!=='_self')||a.hasAttribute('download'))return;
+  let u;try{u=new URL(a.getAttribute('href'),location.href);}catch(_){return;}
+  if(u.origin!==location.origin||!isViewPath(u.pathname))return;
+  e.preventDefault();
+  closeSheets();closeCart();
+  if(!routeTo(u.pathname,u.search,u.hash,null))location.href=u.href;
+});
 
 /* ---------------- BOOT: live data + auth ----------------
  * The demo catalogue above is for a developer's own machine only. On the real
@@ -2813,7 +2943,7 @@ function linkQuoteShops(){
     const a=document.createElement('a');
     a.className='who-link';a.textContent=sp.textContent;
     a.setAttribute('aria-label','Visit '+VENDORS[k].name);
-    a.onclick=()=>openVendor(k);
+    a.href=makerUrl(k);
     sp.replaceWith(a);
   });
 }
@@ -2864,25 +2994,29 @@ async function boot(){
   // After the catalogue, so a saved basket can be checked against what's
   // actually still on sale (restoreCart updates the count itself).
   restoreCart(); updateCartCount();
-  // Deep links from the Services Marketplace: /?shop=<slug> opens a shop
-  // page, /?p=<id> a piece. The shared header on the other pages lands here
-  // too: /?view=shop[&cat=House] · /?view=sell · /?q=<search> · /?cart=1 ·
-  // /#vendors. The query is dropped so a refresh is the home.
+  // The address names the view: /pieces/<id>-<slug>, /makers/<slug>,
+  // /shop[/<category>][?q=], /sell-on-trove or / (#vendors, #weekly). The old
+  // query addresses (/?p=, /?shop=, /?view=shop[&cat=House], /?view=sell)
+  // are 301'd by the server; they are still understood here in case a copy
+  // of the page is served without it. /?q=<search> and /?cart=1 come from
+  // the shared header on the other pages.
   if(takeAppBasket())return;
+  ROUTING=true;
   try{
     const q=new URLSearchParams(location.search);
     const shopSlug=q.get('shop'), pid=Number(q.get('p'));
     const view=q.get('view'), search=q.get('q'), cat=q.get('cat');
     if(shopSlug&&VENDORS[shopSlug])openVendor(shopSlug);
     else if(pid&&PRODUCTS.some(p=>p.id===pid))openPDP(pid);
-    else if(search!=null){if($('searchInput'))$('searchInput').value=search;runSearch(search);}
+    else if(search!=null&&location.pathname==='/'){if($('searchInput'))$('searchInput').value=search;runSearch(search);}
     else if(view==='shop')go('shop',cat||'all');
     else if(view==='sell')go('sell');
-    else if(location.hash==='#vendors')setTimeout(()=>{const v=$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
-    else if(location.hash==='#weekly')setTimeout(()=>{const w=$('weekly');if(w)w.scrollIntoView({behavior:'smooth'});},120);
-    if(q.get('cart'))openCart();
-    if(shopSlug||pid||search!=null||view||q.get('cart'))history.replaceState({},'',location.pathname);
-  }catch(_){}
+    else if(location.pathname==='/'&&location.hash==='#vendors')setTimeout(()=>{const v=$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
+    else if(location.pathname==='/'&&location.hash==='#weekly')setTimeout(()=>{const w=$('weekly');if(w)w.scrollIntoView({behavior:'smooth'});},120);
+    else routeTo(location.pathname,location.search,location.hash,history.state);
+    if(q.get('cart')){openCart();q.delete('cart');const rest=q.toString();history.replaceState(history.state,'',location.pathname+(rest?'?'+rest:'')+location.hash);}
+  }catch(e){console.warn('trove: could not open this address —',e.message);}
+  finally{ROUTING=false;}
 }
 boot();
 </script>

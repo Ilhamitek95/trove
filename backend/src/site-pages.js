@@ -176,9 +176,6 @@ function ldScript(obj) {
   // </script> can never close the tag early: every < is escaped inside JSON.
   return `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', ...obj }).replace(/</g, '\\u003c')}</script>`;
 }
-function storefrontLd(base) {
-  return ldScript({ '@graph': [organizationLd(base, content.company())] });
-}
 
 /* ---- FAQ parsing (page, FAQPage data and llms-full share one source) ---- */
 function faqSections(src) {
@@ -282,8 +279,8 @@ function footerHtml(siteContent) {
         <a href="/" class="fbrand" aria-label="Trove — home">trove</a>
         <p class="blurb">${esc(f.blurb)}</p>
       </div>
-      <div><h5>Shop</h5><ul><li><a href="/?view=shop">All categories</a></li><li class="fhouse"><a href="/?view=shop&amp;cat=House">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
-      <div><h5>Sell</h5><ul><li><a href="/?view=sell">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
+      <div><h5>Shop</h5><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
+      <div><h5>Sell</h5><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
       <div><h5>About</h5><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></div>
     </div>
     <div class="fbot"><span>${esc(f.legal)}</span><span><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/seller-agreement">Seller agreement</a></span></div>
@@ -311,14 +308,7 @@ function shell({ base, pathName, title, description, h1, sub = '', crumb = '', b
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>${esc(fullTitle)}</title>
 <meta name="description" content="${esc(description)}">
-<link rel="canonical" href="${esc(url)}">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Trove">
-<meta property="og:title" content="${esc(fullTitle)}">
-<meta property="og:description" content="${esc(description)}">
-<meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${esc(base)}/apple-touch-icon.png">
-<meta name="twitter:card" content="summary">
+${require('./seo').socialTags({ base, url, title: fullTitle, description })}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -329,11 +319,12 @@ ${ldScript({ '@graph': [organizationLd(base, content.company()), ...ld] })}
 ${extraHead}
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <!-- HEADER: the storefront's (copied from trove-services.html at render time; test/header-sync.test.js checks it) -->
 ${header}
 
-<main class="page">
+<main class="page" id="main">
   <div class="crumb"><a href="/">Trove</a>${crumb ? ` &nbsp;/&nbsp; ${crumb}` : ''} &nbsp;/&nbsp; <span>${esc(h1)}</span></div>
   <h1>${esc(h1)}</h1>
   ${sub ? `<div class="sub">${sub}</div>` : ''}
@@ -506,13 +497,15 @@ function llmsTxt(base) {
 
 ## Pages
 
-- [Shop](${base}/): the storefront, all pieces and makers
+- [Home](${base}/): the storefront
+- [Shop all](${base}/shop): every piece on sale, by category
 - [About Trove](${base}/about): what Trove is, how curation works, who it is for
 - [Delivery & Returns](${base}/returns): delivery costs and times, the returns policy with examples
 - [Help centre](${base}/faq): questions for buyers, makers and service providers
 - [Contact](${base}/contact): contact form
 - [Services Marketplace](${base}/services): in-person creative services
-- [Sell on Trove](${base}/apply): the maker and provider application
+- [Sell on Trove](${base}/sell-on-trove): how selling on Trove works for makers
+- [Apply](${base}/apply): the maker and provider application
 
 ## Policies
 
@@ -553,12 +546,7 @@ ${faq}
 `;
 }
 
-/** Inject the Organization data into the storefront HTML (served for /). */
-function injectStorefrontLd(html, base) {
-  return html.replace('</head>', `${storefrontLd(base)}\n</head>`);
-}
-
 module.exports = {
-  LEGAL, legalDoc, chrome, footerHtml, faqSections, organizationLd, storefrontLd, injectStorefrontLd,
+  LEGAL, legalDoc, chrome, footerHtml, faqSections, organizationLd,
   renderAbout, renderReturns, renderFaq, renderContact, renderLegal, llmsTxt, llmsFullTxt, TOPICS,
 };

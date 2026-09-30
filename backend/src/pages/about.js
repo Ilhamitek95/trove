@@ -47,7 +47,7 @@ Trove, is responsible for the service they deliver.
   be made with a name or a message.
 - **Makers** who make lovely things at home but do not want to run a shop:
   Trove takes care of the storefront, photography, marketing, checkout,
-  delivery and customer care. See [Sell on Trove](/?view=sell).
+  delivery and customer care. See [Sell on Trove](/sell-on-trove).
 
 ## How buying on Trove works
 

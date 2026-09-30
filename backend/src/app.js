@@ -263,6 +263,31 @@ function createApp() {
   for (const legacy of ['/trove.html', '/trove', '/index.html', '/index']) {
     app.get(legacy, (_req, res) => res.redirect(301, '/'));
   }
+  const seo = require('./seo');
+  const keepQuery = (req) => { const q = req.originalUrl.indexOf('?'); return q === -1 ? '' : req.originalUrl.slice(q); };
+  const SITE_BASE = () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '');
+
+  // One address per page: a trailing slash, or capitals in a public path
+  // (/Services, /services/, /Shop/Ceramics), 301 to the canonical spelling.
+  // Express matches case-insensitively and ignores a trailing slash, so
+  // without this every variant answered 200 with the same page. Booking and
+  // payment links keep their case (their codes are case-sensitive).
+  const CASE_FOLDED = /^\/(services|shop|makers|pieces|sell-on-trove|about|contact|faq|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login)(\/|$)/i;
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    const p = req.path;
+    if (p.startsWith('/uploads/') || /\.[a-z0-9]+$/i.test(p) || /^\/services\/(booking|pay)\//i.test(p)) return next();
+    let target = p.length > 1 ? p.replace(/\/+$/, '') || '/' : p;
+    if (CASE_FOLDED.test(target) && target !== target.toLowerCase()) target = target.toLowerCase();
+    if (target === p) return next();
+    res.redirect(301, target + keepQuery(req));
+  });
+  // A miss: the branded 404 page, a real 404 status, never indexed.
+  const notFound = (req, res) => {
+    res.set('X-Robots-Tag', 'noindex');
+    if (req.accepts('html')) return res.status(404).sendFile(path.join(DOCS_DIR, '404.html'));
+    res.status(404).json({ error: 'Not found' });
+  };
 
   // Every page has one clean canonical address; the raw filename (and its
   // extensionless variant) 301s there, keeping the query string intact so
@@ -280,8 +305,22 @@ function createApp() {
   // One application for pieces, services or both: the old provider wizard
   // address lands on the same form with services preselected.
   app.get(['/become-a-provider', '/trove-provider-apply.html', '/trove-provider-apply'], (_req, res) => res.redirect(301, '/apply?for=services'));
+  // Pages served as they are, plus the site-wide social tags when the page
+  // has none of its own (signed-in surfaces get them without a canonical).
+  const PUBLIC_FILES = new Set(['/apply']);
+  const fileCache = {};
+  const servePage = (clean, file) => (_req, res) => {
+    const f = path.join(DOCS_DIR, file);
+    const stamp = require('fs').statSync(f).mtimeMs;
+    const c = fileCache[file];
+    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: require('fs').readFileSync(f, 'utf8') };
+    res.type('html').set('Cache-Control', 'no-cache')
+      .send(seo.withDefaultSocial(fileCache[file].html, { base: SITE_BASE(), url: SITE_BASE() + clean, noindex: !PUBLIC_FILES.has(clean), path: clean }));
+  };
+  // The Services Marketplace directory, server-rendered (src/seo.js).
+  app.get('/services', (_req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderServicesDirectory(SITE_BASE())));
   for (const [clean, file] of Object.entries(PAGES)) {
-    app.get(clean, (_req, res) => res.sendFile(path.join(DOCS_DIR, file)));
+    app.get(clean, servePage(clean, file));
     for (const legacy of ['/' + file, '/' + file.replace(/\.html$/, '')]) {
       if (legacy === clean) continue;
       app.get(legacy, (req, res) => {
@@ -296,7 +335,6 @@ function createApp() {
    * (src/site-pages.js): real text in the HTML, the shared header + footer,
    * canonical, Open Graph and Organization structured data.              */
   const html = (res, body) => res.type('html').set('Cache-Control', 'no-cache').send(body);
-  const SITE_BASE = () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '');
   app.get('/about', (_req, res) => html(res, sitePages.renderAbout(SITE_BASE())));
   app.get('/contact', (req, res) => html(res, sitePages.renderContact(SITE_BASE(), {
     sent: req.query.sent === '1',
@@ -316,21 +354,30 @@ function createApp() {
   };
   for (const [from, to] of Object.entries(REDIRECTS)) app.get(from, (_req, res) => res.redirect(301, to));
 
-  // The storefront, with the Organization structured data (company details
-  // from Site content) added to its head. Re-read only when the file changes.
-  const fsx = require('fs');
-  let storeCache = { stamp: 0, html: '' };
-  app.get('/', (_req, res) => {
-    const file = path.join(DOCS_DIR, 'trove.html');
-    const stamp = fsx.statSync(file).mtimeMs;
-    if (stamp !== storeCache.stamp) storeCache = { stamp, html: fsx.readFileSync(file, 'utf8') };
-    html(res, sitePages.injectStorefrontLd(storeCache.html, SITE_BASE()));
+  /* ---------------- The storefront's own addresses ----------------
+   * Every public view of the single-page storefront has a clean address,
+   * served with its own head tags, structured data and text (src/seo.js).
+   * The old query addresses 301 to them; anything unknown is a real 404.  */
+  const page = (res, req, out) => {
+    if (out.redirect) return res.redirect(301, out.redirect + keepQuery(req));
+    if (out.notFound) return notFound(req, res);
+    html(res, out.html);
+  };
+  app.get('/', (req, res) => {
+    const target = seo.legacyTarget(req.query);
+    if (target) return res.redirect(301, target);
+    html(res, seo.renderHome(SITE_BASE()));
   });
+  app.get('/shop', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), null, { search: req.query.q })));
+  app.get('/shop/:cat([a-z0-9-]+)', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), req.params.cat, { search: req.query.q })));
+  app.get('/pieces/:ref', (req, res) => page(res, req, seo.renderPiece(SITE_BASE(), req.params.ref)));
+  app.get('/makers/:slug', (req, res) => page(res, req, seo.renderMaker(SITE_BASE(), req.params.slug)));
+  app.get('/sell-on-trove', (_req, res) => html(res, seo.renderSell(SITE_BASE())));
 
-  // A provider's public page: /services/<slug> serves the services page, which
-  // reads the slug from the URL. Slugs never contain a dot, so asset paths
-  // under /services/ fall through to the 404 instead of getting HTML.
-  app.get('/services/:slug([a-z0-9-]+)', (_req, res) => res.sendFile(path.join(DOCS_DIR, 'trove-services.html')));
+  // A provider's public page: /services/<slug>, server-rendered; unknown or
+  // unapproved providers are a real 404. Slugs never contain a dot, so asset
+  // paths under /services/ fall through to the 404 instead of getting HTML.
+  app.get('/services/:slug([a-z0-9-]+)', (req, res) => page(res, req, seo.renderProvider(SITE_BASE(), req.params.slug)));
   // A booking's private pages (the link in the customer's emails): the same
   // services page opens the booking view. Never indexed — the URL is the key.
   const bookingPage = (_req, res) => {
@@ -355,8 +402,10 @@ function createApp() {
       'Disallow: /sell',
       'Disallow: /provider',
       'Disallow: /login',
-      // /sell and /provider are prefix rules; the agreements are public.
+      // /sell and /provider are prefix rules; the agreements and the maker
+      // pitch are public (the longest matching rule wins).
       'Allow: /seller-agreement',
+      'Allow: /sell-on-trove',
       'Allow: /provider-agreement',
       'Disallow: /services/booking/',
       'Disallow: /services/pay/',
@@ -368,32 +417,9 @@ function createApp() {
   });
   app.get('/sitemap.xml', (_req, res) => {
     const base = SITE();
-    const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const urls = [];
-    const add = (loc, { changefreq = 'weekly', priority = '0.5', lastmod } = {}) =>
-      urls.push(`<url><loc>${esc(base + loc)}</loc>${lastmod ? `<lastmod>${esc(String(lastmod).slice(0, 10))}</lastmod>` : ''}<changefreq>${changefreq}</changefreq><priority>${priority}</priority></url>`);
-    add('/', { changefreq: 'daily', priority: '1.0' });
-    add('/services', { changefreq: 'daily', priority: '0.8' });
-    add('/apply', { changefreq: 'monthly', priority: '0.4' });
-    add('/about', { changefreq: 'monthly', priority: '0.6' });
-    add('/returns', { changefreq: 'monthly', priority: '0.5' });
-    add('/faq', { changefreq: 'monthly', priority: '0.5' });
-    add('/contact', { changefreq: 'yearly', priority: '0.4' });
-    add('/terms', { changefreq: 'yearly', priority: '0.3' });
-    add('/privacy', { changefreq: 'yearly', priority: '0.3' });
-    add('/seller-agreement', { changefreq: 'yearly', priority: '0.2' });
-    add('/provider-agreement', { changefreq: 'yearly', priority: '0.2' });
-    add('/services-terms', { changefreq: 'yearly', priority: '0.2' });
-    for (const s of db.prepare("SELECT slug, created_at FROM shops WHERE status='approved' ORDER BY id").all()) {
-      add(`/?shop=${encodeURIComponent(s.slug)}`, { priority: '0.7', lastmod: s.created_at });
-    }
-    for (const p of db.prepare(`SELECT p.id, p.created_at FROM products p JOIN shops s ON s.id = p.shop_id
-      WHERE p.status='live' AND s.status='approved' ORDER BY p.id`).all()) {
-      add(`/?p=${p.id}`, { priority: '0.6', lastmod: p.created_at });
-    }
-    for (const pr of db.prepare("SELECT slug, created_at FROM service_providers WHERE status='approved' ORDER BY id").all()) {
-      add(`/services/${encodeURIComponent(pr.slug)}`, { priority: '0.7', lastmod: pr.created_at });
-    }
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const urls = seo.sitemapEntries().map((u) =>
+      `<url><loc>${esc(base + u.loc)}</loc>${u.lastmod ? `<lastmod>${esc(u.lastmod)}</lastmod>` : ''}<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`);
     res.type('application/xml').set('Cache-Control', 'public, max-age=3600')
       .send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
   });
@@ -409,10 +435,7 @@ function createApp() {
 
   // Anything left is a miss: branded 404 page for browsers, JSON for the rest
   // (unknown /api/* paths never reach here — they get their JSON 404 above).
-  app.use((req, res) => {
-    if (req.accepts('html')) return res.status(404).sendFile(path.join(DOCS_DIR, '404.html'));
-    res.status(404).json({ error: 'Not found' });
-  });
+  app.use(notFound);
 
   /* ---------------- Errors ---------------- */
   // A deliberate 4xx (a route or body-parser error with a status) keeps its

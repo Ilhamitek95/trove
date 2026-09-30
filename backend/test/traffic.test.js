@@ -98,12 +98,13 @@ test('sitemap.xml lists the public pages, approved shops, live pieces and approv
   const db = app.db;
   const shop = db.prepare("SELECT slug FROM shops WHERE status='approved' LIMIT 1").get();
   assert.ok(shop, 'seed has an approved shop');
-  assert.match(res.text, new RegExp(`<loc>https://troveathome\\.com/\\?shop=${shop.slug}</loc>`));
-  const live = db.prepare(`SELECT p.id FROM products p JOIN shops s ON s.id = p.shop_id
+  assert.ok(res.text.includes(`<loc>https://troveathome.com/makers/${shop.slug}</loc>`));
+  const live = db.prepare(`SELECT p.id, p.name FROM products p JOIN shops s ON s.id = p.shop_id
     WHERE p.status='live' AND s.status='approved' ORDER BY p.id LIMIT 1`).get();
-  assert.match(res.text, new RegExp(`<loc>https://troveathome\\.com/\\?p=${live.id}</loc>`));
+  assert.ok(res.text.includes(`<loc>https://troveathome.com${require('../src/seo').pieceUrl(live)}</loc>`));
   const hidden = db.prepare("SELECT id FROM products WHERE status!='live' LIMIT 1").get();
-  if (hidden) assert.doesNotMatch(res.text, new RegExp(`\\?p=${hidden.id}</loc>`));
+  if (hidden) assert.ok(!res.text.includes(`/pieces/${hidden.id}-`));
+  assert.doesNotMatch(res.text, /\?(p|shop|view)=/, 'clean addresses only, no query strings');
   assert.doesNotMatch(res.text, /\/admin|\/account|\/sell</);
 });
 

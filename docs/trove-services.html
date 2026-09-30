@@ -43,6 +43,8 @@
   .brand{font-family:var(--font-display);font-size:38px;font-weight:500;letter-spacing:.01em;color:var(--char);line-height:1}
   .brand img{height:34px;width:auto;display:block}
   .mn-brand img{height:28px;width:auto;display:block}
+  .skip{position:absolute;left:12px;top:-80px;z-index:300;background:var(--char);color:var(--cream);padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:700;letter-spacing:.02em}
+  .skip:focus{top:12px}
   .nav .links{display:flex;align-items:center;gap:24px;margin-left:10px;font-size:13.5px;font-weight:600;letter-spacing:.04em;flex-shrink:0}
   .nav .links a{padding:4px 0;color:var(--ink-80);position:relative;white-space:nowrap;line-height:1.3}
   .nav .links a::after{content:"";position:absolute;left:0;bottom:-2px;width:0;height:1px;background:var(--coral);transition:width .25s}
@@ -120,8 +122,8 @@
   .hero{padding:48px 0 18px}
   .hero .lead{text-align:center;max-width:920px}
   .hero .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--muted);display:block;margin-bottom:14px}
-  .hero h1{font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;letter-spacing:-.008em}
-  .hero h1 span{color:var(--coral)}
+  .hero .hero-t{font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;letter-spacing:-.008em}
+  .hero .hero-t span{color:var(--coral)}
   .hero p{font-size:16.5px;color:var(--ink-80);font-weight:400;line-height:1.6;max-width:64ch;margin:16px auto 0}
   .hero .h-terms{margin:20px 0 0;justify-content:center}
   /* first paint: the copy settles in line by line — same rise as the storefront hero */
@@ -154,6 +156,8 @@
 
   /* the directory: one card per category — what it covers, what's bookable, whether anyone offers it yet */
   .dir{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px}
+  .dir:empty{min-height:520px}
+  .audswitch:empty{min-height:74px}
   .dcard{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px 20px 15px;display:flex;flex-direction:column;gap:8px;transition:.18s;text-align:left}
   .dcard.live{cursor:pointer}
   @media(hover:hover){.dcard.live:hover{border-color:var(--char);transform:translateY(-2px)}}
@@ -189,13 +193,13 @@
   .wholink:hover{text-decoration:underline;color:var(--char)}
 
   /* a provider's own page — the storefront's shop page, for services */
-  body.pv .hero,body.pv main{display:none}
+  body.pv .hero,body.pv #dirMain{display:none}
   .pv-hero{height:230px;position:relative}
   .pv-back{position:absolute;left:26px;top:18px;font-size:12.5px;font-weight:700;background:rgba(253,247,245,.88);padding:8px 14px;border-radius:999px;backdrop-filter:blur(6px)}
   .pv-back:hover{background:var(--cream)}
   .pv-head{text-align:center;margin-top:-44px;position:relative}
   .pv-av{width:88px;height:88px;border-radius:50%;border:5px solid var(--cream);margin:0 auto;display:grid;place-items:center;font-family:var(--font-display);font-size:38px;font-weight:600;color:var(--char)}
-  .pv-head h1{font-size:clamp(34px,4vw,50px);font-weight:500;margin-top:10px;line-height:1.05}
+  .pv-head #pvName{font-size:clamp(34px,4vw,50px);font-weight:500;margin-top:10px;line-height:1.05}
   .pv-head .loc{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-top:5px}
   .pv-head p{font-size:15.5px;color:var(--ink-80);font-weight:400;line-height:1.6;max-width:62ch;margin:14px auto 0}
   .pv-stats{display:flex;justify-content:center;gap:38px;margin-top:22px}
@@ -268,7 +272,7 @@
   .bkcard .paylink{font-size:12.5px;font-weight:700;background:var(--char);color:var(--cream);padding:8px 16px;border-radius:999px}
 
   /* a booking's private page: /services/booking/<code>?t=… and /services/pay/<code>-<token> */
-  body.bv .hero,body.bv main{display:none}
+  body.bv .hero,body.bv #dirMain{display:none}
   .bv-wrap{max-width:660px;margin:0 auto;padding:34px 26px 30px}
   .bv-back{display:inline-block;font-size:12.5px;font-weight:700;color:var(--muted);padding:8px 0;margin-bottom:10px}
   .bv-back:hover{color:var(--char)}
@@ -391,19 +395,20 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <!-- HEADER: the storefront's, with real addresses into it (test/header-sync.test.js keeps the two in step) -->
 <div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 200</div></div>
 <header class="top">
   <div class="wrap nav">
     <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-    <a href="/" class="brand" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></a>
+    <a href="/" class="brand" aria-label="Trove — home">trove</a>
     <nav class="links">
-      <a href="/?view=shop">Shop all</a>
-      <a href="/?view=shop&amp;cat=House">Trove Collection</a>
+      <a href="/shop">Shop all</a>
+      <a href="/shop/trove-collection">Trove Collection</a>
       <a href="/#vendors">Marketplace</a>
       <a href="/services" class="on">Services Marketplace</a>
-      <a href="/?view=sell">Sell on Trove</a>
+      <a href="/sell-on-trove">Sell on Trove</a>
     </nav>
     <div class="right">
       <div class="search">
@@ -436,18 +441,18 @@
 <div class="hdr-scrim" id="uiScrim" onclick="closeSheets()"></div>
 <aside class="mnav" id="mnav" aria-label="Menu">
   <div class="mn-head">
-    <span class="mn-brand"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.mn-brand').textContent='trove'"></span>
+    <span class="mn-brand">trove</span>
     <button class="icon-btn" aria-label="Close menu" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="mn-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
     <input id="mSearchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
   </div>
-  <a class="mn-link" href="/?view=shop">Shop all<span>→</span></a>
-  <a class="mn-link" href="/?view=shop&amp;cat=House">Trove Collection<span>→</span></a>
+  <a class="mn-link" href="/shop">Shop all<span>→</span></a>
+  <a class="mn-link" href="/shop/trove-collection">Trove Collection<span>→</span></a>
   <a class="mn-link" href="/#vendors">Marketplace<span>→</span></a>
   <a class="mn-link" href="/services" onclick="closeSheets();return false">Services Marketplace<span>→</span></a>
-  <a class="mn-link" href="/?view=sell">Sell on Trove<span>→</span></a>
+  <a class="mn-link" href="/sell-on-trove">Sell on Trove<span>→</span></a>
   <div class="mn-foot">
     <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
     <a href="/account#orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg>Orders</a>
@@ -455,11 +460,12 @@
   </div>
 </aside>
 
+<main id="main">
 <section id="pview" hidden>
   <div class="pv-hero" id="pvHero"><a class="pv-back" href="/services" onclick="closeProvider();return false">← All services</a></div>
   <div class="wrap pv-head">
     <div class="pv-av" id="pvAv"></div>
-    <h1 id="pvName"></h1>
+    <h2 id="pvName"></h2>
     <div class="loc" id="pvLoc"></div>
     <p id="pvBio"></p>
     <div class="pv-stats" id="pvStats"></div>
@@ -470,7 +476,7 @@
     <div class="pv-shop" id="pvShop" hidden>
       <div class="results"><div class="rhead"><h2>Also in their shop</h2><span id="pvShopCount"></span><a id="pvShopLink" href="/">Visit the shop →</a></div><div class="pcgrid" id="pvPieces"></div></div>
     </div>
-    <p class="pv-note">Every price here is <span id="pvName2"></span>'s own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile. The service is theirs to deliver; Trove lists it.</p>
+    <p class="pv-note">Every price here is the provider's own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile. The service is theirs to deliver; Trove lists it.</p>
   </div>
 </section>
 
@@ -484,7 +490,7 @@
 <section class="hero">
   <div class="wrap lead">
     <span class="eyebrow">Services Marketplace · Dubai &amp; Abu Dhabi</span>
-    <h1>Skilled hands, <span>at your place</span>.</h1>
+    <h1 class="hero-t">Skilled hands, <span>at your place</span>.</h1>
     <p>Trove's makers and creatives, bookable. Made-to-order, repairs, styling and workshops for your home; photography, design and shop support for your brand.</p>
     <div class="h-terms">
       <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No account needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Pay your way</span>
@@ -493,7 +499,7 @@
   </div>
 </section>
 
-<main class="wrap">
+<div class="wrap" id="dirMain">
   <div id="myBookings"></div>
   <div class="dir" id="dir"></div>
   <div id="results"></div>
@@ -570,12 +576,13 @@
     </div>
     <a class="btn" href="/apply?for=services">Become a provider →</a>
   </div>
+</div>
 </main>
 
 <footer>
   <div class="wrap">
     <span>© 2026 Trove · Dubai, UAE</span>
-    <span><a href="/">The shop</a> · <a href="/apply?for=services">Become a provider</a> · <a href="/faq#services">Help</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/services-terms">Services terms</a> · <a href="/provider-agreement">Provider agreement</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span>
+    <span><a href="/shop">The shop</a> · <a href="/apply?for=services">Become a provider</a> · <a href="/faq#services">Help</a> · <a href="/about">About</a> · <a href="/contact">Contact</a> · <a href="/services-terms">Services terms</a> · <a href="/provider-agreement">Provider agreement</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></span>
   </div>
 </footer>
 
@@ -598,6 +605,16 @@ const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
 const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#DBC7BD';
 const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
 let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[], CFG=null;
+/* The storefront's addresses (backend/src/seo.js has the same slugify). */
+function slugify(s){return String(s==null?'':s).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/['\u2019]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80).replace(/-+$/,'');}
+function pieceUrl(p){const s=slugify(p.name);return '/pieces/'+Number(p.id)+(s?'-'+s:'');}
+function makerUrl(k){return '/makers/'+encodeURIComponent(k);}
+/* One h1 heading on the page: the directory's hero title, or the provider's name. */
+function pageH1(view){
+  const swap=(el,want)=>{if(!el||el.tagName===want)return;const n=document.createElement(want);for(const a of el.attributes)n.setAttribute(a.name,a.value);while(el.firstChild)n.appendChild(el.firstChild);el.replaceWith(n);};
+  swap(document.querySelector('.hero-t'),view==='dir'?'H1':'H2');
+  swap($('pvName'),view==='pv'?'H1':'H2');
+}
 let state={audience:'home',cat:null,showAll:false};
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
 
@@ -777,10 +794,10 @@ async function cancelBooking(id,paid,amount){
 
 function catNames(slugs){return (slugs||[]).map(sl=>{const c=TAX.categories.find(x=>x.slug===sl);return c?c.name:null;}).filter(Boolean);}
 function provCardHTML(p){
-  return `<article class="pcard" onclick="openProvider(${jsq(p.slug)})" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider(${jsq(p.slug)})}">
+  return `<article class="pcard" onclick="if(event.metaKey||event.ctrlKey||event.shiftKey)return;openProvider(${jsq(p.slug)});return false" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider(${jsq(p.slug)})}">
     <div class="cover" style="background:center/cover url(&quot;${esc(motifUrl(hashOf(p.slug),safeColor(p.color)))}&quot;)"></div>
     <div class="av" style="background:${safeColor(p.color)}">${esc((p.name||'?')[0])}</div>
-    <h3>${esc(p.name)}</h3>
+    <h3><a class="pcard-link" href="/services/${esc(encodeURIComponent(p.slug))}" tabindex="-1">${esc(p.name)}</a></h3>
     <div class="loc">${esc(p.location||'Dubai')}</div>
     <p>${esc(p.bio)}</p>
     <div class="pmeta"><span><b>${Number(p.serviceCount)||0}</b> ${p.serviceCount===1?'service':'services'}</span>${p.fromCents?`<span>from <b>${money(p.fromCents)}</b></span>`:''}</div>
@@ -808,7 +825,8 @@ async function openProvider(slug,push=true){
   for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
   $('pvHero').style.background=`center/cover url("${motifUrl(hashOf(p.slug),safeColor(p.color))}")`;
   $('pvAv').style.background=safeColor(p.color);$('pvAv').textContent=(p.name||'?')[0];
-  $('pvName').textContent=p.name;$('pvName2').textContent=p.name;
+  pageH1('pv');
+  $('pvName').textContent=p.name;
   $('pvLoc').textContent=p.location||'Dubai';$('pvBio').textContent=p.bio||'';
   const emirate=(p.location||'Dubai').split(',').pop().trim();
   $('pvStats').innerHTML=`<div><b>${Number(p.serviceCount)||0}</b><span>${p.serviceCount===1?'SERVICE':'SERVICES'}</span></div><div><b>${esc(emirate)}</b><span>BASED IN</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>ON TROVE SINCE</span></div>`:''}`;
@@ -818,30 +836,34 @@ async function openProvider(slug,push=true){
     :`<div class="empty" style="grid-column:1/-1">${esc(p.name)} hasn't listed a service yet — check back soon.</div>`;
   loadProviderPieces(p);
   document.body.classList.add('pv');$('pview').hidden=false;
-  document.title=`${p.name} · Trove Services Marketplace`;
+  document.title=`${p.name}${p.location?', '+p.location:''} · Trove Services Marketplace`;
   if(push)history.pushState({provider:slug},'','/services/'+encodeURIComponent(slug));
   window.scrollTo({top:0,behavior:'instant'});
 }
 /* The maker's shop, when the same account sells pieces on the storefront. */
 async function loadProviderPieces(p){
-  const box=$('pvShop'); box.hidden=true;
-  if(!p.shop||!p.shop.productCount)return;
+  // The server already drew this section for the provider it served: it is
+  // only hidden when there is nothing to show, never hidden-then-shown (that
+  // moved the page under the reader).
+  const box=$('pvShop');
+  if(!p.shop||!p.shop.productCount){box.hidden=true;return;}
   try{
     const {products}=await TroveAPI.api('/api/products?shop='+encodeURIComponent(p.shop.slug));
     const live=(products||[]).slice(0,8);
-    if(!live.length)return;
+    if(!live.length){box.hidden=true;return;}
     $('pvShopCount').textContent=`${p.shop.productCount} ${p.shop.productCount===1?'piece':'pieces'} · ${p.shop.name}`;
-    $('pvShopLink').href='/?shop='+encodeURIComponent(p.shop.slug);
+    $('pvShopLink').href=makerUrl(p.shop.slug);
     $('pvPieces').innerHTML=live.map(pr=>{
       const img=safeImg(pr.images&&pr.images[0])||motifUrl(hashOf(pr.name),safeColor(p.color));
-      return `<a class="pc" href="/?p=${Number(pr.id)}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">AED ${Number(pr.price).toLocaleString('en-GB')}</div></div></a>`;
+      return `<a class="pc" href="${esc(pieceUrl(pr))}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">AED ${Number(pr.price).toLocaleString('en-GB')}</div></div></a>`;
     }).join('');
     box.hidden=false;
-  }catch(_){}
+  }catch(_){box.hidden=true;}
 }
 function closeProvider(push=true){
   document.body.classList.remove('pv');$('pview').hidden=true;
-  document.title='Trove · Services Marketplace';
+  pageH1('dir');
+  document.title='Services Marketplace · Trove';
   if(push&&PV_RE.test(location.pathname))history.pushState({},'','/services');
 }
 window.addEventListener('popstate',()=>{const m=location.pathname.match(PV_RE);if(m)openProvider(m[1],false);else closeProvider(false);});
@@ -951,7 +973,7 @@ async function fetchBooking(){
   BV.b=r.booking;return BV.b;
 }
 async function openBookingView(code,t,wantPay){
-  document.body.classList.add('bv');$('bkview').hidden=false;
+  document.body.classList.add('bv');$('bkview').hidden=false;pageH1('bv');
   document.title='Your booking · Trove';
   BV={code,t,b:null};
   try{await fetchBooking();}

@@ -156,7 +156,11 @@ test('/services/<slug> serves the services page; asset paths under it do not', a
   assert.ok(r.text.includes('src="/config.js"'), 'scripts resolve from the root at the nested path');
   r = await api('GET', '/services/config.js');
   assert.equal(r.status, 404);
+  // Capitals fold to the one lowercase address (301), which is then a real 404.
   r = await api('GET', '/services/Not_A_Slug');
+  assert.equal(r.status, 301);
+  assert.equal(r.headers.get('location'), '/services/not_a_slug');
+  r = await api('GET', '/services/not_a_slug');
   assert.equal(r.status, 404);
 });
 
