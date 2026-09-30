@@ -18,7 +18,7 @@
     --blush:#F8D7E4; --moss:#CFDBBE; --sky:#BED3DF;
     --paper:#FFFCFA; --rose-tint:#F2E9E4; --cream-2:#F8F0EA;
     --line:rgba(41,39,39,.10); --line-soft:rgba(41,39,39,.06);
-    --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+    --muted:rgba(41,39,39,.72); --ink-80:rgba(41,39,39,.78); /* .72 = 5.8:1 on cream, 5.4:1 on rose-tint (WCAG AA) */
     --green:#292727; --green-bg:#E4ECE5; /* status ink: Charcoal on a sage tint */
     --stripe:#635BFF;
     --r:16px; --shadow:0 16px 44px -28px rgba(41,39,39,.30);
@@ -153,7 +153,7 @@
   .stock-input:focus{border-color:var(--char)}
   .pill-st{font-size:11px;font-weight:700;letter-spacing:.05em;padding:5px 12px;border-radius:999px;cursor:pointer;transition:.15s}
   .pill-st.live{background:var(--green-bg);color:var(--green)}
-  .pill-st.draft{background:var(--rose-tint);color:var(--taupe)}
+  .pill-st.draft{background:var(--rose-tint);color:var(--char)}
   .pill-st.hidden{background:#EDE7E2;color:var(--muted)}
   .rowact{display:flex;gap:6px;justify-content:flex-end}
   .iact{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--muted);transition:.15s}
@@ -277,7 +277,8 @@
   .ferr{display:none;font-size:11.5px;color:var(--accent-ink);font-weight:600;margin-top:6px}
   .field.bad .ferr{display:block}
   .field.bad input,.field.bad textarea,.field.bad select{border-color:var(--accent-ink)}
-  .dfee{display:block;background:rgba(202,213,204,.18);border:1px solid rgba(202,213,204,.7);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.55}
+  .dfee{display:block;background:var(--green-bg);border:1px solid rgba(41,39,39,.08);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--char);font-weight:500;line-height:1.55}
+  .dfee .keep{display:block;font-size:15px;font-weight:700;margin-bottom:2px}
   .perso-card{border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:14px 16px}
   .perso-card .pc-top{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;cursor:pointer}
   .perso-card #dPersoFields{margin-top:16px}
@@ -517,17 +518,100 @@
   .an-src .n{font-family:var(--font-display);font-size:17px;font-weight:600;min-width:30px;text-align:right}
   .an-foot{font-size:12px;color:var(--muted);font-weight:600;padding:14px 22px 18px}
   @media(max-width:760px){.an-two{grid-template-columns:1fr}}
+  /* ---------- preview (the shop and its pieces as shoppers see them) ---------- */
+  .pvw{position:fixed;inset:0;z-index:125;display:none;place-items:center;padding:18px}
+  .pvw.open{display:grid}
+  .pvw-back{position:absolute;inset:0;background:rgba(41,39,39,.45)}
+  .pvw-card-wrap{position:relative;background:var(--cream);border-radius:20px;box-shadow:var(--shadow);width:min(920px,96vw);max-height:92vh;overflow-y:auto;overscroll-behavior:contain}
+  .pvw-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:rgba(253,247,245,.96);border-bottom:1px solid var(--line)}
+  .pvw-top span{font-size:12px;letter-spacing:.06em;font-weight:700;color:var(--char)}
+  .pvw-ribbon{margin:16px 20px 0;background:var(--rose-tint);border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:700;color:var(--char);line-height:1.5}
+  .pvw-cover{height:150px;margin:16px 20px 0;border-radius:16px}
+  .pvw-shop{text-align:center;padding:0 24px 8px}
+  .pvw-av{width:72px;height:72px;border-radius:50%;border:4px solid var(--cream);margin:-36px auto 0;position:relative;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-size:30px;font-weight:600}
+  .pvw-shop h2{font-size:34px;font-weight:500;margin-top:8px}
+  .pvw-loc{font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:700}
+  .pvw-shop p{max-width:56ch;margin:10px auto 0;font-size:14px;color:var(--ink-80);line-height:1.65}
+  .pvw-h{font-size:24px;margin:22px 20px 12px}
+  .pvw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:18px;padding:0 20px}
+  .pvw-card{display:flex;flex-direction:column;text-align:left;gap:3px;border-radius:14px;padding:0;background:none}
+  .pvw-img{position:relative;display:block;aspect-ratio:4/5;border-radius:14px;overflow:hidden;margin-bottom:8px}
+  .pvw-img img{position:absolute;inset:0;z-index:1}
+  .pvw-maker{display:flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.05em;font-weight:700;color:var(--ink-80)}
+  .pvw-maker i{width:7px;height:7px;transform:rotate(45deg);border-radius:1px;flex-shrink:0}
+  .pvw-cn{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
+  .pvw-cp{font-size:13.5px;font-weight:700}
+  .pvw-cp s,.pvw-price s{color:var(--muted);font-weight:500}
+  .pvw-note{font-size:12px;color:var(--muted);font-weight:600;margin:12px 20px 0;line-height:1.5}
+  .pvw-info .pvw-note{margin:10px 0 0}
+  .pvw-empty{font-size:13px;color:var(--muted);font-weight:600;margin:10px 20px 0}
+  .pvw-shop .pvw-empty,.pvw-info .pvw-empty{margin:10px 0 0}
+  .pvw-pdp{display:grid;grid-template-columns:1.05fr 1fr;gap:28px;padding:18px 20px 4px}
+  .pvw-main{position:relative;aspect-ratio:4/5;border-radius:16px;overflow:hidden}
+  .pvw-main img{position:absolute;inset:0;z-index:1}
+  .pvw-sale{position:absolute;top:10px;left:10px;z-index:2;background:var(--cream);color:var(--char);font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;padding:4px 9px;border-radius:99px}
+  .pvw-thumbs{display:flex;gap:8px;margin-top:8px}
+  .pvw-thumbs img{width:64px;height:64px;border-radius:10px;object-fit:cover}
+  .pvw-info h2{font-size:34px;font-weight:500;line-height:1.08;margin:6px 0 8px}
+  .pvw-price{font-size:18px;font-weight:700}
+  .pvw-desc{font-size:14px;color:var(--ink-80);line-height:1.65;margin-top:12px}
+  .pvw-opt{margin-top:16px}
+  .pvw-ol{font-size:11.5px;letter-spacing:.05em;font-weight:700;color:var(--muted);margin-bottom:7px}
+  .pvw-chips{display:flex;flex-wrap:wrap;gap:7px}
+  .pvw-chips span{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 14px;font-size:13px;font-weight:600}
+  .pvw-ex{display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;padding:5px 0}
+  .pvw-ex b{margin-left:auto;font-weight:700}
+  .pvw-box{width:16px;height:16px;border:1.5px solid var(--muted);border-radius:4px}
+  .pvw-field{border:1px solid var(--line);background:var(--paper);border-radius:11px;padding:12px 14px;font-size:13.5px;color:var(--muted);font-weight:500}
+  .pvw-stock{font-size:12.5px;font-weight:700;margin-top:16px}
+  .pvw-add{width:100%;justify-content:center;margin-top:12px;opacity:.55;cursor:not-allowed}
+  .pvw-foot{display:flex;gap:10px;flex-wrap:wrap;padding:18px 20px 22px}
+  @media(max-width:700px){.pvw{padding:0;place-items:end stretch}.pvw-card-wrap{width:100%;max-height:94vh;border-radius:20px 20px 0 0}.pvw-pdp{grid-template-columns:1fr;gap:16px}.pvw-grid{grid-template-columns:1fr 1fr;gap:12px}.pvw-shop h2,.pvw-info h2{font-size:28px}}
+
+  /* ---------- skeletons (no stale shop names before the data lands) ---------- */
+  .skel{display:inline-block;min-width:88px;height:.9em;border-radius:6px;background:linear-gradient(90deg,var(--rose-tint) 25%,var(--cream-2) 50%,var(--rose-tint) 75%);background-size:200% 100%;animation:skel 1.2s linear infinite;vertical-align:middle}
+  .skel.sm{min-width:54px}
+  @keyframes skel{to{background-position:-200% 0}}
+
+  /* ---------- phones: a slim brand bar above the tabs ---------- */
+  .mbrand{display:none}
+  @media(max-width:920px){
+    .mbrand{display:flex;align-items:center;gap:12px;padding:12px 24px 4px;background:var(--cream)}
+    .mbrand .mlogo{display:inline-flex;align-items:center;min-height:44px;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
+    .mbrand .mlogo img{height:22px;width:auto;display:block}
+    .mbrand .mshop{margin-left:auto;display:flex;align-items:center;gap:9px;min-width:0;text-align:right}
+    .mbrand .mshop .av{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-size:16px;font-weight:600;flex-shrink:0}
+    .mbrand .mnm{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+    .mbrand .mst{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+  }
+
+  /* ---------- accessibility ---------- */
+  .hint{font-size:11.5px;color:var(--muted);font-weight:500;margin-top:6px;line-height:1.5}
+  :focus-visible{outline:2px solid var(--char);outline-offset:2px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char)!important;outline-offset:1px}
+  .banner :focus-visible,.impbar :focus-visible,.mitem.on:focus-visible{outline-color:var(--cream)}
+  .banner a:focus-visible{outline-offset:1px}
+  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  @media(max-width:920px){
+    .btn,.mtabs .mitem,.ochip,.svc-catopt,.seg button,.impbar button{min-height:44px}
+    .iact,.optg-del{width:44px;height:44px}
+    .pill-st,.price-edit{display:inline-flex;align-items:center;min-height:44px;padding:0 14px}
+    .tagbox .tg button{width:28px;height:28px}
+    .dphotos .ph button{width:28px;height:28px}
+    .side .foot a,.tagsug .lbl a{display:inline-block;padding:12px 4px}
+  }
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 <div class="app">
   <!-- SIDEBAR -->
   <aside class="side">
     <div class="logo"><span class="w serif"><img src="/img/trove-wordmark.svg" alt="trove" style="height:26px;width:auto;display:block" onerror="this.closest('.w').textContent='trove'"></span><span class="t">sellers</span></div>
-    <div class="shop-switch" onclick="go('storefront')">
-      <div class="av" id="sideAv">·</div>
-      <div><div class="nm" id="sideShop"></div><div class="st" id="sideStatus"></div></div>
-      <svg class="ch" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+    <div class="shop-switch" role="button" tabindex="0" aria-label="Storefront settings" onclick="go('storefront')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();go('storefront')}">
+      <div class="av" id="sideAv" aria-hidden="true"></div>
+      <div><div class="nm" id="sideShop"><span class="skel"></span></div><div class="st" id="sideStatus"><span class="skel sm"></span></div></div>
+      <svg class="ch" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
     </div>
-    <nav class="menu">
+    <nav class="menu" aria-label="Dashboard">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
       <a class="mitem" data-v="services" onclick="go('services')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Services<span class="pill" id="svcPill" style="display:none">0</span></a>
@@ -539,12 +623,14 @@
       <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
       <a class="mitem" id="adminPanelLink" style="display:none" href="/admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Super admin ↗</a>
     </nav>
-    <div class="foot">Signed in as <span id="sellerName">…</span> · <a href="/login" id="signOutLink">Sign out</a></div>
+    <div class="foot">Signed in as <span id="sellerName"></span> · <a href="/login" id="signOutLink">Sign out</a></div>
   </aside>
 
   <!-- MAIN -->
   <div class="main">
-    <nav class="mtabs" id="mtabs"></nav>
+    <div class="mbrand" id="mbrand"><a class="mlogo" href="/" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.outerHTML='trove'"></a>
+      <div class="mshop"><div><div class="mnm" id="mShop"><span class="skel"></span></div><div class="mst" id="mStatus"><span class="skel sm"></span></div></div><div class="av" id="mAv" aria-hidden="true"></div></div></div>
+    <nav class="mtabs" id="mtabs" aria-label="Dashboard"></nav>
     <div class="topbar">
       <div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub">Welcome back</div></div>
       <div class="tact" id="topActions"></div>
@@ -555,10 +641,10 @@
       <div class="view active" id="view-overview">
         <div id="ovBanner"></div>
         <div class="grid-4">
-          <div class="card stat"><div class="lbl">Revenue · 30d</div><div class="big" id="stRev">—</div><div class="delta up">▲ 18% vs last month</div></div>
-          <div class="card stat"><div class="lbl">Orders · 30d</div><div class="big" id="stOrders">—</div><div class="delta up">▲ 9 new</div></div>
-          <div class="card stat"><div class="lbl">Live products</div><div class="big" id="stProducts">—</div><div class="delta" style="color:var(--muted)">2 drafts</div></div>
-          <div class="card stat"><div class="lbl">Pending payout</div><div class="big" id="stPayout">—</div><div class="delta" style="color:var(--muted)" id="stPayoutSub">—</div></div>
+          <div class="card stat"><div class="lbl">Revenue · 30d</div><div class="big" id="stRev">—</div><div class="delta"><span class="skel"></span></div></div>
+          <div class="card stat"><div class="lbl">Orders · 30d</div><div class="big" id="stOrders">—</div><div class="delta"><span class="skel sm"></span></div></div>
+          <div class="card stat"><div class="lbl">Live products</div><div class="big" id="stProducts">—</div><div class="delta"><span class="skel sm"></span></div></div>
+          <div class="card stat"><div class="lbl">Pending payout</div><div class="big" id="stPayout">—</div><div class="delta" style="color:var(--muted)" id="stPayoutSub"><span class="skel"></span></div></div>
         </div>
         <div class="ov-row">
           <div class="card chart-card">
@@ -582,7 +668,7 @@
 
       <!-- PRODUCTS -->
       <div class="view" id="view-products">
-        <div class="sec-head"><span class="n"><b id="prodCount">0</b> <span id="prodNoun">products</span> · click any price or stock to edit</span></div>
+        <div class="sec-head"><span class="n"><b id="prodCount">0</b> <span id="prodNoun">products</span> · click any price or stock to edit · you keep <span class="keepPct">60</span>% of each price</span></div>
         <div class="card" style="padding:6px 0">
           <table class="tbl" id="prodTable"></table>
         </div>
@@ -661,16 +747,17 @@
             <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area — where the courier collects your parcels"></div>
             <div class="field"><label>Pickup phone (courier only)</label><input id="sfPickupTel" placeholder="05X XXX XXXX — the number the driver calls" inputmode="tel"></div>
             <div class="field"><label>About</label><textarea id="sfBio"></textarea></div>
-            <div class="field"><label>Shop accent</label><div class="color-row" id="sfColors"></div></div>
+            <div class="field"><label id="sfColorsLbl">Shop accent</label><div class="color-row" id="sfColors" role="radiogroup" aria-labelledby="sfColorsLbl"></div></div>
             <button class="btn btn-dark" onclick="saveStore()" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save changes</button>
           </div>
           <div class="preview">
             <div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:12px">Storefront preview</div>
             <div class="pv-card">
               <div class="pv-cover"><div class="grad" id="pvCover"></div></div>
-              <div class="pv-av" id="pvAv">K</div>
-              <div class="pv-body"><h3 id="pvName">Kiln &amp; Clay</h3><div class="loc" id="pvLoc">Lisbon, Portugal</div><p id="pvBio"></p></div>
+              <div class="pv-av" id="pvAv"></div>
+              <div class="pv-body"><h3 id="pvName"></h3><div class="loc" id="pvLoc"></div><p id="pvBio"></p></div>
             </div>
+            <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="openPreview('shop')">Preview your whole shop</button>
           </div>
         </div>
       </div>
@@ -683,10 +770,10 @@
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
 
 <!-- shop-photo cropper -->
-<div class="crop-modal" id="cropModal">
+<div class="crop-modal" id="cropModal" role="dialog" aria-modal="true" aria-labelledby="cmTitle" aria-hidden="true">
   <div class="cm-back" onclick="closeCrop()"></div>
   <div class="cm-card">
-    <h3 class="serif">Frame your shop photo</h3>
+    <h3 class="serif" id="cmTitle">Frame your shop photo</h3>
     <div class="cm-sub">Drag to position, slide to zoom — this framing shows on your shop page, cards and avatar.</div>
     <div class="cm-stage" id="cmStage"><canvas id="cmCanvas"></canvas><div class="cm-grid"></div></div>
     <div class="cm-zoom"><label for="cmZoom">Zoom</label><input type="range" id="cmZoom" min="100" max="300" value="100"></div>
@@ -696,9 +783,16 @@
     </div>
   </div>
 </div>
-<aside class="drawer" id="drawer">
+<div class="pvw" id="pvwModal" role="dialog" aria-modal="true" aria-labelledby="pvwTitle" aria-hidden="true">
+  <div class="pvw-back" onclick="closePreview()"></div>
+  <div class="pvw-card-wrap">
+    <div class="pvw-top"><span>Shopper preview</span><button type="button" class="iact" id="pvwClose" aria-label="Close preview" onclick="closePreview()"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div>
+    <div id="pvwBody"></div>
+  </div>
+</div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawerTitle" aria-hidden="true">
   <div class="dhead"><div><h3 id="drawerTitle">Add product</h3><div class="dsub" id="drawerSub">Takes about a minute — you can always save it as a draft.</div></div>
-    <button class="iact" onclick="closeDrawer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    <button class="iact" aria-label="Close" onclick="closeDrawer()"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="dbody">
     <div class="dprev-card">
@@ -717,9 +811,9 @@
         <div class="ferr"></div></div>
       <div class="field"><label for="dDesc">Description</label><textarea id="dDesc" placeholder="e.g. Hand-thrown in our Al Quoz studio, satin glaze, holds 300 ml."></textarea>
         <div class="hint">What it's made of, how big it is, what makes it special — two or three sentences is plenty.</div></div>
-      <div class="field"><label>Photos</label>
-        <div class="dphotos" id="dPhotos"></div>
-        <input type="file" id="dPhotoFile" accept="image/*" multiple style="display:none" onchange="prodAddFiles(this.files)">
+      <div class="field"><label id="dPhotosLbl">Photos</label>
+        <div class="dphotos" id="dPhotos" role="group" aria-labelledby="dPhotosLbl"></div>
+        <input type="file" id="dPhotoFile" accept="image/*" multiple style="display:none" aria-hidden="true" tabindex="-1" onchange="prodAddFiles(this.files)">
         <div class="hint">Up to 4 — the first one is the cover shoppers see. Bright, simple, true to colour. Without photos the piece shows a brand-pattern tile.</div></div>
       <div class="field" style="margin-bottom:4px"><label for="dCat">Category</label><select id="dCat" onchange="updateDrawerPreview()"><option>Home &amp; Living</option><option>Wall Art &amp; Prints</option><option>Ceramics</option><option>Stationery</option><option>Jewellery</option><option>Personalised Gifts</option><option>Children's</option><option>Pet Accessories</option><option>Wellness &amp; Self-Care</option><option>Accessories</option><option>Seasonal</option><option>Handmade Crafts</option></select></div>
     </div>
@@ -727,13 +821,13 @@
     <div class="dsec">
       <div class="dsec-h"><span class="n">2</span><h4>Help shoppers find it</h4></div>
       <div class="field" style="margin-bottom:4px"><label>Tags</label>
-        <div class="tagbox" id="dTagBox" onclick="$('dTagIn').focus()"><input id="dTagIn" placeholder="Type a tag, press Enter"></div>
+        <div class="tagbox" id="dTagBox" onclick="$('dTagIn').focus()"><input id="dTagIn" aria-label="Add a tag" placeholder="Type a tag, press Enter"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px">
           <div class="hint" style="margin:0">Up to 12 — materials, style, what it's for. They power search.</div>
           <button class="btn btn-ghost btn-sm" id="dTagAI" style="display:none;white-space:nowrap" onclick="aiSuggestTags()">✨ Write tags for me</button>
         </div>
         <div class="tagsug" id="dTagSug">
-          <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a onclick="addAllSuggested()">Add all</a><a onclick="dismissSuggestions()">Dismiss</a></div>
+          <div class="lbl">Claude suggests — tap to add<span style="flex:1"></span><a href="#" role="button" onclick="addAllSuggested();return false">Add all</a><a href="#" role="button" onclick="dismissSuggestions();return false">Dismiss</a></div>
           <div class="chips" id="dTagSugChips"></div>
         </div>
       </div>
@@ -750,7 +844,7 @@
       <div class="hint" style="margin:-10px 0 18px">Fill the was-price only for a genuine markdown — it shows crossed out next to your price, with a Sale badge.</div>
       <div class="field" id="dStockField"><label for="dStock">Stock</label><input id="dStock" type="number" min="0" placeholder="0">
         <div class="hint">How many you can sell right now — 0 shows as sold out. Adding choices below moves this to a count per combination.</div></div>
-      <div class="dfee">Trove buys at your list price minus <span id="dFeePct">20</span>%.&nbsp;On a AED <span id="dFeeBase">0</span> item your purchase price is&nbsp;<b>AED <span id="dFeeKeep">0</span></b>.</div>
+      <div class="dfee" id="dFee" aria-live="polite"><span class="keep">You keep <span class="keepPct">60</span>% · AED <span id="dFeeKeep">0</span></span>Trove buys the piece from you at your price minus <span id="dFeePct">40</span>% — on a AED <span id="dFeeBase">0</span> price that is AED <span id="dFeeKeep2">0</span> to you. Trove's 40% pays for photography, marketing, delivery and payments.</div>
     </div>
 
     <div class="dsec">
@@ -761,8 +855,8 @@
           <div class="field"><label for="dPersoPrompt">What should the buyer tell you?</label><input id="dPersoPrompt" placeholder="e.g. Initials to stamp on the base (up to 3 letters)"></div>
           <div class="ftwo">
             <div class="field" style="margin-bottom:0"><label for="dPersoLimit">Max characters</label><input id="dPersoLimit" type="number" placeholder="256"></div>
-            <div class="field" style="margin-bottom:0"><label>Buyer must fill it in?</label>
-              <div class="seg" id="dPersoReq"><button data-r="0" class="on" onclick="setPersoReq(this)">Optional</button><button data-r="1" onclick="setPersoReq(this)">Required</button></div>
+            <div class="field" style="margin-bottom:0"><label id="dPersoReqLbl">Buyer must fill it in?</label>
+              <div class="seg" id="dPersoReq" role="group" aria-labelledby="dPersoReqLbl"><button type="button" data-r="0" class="on" aria-pressed="true" onclick="setPersoReq(this)">Optional</button><button type="button" data-r="1" aria-pressed="false" onclick="setPersoReq(this)">Required</button></div>
             </div>
           </div>
         </div>
@@ -778,8 +872,8 @@
         <button class="btn btn-ghost btn-sm" type="button" id="dExtraAdd" onclick="addExtra()">+ Add an extra</button>
         <div class="hint">Optional add-ons with their own price — gift wrap, a gift box, hand-engraving. Buyers tick the ones they'd like and the price is added on top. Leave the price at 0 for a free extra.</div>
       </div>
-      <div class="field" style="margin:18px 0 0"><label>Visibility</label>
-        <div class="seg" id="dStatusSeg"><button data-s="live" class="on" onclick="setSeg(this)">Live</button><button data-s="draft" onclick="setSeg(this)">Draft</button></div>
+      <div class="field" style="margin:18px 0 0"><label id="dStatusLbl">Visibility</label>
+        <div class="seg" id="dStatusSeg" role="group" aria-labelledby="dStatusLbl"><button type="button" data-s="live" class="on" aria-pressed="true" onclick="setSeg(this)">Live</button><button type="button" data-s="draft" aria-pressed="false" onclick="setSeg(this)">Draft</button></div>
         <div class="hint" id="dStatusHint">Shoppers can see and buy it as soon as you save.</div>
       </div>
     </div>
@@ -814,15 +908,65 @@ let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',payoutT
 let products=[];
 let orders=[];
 let ME=null;
-let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[],schedule:'Every other Tuesday',nextRunDate:null,returnWindowDays:15};
+let SETTLE={tier:'consignment',commissionPercent:40,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[],schedule:'Every other Tuesday',nextRunDate:null,returnWindowDays:15};
 /* The return window and the fortnightly calendar come from the server (fees.js) — never hard-coded here. */
 const retDays=()=>Number(SETTLE.returnWindowDays)||15;
 function runDayLabel(d){ const t=new Date(String(d)+'T00:00:00Z'); return isNaN(t)?String(d):t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}); }
-const feePct=()=>SETTLE.commissionPercent||20;
+const feePct=()=>SETTLE.commissionPercent||40;
 let editingId=null, drawerStatus='live', drawerDirty=false;
 
 /* ---------------- HELPERS ---------------- */
 const $=id=>document.getElementById(id);
+/* ---------------- ACCESSIBILITY HELPERS ----------------
+ * Modal: role=dialog surfaces (product drawer, photo cropper, preview) move
+ * focus in, keep Tab inside, close on Esc and hand focus back to whatever
+ * opened them. autoLabel: a visible <label> next to its control becomes its
+ * programmatic label, including in the rows the dashboard renders later. */
+const Modal=(()=>{
+  const stack=[];
+  const SEL='a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+  const focusables=el=>[...el.querySelectorAll(SEL)].filter(n=>n.getClientRects().length&&getComputedStyle(n).visibility!=='hidden');
+  document.addEventListener('keydown',e=>{
+    const top=stack[stack.length-1]; if(!top)return;
+    if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();top.onEsc();return;}
+    if(e.key!=='Tab')return;
+    const f=focusables(top.el); if(!f.length){e.preventDefault();return;}
+    const first=f[0], last=f[f.length-1], a=document.activeElement;
+    if(!top.el.contains(a)){e.preventDefault();(e.shiftKey?last:first).focus();}
+    else if(e.shiftKey&&a===first){e.preventDefault();last.focus();}
+    else if(!e.shiftKey&&a===last){e.preventDefault();first.focus();}
+  },true);
+  return {
+    open(el,onEsc,focusEl){
+      if(stack.some(s=>s.el===el))return;
+      stack.push({el,onEsc,ret:document.activeElement});
+      el.removeAttribute('aria-hidden');
+      setTimeout(()=>{const t=focusEl||focusables(el)[0];if(t)t.focus({preventScroll:true});},60);
+    },
+    close(el){
+      const i=stack.findIndex(s=>s.el===el); if(i<0)return;
+      const [s]=stack.splice(i,1); el.setAttribute('aria-hidden','true');
+      if(s.ret&&s.ret.focus&&document.contains(s.ret))s.ret.focus({preventScroll:true});
+    },
+  };
+})();
+function autoLabel(){
+  document.querySelectorAll('label:not([for])').forEach(l=>{
+    if(l.querySelector('input,select,textarea'))return;
+    const nx=l.nextElementSibling; if(!nx)return;
+    let c=nx.matches('input,select,textarea')?nx:null;
+    if(!c){const inner=nx.querySelectorAll('input:not([type=hidden]),select,textarea');if(inner.length===1)c=inner[0];}
+    if(!c||c.type==='file'&&c.style.display==='none')return;
+    if(!c.id)c.id='fld-'+Math.random().toString(36).slice(2,9);
+    l.htmlFor=c.id;
+  });
+}
+new MutationObserver(autoLabel).observe(document.body,{childList:true,subtree:true});
+autoLabel();
+/* menu items are links, so they are reachable with Tab; the inline onclick does the routing */
+document.querySelectorAll('.mitem[data-v]:not([href])').forEach(a=>a.setAttribute('href','#'+a.dataset.v));
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a.mitem[href^="#"]');if(a)e.preventDefault();});
+
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
 function grad(c){return `background:linear-gradient(150deg, ${shade(c,14)}, ${c} 55%, ${shade(c,-14)})`;}
 /* Interim brand-motif product tiles until real photography lands (matches the storefront's generator). */
@@ -878,10 +1022,11 @@ function applyShop(s){
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''}};
   storeColor=SHOP.color;
-  $('sideShop').textContent=SHOP.name;
-  if(SHOP.image){$('sideAv').style.background=`center/cover no-repeat url("${SHOP.image}")`;$('sideAv').textContent='';}
-  else{$('sideAv').textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();$('sideAv').style.background=SHOP.color;}
-  $('sideStatus').textContent=shopStatusLabel();
+  $('sideShop').textContent=SHOP.name; $('mShop').textContent=SHOP.name;
+  ['sideAv','mAv'].forEach(id=>{const el=$(id); if(SHOP.image){el.style.background=`center/cover no-repeat url("${SHOP.image}")`;el.textContent='';}
+    else{el.textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();el.style.background=SHOP.color;}});
+  $('sideStatus').textContent=shopStatusLabel(); $('mStatus').textContent=shopStatusLabel();
+  document.querySelectorAll('.keepPct').forEach(el=>el.textContent=100-feePct());
   fillCatOptions();
 }
 /* Brand taxonomy — the house line and the marketplace list their own categories. */
@@ -991,21 +1136,22 @@ function renderProducts(){
       <td><div class="prod-cell"><div class="th"><div style="position:absolute;inset:0;${grad(SHOP.color)}"></div><img src="${esc(safeImg(p.images&&p.images[0])||img(p.seed))}" onerror="this.style.display='none'"></div>
         <div><div class="pn">${esc(p.name)}</div><div class="ps">${Number(p.stock)||0} in stock</div></div></div></td>
       <td style="color:var(--muted);font-weight:600">${esc(p.cat)}</td>
-      <td><span class="price-edit" onclick="editPrice(${p.id},this)">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
+      <td><span class="price-edit" role="button" tabindex="0" aria-label="Price ${aed(p.price)} — edit" onclick="editPrice(${p.id},this)" onkeydown="if(event.key==='Enter'){event.preventDefault();editPrice(${p.id},this)}">${p.compare?`<s>${aed(p.compare)}</s>`:''}${aed(p.price)}<svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></td>
       <td>${(p.options||[]).length
         ? `<span class="ps" title="Stock is kept per combination">${Number(p.stock)||0} across ${p.variants.length} choice${p.variants.length===1?'':'s'}</span>`
-        : `<input class="stock-input" type="number" value="${Number(p.stock)||0}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
+        : `<input class="stock-input" type="number" aria-label="Stock for ${esc(p.name)}" value="${Number(p.stock)||0}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?' <span style="color:var(--accent-ink);font-size:11px;font-weight:700">Out</span>':''}</td>
       <td>${p.adminHidden
         ? `<span class="pill-st hidden" style="cursor:help" title="Trove has taken this piece off sale. Contact us to put it back." onclick="toast('Hidden by Trove — contact us to put it back on sale')">Hidden by Trove — contact us</span>`
-        : `<span class="pill-st ${esc(p.status)}" onclick="cycleStatus(${p.id})"${waiting&&p.status==='live'?' title="Goes on sale once your shop is approved"':''}>${waiting&&p.status==='live'?'ready':esc(p.status)}</span>`}</td>
+        : `<span class="pill-st ${esc(p.status)}" role="button" tabindex="0" aria-label="Status ${esc(p.status)} — change" onkeydown="if(event.key==='Enter'){event.preventDefault();cycleStatus(${p.id})}" onclick="cycleStatus(${p.id})"${waiting&&p.status==='live'?' title="Goes on sale once your shop is approved"':''}>${waiting&&p.status==='live'?'ready':esc(p.status)}</span>`}</td>
       <td><div class="rowact">
-        <button class="iact" title="Edit" onclick="openEdit(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
-        <button class="iact del" title="Delete" onclick="delProduct(${p.id})"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+        <button class="iact" title="Preview" aria-label="Preview ${esc(p.name)} as shoppers see it" onclick="openPreview('piece',${p.id})"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
+        <button class="iact" title="Edit" aria-label="Edit ${esc(p.name)}" onclick="openEdit(${p.id})"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="iact del" title="Delete" aria-label="Delete ${esc(p.name)}" onclick="delProduct(${p.id})"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
       </div></td></tr>`).join('')}</tbody>`;
 }
 function editPrice(id,el){
   const p=products.find(x=>x.id===id);
-  el.outerHTML=`<input class="price-input" id="pe${id}" type="number" value="${p.price}" autofocus
+  el.outerHTML=`<input class="price-input" id="pe${id}" type="number" aria-label="Price in AED" value="${p.price}" autofocus
     onblur="savePrice(${id},this.value)" onkeydown="if(event.key==='Enter')this.blur()">`;
   setTimeout(()=>{const i=$('pe'+id);if(i){i.focus();i.select();}},10);
 }
@@ -1035,7 +1181,7 @@ function renderDrawerTags(){
   drawerTags.forEach((t,i)=>{
     const chip=document.createElement('span');chip.className='tg';
     chip.appendChild(document.createTextNode(t));
-    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';x.setAttribute('aria-label','Remove tag '+t);
     x.onclick=(e)=>{e.stopPropagation();drawerTags.splice(i,1);renderDrawerTags();};
     chip.appendChild(x);box.insertBefore(chip,input);
   });
@@ -1099,23 +1245,23 @@ function renderDrawerOptions(){
 
     const top=document.createElement('div');top.className='optg-top';
     const name=document.createElement('input');
-    name.placeholder='Name it — e.g. Colour, Size, Glaze';
+    name.placeholder='Name it — e.g. Colour, Size, Glaze';name.setAttribute('aria-label','Choice name');
     name.value=g.name;
     // Renaming a group re-keys its combinations, so the grid follows along
     // (without re-rendering these cards, which would steal focus mid-word).
     name.oninput=()=>{g.name=name.value.slice(0,24);drawerDirty=true;syncDrawerVariants();};
-    const del=document.createElement('button');del.type='button';del.className='optg-del';del.textContent='×';del.title='Remove this choice';
+    const del=document.createElement('button');del.type='button';del.className='optg-del';del.textContent='×';del.title='Remove this choice';del.setAttribute('aria-label','Remove this choice');
     del.onclick=()=>{drawerOptions.splice(gi,1);renderDrawerOptions();};
     top.appendChild(name);top.appendChild(del);
     card.appendChild(top);
 
     const box=document.createElement('div');box.className='tagbox';
     const input=document.createElement('input');
-    input.placeholder=g.values.length?'Add another…':'Type a choice, press Enter';
+    input.placeholder=g.values.length?'Add another…':'Type a choice, press Enter';input.setAttribute('aria-label','Add a value for '+(g.name||'this choice'));
     g.values.forEach((v,vi)=>{
       const chip=document.createElement('span');chip.className='tg';
       chip.appendChild(document.createTextNode(v));
-      const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+      const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';x.setAttribute('aria-label','Remove '+v);
       x.onclick=(e)=>{e.stopPropagation();g.values.splice(vi,1);renderDrawerOptions();};
       chip.appendChild(x);box.appendChild(chip);
     });
@@ -1194,8 +1340,8 @@ function renderDrawerVariants(){
         const out=!(parseInt(v.stock)||0);
         return `<tr class="${out?'out':''}">
           <td class="vc">${esc(v.options.map(o=>o.value).join(' · '))}${out?'<span class="vout">SOLD OUT</span>':''}</td>
-          <td><input type="number" min="0" value="${parseInt(v.stock)||0}" onchange="setVariantStock(${i},this.value)"></td>
-          <td><input type="number" min="0" value="${v.priceCents?v.priceCents/100:''}" placeholder="${$('dPrice').value||'—'}" onchange="setVariantPrice(${i},this.value)"></td>
+          <td><input type="number" min="0" aria-label="Stock for ${esc(v.options.map(o=>o.value).join(' · '))}" value="${parseInt(v.stock)||0}" onchange="setVariantStock(${i},this.value)"></td>
+          <td><input type="number" min="0" aria-label="Price in AED for ${esc(v.options.map(o=>o.value).join(' · '))}" value="${v.priceCents?v.priceCents/100:''}" placeholder="${$('dPrice').value||'—'}" onchange="setVariantPrice(${i},this.value)"></td>
         </tr>`;}).join('')}</tbody>
     </table><div class="vtot"><span>Total stock</span><span>${total}</span></div></div>`;
 }
@@ -1214,14 +1360,14 @@ function renderDrawerPhotos(){
   const w=$('dPhotos');w.innerHTML='';
   drawerImages.forEach((u,i)=>{
     const d=document.createElement('div');d.className='ph';
-    const im=document.createElement('img');im.src=u;d.appendChild(im);
+    const im=document.createElement('img');im.src=u;im.alt=i===0?'Cover photo':'Photo '+(i+1);d.appendChild(im);
     if(i===0){const c=document.createElement('span');c.className='cover';c.textContent='COVER';d.appendChild(c);}
-    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';
+    const x=document.createElement('button');x.type='button';x.textContent='×';x.title='Remove';x.setAttribute('aria-label','Remove photo '+(i+1));
     x.onclick=()=>{drawerImages.splice(i,1);drawerDirty=true;renderDrawerPhotos();updateDrawerPreview();};
     d.appendChild(x);w.appendChild(d);
   });
   if(drawerImages.length<4){
-    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';
+    const b=document.createElement('button');b.type='button';b.className='addph';b.textContent='+';b.title='Add a photo';b.setAttribute('aria-label','Add a photo');
     b.onclick=()=>$('dPhotoFile').click();w.appendChild(b);
   }
 }
@@ -1245,9 +1391,9 @@ function prodAddFiles(files){
 let drawerExtras=[];
 function renderDrawerExtras(){
   $('dExtras').innerHTML=drawerExtras.map((e,i)=>`<div class="exrow">
-    <input class="exname" placeholder="e.g. Gift wrap" value="${esc(e.name)}" onchange="setExtraName(${i},this.value)">
-    <div class="mny"><input type="number" min="0" placeholder="0" value="${e.priceCents?e.priceCents/100:''}" onchange="setExtraPrice(${i},this.value)"></div>
-    <button type="button" class="optg-del" onclick="delExtra(${i})" title="Remove this extra">×</button>
+    <input class="exname" aria-label="Extra ${i+1} name" placeholder="e.g. Gift wrap" value="${esc(e.name)}" onchange="setExtraName(${i},this.value)">
+    <div class="mny"><input type="number" min="0" aria-label="Extra ${i+1} price in AED" placeholder="0" value="${e.priceCents?e.priceCents/100:''}" onchange="setExtraPrice(${i},this.value)"></div>
+    <button type="button" class="optg-del" onclick="delExtra(${i})" title="Remove this extra" aria-label="Remove extra ${i+1}">×</button>
   </div>`).join('');
   $('dExtraAdd').style.display=drawerExtras.length>=6?'none':'';
 }
@@ -1261,8 +1407,8 @@ function drawerExtrasPayload(){return drawerExtras.map(e=>({name:String(e.name||
 
 /* drawer */
 function togglePerso(){$('dPersoFields').style.display=$('dPerso').checked?'block':'none';}
-function setPersoReq(btn){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
-function setPersoReqVal(r){document.querySelectorAll('#dPersoReq button').forEach(b=>b.classList.toggle('on',b.dataset.r===String(r?1:0)));}
+function setPersoReq(btn){document.querySelectorAll('#dPersoReq button').forEach(b=>{b.classList.toggle('on',b===btn);b.setAttribute('aria-pressed',String(b===btn));});}
+function setPersoReqVal(r){document.querySelectorAll('#dPersoReq button').forEach(b=>{const on=b.dataset.r===String(r?1:0);b.classList.toggle('on',on);b.setAttribute('aria-pressed',String(on));});}
 function fillPerso(per){const on=!!(per&&per.enabled);$('dPerso').checked=on;togglePerso();
   $('dPersoPrompt').value=per?per.prompt||'':'';$('dPersoLimit').value=per&&per.maxLen?per.maxLen:'';setPersoReqVal(per?per.required:0);}
 function readPerso(){return {enabled:$('dPerso').checked,required:document.querySelector('#dPersoReq button.on').dataset.r==='1',
@@ -1305,9 +1451,9 @@ function openEdit(id){const p=products.find(x=>x.id===id);editingId=id;
   fillPerso(p.perso);setSegStatus(p.status==='hidden'?'live':p.status);updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
 const STATUS_HINT={live:'Shoppers can see and buy it as soon as you save.',draft:'Only you can see it — finish it and go live whenever you like.'};
 const statusHint=s=>s==='live'&&SHOP.status!=='approved'?'Your shop is under review — it goes on sale the moment your shop is approved.':STATUS_HINT[s];
-function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');drawerStatus=btn.dataset.s;$('dStatusHint').textContent=statusHint(drawerStatus);drawerDirty=true;}
-function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));drawerStatus=s;$('dStatusHint').textContent=statusHint(s);}
-function updateFee(){const v=parseFloat($('dPrice').value)||0;$('dFeePct').textContent=feePct();$('dFeeBase').textContent=v;$('dFeeKeep').textContent=Math.round(v*(1-feePct()/100));}
+function setSeg(btn){document.querySelectorAll('#dStatusSeg button').forEach(b=>{b.classList.toggle('on',b===btn);b.setAttribute('aria-pressed',String(b===btn));});drawerStatus=btn.dataset.s;$('dStatusHint').textContent=statusHint(drawerStatus);drawerDirty=true;}
+function setSegStatus(s){document.querySelectorAll('#dStatusSeg button').forEach(b=>{b.classList.toggle('on',b.dataset.s===s);b.setAttribute('aria-pressed',String(b.dataset.s===s));});drawerStatus=s;$('dStatusHint').textContent=statusHint(s);}
+function updateFee(){const v=parseFloat($('dPrice').value)||0,keep=Math.round(v*(1-feePct()/100)*100)/100;$('dFeePct').textContent=feePct();$('dFeeBase').textContent=v.toLocaleString('en-GB');$('dFeeKeep').textContent=keep.toLocaleString('en-GB');$('dFeeKeep2').textContent=keep.toLocaleString('en-GB');document.querySelectorAll('.keepPct').forEach(el=>el.textContent=100-feePct());}
 $('dPrice').addEventListener('input',()=>{updateFee();updateDrawerPreview();});
 $('dCompare').addEventListener('input',updateDrawerPreview);
 $('dName').addEventListener('input',updateDrawerPreview);
@@ -1343,14 +1489,13 @@ $('drawerSave').onclick=async()=>{
   }catch(e){ toast(e.message||'Could not save product'); }
   finally{ btn.disabled=false;btn.textContent=was; }
 };
-function showDiscard(){$('dFoot').classList.add('confirming');}
+function showDiscard(){$('dFoot').classList.add('confirming');setTimeout(()=>{const k=$('dFoot').querySelector('.dconfirm .btn');if(k)k.focus();},30);}
 function hideDiscard(){$('dFoot').classList.remove('confirming');}
-function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';}
+function openDrawer(){$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';Modal.open($('drawer'),()=>closeDrawer(),$('dName'));}
 function closeDrawer(force){
   if(!force&&drawerDirty){showDiscard();return;}   // don't silently lose typed work
   hideDiscard();drawerDirty=false;
-  $('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';}
-document.addEventListener('keydown',(e)=>{if(e.key==='Escape'&&$('drawer').classList.contains('open')&&!$('cropModal').classList.contains('open'))closeDrawer();});
+  $('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';Modal.close($('drawer'));}
 
 /* ---------------- ORDERS — per-shop shipments you fulfil & track ---------------- */
 const SHIP_NEXT={processing:['shipped','Mark as shipped'],shipped:['out_for_delivery','Out for delivery'],out_for_delivery:['delivered','Mark as delivered']};
@@ -1557,7 +1702,7 @@ function renderAnalytics(){
         : `<div class="an-chart"><div class="an-bars">${bars}</div><div class="an-axis">${axis}</div></div>`}
     </div>
     <div class="an-two">
-      <div class="card"><h3 style="font-size:22px;font-weight:600;margin-bottom:18px">Looking to buying</h3>${funnel}</div>
+      <div class="card"><h3 style="font-size:22px;font-weight:600;margin-bottom:18px">From looking to buying</h3>${funnel}</div>
       <div class="card"><h3 style="font-size:22px;font-weight:600;margin-bottom:14px">Where views came from</h3>${sources}</div>
     </div>
     <div class="card" style="margin-top:18px;padding:0">
@@ -2005,7 +2150,7 @@ async function connectStripe(){
 const PALETTE=['#BD9C8C','#DBC7BD','#CAD5CC','#BED3DF','#FCC998','#F8D7E4','#292727'];
 let storeColor=SHOP.color;
 function renderStore(){
-  $('sfColors').innerHTML=PALETTE.map(c=>`<div class="csw ${c===storeColor?'on':''}" style="background:${c}" onclick="storeColor='${c}';renderStore();updatePreview()"></div>`).join('');
+  $('sfColors').innerHTML=PALETTE.map(c=>`<div class="csw ${c===storeColor?'on':''}" role="radio" tabindex="0" aria-checked="${c===storeColor}" aria-label="Accent ${c}" style="background:${c}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="storeColor='${c}';renderStore();updatePreview()"></div>`).join('');
   updatePreview();
 }
 // A tile shows the shop photo when there is one, else the accent colour + initial.
@@ -2045,13 +2190,13 @@ function startCrop(src){
   const im=new Image();
   im.onload=()=>{
     CROP.img=im;CROP.zoom=1;CROP.ox=0;CROP.oy=0;$('cmZoom').value=100;
-    $('cropModal').classList.add('open');document.body.style.overflow='hidden';
+    $('cropModal').classList.add('open');document.body.style.overflow='hidden';Modal.open($('cropModal'),closeCrop,$('cmZoom'));
     requestAnimationFrame(()=>{sizeCropCanvas();drawCrop();});
   };
   im.onerror=()=>toast('That file could not be read as an image');
   im.src=src;
 }
-function closeCrop(){CROP.img=null;$('cropModal').classList.remove('open');document.body.style.overflow='';}
+function closeCrop(){CROP.img=null;$('cropModal').classList.remove('open');document.body.style.overflow='';Modal.close($('cropModal'));}
 function sizeCropCanvas(){
   const w=$('cmStage').getBoundingClientRect().width, dpr=window.devicePixelRatio||1;
   const cv=$('cmCanvas');cv.width=Math.round(w*dpr);cv.height=Math.round(w*10/16*dpr);
@@ -2094,7 +2239,6 @@ $('cmZoom').addEventListener('input',e=>{
   const end=()=>{drag=null;st.classList.remove('dragging');};
   st.addEventListener('pointerup',end);st.addEventListener('pointercancel',end);
   window.addEventListener('resize',()=>{if($('cropModal').classList.contains('open')){sizeCropCanvas();drawCrop();}});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('cropModal').classList.contains('open'))closeCrop();});
 })();
 async function applyCrop(){
   if(!CROP.img)return;
@@ -2121,6 +2265,77 @@ async function saveStore(){
   catch(e){ toast(e.message||'Could not save'); }
 }
 
+
+/* ---------------- PREVIEW — the shop and its pieces as shoppers will see them ----------------
+ * Built from the dashboard's own data (SHOP + products), never from the public
+ * storefront, so a maker still under review can check photos, choices and
+ * prices before anything is public. Read-only: nothing here can be bought. */
+let PV_BACK=null;
+function pvRibbon(piece){
+  if(SHOP.status!=='approved')return 'Preview — not public yet. Your shop and its live pieces appear the moment Trove approves your shop.';
+  if(piece&&piece.adminHidden)return 'Preview — Trove has taken this piece off sale. Contact us to put it back.';
+  if(piece&&piece.status!=='live')return `Preview — this piece is a ${esc(piece.status)}, so only you can see it.`;
+  return 'Preview — this is how shoppers see it.';
+}
+function pvThumb(p){ return safeImg(p.images&&p.images[0])||img(p.seed); }
+function pvShopHTML(){
+  const shown=products.filter(p=>p.status==='live'&&!p.adminHidden);
+  const cover=SHOP.image?`background:center/cover no-repeat url("${SHOP.image}")`:grad(SHOP.color);
+  const av=SHOP.image?`background:center/cover no-repeat url("${SHOP.image}")`:`background:${SHOP.color}`;
+  const cards=shown.map(p=>`<button type="button" class="pvw-card" onclick="openPreview('piece',${Number(p.id)})" aria-label="Preview ${esc(p.name)}">
+      <span class="pvw-img"><span style="position:absolute;inset:0;${grad(SHOP.color)}"></span><img src="${esc(pvThumb(p))}" alt="" onerror="this.style.display='none'"></span>
+      <span class="pvw-maker"><i aria-hidden="true" style="background:${SHOP.color}"></i>${esc(SHOP.name)}</span>
+      <span class="pvw-cn">${esc(p.name)}</span>
+      <span class="pvw-cp">${p.compare?`<s>${aed(p.compare)}</s> `:''}${aed(p.price)}</span>
+    </button>`).join('');
+  const hidden=products.length-shown.length;
+  return `<div class="pvw-ribbon">${pvRibbon(null)}</div>
+    <div class="pvw-cover" style="${cover}"></div>
+    <div class="pvw-shop"><div class="pvw-av" style="${av}">${SHOP.image?'':esc(((SHOP.name||'?').trim()[0]||'?').toUpperCase())}</div>
+      <h2 id="pvwTitle">${esc(SHOP.name)}</h2><div class="pvw-loc">${esc(SHOP.loc||'')}</div>
+      ${SHOP.bio?`<p>${esc(SHOP.bio)}</p>`:'<p class="pvw-empty">Add a few words about your shop in Storefront — shoppers read this first.</p>'}</div>
+    <h3 class="pvw-h">Pieces by ${esc(SHOP.name)}</h3>
+    ${shown.length?`<div class="pvw-grid">${cards}</div>`:'<p class="pvw-empty">No live pieces yet. Set a piece to Live in Products and it shows here.</p>'}
+    ${hidden?`<p class="pvw-note">${hidden} draft or hidden piece${hidden===1?' is':'s are'} left out — shoppers never see them. You can still preview ${hidden===1?'it':'them'} from Products.</p>`:''}`;
+}
+function pvPieceHTML(p){
+  const imgs=(p.images||[]).map(safeImg).filter(Boolean);
+  const main=imgs[0]||img(p.seed);
+  const sale=p.compare&&p.compare>p.price;
+  const vPrices=(p.variants||[]).map(v=>v.priceCents).filter(c=>c!=null);
+  const opts=(p.options||[]).map(g=>`<div class="pvw-opt"><div class="pvw-ol">${esc(g.name)}</div><div class="pvw-chips">${(g.values||[]).map(v=>`<span>${esc(v)}</span>`).join('')}</div></div>`).join('');
+  const extras=(p.extras||[]).length?`<div class="pvw-opt"><div class="pvw-ol">Extras</div>${p.extras.map(e=>`<div class="pvw-ex"><span class="pvw-box" aria-hidden="true"></span>${esc(e.name)}<b>${e.priceCents?'+'+money(e.priceCents):'Free'}</b></div>`).join('')}</div>`:'';
+  const perso=p.perso&&p.perso.enabled?`<div class="pvw-opt"><div class="pvw-ol">Personalisation${p.perso.required?'':' · optional'}</div><div class="pvw-field">${esc(p.perso.prompt||'Add your personal touch')}</div></div>`:'';
+  const stock=Number(p.stock)||0;
+  return `<div class="pvw-ribbon">${pvRibbon(p)}</div>
+    <div class="pvw-pdp">
+      <div class="pvw-gal"><div class="pvw-main"><span style="position:absolute;inset:0;${grad(SHOP.color)}"></span><img src="${esc(main)}" alt="" onerror="this.style.display='none'">${sale?'<span class="pvw-sale">Sale</span>':''}</div>
+        ${imgs.length>1?`<div class="pvw-thumbs">${imgs.map(u=>`<img src="${esc(u)}" alt="">`).join('')}</div>`:''}</div>
+      <div class="pvw-info">
+        <div class="pvw-maker"><i aria-hidden="true" style="background:${SHOP.color}"></i>${esc(SHOP.name)}</div>
+        <h2 id="pvwTitle">${esc(p.name)}</h2>
+        <div class="pvw-price">${aed(p.price)}${sale?` <s>${aed(p.compare)}</s>`:''}</div>
+        ${vPrices.length?'<div class="pvw-note" style="margin-top:4px">Some choices carry their own price.</div>':''}
+        ${p.desc?`<p class="pvw-desc">${esc(p.desc)}</p>`:'<p class="pvw-empty">No description yet — two or three sentences help shoppers decide.</p>'}
+        ${opts}${extras}${perso}
+        <div class="pvw-stock">${stock?(stock<=3?`Only ${stock} left`:'In stock'):'Sold out'} · ${esc(p.cat||'')}</div>
+        <button type="button" class="btn btn-dark pvw-add" disabled title="Preview only">Add to basket</button>
+        <div class="pvw-note">Sold and delivered by Trove · arrives in 3–6 days</div>
+      </div>
+    </div>
+    <div class="pvw-foot"><button type="button" class="btn btn-ghost btn-sm" onclick="openPreview('shop')">← The whole shop</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="closePreview();openEdit(${Number(p.id)})">Edit this piece</button></div>`;
+}
+function openPreview(kind,id){
+  const body=$('pvwBody');
+  if(kind==='piece'){const p=products.find(x=>x.id===id); if(!p)return; body.innerHTML=pvPieceHTML(p);}
+  else body.innerHTML=pvShopHTML();
+  $('pvwModal').classList.add('open'); document.body.style.overflow='hidden';
+  $('pvwModal').querySelector('.pvw-card-wrap').scrollTop=0;
+  Modal.open($('pvwModal'),closePreview,$('pvwClose'));
+}
+function closePreview(){ $('pvwModal').classList.remove('open'); document.body.style.overflow=''; Modal.close($('pvwModal')); }
+
 /* ---------------- ROUTER ---------------- */
 /* mobile: the sidebar menu cloned into the scrollable tab bar (.mtabs).
  * Clones keep their inline onclick; items that rely on an id (sign out,
@@ -2136,6 +2351,8 @@ function buildMobileTabs(){
     c.querySelectorAll('.pill,.badge').forEach(n=>n.remove());
     c.classList.add('mitem');
     if(src.id)c.onclick=e=>{e.preventDefault();src.click();};
+    if(!c.getAttribute('href'))c.setAttribute('href','#'+(src.dataset.v||''));
+    c.querySelectorAll('svg').forEach(s=>s.setAttribute('aria-hidden','true'));
     bar.appendChild(c);
   });
   bar.onscroll=updateTabFades;
@@ -2158,13 +2375,13 @@ const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage you
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
-  document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
+  document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});
   revealActiveTab();
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
   // top actions
   const ta=$('topActions');
-  if(v==='products')ta.innerHTML=`<button class="btn btn-coral" onclick="openAdd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add product</button>`;
-  else if(v==='overview')ta.innerHTML=`<a class="btn btn-ghost" href="/" target="_blank">View storefront ↗</a>`;
+  if(v==='products')ta.innerHTML=`<button class="btn btn-ghost" onclick="openPreview('shop')">Preview shop</button><button class="btn btn-coral" onclick="openAdd()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add product</button>`;
+  else if(v==='overview')ta.innerHTML=`<button class="btn btn-ghost" onclick="openPreview('shop')">Preview your shop</button>${SHOP.status==='approved'?'<a class="btn btn-ghost" href="/" target="_blank" rel="noopener">View storefront ↗</a>':''}`;
   else if(v==='services'&&HAS_PROVIDER)ta.innerHTML=`<button class="btn btn-coral" onclick="ProviderPanel.openEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add a service</button>`;
   else ta.innerHTML='';
   if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='services')renderServicesView(); if(v==='adminpayouts')renderAdminPayouts();

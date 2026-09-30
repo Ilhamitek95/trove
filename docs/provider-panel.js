@@ -37,14 +37,14 @@
 .pp .pp-banner.good{background:var(--sage-tint,#E9EFEA)}
 .pp .pp-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:18px}
 .pp .pp-stat{background:var(--paper,#FFFCFA);border:1px solid var(--line,rgba(41,39,39,.12));border-radius:16px;padding:16px 18px}
-.pp .pp-stat .k{font-size:11px;letter-spacing:.05em;color:var(--muted,rgba(41,39,39,.62));font-weight:700}
+.pp .pp-stat .k{font-size:11px;letter-spacing:.05em;color:var(--muted,rgba(41,39,39,.72));font-weight:700}
 .pp .pp-stat .v{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:30px;font-weight:600;margin-top:4px}
-.pp .pp-stat .n{font-size:11.5px;color:var(--muted,rgba(41,39,39,.62));font-weight:600}
+.pp .pp-stat .n{font-size:11.5px;color:var(--muted,rgba(41,39,39,.72));font-weight:600}
 .pp .pp-card{background:var(--paper,#FFFCFA);border:1px solid var(--line,rgba(41,39,39,.12));border-radius:18px;padding:20px 22px;margin-bottom:16px}
 .pp .pp-card h3{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:22px;font-weight:500;margin:0 0 4px}
-.pp .pp-hint{font-size:12.5px;color:var(--muted,rgba(41,39,39,.62));font-weight:500;line-height:1.55;margin-bottom:12px}
+.pp .pp-hint{font-size:12.5px;color:var(--muted,rgba(41,39,39,.72));font-weight:500;line-height:1.55;margin-bottom:12px}
 .pp .pp-fee{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:30px;font-weight:600}
-.pp .pp-fee small{font-family:'Quicksand',sans-serif;font-size:13px;color:var(--muted,rgba(41,39,39,.62));font-weight:600}
+.pp .pp-fee small{font-family:'Quicksand',sans-serif;font-size:13px;color:var(--muted,rgba(41,39,39,.72));font-weight:600}
 .pp .pp-btn{display:inline-block;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;transition:.15s;text-align:center;cursor:pointer;border:none;font-family:inherit;background:none;color:inherit}
 .pp .pp-dark{background:var(--char,#292727);color:var(--cream,#FDF7F5)}
 .pp .pp-dark:hover{background:#3B3737}
@@ -54,7 +54,7 @@
 .pp .pp-pill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:var(--rose-tint,#F2E9E4);color:var(--char,#292727);text-transform:none}
 .pp .pp-pill.live,.pp .pp-pill.confirmed,.pp .pp-pill.approved{background:var(--sage-tint,#E9EFEA)}
 .pp .pp-pill.completed{background:var(--sage,#CAD5CC)}
-.pp .pp-pill.hidden,.pp .pp-pill.declined,.pp .pp-pill.cancelled{background:#F0EBE8;color:var(--muted,rgba(41,39,39,.62))}
+.pp .pp-pill.hidden,.pp .pp-pill.declined,.pp .pp-pill.cancelled{background:#F0EBE8;color:var(--muted,rgba(41,39,39,.72))}
 .pp .pp-pill.awaiting_payment{background:#FCEBE4}
 .pp .pp-confirm{margin-top:12px;border-top:1px solid var(--line,rgba(41,39,39,.12));padding-top:12px}
 .pp .pp-confirm .pp-field{margin-bottom:10px}
@@ -62,14 +62,14 @@
 .pp .pp-row{display:flex;gap:14px;align-items:center;border:1px solid var(--line,rgba(41,39,39,.12));border-radius:14px;padding:14px 16px;margin-bottom:10px;flex-wrap:wrap;background:var(--cream,#FDF7F5)}
 .pp .pp-row .grow{flex:1;min-width:200px}
 .pp .pp-row .t{font-weight:700;font-size:14px}
-.pp .pp-row .s{font-size:12px;color:var(--muted,rgba(41,39,39,.62));font-weight:600;margin-top:2px}
-.pp .pp-link{font-size:12.5px;font-weight:700;color:var(--muted,rgba(41,39,39,.62));text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;padding:9px 8px;margin:-6px -4px}
+.pp .pp-row .s{font-size:12px;color:var(--muted,rgba(41,39,39,.72));font-weight:600;margin-top:2px}
+.pp .pp-link{font-size:12.5px;font-weight:700;color:var(--muted,rgba(41,39,39,.72));text-decoration:underline;cursor:pointer;background:none;border:none;font-family:inherit;padding:9px 8px;margin:-6px -4px}
 .pp .pp-bkbody a{display:inline-block;padding:4px 0}
 .pp .pp-hint a,.pp .pp-banner a{display:inline-block;padding:5px 0;margin:-5px 0}
 @media(max-width:560px){.pp .pp-row{padding:12px 14px}.pp .pp-row .grow{min-width:100%}.pp .pp-bkacts .pp-btn{flex:1;min-width:120px}.pp .pp-actions .pp-btn{flex:1}}
 .pp .pp-link:hover{color:var(--char,#292727)}
 .pp .pp-field{margin-bottom:14px}
-.pp .pp-field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted,rgba(41,39,39,.62));font-weight:700;margin-bottom:6px}
+.pp .pp-field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted,rgba(41,39,39,.72));font-weight:700;margin-bottom:6px}
 .pp .pp-field input,.pp .pp-field select,.pp .pp-field textarea{width:100%;border:1px solid var(--line,rgba(41,39,39,.12));border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;font-weight:500;background:var(--cream,#FDF7F5);color:var(--char,#292727);outline:none}
 .pp .pp-field input:focus,.pp .pp-field select:focus,.pp .pp-field textarea:focus{border-color:var(--char,#292727)}
 .pp .pp-field textarea{resize:vertical;min-height:90px;line-height:1.5}
@@ -80,12 +80,53 @@
 .pp .pp-bk{border:1px solid var(--line,rgba(41,39,39,.12));border-radius:16px;padding:16px 18px;margin-bottom:12px;background:var(--cream,#FDF7F5)}
 .pp .pp-bkhead{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .pp .pp-bkhead .t{font-weight:700;font-size:14px}
-.pp .pp-bkhead .code{font-size:11.5px;color:var(--muted,rgba(41,39,39,.62));font-weight:700;letter-spacing:.04em}
+.pp .pp-bkhead .code{font-size:11.5px;color:var(--muted,rgba(41,39,39,.72));font-weight:700;letter-spacing:.04em}
 .pp .pp-bkbody{font-size:13px;font-weight:500;color:var(--ink-80,rgba(41,39,39,.78));line-height:1.6;margin-top:8px}
 .pp .pp-bkbody b{font-weight:700}
 .pp .pp-bkacts{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
-.pp .pp-empty{padding:20px;border:1.5px dashed var(--line,rgba(41,39,39,.12));border-radius:14px;font-size:13px;color:var(--muted,rgba(41,39,39,.62));font-weight:500;line-height:1.6}
+.pp .pp-empty{padding:20px;border:1.5px dashed var(--line,rgba(41,39,39,.12));border-radius:14px;font-size:13px;color:var(--muted,rgba(41,39,39,.72));font-weight:500;line-height:1.6}
 .pp .pp-actions{display:flex;gap:10px;justify-content:flex-end}
+
+.pp .pp-catbox{display:flex;gap:7px;flex-wrap:wrap}
+.pp .pp-catopt{padding:9px 14px;border-radius:999px;border:1px solid var(--line,rgba(41,39,39,.12));font:inherit;font-size:12.5px;font-weight:600;background:var(--cream,#FDF7F5);color:var(--char,#292727);cursor:pointer}
+.pp .pp-catopt.on{background:var(--char,#292727);color:var(--cream,#FDF7F5);border-color:var(--char,#292727)}
+.pp .pp-audlbl{font-size:11px;letter-spacing:.05em;color:var(--muted,rgba(41,39,39,.72));font-weight:700;margin:8px 0 6px}
+.pp .pp-profhead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;justify-content:space-between}
+.pp .pp-proflinks{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pp :focus-visible{outline:2px solid var(--char,#292727);outline-offset:2px}
+.pp input:focus-visible,.pp select:focus-visible,.pp textarea:focus-visible{outline:2px solid var(--char,#292727)!important;outline-offset:1px}
+/* public-page preview (a dialog, so it sits outside .pp) */
+.pp-pv{position:fixed;inset:0;z-index:125;display:none;place-items:center;padding:18px;font-family:'Quicksand',system-ui,sans-serif;color:var(--char,#292727)}
+.pp-pv.open{display:grid}
+.pp-pv .pv-back{position:absolute;inset:0;background:rgba(41,39,39,.45)}
+.pp-pv .pv-card{position:relative;background:var(--cream,#FDF7F5);border-radius:20px;width:min(820px,96vw);max-height:92vh;overflow-y:auto;overscroll-behavior:contain;box-shadow:0 30px 70px rgba(41,39,39,.28)}
+.pp-pv .pv-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(253,247,245,.96);border-bottom:1px solid var(--line,rgba(41,39,39,.12));font-size:12px;letter-spacing:.06em;font-weight:700}
+.pp-pv .pv-x{width:44px;height:44px;border-radius:10px;border:0;background:none;cursor:pointer;display:grid;place-items:center;color:inherit}
+.pp-pv .pv-x:hover{background:var(--rose-tint,#F2E9E4)}
+.pp-pv :focus-visible{outline:2px solid var(--char,#292727);outline-offset:2px}
+.pp-pv .pv-rib{margin:16px 20px 0;background:var(--rose-tint,#F2E9E4);border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:700;line-height:1.5}
+.pp-pv .pv-head{padding:22px 24px 6px}
+.pp-pv .pv-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:28px;font-weight:600;color:var(--char,#292727)}
+.pp-pv h2{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:36px;font-weight:500;line-height:1.05;margin:12px 0 4px}
+.pp-pv .pv-loc{font-size:12px;letter-spacing:.05em;color:var(--muted,rgba(41,39,39,.72));font-weight:700}
+.pp-pv .pv-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.pp-pv .pv-chips span{background:var(--rose-tint,#F2E9E4);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700}
+.pp-pv .pv-bio{font-size:14.5px;color:var(--ink-80,rgba(41,39,39,.78));line-height:1.7;margin-top:14px;max-width:62ch;white-space:pre-line}
+.pp-pv h3{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:24px;font-weight:500;margin:22px 24px 10px}
+.pp-pv .pv-svc{margin:0 24px 12px;background:var(--paper,#FFFCFA);border:1px solid var(--line,rgba(41,39,39,.12));border-radius:16px;padding:16px 18px}
+.pp-pv .pv-svc b{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:20px;font-weight:600;display:block;line-height:1.15}
+.pp-pv .pv-meta{font-size:12px;color:var(--muted,rgba(41,39,39,.72));font-weight:700;margin-top:4px}
+.pp-pv .pv-price{font-weight:700;font-size:14px;margin-top:8px}
+.pp-pv .pv-desc{font-size:13.5px;color:var(--ink-80,rgba(41,39,39,.78));line-height:1.6;margin-top:6px}
+.pp-pv .pv-note{font-size:12px;color:var(--muted,rgba(41,39,39,.72));font-weight:600;margin:6px 24px 24px;line-height:1.5}
+@media(max-width:700px){.pp-pv{padding:0;place-items:end stretch}.pp-pv .pv-card{width:100%;max-height:94vh;border-radius:20px 20px 0 0}}
+@media(max-width:560px){
+  .pp .pp-field input,.pp .pp-field select,.pp .pp-field textarea{font-size:16px}
+  .pp .pp-btn,.pp .pp-catopt{min-height:44px}
+  .pp .pp-link{padding:14px 10px;margin:-6px -2px}
+  .pp .pp-banner a,.pp .pp-bkbody a{padding:12px 0;margin:-12px 0}
+}
+@media(prefers-reduced-motion:reduce){.pp *,.pp-pv *{transition:none!important;animation:none!important}}
 `;
   function injectCss() { if ($('ppCss')) return; const st = document.createElement('style'); st.id = 'ppCss'; st.textContent = CSS; document.head.appendChild(st); }
   function toast(m) {
@@ -151,30 +192,134 @@
         <div class="pp-fee">Free <small>during launch</small></div>
         <div class="pp-hint" style="margin-top:8px">${subHint}</div>
         <div class="pp-hint" style="margin:0">${agLine}</div>
-      </div>${earnLine}</div>`;
+      </div>${earnLine}${profileCard()}</div>`;
+  }
+
+
+  /* ---------------- public profile (name, story, categories) ----------------
+   * PATCH /api/provider/me accepts name, bio and categories — location is set
+   * by Trove at approval, so it isn't offered here. */
+  let PROF_CATS = null;
+  function profileCard() {
+    const p = PP.provider; if (!p) return '';
+    if (!PROF_CATS) PROF_CATS = (p.categories || []).slice();
+    const live = p.status === 'approved';
+    const cats = PP.tax ? PP.tax.audiences.map((a) => {
+      const list = PP.tax.categories.filter((c) => c.audience === a.key);
+      return `<div class="pp-audlbl">${esc(a.name)}</div><div class="pp-catbox">${list.map((c) =>
+        `<button type="button" class="pp-catopt ${PROF_CATS.includes(c.slug) ? 'on' : ''}" data-slug="${esc(c.slug)}" aria-pressed="${PROF_CATS.includes(c.slug)}" onclick="ProviderPanel.toggleProfCat(${esc(JSON.stringify(c.slug))})">${esc(c.name)}</button>`).join('')}</div>`;
+    }).join('') : '';
+    return `<div class="pp-card" id="ppProfile">
+      <div class="pp-profhead"><div><h3 id="ppProfTitle">Your public page</h3>
+        <div class="pp-hint" style="margin-bottom:0">What customers read on the Services Marketplace${live ? '' : ' once you’re approved'}.</div></div>
+        <div class="pp-proflinks">
+          <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.openPreview()">Preview your page</button>
+          ${live ? `<a class="pp-btn pp-ghost" href="/services/${esc(encodeURIComponent(p.slug))}" target="_blank" rel="noopener">View it live ↗</a>` : ''}
+        </div></div>
+      <div class="pp-err" id="ppProfErr" role="alert" style="margin-top:12px"></div>
+      <div class="pp-field" style="margin-top:14px"><label for="ppProfName">Practice name</label><input id="ppProfName" maxlength="60" value="${esc(p.name)}"></div>
+      <div class="pp-field"><label for="ppProfBio">Your story</label><textarea id="ppProfBio" maxlength="2000" placeholder="Who you are, what you do and how you work — a few honest sentences.">${esc(p.bio || '')}</textarea></div>
+      <div class="pp-field"><label id="ppProfCatLbl">Categories <span style="text-transform:none;letter-spacing:0;font-weight:600">· one to three</span></label>
+        <div role="group" aria-labelledby="ppProfCatLbl">${cats}</div></div>
+      <div class="pp-actions"><button type="button" class="pp-btn pp-dark" id="ppProfSave" onclick="ProviderPanel.saveProfile()">Save profile</button></div>
+    </div>`;
+  }
+  function toggleProfCat(slug) {
+    if (PROF_CATS.includes(slug)) PROF_CATS = PROF_CATS.filter((s) => s !== slug);
+    else { if (PROF_CATS.length >= 3) { toast('Three categories is the limit — unpick one first'); return; } PROF_CATS.push(slug); }
+    // keep typed text: only the chips re-render
+    document.querySelectorAll('#ppProfile .pp-catopt').forEach((b) => {
+      const on = PROF_CATS.includes(b.dataset.slug);
+      b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+    });
+  }
+  async function saveProfile() {
+    const err = $('ppProfErr'); err.style.display = 'none';
+    const show = (m) => { err.textContent = m; err.style.display = 'block'; };
+    const name = $('ppProfName').value.trim();
+    if (!name) return show('Your practice needs a name.');
+    if (!PROF_CATS.length) return show('Pick at least one category.');
+    const btn = $('ppProfSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    try {
+      const r = await api('/api/provider/me', { method: 'PATCH', body: { name, bio: $('ppProfBio').value.trim(), categories: PROF_CATS } });
+      PP.provider = { ...PP.provider, ...r.provider }; PROF_CATS = (PP.provider.categories || []).slice();
+      toast('Profile saved'); renderOverview(); changed();
+      if (PP.opts.onProfile) try { PP.opts.onProfile(PP.provider); } catch (_) {}
+    } catch (e) { show(e.message || 'Could not save — try again.'); }
+    const b2 = $('ppProfSave'); if (b2) { b2.disabled = false; b2.textContent = 'Save profile'; }
+  }
+
+  /* ---------------- preview of the public page ----------------
+   * Built from the dashboard's own data, so a provider still in review sees
+   * the page before it exists publicly. A small dialog: focus moves in, Tab
+   * stays inside, Esc closes and focus goes back to the button. */
+  let PV_RET = null;
+  function pvEl() {
+    let el = $('ppPv'); if (el) return el;
+    el = document.createElement('div'); el.id = 'ppPv'; el.className = 'pp-pv';
+    el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'ppPvTitle'); el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<div class="pv-back"></div><div class="pv-card"><div class="pv-top"><span>Customer preview</span><button type="button" class="pv-x" id="ppPvX" aria-label="Close preview"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div><div id="ppPvBody"></div></div>';
+    document.body.appendChild(el);
+    el.querySelector('.pv-back').onclick = closePreview; $('ppPvX').onclick = closePreview;
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closePreview(); return; }
+      if (e.key !== 'Tab') return;
+      const f = [...el.querySelectorAll('button,a[href]')].filter((n) => n.getClientRects().length);
+      if (!f.length) return;
+      if (e.shiftKey && document.activeElement === f[0]) { e.preventDefault(); f[f.length - 1].focus(); }
+      else if (!e.shiftKey && document.activeElement === f[f.length - 1]) { e.preventDefault(); f[0].focus(); }
+    });
+    return el;
+  }
+  function openPreview() {
+    const p = PP.provider; if (!p) return;
+    const el = pvEl();
+    const name = ($('ppProfName') && $('ppProfName').value.trim()) || p.name;
+    const bio = $('ppProfBio') ? $('ppProfBio').value.trim() : (p.bio || '');
+    const cats = (PROF_CATS || p.categories || []).map(catName);
+    const live = PP.services.filter((s) => s.status === 'live');
+    const rib = p.status === 'approved' ? 'Preview — this is how customers see your page.' : 'Preview — not public yet. Your page and live services appear the moment Trove approves your profile.';
+    $('ppPvBody').innerHTML = `<div class="pv-rib">${rib}</div>
+      <div class="pv-head"><div class="pv-av" style="background:${/^#[0-9a-f]{6}$/i.test(p.color || '') ? p.color : '#F2E9E4'}">${esc((name || '?')[0].toUpperCase())}</div>
+        <h2 id="ppPvTitle">${esc(name)}</h2>${p.location ? `<div class="pv-loc">${esc(p.location)}</div>` : ''}
+        ${cats.length ? `<div class="pv-chips">${cats.map((c) => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
+        ${bio ? `<p class="pv-bio">${esc(bio)}</p>` : '<p class="pv-bio" style="color:var(--muted,rgba(41,39,39,.72))">No story yet — add a few sentences under Your public page.</p>'}</div>
+      <h3>What ${esc(name)} offers</h3>
+      ${live.length ? live.map((s) => `<div class="pv-svc"><b>${esc(s.title)}</b><div class="pv-meta">${esc(catName(s.category))} · ${esc(SETTING_LABEL[s.setting] || '')}${s.duration ? ' · ' + esc(s.duration) : ''}</div><div class="pv-price">${priceLabel(s)}</div>${s.description ? `<div class="pv-desc">${esc(s.description)}</div>` : ''}</div>`).join('')
+        : '<p class="pv-note" style="margin-top:0">No live services yet — add one under My services and set it to live.</p>'}
+      <p class="pv-note">Customers send a booking request from this page. Your email and phone are never shown.</p>`;
+    PV_RET = document.activeElement;
+    el.classList.add('open'); el.removeAttribute('aria-hidden'); document.body.style.overflow = 'hidden';
+    el.querySelector('.pv-card').scrollTop = 0;
+    setTimeout(() => $('ppPvX').focus(), 40);
+  }
+  function closePreview() {
+    const el = $('ppPv'); if (!el) return;
+    el.classList.remove('open'); el.setAttribute('aria-hidden', 'true'); document.body.style.overflow = '';
+    if (PV_RET && PV_RET.focus && document.contains(PV_RET)) PV_RET.focus();
   }
 
   /* ---------------- services ---------------- */
   function editorMarkup() {
-    return `<div class="pp-card" id="ppEditor" style="display:none">
-      <h3 id="ppEdTitle">Add a service</h3>
+    return `<div class="pp-card" id="ppEditor" role="region" aria-labelledby="ppEdTitle" style="display:none">
+      <h3 id="ppEdTitle" tabindex="-1">Add a service</h3>
       <div class="pp-hint">Set the price the way you charge — a fixed price, a starting price, or per hour. Direct bookings carry no commission; bookings paid through Trove carry a ${pct()}% platform fee.</div>
-      <div class="pp-err" id="ppEdErr"></div>
-      <div class="pp-field"><label>Service name</label><input id="ppEdName" maxlength="90" placeholder="e.g. Pottery hand-building workshop at your home"></div>
+      <div class="pp-err" id="ppEdErr" role="alert"></div>
+      <div class="pp-field"><label for="ppEdName">Service name</label><input id="ppEdName" maxlength="90" placeholder="e.g. Pottery hand-building workshop at your home"></div>
       <div class="pp-two">
-        <div class="pp-field"><label>Category</label><select id="ppEdCat"></select></div>
-        <div class="pp-field"><label>Where does it happen?</label>
+        <div class="pp-field"><label for="ppEdCat">Category</label><select id="ppEdCat"></select></div>
+        <div class="pp-field"><label for="ppEdSetting">Where does it happen?</label>
           <select id="ppEdSetting"><option value="home">At the customer's place</option><option value="studio">At my studio</option><option value="remote">Remote</option></select></div>
       </div>
       <div class="pp-three">
-        <div class="pp-field"><label>Price (AED)</label><input id="ppEdPrice" type="number" min="1" step="0.01" inputmode="decimal" placeholder="350"></div>
-        <div class="pp-field"><label>Price works as</label>
+        <div class="pp-field"><label for="ppEdPrice">Price (AED)</label><input id="ppEdPrice" type="number" min="1" step="0.01" inputmode="decimal" placeholder="350"></div>
+        <div class="pp-field"><label for="ppEdPriceType">Price works as</label>
           <select id="ppEdPriceType"><option value="fixed">Fixed price</option><option value="from">Starting price</option><option value="hourly">Per hour</option></select></div>
-        <div class="pp-field"><label>How long? <span style="text-transform:none;letter-spacing:0;color:var(--taupe,#BD9C8C);font-weight:600">· optional</span></label><input id="ppEdDuration" maxlength="60" placeholder="e.g. 2–3 hours"></div>
+        <div class="pp-field"><label for="ppEdDuration">How long? <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span></label><input id="ppEdDuration" maxlength="60" placeholder="e.g. 2–3 hours"></div>
       </div>
-      <div class="pp-field"><label>Description</label><textarea id="ppEdDesc" maxlength="2000" placeholder="What's included, what you bring, how many people it suits, how booking works."></textarea></div>
+      <div class="pp-field"><label for="ppEdDesc">Description</label><textarea id="ppEdDesc" maxlength="2000" placeholder="What's included, what you bring, how many people it suits, how booking works."></textarea></div>
       <div class="pp-actions">
-        <button class="pp-btn pp-ghost" onclick="ProviderPanel.closeEditor()">Cancel</button>
+        <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.closeEditor()">Cancel</button>
         <button class="pp-btn pp-dark" id="ppEdSave" onclick="ProviderPanel.saveService()">Save service</button>
       </div>
     </div>
@@ -197,9 +342,9 @@
         <div class="grow"><div class="t">${esc(s.title)}</div>
           <div class="s">${esc(catName(s.category))} · ${priceLabel(s)}${s.duration ? ` · ${esc(s.duration)}` : ''} · ${esc(SETTING_LABEL[s.setting] || '')}</div></div>
         <span class="pp-pill ${esc(s.status)}">${esc(s.status)}</span>
-        <button class="pp-link" onclick="ProviderPanel.openEditor(${num(s.id)})">Edit</button>
-        <button class="pp-link" onclick="ProviderPanel.toggleLive(${num(s.id)})">${s.status === 'live' ? 'Hide' : 'Make live'}</button>
-        <button class="pp-link" onclick="ProviderPanel.deleteService(${num(s.id)})">Delete</button>
+        <button class="pp-link" aria-label="Edit ${esc(s.title)}" onclick="ProviderPanel.openEditor(${num(s.id)})">Edit</button>
+        <button class="pp-link" aria-label="${s.status === 'live' ? 'Hide' : 'Make live'} ${esc(s.title)}" onclick="ProviderPanel.toggleLive(${num(s.id)})">${s.status === 'live' ? 'Hide' : 'Make live'}</button>
+        <button class="pp-link" aria-label="Delete ${esc(s.title)}" onclick="ProviderPanel.deleteService(${num(s.id)})">Delete</button>
       </div>`).join('')
       : '<div class="pp-empty">Nothing listed yet — add your first service and it’s ready the moment you’re approved.</div>';
   }
@@ -218,11 +363,18 @@
     $('ppEdPriceType').value = E ? E.priceType : 'fixed';
     $('ppEdDuration').value = E ? E.duration : '';
     $('ppEdDesc').value = E ? E.description : '';
+    if (ed.style.display !== 'block') PP.edRet = document.activeElement;
     ed.style.display = 'block';
     if (PP.opts.onOpenEditor) PP.opts.onOpenEditor();
-    ed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ed.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+    setTimeout(() => $('ppEdName').focus({ preventScroll: true }), still ? 0 : 300);
+    if (!ed.dataset.esc) { ed.dataset.esc = '1'; ed.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.preventDefault(); closeEditor(); } }); }
   }
-  function closeEditor() { const ed = $('ppEditor'); if (ed) ed.style.display = 'none'; PP.editing = null; }
+  function closeEditor() {
+    const ed = $('ppEditor'); if (ed) ed.style.display = 'none'; PP.editing = null;
+    const r = PP.edRet; PP.edRet = null; if (r && r.focus && document.contains(r)) r.focus({ preventScroll: true });
+  }
   async function saveService() {
     const err = $('ppEdErr'); err.style.display = 'none';
     const show = (m) => { err.textContent = m; err.style.display = 'block'; };
@@ -281,10 +433,10 @@
     const needPrice = trove && b.priceType !== 'fixed';
     const priceHint = b.priceType === 'hourly' ? `hours × ${money(b.priceCents)}` : `from ${money(b.priceCents)}`;
     return `<div class="pp-confirm" id="ppCf${num(b.id)}">
-      <div class="pp-err" id="ppCfErr${num(b.id)}"></div>
+      <div class="pp-err" id="ppCfErr${num(b.id)}" role="alert"></div>
       <div class="pp-two">
-        <div class="pp-field"><label>Service date${trove ? '' : ' <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>'}</label><input type="date" id="ppCfDate${num(b.id)}" min="${todayIso()}"></div>
-        ${needPrice ? `<div class="pp-field"><label>Final price (AED) · ${esc(priceHint)}</label><input type="number" min="1" step="0.01" inputmode="decimal" id="ppCfPrice${num(b.id)}"></div>` : ''}
+        <div class="pp-field"><label for="ppCfDate${num(b.id)}">Service date${trove ? '' : ' <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>'}</label><input type="date" id="ppCfDate${num(b.id)}" min="${todayIso()}"></div>
+        ${needPrice ? `<div class="pp-field"><label for="ppCfPrice${num(b.id)}">Final price (AED) · ${esc(priceHint)}</label><input type="number" min="1" step="0.01" inputmode="decimal" id="ppCfPrice${num(b.id)}"></div>` : ''}
       </div>
       <div class="pp-hint" style="margin:0 0 10px">${trove
         ? `The customer pays Trove this ${needPrice ? 'price' : `listed price (${money(b.priceCents)})`} by card through a secure link; you get their mobile once it’s paid. Your fee is the price less the ${pct()}% platform fee.`
@@ -306,7 +458,7 @@
         <b>${esc(b.customerName)}</b> · ${esc(b.area)} · ${price} · ${pay}<br>
         ${when}${phone}${notes}
         ${b.declineReason && ['declined', 'cancelled'].includes(b.status) ? `<b>Note:</b> ${esc(b.declineReason)}<br>` : ''}
-        <span style="color:var(--muted,rgba(41,39,39,.62));font-size:11.5px">Requested ${fmtDate(b.createdAt)}${b.status === 'requested' ? ' · the customer’s mobile appears once the booking is secured' : ''}${b.status === 'awaiting_payment' ? ' · the customer’s mobile appears once they’ve paid' : ''}</span>
+        <span style="color:var(--muted,rgba(41,39,39,.72));font-size:12px">Requested ${fmtDate(b.createdAt)}${b.status === 'requested' ? ' · the customer’s mobile appears once the booking is secured' : ''}${b.status === 'awaiting_payment' ? ' · the customer’s mobile appears once they’ve paid' : ''}</span>
       </div>
       ${b.status === 'requested' && PP.confirming === b.id ? confirmForm(b) : ''}
       ${b.status === 'requested' && PP.confirming !== b.id ? `<div class="pp-bkacts">
@@ -392,6 +544,7 @@
     mountOverview, mountServices, mountBookings, refresh, stats,
     openEditor, closeEditor, saveService, toggleLive, deleteService, actBooking, declineBooking,
     openConfirm, sendConfirm, cancelBooking,
+    toggleProfCat, saveProfile, openPreview, closePreview,
     get provider() { return PP.provider; },
   };
 })();
