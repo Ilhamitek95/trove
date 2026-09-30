@@ -522,6 +522,6 @@ ${faq}
 }
 
 module.exports = {
-  LEGAL, legalDoc, chrome, footerHtml, faqSections, organizationLd,
+  LEGAL, legalDoc, chrome, footerHtml, faqSections, organizationLd, hasHousePieces,
   renderAbout, renderReturns, renderFaq, renderContact, renderLegal, llmsTxt, llmsFullTxt, TOPICS,
 };

@@ -1,0 +1,69 @@
+'use strict';
+/**
+ * The live site holds one shop, one piece and one provider. Every public view
+ * must look intentional with one of each AND with many: this seeds the demo
+ * catalogue, checks the many-piece layouts, then hides all but one piece /
+ * maker / provider and checks the small-catalogue layouts the server draws
+ * (the storefront's script redraws the same markup, so nothing moves).
+ */
+const { test, before, after } = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { testEnv, startApp } = require('./helpers');
+testEnv({ PUBLIC_URL: 'https://troveathome.com' });
+
+const DOCS = path.join(__dirname, '..', '..', 'docs');
+const store = fs.readFileSync(path.join(DOCS, 'trove.html'), 'utf8');
+let ctx; let db;
+before(async () => { ctx = await startApp(); require('../src/seed'); db = ctx.db; });
+after(async () => { await ctx.close(); });
+
+const get = (p) => ctx.api('GET', p, { headers: { accept: 'text/html' } });
+const noScripts = (html) => html.replace(/<script[\s\S]*?<\/script>/g, ' ');
+const rawH1 = (html) => (html.match(/<h1[\s>]/g) || []).length;
+const MUG = () => db.prepare("SELECT p.id, p.name FROM products p WHERE p.image_seed = 'mug7'").get();
+
+/* ---------------- many pieces (the seeded demo catalogue) ---------------- */
+test('many pieces: the carousel hero, browse tiles and the weekly grid stay as they are', async () => {
+  const html = noScripts((await get("/")).text);
+  assert.match(html, /<div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel"/);
+  assert.doesNotMatch(html, /class="hsolo"/);
+  assert.match(html, /<div class="pgrid" id="trendingGrid">/);
+  assert.doesNotMatch(html, /<html lang="en" class="[^"]*few-pieces/);
+  assert.doesNotMatch(html, /<html lang="en" class="[^"]*no-house/, 'the seed has Trove Collection pieces');
+});
+
+test('the storefront script draws the same small-catalogue layouts the server does', () => {
+  for (const needle of ['function heroSoloHTML(', 'function firstPieceHTML(', 'function renderMakerStory(', "classList.toggle('few-pieces',few)", "stage.classList.toggle('solo',solo)"]) {
+    assert.ok(store.includes(needle), needle);
+  }
+  // carousel controls only exist for two or more pieces
+  assert.match(store, /\.hstage\.solo \.hs-bar\{visibility:hidden\}/);
+  // the maker story is real shop data only: name, place, joined month, bio, link
+  assert.match(store, /<section class="band" id="makerStory"[^>]*hidden>/);
+  assert.match(store, /'On Trove since '\+sinceLabel\(v\)/);
+  // the sell band's figures, the share from the live commission
+  assert.match(store, /<b id="sfShare">60%<\/b>/);
+  assert.match(store, /100-Number\(FEES\.commissionPercent\)/);
+});
+
+/* ---------------- one piece, one maker, no Trove Collection ---------------- */
+test('one piece: the server draws the editorial hero and The first piece, marks no-house', async () => {
+  const mug = MUG();
+  db.prepare("UPDATE products SET status = 'hidden' WHERE id != ?").run(mug.id);
+  const res = await get('/');
+  assert.equal(res.status, 200);
+  const html = res.text;
+  assert.match(html, /<html lang="en" class="no-house few-pieces">/);
+  assert.match(html, /<div class="hstage solo" id="heroStage" aria-label="Featured piece">/);
+  assert.match(html, /<a class="hsolo" href="\/pieces\/\d+-reeded-stoneware-mug">/);
+  assert.match(html, /<span class="hs-meta">Made in Alserkal Avenue, Dubai<\/span>/, 'where it was made, from the shop');
+  assert.match(html, /<span class="hs-by">by Kiln &amp; Clay<\/span>/);
+  assert.match(html, /<div class="firsts n1" id="trendingGrid">/);
+  assert.match(html, /id="weeklyHeading"[^>]*>The first piece</);
+  assert.match(html, /<a class="btn btn-dark" id="heroMarketLink"/, 'the Marketplace link leads the hero');
+  // the stock stand-in photo is labelled as such wherever it shows
+  assert.equal((noScripts(html).match(/class="illus">Illustrative photo</g) || []).length, 2);
+  assert.equal(rawH1(noScripts(html)), 1);
+});

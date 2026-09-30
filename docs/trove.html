@@ -126,8 +126,8 @@
   a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
   /* No Trove Collection pieces yet (html.no-house, set at boot from the live
      catalogue): nothing points shoppers at an empty shelf. */
-  html.no-house .hero-tag,html.no-house #heroShopBtn,html.no-house .house-band,html.no-house .fhouse,
-  html.no-house .nav .links a[onclick*="'House'"],html.no-house .mn-link[onclick*="'House'"]{display:none!important}
+  html.no-house .hero-tag,html.no-house #heroShopBtn,html.no-house .house-section,html.no-house .fhouse,
+  html.no-house header.top a[href="/shop/trove-collection"],html.no-house .mnav a[href="/shop/trove-collection"]{display:none!important}
   /* The shop could not be loaded (never a stand-in catalogue on the live site). */
   .outage{padding:96px 0 120px;text-align:center}
   .outage h1,.outage h2{font-size:clamp(34px,4.5vw,50px);font-weight:400;line-height:1.05;margin-bottom:14px}
@@ -579,6 +579,83 @@
   .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:15px 26px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:120;opacity:0;transition:.35s;box-shadow:var(--shadow);letter-spacing:.03em;max-width:calc(100vw - 36px);text-align:center;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
+
+  /* ---------- A SMALL CATALOGUE, SHOWN WITH INTENT ----------
+     One piece gets an editorial hero instead of a one-card carousel; fewer
+     than three pieces become 'The first pieces' (html.few-pieces); with no
+     Trove Collection yet, the Collection band gives way to a real maker. */
+  .illus{position:absolute;top:12px;right:12px;z-index:3;background:rgba(253,247,245,.94);color:var(--char);font-size:12px;font-weight:600;letter-spacing:.02em;line-height:1.3;padding:4px 10px;border-radius:999px;pointer-events:none}
+  .hstage.solo .hs-deck{-webkit-mask-image:none;mask-image:none;cursor:auto}
+  .hstage.solo .hs-bar{visibility:hidden}
+  .hsolo{position:absolute;inset:0;display:block;border-radius:26px;overflow:hidden;background:var(--rose);box-shadow:0 30px 60px -34px rgba(41,39,39,.5)}
+  .hsolo .hs-img{position:absolute;inset:0}
+  .hsolo .hs-img .grad{position:absolute;inset:0}
+  .hsolo .hs-img img{position:absolute;inset:0;z-index:1;transition:transform .9s cubic-bezier(.22,.61,.36,1)}
+  @media(hover:hover){.hsolo:hover .hs-img img{transform:scale(1.03)}}
+  .hsolo .sale{position:absolute;top:16px;left:16px;z-index:3;background:var(--char);color:var(--cream);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
+  .hs-cap{position:absolute;right:18px;bottom:18px;z-index:3;width:min(360px,calc(100% - 36px));background:rgba(253,247,245,.95);backdrop-filter:blur(8px);border-radius:18px;padding:18px 20px 16px;display:flex;flex-direction:column}
+  .hs-meta{font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--eyebrow);line-height:1.4}
+  .hs-name{font-family:var(--font-display);font-size:30px;font-weight:500;line-height:1.05;margin-top:6px;color:var(--char)}
+  .hs-by{font-size:13.5px;color:var(--ink-80);font-weight:500;margin:3px 0 12px}
+  .firsts{display:grid;gap:28px}
+  .firsts.n2{grid-template-columns:1fr 1fr}
+  .fcard{display:grid;gap:18px;align-content:start}
+  .firsts.n1 .fcard{grid-template-columns:1.1fr 1fr;gap:60px;align-items:center}
+  .fc-img{position:relative;display:block;aspect-ratio:4/5;border-radius:24px;overflow:hidden;background:var(--rose)}
+  .firsts.n1 .fc-img{aspect-ratio:1/1}
+  .firsts.n2 .fc-img{aspect-ratio:5/4}
+  .fc-img .grad{position:absolute;inset:0}
+  .fc-img img{position:absolute;inset:0;z-index:1;filter:saturate(.95);transition:transform .7s cubic-bezier(.22,.61,.36,1)}
+  @media(hover:hover){.fcard:hover .fc-img img{transform:scale(1.03)}}
+  .fc-img .sale{position:absolute;top:14px;left:14px;z-index:3;background:var(--char);color:var(--cream);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:5px 11px;border-radius:999px}
+  .fcard .vrow{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:7px}
+  .fcard .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px;flex-shrink:0}
+  .fcard h3{font-size:clamp(34px,3.6vw,48px);font-weight:400;line-height:1.02;margin:10px 0 14px}
+  .firsts.n2 .fcard h3{font-size:30px;margin:8px 0 10px}
+  .fc-desc{font-size:16px;color:var(--ink-80);font-weight:400;line-height:1.7;max-width:46ch;margin-bottom:18px}
+  .fcard .price{font-size:20px;display:block;margin-bottom:24px}
+  .fc-acts{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  html.few-pieces #browseBand,html.few-pieces #weekly .link-more{display:none}
+  html.few-pieces #weekly{padding-top:80px!important}
+  .story{background:var(--rose);border-radius:28px;overflow:hidden;display:grid;grid-template-columns:1fr 1.05fr;min-height:440px}
+  .story-media{position:relative;min-height:320px;display:block}
+  .story-media img{position:absolute;inset:0;z-index:1}
+  .story-panel{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(circle at 28% 24%,rgba(253,247,245,.55),transparent 62%),linear-gradient(160deg,var(--t1),var(--t0))}
+  .story-panel span{font-family:var(--font-display);font-size:clamp(120px,14vw,190px);font-weight:500;line-height:1;color:rgba(41,39,39,.16)}
+  .story-copy{padding:64px 60px;display:flex;flex-direction:column;justify-content:center}
+  .story-copy h2{font-size:clamp(38px,4vw,56px);font-weight:400;line-height:1.02;margin:16px 0 12px}
+  .story-meta{font-size:13.5px;font-weight:600;color:var(--eyebrow);letter-spacing:.02em;margin-bottom:16px;line-height:1.6}
+  .story-copy p{font-size:16px;line-height:1.7;color:var(--char);font-weight:400;max-width:46ch;margin-bottom:28px}
+  .story-acts{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+  .sell-figs{display:grid;grid-template-columns:repeat(3,auto);justify-content:start;gap:12px 34px;margin:0 0 32px}
+  .sell-figs b{display:block;font-family:var(--font-display);font-size:48px;font-weight:500;line-height:1;color:var(--char);letter-spacing:-.01em}
+  .sell-figs span{display:block;font-size:12.5px;font-weight:600;color:var(--char);max-width:15ch;line-height:1.45;margin-top:8px}
+  @media(max-width:960px){
+    .firsts.n1 .fcard{grid-template-columns:1fr;gap:22px}
+    .firsts.n2{grid-template-columns:1fr}
+    .story{grid-template-columns:1fr}
+    .story-media{aspect-ratio:16/10;min-height:0}
+    .story-copy{padding:40px 36px 44px}
+  }
+  @media(max-width:560px){
+    /* phones: the caption sits under the photo, so it never covers the piece */
+    .hstage.solo .hs-deck{aspect-ratio:auto}
+    .hsolo{position:relative;inset:auto;display:flex;flex-direction:column;background:var(--paper);border-radius:20px}
+    .hsolo .hs-img{position:relative;aspect-ratio:1/1}
+    .hs-cap{position:static;width:auto;border-radius:0;background:var(--paper);backdrop-filter:none;padding:14px 16px 16px}
+    .hs-name{font-size:24px}
+    .hs-by{margin-bottom:8px}
+    .hstage.solo .hs-bar{display:none}
+    html.few-pieces #weekly{padding-top:52px!important}
+    .fcard h3{font-size:34px}
+    .fc-desc{font-size:15px}
+    .story-copy{padding:32px 26px 36px}
+    .sell-figs{grid-template-columns:1fr;gap:12px}
+    .sell-figs>div{display:flex;align-items:baseline;gap:14px}
+    .sell-figs b{font-size:34px;min-width:118px}
+    .sell-figs span{max-width:none;margin:0}
+  }
+
   /* ---------- RESPONSIVE ---------- */
   @media(max-width:960px){
     .hero .wrap{grid-template-columns:1fr;gap:34px}
@@ -964,7 +1041,7 @@
     <div class="mk rv" style="--d:.21s"><div class="ic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg></div><div class="tx"><b data-cms="home.marquee.items.3.head">15-day returns</b><span data-cms="home.marquee.items.3.sub">Free on orders over AED 200</span></div></div>
   </div></div>
 
-  <section class="band">
+  <section class="band" id="browseBand">
     <div class="wrap">
       <div class="band-head rv"><span class="eyebrow" data-cms="home.browse.eyebrow">Browse by</span><h2 data-cms="home.browse.heading">Where would you like to begin?</h2></div>
       <div class="pill-tabs rv" style="--d:.08s" id="catTabs" role="tablist" aria-label="Browse by pillar">
@@ -979,14 +1056,14 @@
   <section class="band" id="weekly" style="padding-top:0">
     <div class="wrap">
       <div class="band-head left rv">
-        <div><span class="eyebrow" data-cms="home.weekly.eyebrow">The weekly edit</span><h2 data-cms="home.weekly.heading">This week's finds</h2></div>
+        <div><span class="eyebrow" id="weeklyEyebrow" data-cms="home.weekly.eyebrow">The weekly edit</span><h2 id="weeklyHeading" data-cms="home.weekly.heading">This week's finds</h2></div>
         <a class="link-more" data-cms="home.weekly.linkLabel" href="/shop">Shop everything →</a>
       </div>
       <div class="pgrid" id="trendingGrid"></div>
     </div>
   </section>
 
-  <section class="band" style="padding-top:0">
+  <section class="band house-section" style="padding-top:0">
     <div class="wrap">
       <div class="house house-band rv">
         <div class="copy">
@@ -1005,6 +1082,11 @@
     </div>
   </section>
 
+  <!-- No Trove Collection yet: a real maker's story takes the Collection's place (renderMakerStory) -->
+  <section class="band" id="makerStory" style="padding-top:0" hidden>
+    <div class="wrap"><div class="story" id="storyInner"></div></div>
+  </section>
+
   <section class="band" id="vendors">
     <div class="wrap">
       <div class="band-head rv"><span class="eyebrow" data-cms="home.makers.eyebrow">The Trove Marketplace</span><h2 data-cms="home.makers.heading">Meet the makers</h2>
@@ -1020,6 +1102,11 @@
           <span class="eyebrow" data-cms="home.sellBand.eyebrow">Sell on Trove</span>
           <h2 data-cms-rich="home.sellBand.h2">Make things at home? Give them a <em>shopfront</em>.</h2>
           <p data-cms="home.sellBand.intro">No shop experience needed and nothing to pay up front. You set your prices and keep your brand; Trove takes care of the photography, the marketing, the delivery and the storefront.</p>
+          <div class="sell-figs">
+            <div><b id="sfShare">60%</b><span>of every sale is yours</span></div>
+            <div><b>3–6 days</b><span>to the buyer's door, anywhere in Dubai &amp; Abu Dhabi</span></div>
+            <div><b>Free</b><span>courier collection from your door</span></div>
+          </div>
           <button class="btn btn-dark" data-cms="home.sellBand.cta" onclick="go('sell')">See how it works</button>
         </div>
         <div class="steps">
@@ -1611,6 +1698,17 @@ function imgRetry(el){
 /* Interim matched photography — the shared map lives in api.js (the admin crop
  * editor previews the same covers). Seller uploads always win over it. */
 const STOCK_IMG=window.TROVE_STOCK_IMG||{};
+/* Stock photos stand in until our own shoots land (api.js). Wherever one is
+ * shown in place of the maker's own photo, the photo says so. */
+const isStockUrl=u=>/^https:\/\/images\.unsplash\.com\//.test(String(u||''));
+function pIsStock(p,i){return !i&&!(p.images&&p.images[0])&&!!STOCK_IMG[p.name];}
+const ILLUS='<span class="illus">Illustrative photo</span>';
+/* A maker's own photo — never a stock stand-in, which reads as unrelated. */
+function ownImg(v){return v&&v.img&&!isStockUrl(v.img)?v.img:'';}
+/* 'September 2026' from the shop's joined month, or ''. */
+function sinceLabel(v){if(!v||!/^\d{4}-\d{2}$/.test(v.joined||''))return '';const d=new Date(v.joined+'-01T00:00:00Z');return d.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'});}
+/* A calm brand panel in the shop's own colour, with its initial. */
+function makerPanel(v){const c=safeColor(v.color);return `<span class="story-panel" style="--t0:${c};--t1:${shade(c,24)}"><span>${esc((v.name||'?')[0])}</span></span>`;}
 /* A product's cover: the seller's first uploaded photo, else the matched stock
  * shot, else the motif tile. */
 function pImg(p,i){
@@ -1635,7 +1733,7 @@ function productCard(p,eager,crop){
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
       <img src="${esc(pImg(p))}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
-      ${p.was?`<span class="sale">Sale</span>`:''}
+      ${p.was?`<span class="sale">Sale</span>`:''}${pIsStock(p)?ILLUS:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">Add to basket</button>
     </div>
     <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
@@ -1659,7 +1757,19 @@ function renderHome(){
     const sel=picks.map(id=>byId[id]).filter(Boolean);
     if(sel.length)weekly=sel;
   }
-  $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true,cropCss('home.weekly',p))).join('');
+  // Fewer than three pieces: the browse tiles and the weekly grid would each
+  // hold one lonely card, so they merge into one feature row instead.
+  const few=LIVE&&PRODUCTS.length>0&&PRODUCTS.length<3;
+  document.documentElement.classList.toggle('few-pieces',few);
+  if(few){
+    $('trendingGrid').className='firsts n'+PRODUCTS.length;
+    $('trendingGrid').innerHTML=PRODUCTS.map(firstPieceHTML).join('');
+    $('weeklyEyebrow').textContent='Just arrived';
+    $('weeklyHeading').textContent=PRODUCTS.length===1?'The first piece':'The first pieces';
+  }else{
+    $('trendingGrid').className='pgrid';
+    $('trendingGrid').innerHTML=weekly.map(p=>productCard(p,true,cropCss('home.weekly',p))).join('');
+  }
   stagger($('trendingGrid'),.06);
 
   // Collection band gallery: admin-picked house pieces when set, else the first 4.
@@ -1688,8 +1798,8 @@ function renderHome(){
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
     const sc=v.provider?Number(v.provider.serviceCount)||0:0;
     return `<article class="vcard">
-    <div class="cover"><div class="grad" style="${grad(v.color)}"></div><img src="${esc(v.img||img('shop-'+k))}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%"></div>
-    <div class="av" style="${v.img?`background:center/cover no-repeat url('${esc(v.img)}')`:`background:${v.color}`}">${v.img?'':esc((v.name||'?')[0])}</div>
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div>${ownImg(v)?`<img src="${esc(ownImg(v))}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%">`:''}</div>
+    <div class="av" style="${ownImg(v)?`background:center/cover no-repeat url('${esc(ownImg(v))}')`:`background:${v.color}`}">${ownImg(v)?'':esc((v.name||'?')[0])}</div>
     <h3><a class="vcard-link" href="${esc(makerUrl(k))}">${esc(v.name)}</a></h3>
     <div class="loc">${esc(v.loc)}</div>
     <p>${esc(v.bio)}</p>
@@ -1697,7 +1807,56 @@ function renderHome(){
   </article>`;}).join('');
   $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards.replace(/<a class="vcard-link"/g,'<a tabindex="-1" class="vcard-link"')}</div></div>`;
   initMakerCarousel();
+  renderMakerStory();
+  const share=100-Number(FEES.commissionPercent);
+  if(share>0&&share<100)$('sfShare').textContent=share+'%';
   renderHeroDeck(); initReveal(); initParallax();
+}
+/* One of the first pieces, large: photo, maker line, the maker's words. */
+function firstPieceHTML(p){
+  const V=VENDORS[p.vendor];
+  const where=V.house?'The Trove Collection':[V.name,V.loc].filter(Boolean).join(' · ');
+  const u=esc(pieceUrl(p));
+  return `<article class="fcard">
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}${pIsStock(p)?ILLUS:''}</a>
+    <div class="fc-body">
+      <div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(where)}</div>
+      <h3><a href="${u}">${esc(p.name)}</a></h3>
+      ${p.desc?`<p class="fc-desc">${esc(clip(p.desc,220))}</p>`:''}
+      <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
+      <div class="fc-acts"><a class="btn btn-dark" href="${u}">See the piece</a>${V.house?'':`<a class="txt-link" href="${esc(makerUrl(p.vendor))}">More from ${esc(V.name)}</a>`}</div>
+    </div>
+  </article>`;
+}
+/* No Trove Collection yet: the space goes to a real maker — name, place, their
+ * own words, straight from the shop. With one maker, this replaces the
+ * one-card carousel too (and /#vendors lands here). */
+function renderMakerStory(){
+  const sec=$('makerStory'), vendors=$('vendors');
+  const makers=Object.entries(VENDORS).filter(([k,v])=>!v.house&&(v.prods==null?PRODUCTS.some(p=>p.vendor===k):v.prods>0));
+  const noHouse=document.documentElement.classList.contains('no-house');
+  if(!LIVE||!noHouse||!makers.length){sec.hidden=true;vendors.hidden=false;return;}
+  makers.sort((a,b)=>(b[1].prods||0)-(a[1].prods||0));
+  const [k,v]=makers[0];
+  const n=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
+  const meta=[v.loc,sinceLabel(v)?'On Trove since '+sinceLabel(v):'',n+' '+(n===1?'piece':'pieces')].filter(Boolean).join(' · ');
+  const photo=ownImg(v);
+  $('storyInner').innerHTML=`<a class="story-media" href="${esc(makerUrl(k))}" tabindex="-1" aria-hidden="true">${photo?`<img src="${esc(photo)}" alt="" loading="lazy" decoding="async">`:makerPanel(v)}</a>
+    <div class="story-copy">
+      <span class="eyebrow">Meet the maker</span>
+      <h2>Meet ${esc(v.name)}</h2>
+      <div class="story-meta">${esc(meta)}</div>
+      ${v.bio?`<p>${esc(v.bio)}</p>`:''}
+      <div class="story-acts"><a class="btn btn-dark" href="${esc(makerUrl(k))}">Visit ${esc(v.name)}</a>${v.provider?`<a class="txt-link" href="/services/${esc(encodeURIComponent(v.provider.slug))}">Book their services</a>`:''}</div>
+    </div>`;
+  sec.hidden=false;
+  vendors.hidden=makers.length===1;
+}
+/* The one-piece hero: the piece, large, with its maker and where it was made. */
+function heroSoloHTML(p){
+  const V=VENDORS[p.vendor];
+  const meta=V.house?'The Trove Collection':(V.loc?'Made in '+V.loc:'');
+  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}" alt="${esc(p.name)}" fetchpriority="high" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}${pIsStock(p)?ILLUS:''}</span><span class="hs-cap">${meta?`<span class="hs-meta">${esc(meta)}</span>`:''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">by ${esc(V.name)}</span><span class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></span></span></a>`;
 }
 
 /* ---------------- THE SHELF: hero carousel ----------------
@@ -1726,9 +1885,17 @@ function heroPicks(){
 function renderHeroDeck(){
   const deck=$('heroDeck'); if(!deck)return;
   HC.items=heroPicks(); HC.n=HC.items.length; HC.i=0;
+  const stage=$('heroStage'), solo=HC.n===1;
+  stage.classList.toggle('solo',solo);
+  if(solo){
+    deck.innerHTML=heroSoloHTML(HC.items[0]);
+    $('hsDots').innerHTML=''; $('hsCount').textContent=''; hcStop();
+    stage.removeAttribute('tabindex'); stage.removeAttribute('aria-roledescription'); stage.setAttribute('aria-label','Featured piece');
+    return;
+  }
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
     return `<article class="hc" data-k="${k}" onclick="hcTap(${k},event)" aria-label="${esc(p.name)}">
-      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}</div>
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">Sale</span>':''}${pIsStock(p)?ILLUS:''}</div>
       <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3><a href="${esc(pieceUrl(p))}" tabindex="-1">${esc(p.name)}</a></h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">View piece →</span></div></div>
     </article>`;}).join('');
@@ -2786,7 +2953,7 @@ function routeTo(path,search,hash,st){
   if(path==='/'){
     go('home');
     const id=(hash||'').slice(1);
-    if(id==='vendors'||id==='weekly')setTimeout(()=>{const el=$(id);if(el)el.scrollIntoView({behavior:'smooth'});},ROUTING?120:60);
+    if(id==='vendors'||id==='weekly')setTimeout(()=>{const el=(id==='vendors'&&$('vendors').hidden)?$('makerStory'):$(id);if(el)el.scrollIntoView({behavior:'smooth'});},ROUTING?120:60);
     return true;
   }
   return false;
@@ -2838,7 +3005,7 @@ async function fetchCatalog(){
   try{
     const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
     VENDORS={};
-    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,bio:s.bio,prods:s.productCount,since:s.since,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,bio:s.bio,prods:s.productCount,since:s.since,joined:s.joined||null,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
       return {id:Number(p.id),name:p.name,vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null};
@@ -3024,7 +3191,7 @@ async function boot(){
     else if(search!=null&&location.pathname==='/'){if($('searchInput'))$('searchInput').value=search;runSearch(search);}
     else if(view==='shop')go('shop',cat||'all');
     else if(view==='sell')go('sell');
-    else if(location.pathname==='/'&&location.hash==='#vendors')setTimeout(()=>{const v=$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
+    else if(location.pathname==='/'&&location.hash==='#vendors')setTimeout(()=>{const v=$('vendors').hidden?$('makerStory'):$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
     else if(location.pathname==='/'&&location.hash==='#weekly')setTimeout(()=>{const w=$('weekly');if(w)w.scrollIntoView({behavior:'smooth'});},120);
     else routeTo(location.pathname,location.search,location.hash,history.state);
     if(q.get('cart')){openCart();q.delete('cart');const rest=q.toString();history.replaceState(history.state,'',location.pathname+(rest?'?'+rest:'')+location.hash);}

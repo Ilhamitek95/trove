@@ -84,6 +84,9 @@ const safeImg = (u) => { u = String(u || ''); return /^(\/(?!\/)|https:\/\/)[^"'
 const safeColor = (c) => (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || '')) ? String(c) : '#DBC7BD');
 /** A piece's cover: the maker's first photo, else the matched stock shot. */
 const coverOf = (p) => safeImg((p.images || [])[0]) || safeImg(p.stockImage) || '';
+/** The cover is a stand-in stock shot, not the maker's own photo: the page says so. */
+const isStock = (p) => !safeImg((p.images || [])[0]) && !!safeImg(p.stockImage);
+const ILLUS = '<span class="illus">Illustrative photo</span>';
 const ldScript = (obj) => `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', ...obj }).replace(/</g, '\\u003c')}</script>`;
 
 function readDoc(file, cache) {
@@ -193,7 +196,7 @@ function cardHtml(p, vendor) {
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
   return `<article class="card">
-    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}</div>
+    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}</div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
     <div class="foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span></div>
@@ -208,14 +211,65 @@ function crumbLd(base, items) {
 }
 const orgRef = (base) => ({ '@id': `${base}/#organization` });
 
-function storefront() { return readDoc('trove.html', storeCache); }
+/**
+ * The storefront page, with the facts its script would otherwise apply after
+ * the first paint (so nothing moves): no Trove Collection yet → html.no-house
+ * and the Marketplace link becomes the hero's button.
+ */
+function storefront() {
+  let html = readDoc('trove.html', storeCache);
+  if (!sitePages.hasHousePieces()) {
+    html = html.replace('<html lang="en">', '<html lang="en" class="no-house">')
+      .replace('<a class="txt-link" id="heroMarketLink"', '<a class="btn btn-dark" id="heroMarketLink"');
+  }
+  return html;
+}
+const addHtmlClass = (html, cls) => html.replace(/<html lang="en"( class="([^"]*)")?>/, (m, a, c) => `<html lang="en" class="${c ? c + ' ' : ''}${cls}">`);
+
+/** The one-piece hero, as the storefront's heroSoloHTML() draws it. */
+function heroSoloHtml(p, vendor) {
+  const meta = p.shop.isHouse ? 'The Trove Collection' : (vendor && vendor.location ? `Made in ${vendor.location}` : '');
+  const cover = coverOf(p);
+  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="${esc(p.name)}" fetchpriority="high" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}</span><span class="hs-cap">${meta ? `<span class="hs-meta">${esc(meta)}</span>` : ''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">by ${esc(p.shop.name)}</span><span class="hc-foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span><span class="hc-go">View piece →</span></span></span></a>`;
+}
+/** One of 'The first pieces', as the storefront's firstPieceHTML() draws it. */
+function firstPieceHtml(p, vendor) {
+  const where = p.shop.isHouse ? 'The Trove Collection' : [p.shop.name, vendor && vendor.location].filter(Boolean).join(' · ');
+  const u = esc(pieceUrl(p));
+  const cover = coverOf(p);
+  return `<article class="fcard">
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}</a>
+    <div class="fc-body">
+      <div class="vrow ${p.shop.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(where)}</div>
+      <h3><a href="${u}">${esc(p.name)}</a></h3>
+      ${p.description ? `<p class="fc-desc">${esc(clip(p.description, 220))}</p>` : ''}
+      <span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span>
+      <div class="fc-acts"><a class="btn btn-dark" href="${u}">See the piece</a>${p.shop.isHouse ? '' : `<a class="txt-link" href="${esc(makerUrl(p.shop.slug))}">More from ${esc(p.shop.name)}</a>`}</div>
+    </div>
+  </article>`;
+}
 
 function renderHome(base) {
   const list = liveProducts();
   const byShop = Object.fromEntries(approvedShops().map((s) => [s.slug, s]));
   let html = activate(storefront(), 'home');
-  // The newest pieces as real links (the page's script swaps in the curated picks).
-  html = fill(html, 'trendingGrid', list.slice(0, 8).map((p) => cardHtml(p, byShop[p.shop.slug])).join(''));
+  // One piece: the editorial hero, drawn now so the first paint is final.
+  const heroPicks = (content.getPublic().home || {}).hero;
+  if (list.length === 1 && !(heroPicks && Array.isArray(heroPicks.productIds) && heroPicks.productIds.length > 1)) {
+    html = html.replace('<div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel" aria-label="Featured pieces">', '<div class="hstage solo" id="heroStage" aria-label="Featured piece">');
+    html = fill(html, 'heroDeck', heroSoloHtml(list[0], byShop[list[0].shop.slug]));
+  }
+  if (list.length > 0 && list.length < 3) {
+    // A small catalogue: 'The first pieces' instead of one tile + one card.
+    html = addHtmlClass(html, 'few-pieces');
+    html = html.replace('<div class="pgrid" id="trendingGrid"></div>', `<div class="firsts n${list.length}" id="trendingGrid"></div>`);
+    html = text(html, 'weeklyEyebrow', 'Just arrived');
+    html = text(html, 'weeklyHeading', list.length === 1 ? 'The first piece' : 'The first pieces');
+    html = fill(html, 'trendingGrid', list.map((p) => firstPieceHtml(p, byShop[p.shop.slug])).join(''));
+  } else {
+    // The newest pieces as real links (the page's script swaps in the curated picks).
+    html = fill(html, 'trendingGrid', list.slice(0, 8).map((p) => cardHtml(p, byShop[p.shop.slug])).join(''));
+  }
   const website = {
     '@type': 'WebSite', '@id': `${base}/#website`, url: `${base}/`, name: 'Trove', alternateName: 'Trove at Home',
     publisher: orgRef(base), inLanguage: 'en',

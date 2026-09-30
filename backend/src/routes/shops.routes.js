@@ -27,6 +27,7 @@ function shape(s) {
     isHouse: !!s.is_house,
     productCount: s.product_count || 0,
     since: s.created_at ? String(s.created_at).slice(0, 4) : null,
+    joined: s.created_at ? String(s.created_at).slice(0, 7) : null, // 'YYYY-MM': "On Trove since September 2026"
     rating: s.rating_count ? { avg: s.avg_rating, count: s.rating_count } : null,
   };
 }
