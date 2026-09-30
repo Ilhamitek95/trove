@@ -13,8 +13,14 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
 // A seller application with an email that already has an account attaches the
 // shop to THAT account (existing buyers can become sellers) — allowed when the
 // applicant is signed in as the account, or the submitted password matches it.
+// Roles a sign-up may ask for. Admin is never self-served — the only admin is
+// bootstrapped from ADMIN_EMAIL in server.js.
+const SIGNUP_ROLES = ['buyer', 'seller', 'both'];
+
 router.post('/register', (req, res) => {
-  const { password, name, role = 'buyer', shopName } = req.body || {};
+  const { password, name, shopName } = req.body || {};
+  const role = req.body?.role == null ? 'buyer' : req.body.role;
+  if (!SIGNUP_ROLES.includes(role)) return res.status(400).json({ error: 'Choose a buyer or seller account' });
   // Emails are identities, not prose: match and store them case-insensitively.
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!email || !name) return res.status(400).json({ error: 'email and name are required' });
