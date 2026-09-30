@@ -617,13 +617,13 @@
             <p style="font-size:13.5px;color:var(--ink-80);font-weight:400;line-height:1.6;margin-bottom:16px">Workshops, styling, photography, repair, brand work — anything you do beautifully, bookable beside your pieces on the <a href="/services" target="_blank" rel="noopener" style="text-decoration:underline">Services Marketplace</a>. Same account, same dashboard; your services get their own page and every booking request lands here.</p>
             <div class="svc-terms">
               <span id="svcCurated">✓ No second application — reviewed with your shop</span>
-              <span>✓ AED 30 a month, from the day your services go live</span>
+              <span>✓ Free during launch — the AED 30/month listing fee starts later; we'll give you 30 days' notice.</span>
               <span>✓ No commission on direct bookings · 10% only when paid through Trove</span>
-              <span>✓ Customers' emails never shared; mobile released when you confirm</span>
+              <span>✓ Customers' emails never shared; mobile released once a booking is secured</span>
             </div>
             <div class="field" style="margin-top:18px"><label>What will you offer? <span style="text-transform:none;letter-spacing:0;color:var(--taupe);font-weight:600">· pick one to three</span></label><div id="svcCatPicker"><div style="font-size:12.5px;color:var(--muted)">Loading categories…</div></div></div>
             <div class="field"><label>Planned services <span style="text-transform:none;letter-spacing:0;color:var(--taupe);font-weight:600">· optional</span></label><textarea id="svcPlanned" maxlength="2000" rows="3" placeholder="One per line, e.g.&#10;Hand-building workshop at your home — AED 1,200 per group&#10;Ceramic repair — from AED 180"></textarea></div>
-            <label class="svc-consent"><input type="checkbox" id="svcAgree"><span>I understand the AED 30/month subscription and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
+            <label class="svc-consent"><input type="checkbox" id="svcAgree"><span>I understand how the listing fee works (free during launch, then AED 30/month with 30 days' notice) and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
             <div class="err" id="svcErr" style="display:none;margin-top:12px"></div>
             <div style="display:flex;gap:10px;align-items:center;margin-top:16px;flex-wrap:wrap">
               <button class="btn btn-coral" id="svcEnableBtn" onclick="enableServices()">Switch on services</button>
@@ -2175,7 +2175,7 @@ async function enableServices(){
   const err=$('svcErr'); err.style.display='none';
   const show=m=>{err.textContent=m;err.style.display='block';};
   if(!SVC_PICKED.length)return show('Pick at least one service category.');
-  if(!$('svcAgree').checked)return show('Tick the box — it covers the subscription and the Provider Agreement.');
+  if(!$('svcAgree').checked)return show('Tick the box — it covers the listing fee and the Provider Agreement.');
   const btn=$('svcEnableBtn'); btn.disabled=true; btn.textContent='Switching on…';
   try{
     const r=await TroveAPI.api('/api/seller/enable-services',{method:'POST',body:{categories:SVC_PICKED,plannedServices:$('svcPlanned').value.trim(),agreeSub:true,agreeTerms:true}});

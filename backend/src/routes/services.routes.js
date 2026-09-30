@@ -14,8 +14,9 @@
  *   POST /api/services/booking/:code/cancel  { t } cancel through the link
  *   POST /api/services/booking/:code/pay     { t } the card form's client secret
  *
- * Money model: providers pay the monthly platform subscription
- * (fees.PROVIDER_SUB_FEE_CENTS). A booking is paid one of two ways, chosen
+ * Money model: listing is free during launch (owner, 2026-09-30) — the
+ * monthly listing fee (fees.PROVIDER_SUB_FEE_CENTS) starts later, with 30
+ * days' notice. A booking is paid one of two ways, chosen
  * by the customer at request time and snapshotted on the booking:
  *   direct — settled between customer and provider (bank transfer, cash…);
  *            Trove is not part of that payment and takes nothing from it
@@ -160,7 +161,7 @@ router.post('/apply', (req, res, next) => {
     return res.status(400).json({ error: "Application answers can't contain < or >" });
   }
   if (b.agreeSub !== true) {
-    return res.status(400).json({ error: `The AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month platform subscription needs your agreement to apply` });
+    return res.status(400).json({ error: `Please confirm you understand the listing fee (free during launch; AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month later, with 30 days' notice) to apply` });
   }
   if (b.agreeTerms !== true) {
     return res.status(400).json({ error: 'The Provider Agreement needs your acceptance to apply' });

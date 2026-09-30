@@ -39,7 +39,7 @@ router.post('/enable-services', requireSeller, (req, res) => {
     return res.status(409).json({ code: 'already_provider', error: 'This account already offers services' });
   }
   if (b.agreeSub !== true) {
-    return res.status(400).json({ error: `The AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month platform subscription needs your agreement` });
+    return res.status(400).json({ error: `Please confirm you understand the listing fee (free during launch; AED ${Math.round(fees.PROVIDER_SUB_FEE_CENTS / 100)}/month later, with 30 days' notice)` });
   }
   if (b.agreeTerms !== true) return res.status(400).json({ error: 'The Provider Agreement needs your acceptance' });
   const cats = Array.isArray(b.categories) ? b.categories.map((c) => String(c).trim()).filter(Boolean) : [];
