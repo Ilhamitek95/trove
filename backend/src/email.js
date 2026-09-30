@@ -324,3 +324,193 @@ function orderUnavailable({ order, items, soldOut = true }) {
 }
 
 module.exports = { enabled, send, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined };
+
+/* ---- Services Marketplace bookings ----
+ * Every template takes { booking, viewUrl, payUrl, commissionPercent } where
+ * booking is a service_bookings row joined with provider_name. Guests have no
+ * account, so customer emails carry the booking's private link (view + cancel)
+ * instead of pointing to /account. The provider never gets the customer's
+ * email; their mobile only once the booking is secured.
+ */
+const FOOT_ORDER = "You're receiving this because of an order you placed with Trove.";
+const svcLayout = (who, title, inner, opts) => layout(title, inner, opts).replace(FOOT_ORDER,
+  who === 'provider' ? "You're receiving this because you offer services on the Trove Services Marketplace."
+    : "You're receiving this because of a booking on the Trove Services Marketplace.");
+const svcDate = (d) => {
+  if (!d) return '';
+  const t = new Date(String(d) + 'T00:00:00Z');
+  return Number.isNaN(t.getTime()) ? String(d) : t.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+};
+const svcPrice = (bk) => (bk.amount_cents ? aed(bk.amount_cents)
+  : bk.price_type === 'from' ? `From ${aed(bk.price_cents)}` : bk.price_type === 'hourly' ? `${aed(bk.price_cents)} / hour` : aed(bk.price_cents));
+const svcKicker = (bk) => `Booking <b style="color:${INK}">${esc(bk.code)}</b>`;
+function svcSummary(bk, { price = true, pay = true } = {}) {
+  const rows = [
+    ['Service', esc(bk.title)],
+    ['With', esc(bk.provider_name)],
+    ['Where', esc(bk.area)],
+    bk.service_date ? ['Date', esc(svcDate(bk.service_date))] : (bk.preferred_date ? ['You asked for', esc(bk.preferred_date)] : null),
+    price ? ['Price', esc(svcPrice(bk))] : null,
+    pay ? ['Paying', bk.payment_method === 'trove' ? 'Through Trove by card' : 'Directly with the provider'] : null,
+  ].filter(Boolean);
+  return panel(rows.map(([k, v]) => `<span style="color:${MUTED}">${k}</span>&nbsp; <b>${v}</b>`).join('<br>'));
+}
+const PROVIDER_LINK = `${SITE_LINK}/provider`;
+const firstName = (s) => esc(String(s || '').trim().split(/\s+/)[0] || '');
+
+function bookingRequestReceived({ booking: bk, viewUrl }) {
+  const inner = svcSummary(bk)
+    + p(bk.payment_method === 'trove'
+      ? `Nothing is charged yet. If ${esc(bk.provider_name)} accepts, they confirm the date and the final price, and we email you a secure link to pay Trove by card.`
+      : `If ${esc(bk.provider_name)} accepts, they will reach you on your mobile to arrange the details. You settle with them directly — Trove takes no part in that payment.`)
+    + button('View or cancel your booking', viewUrl)
+    + note('Keep this email: the button above is your private link to this booking — no account needed.');
+  return {
+    subject: `We've sent your booking request — ${bk.code}`,
+    html: svcLayout('customer', 'Your request is on its way', inner, {
+      kicker: svcKicker(bk),
+      intro: `Thank you, ${firstName(bk.name)}. Your request is with <b>${esc(bk.provider_name)}</b> and we'll email you as soon as they reply.`,
+      preheader: `Booking ${bk.code} is with ${bk.provider_name} — we'll let you know when they reply.`,
+    }),
+  };
+}
+
+function bookingNewRequest({ booking: bk, commissionPercent }) {
+  const inner = svcSummary(bk)
+    + (bk.notes ? panel(`<span style="color:${MUTED}">Their brief</span><br>${esc(bk.notes)}`) : '')
+    + p(bk.payment_method === 'trove'
+      ? `The customer wants to pay through Trove by card. When you confirm, you set the service date${bk.price_type === 'fixed' ? '' : ' and the final price'}; the customer then pays Trove, and their mobile is released to you once the payment is in. Your fee is the amount paid minus Trove's ${commissionPercent}% platform fee.`
+      : 'The customer will settle directly with you. Confirm and their mobile is released to you so you can arrange the details.')
+    + button('Open your bookings', PROVIDER_LINK)
+    + note('Not one for you? Decline with a short note from your dashboard — there is no penalty.');
+  return {
+    subject: `New booking request — ${bk.title}`,
+    html: svcLayout('provider', 'A new booking request', inner, {
+      kicker: svcKicker(bk), tone: 'clay',
+      intro: `<b>${esc(bk.name)}</b> in ${esc(bk.area)} would like to book you.`,
+      preheader: `${bk.name} in ${bk.area} would like to book ${bk.title}.`,
+    }),
+  };
+}
+
+function bookingConfirmedPay({ booking: bk, payUrl, viewUrl }) {
+  const inner = panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(bk.amount_cents)}</span><br>to pay Trove by card for ${esc(bk.title)} with ${esc(bk.provider_name)} on <b>${esc(svcDate(bk.service_date))}</b>.`)
+    + p(`Your booking is secured once you pay, and ${esc(bk.provider_name)} then gets your mobile to arrange the details. For this booking Trove is your contracting party; if the service isn't delivered, you're refunded in full.`)
+    + button('Pay securely', payUrl)
+    + note(`Changed your mind, or the price isn't right? You can cancel instead — <a href="${viewUrl}" style="color:${INK}">view your booking</a>.`);
+  return {
+    subject: `Confirmed — pay to secure your booking ${bk.code}`,
+    html: svcLayout('customer', 'Your booking is confirmed', inner, {
+      kicker: svcKicker(bk),
+      intro: `Good news — <b>${esc(bk.provider_name)}</b> has accepted your request. One step left: pay by card to secure it.`,
+      preheader: `${bk.provider_name} accepted — pay ${aed(bk.amount_cents)} to secure booking ${bk.code}.`,
+    }),
+  };
+}
+
+function bookingConfirmedDirect({ booking: bk, viewUrl }) {
+  const inner = svcSummary(bk)
+    + p(`${esc(bk.provider_name)} now has your mobile and will be in touch to arrange the time, place and final details. You settle with them directly, as you agree — Trove takes no part in that payment.`)
+    + button('View your booking', viewUrl);
+  return {
+    subject: `Confirmed — your booking ${bk.code}`,
+    html: svcLayout('customer', 'Your booking is confirmed', inner, {
+      kicker: svcKicker(bk),
+      intro: `Good news — <b>${esc(bk.provider_name)}</b> has accepted your request.`,
+      preheader: `${bk.provider_name} accepted booking ${bk.code} and will be in touch.`,
+    }),
+  };
+}
+
+function bookingPaid({ booking: bk, viewUrl }) {
+  const inner = totals([
+    totalRow(bk.title, aed(bk.amount_cents)),
+    totalRow('Paid to Trove by card', aed(bk.amount_cents), true),
+  ])
+    + svcSummary(bk, { price: false, pay: false })
+    + p(`${esc(bk.provider_name)} now has your mobile and will be in touch to arrange the details. If the service isn't delivered, Trove refunds you in full, and you can cancel for a full refund any time before the service day.`)
+    + button('View your booking', viewUrl);
+  return {
+    subject: `Payment received — booking ${bk.code} is secured`,
+    html: svcLayout('customer', 'Payment received', inner, {
+      kicker: svcKicker(bk),
+      intro: `Thank you — we've received your payment of <b>${aed(bk.amount_cents)}</b> and your booking is secured.`,
+      preheader: `${aed(bk.amount_cents)} received — booking ${bk.code} is secured.`,
+    }),
+  };
+}
+
+function bookingPaidProvider({ booking: bk, commissionPercent }) {
+  const grace = require('./service-credits').GRACE_DAYS;
+  const inner = panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(bk.provider_net_cents)}</span><br>your fee after Trove's ${commissionPercent}% platform fee (the customer paid ${aed(bk.amount_cents)})`)
+    + svcSummary(bk, { price: false, pay: false })
+    + p(`Paid through Trove. The customer's mobile is now in your dashboard — reach out to arrange the details. Your fee is paid in Trove's settlement run once you mark the booking done (or ${grace} days after the service date).`)
+    + button('Open your bookings', PROVIDER_LINK);
+  return {
+    subject: `Paid through Trove — ${bk.title}${bk.service_date ? ` on ${svcDate(bk.service_date)}` : ''}`,
+    html: svcLayout('provider', 'The booking is paid', inner, {
+      kicker: svcKicker(bk),
+      intro: `<b>${esc(bk.name)}</b> has paid for the booking, so it's secured.`,
+      preheader: `Paid through Trove — your fee ${aed(bk.provider_net_cents)} after ${commissionPercent}%.`,
+    }),
+  };
+}
+
+/** Declined by the provider, or cancelled by anyone — to the customer. */
+function bookingCancelled({ booking: bk, kind, refunded, by }) {
+  const declined = kind === 'declined';
+  const money = bk.paid_at
+    ? (refunded || bk.refunded_at
+      ? panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(bk.amount_cents)}</span><br>is on its way back to your card in full. Depending on your bank it can take 5–10 business days to appear.`)
+      : panel('You paid for this booking, so our team will refund you in full — you will get an email when it is done.'))
+    : (bk.payment_method === 'trove' ? p('Nothing was charged.') : '');
+  const reason = bk.decline_reason ? panel(`${declined ? 'Their note' : 'The reason given'}: <b>${esc(bk.decline_reason)}</b>`) : '';
+  const inner = svcSummary(bk, { pay: false }) + reason + money
+    + button('Find another service', `${SITE_LINK}/services`);
+  const title = declined ? 'About your booking request' : 'Your booking is cancelled';
+  const intro = declined
+    ? `We're sorry — <b>${esc(bk.provider_name)}</b> can't take this booking.`
+    : by === 'customer' ? 'As you asked, we have cancelled your booking.'
+      : `We're sorry — this booking has been cancelled${by === 'provider' ? ` by ${esc(bk.provider_name)}` : ''}.`;
+  return {
+    subject: declined ? `About your booking request ${bk.code}` : `Booking ${bk.code} is cancelled`,
+    html: svcLayout('customer', title, inner, { kicker: svcKicker(bk), tone: 'clay', intro, preheader: `An update on booking ${bk.code}.` }),
+  };
+}
+
+function bookingCancelledProvider({ booking: bk }) {
+  const inner = svcSummary(bk, { pay: false })
+    + p(bk.paid_at ? 'The customer has been refunded in full, so no fee is due on this booking.' : 'Nothing further to do.')
+    + button('Open your bookings', PROVIDER_LINK);
+  return {
+    subject: `Booking ${bk.code} was cancelled`,
+    html: svcLayout('provider', 'A booking was cancelled', inner, {
+      kicker: svcKicker(bk), tone: 'clay',
+      intro: `<b>${esc(bk.name)}</b>'s booking for ${esc(bk.title)} has been cancelled.`,
+      preheader: `Booking ${bk.code} was cancelled.`,
+    }),
+  };
+}
+
+function bookingRefunded({ booking: bk }) {
+  const inner = panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(bk.refund_cents || bk.amount_cents)}</span><br>is on its way back to your card. Depending on your bank it can take 5–10 business days to appear.`)
+    + svcSummary(bk, { price: false, pay: false });
+  return {
+    subject: `Refund on its way — booking ${bk.code}`,
+    html: svcLayout('customer', 'Your refund is on its way', inner, {
+      kicker: svcKicker(bk), tone: 'clay',
+      intro: `We've refunded your payment for booking <b>${esc(bk.code)}</b> in full.`,
+      preheader: `A full refund for booking ${bk.code} is on its way.`,
+    }),
+  };
+}
+
+module.exports.bookingRequestReceived = bookingRequestReceived;
+module.exports.bookingNewRequest = bookingNewRequest;
+module.exports.bookingConfirmedPay = bookingConfirmedPay;
+module.exports.bookingConfirmedDirect = bookingConfirmedDirect;
+module.exports.bookingPaid = bookingPaid;
+module.exports.bookingPaidProvider = bookingPaidProvider;
+module.exports.bookingCancelled = bookingCancelled;
+module.exports.bookingCancelledProvider = bookingCancelledProvider;
+module.exports.bookingRefunded = bookingRefunded;

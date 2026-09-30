@@ -35,7 +35,7 @@ const TABLES_WIPED = [
   'return_request_items', 'return_requests', 'reviews',
   'purchase_notes', 'settlement_items', 'seller_balances', 'settlements', 'payouts',
   'shipment_events', 'shipments', 'order_items', 'orders', 'webhook_events',
-  'analytics_events', 'search_log', 'service_bookings',
+  'analytics_events', 'search_log', 'provider_credits', 'service_bookings',
   'addresses', 'sessions',
 ];
 

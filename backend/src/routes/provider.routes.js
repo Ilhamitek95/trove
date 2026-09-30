@@ -6,8 +6,9 @@
  *
  * Contact privacy mirrors the product marketplace: the provider never sees
  * the customer's email, and the phone number is handed over only once the
- * provider confirms the booking — before that the request is name + area +
- * brief only.
+ * booking is secured — confirmed for a direct booking, paid for a booking paid
+ * through Trove. Before that the request is name + area + brief only.
+ * The booking lifecycle itself lives in src/service-bookings.js.
  */
 const express = require('express');
 const db = require('../db');
@@ -25,12 +26,17 @@ function providerMe(p) {
     id: p.id, name: p.name, slug: p.slug, status: p.status,
     bio: p.bio, location: p.location, color: p.color,
     categories: parseJson(p.categories, []),
+    // Owner, 2026-09-30: listing is free during launch — the monthly fee
+    // starts later, with 30 days' notice. sub_started_at is kept as data (the
+    // approval date) but no longer presented as a running subscription.
     subscription: {
       feeCents: fees.PROVIDER_SUB_FEE_CENTS,
+      freeDuringLaunch: true,
+      noticeDays: 30,
       agreedAt: p.sub_agreed_at || null,
-      startedAt: p.sub_started_at || null,
     },
     commissionPercent: fees.SERVICE_COMMISSION_PERCENT,
+    earnings: require('../service-credits').providerBalances(p.id),
     agreement: { version: p.agreement_version || '', acceptedAt: p.agreement_accepted_at || null },
     createdAt: p.created_at,
   };
@@ -157,6 +163,10 @@ router.patch('/services/:id', (req, res) => {
 });
 
 router.delete('/services/:id', (req, res) => {
+  // A listing with a booking paid through Trove carries a money record —
+  // deleting it would take the booking with it (ON DELETE CASCADE). Hide it.
+  const paid = db.prepare('SELECT 1 FROM service_bookings WHERE service_id=? AND paid_at IS NOT NULL').get(req.params.id);
+  if (paid) return res.status(409).json({ error: 'This service has bookings paid through Trove, so it can’t be deleted — hide it instead' });
   const r = db.prepare('DELETE FROM services WHERE id=? AND provider_id=?').run(req.params.id, req.provider.id);
   if (!r.changes) return res.status(404).json({ error: 'Not found' });
   res.json({ ok: true });
@@ -167,16 +177,22 @@ router.delete('/services/:id', (req, res) => {
 // The provider's view of a booking. Email is never included; the phone
 // number appears once the provider has confirmed.
 function shapeBookingForProvider(bk) {
-  const confirmed = ['confirmed', 'completed'].includes(bk.status);
+  // 'confirmed' is only ever reached by a trove booking once it is paid, so
+  // this one rule covers both ways of paying.
+  const secured = ['confirmed', 'completed'].includes(bk.status);
   return {
     id: bk.id, code: bk.code, status: bk.status, title: bk.title,
     priceCents: bk.price_cents, priceType: bk.price_type,
+    amountCents: bk.amount_cents || 0,
     customerName: bk.name, area: bk.area,
-    preferredDate: bk.preferred_date, notes: bk.notes,
+    preferredDate: bk.preferred_date, serviceDate: bk.service_date || null, notes: bk.notes,
     paymentMethod: bk.payment_method,
+    paid: !!bk.paid_at, paidAt: bk.paid_at || null,
+    refunded: !!bk.refunded_at,
     commissionCents: bk.commission_cents || 0,
     providerNetCents: bk.provider_net_cents || 0,
-    phone: confirmed ? bk.phone : null,
+    declineReason: bk.decline_reason || '', cancelledBy: bk.cancelled_by || '',
+    phone: secured ? bk.phone : null,
     createdAt: bk.created_at, confirmedAt: bk.confirmed_at, completedAt: bk.completed_at,
   };
 }
@@ -186,25 +202,29 @@ router.get('/bookings', (req, res) => {
   res.json({ bookings: rows.map(shapeBookingForProvider) });
 });
 
-// PATCH /api/provider/bookings/:id { action: confirm | decline | complete, reason? }
-router.patch('/bookings/:id', (req, res) => {
-  const bk = db.prepare('SELECT * FROM service_bookings WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
-  if (!bk) return res.status(404).json({ error: 'Not found' });
-  const { action } = req.body || {};
-  if (action === 'confirm') {
-    if (bk.status !== 'requested') return res.status(409).json({ error: 'Only a new request can be confirmed' });
-    db.prepare("UPDATE service_bookings SET status='confirmed', confirmed_at=datetime('now') WHERE id=?").run(bk.id);
-  } else if (action === 'decline') {
-    if (bk.status !== 'requested') return res.status(409).json({ error: 'Only a new request can be declined' });
-    const reason = String((req.body && req.body.reason) || '').trim().slice(0, 500);
-    db.prepare("UPDATE service_bookings SET status='declined', decline_reason=? WHERE id=?").run(reason, bk.id);
-  } else if (action === 'complete') {
-    if (bk.status !== 'confirmed') return res.status(409).json({ error: 'Only a confirmed booking can be marked done' });
-    db.prepare("UPDATE service_bookings SET status='completed', completed_at=datetime('now') WHERE id=?").run(bk.id);
-  } else {
-    return res.status(400).json({ error: 'action must be confirm, decline or complete' });
-  }
-  res.json({ booking: shapeBookingForProvider(db.prepare('SELECT * FROM service_bookings WHERE id=?').get(bk.id)) });
+// PATCH /api/provider/bookings/:id
+//   { action: 'confirm', serviceDate?: 'YYYY-MM-DD', priceCents? }
+//       direct: confirmed (date optional). trove: the service date is required,
+//       and so is the final price for a 'from' / 'hourly' listing — a
+//       PaymentIntent opens and the booking waits for the customer's card.
+//   { action: 'decline', reason? }   a new or unpaid request
+//   { action: 'cancel', reason? }    a confirmed booking — refunded in full if paid
+//   { action: 'complete' }           done: a paid booking's fee becomes payable
+router.patch('/bookings/:id', async (req, res, next) => {
+  try {
+    const svc = require('../service-bookings');
+    const bk = db.prepare('SELECT * FROM service_bookings WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
+    if (!bk) return res.status(404).json({ error: 'Not found' });
+    const b = req.body || {};
+    let r;
+    if (b.action === 'confirm') r = await svc.confirm(bk, { priceCents: b.priceCents, serviceDate: b.serviceDate });
+    else if (b.action === 'decline') r = svc.decline(bk, b.reason);
+    else if (b.action === 'cancel') r = await svc.cancel(bk, { by: 'provider', reason: String(b.reason || '') });
+    else if (b.action === 'complete') r = svc.complete(bk);
+    else return res.status(400).json({ error: 'action must be confirm, decline, cancel or complete' });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    res.json({ booking: shapeBookingForProvider(r.booking) });
+  } catch (e) { next(e); }
 });
 
 module.exports = router;

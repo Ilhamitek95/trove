@@ -41,7 +41,8 @@ module.exports = {
       intentStatus.set(id, 'canceled');
       return record('paymentIntents.cancel', { id, ...params }, { id, status: 'canceled' });
     },
-    retrieve: async (id) => record('paymentIntents.retrieve', { id }, { id, status: intentStatus.get(id) || 'requires_payment_method' }),
+    // client_secret mirrors what create handed out (the pay page re-reads it).
+    retrieve: async (id) => record('paymentIntents.retrieve', { id }, { id, client_secret: `${id}_secret_test`, status: intentStatus.get(id) || 'requires_payment_method' }),
   },
   refunds: {
     create: async (params) => record('refunds.create', params, { id: `re_mock_${++n}`, ...params }),

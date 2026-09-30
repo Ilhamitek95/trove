@@ -10,16 +10,21 @@
  *   POST /api/services/:id/book      request a booking on one service
  *   GET  /api/services/my-bookings   the signed-in customer's booking requests
  *   POST /api/services/bookings/:id/cancel
+ *   GET  /api/services/booking/:code?t=      a booking through its private link (guests)
+ *   POST /api/services/booking/:code/cancel  { t } cancel through the link
+ *   POST /api/services/booking/:code/pay     { t } the card form's client secret
  *
  * Money model: providers pay the monthly platform subscription
  * (fees.PROVIDER_SUB_FEE_CENTS). A booking is paid one of two ways, chosen
  * by the customer at request time and snapshotted on the booking:
  *   direct — settled between customer and provider (bank transfer, cash…);
  *            Trove is not part of that payment and takes nothing from it
- *   trove  — paid to Trove by card once the provider confirms (arrives with
- *            card payments); Trove keeps fees.SERVICE_COMMISSION_PERCENT and
- *            the provider's fee is the remainder (commission_cents /
- *            provider_net_cents are snapshotted from the listed price)
+ *   trove  — paid to Trove by card once the provider confirms (offered only
+ *            while the server has card payments switched on); Trove keeps
+ *            fees.SERVICE_COMMISSION_PERCENT and the provider's fee is the
+ *            remainder (commission_cents / provider_net_cents are snapshotted
+ *            from the listed price, then from the amount actually paid) — the
+ *            whole lifecycle lives in src/service-bookings.js
  * Every booking records the Services Terms version the customer accepted;
  * every provider records the Provider Agreement version they accepted.
  */
@@ -227,14 +232,18 @@ router.post('/apply', (req, res, next) => {
 
 /* ---------------- Bookings ---------------- */
 
+const svc = require('../service-bookings');
+
 function shapeBookingForBuyer(bk) {
+  const view = svc.forCustomer(bk);
   return {
-    id: bk.id, code: bk.code, status: bk.status, title: bk.title,
-    priceCents: bk.price_cents, priceType: bk.price_type,
-    area: bk.area, preferredDate: bk.preferred_date, notes: bk.notes,
-    paymentMethod: bk.payment_method, declineReason: bk.decline_reason,
-    termsVersion: bk.terms_version || '',
-    providerName: bk.provider_name, createdAt: bk.created_at,
+    ...view,
+    notes: bk.notes,
+    commissionCents: bk.commission_cents || 0,
+    providerNetCents: bk.provider_net_cents || 0,
+    // Their own booking: the private link works for them too (same page).
+    viewPath: `/services/booking/${bk.code}?t=${svc.linkToken(bk)}`,
+    payPath: view.canPay ? `/services/pay/${bk.code}-${svc.linkToken(bk)}` : null,
   };
 }
 
@@ -268,6 +277,11 @@ router.post('/:id(\\d+)/book', (req, res) => {
     return res.status(400).json({ error: `The Services Marketplace is available in ${SERVICE_AREAS.join(' and ')} only` });
   }
   const paymentMethod = PAYMENT_METHODS[String(b.paymentMethod || 'direct')] || 'direct';
+  // Card payment is the SERVER's call: only while a Stripe client is
+  // configured here, whatever the page was told.
+  if (paymentMethod === 'trove' && !svc.paymentsEnabled()) {
+    return res.status(400).json({ code: 'payments_off', error: 'Paying through Trove by card isn’t available right now — please choose to settle directly with the provider' });
+  }
   if (b.agreeTerms !== true) {
     return res.status(400).json({ error: 'Please accept the Services Terms to send a request' });
   }
@@ -289,7 +303,10 @@ router.post('/:id(\\d+)/book', (req, res) => {
       paymentMethod, row.title, row.price_cents, row.price_type,
       require('../config').SERVICES_TERMS_VERSION, split.fee, split.net);
 
-  res.status(201).json({ booking: { id: info.lastInsertRowid, code, status: 'requested' } });
+  const created = db.prepare('SELECT * FROM service_bookings WHERE id = ?').get(info.lastInsertRowid);
+  svc.mail('requested', created);
+  // The requester's own private link (also in their email) — guests have no account.
+  res.status(201).json({ booking: { id: created.id, code, status: 'requested', viewPath: `/services/booking/${code}?t=${svc.linkToken(created)}` } });
 });
 
 // GET /api/services/my-bookings — the signed-in customer's requests.
@@ -301,16 +318,53 @@ router.get('/my-bookings', requireAuth, (req, res) => {
   res.json({ bookings: rows.map(shapeBookingForBuyer) });
 });
 
-// POST /api/services/bookings/:id/cancel — a customer can withdraw a request
-// that hasn't happened yet.
-router.post('/bookings/:id/cancel', requireAuth, (req, res) => {
-  const bk = db.prepare('SELECT * FROM service_bookings WHERE id = ? AND buyer_id = ?').get(req.params.id, req.user.id);
-  if (!bk) return res.status(404).json({ error: 'Booking not found' });
-  if (!['requested', 'confirmed'].includes(bk.status)) {
-    return res.status(409).json({ error: 'This booking can no longer be cancelled' });
-  }
-  db.prepare("UPDATE service_bookings SET status='cancelled' WHERE id=?").run(bk.id);
-  res.json({ ok: true });
+// POST /api/services/bookings/:id/cancel — a customer can withdraw a booking
+// before the service day; anything paid through Trove is refunded in full.
+router.post('/bookings/:id/cancel', requireAuth, async (req, res, next) => {
+  try {
+    const bk = db.prepare('SELECT * FROM service_bookings WHERE id = ? AND buyer_id = ?').get(req.params.id, req.user.id);
+    if (!bk) return res.status(404).json({ error: 'Booking not found' });
+    const r = await svc.cancel(bk, { by: 'customer' });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    res.json({ ok: true, refunded: r.refunded, booking: shapeBookingForBuyer(r.booking) });
+  } catch (e) { next(e); }
+});
+
+/* ---------------- The private booking link (guests) ----------------
+ * /services/booking/<code>?t=<token> and /services/pay/<code>-<token> read and
+ * act on one booking with no account. The token is an HMAC of the booking, so
+ * a wrong or missing token looks exactly like a booking that doesn't exist.
+ * Never cached: the answer depends on a secret in the URL.                 */
+function byLink(req, res) {
+  res.set('Cache-Control', 'no-store');
+  const t = req.method === 'GET' ? req.query.t : (req.body || {}).t;
+  const bk = svc.byCodeAndToken(req.params.code, t);
+  if (!bk) { res.status(404).json({ error: 'We couldn’t find that booking — check the link in your email' }); return null; }
+  return bk;
+}
+
+router.get('/booking/:code', (req, res) => {
+  const bk = byLink(req, res); if (!bk) return;
+  const view = svc.forCustomer(bk);
+  res.json({ booking: { ...view, termsVersion: bk.terms_version || '' } });
+});
+
+router.post('/booking/:code/cancel', async (req, res, next) => {
+  try {
+    const bk = byLink(req, res); if (!bk) return;
+    const r = await svc.cancel(bk, { by: 'customer' });
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    res.json({ ok: true, refunded: r.refunded, booking: svc.forCustomer(r.booking) });
+  } catch (e) { next(e); }
+});
+
+router.post('/booking/:code/pay', async (req, res, next) => {
+  try {
+    const bk = byLink(req, res); if (!bk) return;
+    const r = await svc.paymentSession(bk);
+    if (r.error) return res.status(r.status).json({ error: r.error });
+    res.json(r);
+  } catch (e) { next(e); }
 });
 
 module.exports = router;

@@ -355,6 +355,44 @@ addColumn('service_bookings',  'terms_version',         "TEXT DEFAULT ''");  // 
 addColumn('service_bookings',  'commission_cents',      'INTEGER NOT NULL DEFAULT 0'); // Trove's fee when paid through Trove
 addColumn('service_bookings',  'provider_net_cents',    'INTEGER NOT NULL DEFAULT 0'); // the provider's fee on those
 
+// Card payment for bookings paid through Trove (2026-09-30, additive). The
+// provider confirms with the final amount + service date → a PaymentIntent
+// opens and the booking waits in 'awaiting_payment' until the webhook marks it
+// paid ('confirmed'). See src/service-bookings.js.
+addColumn('service_bookings', 'amount_cents',             'INTEGER NOT NULL DEFAULT 0'); // the firm amount charged
+addColumn('service_bookings', 'service_date',             'TEXT');                      // YYYY-MM-DD agreed at confirm
+addColumn('service_bookings', 'stripe_payment_intent_id', 'TEXT');
+addColumn('service_bookings', 'paid_at',                  'TEXT');
+addColumn('service_bookings', 'refunded_at',              'TEXT');
+addColumn('service_bookings', 'refund_cents',             'INTEGER NOT NULL DEFAULT 0');
+addColumn('service_bookings', 'cancelled_at',             'TEXT');
+addColumn('service_bookings', 'cancelled_by',             "TEXT NOT NULL DEFAULT ''");   // customer | provider | admin
+// Why a booking needs a person ('' = nothing to do): refund_failed (refund
+// by hand in Stripe), paid_after_cancel (paid after it was cancelled — refunded).
+addColumn('service_bookings', 'attention',                "TEXT NOT NULL DEFAULT ''");
+db.exec(`
+-- What Trove owes a provider for bookings paid through Trove: one credit per
+-- paid booking (the provider's fee after the platform fee), a debit if a
+-- booking is refunded after its credit was already paid out. Payable once the
+-- provider marks the booking done or 3 days after the service date — see
+-- src/service-credits.js. settlement_id / paid_at close a row.
+CREATE TABLE IF NOT EXISTS provider_credits (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider_id   INTEGER NOT NULL,               -- no FK: money records outlive
+  booking_id    INTEGER NOT NULL,               -- a deleted listing or profile
+  type          TEXT NOT NULL,                  -- credit_service | debit_refund
+  amount_cents  INTEGER NOT NULL,               -- debits stored negative
+  settlement_id INTEGER,                        -- the run that swept it, if any
+  paid_at       TEXT,                           -- bank transfer sent
+  pay_reference TEXT NOT NULL DEFAULT '',
+  voided_at     TEXT,                           -- refunded before it was paid out
+  created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_credit_once ON provider_credits(booking_id) WHERE type='credit_service';
+CREATE INDEX IF NOT EXISTS idx_provider_credits_provider ON provider_credits(provider_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_pi ON service_bookings(stripe_payment_intent_id);
+`);
+
 // Why an order needs a person to look at it ('' = nothing to do):
 //   oversold               paid, but a piece sold out first — refunded in full
 //   oversold_refund_failed same, but the automatic refund failed: refund by hand

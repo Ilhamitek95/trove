@@ -57,6 +57,15 @@ function createApp() {
       return res.status(400).send(`Webhook signature failed: ${err.message}`);
     }
 
+    // A Services Marketplace booking paid through Trove (metadata.kind set by
+    // src/service-bookings.js). Same guarantees as orders: signature checked
+    // above, idempotent through webhook_events inside one transaction.
+    const obj = event.data && event.data.object;
+    if (event.type === 'payment_intent.succeeded' && obj && obj.metadata && obj.metadata.kind === 'service_booking') {
+      require('./service-bookings').onPaymentSucceeded(event);
+      return res.json({ received: true });
+    }
+
     if (event.type === 'payment_intent.succeeded') {
       const pi = event.data.object;
       const orderId = Number(pi.metadata.order_id);
@@ -177,6 +186,9 @@ function createApp() {
     googleClientId: require('./google-auth').clientId(),
     providerSubFeeCents: fees.PROVIDER_SUB_FEE_CENTS,
     serviceCommissionPercent: fees.SERVICE_COMMISSION_PERCENT,
+    // Whether bookings can be paid through Trove by card — the server's own
+    // answer (a Stripe secret key is configured), not the page's publishable key.
+    serviceCardPayments: !!getStripe(),
     providerAgreementVersion: require('./config').PROVIDER_AGREEMENT_VERSION,
     servicesTermsVersion: require('./config').SERVICES_TERMS_VERSION,
   }));
@@ -228,6 +240,7 @@ function createApp() {
   app.use('/api/shops', require('./routes/shops.routes'));
   app.use('/api/seller', require('./routes/seller.routes'));
   app.use('/api/admin', require('./routes/admin.routes'));
+  app.use('/api/admin', require('./routes/admin-bookings.routes'));
   app.use('/api/checkout', require('./routes/checkout.routes'));
   app.use('/api/account', require('./routes/account.routes'));
   app.use('/api/delivery', require('./routes/delivery.routes'));
@@ -280,6 +293,14 @@ function createApp() {
   // reads the slug from the URL. Slugs never contain a dot, so asset paths
   // under /services/ fall through to the 404 instead of getting HTML.
   app.get('/services/:slug([a-z0-9-]+)', (_req, res) => res.sendFile(path.join(DOCS_DIR, 'trove-services.html')));
+  // A booking's private pages (the link in the customer's emails): the same
+  // services page opens the booking view. Never indexed — the URL is the key.
+  const bookingPage = (_req, res) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    res.sendFile(path.join(DOCS_DIR, 'trove-services.html'));
+  };
+  app.get('/services/booking/:code([A-Za-z0-9-]+)', bookingPage);
+  app.get('/services/pay/:ref([A-Za-z0-9-]+)', bookingPage);
 
   /* ---------------- Search engines ----------------
    * The public storefront is indexable; the signed-in surfaces (account,
@@ -296,6 +317,8 @@ function createApp() {
       'Disallow: /sell',
       'Disallow: /provider',
       'Disallow: /login',
+      'Disallow: /services/booking/',
+      'Disallow: /services/pay/',
       '',
       `Sitemap: ${SITE()}/sitemap.xml`,
       '',
