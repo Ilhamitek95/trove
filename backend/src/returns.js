@@ -63,20 +63,25 @@ function money(order, requestId) {
   return { gross, fee, refund: Math.max(0, gross - fee) };
 }
 
-/* ---- eligibility: why this order can't be returned, or null if it can ---- */
+/* ---- eligibility: why this order can't be returned, or null if it can ----
+ * The buyer's deadline is the order's return_window_ends_at, stamped at the
+ * last delivery as delivered + the order's return days (15, or 30 on orders
+ * placed before the 2026-09-30 change — migration 016). Rows without the
+ * stamp fall back to delivered_at + the same number of days. */
+const daysFor = (order) => order.return_days || BUYER_RETURN_DAYS;
+function deadline(order) {
+  if (!order.delivered_at) return null;
+  return order.return_window_ends_at
+    || db.prepare("SELECT datetime(?, '+' || ? || ' days') AS d").get(order.delivered_at, daysFor(order)).d;
+}
 function ineligibleReason(order) {
   if (!order) return 'Order not found';
   if (order.refunded_at) return 'This order was already refunded';
   if (!['paid', 'fulfilled'].includes(order.status)) return 'Only paid orders can be returned';
   if (!order.delivered_at) return 'Returns open once the order has been delivered';
-  const open = db.prepare("SELECT datetime(?, '+' || ? || ' days') > datetime('now') AS ok")
-    .get(order.delivered_at, BUYER_RETURN_DAYS).ok;
-  if (!open) return `The ${BUYER_RETURN_DAYS}-day return window for this order has closed`;
+  const open = db.prepare("SELECT datetime(?) > datetime('now') AS ok").get(deadline(order)).ok;
+  if (!open) return `The ${daysFor(order)}-day return window for this order has closed`;
   return null;
-}
-function deadline(order) {
-  if (!order.delivered_at) return null;
-  return db.prepare("SELECT datetime(?, '+' || ? || ' days') AS d").get(order.delivered_at, BUYER_RETURN_DAYS).d;
 }
 
 /** order_item_id → 'requested' | 'approved' for items already spoken for. */

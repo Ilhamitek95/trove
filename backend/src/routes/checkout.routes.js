@@ -45,7 +45,7 @@ const isPublicIdClash = (e) => e && /UNIQUE constraint failed: orders\.public_id
  * The server is the source of truth for prices — it never trusts amounts from the
  * client. It creates a pending order and opens ONE PaymentIntent on Trove's own
  * Stripe account. On `payment_intent.succeeded` the webhook records Trove's
- * purchase from each supplier on the consignment ledger (settled weekly);
+ * purchase from each supplier on the consignment ledger (settled fortnightly);
  * connect-tier shops (Rail B, feature-flagged) are paid per sale instead.
  */
 router.post('/', async (req, res, next) => {

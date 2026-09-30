@@ -444,7 +444,7 @@ function applicationCardHTML(s){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px">
       ${s.category?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">${esc(s.category)}</span>`:''}
       ${s.location?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">📍 ${esc(s.location)}</span>`:''}
-      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Weekly payout'}</span>
+      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Fortnightly payout'}</span>
     </div>
     ${applicationFactsHTML(s)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
@@ -528,7 +528,7 @@ function shopRowHTML(s){
     <td style="color:var(--muted)">${esc(s.location||'—')}</td>
     <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
     <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.salesCents)}</td>
-    <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Weekly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
+    <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Fortnightly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
     <td>${idCellHTML(s)}</td>
     <td><span class="pill ${esc(s.status)}">${esc(s.status)}</span></td>
     <td><div class="actions"><button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>${shopActions(s)}</div></td>
@@ -1084,7 +1084,7 @@ function renderPayouts(){
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
         <div><h3>Next settlement run</h3>
-          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 7-day return window has closed</div></div>
+          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 15-day buyer return window has closed${PREVIEW.nextRunDate?` · next scheduled run ${esc(PREVIEW.nextRunDate)}`:''}</div></div>
         <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()">Run settlement</button>
       </div>
       ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th></tr></thead>
@@ -1118,7 +1118,7 @@ function renderPayouts(){
               <td style="text-align:right">${i.purchaseNoteId?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
             </tr>`).join('')}</tbody></table>
         </div>`).join('')}</div>`
-       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
+       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every other Tuesday, or run one above.</div>`}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>VAT by quarter</h3>

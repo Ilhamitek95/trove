@@ -15,6 +15,17 @@
  *   DELIVERY_FEE_CENTS             flat buyer delivery fee, per order ...
  *   FREE_DELIVERY_THRESHOLD_CENTS  ... charged on orders AT OR BELOW this;
  *                                  waived once the cart subtotal exceeds it
+ *   RETURN_WINDOW_DAYS             the buyer's return window, counted from
+ *                                  delivery (15 — owner, 2026-09-30). The SAME
+ *                                  number holds the maker's credit: a sale is
+ *                                  payable only once this window has closed,
+ *                                  so a return inside it never needs clawing
+ *                                  back from a payout
+ *   SETTLEMENT_INTERVAL_DAYS       how often the maker settlement run happens
+ *                                  (14 = fortnightly, every other Tuesday)
+ *   SETTLEMENT_ANCHOR_DATE         a fixed run Tuesday (YYYY-MM-DD); every run
+ *                                  date is this plus a whole number of
+ *                                  intervals, so the schedule is deterministic
  */
 const num = (v, d) => {
   const n = Number(v);
@@ -32,6 +43,12 @@ const fees = {
   // keeps a platform fee and the provider's fee is the remainder.
   PROVIDER_SUB_FEE_CENTS: num(process.env.PROVIDER_SUB_FEE_CENTS, 3000), // AED 30.00 / month
   SERVICE_COMMISSION_PERCENT: num(process.env.SERVICE_COMMISSION_PERCENT, 10),
+  // Returns + maker payouts (owner, 2026-09-30: 'bi-weekly shop payments
+  // with 15 days return policy').
+  RETURN_WINDOW_DAYS: num(process.env.RETURN_WINDOW_DAYS, 15),
+  SETTLEMENT_INTERVAL_DAYS: num(process.env.SETTLEMENT_INTERVAL_DAYS, 14),
+  SETTLEMENT_ANCHOR_DATE: /^\d{4}-\d{2}-\d{2}$/.test(process.env.SETTLEMENT_ANCHOR_DATE || '')
+    ? process.env.SETTLEMENT_ANCHOR_DATE : '2026-10-06', // a Tuesday
 };
 
 // Deprecated alias — old readers still get the same number.

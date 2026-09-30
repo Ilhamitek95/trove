@@ -570,7 +570,7 @@
             <h3 style="font-size:22px;font-weight:600;margin-bottom:6px">Next payout</h3>
             <div class="row"><span class="muted">Available</span><span class="v" id="poAvail">—</span></div>
             <div class="row"><span class="muted">Arrives</span><span id="poDate">—</span></div>
-            <div class="row"><span class="muted">Schedule</span><span id="poSched">Weekly · Fridays</span></div>
+            <div class="row"><span class="muted">Schedule</span><span id="poSched">Every other Tuesday</span></div>
             <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:16px" onclick="go('payments')">View payments →</button>
           </div>
         </div>
@@ -814,7 +814,10 @@ let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',payoutT
 let products=[];
 let orders=[];
 let ME=null;
-let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[]};
+let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[],schedule:'Every other Tuesday',nextRunDate:null,returnWindowDays:15};
+/* The return window and the fortnightly calendar come from the server (fees.js) — never hard-coded here. */
+const retDays=()=>Number(SETTLE.returnWindowDays)||15;
+function runDayLabel(d){ const t=new Date(String(d)+'T00:00:00Z'); return isNaN(t)?String(d):t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}); }
 const feePct=()=>SETTLE.commissionPercent||20;
 let editingId=null, drawerStatus='live', drawerDirty=false;
 
@@ -943,8 +946,8 @@ function renderOverview(){
   $('ovBanner').innerHTML = reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
   renderOverviewChart();
   $('poAvail').textContent=aed(net);
-  $('poDate').textContent=managed ? 'Tuesdays · by Trove' : (sc.payoutsEnabled?'On your Stripe schedule':'—');
-  if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Tuesdays' : 'Your Stripe schedule';
+  $('poDate').textContent=managed ? (SETTLE.nextRunDate?runDayLabel(SETTLE.nextRunDate)+' · by Trove':'Every other Tuesday · by Trove') : (sc.payoutsEnabled?'On your Stripe schedule':'—');
+  if($('poSched'))$('poSched').textContent=managed ? 'Fortnightly · '+(SETTLE.schedule||'Every other Tuesday').toLowerCase() : 'Your Stripe schedule';
   $('ovOrders').innerHTML = orders.length
     ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
         <td style="font-weight:700">${esc(o.order?o.order.publicId:'')}</td><td>${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
@@ -1686,7 +1689,7 @@ function bannerHTML(managed, sc){
   if(managed){
     return (SETTLE.payoutSetupComplete || (SHOP.bank && SHOP.bank.iban)) ? '' :
       `<div class="banner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
-        <div><h4>Finish your payout setup</h4><p>Add your bank details so Trove can pay for the pieces it buys from you — until then you're left out of the weekly settlement run.</p></div>
+        <div><h4>Finish your payout setup</h4><p>Add your bank details so Trove can pay for the pieces it buys from you — until then you're left out of the fortnightly settlement run.</p></div>
         <button class="btn btn-coral" onclick="go('payments')">Set up payouts</button></div>`;
   }
   return sc.chargesEnabled ? '' :
@@ -1709,9 +1712,10 @@ function consignmentPayoutUI(){
         <div class="up">Your money</div>
         <div class="bal">${money(s.payableCents)}</div>
         <div class="bal-sub">${s.payableCents<0?'refunds carried forward — nets against your next purchases':'ready for the next settlement run'}</div>
-        <div class="fee-row"><span class="muted">In the 7-day return window</span><span>${money(s.pendingCents)}</span></div>
+        <div class="fee-row"><span class="muted">In the ${retDays()}-day return window</span><span>${money(s.pendingCents)}</span></div>
         <div class="fee-row"><span class="muted">Settled to date</span><span>${money(s.settledCents)}</span></div>
-        <div class="fee-row"><span class="muted">Settlement runs</span><span>Tuesdays · by Trove</span></div>
+        <div class="fee-row"><span class="muted">Settlement runs</span><span>${esc(s.schedule||'Every other Tuesday')} · by Trove</span></div>
+        ${s.nextRunDate?`<div class="fee-row"><span class="muted">Next run</span><span>${runDayLabel(s.nextRunDate)}</span></div>`:''}
         <div class="fee-row"><span class="muted">Purchase price</span><span>your list price − ${s.commissionPercent}%</span></div>
         ${hasBank?'':`<div class="warn">Add your bank details so Trove can pay you →</div>`}
       </div>
@@ -1729,7 +1733,7 @@ function consignmentPayoutUI(){
           <td><span class="order-pill ${SETTLE_STATUS_PILL(h.status)}">${h.status==='paid'?'paid':'processing'}</span></td>
           <td style="text-align:right">${h.purchaseNoteId?`<a class="btn btn-ghost btn-sm" href="${TroveAPI.base}/api/seller/purchase-notes/${h.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlements yet. Once a delivered order clears its 7-day return window, it lands in the next Tuesday run.</div>`}
+       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlements yet. Once a delivered order clears the buyer's ${retDays()}-day return window, it lands in the next fortnightly run.</div>`}
     </div>`;
 }
 
@@ -1809,7 +1813,7 @@ function payoutSetupCard(){
       <div class="fee-row"><span class="muted">Home address</span><span>${SHOP.sellerAddress?esc(SHOP.sellerAddress):'<b style="color:var(--accent-ink)">Missing</b>'}</span></div>`:''}
       <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}</span></div>
       <button class="btn btn-ghost" onclick="PAYOUT_EDIT=true;renderPayments()">Update details</button>
-      <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you each Tuesday once the buyer's 7-day return window has closed.</div>
+      <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you every other Tuesday once the buyer's ${retDays()}-day return window has closed.</div>
     </div>`;
   }
   return `<div class="card">
@@ -1839,7 +1843,7 @@ function payoutSetupCard(){
       <div class="field"><label>Emirate</label><select id="psAddrEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
     </div>`:''}
     <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:10px 0;cursor:pointer"><input type="checkbox" id="psAgree" style="margin-top:2px;accent-color:var(--coral)">
-      <span>I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--accent-ink)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus ${s.commissionPercent}% and pays me weekly after the 7-day return window.</span></label>
+      <span>I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--accent-ink)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus ${s.commissionPercent}% and pays me fortnightly once the buyer's ${retDays()}-day return window has closed.</span></label>
     <button class="btn btn-dark" onclick="savePayoutSetup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save payout details</button>
   </div>`;
 }
@@ -1891,7 +1895,7 @@ async function savePayoutSetup(){
     PSU_ID={front:null,back:null};
     PAYOUT_EDIT=false;
     await reloadPayouts();
-    toast('Payout setup complete — you\'re in the weekly settlement runs');
+    toast('Payout setup complete — you\'re in the fortnightly settlement runs');
     renderPayments(); renderOverview();
   }catch(e){ toast(e.message||'Could not save'); }
 }
@@ -1899,7 +1903,7 @@ async function savePayoutSetup(){
 // storefront footer link) — no raw-markdown modal here.
 function showAgreement(){ window.open('/seller-agreement','_blank','noopener'); }
 
-/* ---------------- ADMIN — weekly settlement run (house/admin only) ---------------- */
+/* ---------------- ADMIN — fortnightly settlement run (house/admin only) ---------------- */
 const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
 async function renderAdminPayouts(){
   const v=$('view-adminpayouts');
@@ -1924,7 +1928,7 @@ async function renderAdminPayouts(){
           <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
           <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(s.netCents)}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">Nothing payable — no purchase has cleared its 7-day return window since the last run.</div>`}
+       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">Nothing payable — no purchase has cleared the buyer's ${retDays()}-day return window since the last run.</div>`}
       ${held.length?`<div style="margin-top:12px;font-size:12.5px;color:var(--muted);font-weight:600">Held back: ${held.map(h=>`${esc(h.name)} (${money(h.netCents)} — ${EXCLUDE_REASON[h.reason]||h.reason})`).join(' · ')}</div>`:''}
     </div>`;
   const history=`
@@ -1942,7 +1946,7 @@ async function renderAdminPayouts(){
           </div>
           <div style="margin-top:8px;font-size:13px;color:var(--muted);font-weight:600">${st.items.map(i=>`${esc(i.shopName)} · ${money(i.amountCents)}${i.purchaseNoteId?` · <a href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">note</a>`:''}`).join(' &nbsp;—&nbsp; ')}</div>
         </div>`).join('')
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
+       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlement runs yet — they happen every other Tuesday${preview.nextRunDate?` (next: ${runDayLabel(preview.nextRunDate)})`:''}, or run one above.</div>`}
     </div>`;
   v.innerHTML = `<div class="sec-head" style="margin-bottom:14px"><span class="n">Pay your consignment suppliers: run the settlement, upload the bank CSV to the bank, send the transfers, then mark it paid.</span></div>` + due + history;
 }

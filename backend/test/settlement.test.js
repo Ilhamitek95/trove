@@ -50,7 +50,8 @@ test('inside the return window the credit is pending, not payable', async () => 
 });
 
 test('window closed → run drafts a settlement with the right item + reference', async () => {
-  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-8 days'), return_window_ends_at=datetime('now','-1 day') WHERE order_id=?").run(orderId);
+  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE order_id=?").run(orderId);
+  db.prepare("UPDATE orders SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(orderId);
 
   const preview = await ctx.api('GET', '/api/admin/settlements/preview', { cookie: adminCookie });
   assert.equal(preview.data.eligible.length, 1);

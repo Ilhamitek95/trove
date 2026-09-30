@@ -2,8 +2,8 @@
 
 API for the trove multi-vendor marketplace: accounts & sessions, a
 products/orders database, delivery tracking, and the **consignment purchase
-model** — Trove buys each sold piece from its supplier and settles weekly
-after the return window. (A feature-flagged Stripe Connect rail exists for
+model** — Trove buys each sold piece from its supplier and settles
+fortnightly after the buyer's 15-day return window. (A feature-flagged Stripe Connect rail exists for
 licensed sellers — see the root README's “Payment architecture: two rails”.)
 
 Stack: Node + Express + SQLite (`better-sqlite3`) + Stripe. SQLite keeps it
@@ -55,8 +55,9 @@ stripe listen --forward-to localhost:4242/api/stripe/webhook
    transfers, and each supplier's purchase price (their subtotal minus
    `COMMISSION_PERCENT`) is credited on the `seller_balances` ledger. A courier
    pickup is booked per shop.
-4. **Settlement** — once a parcel is delivered and its 7-day return window has
-   closed, the credit becomes payable. Every Tuesday the settlement run drafts
+4. **Settlement** — once a parcel is delivered and the buyer's 15-day return
+   window has closed, the credit becomes payable. Every other Tuesday the
+   settlement run drafts
    one bank transfer per supplier (reference “Purchase of handmade goods —
    PO #…”); the admin exports the bank CSV, sends the transfers, and marks the
    run paid — which also generates a self-billed purchase note per supplier.

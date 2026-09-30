@@ -1,12 +1,12 @@
 'use strict';
 /**
- * Admin — marketplace oversight and the weekly settlement run.
+ * Admin — marketplace oversight and the fortnightly settlement run.
  *
  * On the consignment rail Trove purchases each sold item from its supplier
  * (list price minus the purchase margin) and resells it to the buyer. What
  * Trove owes suppliers accrues on the seller_balances ledger; once a parcel
- * is delivered and its 7-day return window closes, the credit becomes payable
- * and the weekly settlement run (src/settlement.js) batches it into a bank
+ * is delivered and the buyer's 15-day return window closes, the credit becomes
+ * payable and the fortnightly settlement run (src/settlement.js) batches it into a bank
  * transfer with self-billed purchase documentation.
  */
 const express = require('express');
@@ -504,7 +504,7 @@ router.post('/returns/:id/decline', requireAdmin, (req, res) => {
   res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id)) });
 });
 
-/* ---------------- Weekly settlements (consignment purchases) ----------------
+/* ---------------- Fortnightly settlements (consignment purchases) ----------
  * The old order_items sweep (payouts/preview + payouts/run) is retired: money
  * owed to suppliers now lives on the seller_balances ledger and is settled by
  * src/settlement.js. Old payout batches stay readable below for history.    */
@@ -514,7 +514,7 @@ const settlement = require('../settlement');
 // GET /api/admin/settlements/preview → what the next run would pay, and who
 // is held back (payout setup incomplete / netted negative → carry forward).
 router.get('/settlements/preview', requireAdmin, (_req, res) => {
-  res.json(settlement.preview());
+  res.json({ ...settlement.preview(), nextRunDate: settlement.nextRunDate(), schedule: settlement.scheduleLabel() });
 });
 
 // POST /api/admin/settlements/run { runDate? } → create the draft settlement.

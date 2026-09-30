@@ -459,7 +459,7 @@ router.get('/returns', requireSeller, (req, res) => {
 
 // Advance a shipment's tracking: status + courier + tracking number.
 // 'delivered' goes through the shared markDelivered funnel (same path as the
-// courier webhook) so the 7-day return-window clock is stamped exactly once;
+// courier webhook) so the 15-day return-window clock is stamped exactly once;
 // stepping BACK from delivered is blocked once the credit is in a settlement.
 // Courier label for a booked parcel — the courier's barcode is what makes the
 // parcel trackable through their depots, so the maker prints this one.
@@ -627,8 +627,8 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Supplier money view: pending (return window still open), payable (next
-// settlement run — may be negative after refunds), settled to date, and the
+// Supplier money view: pending (the buyer's 15-day return window still open),
+// payable (next fortnightly settlement run — may be negative after refunds), settled to date, and the
 // settlement history with purchase-note downloads. Every figure derives from
 // the single eligibility rule in src/settlement.js.
 router.get('/settlements', requireSeller, (req, res) => {
@@ -648,6 +648,11 @@ router.get('/settlements', requireSeller, (req, res) => {
     pendingCents: bal.pendingCents,
     payableCents: bal.payableCents,
     settledCents: bal.settledCents + legacyPaid,
+    // The fortnightly calendar + the hold, so the dashboard never hard-codes them.
+    schedule: settlement.scheduleLabel(),
+    nextRunDate: settlement.nextRunDate(),
+    upcomingRunDates: settlement.upcomingRunDates(3),
+    returnWindowDays: fees.RETURN_WINDOW_DAYS,
     history: history.map((h) => ({
       id: h.id, runDate: h.run_date, status: h.status, paidAt: h.paid_at,
       amountCents: h.amount_cents, creditCents: h.credit_cents, debitCents: h.debit_cents,

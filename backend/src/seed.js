@@ -179,16 +179,17 @@ mkCredit.run(mug.shop_id, demoOrder, fees.split(mug.price_cents).net);
 mkCredit.run(wallet.shop_id, demoOrder, fees.split(wallet.price_cents).net);
 
 // Shipments for the demo order so tracking shows on both sides. Kiln's parcel
-// was delivered 9 days ago — its 7-day return window has closed, so the next
-// settlement run has an eligible credit out of the box. Ember still processing.
+// was delivered 17 days ago — its 15-day return window has closed; the credit
+// becomes payable once Ember's parcel (still processing) is delivered and the
+// buyer's window on the whole order closes.
 const mkShip = db.prepare("INSERT INTO shipments (order_id,shop_id,status,carrier,tracking_number,delivered_at,return_window_ends_at) VALUES (?,?,?,?,?,?,?)");
 const mkEv = db.prepare("INSERT INTO shipment_events (shipment_id,status,note,created_at) VALUES (?,?,?,datetime('now',?))");
 const kilnShip = mkShip.run(demoOrder, mug.shop_id, 'delivered', 'Quiqup', 'TRVX-4471902',
-  db.prepare("SELECT datetime('now','-9 days') AS t").get().t,
+  db.prepare("SELECT datetime('now','-17 days') AS t").get().t,
   db.prepare("SELECT datetime('now','-2 days') AS t").get().t).lastInsertRowid;
-mkEv.run(kilnShip, 'processing', 'Order received — preparing your items', '-12 days');
-mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Quiqup) · TRVX-4471902', '-10 days');
-mkEv.run(kilnShip, 'delivered', 'Delivered (confirmed by courier)', '-9 days');
+mkEv.run(kilnShip, 'processing', 'Order received — preparing your items', '-20 days');
+mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Quiqup) · TRVX-4471902', '-18 days');
+mkEv.run(kilnShip, 'delivered', 'Delivered (confirmed by courier)', '-17 days');
 const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '', null, null).lastInsertRowid;
 mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-12 days');
 
@@ -203,6 +204,6 @@ mkReview.run(layla, mug.shop_id, null, demoOrder, 5,
 
 const providers = require('./demo-providers').ensureDemoProviders(db);
 console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments), %d service providers (1 pending) with 3 booking requests.', products.length + 1, providers);
-console.log('Suppliers: house, Kiln, Ember, Fern = consignment (weekly settlement, payout setup complete); Loom + Folio = connect tier (Rail B, no Stripe account attached).');
+console.log('Suppliers: house, Kiln, Ember, Fern = consignment (fortnightly settlement, payout setup complete); Loom + Folio = connect tier (Rail B, no Stripe account attached).');
 console.log('Kiln has one settlement-eligible credit (delivered 9 days ago, window closed).');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');
