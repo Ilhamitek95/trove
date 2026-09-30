@@ -200,7 +200,7 @@ function onPaymentSucceeded(event) {
     const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type);
     if (!seen.changes) return null;
     const bk = get(Number(pi.metadata && pi.metadata.booking_id));
-    if (!bk || bk.stripe_payment_intent_id !== pi.id || bk.paid_at) return null;
+    if (!bk || !pi.id || !bk.stripe_payment_intent_id || bk.stripe_payment_intent_id !== pi.id || bk.paid_at) return null;
     const amount = Number(pi.amount_received || pi.amount) || bk.amount_cents;
     const split = fees.serviceSplit(amount);
     if (bk.status === 'awaiting_payment') {
@@ -210,6 +210,7 @@ function onPaymentSucceeded(event) {
       return { kind: 'paid', id: bk.id };
     }
     // Declined or cancelled while the customer was paying: nothing to deliver.
+    if (!['declined', 'cancelled'].includes(bk.status)) return null;
     db.prepare(`UPDATE service_bookings SET paid_at=datetime('now'), amount_cents=?, commission_cents=?, provider_net_cents=?,
         attention='paid_after_cancel' WHERE id=?`).run(amount, split.fee, split.net, bk.id);
     return { kind: 'refund', id: bk.id };

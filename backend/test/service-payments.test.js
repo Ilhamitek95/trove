@@ -380,3 +380,35 @@ test('every booking email renders, names the booking and keeps to the copy rules
   assert.ok(!all.bookingNewRequest.html.includes('sara@test.local'), 'the provider never gets the email');
   assert.ok(!all.bookingNewRequest.html.includes('502223344'), 'nor the phone before payment');
 });
+
+/* ---------------- copy: launch fee + honest payment status ---------------- */
+
+test('the provider dashboard shows the fee as free during launch, never a running subscription', async () => {
+  const me = await api('GET', '/api/provider/me', { cookie: providerCookie });
+  assert.equal(me.data.provider.subscription.freeDuringLaunch, true);
+  assert.equal(me.data.provider.subscription.startedAt, undefined);
+  const fs = require('fs');
+  const path = require('path');
+  const read = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'docs', f), 'utf8');
+  const panel = read('provider-panel.js');
+  assert.match(panel, /Awaiting the customer’s card payment/);
+  assert.match(panel, /if \(b\.paid\) return `<span class="pp-paid">Paid through Trove/, 'paid wording only once paid');
+  assert.doesNotMatch(panel, /Running since/);
+  for (const f of ['trove-apply.html', 'trove-seller.html', 'trove-services.html', 'provider-agreement.html']) {
+    assert.match(read(f), /30 days/, `${f} gives the notice period`);
+  }
+  const services = read('trove-services.html');
+  assert.doesNotMatch(services, /arriving with (our )?card payments|Coming with Trove’s card payments/);
+  assert.match(services, /serviceCardPayments/, 'the booking form asks the server');
+});
+
+test('a payment event can never touch a booking that has no PaymentIntent of its own', async () => {
+  const r = await book(svcIds.fixed);
+  const bk = row(r.data.booking.id);
+  assert.equal(bk.stripe_payment_intent_id, null);
+  await ctx.postWebhook(paidEvent(bk)); // id: null, like a misrouted event
+  await ctx.postWebhook(paidEvent({ ...bk, stripe_payment_intent_id: 'pi_someone_else' }));
+  const after = row(bk.id);
+  assert.equal(after.paid_at, null);
+  assert.equal(after.status, 'requested');
+});
