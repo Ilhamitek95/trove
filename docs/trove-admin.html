@@ -540,9 +540,14 @@ function renderShops(){
 }
 async function setShopStatus(id,status,confirmFirst){
   const s=SHOPS.find(x=>x.id===id);
-  if(confirmFirst&&!confirm(`${status==='rejected'?'Reject':'Suspend'} "${s?s.name:'this shop'}"? It disappears from the storefront immediately.`))return;
+  // Rejecting asks for an optional note, quoted in the email to the applicant.
+  let note;
+  if(status==='rejected'){ note=prompt(`Reject "${s?s.name:'this shop'}"? We email the applicant.
+
+An optional note for them (leave empty for none):`,''); if(note===null)return; }
+  else if(confirmFirst&&!confirm(`Suspend "${s?s.name:'this shop'}"? It disappears from the storefront immediately.`))return;
   try{
-    await TroveAPI.api('/api/admin/shops/'+id,{method:'PATCH',body:{status}});
+    await TroveAPI.api('/api/admin/shops/'+id,{method:'PATCH',body:note===undefined?{status}:{status,note}});
     toast(`${s?s.name:'Shop'} → ${status}`);
     await reload();
   }catch(e){ toast(e.message||'Could not update the shop'); }
@@ -597,9 +602,13 @@ function renderProviders(){
 }
 async function setProviderStatus(id,status,confirmFirst){
   const p=PROVIDERS.find(x=>x.id===id);
-  if(confirmFirst&&!confirm(`${status==='rejected'?'Reject':'Suspend'} "${p?p.name:'this provider'}"? Their services disappear from the Services Marketplace immediately.`))return;
+  let note;
+  if(status==='rejected'){ note=prompt(`Reject "${p?p.name:'this provider'}"? We email the applicant.
+
+An optional note for them (leave empty for none):`,''); if(note===null)return; }
+  else if(confirmFirst&&!confirm(`Suspend "${p?p.name:'this provider'}"? Their services disappear from the Services Marketplace immediately.`))return;
   try{
-    await TroveAPI.api('/api/admin/providers/'+id,{method:'PATCH',body:{status}});
+    await TroveAPI.api('/api/admin/providers/'+id,{method:'PATCH',body:note===undefined?{status}:{status,note}});
     toast(`${p?p.name:'Provider'} → ${status}`);
     await reload();
   }catch(e){ toast(e.message||'Could not update the provider'); }

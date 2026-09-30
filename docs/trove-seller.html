@@ -2219,6 +2219,8 @@ async function boot(){
   fillStoreForm();
   const params=new URLSearchParams(location.search);
   if(params.get('connect')){ await refreshStripeStatus(); go('payments'); }
+  // Email links land on a tab, e.g. the order-to-pack email opens /sell?view=orders.
+  else if(/^[a-z]+$/.test(params.get('view')||'')&&$('view-'+params.get('view'))&&TITLES[params.get('view')]) go(params.get('view'));
   else go('overview');
 }
 boot();

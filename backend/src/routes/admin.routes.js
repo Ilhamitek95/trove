@@ -220,6 +220,10 @@ router.get('/shops/:id/eid/:side', requireAdmin, (req, res, next) => {
 
 // PATCH /api/admin/shops/:id { status } → the approval workflow.
 // pending → approved/rejected; approved ↔ suspended; anything can be re-reviewed.
+// An optional { note } is kept on the shop and quoted in the rejection
+// email. The applicant is emailed when a decision changes the status to
+// approved or rejected (best-effort, never blocks the change).
+const reviewNote = (b) => String((b && b.note) || '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').trim().slice(0, 600);
 router.patch('/shops/:id', requireAdmin, (req, res) => {
   const { status } = req.body || {};
   if (!['pending', 'approved', 'rejected', 'suspended'].includes(status))
@@ -227,6 +231,8 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
+  if (req.body.note !== undefined) db.prepare('UPDATE shops SET review_note=? WHERE id=?').run(reviewNote(req.body), shop.id);
+  if (status !== shop.status) require('../notify').shopDecided(shop.id, status);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
 });
 
@@ -269,6 +275,8 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
   const p = db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Provider not found' });
   db.prepare('UPDATE service_providers SET status=? WHERE id=?').run(status, p.id);
+  if (req.body.note !== undefined) db.prepare('UPDATE service_providers SET review_note=? WHERE id=?').run(reviewNote(req.body), p.id);
+  if (status !== p.status) require('../notify').providerDecided(p.id, status);
   if (status === 'approved' && !p.sub_started_at) {
     db.prepare("UPDATE service_providers SET sub_started_at=datetime('now') WHERE id=?").run(p.id);
   }

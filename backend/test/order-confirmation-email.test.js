@@ -46,8 +46,11 @@ test('paying sends the buyer a receipt with the order, the pieces and the money'
   assert.equal(res.status, 200, res.text);
   await ctx.api('POST', '/api/checkout/demo-complete', { cookie: buyerCookie, body: { orderId: res.data.orderId } });
 
-  assert.equal(sent.length, 1, 'exactly one receipt');
-  const mail = sent[0];
+  // The makers hear too (one order-to-pack email per shop, see
+  // test/account-emails.test.js); the buyer gets exactly one receipt.
+  const receipts = sent.filter((m) => m.to === 'amal@test.local');
+  assert.equal(receipts.length, 1, 'exactly one receipt');
+  const mail = receipts[0];
   assert.equal(mail.to, 'amal@test.local');
   assert.match(mail.subject, new RegExp(res.data.orderId));
   assert.match(mail.html, /Thank you, Amal/, 'greets them by name');
