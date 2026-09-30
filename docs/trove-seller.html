@@ -872,6 +872,7 @@ function applyShop(s){
     pickupAddress:s.pickup_address||'',pickupPhone:s.pickup_phone||'',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
+    agreementUpdateDue:!!s.agreementUpdateDue,currentAgreementVersion:s.currentAgreementVersion||'',
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
@@ -943,7 +944,7 @@ function renderOverview(){
   if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
-  $('ovBanner').innerHTML = reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
+  $('ovBanner').innerHTML = agreementBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
   renderOverviewChart();
   $('poAvail').textContent=aed(net);
   $('poDate').textContent=managed ? (SETTLE.nextRunDate?runDayLabel(SETTLE.nextRunDate)+' · by Trove':'Every other Tuesday · by Trove') : (sc.payoutsEnabled?'On your Stripe schedule':'—');
@@ -1685,6 +1686,22 @@ function graduationBannerHTML(){
       ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">Apply for an e-Trader licence ↗</a>'
       :'You applied with a trade licence. Once the Trove team verifies it, we\'ll set up direct per-sale payouts for you — no action needed.'}</p></div></div>`;
 }
+/* A newer Seller Agreement: a gentle prompt, never a block — selling and
+   settlement carry on while it is showing. */
+function agreementBannerHTML(){
+  if(!SHOP.agreementUpdateDue)return '';
+  return `<div class="banner" id="agreeBanner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
+    <div><h4>Please review and accept the updated Seller Agreement</h4><p>Version ${esc(SHOP.currentAgreementVersion)} moves payouts to every other Tuesday and pays each sale once the buyer's ${retDays()}-day return window has closed. <a href="/seller-agreement" target="_blank" rel="noopener" style="color:var(--accent-ink);text-decoration:underline">Read the updated agreement</a></p></div>
+    <button class="btn btn-dark" onclick="acceptAgreement(this)">I accept</button></div>`;
+}
+async function acceptAgreement(btn){
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const {shop}=await TroveAPI.api('/api/seller/agreement',{method:'POST',body:{accept:true}});
+    applyShop(shop); toast('Thank you — the updated Seller Agreement is accepted'); renderOverview();
+    if($('view-payments')&&$('view-payments').innerHTML)renderPayments();
+  }catch(e){ toast(e.message||'Could not save'); if(btn){btn.disabled=false;btn.textContent='I accept';} }
+}
 function bannerHTML(managed, sc){
   if(managed){
     return (SETTLE.payoutSetupComplete || (SHOP.bank && SHOP.bank.iban)) ? '' :
@@ -1811,7 +1828,7 @@ function payoutSetupCard(){
       <div class="fee-row"><span class="muted">IBAN</span><span>${esc(b.iban||'')}</span></div>
       ${SHOP.needsId?`<div class="fee-row"><span class="muted">Emirates ID</span><span>${SHOP.eidFront&&SHOP.eidBack?'On file ✓':'<b style="color:var(--accent-ink)">Missing — update your details</b>'}</span></div>
       <div class="fee-row"><span class="muted">Home address</span><span>${SHOP.sellerAddress?esc(SHOP.sellerAddress):'<b style="color:var(--accent-ink)">Missing</b>'}</span></div>`:''}
-      <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}</span></div>
+      <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}${SHOP.agreementUpdateDue?` · <a href="#" onclick="acceptAgreement();return false" style="color:var(--accent-ink)">accept ${esc(SHOP.currentAgreementVersion)}</a>`:''}</span></div>
       <button class="btn btn-ghost" onclick="PAYOUT_EDIT=true;renderPayments()">Update details</button>
       <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you every other Tuesday once the buyer's ${retDays()}-day return window has closed.</div>
     </div>`;

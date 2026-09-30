@@ -20,6 +20,11 @@ function publicShop(shop) {
   safe.eidFrontProvided = !!eid_front_file;
   safe.eidBackProvided = !!eid_back_file;
   safe.needsIdVerification = !shop.connect_queue && !shop.license_verified_at;
+  // A maker who accepted an older Seller Agreement is asked, gently, to
+  // review the current one (never blocks selling or settlement).
+  const current = require('../config').AGREEMENT_VERSION;
+  safe.currentAgreementVersion = current;
+  safe.agreementUpdateDue = !!(shop.agreement_accepted_at && shop.agreement_version !== current);
   return safe;
 }
 
@@ -625,6 +630,20 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
     }
     res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
   } catch (e) { next(e); }
+});
+
+// POST /api/seller/agreement { accept: true } → accept the CURRENT Seller
+// Agreement (after a version bump). Records the version, the time and a hash
+// of the exact text accepted — the same three facts payout setup records.
+// Deliberately separate from payout setup: no bank details are re-asked.
+router.post('/agreement', requireSeller, (req, res) => {
+  if ((req.body || {}).accept !== true) return res.status(400).json({ error: 'Tick the box to accept the Seller Agreement' });
+  const cfg = require('../config');
+  const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);
+  const agreementHash = require('../crypto').sha256(require('fs').readFileSync(file, 'utf8'));
+  db.prepare("UPDATE shops SET agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=? WHERE id=?")
+    .run(cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+  res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
 // Supplier money view: pending (the buyer's 15-day return window still open),

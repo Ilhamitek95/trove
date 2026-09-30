@@ -11,7 +11,7 @@
  */
 const on = (v) => v === '1' || v === 'true';
 
-const AGREEMENT_VERSION = 'v3';
+const AGREEMENT_VERSION = 'v4';
 // Services Marketplace legal documents (backend/legal/*). Bump on any change
 // and add a new file — accepted versions are recorded on profiles/bookings.
 const PROVIDER_AGREEMENT_VERSION = 'v1';
