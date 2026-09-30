@@ -208,6 +208,8 @@
   .sw.on{background:var(--coral)}
   .sw::after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:var(--paper);transition:.2s}
   .sw.on::after{left:22px}
+  .dhint{font-size:13px;color:var(--muted);font-weight:500;margin:-6px 0 16px;line-height:1.55}
+  .dhint a,.dhint button{color:var(--char);font-weight:700;border-bottom:1px solid var(--rose);text-decoration:none;font-size:13px}
   .sub-h{font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:6px 0 14px}
 
   /* drawer */
@@ -377,10 +379,24 @@
       <div class="view" id="view-details">
         <div class="card form-card">
           <div class="sub-h">Personal details</div>
-          <div class="field"><label>Name</label><input id="dName" readonly></div>
-          <div class="field"><label>Email</label><input id="dEmail" readonly></div>
-          <div class="field" id="dPhoneWrap" style="display:none"><label>Mobile</label><input id="dPhone" readonly></div>
-          <p style="font-size:13px;color:var(--muted);font-weight:500;margin-top:4px">To change your name, email or mobile, <a href="/contact" style="color:var(--char);font-weight:700;border-bottom:1px solid var(--rose)">contact us</a> and we'll update it for you. Delivery phone numbers live on each address.</p>
+          <div class="field"><label for="dName">Name</label><input id="dName" maxlength="80" autocomplete="name"></div>
+          <div class="field"><label for="dPhone">UAE mobile (optional)</label><input id="dPhone" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
+          <p class="dhint">Your mobile is a second way to sign in. Delivery phone numbers live on each address.</p>
+          <button class="btn btn-dark" id="dSave" onclick="saveDetails()">Save details</button>
+        </div>
+        <div class="card form-card" style="margin-top:18px">
+          <div class="sub-h">Email</div>
+          <div class="field"><label for="dEmail">Email</label><input id="dEmail" readonly></div>
+          <p class="dhint" id="dVerify"></p>
+        </div>
+        <div class="card form-card" style="margin-top:18px">
+          <div class="sub-h" id="pwHead">Password</div>
+          <p class="dhint" id="pwIntro" style="display:none">You sign in with Google. Set a password if you would also like to sign in with your email.</p>
+          <div class="field" id="pwCurWrap"><label for="pwCur">Current password</label><input id="pwCur" type="password" autocomplete="current-password"></div>
+          <div class="field"><label for="pwNew">New password</label><input id="pwNew" type="password" placeholder="At least 8 characters" autocomplete="new-password"></div>
+          <div class="field"><label for="pwNew2">Type it again</label><input id="pwNew2" type="password" autocomplete="new-password"></div>
+          <p class="dhint">Changing it signs out every other device. <a href="/login?forgot=1">Forgot your current password?</a></p>
+          <button class="btn btn-dark" id="pwSave" onclick="savePassword()">Update password</button>
         </div>
       </div>
 
@@ -914,10 +930,49 @@ async function reloadAddresses(){
 function initUser(){
   const n=ME.name||'there', first=n.split(' ')[0];
   $('uName').textContent=first; $('uEmail').textContent=ME.email; $('uAv').textContent=(first[0]||'?').toUpperCase();
+  fillDetails();
+  const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='/login';};
+}
+/* ---------- MY DETAILS ---------- */
+function fillDetails(){
   $('dName').value=ME.name||'';
   $('dEmail').value=ME.email||'';
-  if(ME.phone){$('dPhone').value=ME.phone;$('dPhoneWrap').style.display='';}
-  const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='/login';};
+  $('dPhone').value=ME.phone||'';
+  $('dVerify').innerHTML=ME.emailVerified
+    ? 'Confirmed. This is where your receipts and reset links go.'
+    : 'Not confirmed yet — we sent you a link when you joined. <button type="button" onclick="resendVerify()">Send it again</button>';
+  const has=ME.hasPassword!==false;
+  $('pwCurWrap').style.display=has?'':'none';
+  $('pwIntro').style.display=has?'none':'';
+  $('pwHead').textContent=has?'Password':'Set a password';
+  $('pwSave').textContent=has?'Update password':'Set password';
+}
+async function saveDetails(){
+  const name=$('dName').value.trim();
+  if(!name){toast('Add your name');return;}
+  const btn=$('dSave'); btn.disabled=true;
+  try{
+    const {user}=await TroveAPI.api('/api/account/me',{method:'PATCH',body:{name,phone:$('dPhone').value.trim()}});
+    ME=user; initUser(); toast('Details saved');
+  }catch(e){ toast(e.message||'Could not save your details'); }
+  finally{ btn.disabled=false; }
+}
+async function resendVerify(){
+  try{ await TroveAPI.api('/api/auth/verify-email/resend',{method:'POST',body:{}}); toast('Sent — check your inbox'); }
+  catch(e){ toast(e.message||'Could not send it'); }
+}
+async function savePassword(){
+  const has=ME.hasPassword!==false, cur=$('pwCur').value, pw=$('pwNew').value;
+  if(has&&!cur){toast('Enter your current password');return;}
+  if(pw.length<8){toast('Choose a password of at least 8 characters');return;}
+  if(pw!==$('pwNew2').value){toast('The two new passwords do not match');return;}
+  const btn=$('pwSave'); btn.disabled=true;
+  try{
+    const {user}=await TroveAPI.api('/api/auth/password',{method:'POST',body:{current:cur,password:pw}});
+    ME=user; ['pwCur','pwNew','pwNew2'].forEach(id=>$(id).value=''); fillDetails();
+    toast(has?'Password updated — other devices are signed out':'Password set');
+  }catch(e){ toast(e.message||'Could not update your password'); }
+  finally{ btn.disabled=false; }
 }
 async function boot(){
   let session=null;
@@ -929,6 +984,7 @@ async function boot(){
   // Old links to #wishlist, #payments or #following land on the overview.
   const _sec=(location.hash||'').replace('#','');
   go(TITLES[_sec]?_sec:'overview');
+  if(new URLSearchParams(location.search).get('verified')){ toast('Thank you — your email is confirmed'); history.replaceState(null,'','/account'+location.hash); }
 }
 boot();
 </script>

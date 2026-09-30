@@ -9,7 +9,13 @@ const verifyPassword = (pw, hash) => bcrypt.compareSync(pw, hash);
 function publicUser(u) {
   if (!u) return null;
   // Their own sign-in mobile — used to prefill the courier field at checkout.
-  return { id: u.id, email: u.email, name: u.name, role: u.role, phone: u.phone || null };
+  // emailVerified: the owner confirmed the address (welcome link, a reset or
+  // Google). hasPassword: false for Google-only accounts, whose stored hash
+  // is a random placeholder — the account page offers "Set a password".
+  return {
+    id: u.id, email: u.email, name: u.name, role: u.role, phone: u.phone || null,
+    emailVerified: !!u.email_verified_at, hasPassword: u.password_set !== 0,
+  };
 }
 
 function requireAuth(req, res, next) {

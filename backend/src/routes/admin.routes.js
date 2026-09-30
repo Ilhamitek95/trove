@@ -84,7 +84,7 @@ router.get('/products', requireAdmin, (_req, res) => {
     ORDER BY p.created_at DESC`).all();
   res.json({ products: rows.map((p) => ({
     id: p.id, name: p.name, description: p.description, category: p.category,
-    priceCents: p.price_cents, stock: p.stock, status: p.status,
+    priceCents: p.price_cents, stock: p.stock, status: p.status, adminHidden: !!p.admin_hidden_at,
     imageSeed: p.image_seed, tags: parseTags(p.tags), createdAt: p.created_at,
     images: (() => { try { const v = JSON.parse(p.images || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } })(),
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, color: p.color, image: p.shop_image, isHouse: !!p.is_house, status: p.shop_status },
@@ -106,6 +106,11 @@ router.patch('/products/:id', requireAdmin, (req, res) => {
   }
   db.prepare('UPDATE products SET status=COALESCE(?,status), category=COALESCE(?,category) WHERE id=?')
     .run(b.status, b.category, p.id);
+  // An admin hide is a moderation lock: the seller sees 'Hidden by Trove'
+  // and can't put the piece back on sale. Only an admin status change
+  // (live or draft) lifts it.
+  if (b.status === 'hidden') db.prepare("UPDATE products SET admin_hidden_at=COALESCE(admin_hidden_at, datetime('now')) WHERE id=?").run(p.id);
+  else if (b.status !== undefined) db.prepare('UPDATE products SET admin_hidden_at=NULL WHERE id=?').run(p.id);
   if (b.tags !== undefined)
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
@@ -215,6 +220,10 @@ router.get('/shops/:id/eid/:side', requireAdmin, (req, res, next) => {
 
 // PATCH /api/admin/shops/:id { status } → the approval workflow.
 // pending → approved/rejected; approved ↔ suspended; anything can be re-reviewed.
+// An optional { note } is kept on the shop and quoted in the rejection
+// email. The applicant is emailed when a decision changes the status to
+// approved or rejected (best-effort, never blocks the change).
+const reviewNote = (b) => String((b && b.note) || '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').trim().slice(0, 600);
 router.patch('/shops/:id', requireAdmin, (req, res) => {
   const { status } = req.body || {};
   if (!['pending', 'approved', 'rejected', 'suspended'].includes(status))
@@ -222,6 +231,8 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
+  if (req.body.note !== undefined) db.prepare('UPDATE shops SET review_note=? WHERE id=?').run(reviewNote(req.body), shop.id);
+  if (status !== shop.status) require('../notify').shopDecided(shop.id, status);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
 });
 
@@ -264,6 +275,8 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
   const p = db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Provider not found' });
   db.prepare('UPDATE service_providers SET status=? WHERE id=?').run(status, p.id);
+  if (req.body.note !== undefined) db.prepare('UPDATE service_providers SET review_note=? WHERE id=?').run(reviewNote(req.body), p.id);
+  if (status !== p.status) require('../notify').providerDecided(p.id, status);
   if (status === 'approved' && !p.sub_started_at) {
     db.prepare("UPDATE service_providers SET sub_started_at=datetime('now') WHERE id=?").run(p.id);
   }

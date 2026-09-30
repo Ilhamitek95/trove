@@ -84,6 +84,7 @@
   .social .gwrap{flex:1;display:flex;justify-content:center;align-items:center;min-height:44px}
   .swap{text-align:center;font-size:13.5px;color:var(--muted);font-weight:500;margin-top:24px}
   .swap a{color:var(--char);font-weight:700;text-decoration:none;border-bottom:1px solid var(--coral);padding-bottom:1px}
+  .note{display:none;background:var(--rose-tint);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.55;font-weight:600;margin:0 0 16px}
   .demo{text-align:center;font-size:11px;color:var(--muted);font-weight:500;margin-top:22px;display:flex;gap:7px;align-items:center;justify-content:center}
 
   *{-webkit-tap-highlight-color:transparent}
@@ -137,7 +138,7 @@
   <!-- AUTH PANEL -->
   <div class="authside">
     <div class="auth">
-      <div class="tabs">
+      <div class="tabs" id="tabs">
         <button class="on" id="tabShop" onclick="setMode('shop')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6 5 2H2"/></svg>
           I'm shopping
@@ -150,21 +151,23 @@
 
       <h2 id="aTitle">Sign in to shop</h2>
       <p class="lede" id="aLede">Your account and your orders.</p>
+      <div class="note" id="authNote" role="status"></div>
 
       <div class="field" id="nameField" style="display:none"><label>Your name</label><input id="name" placeholder="Your full name"></div>
       <div class="field" id="mobileField" style="display:none"><label>UAE mobile</label><input id="mobile" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
       <div class="field" id="emailField"><label id="emailLabel">Email</label><input id="email" type="email" placeholder="you@email.com"></div>
-      <div class="field"><div class="fl"><label>Password</label><a href="/contact">Forgot your password? Contact us</a></div>
+      <div class="field" id="passField"><div class="fl"><label id="passLabel">Password</label><a href="/login?forgot=1" id="forgotLink" onclick="setView('forgot');return false">Forgot your password?</a></div>
         <div class="pw"><input id="pass" type="password" placeholder="Your password" autocomplete="current-password">
           <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('pass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
+      <div class="field" id="pass2Field" style="display:none"><label>Type it again</label><input id="pass2" type="password" placeholder="The same new password" autocomplete="new-password"></div>
       <div class="field" id="shopField" style="display:none"><label>Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
       <div id="authErr" style="display:none;color:var(--accent-ink);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
       <p class="agree" id="regAgree" style="display:none">By creating an account you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       <button class="submit" id="submitBtn" onclick="signIn()">Sign in</button>
 
-      <div class="or">or</div>
-      <div class="social">
+      <div class="or" id="orRow">or</div>
+      <div class="social" id="socialRow">
         <div class="gwrap" id="gWrap"><div id="gBtn"></div></div>
         <button id="phoneBtn" onclick="togglePhone()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg><span id="phoneBtnLabel">UAE mobile</span></button>
       </div>
@@ -252,8 +255,68 @@ function validUAEMobile(v){
   return /^(971|0)?5\d{8}$/.test(d);
 }
 
+/* ---- Forgot / reset password ----
+   view: 'signin' (the normal form, incl. registering), 'forgot' (email -> a
+   reset link) or 'reset' (arrived from the emailed /reset?token=... link). */
+let view='signin';
+const RESET_TOKEN=new URLSearchParams(location.search).get('token')||'';
+function note(m){const n=$('authNote');n.textContent=m||'';n.style.display=m?'block':'none';}
+function setView(v){
+  view=v; $('authErr').style.display='none'; note('');
+  const alt=v!=='signin';
+  $('tabs').style.display=alt?'none':'';
+  $('orRow').style.display=alt?'none':''; $('socialRow').style.display=alt?'none':'';
+  if(!alt){ $('pass').setAttribute('autocomplete','current-password'); $('pass').placeholder='Your password';
+    $('passLabel').textContent='Password'; $('forgotLink').style.display=''; $('pass2Field').style.display='none'; $('passField').style.display='';
+    if(location.pathname==='/reset'||/[?&](forgot|token)=/.test(location.search)) history.replaceState(null,'','/login');
+    setMode(mode); return; }
+  registering=false; phoneMode=false; $('phoneBtn').classList.remove('on'); $('phoneBtnLabel').textContent='UAE mobile';
+  ['nameField','mobileField','shopField'].forEach(id=>$(id).style.display='none');
+  $('forgotLink').style.display='none';
+  if(v==='forgot'){
+    $('aTitle').textContent='Reset your password';
+    $('aLede').textContent='Enter the email on your account and we will send you a link to choose a new one.';
+    $('emailField').style.display='block'; $('emailLabel').textContent='Email';
+    $('passField').style.display='none'; $('pass2Field').style.display='none';
+    $('submitBtn').textContent='Send reset link';
+    $('swap').innerHTML='Remembered it? <a href="#" onclick="setView(\'signin\');return false">Sign in</a>';
+    setTimeout(()=>$('email').focus(),0);
+  }else{
+    $('aTitle').textContent='Choose a new password';
+    $('aLede').textContent='At least 8 characters. Every device signed in to your account will be signed out.';
+    $('emailField').style.display='none';
+    $('passField').style.display=''; $('pass2Field').style.display='block';
+    $('passLabel').textContent='New password'; $('pass').placeholder='At least 8 characters'; $('pass').setAttribute('autocomplete','new-password');
+    $('submitBtn').textContent='Save and sign in';
+    $('swap').innerHTML='Link not working? <a href="#" onclick="setView(\'forgot\');return false">Send a new one</a>';
+  }
+}
+async function sendForgot(){
+  const email=$('email').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showErr('Enter the email address on your account.');
+  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
+  try{ const r=await TroveAPI.api('/api/auth/forgot',{method:'POST',body:{email}}); note(r.message||'Check your inbox for a link to reset your password.'); }
+  catch(e){ showErr(e.message||'Could not send the link — please try again.'); }
+  finally{ btn.disabled=false; btn.style.opacity='1'; btn.textContent='Send reset link'; }
+}
+async function saveReset(){
+  const pw=$('pass').value, pw2=$('pass2').value;
+  if(pw.length<8) return showErr('Choose a password of at least 8 characters.');
+  if(pw!==pw2) return showErr('The two passwords do not match.');
+  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
+  try{
+    await TroveAPI.api('/api/auth/reset',{method:'POST',body:{token:RESET_TOKEN,password:pw}});
+    window.location.href=await postAuthDest();
+  }catch(e){
+    btn.disabled=false; btn.style.opacity='1'; btn.textContent='Save and sign in';
+    showErr(e.message||'Could not save your new password.');
+  }
+}
+
 async function signIn(){
   const btn=$('submitBtn'); $('authErr').style.display='none';
+  if(view==='forgot') return sendForgot();
+  if(view==='reset') return saveReset();
 
   // No backend reachable → keep the prototype clickable (demo behaviour).
   if(!(await TroveAPI.health())){ window.location.href = mode==='sell' ? '/sell' : '/account'; return; }
@@ -314,6 +377,21 @@ async function onGoogleCredential(resp){
     google.accounts.id.initialize({client_id:clientId,callback:onGoogleCredential});
     google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'signin_with',width:180,locale:'en-GB'});
   })();
+})();
+
+/* Arrivals from emails: /reset?token=... (reset link), ?forgot=1, and the
+   welcome email's confirm link landing here with ?verified=1 / ?verify=expired. */
+(async function arrivals(){
+  const q=new URLSearchParams(location.search);
+  if(location.pathname==='/reset'||RESET_TOKEN){
+    setView('reset');
+    if(!RESET_TOKEN){ showErr('This page needs the link from your reset email.'); return; }
+    try{ const r=await TroveAPI.api('/api/auth/reset?token='+encodeURIComponent(RESET_TOKEN)); if(!r.valid) showErr('This reset link has expired or was already used — ask for a new one below.'); }catch(_){}
+    return;
+  }
+  if(q.get('forgot')) setView('forgot');
+  else if(q.get('verified')) note('Thank you — your email is confirmed. Sign in to carry on.');
+  else if(q.get('verify')==='expired') note('That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.');
 })();
 </script>
 </body>

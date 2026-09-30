@@ -559,9 +559,14 @@ function renderShops(){
 }
 async function setShopStatus(id,status,confirmFirst){
   const s=SHOPS.find(x=>x.id===id);
-  if(confirmFirst&&!confirm(`${status==='rejected'?'Reject':'Suspend'} "${s?s.name:'this shop'}"? It disappears from the storefront immediately.`))return;
+  // Rejecting asks for an optional note, quoted in the email to the applicant.
+  let note;
+  if(status==='rejected'){ note=prompt(`Reject "${s?s.name:'this shop'}"? We email the applicant.
+
+An optional note for them (leave empty for none):`,''); if(note===null)return; }
+  else if(confirmFirst&&!confirm(`Suspend "${s?s.name:'this shop'}"? It disappears from the storefront immediately.`))return;
   try{
-    await TroveAPI.api('/api/admin/shops/'+id,{method:'PATCH',body:{status}});
+    await TroveAPI.api('/api/admin/shops/'+id,{method:'PATCH',body:note===undefined?{status}:{status,note}});
     toast(`${s?s.name:'Shop'} → ${status}`);
     await reload();
   }catch(e){ toast(e.message||'Could not update the shop'); }
@@ -657,9 +662,13 @@ async function markProviderPaid(id,cents){
 }
 async function setProviderStatus(id,status,confirmFirst){
   const p=PROVIDERS.find(x=>x.id===id);
-  if(confirmFirst&&!confirm(`${status==='rejected'?'Reject':'Suspend'} "${p?p.name:'this provider'}"? Their services disappear from the Services Marketplace immediately.`))return;
+  let note;
+  if(status==='rejected'){ note=prompt(`Reject "${p?p.name:'this provider'}"? We email the applicant.
+
+An optional note for them (leave empty for none):`,''); if(note===null)return; }
+  else if(confirmFirst&&!confirm(`Suspend "${p?p.name:'this provider'}"? Their services disappear from the Services Marketplace immediately.`))return;
   try{
-    await TroveAPI.api('/api/admin/providers/'+id,{method:'PATCH',body:{status}});
+    await TroveAPI.api('/api/admin/providers/'+id,{method:'PATCH',body:note===undefined?{status}:{status,note}});
     toast(`${p?p.name:'Provider'} → ${status}`);
     await reload();
   }catch(e){ toast(e.message||'Could not update the provider'); }
@@ -702,7 +711,7 @@ function renderProducts(){
       <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(p.priceCents)}</td>
       <td${p.stock===0?' style="color:var(--accent-ink);font-weight:700"':''}>${p.stock}</td>
       <td style="max-width:230px"><div style="display:flex;flex-wrap:wrap;gap:4px">${p.tags.length?p.tags.slice(0,5).map(t=>`<span style="font-size:10.5px;font-weight:700;background:var(--rose-tint);border-radius:999px;padding:3px 9px;white-space:nowrap">${esc(t)}</span>`).join('')+(p.tags.length>5?`<span style="font-size:10.5px;color:var(--muted);font-weight:700;padding:3px 2px">+${p.tags.length-5}</span>`:''):'<span style="color:var(--accent-ink);font-size:11.5px;font-weight:700">none — hard to find</span>'}</div></td>
-      <td><span class="pill ${PROD_PILL[p.status]||'pending'}">${esc(p.status)}</span></td>
+      <td><span class="pill ${PROD_PILL[p.status]||'pending'}"${p.adminHidden?' title="Hidden by Trove: the shop cannot put it back on sale until you do"':''}>${p.adminHidden?'hidden by Trove':esc(p.status)}</span></td>
       <td><div class="actions">
         <button class="btn btn-ghost" onclick="openTagModal(${p.id},false)">Tags</button>
         ${AI_TAGS?`<button class="btn btn-ghost" onclick="openTagModal(${p.id},true)">✨ AI</button>`:''}

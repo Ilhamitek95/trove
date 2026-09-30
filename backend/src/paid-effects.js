@@ -181,6 +181,8 @@ function paidPostEffects(order, groups, stripe) {
     delivery.bookPickup(sh.id).catch((e) => console.error('Pickup booking failed for shipment', sh.id, e.message));
   }
   try { sendConfirmation(order); } catch (e) { console.error('order-confirmation email failed:', e.message); }
+  // Each maker hears about their own pieces only (no buyer contact details).
+  require('./notify').ordersToPack(order);
 
   if (order.rail === 'connect') return;
   // Rail B leftover: a mixed cart can contain a connect-tier shop's items;

@@ -9,6 +9,39 @@ const returns = require('../returns');
 
 const router = express.Router();
 
+/* ---------------- Profile ----------------
+ * PATCH /api/account/me { name?, phone? } — the My details form. The phone
+ * is the optional UAE sign-in mobile (normalised to +9715XXXXXXXX, unique
+ * across accounts); an empty value removes it. Email changes are not
+ * self-served (the address is the identity the reset flow relies on).     */
+router.patch('/me', requireAuth, (req, res) => {
+  const v = require('../validate');
+  const { publicUser } = require('../middleware');
+  const { normalizeUAEMobile } = require('../phone');
+  const b = req.body || {};
+  const sets = {};
+  if (b.name !== undefined) {
+    const r = v.shortText(b.name, { label: 'Your name', max: v.LIMITS.personName });
+    if (r.error) return res.status(400).json({ error: r.error });
+    sets.name = r.value;
+  }
+  if (b.phone !== undefined) {
+    const raw = String(b.phone == null ? '' : b.phone).trim();
+    if (!raw) sets.phone = null;
+    else {
+      const mobile = normalizeUAEMobile(raw);
+      if (!mobile) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });
+      const taken = db.prepare('SELECT id FROM users WHERE phone = ? AND id != ?').get(mobile, req.user.id);
+      if (taken) return res.status(409).json({ error: 'Another account already uses this mobile number' });
+      sets.phone = mobile;
+    }
+  }
+  const cols = Object.keys(sets);
+  if (!cols.length) return res.status(400).json({ error: 'Nothing to update' });
+  db.prepare(`UPDATE users SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`).run(...cols.map((c) => sets[c]), req.user.id);
+  res.json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)) });
+});
+
 /* ---------------- Orders (buyer) ---------------- */
 router.get('/orders', requireAuth, (req, res) => {
   const orders = db.prepare("SELECT * FROM orders WHERE buyer_id=? AND status!='pending' ORDER BY created_at DESC").all(req.user.id);

@@ -213,7 +213,7 @@ router.post('/apply', (req, res, next) => {
     return /instagram\.com/i.test(v) ? v.replace(/^https?:\/\//i, '') : `instagram.com/${v}`;
   })();
 
-  db.prepare(`INSERT INTO service_providers
+  const provInfo = db.prepare(`INSERT INTO service_providers
       (user_id, name, slug, status, bio, location, categories,
        pitch_services, pitch_experience, pitch_instagram, pitch_links, pitch_phone, sub_agreed_at,
        agreement_version, agreement_accepted_at)
@@ -224,6 +224,11 @@ router.post('/apply', (req, res, next) => {
       ig, clean(b.links, 300), clean(b.phone, 40),
       require('../config').PROVIDER_AGREEMENT_VERSION);
 
+  // Best-effort emails: application received + admin alert, and the welcome
+  // (confirm your email) when this application created the account.
+  const notify = require('../notify');
+  notify.providerApplied(provInfo.lastInsertRowid);
+  if (!existing) notify.welcomeVerify(db.prepare('SELECT * FROM users WHERE id = ?').get(userId));
   const done = () => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
   // A new account signs in on a fresh session; an applicant already signed
   // in keeps the session they have (nothing about their privileges changed).

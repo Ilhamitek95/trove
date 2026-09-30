@@ -153,7 +153,7 @@ function tracker(done) {
  * the white card, and the footer. `kicker` is the small line above the
  * headline (e.g. the order number), `preheader` the inbox preview text.
  */
-function layout(title, inner, { intro = '', kicker = '', preheader = '', tone = 'sage' } = {}) {
+function layout(title, inner, { intro = '', kicker = '', preheader = '', tone = 'sage', reason = "You're receiving this because of an order you placed with Trove." } = {}) {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">
@@ -190,7 +190,7 @@ function layout(title, inner, { intro = '', kicker = '', preheader = '', tone = 
       <a href="${SITE_LINK}" style="color:${INK};text-decoration:none;font-weight:700">Shop Trove</a> &nbsp;·&nbsp;
       <a href="${SITE_LINK}/account" style="color:${INK};text-decoration:none;font-weight:700">Your account</a><br>
       Trove · Curated for Living · Dubai, UAE<br>
-      You're receiving this because of an order you placed with Trove.<br>
+      ${esc(reason)}<br>
       This is an automated email from a no-reply address, so replies aren't read.
     </td></tr>
   </table>
@@ -354,9 +354,7 @@ module.exports.returnRefunded = returnRefunded;
  * email; their mobile only once the booking is secured.
  */
 const FOOT_ORDER = "You're receiving this because of an order you placed with Trove.";
-const svcLayout = (who, title, inner, opts) => layout(title, inner, opts).replace(FOOT_ORDER,
-  who === 'provider' ? "You're receiving this because you offer services on the Trove Services Marketplace."
-    : "You're receiving this because of a booking on the Trove Services Marketplace.");
+const svcLayout = (who, title, inner, opts) => layout(title, inner, { ...opts, reason: who === 'provider' ? "You're receiving this because you offer services on the Trove Services Marketplace." : "You're receiving this because of a booking on the Trove Services Marketplace." });
 const svcDate = (d) => {
   if (!d) return '';
   const t = new Date(String(d) + 'T00:00:00Z');
@@ -535,3 +533,150 @@ module.exports.bookingPaidProvider = bookingPaidProvider;
 module.exports.bookingCancelled = bookingCancelled;
 module.exports.bookingCancelledProvider = bookingCancelledProvider;
 module.exports.bookingRefunded = bookingRefunded;
+
+
+/* ======================================================================
+ * Account + partner emails (2026-09-30). Same shell as the receipts; each
+ * template takes plain data plus the absolute link(s) it needs, and returns
+ * { subject, html }. Callers send them fire-and-forget via send().
+ * ==================================================================== */
+const ACCOUNT_REASON = "You're receiving this because of your Trove account.";
+const PARTNER_REASON = "You're receiving this because you applied to sell or offer services on Trove.";
+const ADMIN_REASON = 'You are receiving this because you look after Trove.';
+const firstNameOr = (name) => esc(String(name || '').trim().split(/\s+/)[0] || 'there');
+
+/** Password reset: a one-hour, single-use link. */
+function passwordReset({ name, link }) {
+  const inner =
+    p('Someone — hopefully you — asked to reset the password for your Trove account. Use the button below to choose a new one.')
+    + button('Choose a new password', esc(link))
+    + note('The link works once and expires in an hour. If you did not ask for this, you can ignore this email — your password stays as it is.');
+  return {
+    subject: 'Reset your Trove password',
+    html: layout('Reset your password', inner, {
+      tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: ACCOUNT_REASON,
+      preheader: 'Your link to choose a new Trove password — it expires in an hour.',
+    }),
+  };
+}
+
+/** Welcome + confirm your email. Shopping never waits on the click. */
+function welcomeVerify({ name, link }) {
+  const inner =
+    p('Thank you for joining Trove — a curated home for pieces made by independent makers in Dubai and Abu Dhabi.')
+    + p('Please confirm this is your email address, so we can reach you about your orders and help you back into your account if you ever forget your password.')
+    + button('Confirm my email', esc(link))
+    + note('You can shop straight away — confirming just keeps your account safe. The link expires in 7 days.');
+  return {
+    subject: 'Welcome to Trove — please confirm your email',
+    html: layout('Welcome to Trove', inner, {
+      intro: `Hello ${firstNameOr(name)},`, reason: ACCOUNT_REASON,
+      preheader: 'Confirm your email address to keep your Trove account safe.',
+    }),
+  };
+}
+
+/** Sent after any password change, so an owner notices one they did not make. */
+function passwordChanged({ name, link }) {
+  const inner =
+    p('The password for your Trove account has just been changed, and every other device has been signed out.')
+    + p(`If this was you, there is nothing else to do. If it was not, <a href="${esc(link)}" style="color:${INK};font-weight:700">reset your password</a> straight away.`);
+  return {
+    subject: 'Your Trove password was changed',
+    html: layout('Password changed', inner, { tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: ACCOUNT_REASON, preheader: 'Your Trove password was just changed.' }),
+  };
+}
+
+/* ---- maker (shop) and provider applications ---- */
+const KIND = { shop: { what: 'shop' }, provider: { what: 'services practice' } };
+
+/** To the applicant, the moment an application lands. kind = shop | provider. */
+function applicationReceived({ kind = 'shop', name, businessName, link }) {
+  const k = KIND[kind] || KIND.shop;
+  const inner =
+    panel(`<b>${esc(businessName)}</b><br>Application received · under review`)
+    + p("Our curation team looks at every application by hand, so it can take a few days. You'll hear from us by email as soon as there is a decision.")
+    + p(kind === 'shop'
+      ? 'Meanwhile you can sign in and get your shop ready — add your pieces, photos and pickup address — so it can go on sale the moment it is approved.'
+      : 'Meanwhile you can sign in and prepare your listings, so they can go live the moment your practice is approved.')
+    + button(kind === 'shop' ? 'Open your dashboard' : 'Open your services dashboard', esc(link));
+  return {
+    subject: kind === 'shop' ? 'We have your Trove shop application' : 'We have your Trove services application',
+    html: layout('Thank you for applying', inner, {
+      intro: `Hello ${firstNameOr(name)}, thank you for applying to open a ${k.what} on Trove.`,
+      reason: PARTNER_REASON,
+      preheader: `Your application for ${businessName} is with our curation team.`,
+    }),
+  };
+}
+
+/** To Trove's admin: a new application is waiting. Contact details stay in the admin panel. */
+function applicationAlert({ kind = 'shop', businessName, applicantName, location, category, link }) {
+  const k = KIND[kind] || KIND.shop;
+  const inner =
+    panel(`<b>${esc(businessName)}</b><br>${esc(applicantName)}${location ? ' · ' + esc(location) : ''}${category ? '<br>' + esc(category) : ''}`)
+    + button('Review in the admin panel', esc(link));
+  return {
+    subject: `New ${k.what} application: ${String(businessName).slice(0, 80)}`,
+    html: layout(`New ${k.what} application`, inner, { reason: ADMIN_REASON, preheader: `${businessName} applied to Trove.` }),
+  };
+}
+
+/** Application approved. */
+function applicationApproved({ kind = 'shop', name, businessName, link }) {
+  const inner = kind === 'shop'
+    ? p(`<b>${esc(businessName)}</b> is approved, and any piece you have marked live is now on sale on Trove.`)
+      + p('When a piece sells we email you, and it appears in your dashboard with everything you need to pack it. Our courier collects from your pickup address — please make sure it and your pickup phone are filled in under Storefront.')
+      + button('Go to your dashboard', esc(link))
+    : p(`<b>${esc(businessName)}</b> is approved, and your live services now appear in the Trove Services Marketplace.`)
+      + p('Booking requests arrive in your services dashboard.')
+      + button('Go to your services dashboard', esc(link));
+  return {
+    subject: kind === 'shop' ? `Welcome to Trove — ${String(businessName).slice(0, 80)} is approved` : `You're approved on Trove Services — ${String(businessName).slice(0, 80)}`,
+    html: layout("You're approved", inner, { intro: `Congratulations, ${firstNameOr(name)}.`, reason: PARTNER_REASON, preheader: `${businessName} is approved on Trove.` }),
+  };
+}
+
+/** Application not accepted — polite, with the admin's note when there is one. */
+function applicationRejected({ kind = 'shop', name, businessName, adminNote = '', link }) {
+  const k = KIND[kind] || KIND.shop;
+  const inner =
+    p(`Thank you for applying to open a ${k.what} on Trove, and for sharing your work with us. We read every application carefully, and this time we are not able to accept <b>${esc(businessName)}</b>.`)
+    + (adminNote ? panel(`A note from our curation team:<br><b>${esc(adminNote)}</b>`) : '')
+    + p('This is often about fit with what we are curating right now rather than the quality of your work. You are welcome to apply again in the future.')
+    + button('Visit Trove', esc(link));
+  return {
+    subject: `About your Trove application — ${String(businessName).slice(0, 80)}`,
+    html: layout('About your application', inner, { tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: PARTNER_REASON, preheader: `An update on your application for ${businessName}.` }),
+  };
+}
+
+/**
+ * New order to pack — to the shop owner, listing ONLY their pieces. By design
+ * it carries no buyer email, phone or address: Trove books the courier, which
+ * holds the delivery details itself.
+ * { shopName, ownerName, publicId, items[{ name, qty, price_cents, meta, image }], packByDays, link }
+ */
+function orderToPack({ shopName, ownerName, publicId, items, packByDays = 2, link }) {
+  const units = items.reduce((t, i) => t + i.qty, 0);
+  const inner =
+    heading(units > 1 ? 'Pieces to pack' : 'Piece to pack')
+    + itemsBlock(items)
+    + panel(`<b>Please pack ${units > 1 ? 'them' : 'it'} within ${packByDays} days</b> in your own packaging, then tap <b>Packed · ready for collection</b> on the order in your dashboard. Our courier collects from your pickup address, so the buyer receives it inside our 3–6 day delivery promise.`)
+    + button('Open the order', esc(link))
+    + note('Trove arranges the courier and looks after the customer, so there is nobody to contact — everything you need is on the order.');
+  return {
+    subject: `New order to pack — ${publicId}`,
+    html: layout('You have a new order', inner, {
+      kicker: `Order <b style="color:${INK}">${esc(publicId)}</b> · ${esc(shopName)}`,
+      intro: `Good news, ${firstNameOr(ownerName)} — ${units > 1 ? `${units} pieces` : 'a piece'} from your shop just sold.`,
+      reason: "You're receiving this because you sell on Trove.",
+      preheader: `Order ${publicId}: please pack within ${packByDays} days.`,
+    }),
+  };
+}
+
+Object.assign(module.exports, {
+  passwordReset, welcomeVerify, passwordChanged,
+  applicationReceived, applicationAlert, applicationApproved, applicationRejected, orderToPack,
+});

@@ -156,6 +156,10 @@ function createApp() {
   app.use('/api/auth', (req, res, next) => (req.method === 'POST' ? authLimiter(req, res, next) : next()));
   // The two other doors that create or extend an account share that budget.
   app.post(['/api/services/apply', '/api/seller/enable-services'], authLimiter);
+  // Anonymous booking requests email and notify a provider, so a script can't
+  // flood one: 10 requests an hour per address.
+  const bookingLimiter = traffic.rateLimit({ windowMs: 60 * MIN, max: 10, name: 'booking requests' });
+  app.post('/api/services/:id/book', bookingLimiter);
   app.use('/api/checkout', traffic.rateLimit({ windowMs: 10 * MIN, max: 60, name: 'checkout requests' }));
   // The contact form emails the owner: a handful per visitor is plenty.
   const contactLimiter = traffic.rateLimit({ windowMs: 10 * MIN, max: 5, name: 'messages' });
@@ -265,6 +269,7 @@ function createApp() {
   // old bookmarks and Stripe return links keep working.
   const PAGES = {
     '/login': 'trove-login.html',
+    '/reset': 'trove-login.html',      // password reset link (?token=…), a mode of the sign-in page
     '/account': 'trove-account.html',
     '/sell': 'trove-seller.html',
     '/apply': 'trove-apply.html',
@@ -355,6 +360,7 @@ function createApp() {
       'Allow: /provider-agreement',
       'Disallow: /services/booking/',
       'Disallow: /services/pay/',
+      'Disallow: /reset',
       '',
       `Sitemap: ${SITE()}/sitemap.xml`,
       '',
