@@ -34,9 +34,11 @@
     return data;
   }
 
-  let _healthy = null;
+  // Only a healthy answer is cached: a failed check (cold start, a blip) is
+  // asked again next time instead of leaving the page offline for the visit.
+  let _healthy = false;
   async function health() {
-    if (_healthy !== null) return _healthy;
+    if (_healthy) return true;
     try {
       const res = await fetch(API_BASE + '/api/health', { credentials: 'include' });
       _healthy = res.ok;
