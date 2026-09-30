@@ -49,6 +49,8 @@ const catSlug = (name) => (name === 'House' ? HOUSE_SLUG : slugify(name));
 const catLabel = (name) => (name === 'House' ? 'Trove Collection' : name);
 function pieceUrl(p) { const s = slugify(p.name); return `/pieces/${p.id}${s ? '-' + s : ''}`; }
 const makerUrl = (slug) => `/makers/${encodeURIComponent(slug)}`;
+/** Where a shop lives: a maker at /makers/<slug>; the Trove Collection is its own shelf. */
+const shopHref = (shop) => (shop && shop.isHouse ? `/shop/${HOUSE_SLUG}` : makerUrl(shop.slug));
 const shopUrl = (cat) => (!cat || cat === 'all' ? '/shop' : `/shop/${catSlug(cat)}`);
 const providerUrl = (slug) => `/services/${encodeURIComponent(slug)}`;
 
@@ -215,15 +217,13 @@ const orgRef = (base) => ({ '@id': `${base}/#organization` });
 
 /**
  * The storefront page, with the facts its script would otherwise apply after
- * the first paint (so nothing moves): no Trove Collection yet → html.no-house
- * and the Marketplace link becomes the hero's button.
+ * the first paint (so nothing moves): no Trove Collection pieces yet →
+ * html.house-soon, which swaps the Collection band to its coming-soon copy.
+ * The Collection is never hidden (owner, 2026-09-30).
  */
 function storefront() {
   let html = readDoc('trove.html', storeCache);
-  if (!sitePages.hasHousePieces()) {
-    html = html.replace('<html lang="en">', '<html lang="en" class="no-house">')
-      .replace('<a class="txt-link" id="heroMarketLink"', '<a class="btn btn-dark" id="heroMarketLink"');
-  }
+  if (!sitePages.hasHousePieces()) html = html.replace('<html lang="en">', '<html lang="en" class="house-soon">');
   return html;
 }
 const addHtmlClass = (html, cls) => html.replace(/<html lang="en"( class="([^"]*)")?>/, (m, a, c) => `<html lang="en" class="${c ? c + ' ' : ''}${cls}">`);
@@ -283,6 +283,13 @@ function renderHome(base) {
   });
 }
 
+/** The Collection's shelf before its first piece, as the storefront's emptyStateHTML() draws it. */
+function houseSoonShelf(all, byShop) {
+  const recs = all.slice(0, 4);
+  return `<div class="noresult"><div class="big">Our own line lands soon</div><p>The Trove Collection is still in the workshop. In the meantime, these pieces from our makers are worth a look.</p><div class="nr-actions"><a class="btn btn-dark" href="/shop">Shop everything</a></div></div>`
+    + (recs.length ? `<div class="nr-rechead"><span class="eyebrow">You might like</span></div>${recs.map((p) => cardHtml(p, byShop[p.shop.slug])).join('')}` : '');
+}
+
 /** Every category name that has a page: the taxonomy plus anything live. */
 function categoryNames(list) {
   const { ALLOWED } = require('./categories');
@@ -291,15 +298,6 @@ function categoryNames(list) {
 function categoryFromSlug(slug, list) {
   if (slug === HOUSE_SLUG) return 'House';
   return categoryNames(list).find((c) => slugify(c) === slug) || null;
-}
-
-/** Mirrors the storefront's syncFilterGroups(): is any filter group worth showing? */
-function hasFilters(all) {
-  const makers = new Set(all.filter((p) => !p.shop.isHouse).map((p) => p.shop.slug));
-  const house = all.some((p) => p.shop.isHouse);
-  const bands = [[0, 80], [80, 200], [200, 9999]].filter(([a, b]) => all.some((p) => p.price >= a && p.price <= b)).length;
-  return new Set(all.map((p) => p.category)).size > 1 || makers.size > 1 || (house && makers.size > 0)
-    || all.some((p) => p.compareAt) || bands > 1;
 }
 
 /**
@@ -316,9 +314,9 @@ function renderShop(base, slug, { search } = {}) {
   let html = activate(storefront(), 'shop');
   html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, `$1${esc(label)}$2`);
   html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, `$1<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? '<span>Shop all</span>' : `<a href="/shop">Shop all</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}$2`);
-  html = fill(html, 'shopGrid', list.map((p) => cardHtml(p, byShop[p.shop.slug])).join(''));
+  html = fill(html, 'shopGrid', list.length || cat !== 'House' ? list.map((p) => cardHtml(p, byShop[p.shop.slug])).join('')
+    : houseSoonShelf(all, byShop));
   if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="shopGrid">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="shopGrid">`);
-  if (cat === 'all' && !search && !hasFilters(all)) html = html.replace('<body>', '<body class="no-filters">');
   const shopN = new Set(list.map((p) => p.shop.slug)).size;
   html = text(html, 'resCount', String(list.length));
   html = text(html, 'resNoun', list.length === 1 ? 'piece' : 'pieces');
@@ -329,7 +327,8 @@ function renderShop(base, slug, { search } = {}) {
   const description = cat === 'all'
     ? `Every piece on Trove: ${list.length} handmade and designed ${list.length === 1 ? 'piece' : 'pieces'} from independent makers, delivered across Dubai and Abu Dhabi.`
     : cat === 'House'
-      ? 'The Trove Collection: homeware designed by Trove, made with quality materials, delivered across Dubai and Abu Dhabi.'
+      ? (list.length ? 'The Trove Collection: homeware designed by Trove, made with quality materials, delivered across Dubai and Abu Dhabi.'
+        : 'The Trove Collection, Trove’s own line of homeware, is on its way. Until it lands, shop handmade pieces from independent makers across Dubai and Abu Dhabi.')
       : `${label} on Trove: ${list.length ? `${list.length} ${list.length === 1 ? 'piece' : 'pieces'} ` : 'pieces '}handmade by independent makers, delivered across Dubai and Abu Dhabi.`;
   const itemList = {
     '@type': 'ItemList', name: label, numberOfItems: list.length,
@@ -341,7 +340,8 @@ function renderShop(base, slug, { search } = {}) {
     html: setHead(html, {
       base, url: base + u, title: search != null ? `Search results · Trove` : title, description,
       // An empty shelf or a search result is not a page worth indexing.
-      robots: search != null || !list.length ? 'noindex, follow' : '',
+      // (the Trove Collection's shelf is a real page even before its first piece)
+      robots: search != null || (!list.length && cat !== 'House') ? 'noindex, follow' : '',
       ld: [itemList, crumbLd(base, crumbs)],
     }),
   };
@@ -361,9 +361,11 @@ function productLd(base, p, url) {
     category: catLabel(p.category) || undefined,
     image: images.length ? images : undefined,
     keywords: (p.tags || []).join(', ') || undefined,
-    brand: { '@type': 'Brand', name: p.shop.name },
     // The maker made it; Trove sells it (merchant of record — the Terms of Sale).
-    manufacturer: { '@type': 'Organization', name: p.shop.name, url: base + makerUrl(p.shop.slug) },
+    // A Trove Collection piece is Trove's own: Trove is the brand and the maker.
+    ...(p.shop.isHouse
+      ? { brand: { '@type': 'Brand', name: 'Trove' }, manufacturer: orgRef(base) }
+      : { brand: { '@type': 'Brand', name: p.shop.name }, manufacturer: { '@type': 'Organization', name: p.shop.name, url: base + makerUrl(p.shop.slug) } }),
     offers: {
       '@type': 'Offer',
       url,
@@ -411,7 +413,7 @@ function pdpAccHtml(p, v) {
   const since = sinceLabel(v.joined);
   const meta = [house ? '' : v.location, since ? `On Trove since ${since}` : ''].filter(Boolean).join(' · ');
   return `<details class="acc" open><summary>Details<span class="faq-tg" aria-hidden="true">+</span></summary><dl class="acc-dl">${rows.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl></details>`
-    + `<details class="acc"><summary>${house ? 'About the Trove Collection' : 'About the maker'}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(p.shop.name)}</b>${meta ? `<div class="acc-meta">${esc(meta)}</div>` : ''}${v.bio ? `<p>${esc(v.bio)}</p>` : ''}<a class="link-more" href="${esc(makerUrl(p.shop.slug))}">Visit ${esc(p.shop.name)} →</a></div></details>`;
+    + `<details class="acc"><summary>${house ? 'About the Trove Collection' : 'About the maker'}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(p.shop.name)}</b>${meta ? `<div class="acc-meta">${esc(meta)}</div>` : ''}${v.bio ? `<p>${esc(v.bio)}</p>` : ''}<a class="link-more" href="${esc(shopHref(p.shop))}">Visit ${esc(p.shop.name)} →</a></div></details>`;
 }
 
 /** /pieces/<ref>. Returns { html } | { redirect } | { notFound }. */
@@ -433,7 +435,7 @@ function renderPiece(base, ref) {
   // one picture: no thumbnail rail; a stock stand-in says so
   if ((p.images || []).length < 2) html = html.replace('<div class="gallery" id="pdpGallery">', '<div class="gallery one" id="pdpGallery">');
   if (isStock(p)) html = html.replace('<span class="illus" id="pdpIllus" hidden>', '<span class="illus" id="pdpIllus">');
-  html = attr(html, 'pdpVendorLink', 'href', makerUrl(p.shop.slug));
+  html = attr(html, 'pdpVendorLink', 'href', shopHref(p.shop));
   html = fill(html, 'pdpVendorLink', esc(p.shop.name));
   html = fill(html, 'pdpName', esc(p.name));
   html = fill(html, 'pdpPrice', `${p.compareAt ? `<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${money(p.compareAt)}</s>` : ''}${money(p.price)}`);
@@ -455,6 +457,8 @@ function renderPiece(base, ref) {
 /** /makers/<slug>. Returns { html } | { redirect } | { notFound }. */
 function renderMaker(base, slug) {
   const s = approvedShops().find((x) => x.slug === slug) || approvedShops().find((x) => x.slug.toLowerCase() === String(slug).toLowerCase());
+  // The Trove Collection is not a maker: its page is its shelf.
+  if ((s && s.isHouse) || String(slug).toLowerCase() === HOUSE_SLUG) return { redirect: shopUrl('House') };
   if (!s) return { notFound: true };
   // (Slugs are made lowercase; a legacy capitalised one is served where it is,
   // never redirected, so it cannot loop with the lowercase fold in app.js.)
@@ -787,11 +791,15 @@ function sitemapEntries() {
     const keys = [p.category, p.is_house ? 'House' : null].filter(Boolean);
     for (const k of keys) cats.set(k, later(cats.get(k), p.mod));
   }
+  // The Trove Collection's shelf is listed as soon as the house shop exists,
+  // pieces or not (it says what is coming); its shop never has a maker page.
+  const house = db.prepare("SELECT COALESCE(updated_at, created_at) AS mod FROM shops WHERE is_house = 1 AND status = 'approved' ORDER BY id LIMIT 1").get();
+  if (house && !cats.has('House')) cats.set('House', house.mod);
   for (const [c, mod] of cats) add(shopUrl(c), mod, '0.6');
   add('/sell-on-trove', null, '0.6', 'monthly');
   for (const s of db.prepare(`SELECT s.slug, COALESCE(s.updated_at, s.created_at) AS mod,
       (SELECT MAX(COALESCE(p.updated_at, p.created_at)) FROM products p WHERE p.shop_id = s.id AND p.status = 'live') AS pmod
-    FROM shops s WHERE s.status = 'approved' ORDER BY s.id`).all()) {
+    FROM shops s WHERE s.status = 'approved' AND s.is_house = 0 ORDER BY s.id`).all()) {
     add(makerUrl(s.slug), later(s.mod, s.pmod), '0.7');
   }
   for (const p of pieces) add(pieceUrl(p), p.mod, '0.6');

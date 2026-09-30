@@ -31,7 +31,8 @@ test('many pieces: the carousel hero, browse tiles and the weekly grid stay as t
   assert.doesNotMatch(html, /class="hsolo"/);
   assert.match(html, /<div class="pgrid" id="trendingGrid">/);
   assert.doesNotMatch(html, /<html lang="en" class="[^"]*few-pieces/);
-  assert.doesNotMatch(html, /<html lang="en" class="[^"]*no-house/, 'the seed has Trove Collection pieces');
+  assert.doesNotMatch(html, /<html lang="en" class="[^"]*house-soon/, 'the seed has Trove Collection pieces');
+  assert.match(html, /<div class="copy live-copy">/, 'the Collection band, as it always was');
 });
 
 test('the storefront script draws the same small-catalogue layouts the server does', () => {
@@ -48,41 +49,47 @@ test('the storefront script draws the same small-catalogue layouts the server do
   assert.match(store, /100-Number\(FEES\.commissionPercent\)/);
 });
 
-/* ---------------- one piece, one maker, no Trove Collection ---------------- */
-test('one piece: the server draws the editorial hero and The first piece, marks no-house', async () => {
+/* ---------------- one piece, one maker, the Collection still to come ---------------- */
+test('one piece: the server draws the editorial hero and The first piece; the Collection stays, coming soon', async () => {
   const mug = MUG();
   db.prepare("UPDATE products SET status = 'hidden' WHERE id != ?").run(mug.id);
   const res = await get('/');
   assert.equal(res.status, 200);
   const html = res.text;
-  assert.match(html, /<html lang="en" class="no-house few-pieces">/);
+  assert.match(html, /<html lang="en" class="house-soon few-pieces">/);
   assert.match(html, /<div class="hstage solo" id="heroStage" aria-label="Featured piece">/);
   assert.match(html, /<a class="hsolo" href="\/pieces\/\d+-reeded-stoneware-mug">/);
   assert.match(html, /<span class="hs-meta">Made in Alserkal Avenue, Dubai<\/span>/, 'where it was made, from the shop');
   assert.match(html, /<span class="hs-by">by Kiln &amp; Clay<\/span>/);
   assert.match(html, /<div class="firsts n1" id="trendingGrid">/);
   assert.match(html, /id="weeklyHeading"[^>]*>The first piece</);
-  assert.match(html, /<a class="btn btn-dark" id="heroMarketLink"/, 'the Marketplace link leads the hero');
+  // the original two-way hero: Shop the Collection + Explore the Marketplace
+  assert.match(html, /<button class="btn btn-dark" id="heroShopBtn"[^>]*>Shop the Collection<\/button>/);
+  assert.match(html, /<a class="txt-link" id="heroMarketLink"[^>]*>Explore the Marketplace<\/a>/);
   // the stock stand-in photo is labelled as such wherever it shows
   assert.equal((noScripts(html).match(/class="illus">Illustrative photo</g) || []).length, 2);
   assert.equal(rawH1(noScripts(html)), 1);
 });
 
 /* ---------------- the shelf (/shop) ---------------- */
-test('the shelf: filters that can change nothing hide, a short shelf gets a bigger grid, quick add sits under the price', async () => {
+test('the shelf: the full filter rail even with one piece, a short shelf gets a bigger grid, quick add sits under the price', async () => {
   // (runs after the one-piece test above: one live piece)
   const html = (await get('/shop')).text;
-  assert.match(html, /<body class="no-filters">/, 'one piece: nothing to filter, no rail');
+  assert.doesNotMatch(html, /no-filters/, 'the rail is always there (owner, 2026-09-30)');
+  assert.doesNotMatch(store, /no-filters|\.hidden=!on/, 'no filter group or rail is ever hidden by the script');
+  assert.match(html, /<label class="fitem fhouse"><input type="checkbox" id="fltHouse"[^>]*> Trove Collection only<\/label>/);
+  assert.match(html, /<select id="fltShop"/);
+  assert.match(html, /<input type="checkbox" id="fltSale"[^>]*> On sale only/);
+  assert.match(store, /<button class="f-open-btn" onclick="openFilters\(\)">/, 'the phone Filter sheet button');
   assert.match(html, /<div class="pgrid few one" id="shopGrid">/);
   assert.match(noScripts(html), /<button class="add add-row" onclick="event\.stopPropagation\(\);addToCart\(\d+,this\)">Add to basket<\/button>/);
   for (const id of ['fgCat', 'fgSeller', 'fgOffers', 'fgPrice']) assert.match(store, new RegExp(`class="fgroup" id="${id}"`));
   assert.match(store, /const inPillar=p=>state\.cat!=='House'/, 'facet counts follow the pillar');
   assert.match(store, /opt\.hidden=!rated;opt\.disabled=!rated;/, 'Top rated waits for real ratings');
   assert.match(store, /\.card \.ph \.add\{display:none\}/, 'touch: no quick add over the photo');
-  // many pieces again: the rail is back
+  // many pieces again
   db.prepare("UPDATE products SET status = 'live' WHERE status = 'hidden'").run();
   const many = (await get('/shop')).text;
-  assert.doesNotMatch(many, /<body class="no-filters">/);
   assert.match(many, /<div class="pgrid" id="shopGrid">/);
   db.prepare("UPDATE products SET status = 'hidden' WHERE id != ?").run(MUG().id);
 });
