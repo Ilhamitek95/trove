@@ -12,7 +12,7 @@
  * For a 'trove' booking Trove is the customer's contracting party and engages
  * the provider as an independent contractor: the customer pays Trove the
  * booking amount by card, Trove keeps fees.SERVICE_COMMISSION_PERCENT and owes
- * the provider the rest (a provider_credits row, paid in the settlement run —
+ * the provider the rest (a provider_credits row, paid by manual bank transfer —
  * see service-credits.js). Nothing is charged at request time: the provider
  * confirms with the final amount and the service date, a PaymentIntent opens
  * and the customer pays through a private link.

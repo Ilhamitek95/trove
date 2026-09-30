@@ -172,6 +172,34 @@ router.delete('/services/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+/* ---------------- Payouts ---------------- */
+// Fees for bookings paid through Trove are paid by bank transfer from the
+// payer named here (Serein Consultancy) on Trove's behalf. Only ever the
+// masked IBAN leaves the server — see src/provider-payouts.js.
+function payoutView(p) {
+  const pay = require('../provider-payouts');
+  const credits = require('../service-credits');
+  const shop = pay.shopWithBank(p.user_id);
+  return {
+    details: pay.getDetails(p.id),
+    shopDetails: shop ? { name: shop.name, accountName: shop.payout_account_name, bankName: shop.payout_bank_name, iban: shop.iban_masked } : null,
+    payerName: credits.payerName(),
+    graceDays: credits.GRACE_DAYS,
+    needsDetails: pay.hasPaidBooking(p.id) && !pay.getDetails(p.id),
+    earnings: credits.providerBalances(p.id),
+    credits: pay.statement(p.id),
+  };
+}
+
+router.get('/payout', (req, res) => res.json(payoutView(req.provider)));
+
+// PUT /api/provider/payout { accountName, bankName, iban } | { useShop: true }
+router.put('/payout', (req, res) => {
+  const r = require('../provider-payouts').saveDetails(req.provider, req.body || {});
+  if (r.error) return res.status(r.status).json({ error: r.error });
+  res.json(payoutView(req.provider));
+});
+
 /* ---------------- Bookings ---------------- */
 
 // The provider's view of a booking. Email is never included; the phone

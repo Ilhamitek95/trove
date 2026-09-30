@@ -4,8 +4,10 @@
  *
  *   GET  /api/admin/service-bookings               bookings, newest first (paid / attention first)
  *   POST /api/admin/service-bookings/:id/refund    refund a paid booking in full
- *   GET  /api/admin/service-credits                what providers are owed now (settlement view)
- *   POST /api/admin/service-credits/:providerId/paid  { reference } close what was just paid by bank transfer
+ *   GET  /api/admin/service-credits                what providers are owed now, grouped per provider
+ *   GET  /api/admin/provider-payouts/export.csv    bank transfer file (the ONLY place a provider IBAN decrypts)
+ *   POST /api/admin/service-credits/:providerId/paid  { reference?, amountCents? } close what was just paid by
+ *                                                  bank transfer + email the provider a payment note
  *
  * Kept in its own file (mounted beside admin.routes.js) so the booking money
  * flow reads in one place: src/service-bookings.js + src/service-credits.js.
@@ -62,13 +64,46 @@ router.post('/service-bookings/:id/refund', requireAdmin, async (req, res, next)
 });
 
 router.get('/service-credits', requireAdmin, (_req, res) => {
-  res.json(credits.preview());
+  res.json({ ...credits.preview(), payerName: credits.payerName() });
 });
 
+// The provider bank transfer file: one line per provider payable now WITH
+// bank details (the rest wait for them). IBANs decrypt straight into the
+// response, like the shop settlement CSV — never logged, never stored.
+router.get('/provider-payouts/export.csv', requireAdmin, (_req, res, next) => {
+  try {
+    const { csv } = require('../provider-payouts').exportCsv();
+    res.set('Cache-Control', 'no-store');
+    res.type('text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="trove-provider-transfers-${credits.dubaiToday()}.csv"`);
+    res.send(csv);
+  } catch (e) { next(e); }
+});
+
+// Mark a provider's batch paid once the transfer went out. `amountCents`
+// (what the admin saw in the transfer file) guards against a booking becoming
+// payable between the download and the click.
 router.post('/service-credits/:providerId/paid', requireAdmin, (req, res) => {
-  const r = credits.markPaid(Number(req.params.providerId), (req.body || {}).reference);
+  const providerId = Number(req.params.providerId);
+  const b = req.body || {};
+  const pv = credits.preview();
+  const row = pv.eligible.concat(pv.excluded).find((r) => r.providerId === providerId && r.netCents > 0);
+  if (!row) return res.status(404).json({ error: 'Nothing is payable to this provider right now' });
+  if (!row.payTo) return res.status(409).json({ error: 'Waiting for bank details — this provider has not added them yet' });
+  if (b.amountCents !== undefined && Number(b.amountCents) !== row.netCents) {
+    return res.status(409).json({ error: 'The amount owed has changed since the transfer file was made — download it again' });
+  }
+  const r = credits.markPaid(providerId, b.reference);
   if (!r) return res.status(404).json({ error: 'Nothing is payable to this provider right now' });
-  res.json({ ok: true, ...r });
+  if (r.owner && r.owner.email) {
+    const email = require('../email');
+    const msg = email.providerFeesSent({
+      providerName: r.name, ownerName: r.owner.name, amountCents: r.amountCents, reference: r.reference,
+      payer: r.payer, bookings: r.bookings, debitCents: r.debitCents,
+    });
+    email.send({ to: r.owner.email, ...msg }).catch((e) => console.error('provider fees-sent email failed:', e.message));
+  }
+  res.json({ ok: true, providerId: r.providerId, amountCents: r.amountCents, reference: r.reference, payer: r.payer, rows: r.rows });
 });
 
 module.exports = router;

@@ -20,13 +20,27 @@
  *
  * SETTLEMENT HOOK: settlement.js calls eligibleServiceCredits(runStart) (via
  * preview) so a run shows what providers are owed. The consignment run itself
- * (settlement_items, the bank CSV) is keyed on shops and their encrypted IBANs;
- * providers have no payout details of their own yet, so provider credits are
- * paid by hand from /admin and closed with markPaid() — see the report.
+ * (settlement_items, the bank CSV) is keyed on shops and never pays these.
+ *
+ * MANUAL PAYOUTS (owner, 2026-09-30): providers are paid by bank transfer from
+ * Serein Consultancy on Trove's behalf (PROVIDER_PAYER_NAME). Each provider
+ * keeps its own bank details in provider_payout_details (IBAN encrypted like a
+ * shop's — see src/provider-payouts.js); admin downloads the provider transfer
+ * file, sends the transfers, then closes each provider's batch with markPaid(),
+ * which stamps paid_at, the reference and the payer on every row.
  */
 const db = require('./db');
 
 const GRACE_DAYS = 3; // a booking nobody marked done becomes payable this long after the service date
+
+/** Who sends provider transfers — shown to providers and on their statement. */
+const payerName = () => String(process.env.PROVIDER_PAYER_NAME || '').trim() || 'Serein Consultancy';
+
+/** Today's date on the Dubai calendar (UTC+4, no daylight saving). */
+const dubaiToday = (now = Date.now()) => new Date(now + 4 * 3600000).toISOString().slice(0, 10);
+
+/** The bank reference for a provider's batch: TRV-SVC-<provider id>-<yyyymmdd>. */
+const payReference = (providerId, day = dubaiToday()) => `TRV-SVC-${Number(providerId)}-${String(day).replace(/-/g, '')}`;
 
 /** Record the provider's fee for a booking that has just been paid. */
 function creditBooking(bk) {
@@ -74,8 +88,8 @@ function eligibleServiceCredits(runStart = nowSql()) {
 
 /**
  * Grouped per provider: what each is owed now, how, and why someone is held
- * back. `payTo` is the provider account's approved shop payout details when it
- * has them (masked IBAN only) — the consignment run's bank details.
+ * back. `payTo` is the provider's own payout details (masked IBAN only) from
+ * provider_payout_details; without them the provider waits for bank details.
  */
 function preview(runStart = nowSql()) {
   const per = new Map();
@@ -95,16 +109,17 @@ function preview(runStart = nowSql()) {
   const eligible = [], excluded = [];
   for (const [providerId, b] of per) {
     const p = db.prepare(`SELECT p.id, p.name, p.slug, u.name AS owner_name, u.email AS owner_email,
-        s.payout_bank_name, s.payout_account_name, s.iban_masked, s.iban_encrypted
+        d.bank_name AS payout_bank_name, d.account_name AS payout_account_name, d.iban_masked, d.provider_id AS has_details
       FROM service_providers p JOIN users u ON u.id = p.user_id
-      LEFT JOIN shops s ON s.user_id = p.user_id AND s.status = 'approved'
+      LEFT JOIN provider_payout_details d ON d.provider_id = p.id
       WHERE p.id = ?`).get(providerId);
     const row = {
       providerId, name: p ? p.name : `Provider ${providerId}`, slug: p ? p.slug : '',
       owner: p ? { name: p.owner_name, email: p.owner_email } : null,
       creditCents: b.creditCents, debitCents: b.debitCents, netCents: b.creditCents + b.debitCents,
       creditIds: b.creditIds, debitIds: b.debitIds, bookings: b.bookings,
-      payTo: p && p.iban_encrypted ? { bank: p.payout_bank_name, accountName: p.payout_account_name, iban: p.iban_masked } : null,
+      reference: payReference(providerId),
+      payTo: p && p.has_details ? { bank: p.payout_bank_name, accountName: p.payout_account_name, iban: p.iban_masked } : null,
     };
     if (row.netCents <= 0) excluded.push({ ...row, reason: 'netted_negative' });
     else if (!row.payTo) excluded.push({ ...row, reason: 'payout_details_missing' });
@@ -119,17 +134,21 @@ function preview(runStart = nowSql()) {
 
 /**
  * Close a provider's currently payable rows once the bank transfer went out
- * (manual payout from /admin). Stamps exactly the rows the preview showed.
+ * (manual payout from /admin). Stamps exactly the rows the preview showed,
+ * with the reference and who sent the money.
  */
-function markPaid(providerId, reference, runStart = nowSql()) {
+function markPaid(providerId, reference, runStart = nowSql(), { payer = payerName() } = {}) {
   const pv = preview(runStart);
   const row = [...pv.eligible, ...pv.excluded]
     .find((r) => r.providerId === Number(providerId) && r.netCents > 0);
   if (!row) return null;
-  const ref = String(reference || '').trim().slice(0, 120) || `Trove service fees — provider ${providerId}`;
-  const stamp = db.prepare("UPDATE provider_credits SET paid_at=datetime('now'), pay_reference=? WHERE id=? AND paid_at IS NULL");
-  db.transaction(() => { for (const id of [...row.creditIds, ...row.debitIds]) stamp.run(ref, id); })();
-  return { providerId: row.providerId, amountCents: row.netCents, reference: ref, rows: row.creditIds.length + row.debitIds.length };
+  const ref = String(reference || '').trim().slice(0, 120) || payReference(providerId);
+  const stamp = db.prepare("UPDATE provider_credits SET paid_at=datetime('now'), pay_reference=?, payer_name=? WHERE id=? AND paid_at IS NULL");
+  db.transaction(() => { for (const id of [...row.creditIds, ...row.debitIds]) stamp.run(ref, payer, id); })();
+  return {
+    providerId: row.providerId, name: row.name, owner: row.owner, amountCents: row.netCents, debitCents: row.debitCents,
+    reference: ref, payer, bookings: row.bookings, hasBankDetails: !!row.payTo, rows: row.creditIds.length + row.debitIds.length,
+  };
 }
 
 /** A provider's own money view. */
@@ -142,4 +161,4 @@ function providerBalances(providerId, runStart = nowSql()) {
   return { pendingCents: open - payable, payableCents: payable + debits, paidCents: paid };
 }
 
-module.exports = { GRACE_DAYS, creditBooking, reverseBooking, eligibleServiceCredits, preview, markPaid, providerBalances };
+module.exports = { GRACE_DAYS, payerName, payReference, dubaiToday, creditBooking, reverseBooking, eligibleServiceCredits, preview, markPaid, providerBalances };

@@ -463,7 +463,7 @@ function bookingPaidProvider({ booking: bk, commissionPercent }) {
   const grace = require('./service-credits').GRACE_DAYS;
   const inner = panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(bk.provider_net_cents)}</span><br>your fee after Trove's ${commissionPercent}% platform fee (the customer paid ${aed(bk.amount_cents)})`)
     + svcSummary(bk, { price: false, pay: false })
-    + p(`Paid through Trove. The customer's mobile is now in your dashboard — reach out to arrange the details. Your fee is paid in Trove's settlement run once you mark the booking done (or ${grace} days after the service date).`)
+    + p(`Paid through Trove. The customer's mobile is now in your dashboard — reach out to arrange the details. Your fee is paid by bank transfer from ${esc(require('./service-credits').payerName())} on Trove's behalf once you mark the booking done (or ${grace} days after the service date) — add your bank details under Payouts in your dashboard if you haven't yet.`)
     + button('Open your bookings', PROVIDER_LINK);
   return {
     subject: `Paid through Trove — ${bk.title}${bk.service_date ? ` on ${svcDate(bk.service_date)}` : ''}`,
@@ -680,3 +680,31 @@ Object.assign(module.exports, {
   passwordReset, welcomeVerify, passwordChanged,
   applicationReceived, applicationAlert, applicationApproved, applicationRejected, orderToPack,
 });
+
+/**
+ * Payment note — to a service provider once admin has marked their batch
+ * of fees paid. Only what the provider already knows: booking codes, services,
+ * dates and their own fees. Never anything about the customer.
+ * { providerName, ownerName, amountCents, reference, payer, bookings[{ code, title, serviceDate, netCents }], debitCents }
+ */
+function providerFeesSent({ providerName, ownerName, amountCents, reference, payer, bookings = [], debitCents = 0 }) {
+  const rows = bookings.map((b) => totalRow(`${b.code} · ${b.title}${b.serviceDate ? ` · ${svcDate(b.serviceDate)}` : ''}`, aed(b.netCents)));
+  if (debitCents) rows.push(totalRow('Less a fee already paid on a booking later refunded', `−${aed(-debitCents)}`));
+  rows.push(totalRow('Total sent', aed(amountCents), true));
+  const inner = panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(amountCents)}</span><br>reference <b>${esc(reference)}</b>`)
+    + label(bookings.length === 1 ? 'The booking covered' : 'The bookings covered')
+    + totals(rows)
+    + p(`This payment was sent from <b>${esc(payer)}</b> on Trove's behalf, so look for that name on your bank statement. Please allow 1–2 working days for it to arrive.`)
+    + button('Open your payouts', PROVIDER_LINK)
+    + note('Your dashboard lists every fee and when it was paid.');
+  return {
+    subject: `Your Trove fees are on their way — ${aed(amountCents)}`,
+    html: svcLayout('provider', 'Your fees are on their way', inner, {
+      kicker: `Payment reference <b style="color:${INK}">${esc(reference)}</b>`,
+      intro: `Hello ${firstNameOr(ownerName)}, we've sent your fees for ${esc(providerName)} by bank transfer.`,
+      preheader: `${aed(amountCents)} sent from ${payer} on Trove's behalf — reference ${reference}.`,
+    }),
+  };
+}
+
+module.exports.providerFeesSent = providerFeesSent;
