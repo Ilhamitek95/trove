@@ -469,6 +469,7 @@ async function submitApp(){
     const code=e.data&&e.data.code;
     if(e.status===409&&code==='already_has_shop'){toStep(1);showErr('This account already runs a shop on Trove — sign in to manage it.');}
     else if(e.status===409&&code==='already_provider'){toStep(1);showErr('This account already offers services on Trove — sign in to manage them.');}
+    else if(e.status===409&&code==='sign_in_required'){toStep(1);showErr('An account with this email already exists. Sign in first, then add your services from your dashboard — or apply with a different email.');}
     else if(e.status===409){toStep(1);showErr('An account with this email already exists. To add this to it, use that account’s password here — or apply with a different email.');}
     else showErr(e.message||'Something went wrong — please try again.');
   }

@@ -1061,7 +1061,7 @@ function renderOrders(){
       <td>${o.shops.map(esc).join(', ')}</td>
       <td>${o.itemCount}</td>
       <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(o.totalCents)}</td>
-      <td>${o.refundedAt?`<span class="pill rejected">refunded</span>`:`<span class="pill ${o.status}">${o.status}</span>`}</td>
+      <td>${o.refundedAt?`<span class="pill rejected">refunded</span>`:`<span class="pill ${esc(o.status)}">${esc(o.status)}</span>`}${o.attention?`<div style="font-size:12px;font-weight:700;color:#B3261E;margin-top:4px">${esc(({oversold:'Sold out after payment — refunded automatically',oversold_refund_failed:'Sold out after payment — REFUND BY HAND',paid_after_cancel:'Paid after it was cancelled — refunded automatically',refund_failed:'Automatic refund failed — REFUND BY HAND'})[o.attention]||o.attention)}</div>`:''}</td>
       <td style="color:var(--muted)">${fmtDate(o.createdAt)}</td>
       <td style="text-align:right">${!o.refundedAt&&['paid','fulfilled'].includes(o.status)?`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`:''}</td>
     </tr>`).join(''):`<tr><td colspan="8" class="empty">No orders yet.</td></tr>`}</tbody>`;

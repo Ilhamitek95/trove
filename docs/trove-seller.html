@@ -1614,16 +1614,22 @@ function undoBtn(s){
 }
 function shipActions(s){
   if(s.status==='cancelled') return `<div class="sc-act" style="color:var(--muted)">This shipment was cancelled.</div>`;
-  if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${undoBtn(s)}</div>`;
-  let [ns,label]=SHIP_NEXT[s.status]||[];
   // Courier-booked parcel (Trove books it: OTO or Quiqup): the first step hands
   // it to the courier for collection, and the courier's label goes on the box.
+  // After that only the courier moves it on — the server refuses anything else.
   const courier=!!s.deliveryRef;
+  if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${courier?'':undoBtn(s)}</div>`;
+  let [ns,label]=SHIP_NEXT[s.status]||[];
   if(courier&&s.status==='processing') label='Packed · ready for collection';
+  if(courier&&s.status!=='processing') ns=null;
   const courierRow=courier?`<div class="sc-act" style="gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px">
       <span>Courier booking <b>${esc(s.deliveryRef)}</b>${s.readyAt?' · handed over '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
       <a class="btn btn-ghost btn-sm" href="/api/seller/shipments/${Number(s.id)}/label" target="_blank" rel="noopener">Print label</a>
     </div>`:'';
+  if(courier) return courierRow+`<div class="sc-act">
+      ${ns?`<button class="btn btn-coral btn-sm" onclick="advanceShip(${Number(s.id)},${jsq(ns)})">${label}</button>`:`<span style="color:var(--muted);font-size:13px">With the courier — updates arrive automatically.</span>`}
+      ${s.status==='shipped'?undoBtn(s):''}
+    </div>`;
   const track=courierRow+`<div class="sc-track">
       <div class="field" style="margin:0"><label>Courier</label><input id="ship-carrier-${s.id}" value="${esc(s.carrier)}" placeholder="e.g. Trove Express"></div>
       <div class="field" style="margin:0"><label>Tracking number</label><input id="ship-track-${s.id}" value="${esc(s.trackingNumber)}" placeholder="optional"></div>
