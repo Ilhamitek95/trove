@@ -339,7 +339,7 @@ function renderReturns(base) {
   const src = require('./pages/delivery-returns')(facts());
   return shell({
     base, pathName: '/returns', title: 'Delivery & Returns', h1: 'Delivery & Returns',
-    description: `Trove delivers to Dubai and Abu Dhabi in 3–6 days: AED 30 on orders of AED 200 and below, free above. Returns within ${facts().returnDays} days of delivery, collected by our courier.`,
+    description: `Trove delivers to Dubai and Abu Dhabi, with the delivery time shown on every piece (most arrive in ${facts().deliveryDays}): AED 30 on orders of AED 200 and below, free above. Returns within ${facts().returnDays} days of delivery, collected by our courier.`,
     body: `<div class="toc"><a href="#delivery">Delivery</a><a href="#returns">Returns</a><a href="#the-collection-fee">Collection fee</a><a href="#personalised">Personalised pieces</a></div>
 <div class="prose">${md.toHtml(src)}</div>`,
     ld: [webPageLd(base, '/returns', 'Delivery & Returns')],
@@ -463,8 +463,8 @@ function llmsTxt(base) {
 
 - Service area: ${f.areas}, United Arab Emirates. Delivery addresses anywhere else are not accepted.
 - Currency: UAE dirhams (AED). No service fee.
-- Delivery: ${f.deliveryFee} on orders of ${f.freeOver} and below; free on orders over ${f.freeOver}. Usually ${f.deliveryDays}. Orders with pieces from several makers may arrive in separate parcels.
-- Returns: request within ${f.returnDays} days of delivery from the account's Orders page; Trove's courier collects the piece; the refund is issued once the courier has collected the return. An ${f.deliveryFee} collection fee applies only to change-of-mind returns on orders of ${f.freeOver} and below, never when a piece is faulty, damaged or wrong. Personalised pieces can be returned only if faulty or wrong.
+- Delivery: ${f.deliveryFee} on orders of ${f.freeOver} and below; free on orders over ${f.freeOver}. Delivery time is shown on every piece: the maker's make/pack time plus ${f.transitDays} with the courier. Most pieces arrive in ${f.deliveryDays}; made-to-order pieces show their own time (up to ${f.maxLeadWeeks} weeks). Orders with pieces from several makers may arrive in separate parcels.
+- Returns: request within ${f.returnDays} days of delivery from the account's Orders page; Trove's courier collects the piece; the refund is issued once the courier has collected the return. An ${f.deliveryFee} collection fee applies only to change-of-mind returns on orders of ${f.freeOver} and below, never when a piece is faulty, damaged or wrong; it is charged once per return request. The original delivery charge is refunded when the whole order comes back faulty, damaged, wrong or not as described. Personalised pieces can be returned only if faulty or wrong.
 - Curation: every maker applies and a real person reviews every application before a shop goes live.
 - Makers: apply at ${base}/apply. Nothing to join; Trove buys each sold piece at ${f.makerShare}% of the maker's price (a ${f.commission}% margin covering photography, marketing, checkout, delivery and customer care) and pays makers ${f.payoutRhythm}, by bank transfer.
 - Services Marketplace (${base}/services): creative services at home in ${f.areas} by independent providers, who (not Trove) are responsible for the service. Customers settle directly with the provider or pay through Trove by card where available. Providers apply at ${base}/apply?for=services and pay ${f.providerSub} a month; Trove keeps ${f.serviceCommission}% of bookings paid through Trove.

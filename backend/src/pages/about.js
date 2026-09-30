@@ -54,7 +54,8 @@ Trove, is responsible for the service they deliver.
 - **Trove is the seller of every product you buy.** You pay Trove by card
   through Stripe, and Trove is responsible to you for the order, including
   returns and refunds. See the [Terms of Sale](/terms).
-- Delivery takes **${f.deliveryDays}** to addresses in ${f.areas}. It costs
+- **Delivery time is shown on every piece**: most arrive in **${f.deliveryDays}**
+  to addresses in ${f.areas}, and made-to-order pieces show their own time. It costs
   **${f.deliveryFee} on orders of ${f.freeOver} and below** and is **free on
   orders over ${f.freeOver}**. There is no service fee.
 - You can ask to return a piece within **${f.returnDays} days of delivery**;

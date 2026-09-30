@@ -37,7 +37,12 @@ function facts() {
     serviceCommission: fees.SERVICE_COMMISSION_PERCENT,
     providerPayer: require('../service-credits').payerName(), // who sends provider transfers (PROVIDER_PAYER_NAME)
     providerGraceDays: require('../service-credits').GRACE_DAYS,
-    deliveryDays: '3–6 days',
+    // Delivery time is per piece since 2026-09-30: the maker's make/pack
+    // time + the courier's window. deliveryDays is what MOST pieces (the
+    // standard make time) take — never promised as the time for everything.
+    deliveryDays: `${fees.LEAD_DAYS_DEFAULT + fees.COURIER_TRANSIT_MIN_DAYS}–${fees.LEAD_DAYS_DEFAULT + fees.COURIER_TRANSIT_MAX_DAYS} days`,
+    transitDays: `${fees.COURIER_TRANSIT_MIN_DAYS}–${fees.COURIER_TRANSIT_MAX_DAYS} days`,
+    maxLeadWeeks: Math.round(fees.LEAD_DAYS_MAX / 7),
     areas: 'Dubai and Abu Dhabi',
   };
 }

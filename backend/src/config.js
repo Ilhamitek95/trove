@@ -20,7 +20,10 @@ const PROVIDER_AGREEMENT_VERSION = 'v2';
 const SERVICES_TERMS_VERSION = 'v2';
 // Buyer-facing documents (backend/legal/buyer-terms-*.md, privacy-*.md),
 // shown at /terms and /privacy. Same rule: a change is a new file + a bump.
-const BUYER_TERMS_VERSION = 'v1';
+// v2 (2026-09-30): the delivery clause — each piece shows its own estimate
+// (the maker's stated make/pack time + the courier's 1–4 days) instead of a
+// fixed 3–6 days. Nothing else changed.
+const BUYER_TERMS_VERSION = 'v2';
 const PRIVACY_VERSION = 'v1';
 // One number (fees.RETURN_WINDOW_DAYS, 15 by default) is both the buyer's
 // return window and the maker's settlement hold — the two names are kept so

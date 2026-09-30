@@ -20,10 +20,14 @@ courier can reach you.
 
 ## How long it takes
 
-Delivery usually takes **${f.deliveryDays}** from the moment your order is
-confirmed. Each piece is packed by its maker and collected from their studio
-by our courier, so an order with pieces from several makers may arrive in
-more than one parcel. You can follow every parcel from **Your account →
+**Delivery time is shown on every piece** — on its page, in your basket and
+at checkout. It is the time its maker needs to make or finish and pack it,
+plus **${f.transitDays}** with our courier, counted from the day your order is
+confirmed. **Most pieces arrive in ${f.deliveryDays}**; made-to-order pieces
+show their own time, which can be up to ${f.maxLeadWeeks} weeks. Each piece is
+packed by its maker and collected from their studio by our courier, so an
+order with pieces from several makers may arrive in more than one parcel, as
+each is ready. You can follow every parcel from **Your account →
 Orders**, and the courier will contact you on your mobile number.
 
 ## Returns: ${f.returnDays} days from delivery {#returns}
@@ -50,13 +54,17 @@ Refunds go back to the card you paid with. Your bank may take a few working
 days to show the money. The refund covers the price you paid for the
 returned pieces, including any paid extras such as gift wrap, less the
 collection fee where it applies (see below). The original delivery charge is
-not refunded on a change-of-mind return.
+refunded too when the **whole order** comes back because it arrived faulty or
+damaged, was the wrong item or was not as described; otherwise, including on
+any change-of-mind return, it is kept.
 
 ## The collection fee
 
 - On orders of **${f.freeOver} and below**, a change-of-mind return carries
   a **${f.deliveryFee} collection fee**, taken off the refund.
 - On orders **over ${f.freeOver}**, collection is **free**.
+- The fee is charged **per return request**, so if you are sending back more
+  than one piece, send them back together and it is charged once.
 - **There is never a collection fee when a piece is faulty, damaged or not
   what you ordered**, whatever the order value.
 

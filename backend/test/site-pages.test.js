@@ -112,10 +112,10 @@ test('the agreements render their current version server-side, picked from confi
 });
 
 test('the buyer terms and privacy policy are served by /api/legal with version and hash', async () => {
-  for (const [doc, needle] of [['terms', 'seller of every product'], ['buyer-terms', 'seller of every product'], ['privacy', 'Personal Data Protection Law']]) {
+  for (const [doc, needle, version] of [['terms', 'seller of every product', 'v2'], ['buyer-terms', 'seller of every product', 'v2'], ['privacy', 'Personal Data Protection Law', 'v1']]) {
     const r = await get('/api/legal/' + doc);
     assert.equal(r.status, 200, doc);
-    assert.equal(r.data.version, 'v1');
+    assert.equal(r.data.version, version, doc);
     assert.ok(r.data.markdown.includes(needle), doc);
     assert.match(r.data.sha256, /^[0-9a-f]{64}$/);
   }

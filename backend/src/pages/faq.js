@@ -51,8 +51,10 @@ To addresses in ${f.areas} only.
 ### How much is delivery and how long does it take?
 
 ${f.deliveryFee} on orders of ${f.freeOver} and below, free on orders over
-${f.freeOver}. Delivery usually takes ${f.deliveryDays}. An order with pieces
-from several makers may arrive in more than one parcel.
+${f.freeOver}. Delivery time is shown on every piece: its maker's time to make
+or finish and pack it, plus ${f.transitDays} with our courier. Most pieces
+arrive in ${f.deliveryDays}; made-to-order pieces show their own time. An order
+with pieces from several makers may arrive in more than one parcel.
 
 ### Can I return something?
 
