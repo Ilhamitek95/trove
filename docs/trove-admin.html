@@ -35,7 +35,7 @@
   .mitem{display:flex;align-items:center;gap:11px;padding:11px 24px;font-size:13.5px;font-weight:600;color:var(--muted);cursor:pointer;border-left:3px solid transparent}
   .mitem svg{width:17px;height:17px;stroke-width:1.7}
   .mitem.on{color:var(--char);background:var(--rose-tint);border-left-color:var(--coral)}
-  .mitem .badge{margin-left:auto;background:var(--coral);color:var(--char);font-size:10.5px;font-weight:700;min-width:19px;height:19px;border-radius:999px;display:grid;place-items:center;padding:0 6px}
+  .mitem .badge{margin-left:auto;background:var(--rose);color:var(--char);font-size:10.5px;font-weight:700;min-width:19px;height:19px;border-radius:999px;display:grid;place-items:center;padding:0 6px}
   .mitem .badge.zero{background:var(--rose-tint);color:var(--muted)}
   .sfoot{margin-top:auto;padding:14px 24px;font-size:12.5px;color:var(--muted);font-weight:600;display:flex;flex-direction:column;gap:9px}
   .sfoot a{cursor:pointer}
@@ -146,7 +146,7 @@
   .tagbox:focus-within{border-color:var(--taupe)}
   .tagbox .tg{display:inline-flex;align-items:center;gap:7px;background:rgba(195,209,199,.35);border:1px solid rgba(195,209,199,.9);border-radius:99px;padding:5px 7px 5px 12px;font-size:13px;font-weight:600;color:var(--char)}
   .tagbox .tg button{border:0;background:rgba(41,39,39,.08);color:var(--char);width:17px;height:17px;border-radius:50%;font-size:11px;line-height:1;cursor:pointer;display:grid;place-items:center}
-  .tagbox .tg button:hover{background:var(--coral);color:var(--char)}
+  .tagbox .tg button:hover{background:var(--rose);color:var(--char)}
   .tagbox input{border:0;outline:0;background:none;flex:1;min-width:130px;font:inherit;font-size:13.5px;padding:4px 2px}
   .tagsug{display:none;margin-top:12px;padding:12px 13px;background:rgba(195,209,199,.16);border:1px solid rgba(195,209,199,.7);border-radius:12px}
   .tagsug.show{display:block}
@@ -350,15 +350,21 @@
 const $=id=>document.getElementById(id);
 let ME=null, STATS=null, SHOPS=[], PROVIDERS=[], ORDERS=[], PRODUCTS=[], REVIEWS=[], RETURNS=[], TRENDS=[], AI_TAGS=false, PREVIEW=null, SETTLEMENTS=[], BATCHES=[], GRAD={queue:[],railBEnabled:false}, VAT={vatRegistered:false,rows:[]};
 
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+/* Every API string that reaches innerHTML goes through esc(). */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+/* Shop colours and images are seller-supplied: only a #hex, and only our
+   uploads, https or an inline image, ever reach a style attribute. */
+const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#BD9C8C';
+const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
 function aed(n){return 'AED '+Math.round(n).toLocaleString();}
 function money(c){const n=(c||0)/100;return Number.isInteger(n)?aed(n):'AED '+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 function shade(hex,p){let n=parseInt(hex.slice(1),16);let r=(n>>16)+p,g=((n>>8)&255)+p,b=(n&255)+p;r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');}
 function tile(s){
-  if(s.image) return `<div class="tile" style="background:center/cover no-repeat url('${esc(s.image)}')"></div>`;
-  const c=s.color||'#BD9C8C';
+  const im=safeImg(s.image);
+  if(im) return `<div class="tile" style="background:center/cover no-repeat url('${esc(im)}')"></div>`;
+  const c=safeColor(s.color);
   return `<div class="tile" style="background:linear-gradient(150deg,${shade(c,14)},${c} 55%,${shade(c,-14)})">${esc((s.name||'?')[0])}</div>`;
 }
 
@@ -409,7 +415,7 @@ function renderOverview(){
     <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">gross, incl. fees</div></div>
     <div class="stat"><div class="k">Buyers</div><div class="v">${s.buyers}</div><div class="n">registered</div></div>
     <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>
-    <div class="stat ${s.licensed&&s.licensed.awaiting?'hot':''}"><div class="k">Licensed sellers</div><div class="v">${s.licensed?s.licensed.total:0}</div><div class="n">${s.licensed&&s.licensed.total?`${s.licensed.verified} verified · ${s.licensed.awaiting} awaiting check`:'none yet — makers sell license-free'}</div></div>
+    <div class="stat ${s.licensed&&s.licensed.awaiting?'hot':''}"><div class="k">Licensed sellers</div><div class="v">${s.licensed?s.licensed.total:0}</div><div class="n">${s.licensed&&s.licensed.total?`${s.licensed.verified} verified · ${s.licensed.awaiting} awaiting check`:'none yet — makers sell licence-free'}</div></div>
     <div class="stat ${s.providers&&s.providers.pending?'hot':''}"><div class="k">Service providers</div><div class="v">${s.providers?s.providers.approved:0}</div><div class="n">${s.providers&&s.providers.pending?`${s.providers.pending} waiting for review`:'live on the Services Marketplace'}</div></div>`;
   const b=$('pendBadge');const n=s.shops.pending;b.textContent=n;b.classList.toggle('zero',!n);
   const pend=SHOPS.filter(x=>x.status==='pending');
@@ -470,7 +476,7 @@ function memberSideHTML(kind, x){
   const live = kind==='shop' ? `${x.liveProducts} live piece${x.liveProducts===1?'':'s'}` : `${x.liveServices} live service${x.liveServices===1?'':'s'}`;
   const acts = kind==='shop' ? shopActions(x) : providerActions(x);
   return `<div style="display:flex;flex-direction:column;gap:6px;min-width:220px">
-    <div><a href="${pub}" target="_blank" rel="noopener" class="nm" style="text-decoration:underline">${esc(x.name)}</a> <span class="pill ${x.status}">${x.status}</span></div>
+    <div><a href="${pub}" target="_blank" rel="noopener" class="nm" style="text-decoration:underline">${esc(x.name)}</a> <span class="pill ${esc(x.status)}">${esc(x.status)}</span></div>
     <div class="sl">${live}${kind==='provider'&&x.openRequests?` · ${x.openRequests} open request${x.openRequests===1?'':'s'}`:''}</div>
     ${acts?`<div class="actions">${acts}</div>`:''}
   </div>`;
@@ -508,7 +514,7 @@ function shopActions(s){
 function idCellHTML(s){
   if(s.isHouse) return '<span style="color:var(--muted)">—</span>';
   if(s.connectQueue||s.licenseVerifiedAt)
-    return s.licenseVerifiedAt?'<span class="pill approved">license ✓</span>':'<span class="pill pending">license</span>';
+    return s.licenseVerifiedAt?'<span class="pill approved">licence ✓</span>':'<span class="pill pending">licence</span>';
   if(s.eidFront&&s.eidBack)
     return `<span class="pill approved">EID ✓</span>
       <div class="sl" style="margin-top:3px"><a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/front" target="_blank" rel="noopener">front</a> · <a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/back" target="_blank" rel="noopener">back</a></div>
@@ -523,7 +529,7 @@ function shopRowHTML(s){
     <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.salesCents)}</td>
     <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Weekly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
     <td>${idCellHTML(s)}</td>
-    <td><span class="pill ${s.status}">${s.status}</span></td>
+    <td><span class="pill ${esc(s.status)}">${esc(s.status)}</span></td>
     <td><div class="actions"><button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>${shopActions(s)}</div></td>
   </tr>`;
 }
@@ -562,7 +568,7 @@ function providerCardHTML(p){
       <div class="shoprow" style="flex:1;min-width:230px">${tile(p)}
         <div><div class="nm" style="font-size:16px">${esc(p.name)}${p.status==='approved'?` <a href="/services/${encodeURIComponent(p.slug)}" target="_blank" rel="noopener" style="font-size:11.5px;font-weight:700;text-decoration:underline;margin-left:6px">public page ↗</a>`:''}</div>
         <div class="sl">${esc(p.owner.name)} · ${esc(p.owner.email)}</div></div></div>
-      <span class="pill ${p.status}">${p.status}</span>
+      <span class="pill ${esc(p.status)}">${esc(p.status)}</span>
       <div style="font-size:12px;color:var(--muted);font-weight:600">Applied ${fmtDate(p.createdAt)}</div>
       <div class="actions">${providerActions(p)}</div>
     </div>
@@ -629,7 +635,7 @@ function renderProducts(){
   const list=PRODUCTS.filter(p=>!q||(p.name+' '+p.category+' '+p.shop.name+' '+p.tags.join(' ')).toLowerCase().includes(q));
   $('productsTable').innerHTML=`<thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Tags</th><th>Status</th><th></th></tr></thead>
     <tbody>${list.length?list.map(p=>`<tr${p.shop.status!=='approved'?' style="opacity:.55"':''}>
-      <td><div class="shoprow"><div class="tile" style="background:center/cover no-repeat url('${(p.images&&p.images[0])?esc(p.images[0]):prodImg(p.imageSeed)}'),linear-gradient(150deg,${shade(p.shop.color||'#BD9C8C',14)},${p.shop.color||'#BD9C8C'})"></div>
+      <td><div class="shoprow"><div class="tile" style="background:center/cover no-repeat url('${esc(safeImg(p.images&&p.images[0])||prodImg(p.imageSeed))}'),linear-gradient(150deg,${shade(safeColor(p.shop.color),14)},${safeColor(p.shop.color)})"></div>
         <div><div class="nm">${esc(p.name)}</div><div class="sl">${esc(p.shop.name)}${p.shop.status!=='approved'?` · <span style="color:var(--accent-ink)">shop ${esc(p.shop.status)}</span>`:''}</div></div></div></td>
       <td style="color:var(--muted)">${esc(p.category)}</td>
       <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(p.priceCents)}</td>
@@ -766,7 +772,7 @@ function renderReviews(){
       <td style="color:var(--coral);letter-spacing:2px;white-space:nowrap">${rstars(r.rating)}</td>
       <td><div style="font-weight:700;font-size:13px">${esc(r.productName||r.shopName)}</div><div style="font-size:11.5px;color:var(--muted);font-weight:600">${r.productName?esc(r.shopName):'shop review'}</div></td>
       <td style="max-width:340px"><div class="rbody" onclick="this.classList.toggle('open')" title="Tap to expand">${esc(r.body||'—')}</div>
-        ${r.images&&r.images.length?`<div style="display:flex;gap:5px;margin-top:6px">${r.images.map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:38px;height:38px;object-fit:cover;border-radius:7px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}</td>
+        ${r.images&&r.images.length?`<div style="display:flex;gap:5px;margin-top:6px">${r.images.map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:38px;height:38px;object-fit:cover;border-radius:7px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}</td>
       <td style="color:var(--muted)">${esc(r.buyer)}<div style="font-size:11px">${esc(r.buyerEmail)}</div></td>
       <td style="color:var(--muted);white-space:nowrap">${fmtDate(r.createdAt)}</td>
       <td><span class="pill ${r.status==='published'?'approved':'suspended'}">${r.status}</span></td>
@@ -801,7 +807,7 @@ function renderReturns(){
         <span style="color:var(--muted);font-size:12px;margin-left:auto">${fmtDate(r.createdAt)}</span>
       </div>
       <div style="margin-top:10px;font-size:13px"><b>${esc(r.reasonLabel)}</b> — ${esc(r.details)}</div>
-      ${r.images.length?`<div style="display:flex;gap:6px;margin-top:9px">${r.images.map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}
+      ${r.images.length?`<div style="display:flex;gap:6px;margin-top:9px">${r.images.map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}
       <div style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600">
         Coming back: ${r.items.map(i=>`<b style="color:var(--char)">${esc(i.name)} ×${i.qty}</b>${(i.options&&i.options.length)?` <span style="color:var(--muted)">(${esc(i.options.map(o=>o.name+': '+o.value).join(' · '))})</span>`:''} — ${esc(i.shop)}`).join(' · ')}
         ${r.items.length<r.order.itemCount?` <span style="color:var(--muted)">(${r.items.length} of ${r.order.itemCount} items on the order)</span>`:' (the whole order)'}
@@ -1128,15 +1134,15 @@ function renderPayouts(){
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>Graduation queue</h3>
-        <div class="hint">Suppliers over the trailing-30-day cap, plus licensed direct entries. Verify the license, then approve to create their direct-payout account.${GRAD.railBEnabled?'':' <strong>Rail B is OFF (RAIL_B_ENABLED)</strong> — approvals are held until it\'s switched on.'}</div></div>
-      ${GRAD.queue.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Supplier</th><th>30-day paid</th><th>License</th><th>Status</th><th></th></tr></thead>
+        <div class="hint">Suppliers over the trailing-30-day cap, plus licensed direct entries. Verify the licence, then approve to create their direct-payout account.${GRAD.railBEnabled?'':' <strong>Rail B is OFF (RAIL_B_ENABLED)</strong> — approvals are held until it\'s switched on.'}</div></div>
+      ${GRAD.queue.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Supplier</th><th>30-day paid</th><th>Licence</th><th>Status</th><th></th></tr></thead>
         <tbody>${GRAD.queue.map(g=>`<tr>
-          <td style="font-weight:700">${esc(g.name)}<div style="font-size:11.5px;color:var(--muted)">${esc(g.owner.email)}${g.directEntry?' · applied with license':''}</div></td>
+          <td style="font-weight:700">${esc(g.name)}<div style="font-size:11.5px;color:var(--muted)">${esc(g.owner.email)}${g.directEntry?' · applied with licence':''}</div></td>
           <td>${money(g.paid30Cents)}</td>
           <td style="color:var(--muted)">${g.licenseNumber?esc(g.licenseNumber):'—'}${g.hasLicenseImage?` · <a href="${TroveAPI.base}/api/admin/shops/${g.shopId}/license-image" target="_blank" rel="noopener">image</a>`:''}</td>
-          <td>${g.licenseVerifiedAt?'<span class="pill approved">license verified</span>':g.licenseNumber?'<span class="pill pending">awaiting check</span>':'<span class="pill pending">no license yet</span>'}</td>
+          <td>${g.licenseVerifiedAt?'<span class="pill approved">licence verified</span>':g.licenseNumber?'<span class="pill pending">awaiting check</span>':'<span class="pill pending">no licence yet</span>'}</td>
           <td style="text-align:right">
-            ${!g.licenseVerifiedAt&&g.licenseNumber?`<button class="btn btn-ghost" onclick="verifyLicense(${g.shopId})">Verify license</button>`:''}
+            ${!g.licenseVerifiedAt&&g.licenseNumber?`<button class="btn btn-ghost" onclick="verifyLicense(${g.shopId})">Verify licence</button>`:''}
             ${g.licenseVerifiedAt?`<button class="btn btn-coral" ${GRAD.railBEnabled?'':'disabled style="opacity:.45;cursor:default" title="Rail B is off"'} onclick="approveGraduation(${g.shopId})">${g.stripeAccountId?'Re-send onboarding':'Approve → Stripe'}</button>`:''}
           </td>
         </tr>`).join('')}</tbody></table></div>`
@@ -1172,8 +1178,8 @@ async function markLegacyPaid(id){
   catch(e){ toast(e.message||'Could not mark as paid'); }
 }
 async function verifyLicense(shopId){
-  if(!confirm('Confirm you have checked this license against the Invest in Dubai / DED registry?'))return;
-  try{ await TroveAPI.api('/api/admin/graduation/'+shopId+'/verify-license',{method:'POST'}); toast('License verified'); reloadPayouts(); }
+  if(!confirm('Confirm you have checked this licence against the Invest in Dubai / DED registry?'))return;
+  try{ await TroveAPI.api('/api/admin/graduation/'+shopId+'/verify-license',{method:'POST'}); toast('Licence verified'); reloadPayouts(); }
   catch(e){ toast(e.message||'Could not verify'); }
 }
 async function approveGraduation(shopId){
