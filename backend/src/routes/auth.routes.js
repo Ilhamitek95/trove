@@ -303,10 +303,23 @@ router.post('/stop-impersonating', (req, res, next) => {
 
 // GET /api/auth/me  -> current user + whether they have a shop or a
 // service-provider profile (every page's boot reads this one shape).
-router.get('/me', requireAuth, (req, res) => {
+function sessionShape(req) {
   const shop = db.prepare('SELECT id, name, slug FROM shops WHERE user_id = ?').get(req.user.id);
   const provider = db.prepare('SELECT id, name, slug, status FROM service_providers WHERE user_id = ?').get(req.user.id);
-  res.json({ user: publicUser(req.user), shop: shop || null, provider: provider || null, impersonating: !!req.session.impersonatorId });
+  return { user: publicUser(req.user), shop: shop || null, provider: provider || null, impersonating: !!req.session.impersonatorId };
+}
+router.get('/me', requireAuth, (req, res) => res.json(sessionShape(req)));
+
+// GET /api/auth/session -> the same shape when signed in, and a plain 200
+// { user: null } when not. Every public page asks this on load; a signed-out
+// visitor is the normal case, not an error, so it must not answer 401 (the
+// browser logs every 401 as a console error).
+router.get('/session', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const user = req.session.userId ? db.prepare('SELECT * FROM users WHERE id = ?').get(req.session.userId) : null;
+  if (!user) return res.json({ user: null, shop: null, provider: null, impersonating: false });
+  req.user = user;
+  res.json(sessionShape(req));
 });
 
 module.exports = router;

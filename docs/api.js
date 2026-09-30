@@ -46,8 +46,10 @@
     return _healthy;
   }
 
+  // Signed out is the normal case: /api/auth/session answers 200 {user:null}
+  // (no 401 in the console), and this hands back null for it, as before.
   async function me() {
-    try { return await api('/api/auth/me'); }
+    try { const s = await api('/api/auth/session'); return s && s.user ? s : null; }
     catch (e) { if (e.status === 401) return null; throw e; }
   }
 

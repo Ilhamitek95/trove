@@ -17,7 +17,7 @@
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
     --rose-tint:#F2E9E4; --sage-tint:#E9EFEA;
-    --line:rgba(41,39,39,.12); --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
+    --line:rgba(41,39,39,.12); --muted:#646161; --eyebrow:#4D4A4A; --ink-80:rgba(41,39,39,.78);
     --line-soft:rgba(41,39,39,.07); --cream-2:#F8F0EA; --shadow:0 18px 50px -28px rgba(41,39,39,.30);
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -30,6 +30,10 @@
   html.no-house header.top a[href*="cat=House"],html.no-house .mnav a[href*="cat=House"]{display:none!important}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  /* one visible keyboard focus ring everywhere (the storefront's) */
+  :focus-visible{outline:2px solid var(--char);outline-offset:3px}
+  input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char);outline-offset:1px}
+  [role="dialog"]:focus-visible{outline:none}
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500}
   .wrap{max-width:1200px;margin:0 auto;padding:0 26px}
 
@@ -54,7 +58,7 @@
   .nav .links a.on::after{width:100%}
   .nav .right{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
   .search{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--muted);width:210px;transition:width .25s}
-  .search:focus-within{width:250px;border-color:var(--rose)}
+  .search:focus-within{width:250px;border-color:var(--char);box-shadow:0 0 0 1px var(--char)}
   .search input{border:none;outline:none;background:none;flex:1;font-family:inherit;font-size:13px;color:var(--char)}
   .icon-btn{position:relative;width:42px;height:42px;border-radius:999px;display:grid;place-items:center;color:var(--char);transition:background .15s}
   .icon-btn:hover,.icon-btn:active{background:var(--rose-tint)}
@@ -80,7 +84,7 @@
     .promo .wrap{font-size:11px}
     .nav{height:64px;gap:12px}
     .brand{font-size:29px}
-    .icon-btn{width:40px;height:40px}
+    .icon-btn{width:44px;height:44px} /* 44px tap targets on phones */
     .nav .right{gap:2px}
   }
   /* account menu */
@@ -121,7 +125,7 @@
   /* hero — the Sell-on-Trove composition: centred, one line of intro, the facts as dashed pills */
   .hero{padding:48px 0 18px}
   .hero .lead{text-align:center;max-width:920px}
-  .hero .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--muted);display:block;margin-bottom:14px}
+  .hero .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;line-height:1.4;color:var(--eyebrow);display:block;margin-bottom:14px}
   .hero .hero-t{font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;letter-spacing:-.008em}
   .hero .hero-t span{color:var(--coral)}
   .hero p{font-size:16.5px;color:var(--ink-80);font-weight:400;line-height:1.6;max-width:64ch;margin:16px auto 0}
@@ -182,7 +186,7 @@
   @media(hover:hover){.pcard:hover .cover{transform:translateY(-4px)}}
   .pcard .av{width:60px;height:60px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:var(--font-display);font-size:26px;color:var(--char);font-weight:600}
   .pcard h3{font-size:22px;font-weight:600;margin-top:10px;line-height:1.1}
-  .pcard .loc{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:3px}
+  .pcard .loc{font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:3px}
   .pcard p{font-size:13.5px;color:var(--ink-80);margin:10px auto 0;max-width:36ch;font-weight:400;line-height:1.55;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
   .pcard .pmeta{display:flex;justify-content:center;gap:18px;margin-top:12px;font-size:12px;color:var(--muted);font-weight:600}
   .pcard .pmeta b{color:var(--char)}
@@ -205,7 +209,7 @@
   .pv-stats{display:flex;justify-content:center;gap:38px;margin-top:22px}
   .pv-stats div{text-align:center}
   .pv-stats b{display:block;font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1}
-  .pv-stats span{font-size:11px;letter-spacing:.08em;color:var(--muted);font-weight:700;display:block;margin-top:5px}
+  .pv-stats span{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700;display:block;margin-top:5px}
   .pv-body{padding:44px 26px 10px}
   .pv-note{margin-top:22px;text-align:center;font-size:13.5px;color:var(--muted);font-weight:500}
   .pv-shop{margin-top:40px}
@@ -314,7 +318,7 @@
   .formgrid{margin-top:18px;border-top:1px solid var(--line);padding-top:18px}
   .formgrid h4{font-size:20px;margin-bottom:12px}
   .field{margin-bottom:13px}
-  .field label{display:block;font-size:11.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .field label{display:block;font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-bottom:6px}
   .field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;font-weight:500;background:var(--paper);color:var(--char);outline:none}
   .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--char)}
   .field textarea{resize:vertical;min-height:74px;line-height:1.5}
@@ -342,7 +346,7 @@
   /* ---- how it works: customers and providers side by side, each on their own dashed rail (the sell-page motif) ---- */
   .band{padding:50px 0 6px}
   .band-head{text-align:center;max-width:640px;margin:0 auto 28px}
-  .band-head .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--muted);display:block;margin-bottom:14px}
+  .band-head .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;line-height:1.4;color:var(--eyebrow);display:block;margin-bottom:14px}
   .band-head h2{font-size:clamp(28px,3.6vw,40px);line-height:1.06}
   .band-head p{color:var(--ink-80);margin-top:12px;font-weight:400;font-size:15px;line-height:1.6}
   .hiw{display:grid;grid-template-columns:1fr 1fr;gap:0 60px;max-width:1080px;margin:0 auto;position:relative}
@@ -401,7 +405,7 @@
 <div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 200</div></div>
 <header class="top">
   <div class="wrap nav">
-    <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" aria-controls="mnav" aria-expanded="false" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
     <a href="/" class="brand" aria-label="Trove — home">trove</a>
     <nav class="links">
       <a href="/shop">Shop all</a>
@@ -413,12 +417,12 @@
     <div class="right">
       <div class="search">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-        <input id="searchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
+        <input id="searchInput" placeholder="Search Trove" aria-label="Search Trove" onkeydown="if(event.key==='Enter')runSearch(this.value)">
       </div>
-      <button class="icon-btn search-btn" title="Search" aria-label="Search" onclick="openMenu(true)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
-      <a class="icon-btn" title="Saved" href="/account#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
+      <button class="icon-btn search-btn" title="Search" aria-label="Search Trove" aria-controls="mnav" aria-expanded="false" onclick="openMenu(true)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></button>
+      <a class="icon-btn" title="Saved" aria-label="Saved items" href="/account#wishlist"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></a>
       <div class="acct-wrap">
-        <button class="icon-btn" title="Account" onclick="toggleAcct(event)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+        <button class="icon-btn" title="Account" aria-label="Account" aria-haspopup="true" aria-expanded="false" aria-controls="acctMenu" onclick="toggleAcct(event)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
         <div class="acct-menu" id="acctMenu" onclick="event.stopPropagation()">
           <div class="am-head"><div class="am-av" id="amAv">·</div><div><div class="am-n" id="amName">Welcome</div><div class="am-e" id="amEmail">Sign in to your account</div></div></div>
           <a href="/account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My account</a>
@@ -430,7 +434,7 @@
           <a href="/login" id="authLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg><span id="authLabel">Sign in</span></a>
         </div>
       </div>
-      <button class="icon-btn" title="Basket" onclick="openCart()">
+      <button class="icon-btn" title="Basket" aria-label="Basket" onclick="openCart()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M6 6 5 2H2"/></svg>
         <span class="cart-count hide" id="cartCount">0</span>
       </button>
@@ -439,14 +443,14 @@
 </header>
 
 <div class="hdr-scrim" id="uiScrim" onclick="closeSheets()"></div>
-<aside class="mnav" id="mnav" aria-label="Menu">
+<aside class="mnav" id="mnav" role="dialog" aria-modal="true" aria-label="Menu" tabindex="-1">
   <div class="mn-head">
     <span class="mn-brand">trove</span>
     <button class="icon-btn" aria-label="Close menu" onclick="closeSheets()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
   </div>
   <div class="mn-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input id="mSearchInput" placeholder="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
+    <input id="mSearchInput" placeholder="Search Trove" aria-label="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
   </div>
   <a class="mn-link" href="/shop">Shop all<span>→</span></a>
   <a class="mn-link" href="/shop/trove-collection">Trove Collection<span>→</span></a>
@@ -588,13 +592,14 @@
 
 <!-- service detail + booking modal -->
 <div class="scrim" id="svScrim" onclick="if(event.target===this)closeModal()">
-  <div class="modal" id="svModal"></div>
+  <div class="modal" id="svModal" role="dialog" aria-modal="true" aria-labelledby="svTitle" tabindex="-1"></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script src="/config.js"></script>
 <script src="/api.js"></script>
+<script src="/site-chrome.js" data-own-chrome></script>
 <script>
 const $=id=>document.getElementById(id);
 /* Every API string that reaches innerHTML goes through esc(). */
@@ -626,11 +631,13 @@ const CART_KEY='trove.cart.v1';
 function updateCartCount(){let n=0;try{n=(JSON.parse(localStorage.getItem(CART_KEY)||'[]')||[]).reduce((s,c)=>s+(parseInt(c&&c.qty)||0),0);}catch(_){}const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);}
 function openCart(){location.href='/?cart=1';}
 function runSearch(q){location.href='/?q='+encodeURIComponent((q||'').trim());}
-function openMenu(focusSearch){$('mnav').classList.add('open');$('uiScrim').classList.add('open');document.body.style.overflow='hidden';if(focusSearch)setTimeout(()=>$('mSearchInput').focus(),380);}
-function closeSheets(){$('mnav').classList.remove('open');$('uiScrim').classList.remove('open');document.body.style.overflow='';}
-function toggleAcct(e){e.stopPropagation();$('acctMenu').classList.toggle('open');}
-document.addEventListener('click',()=>{const m=$('acctMenu');if(m)m.classList.remove('open');});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();closeModal();}});
+/* The mobile menu and the booking modal are dialogs (site-chrome.js TroveDialog). */
+function openMenu(focusSearch){$('mnav').classList.add('open');$('uiScrim').classList.add('open');document.body.style.overflow='hidden';TroveDialog.open($('mnav'),{onClose:closeSheets,focus:focusSearch?$('mSearchInput'):null});}
+function closeSheets(){$('mnav').classList.remove('open');$('uiScrim').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('mnav'));}
+function toggleAcct(e){e.stopPropagation();const open=$('acctMenu').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',open?'true':'false');}
+function closeAcct(){const m=$('acctMenu');if(!m)return;m.classList.remove('open');const b=document.querySelector('[aria-controls="acctMenu"]');if(b)b.setAttribute('aria-expanded','false');}
+document.addEventListener('click',closeAcct);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();closeModal();closeAcct();}});
 async function signOut(){await TroveAPI.logout();location.href='/';}
 function renderAuth(){
   const u=ME&&ME.user;
@@ -638,7 +645,7 @@ function renderAuth(){
     $('amAv').textContent=((u.name||'?').trim()[0]||'·').toUpperCase();
     $('amName').textContent=u.name; $('amEmail').textContent=u.email;
     $('authLabel').textContent='Sign out';
-    $('authLink').removeAttribute('href'); $('authLink').style.cursor='pointer'; $('authLink').onclick=signOut;
+    $('authLink').removeAttribute('href'); $('authLink').style.cursor='pointer'; $('authLink').setAttribute('role','button'); $('authLink').tabIndex=0; $('authLink').onclick=signOut;
   }else{
     $('amName').textContent='Welcome'; $('amEmail').textContent='Sign in to your account'; $('amAv').textContent='·';
     $('authLabel').textContent='Sign in';
@@ -881,8 +888,8 @@ function openService(id){
   // the page can show the card form) — the server refuses it otherwise.
   const paymentsLive=!!(CFG&&CFG.serviceCardPayments)&&!!TroveAPI.stripeKey;
   $('svModal').innerHTML=`
-    <button class="x" onclick="closeModal()" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
-    <h3>${esc(s.title)}</h3>
+    <button class="x" onclick="closeModal()" aria-label="Close this service"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    <h3 id="svTitle">${esc(s.title)}</h3>
     <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}${cat?` · ${esc(cat.name)}`:''}</div>
     ${s.description?`<div class="desc">${esc(s.description)}</div>`:''}
     <div class="meta">
@@ -894,15 +901,15 @@ function openService(id){
       <h4>Request a booking</h4>
       <div class="err" id="bkErr"></div>
       <div class="ftwo">
-        <div class="field"><label>Your name</label><input id="bkName" autocomplete="name"></div>
-        <div class="field"><label>Email</label><input id="bkEmail" type="email" autocomplete="email"></div>
+        <div class="field"><label for="bkName">Your name</label><input id="bkName" autocomplete="name"></div>
+        <div class="field"><label for="bkEmail">Email</label><input id="bkEmail" type="email" autocomplete="email"></div>
       </div>
       <div class="ftwo">
-        <div class="field"><label>UAE mobile</label><input id="bkPhone" placeholder="05x xxx xxxx" autocomplete="tel"></div>
-        <div class="field"><label>Where</label><select id="bkArea"><option>Dubai</option><option>Abu Dhabi</option></select></div>
+        <div class="field"><label for="bkPhone">UAE mobile</label><input id="bkPhone" placeholder="05x xxx xxxx" autocomplete="tel"></div>
+        <div class="field"><label for="bkArea">Where</label><select id="bkArea"><option>Dubai</option><option>Abu Dhabi</option></select></div>
       </div>
-      <div class="field"><label>When suits you? <span style="text-transform:none;letter-spacing:0;color:var(--taupe)">· optional</span></label><input id="bkDate" placeholder="e.g. a Friday afternoon, or 14 September"></div>
-      <div class="field"><label>Tell them about it</label><textarea id="bkNotes" maxlength="1000" placeholder="What you have in mind, how many people, anything they should know."></textarea></div>
+      <div class="field"><label for="bkDate">When suits you? <span style="text-transform:none;letter-spacing:0;color:var(--muted)">· optional</span></label><input id="bkDate" placeholder="e.g. a Friday afternoon, or 14 September"></div>
+      <div class="field"><label for="bkNotes">Tell them about it</label><textarea id="bkNotes" maxlength="1000" placeholder="What you have in mind, how many people, anything they should know."></textarea></div>
       <div class="payrow">
         <label class="payopt"><input type="radio" name="bkPay" value="direct" checked><span><b>Settle directly with the provider</b><span>Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.</span></span></label>
         <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="trove" ${paymentsLive?'':'disabled'}><span><b>Pay through Trove by card</b><span>${paymentsLive?'Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.':'Card payment isn’t available right now — please settle directly for now.'}</span></span></label>
@@ -917,8 +924,11 @@ function openService(id){
   }
   $('svScrim').classList.add('open');
   document.body.style.overflow='hidden';
+  TroveDialog.open($('svModal'),{onClose:closeModal,opener:MODAL_OPENER||document.activeElement,focus:$('svModal')});
+  MODAL_OPENER=null;
 }
-function closeModal(){$('svScrim').classList.remove('open');document.body.style.overflow='';}
+let MODAL_OPENER=null;
+function closeModal(){if(!$('svScrim').classList.contains('open'))return;$('svScrim').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('svModal'));}
 
 async function submitBooking(){
   const err=$('bkErr');err.style.display='none';
