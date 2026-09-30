@@ -359,6 +359,7 @@
   .qhead{margin:0 auto 28px;text-align:center}
   .qsub{margin:14px auto 0;max-width:52ch;font-size:15px;line-height:1.55;color:var(--ink-80)}
   .mquotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+  .mq-empty{grid-column:1/-1;margin:0;padding:26px 24px;border:1.5px dashed rgba(38,36,36,.18);border-radius:18px;text-align:center;color:var(--muted);font-size:15px;font-weight:600}
   .mqband[hidden]{display:none}
   .fterms{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
   .fterm{background:var(--paper);border-radius:16px;padding:20px 20px 18px;box-shadow:0 14px 34px -22px rgba(41,39,39,.3)}
@@ -1345,10 +1346,11 @@
     <section class="band" style="padding-top:0">
     <div class="wrap">
       <!-- Maker quotes: real, consented words only (Site content → Maker testimonials).
-           Hidden until one exists; the founding-makers panel stands in until then. -->
-      <div class="mqband" id="quotesBand" hidden>
+           The section always shows; until a real quote exists it says so plainly
+           (owner, 2026-09-30), and the founding-makers panel sits below it. -->
+      <div class="mqband" id="quotesBand">
         <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2><p class="qsub" data-cms="sell.quotes.sub">Independent makers run their own shops on Trove. Here's how it feels from the studio side.</p></div>
-        <div class="mquotes" id="quotesList"></div>
+        <div class="mquotes" id="quotesList"><p class="mq-empty">No testimonials yet — the first makers’ words will appear here once they’ve sold with us.</p></div>
       </div>
       <div class="mqband founding" id="foundingBand">
         <div class="band-head qhead"><span class="eyebrow">Founding makers wanted</span><h2>Be one of our first makers.</h2><p class="qsub">Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first. The arrangement, plainly:</p></div>
@@ -3228,10 +3230,12 @@ function applyContent(){
   if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
   // Only real makers' words: the five invented quotes that once shipped as
   // defaults are dropped even if a saved override still carries them (the
-  // server filters them too). No quotes → the founding-makers panel stays.
+  // server filters them too). No quotes → the section says so and the
+  // founding-makers panel stays.
   const mq=(cmsGet('sell.quotes.items')||[]).filter(q=>q&&q.quote&&q.name&&!isSeededQuote(q));
-  $('quotesBand').hidden=!mq.length; $('foundingBand').hidden=!!mq.length;
-  if(mq.length)$('quotesList').innerHTML=mq.map((q,i)=>{
+  $('foundingBand').hidden=!!mq.length;
+  if(!mq.length)$('quotesList').innerHTML='<p class="mq-empty">No testimonials yet — the first makers’ words will appear here once they’ve sold with us.</p>';
+  else $('quotesList').innerHTML=mq.map((q,i)=>{
     const av=MAKER_AVATARS[i%MAKER_AVATARS.length];
     const who=`<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div>`;
     return i===0
