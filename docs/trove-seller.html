@@ -10,6 +10,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  em,i,cite{font-style:normal} /* brand: no italics anywhere, not even the browser default */
   :root{
     --font-display:'Cormorant',Georgia,serif;
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
@@ -102,6 +103,7 @@
   .banner h4{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--cream)}
   .banner p{font-size:13px;opacity:.8;margin-top:2px}
   .banner .btn{margin-left:auto;flex-shrink:0}
+  .banner .btn-coral{background:var(--cream);color:var(--char)} .banner .btn-coral:hover{background:#fff}
 
   /* overview layout */
   .ov-row{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-top:18px}
@@ -931,6 +933,7 @@ function renderOverview(){
   $('stRev').textContent=aed(revenue);
   $('stOrders').textContent=new Set(orders.map(o=>o.order&&o.order.publicId)).size;
   $('stProducts').textContent=live;
+  $('stProducts').previousElementSibling.textContent=SHOP.status==='approved'?'Live products':'Ready for launch';
   $('stPayout').textContent=aed(net);
   $('stPayoutSub').textContent=managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
