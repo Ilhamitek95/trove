@@ -22,6 +22,11 @@ function createApp() {
   // gzip/brotli every text response (the storefront HTML alone is ~210 KB
   // raw, ~40 KB compressed). Mounted first so it wraps everything below.
   app.use(require('compression')());
+  // One public address (the old *.onrender.com host 301s there) and the
+  // security headers on every response — see security.js.
+  const security = require('./security');
+  app.use(security.canonicalHost());
+  app.use(security.securityHeaders());
   const isProd = process.env.NODE_ENV === 'production';
   const crossSite = process.env.CROSS_SITE === '1';   // set ONLY when the frontend lives on a different domain than this API
 
@@ -335,9 +340,18 @@ function createApp() {
   });
 
   /* ---------------- Errors ---------------- */
+  // A deliberate 4xx (a route or body-parser error with a status) keeps its
+  // message — it is written for the person using the site. Anything 5xx is
+  // logged in full here and answered generically: raw internals (SQLite
+  // constraint names, env variable names) never reach the browser.
   app.use((err, _req, res, _next) => {
-    console.error(err);
-    res.status(err.status || 500).json({ error: err.message || 'Server error' });
+    const status = Number(err.status || err.statusCode) || 500;
+    if (status >= 500) {
+      console.error(err);
+      return res.status(status).json({ error: err.expose === true ? err.message : 'Something went wrong on our side — please try again in a moment' });
+    }
+    console.error(err.message);
+    res.status(status).json({ error: err.message || 'Something went wrong with that request' });
   });
 
   return app;
