@@ -290,8 +290,9 @@
         <div id="svcBookingsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
       <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px"><h3>Provider fees owed</h3>
-        <div class="hint">What providers are owed for bookings paid through Trove — payable once they mark a booking done, or 3 days after the service date. Providers have no payout details of their own yet: pay by bank transfer (to their shop's account where they have one), then mark it paid here.</div></div>
+        <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h3>Provider payouts</h3>
+        <div class="hint">What providers are owed for bookings paid through Trove — payable once they mark a booking done, or 3 days after the service date. Paid by manual bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf: download the bank transfer file, send each transfer with its reference, then mark that provider paid here (they get an email). Providers without bank details wait and are left out of the file.</div></div>
+        <a class="btn btn-ghost" id="svcCsvBtn" style="display:none" href="#" onclick="setTimeout(loadServiceMoney,1200)">Download bank transfer file</a></div>
         <div id="svcCreditsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
     </div>
@@ -665,6 +666,7 @@ function renderProviders(){
 
 /* ---------------- bookings paid through Trove + provider fees ---------------- */
 const SVC_ATTN={refund_failed:'Refund failed — refund by hand in Stripe',paid_after_cancel:'Paid after it was cancelled — refunded automatically'};
+let SVC_PAY=[];
 async function loadServiceMoney(){
   let bookings=[],credits={eligible:[],excluded:[]};
   try{bookings=(await TroveAPI.api('/api/admin/service-bookings')).bookings.filter(b=>b.paymentMethod==='trove'&&(b.paidAt||b.attention||b.status==='awaiting_payment'));}catch(_){}
@@ -680,12 +682,18 @@ async function loadServiceMoney(){
     </tr>`).join('')}</tbody></table></div>`
     :'<div class="empty">No bookings paid through Trove yet.</div>';
   const rows=[...(credits.eligible||[]),...(credits.excluded||[])].filter(r=>r.netCents>0);
-  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed now</th><th>Pay to</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
+  SVC_PAY=rows;
+  if(credits.payerName)$('svcPayerName').textContent=credits.payerName;
+  const csv=$('svcCsvBtn');
+  csv.href=`${TroveAPI.base}/api/admin/provider-payouts/export.csv`;
+  csv.style.display=rows.some(r=>r.payTo)?'':'none';
+  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed now</th><th>Pay to</th><th>Reference</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
       <td><b>${esc(r.name)}</b>${r.owner?`<br><span style="font-size:12px;color:var(--muted)">${esc(r.owner.email)}</span>`:''}</td>
       <td>${r.bookings.map(b=>esc(b.code)).join(', ')}</td>
       <td><b>${money(r.netCents)}</b>${r.debitCents?`<br><span style="font-size:12px;color:var(--muted)">after ${money(-r.debitCents)} refund adjustments</span>`:''}</td>
-      <td>${r.payTo?`${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}`:'<span style="color:var(--muted)">no payout details yet</span>'}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)},${Number(r.netCents)})">Mark paid</button></td>
+      <td>${r.payTo?`<b>${esc(r.payTo.accountName||'')}</b><br><span style="font-size:12px;color:var(--muted)">${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}</span>`:'<span class="pill">Waiting for bank details</span>'}</td>
+      <td>${r.payTo?`<span style="font-size:12px;font-weight:700">${esc(r.reference||'')}</span>`:''}</td>
+      <td>${r.payTo?`<button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)})">Mark paid</button>`:''}</td>
     </tr>`).join('')}</tbody></table></div>`
     :'<div class="empty">Nothing owed to providers right now.</div>';
 }
@@ -695,10 +703,12 @@ async function refundServiceBooking(id){
   catch(e){toast(e.message||'Could not refund');}
   loadServiceMoney();
 }
-async function markProviderPaid(id,cents){
-  const ref=prompt(`Mark ${money(cents)} as paid by bank transfer? Enter the transfer reference:`,'Trove service fees');
+async function markProviderPaid(id){
+  const r=SVC_PAY.find(x=>x.providerId===id);if(!r)return;
+  const payer=$('svcPayerName').textContent;
+  const ref=prompt(`Mark ${money(r.netCents)} to ${r.name} as sent by bank transfer from ${payer}? We email them a payment note. Transfer reference:`,r.reference||'');
   if(ref===null)return;
-  try{await TroveAPI.api(`/api/admin/service-credits/${id}/paid`,{method:'POST',body:{reference:ref}});toast('Marked paid');}
+  try{await TroveAPI.api(`/api/admin/service-credits/${id}/paid`,{method:'POST',body:{reference:ref,amountCents:r.netCents}});toast('Marked paid — the provider has been emailed');}
   catch(e){toast(e.message||'Could not mark paid');}
   loadServiceMoney();
 }
