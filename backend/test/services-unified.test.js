@@ -64,7 +64,7 @@ test('an approved maker switches on services and is live straight away', async (
   assert.equal(p.location, 'Al Quoz, Dubai');
   assert.equal(p.pitch_phone, '+971 50 000 1111');
   assert.ok(p.sub_started_at, 'subscription anchored on the day it went live');
-  assert.equal(p.agreement_version, 'v1');
+  assert.equal(p.agreement_version, 'v2');
   assert.ok(p.agreement_accepted_at);
   assert.deepEqual(JSON.parse(p.categories), ['workshops', 'care-repair']);
 

@@ -13,8 +13,11 @@ const aed = (cents) => {
 
 // Owner, 2026-09-30: buyers have 15 days from delivery to ask for a return
 // (was 30), and makers are paid fortnightly, every other Tuesday (was weekly).
-const RETURN_DAYS = 15;
-const PAYOUT_RHYTHM = 'fortnightly, every other Tuesday';
+// Both read from fees.js, so the pages move with the code if either changes.
+const RETURN_DAYS = fees.RETURN_WINDOW_DAYS;
+const PAYOUT_RHYTHM = fees.SETTLEMENT_INTERVAL_DAYS === 14 ? 'fortnightly, every other Tuesday'
+  : fees.SETTLEMENT_INTERVAL_DAYS === 7 ? 'weekly, every Tuesday'
+    : `every ${fees.SETTLEMENT_INTERVAL_DAYS} days, on a Tuesday`;
 
 function facts() {
   // Worked examples for the returns page: a piece worth three quarters of the

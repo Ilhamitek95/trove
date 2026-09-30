@@ -33,6 +33,9 @@ module.exports = {
     addColumn(db, 'products', 'admin_hidden_at', 'TEXT');
     addColumn(db, 'shops', 'review_note', "TEXT NOT NULL DEFAULT ''");
     addColumn(db, 'service_providers', 'review_note', "TEXT NOT NULL DEFAULT ''");
+    // The admin account is bootstrapped from ADMIN_EMAIL, so its address is
+    // already proven: never let the Google takeover rule void its password.
+    db.exec("UPDATE users SET email_verified_at = datetime('now') WHERE role = 'admin' AND email_verified_at IS NULL");
     db.exec(`CREATE TABLE IF NOT EXISTS auth_tokens (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

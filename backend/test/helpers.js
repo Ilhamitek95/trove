@@ -32,12 +32,13 @@ async function startApp() {
   });
   const baseUrl = `http://127.0.0.1:${server.address().port}`;
 
-  async function api(method, pathname, { body, cookie, raw } = {}) {
+  async function api(method, pathname, { body, cookie, raw, headers: extra } = {}) {
     const res = await fetch(baseUrl + pathname, {
       method,
       headers: {
         ...(body !== undefined || raw !== undefined ? { 'content-type': 'application/json' } : {}),
         ...(cookie ? { cookie } : {}),
+        ...(extra || {}),
       },
       body: raw !== undefined ? raw : (body !== undefined ? JSON.stringify(body) : undefined),
       redirect: 'manual',

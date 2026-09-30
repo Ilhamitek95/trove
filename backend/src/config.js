@@ -14,7 +14,7 @@ const on = (v) => v === '1' || v === 'true';
 const AGREEMENT_VERSION = 'v4';
 // Services Marketplace legal documents (backend/legal/*). Bump on any change
 // and add a new file — accepted versions are recorded on profiles/bookings.
-const PROVIDER_AGREEMENT_VERSION = 'v1';
+const PROVIDER_AGREEMENT_VERSION = 'v2';
 // v2 (2026-09-30): card payment for bookings, private booking links, full
 // refund on cancelling a paid booking before the service date.
 const SERVICES_TERMS_VERSION = 'v2';

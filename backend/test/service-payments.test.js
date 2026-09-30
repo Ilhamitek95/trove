@@ -43,7 +43,8 @@ const paidEvent = (bk, over = {}) => ({
   data: { object: { id: bk.stripe_payment_intent_id, amount: bk.amount_cents, amount_received: bk.amount_cents, metadata: { kind: 'service_booking', booking_id: String(bk.id), code: bk.code } } },
   ...over,
 });
-const book = (serviceId, body = {}, cookie) => api('POST', `/api/services/${serviceId}/book`, { body: { ...GUEST, paymentMethod: 'trove', ...body }, cookie });
+let bookN = 0; // one address per request: the booking limiter allows 10 an hour
+const book = (serviceId, body = {}, cookie) => api('POST', `/api/services/${serviceId}/book`, { body: { ...GUEST, paymentMethod: 'trove', ...body }, cookie, headers: { 'x-forwarded-for': `192.0.2.${(++bookN % 250) + 1}` } });
 const act = (id, body) => api('PATCH', `/api/provider/bookings/${id}`, { cookie: providerCookie, body });
 
 before(async () => {
@@ -394,9 +395,12 @@ test('the provider dashboard shows the fee as free during launch, never a runnin
   assert.match(panel, /Awaiting the customer’s card payment/);
   assert.match(panel, /if \(b\.paid\) return `<span class="pp-paid">Paid through Trove/, 'paid wording only once paid');
   assert.doesNotMatch(panel, /Running since/);
-  for (const f of ['trove-apply.html', 'trove-seller.html', 'trove-services.html', 'provider-agreement.html']) {
+  for (const f of ['trove-apply.html', 'trove-seller.html', 'trove-services.html']) {
     assert.match(read(f), /30 days/, `${f} gives the notice period`);
   }
+  const agreement = fs.readFileSync(path.join(__dirname, '..', 'legal', `provider-agreement-${require('../src/config').PROVIDER_AGREEMENT_VERSION}.md`), 'utf8');
+  assert.match(agreement, /free during\s+launch/);
+  assert.match(agreement, /30 days/);
   const services = read('trove-services.html');
   assert.doesNotMatch(services, /arriving with (our )?card payments|Coming with Trove’s card payments/);
   assert.match(services, /serviceCardPayments/, 'the booking form asks the server');
