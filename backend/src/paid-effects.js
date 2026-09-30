@@ -15,7 +15,7 @@ const fees = require('./fees');
 /** Per-shop item totals for an order, with each shop's payout wiring. */
 function perShopGroups(orderId) {
   return db.prepare(`
-    SELECT oi.shop_id, s.stripe_account_id, s.charges_enabled, s.tier, SUM(oi.price_cents * oi.qty) AS cents
+    SELECT oi.shop_id, s.stripe_account_id, s.charges_enabled, s.tier, s.is_house, SUM(oi.price_cents * oi.qty) AS cents
     FROM order_items oi JOIN shops s ON s.id = oi.shop_id
     WHERE oi.order_id = ? GROUP BY oi.shop_id`).all(orderId);
 }
@@ -97,11 +97,14 @@ function paidDbEffects(order, groups) {
   // Consignment ledger: record what Trove now owes each supplier — their
   // list price minus the purchase margin. Connect-rail orders (destination
   // charges) bypass the ledger entirely; the unique index on (order, shop)
-  // is a second line of defence against double credits.
+  // is a second line of defence against double credits. The Trove Collection
+  // (is_house) is Trove's own stock: Trove keeps the whole sale, so there is
+  // no maker to owe: no credit, nothing to settle, and nothing to reverse on
+  // a return (returns.js skips a shop without a credit).
   if (order.rail !== 'connect') {
     const credit = db.prepare("INSERT OR IGNORE INTO seller_balances (shop_id, order_id, type, amount_cents) VALUES (?,?, 'credit_sale', ?)");
     for (const g of groups) {
-      if (g.tier === 'consignment') credit.run(g.shop_id, order.id, fees.split(g.cents).net);
+      if (g.tier === 'consignment' && !g.is_house) credit.run(g.shop_id, order.id, fees.split(g.cents).net);
     }
   }
   return { ok: true };
@@ -191,7 +194,7 @@ function paidPostEffects(order, groups, stripe) {
   // Stripe client exists (demo mode has none — funds stay on platform).
   const cfg = require('./config');
   for (const g of groups) {
-    if (g.tier !== 'connect') continue;
+    if (g.tier !== 'connect' || g.is_house) continue;
     const { net } = fees.split(g.cents);
     if (stripe && cfg.railBEnabled() && g.stripe_account_id && g.charges_enabled && net > 0) {
       stripe.transfers.create({

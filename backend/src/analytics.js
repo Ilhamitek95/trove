@@ -20,6 +20,10 @@
  */
 const db = require('./db');
 const fees = require('./fees');
+// What the shop keeps of a sale: a maker keeps their share after the margin;
+// the Trove Collection is Trove's own line, so its "earnings" are the sale.
+const isHouse = (shopId) => !!(db.prepare('SELECT is_house FROM shops WHERE id = ?').get(shopId) || {}).is_house;
+const keptOf = (gross, house) => (house ? gross : fees.split(gross).net);
 
 const KINDS = new Set(['shop_view', 'product_view', 'add_to_cart']);
 const RANGES = [7, 30, 90];
@@ -104,7 +108,7 @@ function summary(shopId, days) {
     orders: s.orders,
     units: s.units,
     sales: s.gross / 100,
-    earnings: fees.split(s.gross).net / 100,
+    earnings: keptOf(s.gross, isHouse(shopId)) / 100,
     // Rates as fractions; the dashboard formats them. Null means "not enough
     // to divide by yet" — showing 0% when nobody has visited would be a lie.
     basketRate: e.productViews ? e.addToCart / e.productViews : null,
@@ -134,6 +138,7 @@ function daily(shopId, days) {
  *  so a maker can see the ones nobody is finding as clearly as the winners. */
 function productRows(shopId, days) {
   const w = since(days);
+  const house = isHouse(shopId);
   return db.prepare(`
     SELECT p.id, p.name, p.status, p.price_cents AS priceCents, p.stock,
       (SELECT COUNT(*) FROM analytics_events e
@@ -157,7 +162,7 @@ function productRows(shopId, days) {
       adds: r.adds,
       units: r.units,
       sales: r.gross / 100,
-      earnings: fees.split(r.gross).net / 100,
+      earnings: keptOf(r.gross, house) / 100,
       basketRate: r.views ? r.adds / r.views : null,
     }));
 }

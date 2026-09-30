@@ -490,6 +490,9 @@
   .sc-act .sc-done{color:var(--green);font-weight:700;font-size:13.5px}
   .sc-act .sc-tn{color:var(--muted);font-weight:600;font-size:12.5px}
   @media(max-width:620px){.sc-track,.sc-cols{grid-template-columns:1fr}}
+  /* House mode: the admin running the Trove Collection, Trove's own line.
+     No payouts, margin, agreement, ID or services practice apply to it. */
+  body.house-mode .maker-only,body.house-mode #dFee,body:not(.house-mode) .house-only{display:none!important}
   /* admin "shop view" bar — pinned so it's unmissable while impersonating */
   .impbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:90;display:none;align-items:center;gap:14px;background:var(--char);color:var(--cream);border-radius:999px;padding:9px 11px 9px 20px;box-shadow:0 12px 34px rgba(41,39,39,.35);font-size:13px;font-weight:600;max-width:calc(100vw - 24px)}
   .impbar.on{display:flex}
@@ -614,11 +617,11 @@
     <nav class="menu" aria-label="Dashboard">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>Products</a>
-      <a class="mitem" data-v="services" onclick="go('services')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Services<span class="pill" id="svcPill" style="display:none">0</span></a>
+      <a class="mitem maker-only" data-v="services" onclick="go('services')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Services<span class="pill" id="svcPill" style="display:none">0</span></a>
       <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="orderPill" style="display:none">0</span></a>
       <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="pill" id="returnPill" style="display:none">0</span></a>
       <a class="mitem" data-v="analytics" onclick="go('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="6" rx="1"/><rect x="10" y="8" width="4" height="10" rx="1"/><rect x="16" y="4" width="4" height="14" rx="1"/></svg>Shop Analytics</a>
-      <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
+      <a class="mitem maker-only" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
       <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
       <a class="mitem" id="adminPanelLink" style="display:none" href="/admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Super admin ↗</a>
@@ -652,7 +655,8 @@
             <div class="an-chart"><div class="an-bars" id="bars"></div><div class="an-axis" id="blabels"></div></div>
             <button class="btn btn-ghost btn-sm" style="margin-top:16px" onclick="go('analytics')">Shop Analytics →</button>
           </div>
-          <div class="card payout-card">
+          <div class="card payout-card house-only" id="houseCard"></div>
+          <div class="card payout-card maker-only">
             <h3 style="font-size:22px;font-weight:600;margin-bottom:6px">Next payout</h3>
             <div class="row"><span class="muted">Available</span><span class="v" id="poAvail">—</span></div>
             <div class="row"><span class="muted">Arrives</span><span id="poDate">—</span></div>
@@ -668,7 +672,7 @@
 
       <!-- PRODUCTS -->
       <div class="view" id="view-products">
-        <div class="sec-head"><span class="n"><b id="prodCount">0</b> <span id="prodNoun">products</span> · click any price or stock to edit · you keep <span class="keepPct">60</span>% of each price</span></div>
+        <div class="sec-head"><span class="n"><b id="prodCount">0</b> <span id="prodNoun">products</span> · click any price or stock to edit<span class="maker-only"> · you keep <span class="keepPct">60</span>% of each price</span></span></div>
         <div class="card" style="padding:6px 0">
           <table class="tbl" id="prodTable"></table>
         </div>
@@ -682,7 +686,7 @@
 
       <!-- RETURNS -->
       <div class="view" id="view-returns">
-        <div class="sec-head"><span class="n">Buyers request, Trove decides — track here what's coming back and what it means for your payouts. Returned pieces stay yours; adjust your stock in Products once they're back with you.</span></div>
+        <div class="sec-head"><span class="n" id="returnsIntro">Buyers request, Trove decides — track here what's coming back and what it means for your payouts. Returned pieces stay yours; adjust your stock in Products once they're back with you.</span></div>
         <div id="returnList"></div>
       </div>
 
@@ -1027,6 +1031,8 @@ function applyShop(s){
     else{el.textContent=((SHOP.name||'?').trim()[0]||'?').toUpperCase();el.style.background=SHOP.color;}});
   $('sideStatus').textContent=shopStatusLabel(); $('mStatus').textContent=shopStatusLabel();
   document.querySelectorAll('.keepPct').forEach(el=>el.textContent=100-feePct());
+  document.body.classList.toggle('house-mode',SHOP.house);
+  if(SHOP.house&&$('returnsIntro'))$('returnsIntro').textContent='Buyers request, Trove decides: track here what is coming back to the Collection. The buyer is refunded from Trove; adjust your stock in Products once a piece is back with you.';
   fillCatOptions();
 }
 /* Brand taxonomy — the house line and the marketplace list their own categories. */
@@ -1086,14 +1092,16 @@ function renderOverview(){
   $('stOrders').textContent=new Set(orders.map(o=>o.order&&o.order.publicId)).size;
   $('stProducts').textContent=live;
   $('stProducts').previousElementSibling.textContent=SHOP.status==='approved'?'Live products':'Ready for launch';
-  $('stPayout').textContent=aed(net);
-  $('stPayoutSub').textContent=managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
+  $('stPayout').textContent=aed(SHOP.house?revenue:net);
+  $('stPayout').previousElementSibling.textContent=SHOP.house?'Trove keeps · 30d':'Pending payout';
+  $('stPayoutSub').textContent=SHOP.house ? 'the whole sale — our own line' : managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
   if(deltas[0]){deltas[0].textContent=ORDER_SUMMARY&&ORDER_SUMMARY.refundedCents?('after '+aed(ORDER_SUMMARY.refundedCents/100)+' refunded'):'paid, less refunds';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
-  $('ovBanner').innerHTML = agreementBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
+  $('ovBanner').innerHTML = SHOP.house ? houseBannerHTML() : agreementBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
   renderOverviewChart();
+  renderHouseCard();
   $('poAvail').textContent=aed(net);
   $('poDate').textContent=managed ? (SETTLE.nextRunDate?runDayLabel(SETTLE.nextRunDate)+' · by Trove':'Every other Tuesday · by Trove') : (sc.payoutsEnabled?'On your Stripe schedule':'—');
   if($('poSched'))$('poSched').textContent=managed ? (SETTLE.schedule||'Every other Tuesday') : 'Your Stripe schedule';
@@ -1566,11 +1574,11 @@ function shipCardHTML(o){
     <div class="sc-divider"></div>
     <div class="sc-sec-label">${units} item${units===1?'':'s'} in this parcel</div>
     <div>${items}</div>
-    <div class="sc-earn">
+    ${SHOP.house?`<div class="sc-earn"><div class="e net"><span class="k">Sale · kept by Trove in full</span><span class="val">${aed(gross)}</span></div></div>`:`<div class="sc-earn">
       <div class="e"><span class="k">List price total</span><span class="val">${aed(gross)}</span></div>
       <div class="e"><span class="k">Trove margin (${feePct()}%)</span><span class="val">−${aed(fee)}</span></div>
       <div class="e net"><span class="k">Your purchase price</span><span class="val">${aed(net)}</span></div>
-    </div>
+    </div>`}
     ${returnStripHTML(o)}
     <div class="sc-divider"></div>
     <div class="sc-sec-label">Fulfilment</div>
@@ -1597,8 +1605,17 @@ function returnStripHTML(o){
     ${rr.items&&rr.items.length?`<div class="rr-body" style="margin-top:6px"><b>${rrItemsLine(rr)}</b> · ${aed(rr.itemsTotal||0)}</div>`:''}
     <div class="rr-body">${esc(rr.reason)}${rr.details?' — '+esc(rr.details):''}</div>
     ${photos?`<div class="rr-ph">${photos}</div>`:''}
-    <div class="rr-note">${note}</div>
+    <div class="rr-note">${houseReturnNote(rr)||note}</div>
   </div>`;
+}
+/* The Trove Collection has no maker credit: a return only means the piece
+   comes back and Trove refunds the buyer. (null = the maker wording applies) */
+function houseReturnNote(r){
+  if(!SHOP.house)return null;
+  if(r.status==='requested')return 'Trove is reviewing this request — nothing for you to do yet.';
+  if(RR_OPEN(r.status))return `${RR_STEP[r.status]} — the courier brings the piece${(r.items||[]).length>1?'s':''} back to your pickup address. Trove refunds the buyer once it is collected.`;
+  if(r.status==='refunded')return 'Returned and refunded by Trove. The piece is back with the Collection — adjust your stock in Products once it arrives.';
+  return null;
 }
 
 /* ---------------- SHOP ANALYTICS ----------------
@@ -1708,7 +1725,7 @@ function renderAnalytics(){
     <div class="card" style="margin-top:18px;padding:0">
       <div style="padding:20px 22px 6px"><h3 style="font-size:22px;font-weight:600">Every piece</h3></div>
       <table class="tbl"><thead><tr><th>Piece</th><th>Views</th><th>Added</th><th>Sold</th><th>You earned</th><th>Stock</th></tr></thead><tbody>${rows}</tbody></table>
-      <div class="an-foot">Your own visits aren't counted. Earnings are your ${100-feePct()}% share of what sold in this window.</div>
+      <div class="an-foot">Your own visits aren't counted. ${SHOP.house?'Earnings are the whole sale: the Collection is Trove’s own line.':`Earnings are your ${100-feePct()}% share of what sold in this window.`}</div>
     </div>`;
 }
 
@@ -1754,7 +1771,7 @@ function renderReturnsView(){
       <div style="margin-top:10px">${items}</div>
       <div class="rr-body" style="font-size:13px;margin-top:4px"><b>${esc(r.reason)}</b>${r.details?' — '+esc(r.details):''}</div>
       ${photos?`<div class="rr-ph" style="display:flex;gap:6px;margin-top:9px">${photos}</div>`:''}
-      <div class="rr-note" style="font-size:12.5px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.55">${state}</div>
+      <div class="rr-note" style="font-size:12.5px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.55">${houseReturnNote(r)||state}</div>
     </div>`;
   }).join('');
 }
@@ -1861,6 +1878,24 @@ async function acceptAgreement(btn){
     applyShop(shop); toast('Thank you — the updated Seller Agreement is accepted'); renderOverview();
     if($('view-payments')&&$('view-payments').innerHTML)renderPayments();
   }catch(e){ toast(e.message||'Could not save'); if(btn){btn.disabled=false;btn.textContent='I accept';} }
+}
+/* House mode (the admin running the Trove Collection): what this dashboard
+   is for, and the one setup step that matters: where the courier collects. */
+function houseBannerHTML(){
+  const ready=!!(SHOP.pickupAddress&&SHOP.pickupPhone);
+  return `<div class="banner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
+    <div><h4>You are running the Trove Collection</h4><p>Trove’s own line. Sales stay with Trove in full, so there is no margin, payout or agreement here. ${ready?'The courier collects sold pieces from your pickup address.':'Add a pickup address and phone under Storefront before your first sale: the courier collects from there.'}</p></div>
+    ${ready?'<a class="btn btn-coral" href="/admin">Back to admin</a>':'<button class="btn btn-coral" onclick="go(\'storefront\')">Add pickup details</button>'}</div>`;
+}
+function renderHouseCard(){
+  const card=$('houseCard'); if(!card||!SHOP.house)return;
+  const live=products.filter(p=>p.status==='live').length;
+  const ready=!!(SHOP.pickupAddress&&SHOP.pickupPhone);
+  card.innerHTML=`<h3 style="font-size:22px;font-weight:600;margin-bottom:6px">The Trove Collection</h3>
+    <div class="row"><span class="muted">On the storefront</span><span>${live} ${live===1?'piece':'pieces'}</span></div>
+    <div class="row"><span class="muted">Courier pickup</span><span>${ready?'Ready':'<b style="color:var(--accent-ink)">Add details</b>'}</span></div>
+    <div class="row"><span class="muted">Shelf</span><span><a href="/shop/trove-collection" target="_blank" rel="noopener" style="text-decoration:underline">/shop/trove-collection</a></span></div>
+    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:16px" onclick="openAdd()">Add a piece →</button>`;
 }
 function bannerHTML(managed, sc){
   if(managed){
@@ -2373,6 +2408,7 @@ function revealActiveTab(){
 const TODAY_LABEL=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
 const TITLES={overview:['Overview',TODAY_LABEL],products:['Products','Manage your catalogue'],orders:['Orders','Fulfil and track'],returns:['Returns','Buyer requests, Trove decisions'],analytics:['Shop Analytics','How shoppers are finding your work'],payments:['Payments','How you get paid'],storefront:['Storefront','How shoppers see you'],services:['Services','Bookable services, beside your pieces'],adminpayouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
+  if(SHOP.house&&(v==='payments'||v==='services'))v='overview';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
   document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});

@@ -290,6 +290,30 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
   res.json({ provider: db.prepare('SELECT * FROM service_providers WHERE id=?').get(p.id) });
 });
 
+// The Trove Collection, the owner's own shop. The admin runs it from the
+// seller dashboard (/sell) as themselves: requireSeller hands an admin the
+// house shop ("house mode", middleware.js), so the admin session is never
+// swapped or signed out.
+// GET /api/admin/house-shop → { shop: {...} | null }
+// POST /api/admin/house-shop → create it now if missing (same rules as the
+// boot step, src/house-shop.js), for when the boot had to skip.
+function houseShape(s) {
+  if (!s) return null;
+  const n = db.prepare(`SELECT COUNT(*) AS total, SUM(status='live') AS live FROM products WHERE shop_id=?`).get(s.id);
+  return { id: s.id, name: s.name, slug: s.slug, status: s.status, products: n.total || 0, liveProducts: n.live || 0,
+    pickupReady: !!(s.pickup_address && s.pickup_phone) };
+}
+router.get('/house-shop', requireAdmin, (_req, res) => {
+  res.json({ shop: houseShape(require('../house-shop').findHouse(db)) });
+});
+router.post('/house-shop', requireAdmin, (req, res) => {
+  const hs = require('../house-shop');
+  const r = hs.ensureHouseShop(db, { adminEmail: req.user.email });
+  if (r.status === 'skipped') return res.status(409).json({ error: `Could not create the Trove Collection: ${r.reason}` });
+  db.prepare('INSERT OR IGNORE INTO schema_migrations (id) VALUES (?)').run(hs.MARKER);
+  res.status(r.status === 'created' ? 201 : 200).json({ created: r.status === 'created', shop: houseShape(r.shop) });
+});
+
 // POST /api/admin/impersonate/:shopId → "shop view": switch this session to
 // the shop owner's account so the admin sees the seller dashboard exactly as
 // they do. The admin's own id stays on the session (impersonatorId), and
@@ -298,6 +322,9 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
 router.post('/impersonate/:shopId', requireAdmin, (req, res, next) => {
   const shop = db.prepare('SELECT s.*, u.email AS owner_email FROM shops s JOIN users u ON u.id = s.user_id WHERE s.id=?').get(req.params.shopId);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  // The Trove Collection needs no shop view: the admin runs it as themselves
+  // (house mode, see GET /api/admin/house-shop).
+  if (shop.is_house) return res.json({ ok: true, house: true, shop: { id: shop.id, name: shop.name, slug: shop.slug } });
   console.log(`shop view: admin ${req.user.email} → ${shop.slug} (${shop.owner_email})`);
   startSession(req, { impersonatorId: req.user.id, userId: shop.user_id }).then(() => res.json({ ok: true, user: publicUser(db.prepare('SELECT * FROM users WHERE id=?').get(shop.user_id)), shop: { id: shop.id, name: shop.name, slug: shop.slug } })).catch(next);
 });
