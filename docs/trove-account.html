@@ -274,6 +274,7 @@
   .rti .pr{color:var(--char);font-weight:700;white-space:nowrap}
   .rti.off{cursor:default;opacity:.55}
   .rti .lk{font-size:11.5px;color:var(--muted);white-space:nowrap}
+  .rti select{border:1px solid var(--line);border-radius:8px;padding:3px 6px;font:inherit;font-size:12.5px;background:#fff;color:var(--char)}
   .toast.show{opacity:1;transform:translateX(-50%)}
 
   .mhead{display:none}
@@ -421,13 +422,12 @@
     <div class="sub" id="rtSub"></div>
     <div style="font-size:12px;color:var(--muted);font-weight:600;margin:0 0 6px">What's going back? (tick each item)</div>
     <div class="rtitems" id="rtItems"></div>
-    <select id="rtReason" class="rtfield">
+    <select id="rtReason" class="rtfield" onchange="updateRtMoney()">
       <option value="">Why are you returning it?</option>
-      <option value="damaged">Arrived damaged</option>
-      <option value="not-as-described">Not as described</option>
-      <option value="wrong-item">Wrong item received</option>
       <option value="changed-mind">Changed my mind</option>
-      <option value="other">Something else</option>
+      <option value="damaged">Faulty or damaged</option>
+      <option value="wrong-item">Wrong item received</option>
+      <option value="not-as-described">Not as described</option>
     </select>
     <textarea id="rtDetails" maxlength="1000" placeholder="Tell us what went wrong — a sentence or two is plenty."></textarea>
     <div style="font-size:12px;color:var(--muted);font-weight:600;margin:12px 0 6px">Photos of the item (at least one)</div>
@@ -755,30 +755,42 @@ document.addEventListener('keydown',(e)=>{
 });
 
 /* ---------- RETURNS ----------
- * Item-level returns: tick the items going back, a reason + a few words +
- * photos, reviewed by Trove. Money facts (fee, per-item prices, deadline)
- * come from the server — this page only ever sums them for the preview; the
- * amount that's actually refunded is recomputed and stamped server-side. */
+ * Unit-level returns: tick the items going back (and how many of each), a
+ * reason + a few words + photos, reviewed by Trove. After approval the order
+ * of events is: collection booked → collected by the courier → refunded
+ * (the refund goes out once the courier has the piece). Money facts (fee,
+ * per-unit prices, deadline) come from the server — this page only ever sums
+ * them for the preview; the amount that's actually refunded is recomputed
+ * and stamped server-side. The collection fee applies to 'changed my mind'
+ * only; faults, wrong items and misdescriptions are collected free. */
+const RT_STEPS=['Approved','Collection booked','Collected','Refunded'];
+function rtStepper(rq){
+  const at=rq.status==='refunded'?3:rq.status==='collected'?2:rq.collectionBookedAt?1:0;
+  return `<span class="ship-note" style="margin:0;font-size:11.5px">${RT_STEPS.map((s,i)=>i<=at?`<b style="color:var(--char)">${s}</b>`:s).join(' → ')}</span>`;
+}
 function returnsFootHTML(o){
   const r=o.returns||{}, reqs=r.requests||[];
-  const what=rq=>(rq.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ');
+  const what=rq=>(rq.items||[]).map(i=>esc(i.name)+(i.qty>1||i.lineQty>1?' ×'+i.qty:'')).join(', ');
+  const fee=rq=>rq.fee?` (${aed(rq.fee)} collection fee deducted)`:'';
   let out=reqs.map(rq=>{
     if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested for <b>${what(rq)}</b> on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
       <button class="btn btn-ghost btn-sm" onclick="withdrawReturn(${jsq(o.id)},${Number(rq.id)})">Withdraw</button>`;
-    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved for <b>${what(rq)}</b> — ${aed(rq.refund)} is on its way back to your card${rq.fee?` (${aed(rq.fee)} collection fee deducted)`:''}. Our courier will be in touch to collect.</span>`;
+    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved for <b>${what(rq)}</b> — ${rq.collectionBookedAt?'our courier collection is booked and the courier will be in touch':'we are booking the courier collection'}. Once the courier has the item, ${aed(rq.refund)} goes back to your card${fee(rq)}.</span>${rtStepper(rq)}`;
+    if(rq.status==='collected')return `<span class="ship-note" style="margin:0">The courier has collected <b>${what(rq)}</b> — your refund of ${aed(rq.refund)} is being sent to your card${fee(rq)}.</span>${rtStepper(rq)}`;
+    if(rq.status==='refunded')return `<span class="ship-note" style="margin:0">Returned <b>${what(rq)}</b> — ${aed(rq.refund)} refunded to your card${rq.refundedAt?' on '+fmtDate(rq.refundedAt):''}${fee(rq)}. Depending on your bank it can take 5–10 business days to appear.</span>${rtStepper(rq)}`;
     return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">Return declined for <b>${what(rq)}</b> — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
   }).join('');
-  if(o.refundedAt&&!reqs.some(q=>q.status==='approved'))out+=`<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
-  if(r.eligible)out+=`<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)}</span>
+  if(o.refundedAt&&!reqs.some(q=>q.status==='refunded'))out+=`<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
+  if(r.eligible)out+=`<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)} (${Number(r.windowDays)||15} days from delivery)</span>
     <button class="btn btn-ghost btn-sm" onclick="openReturn(${jsq(o.id)})">Request a return</button>`;
   return out;
 }
-let rtOrder=null, rtImages=[], rtPicked=new Set();
+let rtOrder=null, rtImages=[], rtPicked=new Map(); // order item id → units going back
 function openReturn(orderId){
   const o=orders.find(x=>x.id===orderId); if(!o||!o.returns)return;
-  rtOrder=o; rtImages=[]; rtPicked=new Set();
-  const free=(o.returns.items||[]).filter(i=>!i.locked);
-  if(free.length===1)rtPicked.add(free[0].id);   // only one candidate → pre-ticked
+  rtOrder=o; rtImages=[]; rtPicked=new Map();
+  const free=(o.returns.items||[]).filter(i=>i.available>0);
+  if(free.length===1&&free[0].available===1)rtPicked.set(free[0].id,1);   // only one candidate → pre-ticked
   $('rtSub').textContent=`Order ${o.id} — only what you tick goes back`;
   $('rtReason').value=''; $('rtDetails').value='';
   renderRtItems(); updateRtMoney(); renderRtPhotos();
@@ -791,21 +803,34 @@ function renderRtItems(){
     // The chosen variation and extras are part of the name here — two lines of
     // the same piece (different colour, or one gift-wrapped) are otherwise
     // impossible to tell apart, and the refund includes what the extras cost.
-    const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` <span style="color:var(--muted);font-weight:600">· ${esc(optLabel(i.options))}</span>`:''}${exText(i.extras)?` <span style="color:var(--muted);font-weight:600">· ${esc(exText(i.extras))}</span>`:''}`;
-    if(i.locked)return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='approved'?'return approved':'already requested'}</span></label>`;
-    return `<label class="rti"><input type="checkbox" ${rtPicked.has(i.id)?'checked':''} onchange="toggleRtItem(${Number(i.id)},this.checked)"><span class="nm">${nm}</span><span class="pr">${aed(i.price*i.qty)}</span></label>`;
+    const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` <span style="color:var(--muted);font-weight:600">· ${esc(optLabel(i.options))}</span>`:''}${exText(i.extras)?` <span style="color:var(--muted);font-weight:600">· ${esc(exText(i.extras))}</span>`:''}${i.personalised?` <span style="color:var(--muted);font-weight:600">· personalised</span>`:''}`;
+    if(!(i.available>0))return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='requested'?'already requested':'already returned'}</span></label>`;
+    const on=rtPicked.has(i.id), n=rtPicked.get(i.id)||i.available;
+    // More than one unit left on the line → pick how many go back.
+    const qty=i.available>1?`<select onclick="event.stopPropagation()" onchange="setRtQty(${Number(i.id)},this.value)" aria-label="How many">${Array.from({length:i.available},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===n?'selected':''}>${k} of ${i.available}</option>`).join('')}</select>`:'';
+    return `<label class="rti"><input type="checkbox" ${on?'checked':''} onchange="toggleRtItem(${Number(i.id)},this.checked)"><span class="nm">${nm}</span>${qty}<span class="pr">${aed(i.price*(on?n:i.available))}</span></label>`;
   }).join('');
 }
-function toggleRtItem(id,on){ if(on)rtPicked.add(id); else rtPicked.delete(id); updateRtMoney(); }
+function toggleRtItem(id,on){
+  const it=(rtOrder.returns.items||[]).find(i=>i.id===id);
+  if(on)rtPicked.set(id,it&&it.available>1?it.available:1); else rtPicked.delete(id);
+  renderRtItems(); updateRtMoney();
+}
+function setRtQty(id,v){ rtPicked.set(id,Math.max(1,Number(v)||1)); renderRtItems(); updateRtMoney(); }
 function updateRtMoney(){
-  const r=rtOrder.returns;
+  if(!rtOrder)return;
+  const r=rtOrder.returns, reason=$('rtReason').value;
   const picked=(r.items||[]).filter(i=>rtPicked.has(i.id));
+  const perso=picked.some(i=>i.personalised)&&reason==='changed-mind';
   if(!picked.length){ $('rtMoney').innerHTML=`Tick at least one item above — your refund figure appears here.`; return; }
-  const gross=picked.reduce((t,i)=>t+i.price*i.qty,0);
-  const refund=Math.max(0,gross-(r.fee||0));
-  const more=(r.items||[]).some(i=>!i.locked&&!rtPicked.has(i.id));
-  $('rtMoney').innerHTML=`You'll get <b>${aed(refund)}</b> back to your card. `
-    +(r.fee?`Collection costs ${aed(r.fee)} on orders of AED 200 and below — it's already deducted from that figure.${more?` Sending more than one item back? Tick them together — one collection, one fee.`:''} `:`Collection is free for this order. `)
+  if(perso){ $('rtMoney').innerHTML=`<b>Personalised pieces can only be returned if they arrive faulty or damaged, are the wrong item, or are not as described.</b> Untick the personalised piece or pick the reason that fits.`; return; }
+  const gross=picked.reduce((t,i)=>t+i.price*(rtPicked.get(i.id)||1),0);
+  const feeApplies=reason==='changed-mind'&&r.fee>0;
+  const refund=Math.max(0,gross-(feeApplies?r.fee:0));
+  const more=(r.items||[]).some(i=>i.available>0&&!rtPicked.has(i.id));
+  $('rtMoney').innerHTML=`You'll get <b>${aed(refund)}</b> back to your card once our courier has collected the item. `
+    +(feeApplies?`Changing your mind on an order of AED 200 and below costs ${aed(r.fee)} for the collection — it's already deducted from that figure.${more?` Sending more than one item back? Tick them together — one collection, one fee.`:''} `
+      :reason?`Collection is free for this return. `:(r.fee?`Collection is free if the item is faulty or damaged, the wrong item or not as described; changing your mind on this order costs ${aed(r.fee)}. `:`Collection is free for this order. `))
     +`The original delivery fee isn't refundable.`;
 }
 function renderRtPhotos(){
@@ -843,7 +868,7 @@ async function saveReturn(){
   const btn=$('rtSave'),was=btn.textContent;btn.textContent='Sending…';btn.disabled=true;
   try{
     await TroveAPI.api(`/api/account/orders/${encodeURIComponent(rtOrder.id)}/return-request`,{method:'POST',body:{
-      itemIds:[...rtPicked],reason:$('rtReason').value,details:$('rtDetails').value.trim(),images:rtImages}});
+      items:[...rtPicked].map(([id,qty])=>({id,qty})),reason:$('rtReason').value,details:$('rtDetails').value.trim(),images:rtImages}});
     closeReturn();toast("Return requested — we'll keep you posted by email");
     await reloadOrders();renderOrders();
   }catch(e){toast(e.message||'Could not send the request');}

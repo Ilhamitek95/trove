@@ -381,15 +381,18 @@ function shopReturnShape(rr, shopId) {
   return {
     id: rr.id,
     status: rr.status,
-    reason: returns.REASONS[rr.reason] || rr.reason,
+    reason: returns.reasonLabel(rr.reason),
     details: rr.details,
     images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, lineQty: i.line_qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
     itemsTotal: gross / 100,
     creditImpact: fees.split(gross).net / 100,
     declineReason: rr.decline_reason || null,
     createdAt: rr.created_at,
     decidedAt: rr.decided_at || null,
+    collectionBookedAt: rr.collection_booked_at || null,
+    collectedAt: rr.collected_at || null,
+    refundedAt: rr.refunded_at || null,
   };
 }
 // Latest request that touches this shop's items in an order (for the order card strip).

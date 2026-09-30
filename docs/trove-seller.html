@@ -1379,7 +1379,8 @@ function shipRowHTML(o){
   const name=(o.order&&o.order.ship&&o.order.ship.name)||'—';
   const rr=o.returnRequest;
   const retFlag=rr&&rr.status==='requested'?' · <span class="sr-ret">↩ return requested</span>'
-    :rr&&rr.status==='approved'?' · <span class="sr-ret">↩ return approved</span>':'';
+    :rr&&['approved','collected'].includes(rr.status)?' · <span class="sr-ret">↩ return on its way back</span>'
+    :rr&&rr.status==='refunded'?' · <span class="sr-ret">↩ returned</span>':'';
   return `<div class="card ship-row" onclick="toggleShip(${Number(o.id)})">
       <span class="order-pill ${shipPill(o.status)}">${esc(o.statusLabel)}</span>
       <div style="min-width:0"><div class="sr-id">${esc(o.order?o.order.publicId:'')}</div>
@@ -1435,10 +1436,11 @@ function returnStripHTML(o){
   const rr=o.returnRequest; if(!rr)return'';
   const photos=(rr.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
   const note=rr.status==='requested'?`Trove is reviewing it — nothing for you to do yet. If it's approved, ${aed(rr.creditImpact||0)} of this sale's credit reverses.`
-    :rr.status==='approved'?`Return approved — the courier will bring the item${(rr.items||[]).length>1?'s':''} back, and ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.`
+    :RR_OPEN(rr.status)?`${RR_STEP[rr.status]} — the courier brings the item${(rr.items||[]).length>1?'s':''} back to you. Once the buyer is refunded, ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts; until then the sale is held, not paid out.`
+    :rr.status==='refunded'?`Returned and refunded — ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.`
     :"Trove declined the request — nothing changes for you.";
   return `<div class="sc-return">
-    <div class="rr-hd">↩ ${rr.status==='requested'?'Return requested by the buyer':rr.status==='approved'?'Return approved by Trove':'Return declined by Trove'} · ${fmtDate(rr.createdAt)}</div>
+    <div class="rr-hd">↩ ${rr.status==='requested'?'Return requested by the buyer':RR_OPEN(rr.status)?'Return approved by Trove · '+RR_STEP[rr.status].toLowerCase():rr.status==='refunded'?'Returned and refunded':'Return declined by Trove'} · ${fmtDate(rr.createdAt)}</div>
     ${rr.items&&rr.items.length?`<div class="rr-body" style="margin-top:6px"><b>${rrItemsLine(rr)}</b> · ${aed(rr.itemsTotal||0)}</div>`:''}
     <div class="rr-body">${esc(rr.reason)}${rr.details?' — '+esc(rr.details):''}</div>
     ${photos?`<div class="rr-ph">${photos}</div>`:''}
@@ -1567,7 +1569,10 @@ async function reloadReturns(){
   if(pill){ pill.textContent=open; pill.style.display=open?'':'none'; }
   if($('view-returns').classList.contains('active'))renderReturnsView();
 }
-function returnPill(s){ return s==='requested'?'new':s==='approved'?'fulfilled':'shipped'; }
+function returnPill(s){ return s==='requested'?'new':['approved','collected','refunded'].includes(s)?'fulfilled':'shipped'; }
+/* A return's steps after Trove approves it: collection booked → collected → refunded. */
+const RR_STEP={approved:'Collection booked',collected:'Collected from the buyer',refunded:'Refunded'};
+const RR_OPEN=s=>s==='approved'||s==='collected';
 function renderReturnsView(){
   const wrap=$('returnList');
   if(!returnRequests.length){
@@ -1577,17 +1582,19 @@ function renderReturnsView(){
   wrap.innerHTML=returnRequests.map(r=>{
     const photos=(r.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
     const items=(r.items||[]).map(i=>`<div class="sc-li" style="padding:8px 0">
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0}${i.lineQty>i.qty?' of '+Number(i.lineQty):''} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
         <div class="pr" style="margin-left:auto">${aed(i.price*i.qty)}</div>
       </div>`).join('');
     const state=r.status==='requested'
       ? `Trove is reviewing this request — nothing for you to do yet. If it's approved, <b>${aed(r.creditImpact||0)}</b> of the sale's credit reverses on your next settlement.`
-      : r.status==='approved'
-      ? `Approved by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — the courier brings the item${(r.items||[]).length>1?'s':''} back and <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock in Products once it's back.`
+      : RR_OPEN(r.status)
+      ? `Approved by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} · ${RR_STEP[r.status].toLowerCase()}${r.collectedAt?' on '+fmtDate(r.collectedAt):''} — the courier brings the item${(r.items||[]).length>1?'s':''} back to you. When the buyer is refunded, <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts; the sale is held until then.`
+      : r.status==='refunded'
+      ? `Returned and refunded${r.refundedAt?' on '+fmtDate(r.refundedAt):''} — <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock in Products once it's back.`
       : `Declined by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — nothing changes for you.${r.declineReason?' Reason given to the buyer: “'+esc(r.declineReason)+'”':''}`;
     return `<div class="card" style="margin-bottom:14px${r.status!=='requested'?';opacity:.78':''}">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':esc(r.status)}</span>
+        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':esc((RR_STEP[r.status]||r.status).toLowerCase())}</span>
         <b style="font-size:13.5px">${esc(r.order?r.order.publicId:'')}</b>
         <span style="color:var(--muted);font-size:12px;margin-left:auto">requested ${fmtDate(r.createdAt)}</span>
       </div>

@@ -355,3 +355,36 @@ test('ensureWebhooks registers status + error subscriptions once, and refreshes 
   assert.equal(hooks.length, 2);
   assert.equal(hooks[0].secretKey, 'rotated');
 });
+
+test('return refund waits for OTO: approval books createReturnShipment, reversePickedUp refunds the buyer', async () => {
+  const { oid, sh } = await paidShipment('TRV-OT10', 'pi_ot_10');
+  require('../src/shipments').markDelivered(sh.id, 'courier');
+  const buyer = db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('otobuyer@test.local','x','Buyer','buyer')").run().lastInsertRowid;
+  const item = db.prepare('SELECT * FROM order_items WHERE order_id=?').get(oid);
+  const rid = db.prepare("INSERT INTO return_requests (order_id,buyer_id,reason,details,images) VALUES (?,?, 'damaged','Cracked on arrival','[]')").run(oid, buyer).lastInsertRowid;
+  db.prepare('INSERT INTO return_request_items (request_id, order_item_id, qty) VALUES (?,?,1)').run(rid, item.id);
+  const returns = require('../src/returns');
+  const order = db.prepare('SELECT * FROM orders WHERE id=?').get(oid);
+  const refunds = () => ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').length;
+  const before = refunds();
+  const approved = await returns.approve(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rid), order);
+  assert.equal(approved.status, 'approved');
+  const col = db.prepare('SELECT * FROM return_collections WHERE request_id=?').get(rid);
+  assert.equal(col.status, 'booked');
+  assert.equal(col.ref, `${sh.delivery_ref}-R1`);
+  assert.equal(refunds(), before, 'nothing refunded at approval');
+
+  // An earlier return status only lands on the timeline.
+  let ts = String(++tsN);
+  await hook({ orderId: sh.delivery_ref, returnOrderId: col.ref, status: 'delivered', returnStatus: 'reverseGoingToPickup', timestamp: ts, signature: sign(sh.delivery_ref, 'delivered', ts) });
+  assert.equal(db.prepare('SELECT status FROM return_requests WHERE id=?').get(rid).status, 'approved');
+
+  ts = String(++tsN);
+  const r = await hook({ orderId: sh.delivery_ref, returnOrderId: col.ref, status: 'delivered', returnStatus: 'reversePickedUp', timestamp: ts, signature: sign(sh.delivery_ref, 'delivered', ts) });
+  assert.equal(r.status, 200);
+  const done = db.prepare('SELECT * FROM return_requests WHERE id=?').get(rid);
+  assert.equal(done.status, 'refunded');
+  assert.ok(done.collected_at);
+  assert.equal(refunds(), before + 1, 'refunded once the courier has it');
+  assert.equal(ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').at(-1).params.amount, 20000, 'faulty piece: no collection fee');
+});

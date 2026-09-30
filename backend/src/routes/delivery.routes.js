@@ -16,6 +16,8 @@
  *   POST /api/delivery/mock/deliver  dev/admin hand-crank for the mock
  *                                    provider: confirms delivery of a shipment
  *                                    as if the courier had.
+ *   POST /api/delivery/mock/collect-return  the same for a return collection
+ *                                    { requestId } — collected → buyer refunded.
  */
 const crypto = require('crypto');
 const express = require('express');
@@ -45,6 +47,11 @@ function shipmentFor(ref, providers) {
   const sh = db.prepare('SELECT * FROM shipments WHERE delivery_ref=?').get(ref);
   return sh && providers.includes(providerOf(sh)) ? sh : null;
 }
+
+/* A return job (buyer → maker) in these states means the courier has the
+ * piece — the moment the buyer's refund goes out. */
+const RETURN_COLLECTED = new Set(['collected', 'picked_up', 'in_transit', 'transit', 'received_at_depot', 'at_depot',
+  'out_for_delivery', 'delivered', 'delivery_complete', 'complete', 'completed']);
 
 /* Quiqup order states → Trove shipment states (api-docs.quiqup.com, "Order
  * states"). Anything not listed only lands on the timeline. */
@@ -111,7 +118,20 @@ router.post('/webhook', (req, res) => {
   // Quiqup (and the mock courier, which speaks the same shape) only ever
   // moves shipments it booked — never an OTO parcel.
   const sh = shipmentFor(ref, ['quiqup', 'mock']);
-  if (!sh) return res.json({ received: true, matched: false });
+  if (!sh) {
+    // A return collection is its own courier job: once the courier has the
+    // piece, the buyer's refund goes out (src/returns.js markCollected).
+    const col = db.prepare("SELECT id, shipment_id FROM return_collections WHERE ref=?").get(ref);
+    const shipOf = col && db.prepare('SELECT * FROM shipments WHERE id=?').get(col.shipment_id);
+    // Never an OTO return (those arrive signed on /oto-webhook).
+    if (!col || providerOf(shipOf) === 'oto' || /^TRV-/.test(ref)) return res.json({ received: true, matched: false });
+    if (RETURN_COLLECTED.has(event)) {
+      return require('../returns').markCollected({ ref })
+        .then(() => res.json({ received: true, matched: true }))
+        .catch((e) => { console.error('return collection webhook failed:', e.message); res.json({ received: true, matched: true }); });
+    }
+    return res.json({ received: true, matched: true });
+  }
 
   if (p.tracking_url && !sh.tracking_url) db.prepare('UPDATE shipments SET tracking_url=? WHERE id=?').run(p.tracking_url, sh.id);
 
@@ -156,6 +176,9 @@ const OTO_RETURN_NOTES = {
   reverseReturned: 'Return delivered back to the shop', reverseConfirmReturn: 'Return received by the shop',
   confirmedReturn: 'Return received by the shop', reverseShipmentCanceled: 'Return collection cancelled',
 };
+
+// Return states that mean the courier has collected the piece from the buyer.
+const OTO_RETURN_COLLECTED = new Set(['reversePickedUp', 'reverseOutForDelivery', 'reverseReturned', 'reverseConfirmReturn', 'confirmedReturn']);
 
 function otoVerified(req) {
   const secret = process.env.OTO_WEBHOOK_SECRET;
@@ -208,6 +231,17 @@ router.post('/oto-webhook', (req, res) => {
   const returnStatus = String(b.returnStatus || (/^(reverse|newReturn|returnShipment|confirmedReturn)/.test(status) ? status : ''));
   if (returnStatus) {
     if (OTO_RETURN_NOTES[returnStatus]) timeline(sh, OTO_RETURN_NOTES[returnStatus] + (b.returnOrderId ? ' · ' + b.returnOrderId : ''));
+    if (OTO_RETURN_COLLECTED.has(returnStatus)) {
+      // The courier has the returned piece: the buyer's refund goes out now
+      // (src/returns.js). Matched by the return orderId OTO gave us at
+      // booking, else by the latest booked collection on this parcel.
+      const returns = require('../returns');
+      const ret = String(b.returnOrderId || '');
+      const known = ret && db.prepare('SELECT 1 FROM return_collections WHERE ref=?').get(ret);
+      return returns.markCollected(known ? { ref: ret, quiet: true } : { shipmentId: sh.id, quiet: true })
+        .then(() => res.json({ received: true, matched: true }))
+        .catch((e) => { console.error('OTO return collection failed:', e.message); res.json({ received: true, matched: true }); });
+    }
     return res.json({ received: true, matched: true });
   }
   const by = sh.carrier && sh.carrier !== 'OTO' ? sh.carrier : 'the courier';
@@ -234,6 +268,23 @@ router.post('/mock/deliver', (req, res) => {
   const sh = shipments.markDelivered(Number(req.body?.shipmentId), 'courier');
   if (!sh) return res.status(404).json({ error: 'Shipment not found' });
   res.json({ ok: true, shipment: { id: sh.id, status: sh.status, deliveredAt: sh.delivered_at, returnWindowEndsAt: sh.return_window_ends_at } });
+});
+
+// Hand-crank for a return collection in mock mode (or when a courier never
+// reports): marks every booked collection on the request collected, which
+// sends the buyer's refund. Same access rule as /mock/deliver.
+router.post('/mock/collect-return', async (req, res, next) => {
+  try {
+    const isAdmin = req.session?.userId
+      && db.prepare('SELECT role FROM users WHERE id=?').get(req.session.userId)?.role === 'admin';
+    if (process.env.NODE_ENV === 'production' && !isAdmin) return res.status(403).json({ error: 'Admin only' });
+    const requestId = Number(req.body?.requestId);
+    const cols = db.prepare("SELECT * FROM return_collections WHERE request_id=? AND status IN ('booking','booked')").all(requestId);
+    if (!cols.length) return res.status(404).json({ error: 'No collection waiting on that return' });
+    const returns = require('../returns');
+    for (const c of cols) await returns.markCollected(c.ref ? { ref: c.ref } : { shipmentId: c.shipment_id });
+    res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(requestId)) });
+  } catch (e) { next(e); }
 });
 
 module.exports = router;
