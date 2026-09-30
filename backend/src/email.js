@@ -249,11 +249,20 @@ function orderConfirmation({ order, items, shops, ship }) {
  * Each takes { order, items, money } (+ extras) with money = { gross, fee,
  * refund } in fils, and returns { subject, html } ready for send().
  */
+// The bracket after a return refund amount: the collection fee taken off,
+// and/or the original delivery given back (whole order back for a fault).
+function deliveryNote(money) {
+  const bits = [];
+  if (money.delivery) bits.push(`including your ${aed(money.delivery)} delivery`);
+  if (money.fee) bits.push(`${aed(money.fee)} collection fee deducted`);
+  return bits.length ? ` (${bits.join('; ')})` : '';
+}
+
 function returnRequested({ order, items, money, reasonLabel }) {
   const inner =
     heading('Coming back')
     + itemsBlock(items)
-    + panel(`Reason: <b>${esc(reasonLabel)}</b><br>If it's approved, our courier collects the item and, once they have it, <b>${aed(money.refund)}</b> goes back to your original payment method${money.fee ? ` (a ${aed(money.fee)} collection fee applies when you change your mind on an order of AED 200 and below, and is already deducted from that figure)` : ' — collection is free for this return'}. The original delivery fee isn't refundable.`)
+    + panel(`Reason: <b>${esc(reasonLabel)}</b><br>If it's approved, our courier collects the item and, once they have it, <b>${aed(money.refund)}</b> goes back to your original payment method${money.fee ? ` (a ${aed(money.fee)} collection fee applies when you change your mind on an order of AED 200 and below, and is already deducted from that figure)` : ' — collection is free for this return'}. ${money.delivery ? `That figure includes your ${aed(money.delivery)} delivery, because the whole order is coming back with a fault.` : 'The original delivery fee is refunded only when the whole order comes back because it arrived faulty or damaged, was the wrong item or was not as described.'}`)
     + p('Nothing else to do for now — keep the item packed and ready in case the return is approved.');
   return {
     subject: `We've received your return request — order ${order.public_id}`,
@@ -268,7 +277,7 @@ function returnRequested({ order, items, money, reasonLabel }) {
 
 function returnApproved({ order, items, money }) {
   const inner =
-    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>will go back to your original payment method as soon as our courier has collected the item${money.fee ? ` (${aed(money.fee)} collection fee deducted)` : ''}. We'll email you the moment it's on its way.`)
+    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>will go back to your original payment method as soon as our courier has collected the item${deliveryNote(money)}. We'll email you the moment it's on its way.`)
     + heading('Coming back')
     + itemsBlock(items)
     + p('Our courier collection is booked and the courier will be in touch to arrange it — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.');
@@ -332,7 +341,7 @@ module.exports = { enabled, send, productImage, orderConfirmation, orderUnavaila
  */
 function returnRefunded({ order, items, money }) {
   const inner =
-    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>is on its way back to your original payment method${money.fee ? ` (${aed(money.fee)} collection fee deducted)` : ''}. Depending on your bank it can take 5–10 business days to appear.`)
+    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>is on its way back to your original payment method${deliveryNote(money)}. Depending on your bank it can take 5–10 business days to appear.`)
     + heading('Returned')
     + itemsBlock(items)
     + p('Thank you for sending it back. The return and this refund stay with the order in your account.');

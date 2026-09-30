@@ -77,6 +77,16 @@ router.get('/orders', requireAuth, (req, res) => {
           windowDays: o.return_days || returns.BUYER_RETURN_DAYS,
           fee: returns.changeOfMindFee(o) / 100,
           feeReasons: ['changed-mind'],
+          // The original delivery comes back too when the WHOLE order is
+          // returned for a fault: this is what that would add (0 when no
+          // delivery was paid, it was already refunded, or an earlier unit
+          // went back as a change of mind). The picker adds it only when the
+          // buyer sends back every unit still here for a fault reason.
+          wholeOrderFaultDelivery: (() => {
+            const live = reqStmt.all(o.id).filter((r) => r.status !== 'declined');
+            if (live.some((r) => !returns.FAULT_REASONS.has(r.reason))) return 0;
+            return returns.deliveryLeftCents({ order_id: o.id, id: 0 }) / 100;
+          })(),
           reasons: Object.entries(returns.REASONS).map(([value, label]) => ({ value, label })),
           personalisedReasons: [...returns.FAULT_REASONS],
           items: retItems,

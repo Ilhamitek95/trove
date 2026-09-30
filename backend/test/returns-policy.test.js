@@ -83,7 +83,11 @@ test('collection fee: only changed-my-mind at or below AED 200 pays it; faults c
     const row = await adminRow(o.pid);
     assert.equal(row.reason, reason, 'the reason is stored on the request');
     assert.equal(row.feePreview, fee, `${reason} → fee ${fee}`);
-    assert.equal(row.refundPreview, 90 - fee);
+    // A one-piece order sent back for a fault is the WHOLE order back for a
+    // fault, so the AED 30 delivery comes back on top (2026-09-30 rule).
+    const delivery = reason === 'changed-mind' ? 0 : 30;
+    assert.equal(row.deliveryPreview, delivery);
+    assert.equal(row.refundPreview, 90 - fee + delivery);
     assert.equal(row.faultReason, reason !== 'changed-mind');
   }
   // Over the threshold even a change of mind is free.

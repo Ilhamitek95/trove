@@ -14,8 +14,27 @@
  *     item, or not as described. A personalised piece can only go back for
  *     one of the last three.
  *   - Refund = the selected units' share of their line totals. The original
- *     delivery fee is not refunded (nor the legacy service fee on orders that
- *     predate its removal).
+ *     delivery fee is kept (as is the legacy service fee on orders that
+ *     predate its removal) — EXCEPT when the whole order comes back because
+ *     of a fault (owner, 2026-09-30). Precisely, a request carries the
+ *     delivery refund when, at the moment it is approved:
+ *       1. its own reason is a fault reason (damaged, wrong item, not as
+ *          described), and
+ *       2. together with the order's other approved/collected/refunded
+ *          requests it covers EVERY unit on the order (so this request
+ *          completes the order), and
+ *       3. every one of those requests is for a fault reason too, and
+ *       4. the order paid a delivery fee and no other request on it has
+ *          already carried the delivery refund.
+ *     A partial return, or a whole order where any unit came back as a
+ *     change of mind, keeps the delivery fee. The delivery fee is Trove's
+ *     (never a maker credit), so it is refunded on top of the items at the
+ *     card-refund step and its VAT reverses with the rest of the refund. The
+ *     admin can override at approval (refundDelivery true/false); charging
+ *     the collection fee on a fault claim (treating it as a change of mind)
+ *     drops the delivery refund too unless the admin asks for it explicitly.
+ *   - Collection fee: charged per return REQUEST (owner, 2026-09-30) — the
+ *     buyer form says so, so several pieces sent back together pay it once.
  *   - The AED 30 collection fee applies ONLY to 'changed my mind' on an order
  *     whose items subtotal is at or below the free-delivery threshold; a
  *     fault, a wrong item or a misdescription is collected free. The admin
@@ -92,14 +111,59 @@ function requestItems(requestId) { return reqItemsStmt.all(requestId); }
 // proportional by construction: 1 of 2 identical mugs = one unit's price.
 function grossCents(items) { return items.reduce((t, i) => t + i.price_cents * i.qty, 0); }
 const feeOverrideOf = (rr) => (rr.fee_override === 1 ? true : rr.fee_override === 0 ? false : null);
-/** { gross, fee, refund } for one request, in fils. `rr` is the request row
- *  (or its id); `opts.feeOverride` previews the admin's override. */
+const deliveryOverrideOf = (rr) => (rr.delivery_override === 1 ? true : rr.delivery_override === 0 ? false : null);
+
+/**
+ * Does this request, by the rule, refund the order's original delivery fee?
+ * See the policy note at the top: fault reason, completes the order with
+ * decided (approved/collected/refunded) requests, every one of them a fault.
+ * `row` is the request row (its order is looked up by row.order_id).
+ */
+function deliveryRefundRule(row) {
+  if (!FAULT_REASONS.has(row.reason)) return false;
+  const others = db.prepare(`SELECT id, reason FROM return_requests
+    WHERE order_id=? AND id != ? AND status IN ('approved','collected','refunded')`).all(row.order_id, row.id);
+  if (others.some((o) => !FAULT_REASONS.has(o.reason))) return false;
+  const ids = [row.id, ...others.map((o) => o.id)];
+  const covered = db.prepare(`SELECT COALESCE(SUM(qty),0) AS q FROM return_request_items
+    WHERE request_id IN (${ids.map(() => '?').join(',')})`).get(...ids).q;
+  const total = db.prepare('SELECT COALESCE(SUM(qty),0) AS q FROM order_items WHERE order_id=?').get(row.order_id).q;
+  return total > 0 && covered >= total;
+}
+/** The delivery fee still refundable on the order (0 once another request carried it). */
+function deliveryLeftCents(row) {
+  const o = db.prepare('SELECT shipping_cents FROM orders WHERE id=?').get(row.order_id);
+  const paid = (o && o.shipping_cents) || 0;
+  const already = db.prepare(`SELECT COALESCE(SUM(delivery_refund_cents),0) AS s FROM return_requests
+    WHERE order_id=? AND id != ? AND status IN ('approved','collected','refunded')`).get(row.order_id, row.id).s;
+  return Math.max(0, paid - already);
+}
+/** The delivery refund for one request: the rule, or the admin's override
+ *  (true = refund it, false = keep it). Charging the collection fee on a
+ *  fault claim drops it by default. */
+function deliveryRefundCents(row, { deliveryOverride = null, feeOverride = null } = {}) {
+  let refund;
+  if (deliveryOverride === true) refund = true;
+  else if (deliveryOverride === false) refund = false;
+  else refund = deliveryRefundRule(row) && feeOverride !== true;
+  return refund ? deliveryLeftCents(row) : 0;
+}
+
+/** { gross, fee, delivery, refund } for one request, in fils. `rr` is the
+ *  request row (or its id); `opts.feeOverride` / `opts.deliveryOverride`
+ *  preview the admin's overrides. Once approved the stamped figures win. */
 function money(order, rr, opts = {}) {
   const row = typeof rr === 'object' ? rr : db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr);
   const gross = grossCents(requestItems(row.id));
-  const override = opts.feeOverride !== undefined ? opts.feeOverride : feeOverrideOf(row);
-  const fee = feeCents(order, row.reason, override);
-  return { gross, fee, refund: Math.max(0, gross - fee) };
+  const feeOverride = opts.feeOverride !== undefined ? opts.feeOverride : feeOverrideOf(row);
+  const fee = feeCents(order, row.reason, feeOverride);
+  const deliveryOverride = opts.deliveryOverride !== undefined ? opts.deliveryOverride : deliveryOverrideOf(row);
+  const previewing = opts.deliveryOverride !== undefined || opts.feeOverride !== undefined;
+  const decided = row.status && row.status !== 'requested';
+  const delivery = decided && !previewing
+    ? (row.delivery_refund_cents || 0) // stamped at approval (NULL on requests approved before the rule)
+    : deliveryRefundCents(row, { deliveryOverride, feeOverride });
+  return { gross, fee, delivery, refund: Math.max(0, gross - fee) + delivery };
 }
 
 /* ---- eligibility: why this order can't be returned, or null if it can ----
@@ -190,6 +254,10 @@ function shape(r) {
     refund: r.refund_cents != null ? r.refund_cents / 100 : null,
     fee: r.fee_cents != null ? r.fee_cents / 100 : null,
     feeOverride: feeOverrideOf(r),
+    // The original delivery fee refunded on top of the items (whole order
+    // back for a fault) — null until approval stamps it.
+    deliveryRefund: r.delivery_refund_cents != null ? r.delivery_refund_cents / 100 : null,
+    deliveryOverride: deliveryOverrideOf(r),
     declineReason: r.decline_reason || null,
     createdAt: r.created_at,
     decidedAt: r.decided_at || null,
@@ -291,11 +359,12 @@ function fullyReturned(orderId) {
  * fresh row after the collection bookings settle (a failed booking never
  * fails the approval; it is shown on the request and can be retried).
  */
-async function approve(rr, order, { feeOverride = null } = {}) {
-  const m = money(order, rr, { feeOverride });
+async function approve(rr, order, { feeOverride = null, deliveryOverride = null } = {}) {
+  const m = money(order, rr, { feeOverride, deliveryOverride });
+  const flag = (v) => (v === true ? 1 : v === false ? 0 : null);
   db.prepare(`UPDATE return_requests SET status='approved', refund_cents=?, fee_cents=?, fee_override=?,
-      decided_at=datetime('now') WHERE id=? AND status='requested'`)
-    .run(m.refund, m.fee, feeOverride === true ? 1 : feeOverride === false ? 0 : null, rr.id);
+      delivery_refund_cents=?, delivery_override=?, decided_at=datetime('now') WHERE id=? AND status='requested'`)
+    .run(m.refund, m.fee, flag(feeOverride), m.delivery, flag(deliveryOverride), rr.id);
   await bookCollections(order, rr.id);
   return db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id);
 }
@@ -405,7 +474,7 @@ async function refund(requestId, { by = 'courier', note = '' } = {}) {
     const fresh = db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id);
     const email = require('./email');
     if (typeof email.returnRefunded === 'function') {
-      const msg = email.returnRefunded({ order, items: emailItems(rr.id), money: { gross: grossCents(requestItems(rr.id)), fee: fresh.fee_cents || 0, refund: amount } });
+      const msg = email.returnRefunded({ order, items: emailItems(rr.id), money: { gross: grossCents(requestItems(rr.id)), fee: fresh.fee_cents || 0, delivery: fresh.delivery_refund_cents || 0, refund: amount } });
       email.send({ to: order.email, ...msg }).catch((e) => console.error('return-refunded email failed:', e.message));
     }
     return fresh;
@@ -513,7 +582,7 @@ function applyRefundEffects(order) {
 
 module.exports = {
   REASONS, LEGACY_REASONS, FAULT_REASONS, IN_FLIGHT, MAX_IMAGES, BUYER_RETURN_DAYS,
-  reasonLabel, changeOfMindFee, feeCents, money, grossCents, requestItems, returnableItems, lockedItems, heldUnits,
+  reasonLabel, changeOfMindFee, feeCents, money, deliveryRefundRule, deliveryRefundCents, deliveryLeftCents, grossCents, requestItems, returnableItems, lockedItems, heldUnits,
   ineligibleReason, deadline, fullyReturned,
   shape, create, cancelOwn, approve, bookCollections, markCollected, refund, applyRefundEffects, emailItems,
 };

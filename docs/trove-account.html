@@ -857,7 +857,7 @@ function rtStepper(rq){
 function returnsFootHTML(o){
   const r=o.returns||{}, reqs=r.requests||[];
   const what=rq=>(rq.items||[]).map(i=>esc(i.name)+(i.qty>1||i.lineQty>1?' ×'+i.qty:'')).join(', ');
-  const fee=rq=>rq.fee?` (${aed(rq.fee)} collection fee deducted)`:'';
+  const fee=rq=>{const b=[];if(rq.deliveryRefund)b.push(`including your ${aed(rq.deliveryRefund)} delivery`);if(rq.fee)b.push(`${aed(rq.fee)} collection fee deducted`);return b.length?` (${b.join('; ')})`:'';};
   let out=reqs.map(rq=>{
     if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested for <b>${what(rq)}</b> on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
       <button class="btn btn-ghost btn-sm" onclick="withdrawReturn(${jsq(o.id)},${Number(rq.id)})">Withdraw</button>`;
@@ -913,12 +913,23 @@ function updateRtMoney(){
   if(perso){ $('rtMoney').innerHTML=`<b>Personalised pieces can only be returned if they arrive faulty or damaged, are the wrong item, or are not as described.</b> Untick the personalised piece or pick the reason that fits.`; return; }
   const gross=picked.reduce((t,i)=>t+i.price*(rtPicked.get(i.id)||1),0);
   const feeApplies=reason==='changed-mind'&&r.fee>0;
-  const refund=Math.max(0,gross-(feeApplies?r.fee:0));
-  const more=(r.items||[]).some(i=>i.available>0&&!rtPicked.has(i.id));
+  // The whole order back for a fault → the original delivery comes back too
+  // (the server decides for real at approval; this is the preview).
+  const fault=(r.personalisedReasons||[]).includes(reason);
+  const all=(r.items||[]).every(i=>!(i.available>0)||(rtPicked.get(i.id)||0)>=i.available);
+  const delivery=fault&&all&&r.wholeOrderFaultDelivery>0?Number(r.wholeOrderFaultDelivery):0;
+  const refund=Math.max(0,gross-(feeApplies?r.fee:0))+delivery;
+  // The collection fee is per return request: say so whenever it could apply
+  // and there is more than one piece on the order.
+  const units=(r.items||[]).reduce((t,i)=>t+(i.available>0?i.available:0),0);
+  const together=r.fee>0&&(!reason||reason==='changed-mind')&&units>1
+    ?`<span class="rt-once" style="display:block;margin-top:8px"><b>Returning more than one piece?</b> Send them back together and the ${aed(r.fee)} collection fee is charged once.</span>`:'';
   $('rtMoney').innerHTML=`You'll get <b>${aed(refund)}</b> back to your card once our courier has collected the item. `
-    +(feeApplies?`Changing your mind on an order of AED 200 and below costs ${aed(r.fee)} for the collection — it's already deducted from that figure.${more?` Sending more than one item back? Tick them together — one collection, one fee.`:''} `
+    +(feeApplies?`Changing your mind on an order of AED 200 and below costs ${aed(r.fee)} for the collection — it's already deducted from that figure. `
       :reason?`Collection is free for this return. `:(r.fee?`Collection is free if the item is faulty or damaged, the wrong item or not as described; changing your mind on this order costs ${aed(r.fee)}. `:`Collection is free for this order. `))
-    +`The original delivery fee isn't refundable.`;
+    +(delivery?`That includes your ${aed(delivery)} delivery, because the whole order is coming back with a fault.`
+      :`The original delivery fee is refunded only when the whole order comes back faulty or damaged, wrong or not as described.`)
+    +together;
 }
 function renderRtPhotos(){
   const w=$('rtPhotos');w.innerHTML='';

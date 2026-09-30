@@ -941,14 +941,15 @@ function renderReturns(){
       </div>
       <div style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">
         Returning AED ${r.itemsTotal} of the order's AED ${r.order.itemsTotal}
-        ${r.status==='refunded'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${r.fee?` (AED ${r.fee} collection fee deducted)`:''}${r.refundedAt?' on '+fmtDate(r.refundedAt):''}${r.creditNoteRef?` · credit note ${esc(r.creditNoteRef)} (VAT AED ${r.vatReversed})`:''}${r.refundNote?` · ${esc(r.refundNote)}`:''}`
-          :open(r.status)?` · <b style="color:var(--char)">AED ${r.refund}</b> goes back once the courier has it${r.fee?` (AED ${r.fee} collection fee deducted)`:''}`
+        ${r.status==='refunded'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${retMoneyNote(r.fee,r.deliveryRefund)}${r.refundedAt?' on '+fmtDate(r.refundedAt):''}${r.creditNoteRef?` · credit note ${esc(r.creditNoteRef)} (VAT AED ${r.vatReversed})`:''}${r.refundNote?` · ${esc(r.refundNote)}`:''}`
+          :open(r.status)?` · <b style="color:var(--char)">AED ${r.refund}</b> goes back once the courier has it${retMoneyNote(r.fee,r.deliveryRefund)}`
           :r.status==='declined'?` · declined: “${esc(r.declineReason||'')}”`
-          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${r.feePreview?` (AED ${r.feePreview} collection fee deducted)`:' (free collection)'}`}
+          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${retMoneyNote(r.feePreview,r.deliveryPreview)||' (free collection)'}`}${r.order.deliveryPaid?` · delivery paid AED ${r.order.deliveryPaid}`:''}
       </div>
       ${(r.collections||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--muted);font-weight:600">Courier: ${r.collections.map(c=>`${esc(c.status)}${c.ref?' · '+esc(c.ref):''}${c.note?' · '+esc(c.note):''}`).join(' &nbsp;|&nbsp; ')}</div>`:''}
       ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px;align-items:center;flex-wrap:wrap">
-        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" id="retFee${r.id}" ${r.feePreview?'checked':''} ${r.feeIfCharged?'':'disabled'} onchange="retFeePreview(${r.id})">Charge the AED ${r.feeIfCharged||0} collection fee</label>
+        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" id="retFee${r.id}" ${r.feePreview?'checked':''} ${r.feeIfCharged?'':'disabled'} onchange="retFeePreview(${r.id},true)">Charge the AED ${r.feeIfCharged||0} collection fee</label>
+        ${r.deliveryIfRefunded?`<label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer" title="By the rule the original delivery comes back when the whole order is returned for a fault"><input type="checkbox" id="retDel${r.id}" ${r.deliveryPreview?'checked':''} onchange="retFeePreview(${r.id})">Refund the AED ${r.deliveryIfRefunded} original delivery</label>`:''}
         <span id="retAmt${r.id}" style="font-size:12.5px;color:var(--muted);font-weight:600">refund AED ${r.refundPreview}</span>
         <span style="flex:1"></span>
         <button class="btn btn-green" onclick="approveReturn(${r.id})">Approve · book collection</button>
@@ -961,18 +962,39 @@ function renderReturns(){
     </div>`).join('')
     :'<div class="empty" style="padding:26px 4px">No return requests yet — they appear here when a buyer asks to send something back.</div>';
 }
-function retFeePreview(id){
+// The bracket after a return amount: delivery given back and/or fee taken off.
+function retMoneyNote(fee,delivery){
+  const b=[];
+  if(delivery)b.push(`incl. AED ${delivery} original delivery`);
+  if(fee)b.push(`AED ${fee} collection fee deducted`);
+  return b.length?` (${b.join('; ')})`:'';
+}
+// What the rule would do with the delivery for a given fee choice: charging
+// the fee on a fault claim treats it as a change of mind, so it drops.
+const retDeliveryDefault=(r,charge)=>!!r.deliveryRule&&!(charge&&!(r.feeRule>0));
+function retChoice(id){
+  const r=RETURNS.find(x=>x.id===id); if(!r)return null;
+  const fb=$('retFee'+id), db=$('retDel'+id);
+  const charge=fb?fb.checked:r.feeRule>0;
+  const deliv=db?db.checked:false;
+  const amount=Math.max(0,r.itemsTotal-(charge?r.feeIfCharged:0))+(deliv?r.deliveryIfRefunded:0);
+  const body={};
+  if(charge!==(r.feeRule>0))body.chargeFee=charge;
+  if(db&&deliv!==retDeliveryDefault(r,charge))body.refundDelivery=deliv;
+  return {r,charge,deliv,amount,body};
+}
+function retFeePreview(id,feeChanged){
   const r=RETURNS.find(x=>x.id===id); if(!r)return;
-  const charge=$('retFee'+id).checked;
-  $('retAmt'+id).textContent=`refund AED ${Math.max(0,r.itemsTotal-(charge?r.feeIfCharged:0))}${charge!==(r.feeRule>0)?' · overriding the rule':''}`;
+  // Changing the fee resets the delivery box to what the rule would do.
+  if(feeChanged&&$('retDel'+id))$('retDel'+id).checked=retDeliveryDefault(r,$('retFee'+id).checked);
+  const c=retChoice(id);
+  $('retAmt'+id).textContent=`refund AED ${c.amount}${Object.keys(c.body).length?' · overriding the rule':''}`;
 }
 async function approveReturn(id){
   const r=RETURNS.find(x=>x.id===id); if(!r)return;
-  const box=$('retFee'+id), charge=box?box.checked:null;
-  const amount=Math.max(0,r.itemsTotal-(charge?r.feeIfCharged:0));
+  const {amount,body}=retChoice(id);
   if(!confirm(`Approve this return? The courier collection is booked now; AED ${amount} goes back to the buyer's card once the courier has collected the item.`))return;
   try{
-    const body=(charge===null||charge===(r.feeRule>0))?{}:{chargeFee:charge};
     await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST',body});
     toast('Return approved — collection booked');
     await reload();

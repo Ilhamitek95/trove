@@ -472,7 +472,7 @@ const shapeReturn = (id) => returns.shape(db.prepare('SELECT * FROM return_reque
 
 router.get('/returns', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
-    SELECT rr.*, o.public_id, o.email, o.subtotal_cents, o.total_cents, o.rail,
+    SELECT rr.*, o.public_id, o.email, o.subtotal_cents, o.shipping_cents, o.total_cents, o.rail,
            o.delivered_at, o.refunded_at AS order_refunded_at, u.name AS buyer_name
     FROM return_requests rr
     JOIN orders o ON o.id = rr.order_id
@@ -487,7 +487,7 @@ router.get('/returns', requireAdmin, (_req, res) => {
       ...returns.shape(r),
       order: {
         publicId: r.public_id, email: r.email, buyer: r.buyer_name || null, rail: r.rail,
-        itemsTotal: r.subtotal_cents / 100, total: r.total_cents / 100, itemCount: countStmt.get(r.order_id).c,
+        itemsTotal: r.subtotal_cents / 100, deliveryPaid: (r.shipping_cents || 0) / 100, total: r.total_cents / 100, itemCount: countStmt.get(r.order_id).c,
         deliveredAt: r.delivered_at || null, refundedAt: r.order_refunded_at || null,
       },
       // Preview of what approval would refund (stamped for real on approve),
@@ -497,12 +497,18 @@ router.get('/returns', requireAdmin, (_req, res) => {
       feeRule: ruleFee / 100,
       feeIfCharged: returns.feeCents(r, r.reason, true) / 100,
       faultReason: returns.FAULT_REASONS.has(r.reason),
+      // The original delivery fee: what approval would refund on top of the
+      // items (whole order back for a fault), what the rule says, and what
+      // an override to refund it would give back.
+      deliveryPreview: m.delivery / 100,
+      deliveryRule: returns.deliveryRefundRule(r),
+      deliveryIfRefunded: returns.deliveryLeftCents(r) / 100,
     };
   }) });
 });
 
-// POST /api/admin/returns/:id/approve { chargeFee?: boolean }
-// chargeFee omitted = the rule; true/false = the admin's override.
+// POST /api/admin/returns/:id/approve { chargeFee?: boolean, refundDelivery?: boolean }
+// Either omitted = the rule; true/false = the admin's override.
 router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
   try {
     const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
@@ -513,9 +519,11 @@ router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
     if (order.rail === 'connect') return res.status(409).json({ error: 'Connect-rail orders need the manual refund button' });
     const cf = (req.body || {}).chargeFee;
     const feeOverride = cf === true ? true : cf === false ? false : null;
+    const rd = (req.body || {}).refundDelivery;
+    const deliveryOverride = rd === true ? true : rd === false ? false : null;
 
-    const fresh = await returns.approve(rr, order, { feeOverride });
-    const m = { gross: returns.grossCents(returns.requestItems(rr.id)), fee: fresh.fee_cents, refund: fresh.refund_cents };
+    const fresh = await returns.approve(rr, order, { feeOverride, deliveryOverride });
+    const m = { gross: returns.grossCents(returns.requestItems(rr.id)), fee: fresh.fee_cents, delivery: fresh.delivery_refund_cents || 0, refund: fresh.refund_cents };
     const msg = email.returnApproved({ order, items: emailItems(rr.id), money: m });
     email.send({ to: order.email, ...msg }).catch((e) => console.error('return-approved email failed:', e.message));
 
