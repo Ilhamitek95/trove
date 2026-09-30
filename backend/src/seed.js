@@ -205,5 +205,5 @@ mkReview.run(layla, mug.shop_id, null, demoOrder, 5,
 const providers = require('./demo-providers').ensureDemoProviders(db);
 console.log('Seeded: 8 users, 7 shops (1 pending approval), %d products, 1 demo paid order (2 shipments), %d service providers (1 pending) with 3 booking requests.', products.length + 1, providers);
 console.log('Suppliers: house, Kiln, Ember, Fern = consignment (fortnightly settlement, payout setup complete); Loom + Folio = connect tier (Rail B, no Stripe account attached).');
-console.log('Kiln has one settlement-eligible credit (delivered 9 days ago, window closed).');
+console.log('Kiln has a delivered parcel past its 15-day window (payable once Ember delivers and the buyer window closes).');
 console.log('Logins (password demo1234): layla@email.com (buyer) · mara@kilnandclay.com (seller) · hello@trove.com (admin/house).');

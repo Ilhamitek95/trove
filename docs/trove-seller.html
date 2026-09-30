@@ -951,7 +951,7 @@ function renderOverview(){
   renderOverviewChart();
   $('poAvail').textContent=aed(net);
   $('poDate').textContent=managed ? (SETTLE.nextRunDate?runDayLabel(SETTLE.nextRunDate)+' · by Trove':'Every other Tuesday · by Trove') : (sc.payoutsEnabled?'On your Stripe schedule':'—');
-  if($('poSched'))$('poSched').textContent=managed ? 'Fortnightly · '+(SETTLE.schedule||'Every other Tuesday').toLowerCase() : 'Your Stripe schedule';
+  if($('poSched'))$('poSched').textContent=managed ? (SETTLE.schedule||'Every other Tuesday') : 'Your Stripe schedule';
   $('ovOrders').innerHTML = orders.length
     ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
         <td style="font-weight:700">${esc(o.order?o.order.publicId:'')}</td><td>${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
@@ -1701,8 +1701,8 @@ function graduationBannerHTML(){
 function agreementBannerHTML(){
   if(!SHOP.agreementUpdateDue)return '';
   return `<div class="banner" id="agreeBanner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
-    <div><h4>Please review and accept the updated Seller Agreement</h4><p>Version ${esc(SHOP.currentAgreementVersion)} moves payouts to every other Tuesday and pays each sale once the buyer's ${retDays()}-day return window has closed. <a href="/seller-agreement" target="_blank" rel="noopener" style="color:var(--accent-ink);text-decoration:underline">Read the updated agreement</a></p></div>
-    <button class="btn btn-dark" onclick="acceptAgreement(this)">I accept</button></div>`;
+    <div><h4>Please review and accept the updated Seller Agreement</h4><p>Version ${esc(SHOP.currentAgreementVersion)} moves payouts to every other Tuesday and pays each sale once the buyer's ${retDays()}-day return window has closed. <a href="/seller-agreement" target="_blank" rel="noopener" style="color:var(--cream);text-decoration:underline;font-weight:700">Read the updated agreement</a></p></div>
+    <button class="btn btn-coral" onclick="acceptAgreement(this)">I accept</button></div>`;
 }
 async function acceptAgreement(btn){
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
