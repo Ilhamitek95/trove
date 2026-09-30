@@ -25,7 +25,7 @@
  */
 const express = require('express');
 const db = require('../db');
-const { hashPassword, verifyPassword, publicUser, requireAuth } = require('../middleware');
+const { hashPassword, publicUser, requireAuth, startSession } = require('../middleware');
 const { normalizeUAEMobile } = require('../phone');
 const tax = require('../service-taxonomy');
 const fees = require('../fees');
@@ -130,15 +130,23 @@ router.get('/providers/:slug', (req, res) => {
 
 /* ---------------- Enrolment ---------------- */
 
-// POST /api/services/apply — mirrors the shop application in auth.routes.js:
-// an existing account (signed in, or proving the password) gains a provider
-// profile; a new email creates the account and the profile together. The
-// profile starts 'pending' and only appears publicly once an admin approves.
-router.post('/apply', (req, res) => {
+// POST /api/services/apply — an existing account gains a provider profile
+// only when it is the one signed in; a new email creates the account and the
+// profile together. No password is ever checked here: this route sits outside
+// the sign-in flow, so an existing email that isn't the signed-in account is
+// told to sign in first (409 sign_in_required) — it must not become a second,
+// quieter place to guess passwords. The profile starts 'pending' and only
+// appears publicly once an admin approves. Rate-limited with /api/auth.
+router.post('/apply', (req, res, next) => {
+  const v = require('../validate');
   const b = req.body || {};
   const email = String(b.email || '').trim().toLowerCase();
   const name = String(b.name || '').trim();
   if (!email || !name) return res.status(400).json({ error: 'email and name are required' });
+  const nameCheck = v.shortText(name, { label: 'Your name', max: v.LIMITS.personName });
+  if (nameCheck.error) return res.status(400).json({ error: nameCheck.error });
+  const pnCheck = v.shortText(b.providerName, { label: 'Practice name', max: v.LIMITS.shopName, optional: true });
+  if (pnCheck.error) return res.status(400).json({ error: pnCheck.error });
 
   // Everything is validated BEFORE any write, so a failed application never
   // leaves behind an account without a profile.
@@ -164,16 +172,15 @@ router.post('/apply', (req, res) => {
   }
 
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-  if (!existing && (!b.password || String(b.password).length < 8)) {
-    return res.status(400).json({ error: 'A password of at least 8 characters is required' });
+  if (!existing) {
+    const pwErr = v.passwordError(b.password);
+    if (pwErr) return res.status(400).json({ error: pwErr });
   }
 
   let userId;
   if (existing) {
-    const ownsAccount = req.session.userId === existing.id
-      || (b.password && verifyPassword(b.password, existing.password_hash));
-    if (!ownsAccount) {
-      return res.status(409).json({ code: 'exists_wrong_password', error: 'An account with this email already exists' });
+    if (req.session.userId !== existing.id) {
+      return res.status(409).json({ code: 'sign_in_required', error: 'An account with this email already exists — sign in first, then add your services' });
     }
     if (db.prepare('SELECT 1 FROM service_providers WHERE user_id = ?').get(existing.id)) {
       return res.status(409).json({ code: 'already_provider', error: 'This account is already registered as a service provider' });
@@ -181,12 +188,12 @@ router.post('/apply', (req, res) => {
     userId = existing.id;
   } else {
     const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
-      .run(email, hashPassword(b.password), name, 'buyer');
+      .run(email, hashPassword(b.password), nameCheck.value, 'buyer');
     userId = info.lastInsertRowid;
   }
 
   const clean = (v, max) => String(v || '').trim().slice(0, max);
-  const providerName = clean(b.providerName, 80) || `${name}'s practice`;
+  const providerName = pnCheck.value || `${nameCheck.value}'s practice`.slice(0, 80);
   const base = slugify(providerName) || 'provider';
   let slug = base, n = 1;
   while (db.prepare('SELECT 1 FROM service_providers WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
@@ -207,8 +214,11 @@ router.post('/apply', (req, res) => {
       ig, clean(b.links, 300), clean(b.phone, 40),
       require('../config').PROVIDER_AGREEMENT_VERSION);
 
-  req.session.userId = userId;
-  res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
+  const done = () => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
+  // A new account signs in on a fresh session; an applicant already signed
+  // in keeps the session they have (nothing about their privileges changed).
+  if (existing) return done();
+  startSession(req, { userId }).then(done).catch(next);
 });
 
 /* ---------------- Bookings ---------------- */

@@ -130,6 +130,8 @@ function createApp() {
   app.use('/api', traffic.rateLimit({ windowMs: MIN, max: 600, name: 'requests' }));
   const authLimiter = traffic.rateLimit({ windowMs: 10 * MIN, max: 30, name: 'sign-in attempts' });
   app.use('/api/auth', (req, res, next) => (req.method === 'POST' ? authLimiter(req, res, next) : next()));
+  // The two other doors that create or extend an account share that budget.
+  app.post(['/api/services/apply', '/api/seller/enable-services'], authLimiter);
   app.use('/api/checkout', traffic.rateLimit({ windowMs: 10 * MIN, max: 60, name: 'checkout requests' }));
   const beaconLimiter = traffic.rateLimit({ windowMs: MIN, max: 120, name: 'events' });
   app.use(['/api/track', '/api/search-log'], beaconLimiter);

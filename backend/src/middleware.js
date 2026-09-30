@@ -49,4 +49,24 @@ function requireAdmin(req, res, next) {
   });
 }
 
-module.exports = { hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin };
+/**
+ * Swap the session for a brand-new one (new id, new cookie) and write
+ * `fields` onto it — used on every privilege change (sign-in, sign-up, Google,
+ * admin shop view in and out) so a session id planted before the change can
+ * never ride along after it (session fixation). `keep` names the few values
+ * that must survive, e.g. the demo checkout's pendingOrderId, which the
+ * confirmation page's create-an-account offer still needs.
+ */
+function startSession(req, fields, { keep = ['pendingOrderId'] } = {}) {
+  const carried = {};
+  for (const k of keep) if (req.session && req.session[k] !== undefined) carried[k] = req.session[k];
+  return new Promise((resolve, reject) => {
+    req.session.regenerate((err) => {
+      if (err) return reject(err);
+      Object.assign(req.session, carried, fields);
+      req.session.save((e) => (e ? reject(e) : resolve()));
+    });
+  });
+}
+
+module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin };

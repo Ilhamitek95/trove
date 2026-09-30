@@ -1,7 +1,8 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
-const { hashPassword, verifyPassword, publicUser, requireAuth } = require('../middleware');
+const { hashPassword, verifyPassword, publicUser, requireAuth, startSession } = require('../middleware');
+const validate = require('../validate');
 const { normalizeUAEMobile } = require('../phone');
 
 const router = express.Router();
@@ -17,16 +18,25 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
 // bootstrapped from ADMIN_EMAIL in server.js.
 const SIGNUP_ROLES = ['buyer', 'seller', 'both'];
 
-router.post('/register', (req, res) => {
+router.post('/register', (req, res, next) => {
   const { password, name, shopName } = req.body || {};
   const role = req.body?.role == null ? 'buyer' : req.body.role;
   if (!SIGNUP_ROLES.includes(role)) return res.status(400).json({ error: 'Choose a buyer or seller account' });
   // Emails are identities, not prose: match and store them case-insensitively.
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (!email || !name) return res.status(400).json({ error: 'email and name are required' });
+  const nameCheck = validate.shortText(name, { label: 'Your name', max: validate.LIMITS.personName });
+  if (nameCheck.error) return res.status(400).json({ error: nameCheck.error });
   const wantsShop = role === 'seller' || role === 'both';
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!existing && !password) return res.status(400).json({ error: 'email, password and name are required' });
+  if (!existing) {
+    const pwErr = validate.passwordError(password);
+    if (pwErr) return res.status(400).json({ error: pwErr });
+  }
+  // The shop name is shown on the storefront and in the admin review queue.
+  const shopNameCheck = validate.shortText(shopName, { label: 'Shop name', max: validate.LIMITS.shopName, optional: true });
+  if (wantsShop && shopNameCheck.error) return res.status(400).json({ error: shopNameCheck.error });
   // Optional UAE mobile — becomes a second way to sign in. ("mobile" here;
   // "phone" is already the seller application's WhatsApp field.)
   let mobile = null;
@@ -66,7 +76,7 @@ router.post('/register', (req, res) => {
     if (existing.role === 'buyer') db.prepare("UPDATE users SET role = 'seller' WHERE id = ?").run(userId);
   } else {
     const info = db.prepare('INSERT INTO users (email, password_hash, name, role, phone) VALUES (?,?,?,?,?)')
-      .run(email, hashPassword(password), name, role, mobile);
+      .run(email, hashPassword(password), nameCheck.value, role, mobile);
     userId = info.lastInsertRowid;
   }
 
@@ -74,7 +84,8 @@ router.post('/register', (req, res) => {
   // appears on the storefront once the super admin approves it. The application
   // details (story, planned products, links) are stored for the review queue.
   if (wantsShop) {
-    const base = slugify(shopName || name);
+    const displayName = shopNameCheck.value || `${nameCheck.value}'s shop`.slice(0, validate.LIMITS.shopName);
+    const base = slugify(displayName) || 'shop';
     let slug = base, n = 1;
     while (db.prepare('SELECT 1 FROM shops WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;
     const clean = (v, max) => String(v || '').trim().slice(0, max);
@@ -93,7 +104,7 @@ router.post('/register', (req, res) => {
     const info = db.prepare(`INSERT INTO shops (user_id, name, slug, status, bio, location, category, pitch_products, pitch_links,
         pitch_instagram, pitch_experience, pitch_maker, pitch_channels, pitch_capacity, pitch_phone, license_number, connect_queue)
       VALUES (?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,?,?,?)`)
-      .run(userId, shopName || `${name}'s shop`, slug,
+      .run(userId, displayName, slug,
         clean(req.body.about, 2000), clean(req.body.location, 120),
         clean(req.body.category, 40), clean(req.body.plannedProducts, 2000), clean(req.body.links, 300),
         ig, clean(req.body.experience, 60), clean(req.body.maker, 80),
@@ -109,13 +120,14 @@ router.post('/register', (req, res) => {
     }
   }
 
-  req.session.userId = userId;
-  res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
+  startSession(req, { userId })
+    .then(() => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) }))
+    .catch(next);
 });
 
 // POST /api/auth/login  { email | identifier, password }
 // The identifier may be an email address or a UAE mobile number.
-router.post('/login', (req, res) => {
+router.post('/login', (req, res, next) => {
   const { password } = req.body || {};
   const rawId = String(req.body?.identifier ?? req.body?.email ?? '').trim();
   let user, wrong = 'Wrong email or password';
@@ -129,8 +141,7 @@ router.post('/login', (req, res) => {
   if (!user || !verifyPassword(password || '', user.password_hash)) {
     return res.status(401).json({ error: wrong });
   }
-  req.session.userId = user.id;
-  res.json({ user: publicUser(user) });
+  startSession(req, { userId: user.id }).then(() => res.json({ user: publicUser(user) })).catch(next);
 });
 
 // POST /api/auth/google  { credential } — a Google Identity Services ID token.
@@ -146,10 +157,12 @@ router.post('/google', async (req, res) => {
     let user = db.prepare('SELECT * FROM users WHERE email = ?').get(g.email);
     if (!user) {
       const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
-        .run(g.email, hashPassword(require('crypto').randomBytes(32).toString('hex')), g.name, 'buyer');
+        .run(g.email, hashPassword(require('crypto').randomBytes(32).toString('hex')),
+          String(g.name || '').replace(/[<>]/g, '').trim().slice(0, validate.LIMITS.personName) || g.email.split('@')[0], 'buyer');
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
     }
-    req.session.userId = user.id;
+    try { await startSession(req, { userId: user.id }); }
+    catch (e) { console.error('google sign-in session failed:', e.message); return res.status(500).json({ error: 'Something went wrong on our side — please try again' }); }
     res.json({ user: publicUser(user) });
   } catch (e) {
     console.error('google sign-in failed:', e.message);
@@ -165,7 +178,7 @@ router.post('/logout', (req, res) => {
 // become the admin again. Only a session that entered through
 // /api/admin/impersonate carries an impersonatorId, and the stored id must
 // still belong to an admin account for the switch back to happen.
-router.post('/stop-impersonating', (req, res) => {
+router.post('/stop-impersonating', (req, res, next) => {
   const adminId = req.session.impersonatorId;
   if (!adminId) return res.status(400).json({ error: 'Not in shop view' });
   delete req.session.impersonatorId;
@@ -173,8 +186,7 @@ router.post('/stop-impersonating', (req, res) => {
   if (!admin || admin.role !== 'admin') {
     return req.session.destroy(() => res.status(403).json({ error: 'Admin account no longer exists' }));
   }
-  req.session.userId = admin.id;
-  res.json({ user: publicUser(admin) });
+  startSession(req, { userId: admin.id }).then(() => res.json({ user: publicUser(admin) })).catch(next);
 });
 
 // GET /api/auth/me  -> current user + whether they have a shop or a

@@ -5,6 +5,10 @@ testEnv({});
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 
+// Every privilege change issues a fresh session cookie (session fixation);
+// follow it the way a browser does.
+const follow = (res, cookie) => (res.headers.get('set-cookie') || '').split(';')[0] || cookie;
+
 let ctx, db, adminCookie, sellerCookie;
 let approvedShopId, pendingShopId;
 
@@ -39,8 +43,12 @@ test('unknown shop is a 404', async () => {
 });
 
 test('impersonating switches the session to the shop owner', async () => {
+  const before = adminCookie;
   const r = await ctx.api('POST', `/api/admin/impersonate/${approvedShopId}`, { cookie: adminCookie });
   assert.equal(r.status, 200);
+  adminCookie = follow(r, adminCookie);
+  assert.notEqual(adminCookie, before, 'shop view starts on a new session id');
+  assert.equal((await ctx.api('GET', '/api/auth/me', { cookie: before })).status, 401, 'the old session id is dead');
   assert.equal(r.data.user.email, 'owner-imp@test.local');
   assert.equal(r.data.shop.slug, 'imp-shop');
   const me = await ctx.api('GET', '/api/auth/me', { cookie: adminCookie });
@@ -60,6 +68,9 @@ test('while in shop view, admin endpoints lock out', async () => {
 test('stop-impersonating returns the session to the admin', async () => {
   const r = await ctx.api('POST', '/api/auth/stop-impersonating', { cookie: adminCookie });
   assert.equal(r.status, 200);
+  const before = adminCookie;
+  adminCookie = follow(r, adminCookie);
+  assert.notEqual(adminCookie, before, 'leaving shop view starts on a new session id');
   assert.equal(r.data.user.email, 'admin-imp@test.local');
   const me = await ctx.api('GET', '/api/auth/me', { cookie: adminCookie });
   assert.equal(me.data.user.email, 'admin-imp@test.local');
@@ -71,10 +82,12 @@ test('stop-impersonating returns the session to the admin', async () => {
 test('pending shops have a shop view too', async () => {
   const r = await ctx.api('POST', `/api/admin/impersonate/${pendingShopId}`, { cookie: adminCookie });
   assert.equal(r.status, 200);
+  adminCookie = follow(r, adminCookie);
   const sellerMe = await ctx.api('GET', '/api/seller/me', { cookie: adminCookie });
   assert.equal(sellerMe.data.shop.slug, 'pending-imp-shop');
   const back = await ctx.api('POST', '/api/auth/stop-impersonating', { cookie: adminCookie });
   assert.equal(back.status, 200);
+  adminCookie = follow(back, adminCookie);
 });
 
 test('stop without a shop view is a 400', async () => {

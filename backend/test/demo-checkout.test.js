@@ -87,7 +87,10 @@ test('a guest order can be claimed by the account created right after (same sess
 
   r = await ctx.api('POST', '/api/auth/register', { cookie: guestCookie, body: { role: 'buyer', name: 'New Guest', email: 'guest@test.local', password: 'longenough1' } });
   assert.equal(r.status, 201, r.text);
-  r = await ctx.api('POST', '/api/checkout/claim', { cookie: guestCookie, body: { orderId } });
+  // Signing up issues a fresh session id; the checkout stamp rides across.
+  const accountCookie = (r.headers.get('set-cookie') || '').split(';')[0];
+  assert.ok(accountCookie && accountCookie !== guestCookie, 'sign-up starts a new session');
+  r = await ctx.api('POST', '/api/checkout/claim', { cookie: accountCookie, body: { orderId } });
   assert.equal(r.status, 200, r.text);
 
   const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(orderId);
