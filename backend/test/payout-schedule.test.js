@@ -179,3 +179,27 @@ test('migration 016: payable money stays payable, open holds move to 15 days, ol
   assert.equal(conv.status, 'refunded');
   assert.equal(conv.refunded_at, '2026-09-01 10:00:00');
 });
+
+test('copy: defaults say 15-day returns and fortnightly payouts; migration 017 rewrites saved overrides', () => {
+  const content = require('../src/content');
+  const all = JSON.stringify(content.DEFAULTS || content.defaults || require('../src/content'));
+  const src = require('fs').readFileSync(require('path').join(__dirname, '..', 'src', 'content.js'), 'utf8');
+  for (const text of [src, all]) {
+    assert.doesNotMatch(text, /30-day returns|Weekly payouts|weekly payout|paid out weekly|7-day buffer/);
+  }
+  assert.match(src, /15-day returns/);
+  const page = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'docs', 'trove.html'), 'utf8');
+  assert.doesNotMatch(page, /30-day returns|Weekly payouts|weekly payout|paid out weekly|7-day buffer/);
+
+  db.prepare("INSERT OR REPLACE INTO site_content (section, value, updated_at) VALUES ('home.marquee', ?, datetime('now'))")
+    .run(JSON.stringify({ items: [{ head: '30-day returns', sub: 'Free on orders over AED 200' }, { head: 'Our own words', sub: 'Kept' }] }));
+  db.prepare("INSERT OR REPLACE INTO site_content (section, value, updated_at) VALUES ('sell.offer', ?, datetime('now'))")
+    .run(JSON.stringify({ items: [{ title: 'Weekly payouts', text: "Your share lands in your bank account every week, and your Payments page shows exactly what's coming and when." }] }));
+  require('../src/migrations/017-returns-payout-copy').up(db);
+  const m = JSON.parse(db.prepare("SELECT value FROM site_content WHERE section='home.marquee'").get().value);
+  assert.equal(m.items[0].head, '15-day returns');
+  assert.equal(m.items[1].head, 'Our own words', 'unrelated admin copy untouched');
+  const o = JSON.parse(db.prepare("SELECT value FROM site_content WHERE section='sell.offer'").get().value);
+  assert.equal(o.items[0].title, 'Fortnightly payouts');
+  assert.match(o.items[0].text, /every other Tuesday/);
+});
