@@ -4,8 +4,11 @@ const db = require('../db');
 const { hashPassword, verifyPassword, publicUser, requireAuth, startSession } = require('../middleware');
 const validate = require('../validate');
 const { normalizeUAEMobile } = require('../phone');
+const accounts = require('../accounts');
+const notify = require('../notify');
 
 const router = express.Router();
+const randomSecret = () => require('crypto').randomBytes(32).toString('hex');
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 // POST /api/auth/register
@@ -65,7 +68,7 @@ router.post('/register', (req, res, next) => {
       return res.status(400).json({ error: `Trove is currently open to makers in ${SERVICE_AREAS.join(' and ')} only` });
   }
 
-  let userId;
+  let userId, created = false, shopId = null;
   if (existing) {
     if (!wantsShop) return res.status(409).json({ error: 'An account with this email already exists' });
     const ownsAccount = req.session.userId === existing.id
@@ -83,6 +86,7 @@ router.post('/register', (req, res, next) => {
     const info = db.prepare('INSERT INTO users (email, password_hash, name, role, phone) VALUES (?,?,?,?,?)')
       .run(email, hashPassword(password), nameCheck.value, role, mobile);
     userId = info.lastInsertRowid;
+    created = true;
   }
 
   // Sellers get a shop scaffold immediately — but it starts 'pending' and only
@@ -115,6 +119,7 @@ router.post('/register', (req, res, next) => {
         ig, clean(req.body.experience, 60), clean(req.body.maker, 80),
         clean(req.body.channels, 120), clean(req.body.capacity, 40), clean(req.body.phone, 40),
         licenseNumber, licenseNumber ? 1 : 0);
+    shopId = info.lastInsertRowid;
     // License image is saved AFTER the inserts so a failed application never
     // leaves an orphan file; a bad image must not sink the application either.
     if (licenseNumber && req.body.licenseImage) {
@@ -125,8 +130,15 @@ router.post('/register', (req, res, next) => {
     }
   }
 
+  // Emails are best-effort and never hold up the sign-up: a welcome with the
+  // confirm-your-email link for a new account, and the application
+  // received + admin alert pair for a new shop.
+  const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  if (created) notify.welcomeVerify(fresh);
+  if (shopId) notify.shopApplied(shopId);
+
   startSession(req, { userId })
-    .then(() => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) }))
+    .then(() => res.status(201).json({ user: publicUser(fresh) }))
     .catch(next);
 });
 
@@ -161,10 +173,22 @@ router.post('/google', async (req, res) => {
     if (!g) return res.status(401).json({ error: 'Google could not confirm that sign-in — please try again' });
     let user = db.prepare('SELECT * FROM users WHERE email = ?').get(g.email);
     if (!user) {
-      const info = db.prepare('INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?,?)')
-        .run(g.email, hashPassword(require('crypto').randomBytes(32).toString('hex')),
+      const info = db.prepare("INSERT INTO users (email, password_hash, name, role, password_set, email_verified_at) VALUES (?,?,?,?,0,datetime('now'))")
+        .run(g.email, hashPassword(randomSecret()),
           String(g.name || '').replace(/[<>]/g, '').trim().slice(0, validate.LIMITS.personName) || g.email.split('@')[0], 'buyer');
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
+    } else if (!user.email_verified_at) {
+      // Google has just proved who owns this inbox, while the account's
+      // password was set by whoever registered it and never proved. That is
+      // the pre-hijack hole: someone signs up with a victim's email, waits
+      // for the victim to arrive via Google, and keeps a working password.
+      // So Google counts as confirming the email, the unproven password
+      // stops working (a reset link to the inbox sets a new one), and every
+      // session opened with it is signed out.
+      db.prepare("UPDATE users SET email_verified_at=datetime('now'), password_hash=?, password_set=0 WHERE id=?")
+        .run(hashPassword(randomSecret()), user.id);
+      accounts.endOtherSessions(user.id);
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
     }
     try { await startSession(req, { userId: user.id }); }
     catch (e) { console.error('google sign-in session failed:', e.message); return res.status(500).json({ error: 'Something went wrong on our side — please try again' }); }
@@ -173,6 +197,89 @@ router.post('/google', async (req, res) => {
     console.error('google sign-in failed:', e.message);
     res.status(502).json({ error: 'Google sign-in is unavailable right now — try again in a moment' });
   }
+});
+
+/* ---------------- Password reset ----------------
+ * POST /api/auth/forgot { email } — always the same neutral 200, whether or
+ * not the address has an account (no account discovery). When it does, a
+ * one-hour, single-use link goes to that inbox. Rate-limited with sign-in.
+ * Works for Google-only accounts too: the reset simply sets a password.  */
+const FORGOT_REPLY = 'If that email has a Trove account, a link to reset the password is on its way. It expires in an hour.';
+router.post('/forgot', (req, res) => {
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  if (email && email.length <= 254 && email.includes('@')) {
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    if (user) notify.passwordReset(user);
+  }
+  res.json({ ok: true, message: FORGOT_REPLY });
+});
+
+// GET /api/auth/reset?token= — is this link still good? (lets the page say
+// so before the person types a new password). Spends nothing.
+router.get('/reset', (req, res) => {
+  const found = accounts.findToken(String(req.query.token || ''), 'reset');
+  res.json({ valid: !!found });
+});
+
+// POST /api/auth/reset { token, password } — set the new password, spend the
+// token, sign out every session of the account, then sign this browser in.
+const BAD_LINK = 'This reset link has expired or was already used — ask for a new one.';
+router.post('/reset', (req, res, next) => {
+  const { token, password } = req.body || {};
+  const pwErr = validate.passwordError(password);
+  if (pwErr) return res.status(400).json({ error: pwErr });
+  const found = accounts.findToken(token, 'reset');
+  if (!found || !accounts.spendToken(found.row)) return res.status(400).json({ code: 'bad_token', error: BAD_LINK });
+  const { user } = found;
+  // The link reached the inbox, so the email is proven as well.
+  db.prepare("UPDATE users SET password_hash=?, password_set=1, email_verified_at=COALESCE(email_verified_at, datetime('now')) WHERE id=?")
+    .run(hashPassword(password), user.id);
+  db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(user.id);
+  accounts.endOtherSessions(user.id);
+  const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+  notify.passwordChanged(fresh);
+  startSession(req, { userId: user.id }, { keep: [] }).then(() => res.json({ user: publicUser(fresh) })).catch(next);
+});
+
+// POST /api/auth/password { current, password } — change it while signed in.
+// A Google-only account has no password to confirm, so it may set one. Every
+// other session of the account is signed out; this one carries on (on a
+// fresh session id).
+router.post('/password', requireAuth, (req, res, next) => {
+  if (req.session.impersonatorId) return res.status(403).json({ error: 'Only the shop owner can change their password' });
+  const { current, password } = req.body || {};
+  const u = req.user;
+  if (u.password_set !== 0 && !verifyPassword(String(current || ''), u.password_hash)) {
+    return res.status(400).json({ code: 'wrong_password', error: 'Your current password is not right' });
+  }
+  const pwErr = validate.passwordError(password);
+  if (pwErr) return res.status(400).json({ error: pwErr });
+  db.prepare('UPDATE users SET password_hash=?, password_set=1 WHERE id=?').run(hashPassword(password), u.id);
+  db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(u.id);
+  accounts.endOtherSessions(u.id);
+  const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);
+  notify.passwordChanged(fresh);
+  startSession(req, { userId: u.id }).then(() => res.json({ ok: true, user: publicUser(fresh) })).catch(next);
+});
+
+/* ---------------- Email confirmation ---------------- */
+// GET /api/auth/verify-email?token= — the welcome email's button. Confirms
+// the address and lands on the account (or sign-in) page with a notice.
+router.get('/verify-email', (req, res) => {
+  const found = accounts.findToken(String(req.query.token || ''), 'verify');
+  if (!found || !accounts.spendToken(found.row)) {
+    const u = req.session.userId && db.prepare('SELECT email_verified_at FROM users WHERE id=?').get(req.session.userId);
+    return res.redirect(302, u && u.email_verified_at ? '/account?verified=1' : '/login?verify=expired');
+  }
+  db.prepare("UPDATE users SET email_verified_at=COALESCE(email_verified_at, datetime('now')) WHERE id=?").run(found.user.id);
+  res.redirect(302, req.session.userId === found.user.id ? '/account?verified=1' : '/login?verified=1');
+});
+
+// POST /api/auth/verify-email/resend — send the confirm link again.
+router.post('/verify-email/resend', requireAuth, (req, res) => {
+  if (req.user.email_verified_at) return res.json({ ok: true, already: true });
+  notify.welcomeVerify(req.user);
+  res.json({ ok: true });
 });
 
 router.post('/logout', (req, res) => {

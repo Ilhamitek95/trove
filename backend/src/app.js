@@ -252,6 +252,7 @@ function createApp() {
   // old bookmarks and Stripe return links keep working.
   const PAGES = {
     '/login': 'trove-login.html',
+    '/reset': 'trove-login.html',      // password reset link (?token=…), a mode of the sign-in page
     '/account': 'trove-account.html',
     '/sell': 'trove-seller.html',
     '/apply': 'trove-apply.html',
@@ -296,6 +297,7 @@ function createApp() {
       'Disallow: /sell',
       'Disallow: /provider',
       'Disallow: /login',
+      'Disallow: /reset',
       '',
       `Sitemap: ${SITE()}/sitemap.xml`,
       '',
