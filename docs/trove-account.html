@@ -23,7 +23,7 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
        -webkit-font-smoothing:antialiased;font-weight:500;line-height:1.5}
-  ::selection{background:var(--coral);color:var(--char)}
+  ::selection{background:var(--rose);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   img{display:block;width:100%;height:100%;object-fit:cover}
@@ -91,7 +91,7 @@
   .pstep{flex:1;display:flex;flex-direction:column;align-items:center;position:relative}
   .pstep .dot{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);border:2px solid var(--line);display:grid;place-items:center;color:var(--muted);z-index:2}
   .pstep.done .dot{background:var(--char);border-color:var(--char);color:var(--cream)}
-  .pstep.now .dot{background:var(--coral);border-color:var(--coral);color:var(--char)}
+  .pstep.now .dot{background:var(--rose);border-color:var(--rose);color:var(--char)}
   .pstep .pl{font-size:11px;font-weight:600;margin-top:8px;color:var(--muted);text-align:center;line-height:1.35}
   .pstep.done .pl,.pstep.now .pl{color:var(--char)}
   .pline{position:absolute;top:13px;left:50%;width:100%;height:2px;background:var(--line);z-index:1}
@@ -313,17 +313,14 @@
     <button class="side-close" aria-label="Close menu" onclick="closeMenu()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <a class="logo serif" href="/" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('.logo').textContent='trove'"></a>
     <div class="user-card">
-      <div class="av" id="uAv">L</div>
-      <div class="nm" id="uName">Layla</div>
-      <div class="em" id="uEmail">layla@email.com</div>
+      <div class="av" id="uAv">·</div>
+      <div class="nm" id="uName"></div>
+      <div class="em" id="uEmail"></div>
     </div>
     <nav class="menu">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
-      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="ordPill">3</span></a>
-      <a class="mitem" data-v="wishlist" onclick="go('wishlist')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg>Saved items<span class="pill" id="wishPill">3</span></a>
+      <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="ordPill">0</span></a>
       <a class="mitem" data-v="addresses" onclick="go('addresses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Addresses</a>
-      <a class="mitem" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payment methods</a>
-      <a class="mitem" data-v="following" onclick="go('following')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Following<span class="pill" id="followPill">3</span></a>
       <a class="mitem" data-v="details" onclick="go('details')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My details</a>
     </nav>
     <div class="foot">
@@ -346,27 +343,17 @@
 
       <!-- OVERVIEW -->
       <div class="view active" id="view-overview">
-        <h2 class="hello">Hello, <em>Layla</em>.</h2>
+        <h2 class="hello">Hello.</h2>
         <p style="color:var(--muted);font-weight:500;margin-bottom:24px">Here's what's happening with your Trove.</p>
         <div class="grid-3">
           <div class="card stat"><div class="lbl">Active orders</div><div class="big" id="oActive">0</div><div class="s" id="oActiveSub">nothing on the way</div></div>
-          <div class="card stat"><div class="lbl">Saved items</div><div class="big" id="oSaved">0</div><div class="s" id="oSavedSub">nothing saved yet</div></div>
-          <div class="card stat"><div class="lbl">Following</div><div class="big" id="oFollow">0</div><div class="s" id="oFollowSub">no shops yet</div></div>
+          <div class="card stat"><div class="lbl">Orders to date</div><div class="big" id="oTotal">0</div><div class="s" id="oTotalSub">no orders yet</div></div>
+          <div class="card stat"><div class="lbl">Saved addresses</div><div class="big" id="oAddr">0</div><div class="s" id="oAddrSub">none saved yet</div></div>
         </div>
-        <div class="card track">
-          <div class="th"><div><div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">TRV-9F2K</div></div>
-            <span class="opill shipped">On the way</span></div>
-          <div class="progress">
-            <div class="pstep done"><div class="pline"></div><div class="dot">✓</div><div class="pl">Ordered</div></div>
-            <div class="pstep done"><div class="pline"></div><div class="dot">✓</div><div class="pl">Packed</div></div>
-            <div class="pstep now"><div class="pline"></div><div class="dot">●</div><div class="pl">Shipped</div></div>
-            <div class="pstep"><div class="dot"></div><div class="pl">Delivered</div></div>
-          </div>
-          <div style="font-size:13px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">Estimated arrival <b style="color:var(--char)">Thursday, 12 June</b></div>
-        </div>
+        <div class="card track" style="display:none"></div>
         <div class="quick-links">
           <div class="ql" onclick="go('orders')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg></div><div class="t">Your orders</div><div class="d">Track & reorder</div></div>
-          <div class="ql" onclick="go('wishlist')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></div><div class="t">Saved items</div><div class="d">Your wishlist</div></div>
+          <div class="ql" onclick="location.href='/'"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg></div><div class="t">Keep shopping</div><div class="d">Back to the shop</div></div>
           <div class="ql" onclick="go('addresses')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></div><div class="t">Addresses</div><div class="d">Where we ship</div></div>
           <div class="ql" onclick="go('details')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg></div><div class="t">My details</div><div class="d">Profile & prefs</div></div>
         </div>
@@ -374,9 +361,6 @@
 
       <!-- ORDERS -->
       <div class="view" id="view-orders"><div id="reviewNudge"></div><div id="ordersList"></div><div id="myReviews"></div></div>
-
-      <!-- WISHLIST -->
-      <div class="view" id="view-wishlist"><div id="wishWrap"></div></div>
 
       <!-- ADDRESSES -->
       <div class="view" id="view-addresses">
@@ -387,42 +371,14 @@
         <div class="twocol" id="addrList"></div>
       </div>
 
-      <!-- PAYMENTS -->
-      <div class="view" id="view-payments">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-          <span style="font-size:13px;color:var(--muted);font-weight:600">Cards used at checkout.</span>
-          <button class="btn btn-coral btn-sm" onclick="openCard()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Add card</button>
-        </div>
-        <div id="cardList"></div>
-        <div class="secure-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-          <span>Your card details are tokenised and held securely by Stripe — they never touch Trove's servers. (In this prototype no real card is stored.)</span></div>
-      </div>
-
-      <!-- FOLLOWING -->
-      <div class="view" id="view-following">
-        <p style="font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px">Shops you follow appear first in your feed and notify you of new drops.</p>
-        <div class="card" id="followList" style="margin-top:14px"></div>
-      </div>
-
       <!-- DETAILS -->
       <div class="view" id="view-details">
         <div class="card form-card">
           <div class="sub-h">Personal details</div>
-          <div class="ftwo"><div class="field"><label>First name</label><input id="dFirst" value="Layla"></div><div class="field"><label>Last name</label><input id="dLast" value="Hassan"></div></div>
-          <div class="field"><label>Email</label><input id="dEmail" value="layla@email.com"></div>
-          <div class="field"><label>Phone</label><input id="dPhone" value="+971 50 123 4567"></div>
-          <button class="btn btn-dark btn-sm" onclick="saveDetails()" style="margin:4px 0 6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save details</button>
-        </div>
-        <div class="card form-card" style="margin-top:18px">
-          <div class="sub-h">Notifications</div>
-          <div class="toggle-row"><div><div class="tt">Order updates</div><div class="td">Shipping and delivery alerts</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="toggle-row"><div><div class="tt">New drops from shops you follow</div><div class="td">A note when a followed shop restocks</div></div><div class="sw on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="toggle-row"><div><div class="tt">The weekly edit</div><div class="td">Our curated newsletter, Sundays</div></div><div class="sw" onclick="this.classList.toggle('on')"></div></div>
-        </div>
-        <div class="card form-card" style="margin-top:18px">
-          <div class="sub-h">Password</div>
-          <div class="field"><label>New password</label><input type="password" placeholder="••••••••"></div>
-          <button class="btn btn-ghost btn-sm" onclick="toast('Password updated')">Update password</button>
+          <div class="field"><label>Name</label><input id="dName" readonly></div>
+          <div class="field"><label>Email</label><input id="dEmail" readonly></div>
+          <div class="field" id="dPhoneWrap" style="display:none"><label>Mobile</label><input id="dPhone" readonly></div>
+          <p style="font-size:13px;color:var(--muted);font-weight:500;margin-top:4px">To change your name, email or mobile, <a href="/contact" style="color:var(--char);font-weight:700;border-bottom:1px solid var(--rose)">contact us</a> and we'll update it for you. Delivery phone numbers live on each address.</p>
         </div>
       </div>
 
@@ -491,18 +447,8 @@
 <script src="api.js"></script>
 <script>
 /* ---------- DATA ---------- */
-const VENDORS={
-  kiln:{name:'Kiln & Clay',loc:'Lisbon, Portugal',color:'#BD9C8C'},
-  fern:{name:'Fern Apothecary',loc:'Portland, USA',color:'#CFDBBE'},
-  loom:{name:'Northbound Loom',loc:'Reykjavík, Iceland',color:'#BED3DF'},
-  ember:{name:'Ember Goods',loc:'Marrakech, Morocco',color:'#FCC998'},
-  paper:{name:'Folio Paper Co.',loc:'Kyoto, Japan',color:'#F8D7E4'},
-};
 let orders=[];
-let wishlist=[];          // local-only feature (no backend yet)
 let addresses=[];
-let cards=[];             // cards live with Stripe; entered at checkout
-let following={};         // local-only feature (no backend yet)
 let ME=null;
 
 /* ---------- HELPERS ---------- */
@@ -532,7 +478,11 @@ function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')
 const SHIP_FLOW=['processing','shipped','out_for_delivery','delivered'];
 const SHIP_STEP={processing:'Processing',shipped:'Shipped',out_for_delivery:'Out for delivery',delivered:'Delivered'};
 const SHIP_PILL={processing:'processing',shipped:'shipped',out_for_delivery:'shipped',delivered:'delivered',cancelled:'processing'};
-function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+/* Every API string that reaches innerHTML goes through esc(). */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+/* A value for an inline handler: a JSON string literal, HTML-escaped. */
+const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
+const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#BD9C8C';
 /* "Glaze: Ash grey · Size: Large" — the variation the buyer chose. */
 const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
 /* The extras ticked at checkout — their cost is already inside the line price. */
@@ -564,13 +514,13 @@ function renderOrders(){
     let body;
     if(sh.length){
       body=sh.map(s=>{
-        const color=(s.shop&&s.shop.color)||'#BD9C8C';
+        const color=safeColor(s.shop&&s.shop.color);
         const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div>${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display='none'">`:''}</div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
+          <div><div class="nm">${esc(it.name)}</div><div class="qt">Qty ${esc(it.qty)}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
         const last=(s.timeline||[]).slice(-1)[0];
         const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
         return `<div class="ship">
-          <div class="ship-hd"><span class="oc-shop"><span class="gem"></span>${s.shop?s.shop.name:'Shop'}</span><span class="opill ${SHIP_PILL[s.status]||'processing'}">${s.statusLabel}</span></div>
+          <div class="ship-hd"><span class="oc-shop"><span class="gem"></span>${esc(s.shop?s.shop.name:'Shop')}</span><span class="opill ${SHIP_PILL[s.status]||'processing'}">${esc(s.statusLabel)}</span></div>
           ${shipTracker(s.status)}
           ${last?`<div class="ship-note">${esc(last.note||last.label)}${last.at?' · '+fmtDate(last.at):''}</div>`:''}
           ${tn}
@@ -581,14 +531,14 @@ function renderOrders(){
       const groups={};
       (o.items||[]).forEach(it=>{(groups[it.shop.name]=groups[it.shop.name]||{color:it.shop.color,items:[]}).items.push(it);});
       body=Object.entries(groups).map(([name,g])=>
-        `<div class="oc-shop"><span class="gem"></span>${name}</div>`+
-        g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(g.color||'#BD9C8C')}"></div></div>
-          <div><div class="nm">${it.name}</div><div class="qt">Qty ${it.qty}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
+        `<div class="oc-shop"><span class="gem"></span>${esc(name)}</div>`+
+        g.items.map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(safeColor(g.color))}"></div></div>
+          <div><div class="nm">${esc(it.name)}</div><div class="qt">Qty ${esc(it.qty)}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('')
       ).join('');
     }
     return `<div class="order-card">
       <div class="oc-head">
-        <div class="h"><span class="k">Order</span><span class="v">${o.id}</span></div>
+        <div class="h"><span class="k">Order</span><span class="v">${esc(o.id)}</span></div>
         <div class="h"><span class="k">Placed</span><span class="v">${fmtDate(o.createdAt)}</span></div>
         <div class="h"><span class="k">Total</span><span class="v tot">${aed(o.total)}</span></div>
         <div class="stat"><span class="opill ${cls}">${label}</span></div>
@@ -603,7 +553,7 @@ function renderOrders(){
 }
 function renderOverview(){
   const first=(ME&&ME.name?ME.name.split(' ')[0]:'there');
-  const hello=document.querySelector('#view-overview .hello'); if(hello)hello.innerHTML=`Hello, <em>${first}</em>.`;
+  const hello=document.querySelector('#view-overview .hello'); if(hello)hello.innerHTML=`Hello, <em>${esc(first)}</em>.`;
   // Every caption here reads off the real orders — they used to be hardcoded
   // ("1 on the way"), so a brand-new account was told about parcels it
   // didn't have. An order is active until every parcel in it is delivered.
@@ -613,6 +563,10 @@ function renderOverview(){
   $('oActiveSub').textContent=active
     ? `${active} on the way`
     : (delivered?`${delivered} delivered · nothing on the way`:'nothing on the way');
+  $('oTotal').textContent=orders.length;
+  $('oTotalSub').textContent=orders.length?(orders.length===1?'one order placed':`${orders.length} orders placed`):'no orders yet';
+  $('oAddr').textContent=addresses.length;
+  $('oAddrSub').textContent=addresses.length?'ready for checkout':'none saved yet';
   const latest=orders[0], track=document.querySelector('#view-overview .track');
   if(latest&&track){
     track.style.display='';
@@ -620,36 +574,19 @@ function renderOverview(){
     const sh=latest.shipments||[];
     // Headline progress = the least-advanced parcel, so "on the way" never overstates.
     const overall=sh.length?SHIP_FLOW[Math.min(...sh.map(s=>{const i=SHIP_FLOW.indexOf(s.status);return i<0?0:i;}))]:'processing';
-    track.innerHTML=`<div class="th"><div><div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">${latest.id}</div></div><span class="opill ${cls}">${lbl}</span></div>`
+    track.innerHTML=`<div class="th"><div><div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700">Latest order</div><div class="oid" id="trackId">${esc(latest.id)}</div></div><span class="opill ${cls}">${lbl}</span></div>`
       + shipTracker(overall)
       + `<div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">${sh.length>1?sh.length+' parcels, tracked separately — ':''}<a href="#" onclick="go('orders');return false" style="color:var(--accent-ink);font-weight:700">view details →</a></div>`;
   } else if(track){ track.style.display='none'; }
 }
 
-/* ---------- WISHLIST ---------- */
-function renderWishlist(){
-  $('wishPill').textContent=wishlist.length; $('oSaved').textContent=wishlist.length;
-  const wishShops=new Set(wishlist.map(w=>w.v)).size;
-  $('oSavedSub').textContent=wishlist.length?`across ${wishShops} shop${wishShops===1?'':'s'}`:'nothing saved yet';
-  if(!wishlist.length){$('wishWrap').innerHTML=`<div class="empty-state"><div class="big">Nothing saved yet</div><p>Tap the heart on anything you love and it'll wait for you here.</p><a class="btn btn-coral" href="/">Discover Trove</a></div>`;return;}
-  $('wishWrap').innerHTML=`<div class="pgrid">${wishlist.map((w,i)=>{
-    const V=VENDORS[w.v];
-    return `<div class="pcard">
-      <div class="ph"><div class="grad" style="${grad(V.color)}"></div><img src="${img(w.seed)}" onerror="this.style.display='none'">
-        <button class="heart" title="Remove" onclick="removeWish(${i})"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 14c1.5-1.5 3-3.3 3-5.5A4.5 4.5 0 0 0 12 5 4.5 4.5 0 0 0 2 8.5c0 2.2 1.5 4 3 5.5l7 7Z"/></svg></button></div>
-      <div class="vr">${V.name}</div><h3>${w.n}</h3>
-      <div class="row"><span class="price">${aed(w.p)}</span><button class="btn btn-dark btn-sm" onclick="toast('${w.n} added to cart')">Add to cart</button></div>
-    </div>`;}).join('')}</div>`;
-}
-function removeWish(i){const w=wishlist[i];wishlist.splice(i,1);renderWishlist();toast(`${w.n} removed from saved`);}
-
 /* ---------- ADDRESSES ---------- */
 function renderAddr(){
   $('addrList').innerHTML=addresses.map(a=>`<div class="addr-card ${a.def?'def':''}">
     ${a.def?'<span class="badge">Default</span>':''}
-    <h4>${a.label}</h4>
-    <p>${a.name}<br>${a.line}<br>${a.city}<br>${a.country}<br>${a.phone}</p>
-    <div class="acts"><a onclick="openAddr(${a.id})">Edit</a>${!a.def?`<a onclick="setDefAddr(${a.id})">Set default</a><a class="danger" onclick="delAddr(${a.id})">Delete</a>`:''}</div>
+    <h4>${esc(a.label)}</h4>
+    <p>${esc(a.name)}<br>${esc(a.line)}<br>${esc(a.city)}<br>${esc(a.country)}${a.phone?'<br>'+esc(a.phone):''}</p>
+    <div class="acts"><a onclick="openAddr(${Number(a.id)})">Edit</a>${!a.def?`<a onclick="setDefAddr(${Number(a.id)})">Set default</a><a class="danger" onclick="delAddr(${Number(a.id)})">Delete</a>`:''}</div>
   </div>`).join('')+`<div class="add-tile" onclick="openAddr()"><div class="inner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg><div>Add a new address</div></div></div>`;
 }
 async function setDefAddr(id){ try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'PATCH',body:{isDefault:true}}); await reloadAddresses(); toast('Default address updated'); }catch(e){ toast(e.message||'Could not update'); } }
@@ -662,13 +599,13 @@ function openAddr(id){
   const isAD=/abu dhabi/i.test(a.city||''); const emirate=isAD?'Abu Dhabi':'Dubai';
   const area=(a.city||'').replace(/,?\s*(abu dhabi|dubai)\s*$/i,'').trim();
   $('drawerBody').innerHTML=`
-    <div class="field"><label>Label</label><input id="aLabel" value="${a.label||''}" placeholder="Home, Work…"></div>
-    <div class="field"><label>Full name</label><input id="aName" value="${a.name||(ME&&ME.name)||''}" placeholder="Recipient's name"></div>
-    <div class="field"><label>Address</label><input id="aLine" value="${a.line||''}" placeholder="Street, building, apt"></div>
-    <div class="field"><label>Area</label><input id="aCity" value="${area}" placeholder="e.g. Dubai Marina, Khalifa City"></div>
+    <div class="field"><label>Label</label><input id="aLabel" value="${esc(a.label||'')}" placeholder="Home, Work…"></div>
+    <div class="field"><label>Full name</label><input id="aName" value="${esc(a.name||(ME&&ME.name)||'')}" placeholder="Recipient's name"></div>
+    <div class="field"><label>Address</label><input id="aLine" value="${esc(a.line||'')}" placeholder="Street, building, apt"></div>
+    <div class="field"><label>Area</label><input id="aCity" value="${esc(area)}" placeholder="e.g. Dubai Marina, Khalifa City"></div>
     <div class="field"><label>Emirate</label><select id="aEmirate"><option${emirate==='Dubai'?' selected':''}>Dubai</option><option${emirate==='Abu Dhabi'?' selected':''}>Abu Dhabi</option></select>
       <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">We currently deliver in Dubai &amp; Abu Dhabi only.</div></div>
-    <div class="field"><label>Phone</label><input id="aPhone" value="${a.phone||''}"></div>`;
+    <div class="field"><label>Phone</label><input id="aPhone" value="${esc(a.phone||'')}"></div>`;
   $('drawerSave').onclick=saveAddr; openDrawer();
 }
 async function saveAddr(){
@@ -682,47 +619,6 @@ async function saveAddr(){
     toast(editAddrId?'Address updated':'Address added');
     closeDrawer(); await reloadAddresses();
   }catch(e){ toast(e.message||'Could not save address'); }
-}
-
-/* ---------- PAYMENTS ---------- */
-function renderCards(){
-  if(!cards.length){ $('cardList').innerHTML=`<div class="empty-state" style="padding:36px 20px"><div class="big">No saved cards</div><p>You'll enter your card securely with Stripe when you check out.</p></div>`; return; }
-  $('cardList').innerHTML=cards.map(c=>`<div class="pay-row ${c.def?'def':''}">
-    <div class="brand" style="background:${c.color}">${c.brand}</div>
-    <div><div class="pn">•••• •••• •••• ${c.last4}</div><div class="pe">Expires ${c.exp}</div></div>
-    <div class="pacts">${c.def?'<span class="def-badge">Default</span>':`<a onclick="setDefCard(${c.id})">Set default</a>`}<a class="danger" onclick="delCard(${c.id})">Remove</a></div>
-  </div>`).join('');
-}
-function setDefCard(id){cards.forEach(c=>c.def=c.id===id);renderCards();toast('Default card updated');}
-function delCard(id){if(confirm('Remove this card?')){cards=cards.filter(c=>c.id!==id);renderCards();toast('Card removed');}}
-function openCard(){ toast('Cards are added securely with Stripe at checkout, not stored here.'); }
-function saveCard(){
-  const num=($('cNum').value||'').replace(/\s/g,''); const exp=$('cExp').value||'—';
-  if(num.length<4){toast('Enter a card number');return;}
-  cards.push({id:Date.now(),brand:num[0]==='4'?'Visa':'MC',color:num[0]==='4'?'#1A1F71':'#EB5C2E',last4:num.slice(-4),exp,def:cards.length===0});
-  closeDrawer();renderCards();toast('Card added');
-}
-
-/* ---------- FOLLOWING ---------- */
-function renderFollowing(){
-  const list=Object.keys(VENDORS);
-  const followedCount=Object.values(following).filter(Boolean).length;
-  $('followPill').textContent=followedCount; $('oFollow').textContent=followedCount;
-  $('oFollowSub').textContent=followedCount?`shop${followedCount===1?'':'s'} you love`:'no shops yet';
-  $('followList').innerHTML=list.map(k=>{const V=VENDORS[k],on=following[k];
-    return `<div class="follow-row"><div class="fav" style="${grad(V.color)}">${V.name[0]}</div>
-      <div><div class="fn">${V.name}</div><div class="fl">${V.loc}</div></div>
-      <div class="facts"><a class="btn btn-ghost btn-sm" href="/">Visit shop</a>
-        <button class="followbtn ${on?'on':''}" onclick="toggleFollow('${k}')">${on?'Following':'Follow'}</button></div></div>`;
-  }).join('');
-}
-function toggleFollow(k){following[k]=!following[k];renderFollowing();toast(following[k]?`Following ${VENDORS[k].name}`:`Unfollowed ${VENDORS[k].name}`);}
-
-/* ---------- DETAILS ---------- */
-function saveDetails(){
-  const n=$('dFirst').value||'there';
-  $('uName').textContent=n;$('uAv').textContent=(n[0]||'?').toUpperCase();
-  toast("Profile changes aren't saved yet — coming soon.");
 }
 
 /* ---------- DRAWER ---------- */
@@ -745,17 +641,21 @@ function renderReviewNudge(){
   w.innerHTML=`<div class="rev-nudge">
     <h3>Share what you thought</h3>
     <div class="sub">Reviews are from verified buyers only — yours helps the next shopper and the maker alike.</div>
-    ${reviewables.products.map(p=>`<div class="rev-row">
-      <div class="im"><div style="position:absolute;inset:0;${grad(p.color||'#BD9C8C')}"></div><img src="${img(p.imageSeed)}" onerror="this.style.display='none'"></div>
+    ${reviewables.products.map((p,i)=>`<div class="rev-row">
+      <div class="im"><div style="position:absolute;inset:0;${grad(safeColor(p.color))}"></div><img src="${esc(img(p.imageSeed))}" style="position:absolute;inset:0;z-index:1" onerror="this.style.display='none'"></div>
       <div><div class="nm">${esc(p.name)}</div><div class="sl">${esc(p.shopName)}</div></div>
-      <button class="btn btn-ghost btn-sm" onclick='openReview({productId:${p.id},name:${JSON.stringify(p.name)},sub:${JSON.stringify(p.shopName)}})'>☆ Rate &amp; review</button>
+      <button class="btn btn-ghost btn-sm" onclick="reviewAt('products',${i})">☆ Rate &amp; review</button>
     </div>`).join('')}
-    ${reviewables.shops.map(s=>`<div class="rev-row">
-      <div class="im"><div style="position:absolute;inset:0;${grad(s.color||'#BD9C8C')}"></div></div>
+    ${reviewables.shops.map((s,i)=>`<div class="rev-row">
+      <div class="im"><div style="position:absolute;inset:0;${grad(safeColor(s.color))}"></div></div>
       <div><div class="nm">${esc(s.name)}</div><div class="sl">The shop — packaging, communication, care</div></div>
-      <button class="btn btn-ghost btn-sm" onclick='openReview({shopId:${s.id},name:${JSON.stringify(s.name)},sub:"Shop review"})'>☆ Rate the shop</button>
+      <button class="btn btn-ghost btn-sm" onclick="reviewAt('shops',${i})">☆ Rate the shop</button>
     </div>`).join('')}
   </div>`;
+}
+function reviewAt(kind,i){
+  const x=(reviewables[kind]||[])[i]; if(!x)return;
+  openReview(kind==='products'?{productId:x.id,name:x.name,sub:x.shopName}:{shopId:x.id,name:x.name,sub:'Shop review'});
 }
 function renderMyReviews(){
   const w=$('myReviews'); if(!w)return;
@@ -769,7 +669,7 @@ function renderMyReviews(){
         <span class="rw">${fmtDate(r.createdAt)}${r.edited?' · edited':''}</span></div>
       ${r.body?`<p>${esc(r.body)}</p>`:''}
       ${r.images.length?`<div class="rimgs">${r.images.map(u=>`<img src="${esc(u)}">`).join('')}</div>`:''}
-      <div class="racts"><a onclick='editReview(${r.id})'>Edit</a><a onclick='confirmDeleteReview(${r.id})' style="color:var(--muted)">Remove</a></div>
+      <div class="racts"><a onclick="editReview(${Number(r.id)})">Edit</a><a onclick="confirmDeleteReview(${Number(r.id)})" style="color:var(--muted)">Remove</a></div>
     </div>`).join('')}</div>`;
 }
 function renderRvStars(){
@@ -863,13 +763,13 @@ function returnsFootHTML(o){
   const what=rq=>(rq.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ');
   let out=reqs.map(rq=>{
     if(rq.status==='requested')return `<span class="ship-note" style="margin:0">Return requested for <b>${what(rq)}</b> on ${fmtDate(rq.createdAt)} — we're reviewing it</span>
-      <button class="btn btn-ghost btn-sm" onclick="withdrawReturn('${o.id}',${rq.id})">Withdraw</button>`;
+      <button class="btn btn-ghost btn-sm" onclick="withdrawReturn(${jsq(o.id)},${Number(rq.id)})">Withdraw</button>`;
     if(rq.status==='approved')return `<span class="ship-note" style="margin:0">Return approved for <b>${what(rq)}</b> — ${aed(rq.refund)} is on its way back to your card${rq.fee?` (${aed(rq.fee)} collection fee deducted)`:''}. Our courier will be in touch to collect.</span>`;
     return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">Return declined for <b>${what(rq)}</b> — ${esc(rq.declineReason||'we emailed you the details')}</span>`;
   }).join('');
   if(o.refundedAt&&!reqs.some(q=>q.status==='approved'))out+=`<span class="ship-note" style="margin:0">Refunded on ${fmtDate(o.refundedAt)}</span>`;
   if(r.eligible)out+=`<span class="ship-note" style="margin:0">Returns open until ${fmtDate(r.deadline)}</span>
-    <button class="btn btn-ghost btn-sm" onclick="openReturn('${o.id}')">Request a return</button>`;
+    <button class="btn btn-ghost btn-sm" onclick="openReturn(${jsq(o.id)})">Request a return</button>`;
   return out;
 }
 let rtOrder=null, rtImages=[], rtPicked=new Set();
@@ -892,7 +792,7 @@ function renderRtItems(){
     // impossible to tell apart, and the refund includes what the extras cost.
     const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` <span style="color:var(--muted);font-weight:600">· ${esc(optLabel(i.options))}</span>`:''}${exText(i.extras)?` <span style="color:var(--muted);font-weight:600">· ${esc(exText(i.extras))}</span>`:''}`;
     if(i.locked)return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='approved'?'return approved':'already requested'}</span></label>`;
-    return `<label class="rti"><input type="checkbox" ${rtPicked.has(i.id)?'checked':''} onchange="toggleRtItem(${i.id},this.checked)"><span class="nm">${nm}</span><span class="pr">${aed(i.price*i.qty)}</span></label>`;
+    return `<label class="rti"><input type="checkbox" ${rtPicked.has(i.id)?'checked':''} onchange="toggleRtItem(${Number(i.id)},this.checked)"><span class="nm">${nm}</span><span class="pr">${aed(i.price*i.qty)}</span></label>`;
   }).join('');
 }
 function toggleRtItem(id,on){ if(on)rtPicked.add(id); else rtPicked.delete(id); updateRtMoney(); }
@@ -941,7 +841,7 @@ async function saveReturn(){
   if(!rtImages.length){toast('Add at least one photo of the item');return;}
   const btn=$('rtSave'),was=btn.textContent;btn.textContent='Sending…';btn.disabled=true;
   try{
-    await TroveAPI.api(`/api/account/orders/${rtOrder.id}/return-request`,{method:'POST',body:{
+    await TroveAPI.api(`/api/account/orders/${encodeURIComponent(rtOrder.id)}/return-request`,{method:'POST',body:{
       itemIds:[...rtPicked],reason:$('rtReason').value,details:$('rtDetails').value.trim(),images:rtImages}});
     closeReturn();toast("Return requested — we'll keep you posted by email");
     await reloadOrders();renderOrders();
@@ -950,12 +850,12 @@ async function saveReturn(){
 }
 async function withdrawReturn(orderId,requestId){
   if(!confirm('Withdraw this return request?'))return;
-  try{await TroveAPI.api(`/api/account/orders/${orderId}/return-requests/${requestId}`,{method:'DELETE'});toast('Request withdrawn');await reloadOrders();renderOrders();}
+  try{await TroveAPI.api(`/api/account/orders/${encodeURIComponent(orderId)}/return-requests/${Number(requestId)}`,{method:'DELETE'});toast('Request withdrawn');await reloadOrders();renderOrders();}
   catch(e){toast(e.message||'Could not withdraw it');}
 }
 
 /* ---------- ROUTER ---------- */
-const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, reorder and review'],wishlist:['Saved items','Your wishlist'],addresses:['Addresses','Where we ship'],payments:['Payment methods','Cards & checkout'],following:['Following','Shops you love'],details:['My details','Profile & preferences']};
+const TITLES={overview:['Overview','Welcome back'],orders:['Your orders','Track, return and review'],addresses:['Addresses','Where we ship'],details:['My details','Your profile']};
 /* mobile: the sidebar itself slides in as a collapsible menu (.side.open);
  * same elements as desktop, so active-state toggles and sign-out just work */
 function openMenu(){$('sideMenu').classList.add('open');$('menuScrim').classList.add('open');document.body.style.overflow='hidden';}
@@ -965,13 +865,14 @@ function closeMenu(){
 }
 window.addEventListener('resize',()=>{if(window.innerWidth>920)closeMenu();});
 function go(v){
+  if(!TITLES[v])v='overview';
   closeMenu();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
   document.querySelectorAll('.mitem').forEach(m=>m.classList.toggle('on',m.dataset.v===v));
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
   $('mhSec').textContent=TITLES[v][0];
-  if(v==='orders')renderOrders(); if(v==='wishlist')renderWishlist(); if(v==='addresses')renderAddr(); if(v==='payments')renderCards(); if(v==='following')renderFollowing();
+  if(v==='orders')renderOrders(); if(v==='addresses')renderAddr();
   window.scrollTo(0,0);
 }
 
@@ -987,10 +888,9 @@ async function reloadAddresses(){
 function initUser(){
   const n=ME.name||'there', first=n.split(' ')[0];
   $('uName').textContent=first; $('uEmail').textContent=ME.email; $('uAv').textContent=(first[0]||'?').toUpperCase();
-  if($('dFirst'))$('dFirst').value=first;
-  if($('dLast'))$('dLast').value=n.split(' ').slice(1).join(' ');
-  if($('dEmail'))$('dEmail').value=ME.email;
-  if($('dPhone'))$('dPhone').value='';
+  $('dName').value=ME.name||'';
+  $('dEmail').value=ME.email||'';
+  if(ME.phone){$('dPhone').value=ME.phone;$('dPhoneWrap').style.display='';}
   const so=$('signOutLink'); if(so)so.onclick=async(e)=>{e.preventDefault();await TroveAPI.logout();location.href='/login';};
 }
 async function boot(){
@@ -999,9 +899,10 @@ async function boot(){
   if(!session||!session.user){ location.href='/login'; return; }
   ME=session.user; initUser();
   await Promise.all([reloadOrders(), reloadAddresses(), reloadReviews()]);
-  renderWishlist(); renderFollowing(); renderOverview();
+  renderOverview();
+  // Old links to #wishlist, #payments or #following land on the overview.
   const _sec=(location.hash||'').replace('#','');
-  if(['orders','wishlist','addresses','payments','following','details'].includes(_sec))go(_sec); else go('overview');
+  go(TITLES[_sec]?_sec:'overview');
 }
 boot();
 </script>
