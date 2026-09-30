@@ -343,7 +343,7 @@
   <!-- SIDEBAR -->
   <aside class="side" id="sideMenu" aria-label="Account menu">
     <button class="side-close" aria-label="Close menu" onclick="closeMenu()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
-    <a class="logo serif" href="/" aria-label="Trove — home"><img src="/img/trove-wordmark.svg" alt="trove" style="height:30px;width:auto;display:block" onerror="this.closest('.logo').textContent='trove'"></a>
+    <a class="logo serif" href="/" aria-label="Trove — home">trove</a>
     <div class="user-card">
       <div class="av" id="uAv" aria-hidden="true"></div>
       <div class="nm" id="uName"></div>
@@ -640,8 +640,6 @@ function renderOrders(){
       <div class="oc-body">${body}</div>
       <div class="oc-foot">
         ${returnsFootHTML(o)}
-        <button class="btn btn-ghost btn-sm" onclick="toast('Reorder is coming soon')">Buy again</button>
-        <button class="btn btn-ghost btn-sm" onclick="toast('Invoices are coming soon')">Invoice</button>
       </div></div>`;
   }).join('');
 }
