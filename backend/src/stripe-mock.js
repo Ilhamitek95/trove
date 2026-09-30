@@ -10,6 +10,7 @@
  */
 let n = 0;
 const calls = [];
+const intentStatus = new Map();
 
 function record(method, params, result) {
   calls.push({ method, params });
@@ -18,7 +19,8 @@ function record(method, params, result) {
 
 module.exports = {
   calls,
-  reset() { calls.length = 0; },
+  reset() { calls.length = 0; intentStatus.clear(); },
+  setIntentStatus(id, status) { intentStatus.set(id, status); },
 
   paymentIntents: {
     create: async (params) => record('paymentIntents.create', params, {
@@ -26,6 +28,20 @@ module.exports = {
       client_secret: `pi_mock_${n}_secret_test`,
       ...params,
     }),
+    // States are only tracked for intents a test marks via `setIntentStatus`;
+    // anything else is an unpaid intent that can be cancelled.
+    cancel: async (id, params) => {
+      const st = intentStatus.get(id) || 'requires_payment_method';
+      if (st === 'succeeded' || st === 'processing' || st === 'canceled') {
+        record('paymentIntents.cancel', { id, ...params }, null);
+        const e = new Error(`You cannot cancel this PaymentIntent because it has a status of ${st}.`);
+        e.code = 'payment_intent_unexpected_state';
+        throw e;
+      }
+      intentStatus.set(id, 'canceled');
+      return record('paymentIntents.cancel', { id, ...params }, { id, status: 'canceled' });
+    },
+    retrieve: async (id) => record('paymentIntents.retrieve', { id }, { id, status: intentStatus.get(id) || 'requires_payment_method' }),
   },
   refunds: {
     create: async (params) => record('refunds.create', params, { id: `re_mock_${++n}`, ...params }),

@@ -283,12 +283,17 @@ router.post('/impersonate/:shopId', requireAdmin, (req, res, next) => {
 });
 
 // GET /api/admin/orders → recent orders across the whole marketplace.
+// An unpaid checkout ('pending': the payment form opened, nothing paid yet)
+// is not an order — it stays out of the list until it is paid, and the
+// hourly sweep cancels it after 24 hours. Cancelled orders stay visible:
+// `attention` says when one needs a person (e.g. an automatic refund failed).
 router.get('/orders', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
     SELECT o.*, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count,
       (SELECT GROUP_CONCAT(DISTINCT s.name) FROM order_items oi JOIN shops s ON s.id = oi.shop_id
         WHERE oi.order_id = o.id) AS shop_names
     FROM orders o
+    WHERE o.status != 'pending' AND NOT (o.status = 'cancelled' AND o.attention = '' AND o.title_transferred_at IS NULL)
     ORDER BY o.created_at DESC, o.id DESC LIMIT 200`).all();
   res.json({ orders: rows.map((o) => ({
     // Trove is the merchant of record: support and the courier desk reach the
@@ -298,6 +303,7 @@ router.get('/orders', requireAdmin, (_req, res) => {
     shops: o.shop_names ? o.shop_names.split(',') : [],
     createdAt: o.created_at,
     refundedAt: o.refunded_at || null,
+    attention: o.attention || null,
     rail: o.rail,
   })) });
 });

@@ -167,7 +167,10 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     }
   }, { timezone: 'Asia/Dubai' });
 
-  // Hourly session sweep — expired rows otherwise only leave on a restart.
+  // Hourly sweeps — expired sessions (otherwise they only leave on a
+  // restart) and unpaid checkouts older than a day (PaymentIntent cancelled,
+  // order cancelled — see order-sweep.js).
+  let sweepingOrders = false;
   cron.schedule('15 * * * *', () => {
     try {
       const n = db.prepare('DELETE FROM sessions WHERE expire < ?').run(Date.now()).changes;
@@ -175,6 +178,12 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     } catch (e) {
       console.error('session sweep failed:', e);
     }
+    if (sweepingOrders) return;
+    sweepingOrders = true;
+    require('./order-sweep').sweepUnpaid()
+      .then(({ cancelled, skipped }) => { if (cancelled || skipped) console.log(`unpaid checkouts: cancelled ${cancelled}, left ${skipped} for the payment webhook`); })
+      .catch((e) => console.error('unpaid checkout sweep failed:', e))
+      .finally(() => { sweepingOrders = false; });
   });
 }
 
