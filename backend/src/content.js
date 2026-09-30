@@ -25,13 +25,26 @@ const DEFAULTS = {
     text: 'Delivering across Dubai & Abu Dhabi · Free delivery on orders over AED 200',
   },
   'site.footer': {
-    blurb: 'Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.',
+    blurb: 'Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.',
     legal: '© 2026 Trove · Dubai, UAE',
+  },
+  // Who Trove is, for the About, Contact and legal pages and the
+  // Organization structured data. Every field starts empty and may stay
+  // empty: the pages then say the details are being finalised, never show
+  // made-up ones. Filled in by the owner in /admin → Site content.
+  'site.company': {
+    legalName: '',
+    tradeLicence: '',
+    licenceAuthority: '',
+    address: '',
+    email: '',
+    whatsapp: '',
+    vatTrn: '',
   },
   'home.hero': {
     eyebrow: 'Thoughtfully gathered',
     h1: 'Curated|for *Living*.',
-    lead: 'Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.',
+    lead: 'Discover handcrafted homeware from independent makers across the UAE, each piece chosen by hand for the Trove Marketplace.',
     ctaShop: 'Shop the Collection',
     ctaSell: 'Explore the Marketplace',
     tagLine: 'Our own line',
@@ -156,6 +169,11 @@ const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a', 'blurb', 'quote']);
 const MAX_SHORT = 200;
 const MAX_LONG = 1200;
 
+// Sections whose fields may be left blank (a blank field is simply not shown).
+const OPTIONAL_SECTIONS = new Set(['site.company']);
+const COMPANY_PENDING = 'Company details are being finalised — write to us via the contact form.';
+const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
+
 // Flexible list bounds; anything not listed must keep the default length.
 const LIST_BOUNDS = {
   'sell.hero.facts': [2, 6],
@@ -194,6 +212,16 @@ function checkString(section, key, v) {
   if (s.length > max) bad(`"${key}" is too long (max ${max} characters)`);
   const hit = copyViolation(s);
   if (hit) bad(`The phrase “${hit}” can't be used — Trove buys pieces and resells them, it never handles anyone else's money, and it makes no claims it can't back up.`);
+  return s;
+}
+
+// A blank-allowed field: trimmed, capped, no markup; the email must look like one.
+function checkOptional(section, key, v) {
+  if (v == null || (typeof v === 'string' && !v.trim())) return '';
+  const s = checkString(section, key, v);
+  if (/[<>]/.test(s)) bad(`"${key}" can't contain < or >`);
+  if (key === 'email' && !EMAIL_RE.test(s)) bad('That email address doesn\'t look right');
+  if (key === 'whatsapp' && !/^\+?[0-9 ()-]{7,20}$/.test(s)) bad('Write the WhatsApp number with digits only, e.g. +971 50 123 4567');
   return s;
 }
 
@@ -256,6 +284,8 @@ function validateSection(section, value) {
         for (const f of Object.keys(itemDef)) ci[f] = checkString(section, f, item[f]);
         return ci;
       });
+    } else if (OPTIONAL_SECTIONS.has(section)) {
+      clean[key] = checkOptional(section, key, v);
     } else {
       clean[key] = checkString(section, key, v);
     }
@@ -299,4 +329,10 @@ function reset(section) {
   db.prepare('DELETE FROM site_content WHERE section=?').run(section);
 }
 
-module.exports = { DEFAULTS, SECTIONS, getPublic, overrides, save, reset, ContentError, isSeededQuote };
+/** The company details as saved (blank fields ''), plus whether any are filled. */
+function company() {
+  const c = { ...DEFAULTS['site.company'], ...(overrides()['site.company'] || {}) };
+  return { ...c, filled: Object.values(c).some((v) => typeof v === 'string' && v.trim()) };
+}
+
+module.exports = { DEFAULTS, SECTIONS, getPublic, overrides, save, reset, ContentError, isSeededQuote, company, COMPANY_PENDING, EMAIL_RE };

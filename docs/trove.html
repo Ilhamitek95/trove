@@ -780,6 +780,8 @@
   .co-tot .row.grand{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--char);margin-top:8px;padding-top:12px;border-top:1px solid var(--line-soft)}
   .co-place{width:100%;padding:16px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;margin-top:18px;transition:.18s}
   .co-place:hover{background:#3B3737}
+  .co-agree{font-size:12px;color:var(--muted);font-weight:500;line-height:1.5;text-align:center;margin-top:10px}
+  .co-agree a{color:var(--char);text-decoration:underline}
   .co-secure{font-size:11.5px;color:var(--muted);font-weight:500;text-align:center;margin-top:12px;display:flex;gap:6px;align-items:center;justify-content:center}
   .stripe-note{display:flex;gap:11px;align-items:flex-start;background:var(--rose-tint);border-radius:12px;padding:13px 15px;font-size:12px;color:var(--ink-80);font-weight:500;line-height:1.5;margin-top:6px}
   .stripe-note svg{flex-shrink:0;color:var(--accent-ink);margin-top:1px}
@@ -919,7 +921,7 @@
       <div class="lead">
         <span class="eyebrow" data-cms="home.hero.eyebrow">Thoughtfully gathered</span>
         <h1 data-cms-rich="home.hero.h1">Curated<br>for <em>Living</em>.</h1>
-        <p data-cms="home.hero.lead">Discover thoughtfully designed homeware from the Trove Collection alongside handcrafted finds from independent makers in the Trove Marketplace.</p>
+        <p data-cms="home.hero.lead">Discover handcrafted homeware from independent makers across the UAE, each piece chosen by hand for the Trove Marketplace.</p>
         <div class="ctas">
           <button class="btn btn-dark" id="heroShopBtn" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
           <a class="txt-link" id="heroMarketLink" data-cms="home.hero.ctaSell" href="#" onclick="go('shop','all');return false">Explore the Marketplace</a>
@@ -960,7 +962,7 @@
     </div>
   </section>
 
-  <section class="band" style="padding-top:0">
+  <section class="band" id="weekly" style="padding-top:0">
     <div class="wrap">
       <div class="band-head left rv">
         <div><span class="eyebrow" data-cms="home.weekly.eyebrow">The weekly edit</span><h2 data-cms="home.weekly.heading">This week's finds</h2></div>
@@ -1262,6 +1264,7 @@
           <div id="coSummary"></div>
           <div class="co-tot" id="coTotals"></div>
           <button class="co-place" onclick="placeOrder()">Place order · <span id="coPlaceTot"></span></button>
+          <p class="co-agree">By placing your order you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
           <div class="co-secure"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Secured by Stripe</div>
         </div>
       </div>
@@ -1341,13 +1344,13 @@
     <div class="fgrid">
       <div>
         <span class="brand serif"><img src="/img/trove-wordmark.svg" alt="trove" onerror="this.closest('.brand').textContent='trove'"></span>
-        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.</p>
+        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.</p>
       </div>
-      <div><h5>Shop</h5><ul><li><a href="#" onclick="go('shop','all');return false">All categories</a></li><li class="fhouse"><a href="#" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="#" onclick="go('home');return false">The weekly edit</a></li></ul></div>
-      <div><h5>Sell</h5><ul><li><a href="#" onclick="go('sell');return false">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="#" onclick="go('sell');return false">Seller fees</a></li><li><a href="#">Seller handbook</a></li></ul></div>
-      <div><h5>About</h5><ul><li><a href="#">Our story</a></li><li><a href="#">How curation works</a></li><li><a href="#">Help centre</a></li><li><a href="#">Contact</a></li></ul></div>
+      <div><h5>Shop</h5><ul><li><a href="/?view=shop" onclick="go('shop','all');return false">All categories</a></li><li class="fhouse"><a href="/?view=shop&amp;cat=House" onclick="go('shop','House');return false">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly" onclick="go('home');setTimeout(()=>{const w=document.getElementById('weekly');if(w)w.scrollIntoView({behavior:'smooth'});},60);return false">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></div>
+      <div><h5>Sell</h5><ul><li><a href="/?view=sell" onclick="go('sell');return false">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></div>
+      <div><h5>About</h5><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></div>
     </div>
-    <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span>Privacy · Terms · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
+    <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span><a href="/privacy" style="color:inherit">Privacy</a> · <a href="/terms" style="color:inherit">Terms</a> · <a href="/seller-agreement" style="color:inherit">Seller agreement</a></span></div>
   </div>
 </footer>
 
@@ -2837,6 +2840,10 @@ function takeAppBasket(){
   if(dropped)toast(dropped===1?'One piece from your basket is no longer available':`${dropped} pieces from your basket are no longer available`);
   return true;
 }
+const NO_HOUSE_COPY={
+  lead:'Discover handcrafted homeware from independent makers across the UAE, each piece chosen by hand for the Trove Marketplace.',
+  blurb:'Handcrafted homeware from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.',
+};
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
   // The saved basket is left untouched: restoring it against an empty
@@ -2847,7 +2854,13 @@ async function boot(){
   const noHouse=LIVE&&!PRODUCTS.some(p=>VENDORS[p.vendor]&&VENDORS[p.vendor].house);
   document.documentElement.classList.toggle('no-house',noHouse);
   if(noHouse){const m=$('heroMarketLink');if(m)m.className='btn btn-dark';}
-  applyContent(); linkQuoteShops(); renderHome(); buildCatFilters();
+  applyContent();
+  // …and no copy promises that shelf: a hero or footer line (default or
+  // admin-edited) that names the Trove Collection gives way to one that doesn't.
+  if(noHouse){
+    const swap={'home.hero.lead':NO_HOUSE_COPY.lead,'site.footer.blurb':NO_HOUSE_COPY.blurb};
+    for(const [k,v] of Object.entries(swap)){const el=[...document.querySelectorAll('[data-cms]')].find(e=>e.dataset.cms===k);if(el&&/Trove Collection/i.test(el.textContent))el.textContent=v;}
+  } linkQuoteShops(); renderHome(); buildCatFilters();
   // After the catalogue, so a saved basket can be checked against what's
   // actually still on sale (restoreCart updates the count itself).
   restoreCart(); updateCartCount();
@@ -2866,6 +2879,7 @@ async function boot(){
     else if(view==='shop')go('shop',cat||'all');
     else if(view==='sell')go('sell');
     else if(location.hash==='#vendors')setTimeout(()=>{const v=$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
+    else if(location.hash==='#weekly')setTimeout(()=>{const w=$('weekly');if(w)w.scrollIntoView({behavior:'smooth'});},120);
     if(q.get('cart'))openCart();
     if(shopSlug||pid||search!=null||view||q.get('cart'))history.replaceState({},'',location.pathname);
   }catch(_){}

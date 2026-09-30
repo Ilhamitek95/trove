@@ -29,6 +29,9 @@ const adminHtml = fs.readFileSync(path.join(DOCS, 'trove-admin.html'), 'utf8');
 
 // Lists the storefront re-renders from JS (flexible length — no static wiring).
 const JS_RENDERED = new Set(['sell.hero.facts', 'sell.steps.items', 'sell.offer.items', 'sell.quotes.items', 'sell.faq.items']);
+// Sections the storefront never shows: the server renders them into other
+// pages (company details → About, Contact, Terms, Privacy; test/site-pages.test.js).
+const SERVER_RENDERED = new Set(['site.company']);
 
 const entities = (s) => s.replace(/&/g, '&amp;');
 const norm = (s) => s.replace(/\s+/g, ' ').trim();
@@ -49,6 +52,7 @@ function richText(p) {
 const wired = [];
 const jsListStrings = [];
 for (const section of SECTIONS) {
+  if (SERVER_RENDERED.has(section)) continue;
   for (const [key, dv] of Object.entries(DEFAULTS[section])) {
     if (key === 'productIds' || key === 'shopSlugs' || key === 'crops') continue; // picker/crop-driven, no default copy
     if (Array.isArray(dv)) {
