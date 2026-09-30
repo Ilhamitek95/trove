@@ -35,6 +35,16 @@ function stepShipment(sh, status, note) {
 }
 const timeline = (sh, note) => db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, sh.status, note);
 const safeEq = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+// Webhooks fail CLOSED in production: an unset secret there means nobody can
+// prove they are the courier, so every call is refused. Locally and in tests
+// an unset secret stays open, for the mock courier and hand testing.
+const isProd = () => process.env.NODE_ENV === 'production';
+/** The shipment a courier reference names — only among that courier's own bookings. */
+const { providerOf } = require('../delivery');
+function shipmentFor(ref, providers) {
+  const sh = db.prepare('SELECT * FROM shipments WHERE delivery_ref=?').get(ref);
+  return sh && providers.includes(providerOf(sh)) ? sh : null;
+}
 
 /* Quiqup order states → Trove shipment states (api-docs.quiqup.com, "Order
  * states"). Anything not listed only lands on the timeline. */
@@ -60,7 +70,7 @@ body) as well as body-only. hex or base64, with or without an
 const SIG_HEADERS = ['x-quiqup-signature', 'x-signature', 'x-webhook-signature', 'x-hub-signature-256', 'x-hub-signature'];
 function verified(req) {
   const secret = process.env.QUIQUP_WEBHOOK_SECRET;
-  if (!secret) return true; // unset = open (local / staging before the secret is configured)
+  if (!secret) return !isProd(); // unset = open locally / in tests, closed in production
   if (req.headers['x-webhook-secret'] === secret) return true; // shared-secret header (custom header on the subscription)
   const header = SIG_HEADERS.map((h) => req.headers[h]).find(Boolean);
   if (!header) return false;
@@ -98,7 +108,9 @@ router.post('/webhook', (req, res) => {
   const event = String(p.state || p.status || (named !== 'order' ? named : '') || p.event || '').toLowerCase().replace(/^order[._]/, '');
   if (!ref) return res.status(400).json({ error: 'Missing job reference' });
 
-  const sh = db.prepare('SELECT * FROM shipments WHERE delivery_ref=?').get(ref);
+  // Quiqup (and the mock courier, which speaks the same shape) only ever
+  // moves shipments it booked — never an OTO parcel.
+  const sh = shipmentFor(ref, ['quiqup', 'mock']);
   if (!sh) return res.json({ received: true, matched: false });
 
   if (p.tracking_url && !sh.tracking_url) db.prepare('UPDATE shipments SET tracking_url=? WHERE id=?').run(p.tracking_url, sh.id);
@@ -147,7 +159,7 @@ const OTO_RETURN_NOTES = {
 
 function otoVerified(req) {
   const secret = process.env.OTO_WEBHOOK_SECRET;
-  if (!secret) return true; // unset = open (local / before the webhook is registered)
+  if (!secret) return !isProd(); // unset = open locally / in tests, closed in production
   const auth = String(req.headers.authorization || req.headers['x-authorization'] || '').replace(/^Bearer\s+/i, '');
   if (auth && safeEq(auth, secret)) return true;
   const b = req.body || {};
@@ -169,7 +181,7 @@ router.post('/oto-webhook', (req, res) => {
   if (!db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(key, 'oto.' + kind).changes) {
     return res.json({ received: true, duplicate: true });
   }
-  const sh = db.prepare('SELECT * FROM shipments WHERE delivery_ref=?').get(ref);
+  const sh = shipmentFor(ref, ['oto']);
   if (!sh) return res.json({ received: true, matched: false });
 
   if (kind === 'error') {

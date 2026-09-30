@@ -33,10 +33,10 @@ async function bookPickup(shipmentId) {
   const shop = loadShop(sh.shop_id);
   const p = provider();
   const res = await p.bookPickup(sh, shop, loadItems(sh));
-  db.prepare(`UPDATE shipments SET delivery_ref=?, carrier=?,
+  db.prepare(`UPDATE shipments SET delivery_ref=?, carrier=?, delivery_provider=?,
       tracking_number = COALESCE(NULLIF(tracking_number,''), ?),
       tracking_url    = COALESCE(NULLIF(tracking_url,''), ?)
-    WHERE id=?`).run(res.ref, p.name, res.ref, res.trackingUrl || '', sh.id);
+    WHERE id=?`).run(res.ref, p.name, mode(), res.ref, res.trackingUrl || '', sh.id);
   return res;
 }
 
@@ -68,6 +68,20 @@ async function markReady(shipmentId) {
   return res;
 }
 
+/**
+ * Which integration booked a shipment: the stored column, or — for rows
+ * booked before it existed — read from the reference itself (OTO orderIds
+ * are '<public id>-<shipment id>', the mock's start QMOCK-, anything else is
+ * a Quiqup order id).
+ */
+function providerOf(sh) {
+  if (!sh || !sh.delivery_ref) return '';
+  if (sh.delivery_provider) return sh.delivery_provider;
+  if (/^QMOCK-/.test(sh.delivery_ref)) return 'mock';
+  if (/^TRV-/.test(sh.delivery_ref)) return 'oto';
+  return 'quiqup';
+}
+
 /** Courier label for a booked shipment: a PDF buffer, { url } of a hosted label, or null. */
 async function getLabel(shipmentId) {
   const sh = loadShipment(shipmentId);
@@ -77,4 +91,4 @@ async function getLabel(shipmentId) {
 
 const getStatus = (ref) => provider().getStatus(ref);
 
-module.exports = { bookPickup, bookReversePickup, markReady, getLabel, getStatus, provider, isLive, isOto, mode };
+module.exports = { bookPickup, bookReversePickup, markReady, getLabel, getStatus, provider, providerOf, isLive, isOto, mode };
