@@ -106,6 +106,14 @@ if (process.env.DEMO_PASSWORD) {
   }
 }
 
+// One-time QA cleanup (2026-09-30): removes ONLY the test accounts, shop,
+// provider and unpaid orders that review agents created on the live site
+// (ilhamitek95+trove-qa-*@gmail.com). Runs once — guarded by the
+// 'qa-cleanup-2026-09-30' marker in schema_migrations — backs up first, skips
+// and reports anything where money moved, and never crashes the boot. The
+// summary is at GET /api/admin/maintenance/qa-cleanup. See src/qa-cleanup.js.
+require('./qa-cleanup').bootOnce(db, { stripe: require('./stripe').getStripe() });
+
 const { createApp } = require('./app');
 const { getStripe } = require('./stripe');
 

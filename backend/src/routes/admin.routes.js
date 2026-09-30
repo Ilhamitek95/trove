@@ -41,6 +41,13 @@ router.get('/stats', requireAdmin, (_req, res) => {
 
 // GET /api/admin/search-trends → what shoppers typed in the last 30 days.
 // avgResults near 0 flags demand the catalogue isn't meeting yet.
+// GET /api/admin/maintenance/qa-cleanup → the one-time QA data cleanup's
+// last run: marker time, what was removed (ids + counts), the backup file
+// and anything it skipped on purpose. See src/qa-cleanup.js.
+router.get('/maintenance/qa-cleanup', requireAdmin, (_req, res) => {
+  res.json(require('../qa-cleanup').lastSummary(db));
+});
+
 router.get('/search-trends', requireAdmin, (req, res) => {
   const days = Math.min(90, Math.max(1, parseInt(req.query.days) || 30));
   res.json({ days, terms: require('../trends').topSearchTerms(days, 40) });

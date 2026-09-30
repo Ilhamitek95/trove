@@ -27,11 +27,16 @@ function stamp(d = new Date()) {
   return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}-${p(d.getUTCHours())}${p(d.getUTCMinutes())}`;
 }
 
-/** Write one backup and prune old ones. Returns { file, kept, removed }. */
-function run(now = new Date()) {
+/**
+ * Write one backup and prune old ones. Returns { file, kept, removed }.
+ * opts.prefix names a one-off copy (e.g. 'trove-qa-cleanup'); such a file
+ * does not match the nightly pattern, so the rotation below never prunes it.
+ */
+function run(now = new Date(), opts = {}) {
   const dir = backupsDir();
   fs.mkdirSync(dir, { recursive: true });
-  const file = path.join(dir, `trove-${stamp(now)}.db`);
+  const prefix = /^[a-z0-9-]+$/.test(opts.prefix || '') ? opts.prefix : 'trove';
+  const file = path.join(dir, `${prefix}-${stamp(now)}.db`);
   // A same-minute rerun would collide; VACUUM INTO refuses to overwrite.
   if (fs.existsSync(file)) fs.unlinkSync(file);
   db.exec(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
