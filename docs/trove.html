@@ -2499,7 +2499,6 @@ function pdpAccHTML(p){
   (p.options||[]).forEach(g=>rows.push([g.name,g.values.join(', ')]));
   if((p.extras||[]).length)rows.push(['Extras',p.extras.map(e=>e.name+(e.price?` (+AED ${e.price.toLocaleString()})`:'')).join(', ')]);
   if(p.perso)rows.push(['Personalisation',(p.perso.required?'Required':'Optional')+`, up to ${p.perso.maxLen} characters`]);
-  rows.push(['Trove reference','TRV-'+p.id]);
   const since=sinceLabel(V), meta=[V.house?'':V.loc,since?'On Trove since '+since:''].filter(Boolean).join(' · ');
   return `<details class="acc" open><summary>Details<span class="faq-tg" aria-hidden="true">+</span></summary><dl class="acc-dl">${rows.map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl></details>`
     +`<details class="acc"><summary>${V.house?'About the Trove Collection':'About the maker'}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(V.name)}</b>${meta?`<div class="acc-meta">${esc(meta)}</div>`:''}${V.bio?`<p>${esc(V.bio)}</p>`:''}<a class="link-more" href="${esc(makerUrl(p.vendor))}">Visit ${esc(V.name)} →</a></div></details>`;

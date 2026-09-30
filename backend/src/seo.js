@@ -356,7 +356,7 @@ function productLd(base, p, url) {
     '@id': `${url}#product`,
     name: p.name,
     url,
-    sku: `TRV-${p.id}`,
+    sku: String(p.id),
     description: p.description || undefined,
     category: catLabel(p.category) || undefined,
     image: images.length ? images : undefined,
@@ -407,7 +407,6 @@ function pdpAccHtml(p, v) {
   if ((p.extras || []).length) rows.push(['Extras', p.extras.map((e) => e.name + (e.price ? ` (+AED ${aed(e.price)})` : '')).join(', ')]);
   const per = p.personalization;
   if (per) rows.push(['Personalisation', `${per.required ? 'Required' : 'Optional'}, up to ${per.maxLen} characters`]);
-  rows.push(['Trove reference', `TRV-${p.id}`]);
   const house = !!p.shop.isHouse;
   const since = sinceLabel(v.joined);
   const meta = [house ? '' : v.location, since ? `On Trove since ${since}` : ''].filter(Boolean).join(' · ');

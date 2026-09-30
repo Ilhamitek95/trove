@@ -98,7 +98,7 @@ test('a piece: one photo has no thumbnail rail, details come only from real fiel
   // the accordion: Details + About the maker, nothing invented
   assert.match(page, /<details class="acc" open><summary>Details/);
   assert.match(page, /<dt>Category<\/dt><dd>Ceramics<\/dd>/);
-  assert.match(page, /<dt>Trove reference<\/dt><dd>TRV-\d+<\/dd>/);
+  assert.doesNotMatch(page, /Trove reference|TRV-\d/, 'no internal ids on the product page (owner, 2026-09-30)');
   assert.match(page, /<summary>About the maker/);
   for (const invented of [/Dimensions/, /Dishwasher/i, /Care<\/summary>/, /Lead time/]) assert.doesNotMatch(page, invented);
   // personalised pieces: the returns rule is said under the field, which is 16px on phones
