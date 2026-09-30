@@ -29,7 +29,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const MARKER = 'qa-cleanup-2026-09-30';
+// Bumped for each QA pass on live: a new marker makes the boot step run once more.
+// r2 (2026-09-30 evening): the second full review's test accounts, shops and listings.
+const MARKER = 'qa-cleanup-2026-09-30-r2';
 const QA_EMAIL_RE = /^ilhamitek95\+trove-qa-[^@\s]+@gmail\.com$/i;
 const QA_EMAIL_LIKE = 'ilhamitek95+trove-qa-%@gmail.com';
 // Order states in which no money has moved.

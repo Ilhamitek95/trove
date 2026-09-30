@@ -249,7 +249,7 @@ test('admin endpoint shows the summary; everyone else gets 403', async () => {
   const admin = await ctx.loginAs('ilhamitek95@gmail.com', 'testpass123');
   const res = await ctx.api('GET', '/api/admin/maintenance/qa-cleanup', { cookie: admin });
   assert.equal(res.status, 200);
-  assert.equal(res.data.marker, 'qa-cleanup-2026-09-30');
+  assert.equal(res.data.marker, 'qa-cleanup-2026-09-30-r2');
   assert.ok(res.data.appliedAt);
   assert.ok(res.data.summary.shops.some((s) => s.slug === 'qa-test-delete'));
 });
@@ -286,5 +286,5 @@ test('server.js runs the cleanup at boot, before the app starts serving', () => 
   assert.ok(hook > 0, 'boot hook present');
   assert.ok(hook < src.indexOf('app.listen('), 'runs before listen');
   const text = qa.describe(qa.lastSummary(db).summary);
-  assert.match(text, /QA cleanup qa-cleanup-2026-09-30/);
+  assert.match(text, /QA cleanup qa-cleanup-2026-09-30-r2/);
 });
