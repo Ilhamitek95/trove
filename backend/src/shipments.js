@@ -63,8 +63,9 @@ function noteFor(status, carrier, tracking) {
 
 /**
  * Re-derive the parent order's state from its shipments, both ways: all
- * delivered → fulfilled (plus order-level delivery + return-window stamps for
- * the buyer view); any un-delivered → back to paid, stamps cleared.
+ * delivered → fulfilled (plus order-level delivery + the buyer's return
+ * deadline: last delivery + the order's return days); any un-delivered →
+ * back to paid, stamps cleared.
  */
 function deriveOrderStatus(orderId) {
   const notDelivered = db.prepare("SELECT COUNT(*) AS c FROM shipments WHERE order_id=? AND status!='delivered'").get(orderId).c;
@@ -72,8 +73,9 @@ function deriveOrderStatus(orderId) {
     db.prepare(`UPDATE orders SET
         status = CASE WHEN status='paid' THEN 'fulfilled' ELSE status END,
         delivered_at = COALESCE(delivered_at, (SELECT MAX(delivered_at) FROM shipments WHERE order_id=orders.id)),
-        return_window_ends_at = COALESCE(return_window_ends_at, (SELECT MAX(return_window_ends_at) FROM shipments WHERE order_id=orders.id))
-      WHERE id=?`).run(orderId);
+        return_window_ends_at = COALESCE(return_window_ends_at, datetime((SELECT MAX(delivered_at) FROM shipments WHERE order_id=orders.id),
+          '+' || COALESCE(return_days, ?) || ' days'))
+      WHERE id=?`).run(require('./fees').RETURN_WINDOW_DAYS, orderId);
   } else {
     db.prepare("UPDATE orders SET status='paid' WHERE id=? AND status='fulfilled'").run(orderId);
     db.prepare('UPDATE orders SET delivered_at=NULL, return_window_ends_at=NULL WHERE id=?').run(orderId);
@@ -83,7 +85,7 @@ function deriveOrderStatus(orderId) {
 /**
  * The single funnel for delivery confirmation — the seller's "Mark delivered"
  * button and the courier webhook both land here. Idempotent: a shipment
- * already delivered is returned untouched (the 7-day return window is never
+ * already delivered is returned untouched (the 15-day return window is never
  * re-stamped or extended by a duplicate confirmation).
  */
 function markDelivered(shipmentId, source = 'seller') {

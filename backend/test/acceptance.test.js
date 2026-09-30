@@ -70,7 +70,8 @@ test('worked example: pay 230 → credit 120 → deliver → window → run → 
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh.id } });
   let mine = await ctx.api('GET', '/api/seller/settlements', { cookie: sellerCookie });
   assert.equal(mine.data.pendingCents, 12000, 'inside the window: pending, not payable');
-  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-8 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(sh.id);
+  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(sh.id);
+  db.prepare("UPDATE orders SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=(SELECT order_id FROM shipments WHERE id=?)").run(sh.id);
 
   // 4. Tuesday run → one settlement item of 120 with the PO reference.
   const run = await ctx.api('POST', '/api/admin/settlements/run', { cookie: adminCookie, body: {} });

@@ -35,12 +35,17 @@ router.get('/orders', requireAuth, (req, res) => {
         })),
         shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),
         returns: {
-          // Item-level: eligible while the window is open AND something is
+          // Unit-level: eligible while the window is open AND some unit is
           // still free to send back. Money facts are server-fed; the picker
-          // only ever sums the item prices below minus the fee.
-          eligible: !returns.ineligibleReason(o) && retItems.some((i) => !i.locked),
+          // only ever sums the unit prices below minus the fee, and the fee
+          // applies to 'changed my mind' only (faults collect free).
+          eligible: !returns.ineligibleReason(o) && retItems.some((i) => i.available > 0),
           deadline: returns.deadline(o),
-          fee: returns.feeCents(o) / 100,
+          windowDays: o.return_days || returns.BUYER_RETURN_DAYS,
+          fee: returns.changeOfMindFee(o) / 100,
+          feeReasons: ['changed-mind'],
+          reasons: Object.entries(returns.REASONS).map(([value, label]) => ({ value, label })),
+          personalisedReasons: [...returns.FAULT_REASONS],
           items: retItems,
           requests: reqStmt.all(o.id).map((r) => returns.shape(r)),
         },
@@ -50,8 +55,8 @@ router.get('/orders', requireAuth, (req, res) => {
 });
 
 /* ---------------- Return requests (buyer) ----------------
- * Item-level returns: pick the items, a reason, a few words and at least one
- * photo. The request lands with Trove's admin (who approves/declines) and
+ * Unit-level returns: pick the items (and how many of each), a reason, a few
+ * words and at least one photo. The request lands with Trove's admin (who approves/declines) and
  * shows on the shops' order views. Money rules live in src/returns.js.
  */
 router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) => {
@@ -67,7 +72,7 @@ router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) =>
       order,
       items: returns.requestItems(result.id).map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, image: email.productImage({ images: i.product_images, name: i.name_snapshot }) })),
       money: returns.money(order, result.id),
-      reasonLabel: returns.REASONS[req.body.reason] || req.body.reason,
+      reasonLabel: returns.reasonLabel(req.body.reason),
     });
     email.send({ to: order.email, ...msg }).catch((e) => console.error('return-requested email failed:', e.message));
 

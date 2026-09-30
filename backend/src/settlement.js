@@ -1,17 +1,22 @@
 'use strict';
 /**
- * Settlement engine — the weekly purchase run for consignment suppliers.
+ * Settlement engine — the fortnightly purchase run for consignment suppliers
+ * (every other Tuesday, anchored to fees.SETTLEMENT_ANCHOR_DATE).
  *
  * Lifecycle:  credit_sale (pending, return window open)
- *          →  eligible (delivered + 7-day window closed + order not refunded)
+ *          →  eligible (delivered + the buyer's 15-day return window closed
+ *                       + no return still open for it + order not refunded)
  *          →  settlement draft (swept, settlement_id stamped)
  *          →  exported (bank CSV, the ONLY place an IBAN is ever decrypted)
  *          →  paid (negative 'payout' ledger rows + self-billed purchase notes)
  *
- * Refund debits net against a supplier's next run; a shop netting ≤ 0 is
- * skipped and its rows stay unswept — that IS the carry-forward mechanism.
- * The eligibility rule lives in exactly one query below; every balance figure
- * shown anywhere derives from it.
+ * Because a credit waits for the buyer's whole return window, a return inside
+ * that window only ever shrinks an UNPAID credit — no clawback. Refund debits
+ * still exist for the exceptions (orders placed under the old 30-day promise,
+ * an admin refund outside the window): they net against a supplier's next
+ * run; a shop netting ≤ 0 is skipped and its rows stay unswept — that IS the
+ * carry-forward mechanism. The eligibility rule lives in exactly one query
+ * below; every balance figure shown anywhere derives from it.
  */
 const fs = require('fs');
 const path = require('path');
@@ -22,8 +27,13 @@ const { UPLOADS_DIR } = require('./uploads');
 
 const PRIVATE_DIR = () => process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
 
-/* A supplier credit is payable when its parcel was delivered, the return
- * window closed BEFORE the run start, and the order was never refunded. */
+/* A supplier credit is payable when its parcel was delivered, its return
+ * window closed BEFORE the run start, the ORDER's buyer window closed too (on
+ * a multi-shop order the buyer's clock starts at the last delivery, so every
+ * other parcel must be delivered first), no return request for that shop's
+ * pieces is still in flight, and the order was never
+ * refunded. Orders placed under the old 30-day promise (return_days set by
+ * migration 016) keep the per-parcel hold they were sold under. */
 const ELIGIBLE_CREDITS = `
   SELECT b.id, b.shop_id, b.order_id, b.amount_cents
   FROM seller_balances b
@@ -33,7 +43,17 @@ const ELIGIBLE_CREDITS = `
     AND o.refunded_at IS NULL
     AND sh.status = 'delivered'
     AND sh.return_window_ends_at IS NOT NULL
-    AND sh.return_window_ends_at < ?`;
+    AND sh.return_window_ends_at < @at
+    AND (o.return_days IS NOT NULL OR (
+      COALESCE(o.return_window_ends_at, sh.return_window_ends_at) < @at
+      AND NOT EXISTS (SELECT 1 FROM shipments s2
+        WHERE s2.order_id = b.order_id AND s2.status NOT IN ('delivered','cancelled'))))
+    AND NOT EXISTS (
+      SELECT 1 FROM return_requests rr
+      JOIN return_request_items ri ON ri.request_id = rr.id
+      JOIN order_items oi ON oi.id = ri.order_item_id
+      WHERE rr.order_id = b.order_id AND oi.shop_id = b.shop_id
+        AND rr.status IN ('requested','approved','collected'))`;
 
 /* Unswept refund debits apply to the very next run, no window. */
 const OPEN_DEBITS = `
@@ -52,7 +72,7 @@ function gather(runStart) {
     if (!perShop.has(shopId)) perShop.set(shopId, { creditIds: [], debitIds: [], creditCents: 0, debitCents: 0 });
     return perShop.get(shopId);
   };
-  for (const c of db.prepare(ELIGIBLE_CREDITS).all(runStart)) {
+  for (const c of db.prepare(ELIGIBLE_CREDITS).all({ at: runStart })) {
     const b = bucket(c.shop_id);
     b.creditIds.push(c.id);
     b.creditCents += c.amount_cents;
@@ -220,10 +240,50 @@ to Trove at order confirmation. Bank transfer reference: “${item.bank_referenc
     .run(item.id, item.shop_id, path.join(dir, file));
 }
 
+/* ---------------- the fortnightly schedule ----------------
+ * Run dates are the anchor Tuesday plus whole multiples of the interval, in
+ * both directions, so the calendar never depends on when the server booted
+ * or whether a run was skipped. Dates are plain YYYY-MM-DD (Dubai calendar
+ * day); the arithmetic runs on UTC midnights so no timezone can shift it. */
+const DAY_MS = 86400000;
+const toDay = (d) => Math.floor(Date.parse(`${d}T00:00:00Z`) / DAY_MS);
+const fromDay = (n) => new Date(n * DAY_MS).toISOString().slice(0, 10);
+const interval = () => Math.max(1, Math.round(fees.SETTLEMENT_INTERVAL_DAYS));
+/** Today's date on the Dubai calendar (UTC+4, no daylight saving). */
+const dubaiToday = (now = Date.now()) => new Date(now + 4 * 3600000).toISOString().slice(0, 10);
+
+/** True when `date` (YYYY-MM-DD) is a settlement run day. */
+function isRunDate(date) {
+  const diff = toDay(date) - toDay(fees.SETTLEMENT_ANCHOR_DATE);
+  return Number.isFinite(diff) && ((diff % interval()) + interval()) % interval() === 0;
+}
+
+/** The first run date on or after `from` (YYYY-MM-DD, default today in Dubai). */
+function nextRunDate(from = dubaiToday()) {
+  const f = toDay(from), a = toDay(fees.SETTLEMENT_ANCHOR_DATE), n = interval();
+  const k = Math.ceil((f - a) / n);
+  return fromDay(a + k * n);
+}
+
+/** The next `count` run dates from `from` — for the dashboard and the tests. */
+function upcomingRunDates(count = 3, from = dubaiToday()) {
+  const out = [nextRunDate(from)];
+  while (out.length < count) out.push(fromDay(toDay(out[out.length - 1]) + interval()));
+  return out;
+}
+
+/** Human label for the schedule, e.g. 'Every other Tuesday'. */
+function scheduleLabel() {
+  const n = interval();
+  if (n === 7) return 'Every Tuesday';
+  if (n === 14) return 'Every other Tuesday';
+  return `Every ${n} days`;
+}
+
 /** A supplier's money view — every figure derived from the same eligibility rule. */
 function balances(shopId) {
   const now = nowSql();
-  const eligible = db.prepare(ELIGIBLE_CREDITS + ' AND b.shop_id = ?').all(now, shopId)
+  const eligible = db.prepare(ELIGIBLE_CREDITS + ' AND b.shop_id = @shop').all({ at: now, shop: shopId })
     .reduce((s, r) => s + r.amount_cents, 0);
   const allUnsweptCredits = db.prepare(`
     SELECT COALESCE(SUM(b.amount_cents),0) AS c FROM seller_balances b
@@ -241,4 +301,7 @@ function balances(shopId) {
   };
 }
 
-module.exports = { preview, run, exportCsv, markPaid, balances, payoutSetupComplete, ELIGIBLE_CREDITS };
+module.exports = {
+  preview, run, exportCsv, markPaid, balances, payoutSetupComplete, ELIGIBLE_CREDITS,
+  isRunDate, nextRunDate, upcomingRunDates, scheduleLabel, dubaiToday,
+};

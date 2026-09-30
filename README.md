@@ -3,7 +3,8 @@
 A curated multi-vendor marketplace — independent shops plus an own house label
 (*trove label*). Shoppers buy from Trove; Trove **purchases each sold piece
 from its supplier** (list price minus a 40% margin) and settles with suppliers
-weekly by bank transfer once the buyer's return window closes. See
+fortnightly (every other Tuesday) by bank transfer once the buyer's 15-day
+return window closes. See
 [Payment architecture: two rails](#payment-architecture-two-rails).
 
 ```
@@ -15,7 +16,7 @@ trove/
 **This is now a working app, not just a prototype.** The pages talk to the
 backend for real: sign-up / sign-in, a real product database, a cart that checks
 out through Stripe, buyer orders & addresses, and a seller dashboard with product
-management, delivery tracking and weekly supplier settlements.
+management, delivery tracking and fortnightly supplier settlements.
 
 The backend serves the storefront from the **same address** (“single-origin”), so
 there is **one thing to run and one thing to deploy**, and logins just work.
@@ -162,15 +163,16 @@ consignment and sit in the graduation queue until the flag turns on.
 
 **The settlement eligibility rule** (one query in `backend/src/settlement.js`,
 everything derives from it): *a supplier credit is payable when its parcel is
-delivered, its 7-day return window closed before the run start, the order was
-never refunded, and the supplier completed payout setup.*
+delivered, the buyer's 15-day return window closed before the run start, no
+return for it is still in flight, the order was never refunded, and the
+supplier completed payout setup.*
 
 ```
 sale (payment succeeds)
   └─ credit_sale on the ledger ..... "pending" while the parcel is undelivered
-                                      or inside the 7-day return window
+                                      or inside the 15-day return window
        └─ eligible ................. window closed, order not refunded
-            └─ Tuesday run ......... settlement DRAFT (one bank line per supplier,
+            └─ fortnightly run ..... settlement DRAFT (one bank line per supplier,
                                       reference "Purchase of handmade goods — PO #n")
                  └─ exported ....... bank CSV (the only place an IBAN is decrypted)
                       └─ paid ...... negative payout row + self-billed purchase note
@@ -187,7 +189,7 @@ Known deviations & properties, on purpose:
   charge; the connect shop's share moves by Transfer in the webhook. A
   destination charge is only used when the whole order belongs to one
   fully-onboarded connect shop.
-- **The cap lags real sales** by up to ~2 weeks (return window + weekly
+- **The cap lags real sales** by up to ~4 weeks (return window + fortnightly
   cadence) because it counts *paid settlements* — that is the point: it
   measures money actually moved.
 - **Cancelling a shipment outside the refund flow** strands its credit as
@@ -212,7 +214,7 @@ Run the test suite with `cd backend && npm test`.
 - **Money flow.** One PaymentIntent is charged on Trove's own Stripe account at
   checkout; when Stripe confirms it, Trove has purchased the goods from its
   suppliers (title transfers) and their purchase price accrues on the supplier
-  ledger for the weekly settlement run. See
+  ledger for the fortnightly settlement run. See
   [Payment architecture: two rails](#payment-architecture-two-rails) and
   `backend/README.md` for the full detail and API reference.
 - **Prices are server-trusted.** The backend recomputes every price from the

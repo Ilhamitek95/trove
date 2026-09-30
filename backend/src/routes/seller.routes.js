@@ -20,6 +20,11 @@ function publicShop(shop) {
   safe.eidFrontProvided = !!eid_front_file;
   safe.eidBackProvided = !!eid_back_file;
   safe.needsIdVerification = !shop.connect_queue && !shop.license_verified_at;
+  // A maker who accepted an older Seller Agreement is asked, gently, to
+  // review the current one (never blocks selling or settlement).
+  const current = require('../config').AGREEMENT_VERSION;
+  safe.currentAgreementVersion = current;
+  safe.agreementUpdateDue = !!(shop.agreement_accepted_at && shop.agreement_version !== current);
   return safe;
 }
 
@@ -376,15 +381,18 @@ function shopReturnShape(rr, shopId) {
   return {
     id: rr.id,
     status: rr.status,
-    reason: returns.REASONS[rr.reason] || rr.reason,
+    reason: returns.reasonLabel(rr.reason),
     details: rr.details,
     images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, lineQty: i.line_qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
     itemsTotal: gross / 100,
     creditImpact: fees.split(gross).net / 100,
     declineReason: rr.decline_reason || null,
     createdAt: rr.created_at,
     decidedAt: rr.decided_at || null,
+    collectionBookedAt: rr.collection_booked_at || null,
+    collectedAt: rr.collected_at || null,
+    refundedAt: rr.refunded_at || null,
   };
 }
 // Latest request that touches this shop's items in an order (for the order card strip).
@@ -394,6 +402,25 @@ const latestShopReturnStmt = () => db.prepare(`
     SELECT 1 FROM return_request_items ri JOIN order_items oi ON oi.id = ri.order_item_id
     WHERE ri.request_id = rr.id AND oi.shop_id = ?)
   ORDER BY rr.created_at DESC, rr.id DESC LIMIT 1`);
+
+/**
+ * 'Revenue · 30d' on the seller overview: the list value of this shop's
+ * pieces on paid orders placed in the last 30 days, NET of refunds — a
+ * whole-order refund drops the order, a refunded return drops just the
+ * units that went back. Gross list prices (the buyer-facing number), in fils.
+ */
+function revenueSummary(shopId, days = 30) {
+  const row = db.prepare(`
+    SELECT COALESCE(SUM(oi.price_cents * oi.qty), 0) AS gross,
+           COALESCE(SUM(CASE WHEN o.refunded_at IS NOT NULL THEN oi.price_cents * oi.qty
+             ELSE oi.price_cents * MIN(oi.qty, COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
+               JOIN return_requests rr ON rr.id = ri.request_id
+               WHERE ri.order_item_id = oi.id AND rr.status = 'refunded'), 0)) END), 0) AS refunded
+    FROM order_items oi JOIN orders o ON o.id = oi.order_id
+    WHERE oi.shop_id = ? AND o.status IN ('paid','fulfilled')
+      AND o.created_at >= datetime('now', ?)`).get(shopId, `-${days} days`);
+  return { days, grossCents: row.gross, refundedCents: row.refunded, revenueCents: row.gross - row.refunded };
+}
 
 // The buyer's email is deliberately NOT selected here. Trove is the merchant of
 // record, so a shop never needs to contact the customer directly — the packing
@@ -409,7 +436,7 @@ router.get('/orders', requireSeller, (req, res) => {
     WHERE sh.shop_id = ?
     ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
   const latestReq = latestShopReturnStmt();
-  res.json({ orders: rows.map((r) => {
+  res.json({ summary: revenueSummary(req.shop.id), orders: rows.map((r) => {
     const rr = latestReq.get(r.order_id, req.shop.id);
     return {
       ...shipments.shape(r),
@@ -459,7 +486,7 @@ router.get('/returns', requireSeller, (req, res) => {
 
 // Advance a shipment's tracking: status + courier + tracking number.
 // 'delivered' goes through the shared markDelivered funnel (same path as the
-// courier webhook) so the 7-day return-window clock is stamped exactly once;
+// courier webhook) so the 15-day return-window clock is stamped exactly once;
 // stepping BACK from delivered is blocked once the credit is in a settlement.
 // Courier label for a booked parcel — the courier's barcode is what makes the
 // parcel trackable through their depots, so the maker prints this one.
@@ -627,8 +654,22 @@ router.post('/payout-setup', requireSeller, (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Supplier money view: pending (return window still open), payable (next
-// settlement run — may be negative after refunds), settled to date, and the
+// POST /api/seller/agreement { accept: true } → accept the CURRENT Seller
+// Agreement (after a version bump). Records the version, the time and a hash
+// of the exact text accepted — the same three facts payout setup records.
+// Deliberately separate from payout setup: no bank details are re-asked.
+router.post('/agreement', requireSeller, (req, res) => {
+  if ((req.body || {}).accept !== true) return res.status(400).json({ error: 'Tick the box to accept the Seller Agreement' });
+  const cfg = require('../config');
+  const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);
+  const agreementHash = require('../crypto').sha256(require('fs').readFileSync(file, 'utf8'));
+  db.prepare("UPDATE shops SET agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=? WHERE id=?")
+    .run(cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+  res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
+});
+
+// Supplier money view: pending (the buyer's 15-day return window still open),
+// payable (next fortnightly settlement run — may be negative after refunds), settled to date, and the
 // settlement history with purchase-note downloads. Every figure derives from
 // the single eligibility rule in src/settlement.js.
 router.get('/settlements', requireSeller, (req, res) => {
@@ -648,6 +689,11 @@ router.get('/settlements', requireSeller, (req, res) => {
     pendingCents: bal.pendingCents,
     payableCents: bal.payableCents,
     settledCents: bal.settledCents + legacyPaid,
+    // The fortnightly calendar + the hold, so the dashboard never hard-codes them.
+    schedule: settlement.scheduleLabel(),
+    nextRunDate: settlement.nextRunDate(),
+    upcomingRunDates: settlement.upcomingRunDates(3),
+    returnWindowDays: fees.RETURN_WINDOW_DAYS,
     history: history.map((h) => ({
       id: h.id, runDate: h.run_date, status: h.status, paidAt: h.paid_at,
       amountCents: h.amount_cents, creditCents: h.credit_cents, debitCents: h.debit_cents,

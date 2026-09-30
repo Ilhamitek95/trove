@@ -129,18 +129,27 @@ try {
 if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
   const cron = require('node-cron');
   let settling = false;
-  // Weekly settlement run — Tuesdays 06:00 Dubai time. Creates the DRAFT only;
-  // an admin reviews, exports the bank CSV, and marks it paid in the panel.
+  // Fortnightly settlement run — every other Tuesday, 06:00 Dubai time. The
+  // cron fires every Tuesday; settlement.isRunDate() keeps only the Tuesdays
+  // on the fixed fortnightly calendar (fees.SETTLEMENT_ANCHOR_DATE +
+  // multiples of SETTLEMENT_INTERVAL_DAYS). Creates the DRAFT only; an admin
+  // reviews, exports the bank CSV, and marks it paid in the panel.
   cron.schedule('0 6 * * 2', () => {
     if (settling) return;
+    const settlement = require('./settlement');
+    const today = settlement.dubaiToday();
+    if (!settlement.isRunDate(today)) {
+      console.log(`settlement: ${today} is an off week — next run ${settlement.nextRunDate(today)}`);
+      return;
+    }
     settling = true;
     try {
-      const result = require('./settlement').run();
+      const result = settlement.run(today);
       console.log(result
-        ? `weekly settlement #${result.settlementId}: ${result.items.length} supplier(s), AED ${(result.totalCents / 100).toFixed(2)}`
-        : 'weekly settlement: nothing payable this week');
+        ? `fortnightly settlement #${result.settlementId}: ${result.items.length} supplier(s), AED ${(result.totalCents / 100).toFixed(2)}`
+        : 'fortnightly settlement: nothing payable this run');
     } catch (e) {
-      console.error('weekly settlement failed:', e);
+      console.error('fortnightly settlement failed:', e);
     } finally {
       settling = false;
     }

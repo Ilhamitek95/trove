@@ -570,7 +570,7 @@
             <h3 style="font-size:22px;font-weight:600;margin-bottom:6px">Next payout</h3>
             <div class="row"><span class="muted">Available</span><span class="v" id="poAvail">—</span></div>
             <div class="row"><span class="muted">Arrives</span><span id="poDate">—</span></div>
-            <div class="row"><span class="muted">Schedule</span><span id="poSched">Weekly · Fridays</span></div>
+            <div class="row"><span class="muted">Schedule</span><span id="poSched">Every other Tuesday</span></div>
             <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:16px" onclick="go('payments')">View payments →</button>
           </div>
         </div>
@@ -814,7 +814,10 @@ let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',payoutT
 let products=[];
 let orders=[];
 let ME=null;
-let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[]};
+let SETTLE={tier:'consignment',commissionPercent:20,payoutSetupComplete:false,pendingCents:0,payableCents:0,settledCents:0,history:[],schedule:'Every other Tuesday',nextRunDate:null,returnWindowDays:15};
+/* The return window and the fortnightly calendar come from the server (fees.js) — never hard-coded here. */
+const retDays=()=>Number(SETTLE.returnWindowDays)||15;
+function runDayLabel(d){ const t=new Date(String(d)+'T00:00:00Z'); return isNaN(t)?String(d):t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}); }
 const feePct=()=>SETTLE.commissionPercent||20;
 let editingId=null, drawerStatus='live', drawerDirty=false;
 
@@ -869,6 +872,7 @@ function applyShop(s){
     pickupAddress:s.pickup_address||'',pickupPhone:s.pickup_phone||'',
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
+    agreementUpdateDue:!!s.agreementUpdateDue,currentAgreementVersion:s.currentAgreementVersion||'',
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
@@ -908,10 +912,11 @@ async function reloadProducts(){
   try{ const {products:ps}=await TroveAPI.api('/api/seller/products'); products=(ps||[]).map(mapProduct); }catch(_){ products=[]; }
   renderProducts(); renderOverview();
 }
+var ORDER_SUMMARY=null;
 async function reloadOrders(){
   // Each row is one shipment (this shop's items within an order), with an `order` summary attached.
-  try{ const {orders:o}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; }
-  catch(_){ orders=[]; }
+  try{ const {orders:o,summary}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; ORDER_SUMMARY=summary||null; }
+  catch(_){ orders=[]; ORDER_SUMMARY=null; }
   // The sidebar count belongs to the orders load, not to opening Products —
   // it used to sit in renderProducts() and read 0 until you happened to go there.
   const openOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
@@ -926,7 +931,9 @@ async function refreshStripeStatus(){
 function renderOverview(){
   const live=products.filter(p=>p.status==='live').length;
   const drafts=products.filter(p=>p.status==='draft').length;
-  const revenue=orders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+(o.itemTotal||0),0);
+  // Revenue · 30d comes from the server: paid orders of the last 30 days, less
+  // anything refunded (whole orders and returned units alike).
+  const revenue=ORDER_SUMMARY?ORDER_SUMMARY.revenueCents/100:0;
   const sc=SHOP.stripeStatus;
   const managed=SETTLE.tier!=='connect';
   const net=managed ? (SETTLE.payableCents/100) : revenue*(1-feePct()/100);
@@ -937,14 +944,14 @@ function renderOverview(){
   $('stPayout').textContent=aed(net);
   $('stPayoutSub').textContent=managed ? 'ready for the next settlement' : (sc.chargesEnabled?('after the '+feePct()+'% margin'):'connect Stripe');
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
-  if(deltas[0]){deltas[0].textContent='paid & fulfilled';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
+  if(deltas[0]){deltas[0].textContent=ORDER_SUMMARY&&ORDER_SUMMARY.refundedCents?('after '+aed(ORDER_SUMMARY.refundedCents/100)+' refunded'):'paid, less refunds';deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
   if(deltas[1]){deltas[1].textContent='all time';deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=drafts+' draft'+(drafts===1?'':'s');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
-  $('ovBanner').innerHTML = reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
+  $('ovBanner').innerHTML = agreementBannerHTML() + reviewBannerHTML() + graduationBannerHTML() + bannerHTML(managed, sc);
   renderOverviewChart();
   $('poAvail').textContent=aed(net);
-  $('poDate').textContent=managed ? 'Tuesdays · by Trove' : (sc.payoutsEnabled?'On your Stripe schedule':'—');
-  if($('poSched'))$('poSched').textContent=managed ? 'Weekly · Tuesdays' : 'Your Stripe schedule';
+  $('poDate').textContent=managed ? (SETTLE.nextRunDate?runDayLabel(SETTLE.nextRunDate)+' · by Trove':'Every other Tuesday · by Trove') : (sc.payoutsEnabled?'On your Stripe schedule':'—');
+  if($('poSched'))$('poSched').textContent=managed ? (SETTLE.schedule||'Every other Tuesday') : 'Your Stripe schedule';
   $('ovOrders').innerHTML = orders.length
     ? `<tbody>${orders.slice(0,4).map(o=>`<tr>
         <td style="font-weight:700">${esc(o.order?o.order.publicId:'')}</td><td>${esc((o.order&&o.order.ship&&o.order.ship.name)||'—')}</td><td style="color:var(--muted)">${(o.items||[]).map(i=>esc(i.name)+(i.qty>1?' ×'+i.qty:'')).join(', ')}</td>
@@ -1375,7 +1382,8 @@ function shipRowHTML(o){
   const name=(o.order&&o.order.ship&&o.order.ship.name)||'—';
   const rr=o.returnRequest;
   const retFlag=rr&&rr.status==='requested'?' · <span class="sr-ret">↩ return requested</span>'
-    :rr&&rr.status==='approved'?' · <span class="sr-ret">↩ return approved</span>':'';
+    :rr&&['approved','collected'].includes(rr.status)?' · <span class="sr-ret">↩ return on its way back</span>'
+    :rr&&rr.status==='refunded'?' · <span class="sr-ret">↩ returned</span>':'';
   return `<div class="card ship-row" onclick="toggleShip(${Number(o.id)})">
       <span class="order-pill ${shipPill(o.status)}">${esc(o.statusLabel)}</span>
       <div style="min-width:0"><div class="sr-id">${esc(o.order?o.order.publicId:'')}</div>
@@ -1431,10 +1439,11 @@ function returnStripHTML(o){
   const rr=o.returnRequest; if(!rr)return'';
   const photos=(rr.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
   const note=rr.status==='requested'?`Trove is reviewing it — nothing for you to do yet. If it's approved, ${aed(rr.creditImpact||0)} of this sale's credit reverses.`
-    :rr.status==='approved'?`Return approved — the courier will bring the item${(rr.items||[]).length>1?'s':''} back, and ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.`
+    :RR_OPEN(rr.status)?`${RR_STEP[rr.status]} — the courier brings the item${(rr.items||[]).length>1?'s':''} back to you. Once the buyer is refunded, ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts; until then the sale is held, not paid out.`
+    :rr.status==='refunded'?`Returned and refunded — ${aed(rr.creditImpact||0)} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.`
     :"Trove declined the request — nothing changes for you.";
   return `<div class="sc-return">
-    <div class="rr-hd">↩ ${rr.status==='requested'?'Return requested by the buyer':rr.status==='approved'?'Return approved by Trove':'Return declined by Trove'} · ${fmtDate(rr.createdAt)}</div>
+    <div class="rr-hd">↩ ${rr.status==='requested'?'Return requested by the buyer':RR_OPEN(rr.status)?'Return approved by Trove · '+RR_STEP[rr.status].toLowerCase():rr.status==='refunded'?'Returned and refunded':'Return declined by Trove'} · ${fmtDate(rr.createdAt)}</div>
     ${rr.items&&rr.items.length?`<div class="rr-body" style="margin-top:6px"><b>${rrItemsLine(rr)}</b> · ${aed(rr.itemsTotal||0)}</div>`:''}
     <div class="rr-body">${esc(rr.reason)}${rr.details?' — '+esc(rr.details):''}</div>
     ${photos?`<div class="rr-ph">${photos}</div>`:''}
@@ -1563,7 +1572,10 @@ async function reloadReturns(){
   if(pill){ pill.textContent=open; pill.style.display=open?'':'none'; }
   if($('view-returns').classList.contains('active'))renderReturnsView();
 }
-function returnPill(s){ return s==='requested'?'new':s==='approved'?'fulfilled':'shipped'; }
+function returnPill(s){ return s==='requested'?'new':['approved','collected','refunded'].includes(s)?'fulfilled':'shipped'; }
+/* A return's steps after Trove approves it: collection booked → collected → refunded. */
+const RR_STEP={approved:'Collection booked',collected:'Collected from the buyer',refunded:'Refunded'};
+const RR_OPEN=s=>s==='approved'||s==='collected';
 function renderReturnsView(){
   const wrap=$('returnList');
   if(!returnRequests.length){
@@ -1573,17 +1585,19 @@ function renderReturnsView(){
   wrap.innerHTML=returnRequests.map(r=>{
     const photos=(r.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
     const items=(r.items||[]).map(i=>`<div class="sc-li" style="padding:8px 0">
-        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
+        <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0}${i.lineQty>i.qty?' of '+Number(i.lineQty):''} · ${aed(i.price)} each${optLabel(i.options)?' · '+esc(optLabel(i.options)):''}${exText(i.extras)?' · '+esc(exText(i.extras)):''}</div></div>
         <div class="pr" style="margin-left:auto">${aed(i.price*i.qty)}</div>
       </div>`).join('');
     const state=r.status==='requested'
       ? `Trove is reviewing this request — nothing for you to do yet. If it's approved, <b>${aed(r.creditImpact||0)}</b> of the sale's credit reverses on your next settlement.`
-      : r.status==='approved'
-      ? `Approved by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — the courier brings the item${(r.items||[]).length>1?'s':''} back and <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock in Products once it's back.`
+      : RR_OPEN(r.status)
+      ? `Approved by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} · ${RR_STEP[r.status].toLowerCase()}${r.collectedAt?' on '+fmtDate(r.collectedAt):''} — the courier brings the item${(r.items||[]).length>1?'s':''} back to you. When the buyer is refunded, <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts; the sale is held until then.`
+      : r.status==='refunded'
+      ? `Returned and refunded${r.refundedAt?' on '+fmtDate(r.refundedAt):''} — <b>${aed(r.creditImpact||0)}</b> of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock in Products once it's back.`
       : `Declined by Trove${r.decidedAt?' on '+fmtDate(r.decidedAt):''} — nothing changes for you.${r.declineReason?' Reason given to the buyer: “'+esc(r.declineReason)+'”':''}`;
     return `<div class="card" style="margin-bottom:14px${r.status!=='requested'?';opacity:.78':''}">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':esc(r.status)}</span>
+        <span class="order-pill ${returnPill(r.status)}">${r.status==='requested'?'awaiting Trove':esc((RR_STEP[r.status]||r.status).toLowerCase())}</span>
         <b style="font-size:13.5px">${esc(r.order?r.order.publicId:'')}</b>
         <span style="color:var(--muted);font-size:12px;margin-left:auto">requested ${fmtDate(r.createdAt)}</span>
       </div>
@@ -1682,11 +1696,27 @@ function graduationBannerHTML(){
       ?'Your sales the last month passed AED 12,000 — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It\'s optional, and nothing changes until you\'re ready. <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">Apply for an e-Trader licence ↗</a>'
       :'You applied with a trade licence. Once the Trove team verifies it, we\'ll set up direct per-sale payouts for you — no action needed.'}</p></div></div>`;
 }
+/* A newer Seller Agreement: a gentle prompt, never a block — selling and
+   settlement carry on while it is showing. */
+function agreementBannerHTML(){
+  if(!SHOP.agreementUpdateDue)return '';
+  return `<div class="banner" id="agreeBanner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
+    <div><h4>Please review and accept the updated Seller Agreement</h4><p>Version ${esc(SHOP.currentAgreementVersion)} moves payouts to every other Tuesday and pays each sale once the buyer's ${retDays()}-day return window has closed. <a href="/seller-agreement" target="_blank" rel="noopener" style="color:var(--cream);text-decoration:underline;font-weight:700">Read the updated agreement</a></p></div>
+    <button class="btn btn-coral" onclick="acceptAgreement(this)">I accept</button></div>`;
+}
+async function acceptAgreement(btn){
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const {shop}=await TroveAPI.api('/api/seller/agreement',{method:'POST',body:{accept:true}});
+    applyShop(shop); toast('Thank you — the updated Seller Agreement is accepted'); renderOverview();
+    if($('view-payments')&&$('view-payments').innerHTML)renderPayments();
+  }catch(e){ toast(e.message||'Could not save'); if(btn){btn.disabled=false;btn.textContent='I accept';} }
+}
 function bannerHTML(managed, sc){
   if(managed){
     return (SETTLE.payoutSetupComplete || (SHOP.bank && SHOP.bank.iban)) ? '' :
       `<div class="banner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
-        <div><h4>Finish your payout setup</h4><p>Add your bank details so Trove can pay for the pieces it buys from you — until then you're left out of the weekly settlement run.</p></div>
+        <div><h4>Finish your payout setup</h4><p>Add your bank details so Trove can pay for the pieces it buys from you — until then you're left out of the fortnightly settlement run.</p></div>
         <button class="btn btn-coral" onclick="go('payments')">Set up payouts</button></div>`;
   }
   return sc.chargesEnabled ? '' :
@@ -1709,9 +1739,10 @@ function consignmentPayoutUI(){
         <div class="up">Your money</div>
         <div class="bal">${money(s.payableCents)}</div>
         <div class="bal-sub">${s.payableCents<0?'refunds carried forward — nets against your next purchases':'ready for the next settlement run'}</div>
-        <div class="fee-row"><span class="muted">In the 7-day return window</span><span>${money(s.pendingCents)}</span></div>
+        <div class="fee-row"><span class="muted">In the ${retDays()}-day return window</span><span>${money(s.pendingCents)}</span></div>
         <div class="fee-row"><span class="muted">Settled to date</span><span>${money(s.settledCents)}</span></div>
-        <div class="fee-row"><span class="muted">Settlement runs</span><span>Tuesdays · by Trove</span></div>
+        <div class="fee-row"><span class="muted">Settlement runs</span><span>${esc(s.schedule||'Every other Tuesday')} · by Trove</span></div>
+        ${s.nextRunDate?`<div class="fee-row"><span class="muted">Next run</span><span>${runDayLabel(s.nextRunDate)}</span></div>`:''}
         <div class="fee-row"><span class="muted">Purchase price</span><span>your list price − ${s.commissionPercent}%</span></div>
         ${hasBank?'':`<div class="warn">Add your bank details so Trove can pay you →</div>`}
       </div>
@@ -1729,7 +1760,7 @@ function consignmentPayoutUI(){
           <td><span class="order-pill ${SETTLE_STATUS_PILL(h.status)}">${h.status==='paid'?'paid':'processing'}</span></td>
           <td style="text-align:right">${h.purchaseNoteId?`<a class="btn btn-ghost btn-sm" href="${TroveAPI.base}/api/seller/purchase-notes/${h.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlements yet. Once a delivered order clears its 7-day return window, it lands in the next Tuesday run.</div>`}
+       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlements yet. Once a delivered order clears the buyer's ${retDays()}-day return window, it lands in the next fortnightly run.</div>`}
     </div>`;
 }
 
@@ -1807,9 +1838,9 @@ function payoutSetupCard(){
       <div class="fee-row"><span class="muted">IBAN</span><span>${esc(b.iban||'')}</span></div>
       ${SHOP.needsId?`<div class="fee-row"><span class="muted">Emirates ID</span><span>${SHOP.eidFront&&SHOP.eidBack?'On file ✓':'<b style="color:var(--accent-ink)">Missing — update your details</b>'}</span></div>
       <div class="fee-row"><span class="muted">Home address</span><span>${SHOP.sellerAddress?esc(SHOP.sellerAddress):'<b style="color:var(--accent-ink)">Missing</b>'}</span></div>`:''}
-      <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}</span></div>
+      <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}${SHOP.agreementUpdateDue?` · <a href="#" onclick="acceptAgreement();return false" style="color:var(--accent-ink)">accept ${esc(SHOP.currentAgreementVersion)}</a>`:''}</span></div>
       <button class="btn btn-ghost" onclick="PAYOUT_EDIT=true;renderPayments()">Update details</button>
-      <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you each Tuesday once the buyer's 7-day return window has closed.</div>
+      <div class="demo-note" style="margin-top:10px">Trove buys every piece you sell at your list price minus ${s.commissionPercent}%, and pays you every other Tuesday once the buyer's ${retDays()}-day return window has closed.</div>
     </div>`;
   }
   return `<div class="card">
@@ -1839,7 +1870,7 @@ function payoutSetupCard(){
       <div class="field"><label>Emirate</label><select id="psAddrEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></div>
     </div>`:''}
     <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:10px 0;cursor:pointer"><input type="checkbox" id="psAgree" style="margin-top:2px;accent-color:var(--coral)">
-      <span>I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--accent-ink)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus ${s.commissionPercent}% and pays me weekly after the 7-day return window.</span></label>
+      <span>I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--accent-ink)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus ${s.commissionPercent}% and pays me fortnightly once the buyer's ${retDays()}-day return window has closed.</span></label>
     <button class="btn btn-dark" onclick="savePayoutSetup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>Save payout details</button>
   </div>`;
 }
@@ -1891,7 +1922,7 @@ async function savePayoutSetup(){
     PSU_ID={front:null,back:null};
     PAYOUT_EDIT=false;
     await reloadPayouts();
-    toast('Payout setup complete — you\'re in the weekly settlement runs');
+    toast('Payout setup complete — you\'re in the fortnightly settlement runs');
     renderPayments(); renderOverview();
   }catch(e){ toast(e.message||'Could not save'); }
 }
@@ -1899,7 +1930,7 @@ async function savePayoutSetup(){
 // storefront footer link) — no raw-markdown modal here.
 function showAgreement(){ window.open('/seller-agreement','_blank','noopener'); }
 
-/* ---------------- ADMIN — weekly settlement run (house/admin only) ---------------- */
+/* ---------------- ADMIN — fortnightly settlement run (house/admin only) ---------------- */
 const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
 async function renderAdminPayouts(){
   const v=$('view-adminpayouts');
@@ -1924,7 +1955,7 @@ async function renderAdminPayouts(){
           <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
           <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(s.netCents)}</td>
         </tr>`).join('')}</tbody></table>`
-       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">Nothing payable — no purchase has cleared its 7-day return window since the last run.</div>`}
+       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">Nothing payable — no purchase has cleared the buyer's ${retDays()}-day return window since the last run.</div>`}
       ${held.length?`<div style="margin-top:12px;font-size:12.5px;color:var(--muted);font-weight:600">Held back: ${held.map(h=>`${esc(h.name)} (${money(h.netCents)} — ${EXCLUDE_REASON[h.reason]||h.reason})`).join(' · ')}</div>`:''}
     </div>`;
   const history=`
@@ -1942,7 +1973,7 @@ async function renderAdminPayouts(){
           </div>
           <div style="margin-top:8px;font-size:13px;color:var(--muted);font-weight:600">${st.items.map(i=>`${esc(i.shopName)} · ${money(i.amountCents)}${i.purchaseNoteId?` · <a href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">note</a>`:''}`).join(' &nbsp;—&nbsp; ')}</div>
         </div>`).join('')
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
+       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">No settlement runs yet — they happen every other Tuesday${preview.nextRunDate?` (next: ${runDayLabel(preview.nextRunDate)})`:''}, or run one above.</div>`}
     </div>`;
   v.innerHTML = `<div class="sec-head" style="margin-bottom:14px"><span class="n">Pay your consignment suppliers: run the settlement, upload the bank CSV to the bank, send the transfers, then mark it paid.</span></div>` + due + history;
 }

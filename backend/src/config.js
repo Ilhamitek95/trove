@@ -11,7 +11,7 @@
  */
 const on = (v) => v === '1' || v === 'true';
 
-const AGREEMENT_VERSION = 'v3';
+const AGREEMENT_VERSION = 'v4';
 // Services Marketplace legal documents (backend/legal/*). Bump on any change
 // and add a new file — accepted versions are recorded on profiles/bookings.
 const PROVIDER_AGREEMENT_VERSION = 'v1';
@@ -20,8 +20,11 @@ const SERVICES_TERMS_VERSION = 'v1';
 // shown at /terms and /privacy. Same rule: a change is a new file + a bump.
 const BUYER_TERMS_VERSION = 'v1';
 const PRIVACY_VERSION = 'v1';
-const RETURN_WINDOW_DAYS = 7;   // settlement hold: supplier credit payable after this
-const BUYER_RETURN_DAYS = 30;   // shopper-facing: request a return this long after delivery
+// One number (fees.RETURN_WINDOW_DAYS, 15 by default) is both the buyer's
+// return window and the maker's settlement hold — the two names are kept so
+// older readers keep working, but they can no longer drift apart.
+const RETURN_WINDOW_DAYS = require('./fees').RETURN_WINDOW_DAYS;
+const BUYER_RETURN_DAYS = RETURN_WINDOW_DAYS;
 
 module.exports = {
   AGREEMENT_VERSION,

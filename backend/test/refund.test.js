@@ -63,7 +63,8 @@ test('refund AFTER settlement: debit -12000 drives the balance negative and nets
   const oid = await paidOrder('TRV-REF02', 'pi_ref_2');
   const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh.id } });
-  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-8 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(sh.id);
+  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(sh.id);
+  db.prepare("UPDATE orders SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=(SELECT order_id FROM shipments WHERE id=?)").run(sh.id);
   const run = await ctx.api('POST', '/api/admin/settlements/run', { cookie: adminCookie, body: {} });
   assert.equal(run.status, 201);
   await ctx.api('POST', `/api/admin/settlements/${run.data.settlementId}/paid`, { cookie: adminCookie });
@@ -85,7 +86,8 @@ test('refund AFTER settlement: debit -12000 drives the balance negative and nets
   const oid3 = await paidOrder('TRV-REF03', 'pi_ref_3');
   const sh3 = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid3);
   await ctx.api('POST', '/api/delivery/mock/deliver', { body: { shipmentId: sh3.id } });
-  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-8 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(sh3.id);
+  db.prepare("UPDATE shipments SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=?").run(sh3.id);
+  db.prepare("UPDATE orders SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=(SELECT order_id FROM shipments WHERE id=?)").run(sh3.id);
   const preview = await ctx.api('GET', '/api/admin/settlements/preview', { cookie: adminCookie });
   const held = preview.data.excluded.find((x) => x.shopId === shopId);
   assert.ok(held, 'netted to zero → held back');

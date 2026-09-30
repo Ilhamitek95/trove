@@ -46,7 +46,7 @@ test('legal documents are served with a version and hash, and their pages exist'
     assert.equal(page.status, 200);
     assert.ok(page.text.includes('/api/legal/' + doc));
   }
-  assert.equal((await api('GET', '/api/legal/seller-agreement')).data.version, 'v3', 'the seller agreement still serves');
+  assert.equal((await api('GET', '/api/legal/seller-agreement')).data.version, 'v4', 'the seller agreement still serves');
   assert.equal((await api('GET', '/api/legal/nope')).status, 404);
 });
 

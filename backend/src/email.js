@@ -253,7 +253,7 @@ function returnRequested({ order, items, money, reasonLabel }) {
   const inner =
     heading('Coming back')
     + itemsBlock(items)
-    + panel(`Reason: <b>${esc(reasonLabel)}</b><br>If it's approved, <b>${aed(money.refund)}</b> goes back to your original payment method${money.fee ? ` (a ${aed(money.fee)} collection fee applies on orders of AED 200 and below and is already deducted from that figure)` : ' — collection is free for this order'}. The original delivery fee isn't refundable.`)
+    + panel(`Reason: <b>${esc(reasonLabel)}</b><br>If it's approved, our courier collects the item and, once they have it, <b>${aed(money.refund)}</b> goes back to your original payment method${money.fee ? ` (a ${aed(money.fee)} collection fee applies when you change your mind on an order of AED 200 and below, and is already deducted from that figure)` : ' — collection is free for this return'}. The original delivery fee isn't refundable.`)
     + p('Nothing else to do for now — keep the item packed and ready in case the return is approved.');
   return {
     subject: `We've received your return request — order ${order.public_id}`,
@@ -268,16 +268,16 @@ function returnRequested({ order, items, money, reasonLabel }) {
 
 function returnApproved({ order, items, money }) {
   const inner =
-    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>on its way back to your original payment method${money.fee ? ` (${aed(money.fee)} collection fee deducted)` : ''}. Depending on your bank it can take 5–10 business days to appear.`)
+    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>will go back to your original payment method as soon as our courier has collected the item${money.fee ? ` (${aed(money.fee)} collection fee deducted)` : ''}. We'll email you the moment it's on its way.`)
     + heading('Coming back')
     + itemsBlock(items)
-    + p('Our courier will be in touch to collect the item — please keep it packed and ready with any original packaging.');
+    + p('Our courier collection is booked and the courier will be in touch to arrange it — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.');
   return {
-    subject: `Your return is approved — ${aed(money.refund)} on its way`,
+    subject: `Your return is approved — collection booked for order ${order.public_id}`,
     html: layout('Return approved', inner, {
       kicker: `Order <b style="color:${INK}">${esc(order.public_id)}</b>`,
-      intro: `Good news — your return for order <b>${esc(order.public_id)}</b> is approved.`,
-      preheader: `${aed(money.refund)} is on its way back to you.`,
+      intro: `Good news — your return for order <b>${esc(order.public_id)}</b> is approved and the collection is booked.`,
+      preheader: `Collection booked — ${aed(money.refund)} comes back to you once the courier has the item.`,
     }),
   };
 }
@@ -324,3 +324,25 @@ function orderUnavailable({ order, items, soldOut = true }) {
 }
 
 module.exports = { enabled, send, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined };
+
+/* ---- return refunded (appended 2026-09-30) ----
+ * Sent when the courier has collected a returned item (or Trove refunds it
+ * early) and the card refund has gone out. Same { order, items, money }
+ * shape as the other return templates.
+ */
+function returnRefunded({ order, items, money }) {
+  const inner =
+    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>is on its way back to your original payment method${money.fee ? ` (${aed(money.fee)} collection fee deducted)` : ''}. Depending on your bank it can take 5–10 business days to appear.`)
+    + heading('Returned')
+    + itemsBlock(items)
+    + p('Thank you for sending it back. The return and this refund stay with the order in your account.');
+  return {
+    subject: `Your refund is on its way — ${aed(money.refund)} for order ${order.public_id}`,
+    html: layout('Refund on its way', inner, {
+      kicker: `Order <b style="color:${INK}">${esc(order.public_id)}</b>`,
+      intro: `We have your returned item from order <b>${esc(order.public_id)}</b>, so your refund has gone out.`,
+      preheader: `${aed(money.refund)} is on its way back to you.`,
+    }),
+  };
+}
+module.exports.returnRefunded = returnRefunded;

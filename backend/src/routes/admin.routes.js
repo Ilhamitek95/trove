@@ -1,12 +1,12 @@
 'use strict';
 /**
- * Admin — marketplace oversight and the weekly settlement run.
+ * Admin — marketplace oversight and the fortnightly settlement run.
  *
  * On the consignment rail Trove purchases each sold item from its supplier
  * (list price minus the purchase margin) and resells it to the buyer. What
  * Trove owes suppliers accrues on the seller_balances ledger; once a parcel
- * is delivered and its 7-day return window closes, the credit becomes payable
- * and the weekly settlement run (src/settlement.js) batches it into a bank
+ * is delivered and the buyer's 15-day return window closes, the credit becomes
+ * payable and the fortnightly settlement run (src/settlement.js) batches it into a bank
  * transfer with self-billed purchase documentation.
  */
 const express = require('express');
@@ -367,22 +367,37 @@ router.post('/graduation/:shopId/approve', requireAdmin, async (req, res, next) 
 /* ---------------- VAT (quarterly, by rail) ----------------
  * Prices are VAT-inclusive; vat_amount_cents is captured at payment time
  * (consignment: 5/105 of the full charge — Trove is the seller; connect:
- * 5/105 of the margin only). No filing integration — just correct numbers. */
+ * 5/105 of the margin only). Refunds give VAT back: vat_reversed_cents on
+ * the order, one credit note per refunded return (CN-<order>-R<id>) or per
+ * whole-order refund (CN-<order>). Rows are by the SALE's quarter (output
+ * VAT) and creditNotes by the REFUND's quarter, which is when a credit note
+ * adjusts the return. No filing integration — just correct numbers. */
 router.get('/vat-report', requireAdmin, (_req, res) => {
+  const quarterOf = (col) => `strftime('%Y', ${col}) || '-Q' || ((CAST(strftime('%m', ${col}) AS INTEGER) + 2) / 3)`;
   const rows = db.prepare(`
-    SELECT strftime('%Y', title_transferred_at) || '-Q' ||
-           ((CAST(strftime('%m', title_transferred_at) AS INTEGER) + 2) / 3) AS quarter,
+    SELECT ${quarterOf('title_transferred_at')} AS quarter,
            rail,
            COUNT(*) AS orders,
            SUM(total_cents) AS gross_cents,
-           SUM(vat_amount_cents) AS vat_cents
+           SUM(vat_amount_cents) AS vat_cents,
+           SUM(vat_reversed_cents) AS reversed_cents
     FROM orders
     WHERE status IN ('paid','fulfilled') AND vat_amount_cents > 0 AND title_transferred_at IS NOT NULL
     GROUP BY quarter, rail
     ORDER BY quarter DESC, rail`).all();
+  const notes = db.prepare(`
+    SELECT ${quarterOf('rr.refunded_at')} AS quarter, rr.credit_note_ref AS ref, o.public_id, rr.refund_cents, rr.vat_reversed_cents, rr.refunded_at
+    FROM return_requests rr JOIN orders o ON o.id = rr.order_id
+    WHERE rr.status = 'refunded' AND rr.vat_reversed_cents > 0
+    UNION ALL
+    SELECT ${quarterOf('o.refunded_at')}, o.credit_note_ref, o.public_id, o.total_cents, o.vat_reversed_cents, o.refunded_at
+    FROM orders o WHERE o.credit_note_ref IS NOT NULL
+    ORDER BY 6 DESC`).all();
   res.json({
     vatRegistered: cfg.vatRegistered(),
-    rows: rows.map((r) => ({ quarter: r.quarter, rail: r.rail, orders: r.orders, grossCents: r.gross_cents, vatCents: r.vat_cents })),
+    rows: rows.map((r) => ({ quarter: r.quarter, rail: r.rail, orders: r.orders, grossCents: r.gross_cents, vatCents: r.vat_cents,
+      reversedCents: r.reversed_cents || 0, netVatCents: r.vat_cents - (r.reversed_cents || 0) })),
+    creditNotes: notes.map((n) => ({ quarter: n.quarter, reference: n.ref, order: n.public_id, refundCents: n.refund_cents, vatCents: n.vat_reversed_cents, refundedAt: n.refunded_at })),
   });
 });
 
@@ -403,8 +418,8 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
     if (!order.stripe_payment_intent_id) return res.status(409).json({ error: 'No card payment to refund' });
     // Item-level returns already refunded part of this order — a full-order
     // refund on top would pay the buyer twice for those items.
-    const partiallyReturned = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status='approved'").get(order.id).c;
-    if (partiallyReturned) return res.status(409).json({ error: 'Items from this order were already refunded through a return — handle the rest from the Returns view' });
+    const partiallyReturned = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status IN ('approved','collected','refunded')").get(order.id).c;
+    if (partiallyReturned) return res.status(409).json({ error: 'Items from this order are already part of an approved return — handle the rest from the Returns view' });
 
     const stripe = require('../stripe').requireStripe();
     await stripe.refunds.create({
@@ -420,44 +435,54 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
 });
 
 /* ---------------- Return requests (buyer-initiated) ----------------
- * Requests arrive from the account page with photos and name the exact items
- * going back; Trove decides. Approval refunds THOSE ITEMS' line totals back
- * to the card (service + delivery fees are not refunded; under the free-
- * delivery threshold the courier's AED 25 return-collection fee is deducted
- * per request) and reverses the suppliers' credit for just those items. The
- * buyer is emailed at every decision (best-effort, see src/email.js).
+ * Requests arrive from the account page with photos and name the exact units
+ * going back; Trove decides. Approval decides the collection fee (AED 30 only
+ * for 'changed my mind' on orders of AED 200 and below, unless the admin
+ * overrides it) and BOOKS the courier collection — no money moves yet. The
+ * card refund goes out when the courier reports the piece collected (OTO
+ * return webhook / mock hand-crank), which also reverses the suppliers'
+ * credit for just those units and any captured VAT. 'Refund now' is the
+ * admin override for exceptions. The buyer is emailed at every step
+ * (best-effort, see src/email.js).
  */
 const returns = require('../returns');
 const email = require('../email');
-const emailItems = (requestId) => returns.requestItems(requestId)
-  .map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, image: email.productImage({ images: i.product_images, name: i.name_snapshot }) }));
+const emailItems = (requestId) => returns.emailItems(requestId);
+const shapeReturn = (id) => returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(id));
 
 router.get('/returns', requireAdmin, (_req, res) => {
   const rows = db.prepare(`
     SELECT rr.*, o.public_id, o.email, o.subtotal_cents, o.total_cents, o.rail,
-           o.delivered_at, o.refunded_at, u.name AS buyer_name
+           o.delivered_at, o.refunded_at AS order_refunded_at, u.name AS buyer_name
     FROM return_requests rr
     JOIN orders o ON o.id = rr.order_id
     LEFT JOIN users u ON u.id = rr.buyer_id
-    ORDER BY CASE rr.status WHEN 'requested' THEN 0 ELSE 1 END, rr.created_at DESC
+    ORDER BY CASE rr.status WHEN 'requested' THEN 0 WHEN 'collected' THEN 1 WHEN 'approved' THEN 2 ELSE 3 END, rr.created_at DESC
     LIMIT 500`).all();
   const countStmt = db.prepare('SELECT COUNT(*) AS c FROM order_items WHERE order_id=?');
   res.json({ returns: rows.map((r) => {
-    const m = returns.money(r, r.id); // r carries the order's subtotal_cents for the fee rule
+    const m = returns.money(r, r); // r carries the order's subtotal_cents for the fee rule
+    const ruleFee = returns.feeCents(r, r.reason, null);
     return {
       ...returns.shape(r),
       order: {
         publicId: r.public_id, email: r.email, buyer: r.buyer_name || null, rail: r.rail,
         itemsTotal: r.subtotal_cents / 100, total: r.total_cents / 100, itemCount: countStmt.get(r.order_id).c,
-        deliveredAt: r.delivered_at || null, refundedAt: r.refunded_at || null,
+        deliveredAt: r.delivered_at || null, refundedAt: r.order_refunded_at || null,
       },
-      // Preview of what approval would refund (stamped for real on approve).
+      // Preview of what approval would refund (stamped for real on approve),
+      // plus what the rule says so the override toggle can show both.
       feePreview: m.fee / 100,
       refundPreview: m.refund / 100,
+      feeRule: ruleFee / 100,
+      feeIfCharged: returns.feeCents(r, r.reason, true) / 100,
+      faultReason: returns.FAULT_REASONS.has(r.reason),
     };
   }) });
 });
 
+// POST /api/admin/returns/:id/approve { chargeFee?: boolean }
+// chargeFee omitted = the rule; true/false = the admin's override.
 router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
   try {
     const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
@@ -466,25 +491,41 @@ router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
     const order = db.prepare('SELECT * FROM orders WHERE id=?').get(rr.order_id);
     if (order.refunded_at) return res.status(409).json({ error: 'Order already refunded' });
     if (order.rail === 'connect') return res.status(409).json({ error: 'Connect-rail orders need the manual refund button' });
+    const cf = (req.body || {}).chargeFee;
+    const feeOverride = cf === true ? true : cf === false ? false : null;
 
-    const m = returns.money(order, rr.id);
-
-    // Partial card refund first — if Stripe fails, nothing local changes.
-    // Orders from demo-payments mode have no PaymentIntent; they proceed
-    // without a card refund so the flow stays demonstrable before go-live.
-    const stripe = require('../stripe').getStripe();
-    if (stripe && order.stripe_payment_intent_id && m.refund > 0) {
-      await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id, amount: m.refund });
-    } else if (!stripe || !order.stripe_payment_intent_id) {
-      console.warn(`return ${rr.id} (${order.public_id}): approved without a card refund (demo mode / no PaymentIntent)`);
-    }
-
-    const fresh = returns.approve(rr, order, m);
-
+    const fresh = await returns.approve(rr, order, { feeOverride });
+    const m = { gross: returns.grossCents(returns.requestItems(rr.id)), fee: fresh.fee_cents, refund: fresh.refund_cents };
     const msg = email.returnApproved({ order, items: emailItems(rr.id), money: m });
     email.send({ to: order.email, ...msg }).catch((e) => console.error('return-approved email failed:', e.message));
 
     res.json({ ok: true, request: returns.shape(fresh) });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/returns/:id/book-collection → retry a failed courier booking.
+router.post('/returns/:id/book-collection', requireAdmin, async (req, res, next) => {
+  try {
+    const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
+    if (!rr) return res.status(404).json({ error: 'Return request not found' });
+    if (rr.status !== 'approved') return res.status(409).json({ error: 'Only an approved return waiting for collection can be re-booked' });
+    const order = db.prepare('SELECT * FROM orders WHERE id=?').get(rr.order_id);
+    await returns.bookCollections(order, rr.id);
+    res.json({ ok: true, request: shapeReturn(rr.id) });
+  } catch (e) { next(e); }
+});
+
+// POST /api/admin/returns/:id/refund-now { note? } → the exception path: refund
+// before the courier confirms collection (a lost webhook, a buyer who drops
+// the piece at the maker's door, a goodwill call).
+router.post('/returns/:id/refund-now', requireAdmin, async (req, res, next) => {
+  try {
+    const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
+    if (!rr) return res.status(404).json({ error: 'Return request not found' });
+    if (!['approved', 'collected'].includes(rr.status)) return res.status(409).json({ error: 'Only an approved return can be refunded' });
+    const note = String((req.body || {}).note || '').trim().slice(0, 300);
+    await returns.refund(rr.id, { by: 'admin', note: note || undefined });
+    res.json({ ok: true, request: shapeReturn(rr.id) });
   } catch (e) { next(e); }
 });
 
@@ -504,7 +545,7 @@ router.post('/returns/:id/decline', requireAdmin, (req, res) => {
   res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(rr.id)) });
 });
 
-/* ---------------- Weekly settlements (consignment purchases) ----------------
+/* ---------------- Fortnightly settlements (consignment purchases) ----------
  * The old order_items sweep (payouts/preview + payouts/run) is retired: money
  * owed to suppliers now lives on the seller_balances ledger and is settled by
  * src/settlement.js. Old payout batches stay readable below for history.    */
@@ -514,7 +555,7 @@ const settlement = require('../settlement');
 // GET /api/admin/settlements/preview → what the next run would pay, and who
 // is held back (payout setup incomplete / netted negative → carry forward).
 router.get('/settlements/preview', requireAdmin, (_req, res) => {
-  res.json(settlement.preview());
+  res.json({ ...settlement.preview(), nextRunDate: settlement.nextRunDate(), schedule: settlement.scheduleLabel() });
 });
 
 // POST /api/admin/settlements/run { runDate? } → create the draft settlement.

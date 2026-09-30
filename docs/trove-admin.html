@@ -305,7 +305,7 @@
 
     <div class="view" id="view-returns">
       <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Buyers request whole-order returns with photos. Approving refunds the items total back to their card (minus the AED 30 collection fee on orders of AED 200 and below — the original delivery fee is never refunded), reverses the shops' credits and books the courier collection. Declines go back to the buyer with your reason.</div></div>
+        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Buyers pick the items (and units) going back, a reason and photos, within 15 days of delivery. Approving books the courier collection; the refund goes back to their card once the courier has collected the item, and only then do the shops' credits reverse. The AED 30 collection fee applies only to 'changed my mind' on orders of AED 200 and below — tick or untick it to override. The original delivery fee is never refunded. Declines go back to the buyer with your reason.</div></div>
         <div id="returnsWrap" style="padding:14px 22px 22px"></div>
       </div>
     </div>
@@ -378,7 +378,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to refund and collect'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to book the collection; the refund follows the pickup'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Trove payouts','Pay your managed sellers']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -453,7 +453,7 @@ function applicationCardHTML(s){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px">
       ${s.category?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">${esc(s.category)}</span>`:''}
       ${s.location?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">📍 ${esc(s.location)}</span>`:''}
-      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Weekly payout'}</span>
+      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Fortnightly payout'}</span>
     </div>
     ${applicationFactsHTML(s)}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
@@ -537,7 +537,7 @@ function shopRowHTML(s){
     <td style="color:var(--muted)">${esc(s.location||'—')}</td>
     <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
     <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.salesCents)}</td>
-    <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Weekly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
+    <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Fortnightly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
     <td>${idCellHTML(s)}</td>
     <td><span class="pill ${esc(s.status)}">${esc(s.status)}</span></td>
     <td><div class="actions"><button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>${shopActions(s)}</div></td>
@@ -801,47 +801,81 @@ async function setReviewStatus(id,status,confirmFirst){
   }catch(e){ toast(e.message||'Could not update the review'); }
 }
 
-/* ---------------- return requests ---------------- */
+/* ---------------- return requests ----------------
+ * requested → (approve: fee decided, courier collection booked) approved →
+ * (courier reports the pickup) collected → refunded. 'Refund now' is the
+ * exception path; 'Book again' retries a failed courier booking. */
+const RET_PILL={requested:['pending','requested'],approved:['approved','collection booked'],collected:['approved','collected'],refunded:['approved','refunded'],declined:['suspended','declined']};
 function renderReturns(){
   const pending=RETURNS.filter(r=>r.status==='requested').length;
   const badge=$('retBadge'); if(badge){badge.textContent=pending;badge.classList.toggle('zero',!pending);}
-  const pill=s=>s==='requested'?'<span class="pill pending">requested</span>'
-    :s==='approved'?'<span class="pill approved">approved</span>'
-    :'<span class="pill suspended">declined</span>';
+  const pill=s=>{const p=RET_PILL[s]||['suspended',s];return `<span class="pill ${p[0]}">${esc(p[1])}</span>`;};
+  const open=s=>s==='approved'||s==='collected';
   $('returnsWrap').innerHTML=RETURNS.length?RETURNS.map(r=>`
-    <div style="border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px${r.status!=='requested'?';opacity:.72':''}">
+    <div style="border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:14px${['refunded','declined'].includes(r.status)?';opacity:.72':''}">
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         ${pill(r.status)}
         <b style="font-size:13.5px">${esc(r.order.publicId)}</b>
         <span style="color:var(--muted);font-size:12.5px;font-weight:600">${esc(r.order.buyer||'')} · ${esc(r.order.email)}</span>
         <span style="color:var(--muted);font-size:12px;margin-left:auto">${fmtDate(r.createdAt)}</span>
       </div>
-      <div style="margin-top:10px;font-size:13px"><b>${esc(r.reasonLabel)}</b> — ${esc(r.details)}</div>
+      <div style="margin-top:10px;font-size:13px">Reason: <b>${esc(r.reasonLabel)}</b>${r.faultReason?' <span style="color:var(--muted);font-weight:600">(not the buyer’s fault — collected free)</span>':''} — ${esc(r.details)}</div>
       ${r.images.length?`<div style="display:flex;gap:6px;margin-top:9px">${r.images.map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}" style="width:54px;height:54px;object-fit:cover;border-radius:8px;border:1px solid var(--line)"></a>`).join('')}</div>`:''}
       <div style="margin-top:9px;font-size:12.5px;color:var(--muted);font-weight:600">
-        Coming back: ${r.items.map(i=>`<b style="color:var(--char)">${esc(i.name)} ×${i.qty}</b>${(i.options&&i.options.length)?` <span style="color:var(--muted)">(${esc(i.options.map(o=>o.name+': '+o.value).join(' · '))})</span>`:''} — ${esc(i.shop)}`).join(' · ')}
-        ${r.items.length<r.order.itemCount?` <span style="color:var(--muted)">(${r.items.length} of ${r.order.itemCount} items on the order)</span>`:' (the whole order)'}
+        Coming back: ${r.items.map(i=>`<b style="color:var(--char)">${esc(i.name)} ×${i.qty}${i.lineQty>i.qty?` of ${i.lineQty}`:''}</b>${(i.options&&i.options.length)?` <span style="color:var(--muted)">(${esc(i.options.map(o=>o.name+': '+o.value).join(' · '))})</span>`:''} — ${esc(i.shop)}`).join(' · ')}
+        ${r.items.length<r.order.itemCount?` <span style="color:var(--muted)">(${r.items.length} of ${r.order.itemCount} items on the order)</span>`:''}
       </div>
       <div style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">
         Returning AED ${r.itemsTotal} of the order's AED ${r.order.itemsTotal}
-        ${r.status==='approved'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${r.fee?` (AED ${r.fee} collection fee deducted)`:''}`
+        ${r.status==='refunded'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${r.fee?` (AED ${r.fee} collection fee deducted)`:''}${r.refundedAt?' on '+fmtDate(r.refundedAt):''}${r.creditNoteRef?` · credit note ${esc(r.creditNoteRef)} (VAT AED ${r.vatReversed})`:''}${r.refundNote?` · ${esc(r.refundNote)}`:''}`
+          :open(r.status)?` · <b style="color:var(--char)">AED ${r.refund}</b> goes back once the courier has it${r.fee?` (AED ${r.fee} collection fee deducted)`:''}`
           :r.status==='declined'?` · declined: “${esc(r.declineReason||'')}”`
-          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${r.feePreview?` (AED ${r.feePreview} collection fee deducted)`:' (free collection, AED 500+ order)'}`}
+          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${r.feePreview?` (AED ${r.feePreview} collection fee deducted)`:' (free collection)'}`}
       </div>
-      ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px">
-        <button class="btn btn-green" onclick="approveReturn(${r.id},${r.refundPreview})">Approve · refund AED ${r.refundPreview}</button>
+      ${(r.collections||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--muted);font-weight:600">Courier: ${r.collections.map(c=>`${esc(c.status)}${c.ref?' · '+esc(c.ref):''}${c.note?' · '+esc(c.note):''}`).join(' &nbsp;|&nbsp; ')}</div>`:''}
+      ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px;align-items:center;flex-wrap:wrap">
+        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" id="retFee${r.id}" ${r.feePreview?'checked':''} ${r.feeIfCharged?'':'disabled'} onchange="retFeePreview(${r.id})">Charge the AED ${r.feeIfCharged||0} collection fee</label>
+        <span id="retAmt${r.id}" style="font-size:12.5px;color:var(--muted);font-weight:600">refund AED ${r.refundPreview}</span>
+        <span style="flex:1"></span>
+        <button class="btn btn-green" onclick="approveReturn(${r.id})">Approve · book collection</button>
         <button class="btn btn-ghost" onclick="declineReturn(${r.id})">Decline…</button>
       </div>`:''}
+      ${open(r.status)?`<div style="display:flex;gap:9px;margin-top:12px;flex-wrap:wrap">
+        ${(r.collections||[]).some(c=>c.status==='failed')&&r.status==='approved'?`<button class="btn btn-ghost" onclick="rebookReturn(${r.id})">Book the collection again</button>`:''}
+        <button class="btn btn-ghost" onclick="refundReturnNow(${r.id},${r.refund})">Refund now…</button>
+      </div>`:''}
     </div>`).join('')
-    :'<div class="empty" style="padding:26px 4px">No return requests yet — they appear here when a buyer asks to send an order back.</div>';
+    :'<div class="empty" style="padding:26px 4px">No return requests yet — they appear here when a buyer asks to send something back.</div>';
 }
-async function approveReturn(id,amount){
-  if(!confirm(`Approve this return? AED ${amount} goes back to the buyer's card, the shops' credits reverse, and the courier collects the parcel.`))return;
+function retFeePreview(id){
+  const r=RETURNS.find(x=>x.id===id); if(!r)return;
+  const charge=$('retFee'+id).checked;
+  $('retAmt'+id).textContent=`refund AED ${Math.max(0,r.itemsTotal-(charge?r.feeIfCharged:0))}${charge!==(r.feeRule>0)?' · overriding the rule':''}`;
+}
+async function approveReturn(id){
+  const r=RETURNS.find(x=>x.id===id); if(!r)return;
+  const box=$('retFee'+id), charge=box?box.checked:null;
+  const amount=Math.max(0,r.itemsTotal-(charge?r.feeIfCharged:0));
+  if(!confirm(`Approve this return? The courier collection is booked now; AED ${amount} goes back to the buyer's card once the courier has collected the item.`))return;
   try{
-    await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST'});
-    toast('Return approved — refund issued');
+    const body=(charge===null||charge===(r.feeRule>0))?{}:{chargeFee:charge};
+    await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST',body});
+    toast('Return approved — collection booked');
     await reload();
   }catch(e){ toast(e.message||'Could not approve the return'); }
+}
+async function rebookReturn(id){
+  try{ await TroveAPI.api(`/api/admin/returns/${id}/book-collection`,{method:'POST'}); toast('Collection booked again'); await reload(); }
+  catch(e){ toast(e.message||'Could not book the collection'); }
+}
+async function refundReturnNow(id,amount){
+  const note=prompt(`Refund AED ${amount} now, before the courier confirms collection? Add a short note for the record (optional).`);
+  if(note===null)return;
+  try{
+    await TroveAPI.api(`/api/admin/returns/${id}/refund-now`,{method:'POST',body:{note:note.trim()}});
+    toast('Refund sent');
+    await reload();
+  }catch(e){ toast(e.message||'Could not refund'); }
 }
 async function declineReturn(id){
   const reason=prompt('Why is this return declined? The buyer sees this in their account.');
@@ -1120,7 +1154,7 @@ function renderPayouts(){
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
         <div><h3>Next settlement run</h3>
-          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 7-day return window has closed</div></div>
+          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 15-day buyer return window has closed${PREVIEW.nextRunDate?` · next scheduled run ${esc(PREVIEW.nextRunDate)}`:''}</div></div>
         <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()">Run settlement</button>
       </div>
       ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th></tr></thead>
@@ -1154,7 +1188,7 @@ function renderPayouts(){
               <td style="text-align:right">${i.purchaseNoteId?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
             </tr>`).join('')}</tbody></table>
         </div>`).join('')}</div>`
-       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every Tuesday, or run one above.</div>`}
+       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every other Tuesday, or run one above.</div>`}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>VAT by quarter</h3>

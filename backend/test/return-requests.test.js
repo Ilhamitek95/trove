@@ -55,7 +55,7 @@ after(async () => { await ctx.close(); });
 
 const reqBody = (itemIds, extra = {}) => ({ ...FORM, itemIds, ...extra });
 
-test('eligibility gates: auth, ownership, delivery, the 30-day window, and the form itself', async () => {
+test('eligibility gates: auth, ownership, delivery, the 15-day window, and the form itself', async () => {
   let res = await ctx.api('POST', '/api/account/orders/TRV-RET01/return-request', { body: reqBody(small.itemIds) });
   assert.equal(res.status, 401, 'signed out');
   res = await ctx.api('POST', '/api/account/orders/TRV-RET01/return-request', { cookie: otherCookie, body: reqBody(small.itemIds) });
@@ -63,7 +63,7 @@ test('eligibility gates: auth, ownership, delivery, the 30-day window, and the f
   res = await ctx.api('POST', '/api/account/orders/TRV-RET04/return-request', { cookie: buyerCookie, body: reqBody(undelivered.itemIds) });
   assert.equal(res.status, 409, 'not delivered yet');
   res = await ctx.api('POST', '/api/account/orders/TRV-RET03/return-request', { cookie: buyerCookie, body: reqBody(stale.itemIds) });
-  assert.equal(res.status, 409, '30-day window closed');
+  assert.equal(res.status, 409, 'return window closed');
   res = await ctx.api('POST', '/api/account/orders/TRV-RET01/return-request', { cookie: buyerCookie, body: reqBody([]) });
   assert.equal(res.status, 400, 'items are required');
   res = await ctx.api('POST', '/api/account/orders/TRV-RET01/return-request', { cookie: buyerCookie, body: reqBody(big.itemIds) });
@@ -80,7 +80,8 @@ test('orders payload advertises the pickable items and the fee rule', async () =
   const { data } = await ctx.api('GET', '/api/account/orders', { cookie: buyerCookie });
   const s = data.orders.find((o) => o.id === 'TRV-RET01');
   assert.equal(s.returns.eligible, true);
-  assert.equal(s.returns.fee, 30, 'AED 200 and below → courier fee deducted');
+  assert.equal(s.returns.fee, 30, 'AED 200 and below → the changed-my-mind collection fee');
+  assert.equal(s.returns.windowDays, 15);
   assert.equal(s.returns.items.length, 2, 'both items pickable');
   assert.deepEqual(s.returns.items.map((i) => i.price).sort((a, b) => a - b), [36, 64]);
   assert.ok(s.returns.items.every((i) => !i.locked), 'nothing locked yet');
@@ -105,7 +106,7 @@ test('a valid request locks its items; the same item cannot ride twice', async (
   assert.equal(o.returns.items.find((i) => i.name === 'Bowl').locked, null);
   assert.equal(o.returns.requests.length, 1);
   assert.equal(o.returns.requests[0].status, 'requested');
-  assert.equal(o.returns.requests[0].reasonLabel, 'Arrived damaged');
+  assert.equal(o.returns.requests[0].reasonLabel, 'Faulty or damaged');
   assert.equal(o.returns.requests[0].itemsTotal, 64);
   assert.match(o.returns.requests[0].images[0], /^\/uploads\/returns\//);
 });
@@ -115,7 +116,7 @@ test('the shop sees the request on its order view and in its returns feed', asyn
   const row = data.orders.find((r) => r.order.publicId === 'TRV-RET01');
   assert.ok(row.returnRequest, 'return request attached');
   assert.equal(row.returnRequest.status, 'requested');
-  assert.equal(row.returnRequest.reason, 'Arrived damaged');
+  assert.equal(row.returnRequest.reason, 'Faulty or damaged');
   assert.equal(row.returnRequest.items.length, 1, "only the requested item rides");
   assert.equal(row.returnRequest.items[0].name, 'Mug');
   assert.equal(row.returnRequest.images.length, 1);
@@ -144,9 +145,19 @@ test('withdrawing a pending request frees its items for a fresh one', async () =
   assert.equal(res.status, 201, 're-request allowed after withdrawal');
 });
 
-test('approving a partial return refunds those items minus the fee and reverses only their credit', async () => {
+/** Approve (optionally with a fee override), then let the mock courier collect it. */
+async function approveAndCollect(id, body) {
+  const ap = await ctx.api('POST', `/api/admin/returns/${id}/approve`, { cookie: adminCookie, body: body || {} });
+  assert.equal(ap.status, 200, ap.text);
+  assert.equal(ap.data.request.status, 'approved', 'approval books the collection, nothing more');
+  const col = await ctx.api('POST', '/api/delivery/mock/collect-return', { body: { requestId: id } });
+  assert.equal(col.status, 200, col.text);
+  return { approved: ap.data.request, collected: col.data.request };
+}
+
+test('a partial return: approval books the collection, collection refunds those units and reverses only their credit', async () => {
   // The shop's credit for the whole order (split(10000).net = 6000) was
-  // ALREADY paid out in a settlement run.
+  // ALREADY paid out in a settlement run (an exception under the 15-day hold).
   const settlementId = db.prepare("INSERT INTO settlements (run_date, status) VALUES (date('now'), 'paid')").run().lastInsertRowid;
   db.prepare(`INSERT INTO seller_balances (shop_id, order_id, settlement_id, type, amount_cents)
     VALUES (?,?,?, 'credit_sale', ?)`).run(shopId, small.id, settlementId, 6000);
@@ -155,36 +166,54 @@ test('approving a partial return refunds those items minus the fee and reverses 
   assert.equal(res.status, 200);
   const rr = res.data.returns.find((r) => r.order.publicId === 'TRV-RET01' && r.status === 'requested');
   assert.equal(rr.itemsTotal, 64, 'request carries its own items total');
-  assert.equal(rr.refundPreview, 34, '64 item − 30 fee');
-  assert.equal(rr.feePreview, 30);
+  assert.equal(rr.reason, 'damaged');
+  assert.equal(rr.feePreview, 0, 'a faulty piece is collected free, even under AED 200');
+  assert.equal(rr.refundPreview, 64);
+  assert.equal(rr.feeIfCharged, 30, 'the admin can see what charging would mean');
 
   const calls = ctx.stripeMock.calls;
-  const before = calls.filter((c) => c.method === 'refunds.create').length;
+  const refundsBefore = calls.filter((c) => c.method === 'refunds.create').length;
   res = await ctx.api('POST', `/api/admin/returns/${rr.id}/approve`, { cookie: adminCookie });
   assert.equal(res.status, 200, res.text);
   assert.equal(res.data.request.status, 'approved');
-  assert.equal(res.data.request.refund, 34);
-  assert.equal(res.data.request.fee, 30);
+  assert.equal(res.data.request.refund, 64);
+  assert.equal(res.data.request.fee, 0);
+  assert.ok(res.data.request.collectionBookedAt, 'courier collection booked on approval');
+  assert.equal(res.data.request.collections[0].status, 'booked');
+  assert.equal(calls.filter((c) => c.method === 'refunds.create').length, refundsBefore, 'no card refund at approval');
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM seller_balances WHERE order_id=? AND type='debit_refund'").get(small.id).n, 0, 'no credit reversal yet');
 
+  // The buyer's account explains where it stands.
+  let acct = await ctx.api('GET', '/api/account/orders', { cookie: buyerCookie });
+  let q = acct.data.orders.find((x) => x.id === 'TRV-RET01').returns.requests.find((x) => x.id === rr.id);
+  assert.equal(q.status, 'approved');
+  assert.ok(q.collectionBookedAt);
+
+  // The courier collects → refund goes out.
+  res = await ctx.api('POST', '/api/delivery/mock/collect-return', { body: { requestId: rr.id } });
+  assert.equal(res.status, 200, res.text);
+  assert.equal(res.data.request.status, 'refunded');
+  assert.ok(res.data.request.collectedAt && res.data.request.refundedAt);
   const refundCalls = calls.filter((c) => c.method === 'refunds.create');
-  assert.equal(refundCalls.length, before + 1, 'one card refund');
-  assert.equal(refundCalls[refundCalls.length - 1].params.amount, 3400, 'partial refund, in fils');
+  assert.equal(refundCalls.length, refundsBefore + 1, 'one card refund');
+  assert.equal(refundCalls[refundCalls.length - 1].params.amount, 6400, 'partial refund, in fils');
 
   let order = db.prepare('SELECT * FROM orders WHERE id=?').get(small.id);
-  assert.equal(order.refunded_at, null, 'one item back ≠ the order refunded');
+  assert.equal(order.refunded_at, null, 'one item back is not the order refunded');
   let debits = db.prepare("SELECT * FROM seller_balances WHERE order_id=? AND type='debit_refund'").all(small.id);
   assert.equal(debits.length, 1);
   assert.equal(debits[0].amount_cents, -3840, "the Mug's credit share reverses — commission is never refunded");
 
-  // The buyer sends the Bowl back too → second request, second fee, and the
-  // order closes out exactly: remaining credit 2160 reverses, order stamps.
+  // The buyer sends the Bowl back too, having changed their mind: the AED 30
+  // fee applies (order at or below AED 200), and the order closes out exactly.
   res = await ctx.api('POST', '/api/account/orders/TRV-RET01/return-request', { cookie: buyerCookie, body: reqBody([small.itemIds[1]], { reason: 'changed-mind' }) });
   assert.equal(res.status, 201, res.text);
   const list = await ctx.api('GET', '/api/admin/returns', { cookie: adminCookie });
   const rr2 = list.data.returns.find((r) => r.order.publicId === 'TRV-RET01' && r.status === 'requested');
   assert.equal(rr2.refundPreview, 6, '36 item − 30 fee');
-  res = await ctx.api('POST', `/api/admin/returns/${rr2.id}/approve`, { cookie: adminCookie });
-  assert.equal(res.status, 200, res.text);
+  const { collected } = await approveAndCollect(rr2.id);
+  assert.equal(collected.status, 'refunded');
+  assert.equal(collected.refund, 6);
 
   order = db.prepare('SELECT * FROM orders WHERE id=?').get(small.id);
   assert.ok(order.refunded_at, 'every item back → order stamped refunded');
@@ -193,6 +222,9 @@ test('approving a partial return refunds those items minus the fee and reverses 
 
   res = await ctx.api('POST', `/api/admin/returns/${rr2.id}/approve`, { cookie: adminCookie });
   assert.equal(res.status, 409, 'no double decisions');
+  acct = await ctx.api('GET', '/api/account/orders', { cookie: buyerCookie });
+  q = acct.data.orders.find((x) => x.id === 'TRV-RET01').returns.requests.find((x) => x.id === rr2.id);
+  assert.equal(q.status, 'refunded');
 });
 
 test('an unswept credit shrinks in place instead of debiting', async () => {
@@ -201,12 +233,11 @@ test('an unswept credit shrinks in place instead of debiting', async () => {
   db.prepare("INSERT INTO seller_balances (shop_id, order_id, type, amount_cents) VALUES (?,?, 'credit_sale', ?)")
     .run(shopId, o.id, 3840);
 
-  let res = await ctx.api('POST', '/api/account/orders/TRV-RET06/return-request', { cookie: buyerCookie, body: reqBody(o.itemIds) });
+  const res = await ctx.api('POST', '/api/account/orders/TRV-RET06/return-request', { cookie: buyerCookie, body: reqBody(o.itemIds) });
   assert.equal(res.status, 201, res.text);
   const list = await ctx.api('GET', '/api/admin/returns', { cookie: adminCookie });
   const rr = list.data.returns.find((r) => r.order.publicId === 'TRV-RET06');
-  res = await ctx.api('POST', `/api/admin/returns/${rr.id}/approve`, { cookie: adminCookie });
-  assert.equal(res.status, 200, res.text);
+  await approveAndCollect(rr.id);
 
   const credit = db.prepare("SELECT * FROM seller_balances WHERE order_id=? AND type='credit_sale'").get(o.id);
   assert.equal(credit.amount_cents, 0, 'unpaid credit reduced to nothing');
@@ -220,7 +251,7 @@ test('a fully-returned order blocks the manual whole-order refund (no double pay
   assert.equal(res.status, 409);
 });
 
-test('orders over AED 200 return free; approval without a PaymentIntent still works (demo mode)', async () => {
+test('orders over AED 200 return free; a refund without a PaymentIntent still works (demo mode)', async () => {
   let res = await ctx.api('POST', '/api/account/orders/TRV-RET02/return-request',
     { cookie: buyerCookie, body: reqBody(big.itemIds, { reason: 'changed-mind' }) });
   assert.equal(res.status, 201, res.text);
@@ -230,10 +261,10 @@ test('orders over AED 200 return free; approval without a PaymentIntent still wo
   const list = await ctx.api('GET', '/api/admin/returns', { cookie: adminCookie });
   const rr = list.data.returns.find((r) => r.order.publicId === 'TRV-RET02');
   const before = ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').length;
-  res = await ctx.api('POST', `/api/admin/returns/${rr.id}/approve`, { cookie: adminCookie });
-  assert.equal(res.status, 200, res.text);
-  assert.equal(res.data.request.fee, 0, 'free return over AED 200');
-  assert.equal(res.data.request.refund, 600);
+  const { approved, collected } = await approveAndCollect(rr.id);
+  assert.equal(approved.fee, 0, 'free return over AED 200');
+  assert.equal(approved.refund, 600);
+  assert.equal(collected.status, 'refunded');
   assert.equal(ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').length, before, 'no card call without a PaymentIntent');
 });
 
