@@ -68,14 +68,21 @@ and choose **Privacy and my data**.
   search results.
 - Standard server logs (such as IP address and browser type), kept briefly
   for security and to keep the site running.
-- **Google Tag Manager**, a script from Google that our pages load and that
-  we will use for Google Analytics once the site asks for your cookie
-  choice. Unless you agree to analytics it stays switched off: it sets no
-  cookies, stores nothing in your browser and sends nothing to Google
-  Analytics. Like any file your browser fetches, loading it shares your IP
-  address and browser details with Google.
+- Your **cookie choice**. On your first visit a banner asks whether you
+  agree to measurement and marketing cookies; you can accept, reject or
+  choose per purpose, and change your mind any time with **Cookie
+  settings** at the bottom of every page. The choice is recorded by
+  **iubenda** (our consent tool) in a cookie in your browser and kept for
+  **180 days**, with a record of the choice kept as proof of consent.
+- **Google Analytics**, through **Google Tag Manager**, a script from
+  Google that our pages load. It runs only if you agree to measurement
+  cookies: until then it sets no cookies, stores nothing in your browser
+  and sends nothing to Google Analytics. Like any file your browser
+  fetches, loading Tag Manager shares your IP address and browser details
+  with Google.
 
-We do not use advertising cookies and we do not sell your personal data.
+We do not use advertising cookies today; if we add any, they will run only
+if you agree to marketing cookies. We do not sell your personal data.
 
 ## 3. Why we use it (and our legal basis)
 
@@ -109,7 +116,9 @@ protect it and use it only to provide their service to Trove:
 - **Google** (if you choose "Sign in with Google"; the site's fonts are
   loaded from Google Fonts and our pages load Google Tag Manager, both of
   which receive your IP address; Google Analytics receives nothing unless
-  you agree to analytics).
+  you agree to measurement cookies).
+- **iubenda** (our cookie banner: it shows the banner, records your cookie
+  choice and passes it to Google's consent settings).
 - **Anthropic** (only for makers who use the optional AI tag-writer: the
   product name, description, category and shop name are sent to suggest
   search tags. No buyer data is sent.)

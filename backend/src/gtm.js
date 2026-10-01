@@ -36,6 +36,8 @@ const GTM_ID = 'GTM-5F87RHVM';
 const SNIPPET = [
   `  <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager ${GTM_ID}. No <noscript> iframe on purpose: it cannot respect consent. -->`,
   '  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>',
+  '  <!-- iubenda: cookie banner + consent log (Privacy Controls and Cookie Solution, site 4702684). After the Consent Mode defaults, before GTM, so a saved choice is applied before any tag can run. -->',
+  '  <script src="https://embeds.iubenda.com/widgets/e5a8f7dc-abe7-4798-a50d-a94138033fad.js"></script>',
   `  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');</script>`,
   '  <!-- gtm:end -->',
 ].join('\n');

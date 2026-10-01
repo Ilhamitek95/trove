@@ -32,12 +32,12 @@
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com",
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com https://embeds.iubenda.com https://cdn.iubenda.com https://cs.iubenda.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
-  "frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://pay.google.com",
+  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://www.google.com https://*.iubenda.com",
+  "frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://pay.google.com https://www.iubenda.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",
