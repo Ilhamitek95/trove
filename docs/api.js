@@ -73,6 +73,49 @@
   };
 })();
 
+/* ------------------------------------------------------------------ *
+ * window.troveTrack(event, params) — analytics: one GA4-ready push to
+ * Google Tag Manager's dataLayer. The container sits in each page's <head>
+ * behind Consent Mode v2 (backend/src/gtm.js), so nothing is stored or
+ * sent with an identifier until the cookie banner records a choice.
+ *   - An ecommerce event clears the previous ecommerce object first, as
+ *     GA4 asks, so items never carry over from one event to the next.
+ *   - Never throws: analytics can't break a page.
+ *   - Returns a Promise that settles once Tag Manager has run its tags for
+ *     the event (or after a second and a half; at once when it never
+ *     loaded), so a page about to navigate away can wait for the hit.
+ * NO personal data, ever: pieces, prices and public order numbers only —
+ * never an email, name, phone, address, account id or IBAN. As a last line
+ * of defence anything shaped like an email address is blanked.
+ * ------------------------------------------------------------------ */
+(function () {
+  var EMAIL = /[^\s@<>"']+@[^\s@<>"']+\.[a-z]{2,}/gi;
+  function clean(v, depth) {
+    if (typeof v === 'string') return v.replace(EMAIL, '[redacted]');
+    if (!v || typeof v !== 'object' || depth > 6) return v;
+    if (Array.isArray(v)) return v.map(function (x) { return clean(x, depth + 1); });
+    var out = {};
+    Object.keys(v).forEach(function (k) { out[k] = clean(v[k], depth + 1); });
+    return out;
+  }
+  window.troveTrack = function (event, params) {
+    return new Promise(function (resolve) {
+      var settled = false, waiting = false;
+      function done() { if (!settled) { settled = true; resolve(); } }
+      try {
+        var dl = (window.dataLayer = window.dataLayer || []);
+        var msg = { event: String(event) }, p = clean(params || {}, 0);
+        Object.keys(p).forEach(function (k) { if (k !== 'event') msg[k] = p[k]; });
+        // Tag Manager calls eventCallback once this event's tags have fired.
+        if (window.google_tag_manager) { waiting = true; msg.eventCallback = done; msg.eventTimeout = 1000; setTimeout(done, 1500); }
+        if (msg.ecommerce) dl.push({ ecommerce: null });
+        dl.push(msg);
+      } catch (_) { /* analytics never breaks the page */ }
+      if (!waiting) done();
+    });
+  };
+})();
+
 /* Interim matched photography (owner, 2026-09-02): a hand-picked stock photo per
  * piece so the storefront can be judged with real imagery before our own shoots
  * land. Keyed by product name; seller uploads always win. Shared here so the

@@ -234,7 +234,8 @@ router.post('/apply', (req, res, next) => {
   const notify = require('../notify');
   notify.providerApplied(provInfo.lastInsertRowid);
   if (!existing) notify.welcomeVerify(db.prepare('SELECT * FROM users WHERE id = ?').get(userId));
-  const done = () => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)) });
+  // `created` lets the page report a sign-up to analytics only when this opened the account.
+  const done = () => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)), created: !existing });
   // A new account signs in on a fresh session; an applicant already signed
   // in keeps the session they have (nothing about their privileges changed).
   if (existing) return done();

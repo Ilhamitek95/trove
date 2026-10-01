@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager GTM-5F87RHVM. No <noscript> iframe on purpose: it cannot respect consent. -->
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-5F87RHVM');</script>
+  <!-- gtm:end -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Trove · Join as a maker or provider</title>
@@ -448,28 +452,31 @@ async function submitApp(){
   const name=$('fName').value.trim(), email=$('fEmail').value.trim(), practice=$('fShop').value.trim();
   const common={location:$('fLoc').value.trim(),about:$('fAbout').value.trim(),experience:$('fExp').value,
     instagram:$('fInsta').value.trim(),links:$('fLinks').value.trim(),phone:$('fPhone').value.trim()};
-  let servicesWarn='';
+  let servicesWarn='', signedUp=false;
   try{
     if(wantsShop()){
       const licenseImage=await licenseDataUrl();
-      await TroveAPI.api('/api/auth/register',{method:'POST',body:{
+      const reg=await TroveAPI.api('/api/auth/register',{method:'POST',body:{
         role:'seller',name,email,password:$('fPass').value,shopName:practice,
         category:$('fCat').value,maker:$('fMaker').value,plannedProducts:$('fProducts').value.trim(),
         channels:$('fChannels').value,capacity:$('fCap').value,
         licenseNumber:$('fLic').value==='yes'?$('fLicNo').value.trim():'',licenseImage,...common,
       }});
+      signedUp=!!(reg&&reg.created);
     }
     if(wantsServices()){
       // For "both" the shop application just signed the applicant in, so no
       // password is resent; for services-only it creates the account.
       const body={name,email,providerName:practice,categories:PICKED,plannedServices:$('fServices').value.trim(),agreeSub:true,agreeTerms:true,...common};
       if(!wantsShop()&&!SIGNED_IN)body.password=$('fPass').value;
-      try{ await TroveAPI.api('/api/services/apply',{method:'POST',body}); }
+      try{ const r=await TroveAPI.api('/api/services/apply',{method:'POST',body}); if(r&&r.created)signedUp=true; }
       catch(e){
         if(!wantsShop())throw e;   // services-only: this IS the application
         servicesWarn=e.message||'error';
       }
     }
+    // Analytics (GA4 via Tag Manager): a new account, never whose.
+    if(signedUp&&window.troveTrack)troveTrack('sign_up',{method:'email'});
     // Done screen
     const first=name.split(' ')[0];
     const what=ROLE==='maker'?`<b>${esc(practice)}</b> is now with our curation team`:ROLE==='provider'?`<b>${esc(practice)}</b> is now with our curation team`:`<b>${esc(practice)}</b> — your shop and your services practice — is now with our curation team`;

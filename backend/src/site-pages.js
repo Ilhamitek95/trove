@@ -22,6 +22,7 @@ const md = require('./markdown');
 const { esc } = md;
 const config = require('./config');
 const content = require('./content');
+const gtm = require('./gtm');
 const { facts } = require('./pages/facts');
 
 const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
@@ -280,6 +281,7 @@ function shell({ base, pathName, title, description, h1, sub = '', crumb = '', b
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+${gtm.SNIPPET}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>${esc(fullTitle)}</title>

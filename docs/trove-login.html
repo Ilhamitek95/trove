@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager GTM-5F87RHVM. No <noscript> iframe on purpose: it cannot respect consent. -->
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-5F87RHVM');</script>
+  <!-- gtm:end -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Trove · Sign in</title>
@@ -335,22 +339,34 @@ async function signIn(){
   const label=btn.textContent;
   btn.textContent='One moment…'; btn.style.opacity='.7'; btn.disabled=true;
   try{
+    // Analytics (GA4 via Tag Manager): which of the two happened and how —
+    // never who. A seller form that attached a shop to an existing account
+    // (right password) counts as a log-in.
+    let ga;
     if(registering){
       const body={email,password:pass,name,role:mode==='sell'?'seller':'buyer'};
       if(mode==='sell') body.shopName=$('shopName').value.trim()||name;
       if(phoneMode) body.mobile=mob;
-      await TroveAPI.api('/api/auth/register',{method:'POST',body});
+      const r=await TroveAPI.api('/api/auth/register',{method:'POST',body});
+      ga=r&&r.created?['sign_up','email']:['login','email'];
     }else{
       const body=phoneMode?{identifier:mob,password:pass}:{email,password:pass};
       await TroveAPI.api('/api/auth/login',{method:'POST',body});
+      ga=['login',phoneMode?'phone':'email'];
     }
-    window.location.href=await postAuthDest();
+    window.location.href=(await Promise.all([postAuthDest(),gaAuth(ga[0],ga[1])]))[0];
   }catch(e){
     btn.textContent=label; btn.style.opacity='1'; btn.disabled=false;
     showErr(e.message||'Could not sign you in.');
   }
 }
 
+/* sign_up / login for GA4, sent before the page moves on (troveTrack waits
+   for Tag Manager, a second and a half at most). Only the method, ever. */
+function gaAuth(event,method){
+  try{ return window.troveTrack?troveTrack(event,{method}):Promise.resolve(); }
+  catch(_){ return Promise.resolve(); }
+}
 async function postAuthDest(){
   let dest = mode==='sell' ? '/sell' : '/account';
   try{
@@ -367,8 +383,8 @@ async function postAuthDest(){
 async function onGoogleCredential(resp){
   $('authErr').style.display='none';
   try{
-    await TroveAPI.api('/api/auth/google',{method:'POST',body:{credential:resp.credential}});
-    window.location.href=await postAuthDest();
+    const r=await TroveAPI.api('/api/auth/google',{method:'POST',body:{credential:resp.credential}});
+    window.location.href=(await Promise.all([postAuthDest(),gaAuth(r&&r.created?'sign_up':'login','google')]))[0];
   }catch(e){ showErr(e.message||"Google sign-in didn't work — please try again."); }
 }
 (async function initGoogle(){

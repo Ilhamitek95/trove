@@ -138,7 +138,7 @@ router.post('/register', (req, res, next) => {
   if (shopId) notify.shopApplied(shopId);
 
   startSession(req, { userId })
-    .then(() => res.status(201).json({ user: publicUser(fresh) }))
+    .then(() => res.status(201).json({ user: publicUser(fresh), created }))
     .catch(next);
 });
 
@@ -172,6 +172,9 @@ router.post('/google', async (req, res) => {
     const g = await google.verifyIdToken(req.body?.credential);
     if (!g) return res.status(401).json({ error: 'Google could not confirm that sign-in — please try again' });
     let user = db.prepare('SELECT * FROM users WHERE email = ?').get(g.email);
+    // Whether this sign-in opened the account: the page reports a sign-up or
+    // a log-in to analytics (no personal data — just which of the two).
+    const created = !user;
     if (!user) {
       const info = db.prepare("INSERT INTO users (email, password_hash, name, role, password_set, email_verified_at) VALUES (?,?,?,?,0,datetime('now'))")
         .run(g.email, hashPassword(randomSecret()),
@@ -192,7 +195,7 @@ router.post('/google', async (req, res) => {
     }
     try { await startSession(req, { userId: user.id }); }
     catch (e) { console.error('google sign-in session failed:', e.message); return res.status(500).json({ error: 'Something went wrong on our side — please try again' }); }
-    res.json({ user: publicUser(user) });
+    res.json({ user: publicUser(user), created });
   } catch (e) {
     console.error('google sign-in failed:', e.message);
     res.status(502).json({ error: 'Google sign-in is unavailable right now — try again in a moment' });

@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager GTM-5F87RHVM. No <noscript> iframe on purpose: it cannot respect consent. -->
+  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>
+  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-5F87RHVM');</script>
+  <!-- gtm:end -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Trove — Curated for Living</title>
@@ -2420,6 +2424,34 @@ function track(kind,body){
     TroveAPI.api('/api/track',{method:'POST',body:{kind,visitor:visitorId(),source:state.q?'search':state.view,...body}}).catch(()=>{});
   }catch(_){}
 }
+/* ---------------- Google Analytics (GA4 ecommerce via Tag Manager) ----------------
+ * view_item, add_to_cart, begin_checkout and purchase in GA4's recommended
+ * shape, pushed through troveTrack (api.js). Same rules as the beacon: the
+ * real catalogue only (demo mode never reports), and nothing about the
+ * shopper — the piece, its maker's shop name, its price and the public order
+ * number; never a name, email, phone, address or personalisation note.
+ * Prices on this page are already AED; the server's amounts are fils. */
+const gaAed=n=>Math.round((Number(n)||0)*100)/100;
+function gaItem(p,qty,opts,extras){
+  const V=VENDORS[p.vendor]||{};
+  return {item_id:String(p.id),item_name:p.name,item_brand:V.name||'',item_category:p.cat||'',price:gaAed(unitPrice(p,opts||[])+extrasPrice(p,extras||[])),quantity:qty||1};
+}
+function gaCartItems(){return cart.map(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);return p?gaItem(p,c.qty,c.opts,c.extras):null;}).filter(Boolean);}
+const gaValue=items=>gaAed(items.reduce((s,i)=>s+i.price*i.quantity,0));
+function gaEcommerce(event,items,extra){
+  if(!LIVE||!window.troveTrack||!items.length)return;
+  troveTrack(event,{ecommerce:{currency:'AED',value:gaValue(items),...(extra||{}),items}});
+}
+/* Once per order: a refresh or a second confirmation of the same order never counts twice. */
+function gaPurchase(orderId){
+  if(!LIVE||!orderId||!window.troveTrack)return;
+  const items=gaCartItems(); if(!items.length)return;
+  const key='trove.ga.purchase.'+orderId;
+  try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');}catch(_){/* private mode: still sent once from this page */}
+  const sub=gaValue(items), shipping=gaAed(feeBreakdown(sub).delivery);
+  const charged=lastOrder&&Number.isFinite(lastOrder.amountCents)?lastOrder.amountCents/100:null;   // the server's total, fils → AED
+  gaEcommerce('purchase',items,{transaction_id:String(orderId),value:gaAed(charged!=null?charged:sub+shipping),shipping});
+}
 
 /* VENDOR */
 function openVendor(key){
@@ -2468,6 +2500,7 @@ async function loadShopServices(key){
 function openPDP(id){
   const p=PRODUCTS.find(x=>x.id===id), V=VENDORS[p.vendor];
   track('product_view',{productId:id});   // before showView, so source is where the shopper clicked from
+  gaEcommerce('view_item',[gaItem(p,1)]);
   $('pdpCrumb').innerHTML=`<a href="${esc(shopUrl(p.cat))}">${esc(p.cat)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
   // Real seller photos when they exist, else the matched stock shot, else
@@ -2736,6 +2769,7 @@ function addToCart(id,btn,note,opts,extras){
   }
   if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts,extras});
   track('add_to_cart',{productId:id});   // only once it really went in — the guards above bail out first
+  gaEcommerce('add_to_cart',[gaItem(p,1,opts,extras)]);
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ Added';setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
   toast(`${p.name} added to your basket`);
@@ -2820,6 +2854,7 @@ document.addEventListener('click',closeAcct);
 function cartGroups(){const g={};cart.forEach(c=>{const p=PRODUCTS.find(x=>x.id===c.pid);if(p)(g[p.vendor]=g[p.vendor]||[]).push({...c,p});});return g;}
 function startCheckout(){
   if(!cart.length){toast('Your basket is empty');return;}
+  gaEcommerce('begin_checkout',gaCartItems());
   // Guests check out with their own details — no demo addresses, and an
   // optional "create an account" offer (only when a real backend is live).
   if(LIVE&&!ME){SAVED_ADDR=[];coNewAddr=true;coAddr=-1;}
@@ -2863,7 +2898,8 @@ async function ensureGuestAccount(){
   if(pw.length<8){coAcctError('Your password needs at least 8 characters.');return false;}
   const name=($('coNewName')&&$('coNewName').value.trim())||email.split('@')[0];
   try{
-    await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    const reg=await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    if(reg&&reg.created&&window.troveTrack)troveTrack('sign_up',{method:'email'});
     try{await saveCheckoutAddress();}catch(_){/* best effort */}
     if(payIntent){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret}});}catch(_){/* order stays a guest order */}}
     ME={name,email};
@@ -2918,6 +2954,7 @@ function renderCheckout(){
   $('coPlaceTot').textContent=aed(fb.total);
 }
 function showConfirmation(orderId){
+  gaPurchase(orderId);   // first: it reads the basket, which is emptied below
   const groups=cartGroups();
   const n=Object.keys(groups).length;
   // Greet them by name when we have one — from the account, or from the
@@ -2981,7 +3018,7 @@ async function placeOrder(){
     btn.disabled=false;btn.style.opacity=1;
     if(error){$('payStatus').textContent=error.message;return;}
     const id=payIntent.orderId;
-    lastOrder={orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
+    lastOrder={orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,amountCents:Number(payIntent.amount),email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
     resetPayment();
     showConfirmation(id);
     return;
@@ -2994,7 +3031,7 @@ async function placeOrder(){
     try{
       const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
       await TroveAPI.api('/api/checkout/demo-complete',{method:'POST',body:{orderId:data.orderId}});
-      lastOrder={orderId:data.orderId,demo:true,email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
+      lastOrder={orderId:data.orderId,demo:true,amountCents:Number(data.amount),email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
       showConfirmation(data.orderId);
     }catch(e){toast(e.message||'Could not place the order — please try again');}
     finally{btn.disabled=false;btn.style.opacity=1;}
@@ -3015,7 +3052,8 @@ async function confCreateAccount(){
   if(pw.length<8){err('Your password needs at least 8 characters.');return;}
   const name=(lastOrder&&lastOrder.name)||email.split('@')[0];
   try{
-    await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    const reg=await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
+    if(reg&&reg.created&&window.troveTrack)troveTrack('sign_up',{method:'email'});
     try{await saveCheckoutAddress();}catch(_){/* best effort */}
     if(lastOrder&&(lastOrder.clientSecret||lastOrder.demo)){try{await TroveAPI.api('/api/checkout/claim',{method:'POST',body:{orderId:lastOrder.orderId,clientSecret:lastOrder.clientSecret||''}});}catch(_){/* stays a guest order */}}
     ME={name,email};

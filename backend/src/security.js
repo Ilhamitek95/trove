@@ -9,7 +9,10 @@
  *                       inline event handlers and inline styles, so
  *                       'unsafe-inline' stays — and names every third party
  *                       the pages actually load: Stripe (Elements, 3-D
- *                       Secure, wallets), Google sign-in, Google Fonts, and
+ *                       Secure, wallets), Google sign-in, Google Fonts,
+ *                       Google Tag Manager + GA4 (gtm.js and the tags it
+ *                       loads from www.googletagmanager.com; GA4's collect
+ *                       endpoints in connect-src — see src/gtm.js), and
  *                       images from anywhere over https (Unsplash stock,
  *                       Google avatars) plus data:/blob: previews. What it
  *                       buys: no framing of /admin or checkout (clickjacking),
@@ -29,11 +32,11 @@
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com",
+  "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com",
+  "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com",
   "frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://*.stripe.network https://*.stripecdn.com https://accounts.google.com https://pay.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",

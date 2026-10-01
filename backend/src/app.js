@@ -270,6 +270,9 @@ function createApp() {
     app.get(legacy, (_req, res) => res.redirect(301, '/'));
   }
   const seo = require('./seo');
+  // Google Tag Manager rides in every page's <head>, except on private links
+  // (a booking or reset token in the address): see src/gtm.js.
+  const gtm = require('./gtm');
   const keepQuery = (req) => { const q = req.originalUrl.indexOf('?'); return q === -1 ? '' : req.originalUrl.slice(q); };
   const SITE_BASE = () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '');
 
@@ -289,9 +292,18 @@ function createApp() {
     res.redirect(301, target + keepQuery(req));
   });
   // A miss: the branded 404 page, a real 404 status, never indexed.
+  const fileCache = {};
+  /** A docs/ page's source, re-read only when the file changes. */
+  const docFile = (file) => {
+    const f = path.join(DOCS_DIR, file);
+    const stamp = require('fs').statSync(f).mtimeMs;
+    const c = fileCache[file];
+    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: require('fs').readFileSync(f, 'utf8') };
+    return fileCache[file].html;
+  };
   const notFound = (req, res) => {
     res.set('X-Robots-Tag', 'noindex');
-    if (req.accepts('html')) return res.status(404).sendFile(path.join(DOCS_DIR, '404.html'));
+    if (req.accepts('html')) return res.status(404).type('html').set('Cache-Control', 'no-cache').send(gtm.forAddress(req, res, docFile('404.html')));
     res.status(404).json({ error: 'Not found' });
   };
 
@@ -314,14 +326,9 @@ function createApp() {
   // Pages served as they are, plus the site-wide social tags when the page
   // has none of its own (signed-in surfaces get them without a canonical).
   const PUBLIC_FILES = new Set(['/apply']);
-  const fileCache = {};
-  const servePage = (clean, file) => (_req, res) => {
-    const f = path.join(DOCS_DIR, file);
-    const stamp = require('fs').statSync(f).mtimeMs;
-    const c = fileCache[file];
-    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: require('fs').readFileSync(f, 'utf8') };
+  const servePage = (clean, file) => (req, res) => {
     res.type('html').set('Cache-Control', 'no-cache')
-      .send(seo.withDefaultSocial(fileCache[file].html, { base: SITE_BASE(), url: SITE_BASE() + clean, noindex: !PUBLIC_FILES.has(clean), path: clean }));
+      .send(gtm.forAddress(req, res, seo.withDefaultSocial(docFile(file), { base: SITE_BASE(), url: SITE_BASE() + clean, noindex: !PUBLIC_FILES.has(clean), path: clean })));
   };
   // The Services Marketplace directory, server-rendered (src/seo.js).
   app.get('/services', (_req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderServicesDirectory(SITE_BASE())));
@@ -340,7 +347,7 @@ function createApp() {
    * About, Contact, Help centre, Delivery & Returns and the legal documents
    * (src/site-pages.js): real text in the HTML, the shared header + footer,
    * canonical, Open Graph and Organization structured data.              */
-  const html = (res, body) => res.type('html').set('Cache-Control', 'no-cache').send(body);
+  const html = (res, body) => res.type('html').set('Cache-Control', 'no-cache').send(gtm.forAddress(res.req, res, body));
   app.get('/about', (_req, res) => html(res, sitePages.renderAbout(SITE_BASE())));
   app.get('/contact', (req, res) => html(res, sitePages.renderContact(SITE_BASE(), {
     sent: req.query.sent === '1',
@@ -385,10 +392,11 @@ function createApp() {
   // paths under /services/ fall through to the 404 instead of getting HTML.
   app.get('/services/:slug([a-z0-9-]+)', (req, res) => page(res, req, seo.renderProvider(SITE_BASE(), req.params.slug)));
   // A booking's private pages (the link in the customer's emails): the same
-  // services page opens the booking view. Never indexed — the URL is the key.
-  const bookingPage = (_req, res) => {
+  // services page opens the booking view. Never indexed — the URL is the key,
+  // so it is never tagged either (src/gtm.js strips Tag Manager from it).
+  const bookingPage = (req, res) => {
     res.set('X-Robots-Tag', 'noindex, nofollow');
-    res.sendFile(path.join(DOCS_DIR, 'trove-services.html'));
+    res.type('html').set('Cache-Control', 'no-cache').send(gtm.forAddress(req, res, docFile('trove-services.html')));
   };
   app.get('/services/booking/:code([A-Za-z0-9-]+)', bookingPage);
   app.get('/services/pay/:ref([A-Za-z0-9-]+)', bookingPage);
