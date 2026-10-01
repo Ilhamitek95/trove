@@ -98,6 +98,20 @@
     Object.keys(v).forEach(function (k) { out[k] = clean(v[k], depth + 1); });
     return out;
   }
+  /* True once the latest gtag consent command on the dataLayer grants
+   * analytics_storage — guards that keep a note in the browser (e.g. the
+   * once-per-order purchase key) only do so after the visitor agrees. */
+  window.troveAnalyticsConsent = function () {
+    var granted = false;
+    try {
+      (window.dataLayer || []).forEach(function (e) {
+        if (!e || typeof e !== 'object' || e[0] !== 'consent' || (e[1] !== 'default' && e[1] !== 'update')) return;
+        var st = e[2] && e[2].analytics_storage;
+        if (st === 'granted' || st === 'denied') granted = st === 'granted';
+      });
+    } catch (_) { granted = false; }
+    return granted;
+  };
   window.troveTrack = function (event, params) {
     return new Promise(function (resolve) {
       var settled = false, waiting = false;

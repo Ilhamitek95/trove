@@ -2442,12 +2442,17 @@ function gaEcommerce(event,items,extra){
   if(!LIVE||!window.troveTrack||!items.length)return;
   troveTrack(event,{ecommerce:{currency:'AED',value:gaValue(items),...(extra||{}),items}});
 }
-/* Once per order: a refresh or a second confirmation of the same order never counts twice. */
+/* Once per order: a refresh or a second confirmation of the same order never counts twice.
+ * The sessionStorage note is only kept after analytics consent (before that nothing is sent, so memory is enough). */
+const gaPurchased=new Set();
 function gaPurchase(orderId){
   if(!LIVE||!orderId||!window.troveTrack)return;
   const items=gaCartItems(); if(!items.length)return;
   const key='trove.ga.purchase.'+orderId;
-  try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');}catch(_){/* private mode: still sent once from this page */}
+  if(gaPurchased.has(key))return; gaPurchased.add(key);
+  if(window.troveAnalyticsConsent&&troveAnalyticsConsent()){
+    try{if(sessionStorage.getItem(key))return;sessionStorage.setItem(key,'1');}catch(_){/* private mode: still sent once from this page */}
+  }
   const sub=gaValue(items), shipping=gaAed(feeBreakdown(sub).delivery);
   const charged=lastOrder&&Number.isFinite(lastOrder.amountCents)?lastOrder.amountCents/100:null;   // the server's total, fils → AED
   gaEcommerce('purchase',items,{transaction_id:String(orderId),value:gaAed(charged!=null?charged:sub+shipping),shipping});

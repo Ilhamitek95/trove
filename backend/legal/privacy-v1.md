@@ -1,6 +1,6 @@
 # Trove Privacy Policy
 
-**Version v1 · Last updated 30 September 2026 · Trove, Dubai, United Arab Emirates**
+**Version v1 · Last updated 1 October 2026 · Trove, Dubai, United Arab Emirates**
 
 This policy explains what personal data Trove collects when you use
 troveathome.com, why, who it is shared with, how long it is kept and the
@@ -68,6 +68,12 @@ and choose **Privacy and my data**.
   search results.
 - Standard server logs (such as IP address and browser type), kept briefly
   for security and to keep the site running.
+- **Google Tag Manager**, a script from Google that our pages load and that
+  we will use for Google Analytics once the site asks for your cookie
+  choice. Unless you agree to analytics it stays switched off: it sets no
+  cookies, stores nothing in your browser and sends nothing to Google
+  Analytics. Like any file your browser fetches, loading it shares your IP
+  address and browser details with Google.
 
 We do not use advertising cookies and we do not sell your personal data.
 
@@ -100,8 +106,10 @@ protect it and use it only to provide their service to Trove:
 - **Resend** (sending our transactional emails, such as receipts).
 - **Render** (the hosting provider whose servers run troveathome.com and
   hold its database and backups).
-- **Google** (only if you choose "Sign in with Google"; and the site's fonts
-  are loaded from Google Fonts, which receives your IP address).
+- **Google** (if you choose "Sign in with Google"; the site's fonts are
+  loaded from Google Fonts and our pages load Google Tag Manager, both of
+  which receive your IP address; Google Analytics receives nothing unless
+  you agree to analytics).
 - **Anthropic** (only for makers who use the optional AI tag-writer: the
   product name, description, category and shop name are sent to suggest
   search tags. No buyer data is sent.)
