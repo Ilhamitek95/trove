@@ -157,6 +157,8 @@ router.post('/apply', (req, res, next) => {
   const email = String(b.email || '').trim().toLowerCase();
   const name = String(b.name || '').trim();
   if (!email || !name) return res.status(400).json({ error: 'email and name are required' });
+  // A new account is made from this address unless it already exists.
+  if (v.emailError(email) && !db.prepare('SELECT 1 FROM users WHERE email = ?').get(email)) return res.status(400).json({ error: v.EMAIL_ERROR });
   const nameCheck = v.shortText(name, { label: 'Your name', max: v.LIMITS.personName });
   if (nameCheck.error) return res.status(400).json({ error: nameCheck.error });
   const pnCheck = v.shortText(b.providerName, { label: 'Practice name', max: v.LIMITS.shopName, optional: true });

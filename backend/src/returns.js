@@ -170,13 +170,41 @@ function money(order, rr, opts = {}) {
   return { gross, fee, delivery, refund: Math.max(0, gross - fee) + delivery };
 }
 
-/* ---- eligibility: why this order can't be returned, or null if it can ----
- * The buyer's deadline is the order's return_window_ends_at, stamped at the
- * last delivery as delivered + the order's return days (15, or 30 on orders
- * placed before the 2026-09-30 change — migration 016). Rows without the
- * stamp fall back to delivered_at + the same number of days. */
+/* ---- eligibility: per parcel (2026-10-02) ----
+ * Delivery happens per shop, so returns open per parcel: a delivered parcel's
+ * pieces can be sent back while another maker's parcel is still on its way
+ * (or was cancelled). A parcel's deadline is its own delivery + the order's
+ * return days (15, or 30 on orders placed before the 2026-09-30 change —
+ * migration 016) — or the order-level deadline (last delivery + the same
+ * days) when that is later, so nobody loses days they were shown before.
+ * Pieces in a parcel that has not been delivered can't be picked yet.
+ * Settlement keeps the order-level clock (settlement.js), and a shop's credit
+ * waits while any return on its pieces is in flight. */
 const daysFor = (order) => order.return_days || BUYER_RETURN_DAYS;
+const parcelsStmt = db.prepare(`SELECT id, shop_id, status, delivered_at, datetime(delivered_at, '+' || ? || ' days') AS own,
+    datetime('now') AS now FROM shipments WHERE order_id=? ORDER BY id`);
+/** One parcel's return deadline (SQLite UTC text), or null while it isn't delivered. */
+function parcelDeadline(order, sh) {
+  // Parcels delivered before shipments carried their own stamp use the order's.
+  const at = sh && (sh.delivered_at || order.delivered_at);
+  if (!sh || sh.status !== 'delivered' || !at) return null;
+  const own = (sh.delivered_at && sh.own) || db.prepare("SELECT datetime(?, '+' || ? || ' days') AS d").get(at, daysFor(order)).d;
+  const whole = order.return_window_ends_at || null;
+  return whole && whole > own ? whole : own;
+}
+/** shop_id → { shipmentId, status, delivered, deadline, open } for the order's parcels. */
+function parcelWindows(order) {
+  const map = new Map();
+  for (const sh of parcelsStmt.all(daysFor(order), order.id)) {
+    const dl = parcelDeadline(order, sh);
+    map.set(sh.shop_id, { shipmentId: sh.id, status: sh.status, delivered: !!dl, deadline: dl, open: !!dl && dl > sh.now });
+  }
+  return map;
+}
+/** The latest deadline still open (what 'Returns open until' shows), else the order's own, else null. */
 function deadline(order) {
+  const open = [...parcelWindows(order).values()].filter((w) => w.open).map((w) => w.deadline).sort();
+  if (open.length) return open[open.length - 1];
   if (!order.delivered_at) return null;
   return order.return_window_ends_at
     || db.prepare("SELECT datetime(?, '+' || ? || ' days') AS d").get(order.delivered_at, daysFor(order)).d;
@@ -185,9 +213,15 @@ function ineligibleReason(order) {
   if (!order) return 'Order not found';
   if (order.refunded_at) return 'This order was already refunded';
   if (!['paid', 'fulfilled'].includes(order.status)) return 'Only paid orders can be returned';
-  if (!order.delivered_at) return 'Returns open once the order has been delivered';
-  const open = db.prepare("SELECT datetime(?) > datetime('now') AS ok").get(deadline(order)).ok;
-  if (!open) return `The ${daysFor(order)}-day return window for this order has closed`;
+  const windows = [...parcelWindows(order).values()];
+  if (!windows.length) {
+    // An order without parcel rows (very old data): the order-level clock.
+    if (!order.delivered_at) return 'Returns open once the order has been delivered';
+    const open = db.prepare("SELECT datetime(?) > datetime('now') AS ok").get(deadline(order)).ok;
+    return open ? null : `The ${daysFor(order)}-day return window for this order has closed`;
+  }
+  if (!windows.some((w) => w.delivered)) return 'Returns open once the order has been delivered';
+  if (!windows.some((w) => w.open)) return `The ${daysFor(order)}-day return window for this order has closed`;
   return null;
 }
 
@@ -218,22 +252,33 @@ function lockedItems(orderId) {
   return map;
 }
 
-/** The order's items with their return state — feeds the buyer's picker. */
+/** The order's items with their return state — feeds the buyer's picker.
+ *  `locked`: 'requested' / 'approved' (already in a return), 'not_delivered'
+ *  (its parcel hasn't arrived yet) or 'closed' (its parcel's window is over);
+ *  `deadline` is its parcel's last day for a return. */
 function returnableItems(order) {
   const held = heldUnits(order.id);
+  const windows = parcelWindows(order);
   // The chosen variation rides along so two lines of the same piece (the mug
   // in Sand and the mug in Clay) are told apart in the return picker.
   // A unit Trove cancelled before dispatch never arrived, so it can't go back.
-  return db.prepare('SELECT id, name_snapshot, qty - cancelled_qty AS qty, price_cents, options, extras, personalization FROM order_items WHERE order_id=? AND qty > cancelled_qty').all(order.id)
+  return db.prepare('SELECT id, shop_id, name_snapshot, qty - cancelled_qty AS qty, price_cents, options, extras, personalization FROM order_items WHERE order_id=? AND qty > cancelled_qty').all(order.id)
     .map((i) => {
       const h = held.get(i.id);
-      const available = Math.max(0, i.qty - (h ? h.qty : 0));
+      const w = windows.get(i.shop_id);
+      // No parcel rows at all (very old data): the order-level clock decides.
+      const parcel = w ? (w.open ? null : w.delivered ? 'closed' : 'not_delivered') : null;
+      const free = Math.max(0, i.qty - (h ? h.qty : 0));
+      const available = parcel ? 0 : free;
       return {
         id: i.id, name: i.name_snapshot, qty: i.qty, available, price: i.price_cents / 100,
         personalised: !!String(i.personalization || '').trim(),
         options: require('./options').parse(i.options),
         extras: require('./extras').parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })),
-        locked: available > 0 ? null : (h.statuses.includes('requested') ? 'requested' : 'approved'),
+        deadline: w ? w.deadline : null,
+        locked: available > 0 ? null
+          : free <= 0 && h ? (h.statuses.includes('requested') ? 'requested' : 'approved')
+            : parcel,
       };
     });
 }
@@ -276,6 +321,16 @@ function shape(r) {
   };
 }
 
+/** The buyer's view of a request: Trove's private note for the record and
+ *  the raw courier messages stay with Trove. */
+function shapeForBuyer(r) {
+  const x = shape(r);
+  if (!x) return x;
+  delete x.refundNote;
+  x.collections = x.collections.map(({ note, ...c }) => c); // eslint-disable-line no-unused-vars
+  return x;
+}
+
 /* ---- create (buyer) ---- */
 /** Normalise the picked units: body.items [{ id, qty }] (unit-level) or the
  *  older body.itemIds [id] (every unit still available on those lines). */
@@ -297,7 +352,11 @@ function pickedUnits(order, body) {
   for (const [id, want] of picks) {
     const line = lines.get(id);
     if (!line) return { error: 'Those items are not on this order', status: 400 };
-    if (line.available <= 0) return { error: 'One of those items is already part of another return request', status: 409 };
+    if (line.available <= 0) {
+      if (line.locked === 'not_delivered') return { error: 'That piece has not been delivered yet — returns for it open once it arrives', status: 409 };
+      if (line.locked === 'closed') return { error: 'The return window for that piece has closed', status: 409 };
+      return { error: 'One of those items is already part of another return request', status: 409 };
+    }
     const qty = want === null ? line.available : want;
     if (!Number.isInteger(qty) || qty < 1) return { error: 'Choose how many of each item go back', status: 400 };
     if (qty > line.available) return { error: `Only ${line.available} of ${line.name} can still be returned`, status: 409 };
@@ -635,6 +694,9 @@ function applyRefundEffects(order, { refundRef = null, bookReturns = true } = {}
     // follow, but nobody asked for the piece back — no collection.
     if (sh.status === 'delivered' && !bookReturns) continue;
     if (sh.status === 'delivered') {
+      // The maker hears their pieces are coming back (and, if they were
+      // already paid for them, that it nets off their next payment).
+      require('./notify').refundedParcelComing(order.id, sh.shop_id);
       jobs.push(delivery.bookReversePickup(sh.id).then((r) => {
         db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
           .run(sh.id, sh.status, `Return pickup booked${r && r.ref ? ' · ' + r.ref : ''}`);
@@ -664,6 +726,6 @@ function applyRefundEffects(order, { refundRef = null, bookReturns = true } = {}
 module.exports = {
   REASONS, LEGACY_REASONS, FAULT_REASONS, IN_FLIGHT, MAX_IMAGES, BUYER_RETURN_DAYS,
   reasonLabel, changeOfMindFee, feeCents, money, deliveryRefundRule, deliveryRefundCents, deliveryLeftCents, grossCents, requestItems, returnableItems, lockedItems, heldUnits,
-  ineligibleReason, deadline, fullyReturned, reverseCreditsFor,
-  shape, create, cancelOwn, approve, bookCollections, markCollected, refund, applyRefundEffects, emailItems,
+  ineligibleReason, deadline, parcelDeadline, parcelWindows, fullyReturned, reverseCreditsFor,
+  shape, shapeForBuyer, create, cancelOwn, approve, bookCollections, markCollected, refund, applyRefundEffects, emailItems,
 };

@@ -636,6 +636,9 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
     // Parcels the courier hasn't collected are stopped (courier booking
     // cancelled, maker told); delivered ones get a return collection.
     const parcels = await returns.applyRefundEffects(order, { refundRef: (refund && refund.id) || null });
+    // The buyer hears about the refund (and any collection) by email; makers
+    // were told inside applyRefundEffects (parcel stopped / coming back).
+    require('../notify').orderRefunded(order.id, parcels);
 
     const fresh = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
     res.json({ ok: true, order: { publicId: fresh.public_id, refundedAt: fresh.refunded_at }, parcels });
@@ -834,6 +837,8 @@ router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
     const m = { gross: returns.grossCents(returns.requestItems(rr.id)), fee: fresh.fee_cents, delivery: fresh.delivery_refund_cents || 0, refund: fresh.refund_cents };
     const msg = email.returnApproved({ order, items: emailItems(rr.id), money: m });
     email.send({ to: order.email, ...msg }).catch((e) => console.error('return-approved email failed:', e.message));
+    // Each maker whose pieces are coming back is told too.
+    require('../notify').returnApprovedMakers(rr.id);
 
     res.json({ ok: true, request: returns.shape(fresh) });
   } catch (e) { next(e); }

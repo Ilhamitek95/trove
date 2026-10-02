@@ -78,5 +78,7 @@
   "This page needs the link from your reset email.": "تحتاج هذه الصفحة إلى الرابط الوارد في رسالة إعادة التعيين.",
   "This reset link has expired or was already used — ask for a new one below.": "انتهت صلاحية رابط إعادة التعيين هذا أو سبق استخدامه — اطلب رابطاً جديداً أدناه.",
   "Thank you — your email is confirmed. Sign in to carry on.": "شكراً لك — تم تأكيد بريدك الإلكتروني. سجّل الدخول لتتابع.",
-  "That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.": "انتهت صلاحية رابط التأكيد هذا أو سبق استخدامه. سجّل الدخول ويمكنك طلب رابط جديد من قسم «بياناتي»."
+  "That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.": "انتهت صلاحية رابط التأكيد هذا أو سبق استخدامه. سجّل الدخول ويمكنك طلب رابط جديد من قسم «بياناتي».",
+  "That email doesn’t look right — did you mean {email}?": "لا يبدو هذا البريد الإلكتروني صحيحاً — هل تقصد {email}؟",
+  "That email address doesn't look right — check it and try again": "لا يبدو عنوان البريد الإلكتروني هذا صحيحاً — تحقّق منه وحاول مرة أخرى"
 }

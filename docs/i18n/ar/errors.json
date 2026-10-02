@@ -100,5 +100,8 @@
   "Add a photo of the front of your Emirates ID": "أضف صورة لوجه هويتك الإماراتية",
   "Add a photo of the back of your Emirates ID": "أضف صورة لظهر هويتك الإماراتية",
   "A WhatsApp number is required to apply": "رقم WhatsApp مطلوب لتقديم الطلب",
-  "A WhatsApp number is required for a shop application": "رقم WhatsApp مطلوب لطلب فتح متجر"
+  "A WhatsApp number is required for a shop application": "رقم WhatsApp مطلوب لطلب فتح متجر",
+  "That email address doesn't look right — check it and try again": "لا يبدو عنوان البريد الإلكتروني هذا صحيحاً — تحقّق منه وحاول مرة أخرى",
+  "That piece has not been delivered yet — returns for it open once it arrives": "لم تُسلَّم هذه القطعة بعد — يُتاح إرجاعها بمجرد وصولها",
+  "The return window for that piece has closed": "انتهت مهلة إرجاع هذه القطعة"
 }

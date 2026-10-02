@@ -274,6 +274,21 @@ function togglePhone(){
   updateRegisterUI();
   if(phoneMode)$('mobile').focus();
 }
+/* A new account's email: the same shape check as the server (validate.js
+ * emailError), plus a 'did you mean' for the usual domain slips — a typo
+ * would send every receipt and reset link to an inbox that doesn't exist. */
+const EMAIL_SHAPE=/^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)*\.[^\s@<>.]{2,}$/;
+const DOMAIN_SLIPS={'gmial.com':'gmail.com','gmai.com':'gmail.com','gamil.com':'gmail.com','gmail.co':'gmail.com','gmail.con':'gmail.com','hotmial.com':'hotmail.com','hotmail.co':'hotmail.com','hotmail.con':'hotmail.com','yahoo.co':'yahoo.com','yahoo.con':'yahoo.com','outlook.co':'outlook.com','outlook.con':'outlook.com','icloud.co':'icloud.com','iclod.com':'icloud.com'};
+function emailProblem(e){
+  const m=/^([^@\s]+)@([^@\s]+)$/.exec(e); let hint='';
+  if(m){
+    const d=m[2].toLowerCase();
+    if(DOMAIN_SLIPS[d])hint=m[1]+'@'+DOMAIN_SLIPS[d];
+    else if(!d.includes('.')&&/^[a-z0-9-]+(com|net|org|ae)$/.test(d))hint=m[1]+'@'+d.replace(/(com|net|org|ae)$/,'.$1');
+  }
+  if(hint)return _t('That email doesn’t look right — did you mean {email}?',{email:hint});
+  return EMAIL_SHAPE.test(e)&&e.length<=254?'':_t("That email address doesn't look right — check it and try again");
+}
 function validUAEMobile(v){
   const d=String(v||'').replace(/[\s().-]/g,'').replace(/^\+/,'');
   return /^(971|0)?5\d{8}$/.test(d);
@@ -381,6 +396,7 @@ async function signIn(){
   if(!pass) return showErr(phoneMode?_t('Enter your mobile number and password.'):_t('Enter your email and password.'));
   if((!phoneMode||registering)&&!email) return showErr(phoneMode?_t('Enter your email too — order updates go there.'):_t('Enter your email and password.'));
   if(registering&&!name) return showErr(_t('Enter your name.'));
+  if(registering&&email){ const bad=emailProblem(email); if(bad) return showErr(bad); }
 
   const label=btn.textContent;
   btn.textContent=_t('One moment…'); btn.style.opacity='.7'; btn.disabled=true;

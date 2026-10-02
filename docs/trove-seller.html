@@ -1833,7 +1833,9 @@ let returnRequests=[];
 async function reloadReturns(){
   try{ const {returns:r}=await TroveAPI.api('/api/seller/returns'); returnRequests=r||[]; }
   catch(_){ returnRequests=[]; }
-  const open=returnRequests.filter(r=>r.status==='requested').length;
+  // Waiting on Trove, or approved and on its way back to the maker: both need
+  // the maker's eye, so the badge stays until the return is refunded/closed.
+  const open=returnRequests.filter(r=>['requested','approved','collected'].includes(r.status)).length;
   const pill=$('returnPill');
   if(pill){ pill.textContent=open; pill.style.display=open?'':'none'; }
   if($('view-returns').classList.contains('active'))renderReturnsView();

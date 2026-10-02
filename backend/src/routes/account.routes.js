@@ -46,13 +46,22 @@ router.patch('/me', requireAuth, (req, res) => {
 router.get('/orders', requireAuth, (req, res) => {
   // Orders placed as a guest with this (confirmed) email join the account.
   require('../guest-orders').claimQuietly(req.user);
-  const orders = db.prepare("SELECT * FROM orders WHERE buyer_id=? AND status!='pending' ORDER BY created_at DESC").all(req.user.id);
+  // A checkout that was opened but never paid is closed as 'cancelled' by the
+  // hourly sweep (src/order-sweep.js): it was never an order and nothing was
+  // charged, so — as in the admin list — it is not shown. An order cancelled
+  // AFTER payment (sold out first) keeps its flag and stays, with its refund.
+  const orders = db.prepare(`SELECT * FROM orders WHERE buyer_id=? AND status!='pending'
+      AND NOT (status='cancelled' AND COALESCE(attention,'')='' AND title_transferred_at IS NULL)
+    ORDER BY created_at DESC`).all(req.user.id);
+  const parseShip = (o) => { try { const s = JSON.parse(o.shipping_json || 'null'); return s && typeof s === 'object' ? s : null; } catch (_) { return null; } };
   const itemsStmt = db.prepare(`SELECT oi.*, s.name AS shop_name, s.color, s.is_house FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
   const shipStmt = db.prepare(`SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);
   const reqStmt = db.prepare('SELECT * FROM return_requests WHERE order_id=? ORDER BY created_at DESC, id DESC');
   res.json({
     orders: orders.map((o) => {
       const retItems = returns.returnableItems(o);
+      const windows = returns.parcelWindows(o);
+      const ship = parseShip(o);
       return {
         id: o.public_id,
         status: o.status,
@@ -61,6 +70,18 @@ router.get('/orders', requireAuth, (req, res) => {
         deliveredAt: o.delivered_at || null,
         returnWindowEndsAt: o.return_window_ends_at || null,
         refundedAt: o.refunded_at || null,
+        // Paid, then cancelled before anything was sent (a piece sold out
+        // first) — refunded in full automatically.
+        couldNotGoAhead: o.status === 'cancelled' && !!o.attention,
+        // The order's own record: where it goes and what was paid.
+        details: {
+          shipTo: ship ? { name: ship.name || '', line: ship.line || '', line2: ship.line2 || '', city: ship.city || '' } : null,
+          subtotal: o.subtotal_cents / 100,
+          delivery: o.shipping_cents / 100,
+          serviceFee: (o.service_fee_cents || 0) / 100,
+          total: o.total_cents / 100,
+          paidByCard: !!o.stripe_payment_intent_id,
+        },
         // Tax invoice + credit notes (only once Trove is VAT-registered).
         documents: require('../tax-docs').docsFor(o),
         // Pieces Trove cancelled before dispatch, and what they refunded.
@@ -72,8 +93,15 @@ router.get('/orders', requireAuth, (req, res) => {
           productId: i.product_id, shopId: i.shop_id, orderItemId: i.id,
           shop: { name: i.shop_name, color: i.color, isHouse: !!i.is_house },
         })),
-        shipments: shipStmt.all(o.id).map((sh) => shipments.shape(sh)),
+        // The buyer's view: friendly timeline lines, no internal references;
+        // returnUntil = this parcel's last day for a return (returns open per parcel).
+        shipments: shipStmt.all(o.id).map((sh) => {
+          const w = windows.get(sh.shop_id);
+          return { ...shipments.shapeForBuyer(sh), returnUntil: w && w.open ? w.deadline : null };
+        }),
         returns: {
+          // Why the Request a return button isn't there (null when it is).
+          blocked: returns.ineligibleReason(o),
           // Unit-level: eligible while the window is open AND some unit is
           // still free to send back. Money facts are server-fed; the picker
           // only ever sums the unit prices below minus the fee, and the fee
@@ -96,7 +124,7 @@ router.get('/orders', requireAuth, (req, res) => {
           reasons: Object.entries(returns.REASONS).map(([value, label]) => ({ value, label })),
           personalisedReasons: [...returns.FAULT_REASONS],
           items: retItems,
-          requests: reqStmt.all(o.id).map((r) => returns.shape(r)),
+          requests: reqStmt.all(o.id).map((r) => returns.shapeForBuyer(r)),
         },
       };
     }),
@@ -140,6 +168,8 @@ router.post('/orders/:publicId/return-request', requireAuth, notInShopView, (req
       reasonLabel: returns.reasonLabel(req.body.reason),
     });
     email.send({ to: order.email, ...msg }).catch((e) => console.error('return-requested email failed:', e.message));
+    // Only the owner can approve it — tell them it is waiting.
+    require('../notify').ownerReturnRequested(result.id);
 
     res.status(201).json({ ok: true, id: result.id });
   } catch (e) { next(e); }

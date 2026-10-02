@@ -90,6 +90,57 @@ function shape(s) {
   };
 }
 
+/* ---- the buyer's view of a parcel (2026-10-02) ----
+ * The timeline is one log shared by Trove, makers and buyers: courier errors,
+ * booking references and staff notes are written there for the people who act
+ * on them. The buyer sees a fixed, friendly line per step instead, never the
+ * raw note; the courier gateway (OTO) and its internal booking reference are
+ * not a carrier or a tracking number the buyer can use. */
+const BUYER_NOTES = {
+  processing: 'Order received — preparing your items',
+  packed: 'Packed — waiting for the courier to collect it',
+  shipped: 'Handed to the courier',
+  out_for_delivery: 'Out for delivery',
+  delivered: 'Delivered',
+  cancelled: 'This parcel was cancelled',
+  return: 'Return collection booked',
+  refunded: 'Order refunded',
+};
+// Notes that are already written for the buyer and say more than the step.
+const BUYER_SAFE = new Set([
+  'Delivery attempt failed — the courier will try again',
+  'Delivery on hold with the courier',
+]);
+const GATEWAYS = /^(oto|mock)$/i;
+const buyerCarrier = (s) => (s.carrier && !GATEWAYS.test(String(s.carrier).trim()) ? String(s.carrier).trim() : '');
+function buyerNote(e, s) {
+  const n = String(e.note || '');
+  if (/^Return (collection|pickup) booked/i.test(n)) return BUYER_NOTES.return;
+  if (/^Order refunded/i.test(n)) return BUYER_NOTES.refunded;
+  if (BUYER_SAFE.has(n)) return n;
+  if (e.status === 'shipped') {
+    if (/^(Ready for collection|Packed|Courier booked|Courier assigned|Driver|Courier could not collect)/i.test(n)) return BUYER_NOTES.packed;
+    const c = buyerCarrier(s);
+    return BUYER_NOTES.shipped + (c ? ` (${c})` : '');
+  }
+  return BUYER_NOTES[e.status] || '';
+}
+function shapeForBuyer(s) {
+  const x = shape(s);
+  const internalRef = !!s.delivery_ref && String(s.tracking_number || '') === String(s.delivery_ref);
+  x.carrier = buyerCarrier(s);
+  x.trackingNumber = internalRef ? '' : x.trackingNumber;
+  delete x.deliveryRef;
+  const out = [];
+  for (const e of x.timeline) {
+    const note = buyerNote({ status: e.status, note: e.note }, s);
+    if (!note || (out.length && out[out.length - 1].note === note)) continue;
+    out.push({ ...e, note });
+  }
+  x.timeline = out;
+  return x;
+}
+
 // The default human note attached to a status change.
 function noteFor(status, carrier, tracking) {
   switch (status) {
@@ -158,6 +209,8 @@ function markDelivered(shipmentId, source = 'seller') {
       .run(shipmentId, 'delivered', source === 'courier' ? 'Delivered (confirmed by courier)' : 'Delivered');
     deriveOrderStatus(sh.order_id);
   })();
+  // The buyer hears it arrived and until when it can go back (best-effort).
+  require('./notify').parcelDelivered(shipmentId);
   return db.prepare('SELECT * FROM shipments WHERE id=?').get(shipmentId);
 }
 
@@ -176,4 +229,4 @@ function assertUndoable(sh) {
   }
 }
 
-module.exports = { FLOW, LABELS, shape, statusLabel, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };
+module.exports = { FLOW, LABELS, shape, shapeForBuyer, BUYER_NOTES, statusLabel, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };
