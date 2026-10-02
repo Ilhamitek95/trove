@@ -279,14 +279,14 @@ test('F006: a typed licence does not skip the ID step; settlement waits for the 
 });
 
 test('F006: a payout account in someone else’s name is flagged; a bank-only change keeps the ID check', async () => {
-  const r = await ctx.api('POST', '/api/seller/payout-setup', { cookie: makerCookie, body: GOOD_ID({ accountName: 'Someone Else Entirely', eidFront: undefined, eidBack: undefined, address: undefined, iban: '' }) });
+  const r = await ctx.api('POST', '/api/seller/payout-setup', { cookie: makerCookie, body: GOOD_ID({ accountName: 'Someone Else Entirely', eidFront: undefined, eidBack: undefined, address: undefined, iban: '', currentPassword: 'testpass123' }) });
   assert.equal(r.status, 200, r.text);
   assert.equal(r.data.shop.identity.verified, true, 'same ID details, so the check stands');
   assert.equal(r.data.shop.iban_masked, 'AE·· ···· 3456', 'an empty IBAN keeps the one on file');
   const pv = (await ctx.api('GET', '/api/admin/settlements/preview', { cookie: adminCookie })).data;
   assert.equal(pv.eligible.find((x) => x.shopId === shopId).accountNameMatches, false, 'mismatch flagged to the admin');
 
-  const renewed = await ctx.api('POST', '/api/seller/payout-setup', { cookie: makerCookie, body: GOOD_ID({ emiratesIdExpiry: '2031-01-09', accountName: 'Mara Haddad', iban: '' }) });
+  const renewed = await ctx.api('POST', '/api/seller/payout-setup', { cookie: makerCookie, body: GOOD_ID({ emiratesIdExpiry: '2031-01-09', accountName: 'Mara Haddad', iban: '', currentPassword: 'testpass123' }) });
   assert.equal(renewed.status, 200);
   assert.equal(renewed.data.shop.identity.reason, 'id_to_check', 'a new ID needs a fresh check');
   await ctx.api('POST', `/api/admin/shops/${shopId}/identity-check`, { cookie: adminCookie, body: { checked: true } });
