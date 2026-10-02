@@ -43,7 +43,7 @@ const DEFAULTS = {
     address: 'Sharjah Media City (Shams), Sharjah, United Arab Emirates',
     email: 'hello@troveathome.com',
     whatsapp: '',
-    vatTrn: '',
+    vatTrn: '104316607100003',
   },
   'home.hero': {
     eyebrow: 'Thoughtfully gathered',

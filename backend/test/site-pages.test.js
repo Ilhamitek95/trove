@@ -150,7 +150,7 @@ test('company details default to Serein Consultancy LLC, the company behind Trov
     address: 'Sharjah Media City (Shams), Sharjah, United Arab Emirates',
     email: 'hello@troveathome.com',
     whatsapp: '',
-    vatTrn: '',
+    vatTrn: '104316607100003',
   });
   for (const p of ['/about', '/contact', '/terms', '/privacy']) {
     const res = await get(p);
