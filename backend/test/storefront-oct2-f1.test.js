@@ -64,6 +64,10 @@ after(async () => { await ctx.close(); });
 /* ---------------- F084 money format ---------------- */
 test('F084: prices are AED with Western digits, thousands commas and .50 for fils, whatever the device language', () => {
   const sb = { troveIso: (s) => s };
+  // aed() is the shared formatter from docs/api.js (troveMoney)
+  const api = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'api.js'), 'utf8');
+  const body = api.match(/window\.troveMoney = function \(n, opts\) \{([\s\S]*?)\r?\n  \};/)[1];
+  sb.troveMoney = new Function('window', `return function (n, opts) {${body}\n};`)(sb);
   vm.runInNewContext(`${fnSrc('aedNum')}\n${fnSrc('aed')}\n${fnSrc('plusAed')}\nthis.aed=aed;this.plusAed=plusAed;`, sb);
   // force a foreign default locale: the format must not follow it
   const orig = Number.prototype.toLocaleString;

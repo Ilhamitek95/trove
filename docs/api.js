@@ -70,7 +70,7 @@
   };
   window.troveIso = function (s) { return LANG === 'ar' ? '⁦' + s + '⁩' : String(s); };
   window.troveMoney = function (n, opts) {
-    n = Number(n) || 0;
+    n = Math.round((Number(n) || 0) * 100) / 100;
     var s = 'AED ' + (Number.isInteger(n) && !(opts && opts.decimals) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     return window.troveIso(s);
   };
