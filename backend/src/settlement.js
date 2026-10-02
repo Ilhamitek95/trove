@@ -31,8 +31,10 @@ const PRIVATE_DIR = () => process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..'
  * window closed BEFORE the run start, the ORDER's buyer window closed too (on
  * a multi-shop order the buyer's clock starts at the last delivery, so every
  * other parcel must be delivered first), no return request for that shop's
- * pieces is still in flight, and the order was never
- * refunded. Orders placed under the old 30-day promise (return_days set by
+ * pieces is still in flight, the order was never refunded, and nothing
+ * holds it (orders.hold_reason: a card dispute, or a refund made straight in
+ * the Stripe dashboard that a person has to reconcile — src/stripe-events.js).
+ * Orders placed under the old 30-day promise (return_days set by
  * migration 016) keep the per-parcel hold they were sold under. */
 const ELIGIBLE_CREDITS = `
   SELECT b.id, b.shop_id, b.order_id, b.amount_cents
@@ -41,6 +43,7 @@ const ELIGIBLE_CREDITS = `
   JOIN shipments sh ON sh.order_id = b.order_id AND sh.shop_id = b.shop_id
   WHERE b.type = 'credit_sale' AND b.settlement_id IS NULL
     AND o.refunded_at IS NULL
+    AND COALESCE(o.hold_reason, '') = ''
     AND sh.status = 'delivered'
     AND sh.return_window_ends_at IS NOT NULL
     AND sh.return_window_ends_at < @at
@@ -205,8 +208,9 @@ function generatePurchaseNote(item, settlement) {
     SELECT b.amount_cents, o.public_id, o.created_at
     FROM seller_balances b JOIN orders o ON o.id = b.order_id
     WHERE b.settlement_id=? AND b.shop_id=? AND b.type='credit_sale' ORDER BY o.created_at`).all(settlement.id, item.shop_id);
-  const lineStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents FROM order_items oi
-    JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=?`);
+  // Units Trove cancelled before dispatch were never bought from the maker.
+  const lineStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty - oi.cancelled_qty AS qty, oi.price_cents FROM order_items oi
+    JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=? AND oi.qty > oi.cancelled_qty`);
   const aed = (c) => `AED ${(c / 100).toFixed(2)}`;
   const orderBlocks = orders.map((o) => {
     const lines = lineStmt.all(o.public_id, item.shop_id);

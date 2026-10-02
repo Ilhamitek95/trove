@@ -11,6 +11,7 @@
 let n = 0;
 const calls = [];
 const intentStatus = new Map();
+const refundsMade = [];
 
 function record(method, params, result) {
   calls.push({ method, params });
@@ -19,7 +20,7 @@ function record(method, params, result) {
 
 module.exports = {
   calls,
-  reset() { calls.length = 0; intentStatus.clear(); },
+  reset() { calls.length = 0; intentStatus.clear(); refundsMade.length = 0; },
   setIntentStatus(id, status) { intentStatus.set(id, status); },
 
   paymentIntents: {
@@ -45,7 +46,29 @@ module.exports = {
     retrieve: async (id) => record('paymentIntents.retrieve', { id }, { id, client_secret: `${id}_secret_test`, status: intentStatus.get(id) || 'requires_payment_method' }),
   },
   refunds: {
-    create: async (params) => record('refunds.create', params, { id: `re_mock_${++n}`, ...params }),
+    // `failNext` makes the next create throw (a declined/failed refund).
+    create: async (params) => {
+      if (module.exports.refunds.failNext) {
+        const msg = module.exports.refunds.failNext;
+        module.exports.refunds.failNext = null;
+        record('refunds.create.failed', params, null);
+        throw new Error(msg);
+      }
+      const r = record('refunds.create', params, { id: `re_mock_${++n}`, status: 'succeeded', metadata: {}, ...params });
+      refundsMade.push(r);
+      return r;
+    },
+    list: async (params) => record('refunds.list', params, {
+      data: refundsMade.filter((r) => !params || !params.payment_intent || r.payment_intent === params.payment_intent),
+      has_more: false,
+    }),
+    failNext: null,
+  },
+  /** Test hook: a refund made straight in the Stripe dashboard (no Trove metadata). */
+  addExternalRefund(paymentIntent, amount) {
+    const r = { id: `re_ext_${++n}`, payment_intent: paymentIntent, amount, status: 'succeeded', metadata: {} };
+    refundsMade.push(r);
+    return r;
   },
   transfers: {
     create: async (params) => record('transfers.create', params, { id: `tr_mock_${++n}`, ...params }),

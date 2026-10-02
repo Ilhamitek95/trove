@@ -1608,6 +1608,7 @@ function shipCardHTML(o){
   const items=(o.items||[]).map(i=>`<div class="sc-li">
       <div class="th"><div style="position:absolute;inset:0;${grad(safeColor(o.shop&&o.shop.color))}"></div>${(i.image||i.seed)?`<img src="${esc(safeImg(i.image)||img(i.seed))}" onerror="this.style.display='none'">`:''}</div>
       <div><div class="nm">${esc(i.name)}</div><div class="q">Qty ${Number(i.qty)||0} · ${aed(i.price)} each</div>
+        ${i.cancelledQty?`<div class="q" style="color:#B3261E;font-weight:700">${Number(i.cancelledQty)} cancelled by Trove — leave ${Number(i.qty)?'that one':'it'} out of the parcel</div>`:''}
         ${optLabel(i.options)?`<div class="q" style="color:var(--accent-ink);font-weight:700">${esc(optLabel(i.options))}</div>`:''}
         ${exText(i.extras)?`<div class="q" style="color:var(--accent-ink);font-weight:700">+ ${esc(exText(i.extras))}</div>`:''}
         ${i.personalization?`<div class="q" style="color:var(--accent-ink);font-weight:700">✎ Personalisation: “${esc(i.personalization)}”</div>`:''}</div>
@@ -1850,18 +1851,26 @@ function shipActions(s){
   // Courier-booked parcel (Trove books it: OTO or Quiqup): the first step hands
   // it to the courier for collection, and the courier's label goes on the box.
   // After that only the courier moves it on — the server refuses anything else.
-  const courier=!!s.deliveryRef;
+  // Trove books the courier (booked, or a live courier is connected): the
+  // maker only marks it packed. 'Shipped' then means packed + collection
+  // booked until the courier reports collecting it (collectedAt).
+  const courier=!!s.deliveryRef||!!s.courierManaged;
   if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">✓ Delivered ${fmtDate(s.updatedAt)}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${courier?'':undoBtn(s)}</div>`;
   let [ns,label]=SHIP_NEXT[s.status]||[];
-  if(courier&&s.status==='processing') label='Packed · ready for collection';
+  if(courier&&s.status==='processing') label=s.courierPending?'Try booking the courier again':'Packed · ready for collection';
   if(courier&&s.status!=='processing') ns=null;
-  const courierRow=courier?`<div class="sc-act" style="gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px">
-      <span>Courier booking <b>${esc(s.deliveryRef)}</b>${s.readyAt?' · handed over '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
+  const courierRow=s.deliveryRef?`<div class="sc-act" style="gap:10px;flex-wrap:wrap;color:var(--muted);font-size:13px">
+      <span>Courier booking <b>${esc(s.deliveryRef)}</b>${s.collectedAt?' · collected '+fmtDateTime(s.collectedAt):s.readyAt?' · collection booked '+fmtDateTime(s.readyAt):' · collected once you mark it packed'}</span>
       <a class="btn btn-ghost btn-sm" href="/api/seller/shipments/${Number(s.id)}/label" target="_blank" rel="noopener">Print label</a>
     </div>`:'';
+  const waiting=s.status==='shipped'&&!s.collectedAt;
+  const msg=s.courierPending?'Packed — Trove is booking the courier collection. Nothing more for you to do; we’ll email if anything changes.'
+    :waiting?'Packed — waiting for the courier to collect it. Keep it ready with the label on.'
+    :'With the courier — updates arrive automatically.';
   if(courier) return courierRow+`<div class="sc-act">
-      ${ns?`<button class="btn btn-coral btn-sm" onclick="advanceShip(${Number(s.id)},${jsq(ns)})">${label}</button>`:`<span style="color:var(--muted);font-size:13px">With the courier — updates arrive automatically.</span>`}
-      ${s.status==='shipped'?undoBtn(s):''}
+      ${s.courierPending?`<span style="color:var(--muted);font-size:13px">${msg}</span>`:''}
+      ${ns?`<button class="btn ${s.courierPending?'btn-ghost':'btn-coral'} btn-sm" onclick="advanceShip(${Number(s.id)},${jsq(ns)})">${label}</button>`:`<span style="color:var(--muted);font-size:13px">${msg}</span>`}
+      ${waiting?undoBtn(s):''}
     </div>`;
   const track=courierRow+`<div class="sc-track">
       <div class="field" style="margin:0"><label>Courier</label><input id="ship-carrier-${s.id}" value="${esc(s.carrier)}" placeholder="e.g. Trove Express"></div>
@@ -1888,7 +1897,7 @@ async function advanceShip(id,status){
   if(c)body.carrier=c.value.trim();
   if(t)body.trackingNumber=t.value.trim();
   if(u)body.trackingUrl=u.value.trim();
-  try{ await TroveAPI.api('/api/seller/shipments/'+id,{method:'PATCH',body}); toast('Order updated'); await reloadOrders(); }
+  try{ const r=await TroveAPI.api('/api/seller/shipments/'+id,{method:'PATCH',body}); toast((r&&r.notice)||'Order updated'); await reloadOrders(); }
   catch(e){ toast(e.message||'Could not update'); }
 }
 

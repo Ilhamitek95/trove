@@ -24,7 +24,11 @@ const loadShipment = (id) => db.prepare(`SELECT sh.*, o.shipping_json, o.phone A
 // The owner's name + email go to the courier as the pickup contact (courier-only, like pickup_phone).
 const loadShop = (id) => db.prepare(`SELECT s.*, u.name AS owner_name, u.email AS owner_email FROM shops s
     LEFT JOIN users u ON u.id = s.user_id WHERE s.id=?`).get(id);
-const loadItems = (sh) => db.prepare('SELECT * FROM order_items WHERE order_id=? AND shop_id=? ORDER BY id').all(sh.order_id, sh.shop_id);
+// What actually travels: units Trove cancelled before dispatch are left out
+// (src/cancellations.js), and a line with nothing left goes altogether.
+const loadItems = (sh) => db.prepare('SELECT * FROM order_items WHERE order_id=? AND shop_id=? ORDER BY id').all(sh.order_id, sh.shop_id)
+  .map((i) => ({ ...i, qty: i.qty - (i.cancelled_qty || 0) }))
+  .filter((i) => i.qty > 0);
 
 /** Book the buyer-bound pickup for a shipment. No-op if already booked. */
 async function bookPickup(shipmentId) {
@@ -69,6 +73,20 @@ async function markReady(shipmentId) {
 }
 
 /**
+ * Cancel the courier booking of a parcel Trove refunded or cancelled before
+ * the courier collected it. Resolves { cancelled: false } when nothing was
+ * booked; throws when the courier refuses (or the integration cannot cancel)
+ * — the caller flags the parcel for a person.
+ */
+async function cancelPickup(shipmentId) {
+  const sh = loadShipment(shipmentId);
+  if (!sh || !sh.delivery_ref) return { cancelled: false };
+  const p = provider();
+  if (typeof p.cancelPickup !== 'function') throw new Error(`${p.name} bookings can't be cancelled automatically`);
+  return p.cancelPickup(sh.delivery_ref, sh);
+}
+
+/**
  * Which integration booked a shipment: the stored column, or — for rows
  * booked before it existed — read from the reference itself (OTO orderIds
  * are '<public id>-<shipment id>', the mock's start QMOCK-, anything else is
@@ -91,4 +109,4 @@ async function getLabel(shipmentId) {
 
 const getStatus = (ref) => provider().getStatus(ref);
 
-module.exports = { bookPickup, bookReversePickup, markReady, getLabel, getStatus, provider, providerOf, isLive, isOto, mode };
+module.exports = { bookPickup, bookReversePickup, markReady, cancelPickup, getLabel, getStatus, provider, providerOf, isLive, isOto, mode };

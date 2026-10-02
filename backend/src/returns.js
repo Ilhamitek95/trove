@@ -127,15 +127,19 @@ function deliveryRefundRule(row) {
   const ids = [row.id, ...others.map((o) => o.id)];
   const covered = db.prepare(`SELECT COALESCE(SUM(qty),0) AS q FROM return_request_items
     WHERE request_id IN (${ids.map(() => '?').join(',')})`).get(...ids).q;
-  const total = db.prepare('SELECT COALESCE(SUM(qty),0) AS q FROM order_items WHERE order_id=?').get(row.order_id).q;
+  // Units Trove cancelled before dispatch were never delivered, so the
+  // order that came back is what was actually sent.
+  const total = db.prepare('SELECT COALESCE(SUM(qty - cancelled_qty),0) AS q FROM order_items WHERE order_id=?').get(row.order_id).q;
   return total > 0 && covered >= total;
 }
-/** The delivery fee still refundable on the order (0 once another request carried it). */
+/** The delivery fee still refundable on the order (0 once another request,
+ *  or a cancellation of the whole order, carried it). */
 function deliveryLeftCents(row) {
   const o = db.prepare('SELECT shipping_cents FROM orders WHERE id=?').get(row.order_id);
   const paid = (o && o.shipping_cents) || 0;
   const already = db.prepare(`SELECT COALESCE(SUM(delivery_refund_cents),0) AS s FROM return_requests
-    WHERE order_id=? AND id != ? AND status IN ('approved','collected','refunded')`).get(row.order_id, row.id).s;
+    WHERE order_id=? AND id != ? AND status IN ('approved','collected','refunded')`).get(row.order_id, row.id).s
+    + db.prepare("SELECT COALESCE(SUM(delivery_refund_cents),0) AS s FROM order_cancellations WHERE order_id=? AND status='refunded'").get(row.order_id).s;
   return Math.max(0, paid - already);
 }
 /** The delivery refund for one request: the rule, or the admin's override
@@ -205,7 +209,7 @@ function heldUnits(orderId) {
 /** order_item_id → 'requested' | 'approved' for items with NO unit left to send back. */
 function lockedItems(orderId) {
   const held = heldUnits(orderId);
-  const lines = db.prepare('SELECT id, qty FROM order_items WHERE order_id=?').all(orderId);
+  const lines = db.prepare('SELECT id, qty - cancelled_qty AS qty FROM order_items WHERE order_id=?').all(orderId);
   const map = new Map();
   for (const l of lines) {
     const h = held.get(l.id);
@@ -219,7 +223,8 @@ function returnableItems(order) {
   const held = heldUnits(order.id);
   // The chosen variation rides along so two lines of the same piece (the mug
   // in Sand and the mug in Clay) are told apart in the return picker.
-  return db.prepare('SELECT id, name_snapshot, qty, price_cents, options, extras, personalization FROM order_items WHERE order_id=?').all(order.id)
+  // A unit Trove cancelled before dispatch never arrived, so it can't go back.
+  return db.prepare('SELECT id, name_snapshot, qty - cancelled_qty AS qty, price_cents, options, extras, personalization FROM order_items WHERE order_id=? AND qty > cancelled_qty').all(order.id)
     .map((i) => {
       const h = held.get(i.id);
       const available = Math.max(0, i.qty - (h ? h.qty : 0));
@@ -344,10 +349,13 @@ function cancelOwn(userId, orderId, requestId) {
 const refundedUnitsSql = `COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
     JOIN return_requests r2 ON r2.id = ri.request_id
     WHERE ri.order_item_id = oi.id AND r2.status = 'refunded'), 0)`;
-/** True once every unit on the order sits in a refunded request. */
+/** Units of each order item no longer the buyer's: refunded through a
+ *  return, or cancelled by Trove before dispatch (src/cancellations.js). */
+const goneUnitsSql = `(${refundedUnitsSql} + oi.cancelled_qty)`;
+/** True once every unit on the order is refunded (returned or cancelled). */
 function fullyReturned(orderId) {
   return db.prepare(`SELECT COUNT(*) AS c FROM order_items oi
-    WHERE oi.order_id=? AND ${refundedUnitsSql} < oi.qty`).get(orderId).c === 0;
+    WHERE oi.order_id=? AND ${goneUnitsSql} < oi.qty`).get(orderId).c === 0;
 }
 
 /* ---- approve (admin): decide the fee, book the collection ---- */
@@ -378,11 +386,21 @@ async function bookCollections(order, requestId) {
   for (const shopId of [...new Set(items.map((i) => i.shop_id))]) {
     const sh = db.prepare('SELECT * FROM shipments WHERE order_id=? AND shop_id=?').get(order.id, shopId);
     if (!sh) continue;
-    const existing = db.prepare("SELECT * FROM return_collections WHERE request_id=? AND shipment_id=? AND status IN ('booking','booked','collected')").get(requestId, sh.id);
-    if (existing) continue;
-    const colId = db.prepare('INSERT INTO return_collections (request_id, shipment_id, shop_id) VALUES (?,?,?)').run(requestId, sh.id, shopId).lastInsertRowid;
+    // One row per (request, parcel). A booking that FAILED is re-tried on the
+    // same row — a failed collection keeps the request waiting (see
+    // markCollected), so a stale failed row must never linger beside a new one.
+    const existing = db.prepare('SELECT * FROM return_collections WHERE request_id=? AND shipment_id=? ORDER BY id DESC LIMIT 1').get(requestId, sh.id);
+    if (existing && existing.status !== 'failed') continue;
+    let colId;
+    if (existing) {
+      colId = existing.id;
+      db.prepare("UPDATE return_collections SET status='booking', note=NULL WHERE id=?").run(colId);
+    } else {
+      colId = db.prepare('INSERT INTO return_collections (request_id, shipment_id, shop_id) VALUES (?,?,?)').run(requestId, sh.id, shopId).lastInsertRowid;
+    }
     if (!['shipped', 'out_for_delivery', 'delivered'].includes(sh.status)) {
-      db.prepare("UPDATE return_collections SET status='failed', note=? WHERE id=?").run('The parcel never reached the buyer — nothing to collect', colId);
+      // Nothing to collect — not a failure, and it never holds the refund.
+      db.prepare("UPDATE return_collections SET status='not_needed', note=? WHERE id=?").run('The parcel never reached the buyer — nothing to collect', colId);
       continue;
     }
     const units = items.filter((i) => i.shop_id === shopId);
@@ -394,6 +412,18 @@ async function bookCollections(order, requestId) {
     }).catch((e) => {
       console.error('Return collection booking failed for shipment', sh.id, e.message);
       db.prepare("UPDATE return_collections SET status='failed', note=? WHERE id=?").run(String(e.message || 'Booking failed').slice(0, 300), colId);
+      const wallet = /OTO1006/.test(`${e.otoCode || ''} ${e.message || ''}`);
+      if (wallet) require('./courier-ops').walletEmpty();
+      require('./notify').adminAlert({
+        subject: `Return collection not booked: order ${order.public_id}`,
+        title: 'A return collection did not book',
+        kicker: `Order ${order.public_id} · return request ${requestId}`,
+        lines: [
+          `The courier collection for the ${units.map((u) => u.name_snapshot).join(', ')} coming back could not be booked.`,
+          wallet ? 'Reason: the OTO wallet is out of credit (OTO1006) — top it up first.' : `Reason: ${String(e.message || '').slice(0, 200)}`,
+          'The buyer is not refunded until it is collected. Press Book the collection again on the return in Admin → Returns.',
+        ],
+      });
     }));
   }
   await Promise.all(jobs);
@@ -423,7 +453,12 @@ async function markCollected(where) {
     if (!where.quiet) db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, (SELECT status FROM shipments WHERE id=?), ?)')
       .run(col.shipment_id, col.shipment_id, 'Return collected from the buyer');
   }
-  const pending = db.prepare("SELECT COUNT(*) AS c FROM return_collections WHERE request_id=? AND status IN ('booking','booked')").get(col.request_id).c;
+  // Every OTHER parcel on the request must be collected too. A collection
+  // whose booking FAILED still owes a pickup (an empty courier wallet, a
+  // refusal): it holds the refund, so the request stays 'approved' and the
+  // admin's 'Book the collection again' stays available. Only 'not_needed'
+  // (the parcel never reached the buyer) and 'collected' let it through.
+  const pending = db.prepare("SELECT COUNT(*) AS c FROM return_collections WHERE request_id=? AND status IN ('booking','booked','failed')").get(col.request_id).c;
   if (pending) return col.request_id;
   db.prepare("UPDATE return_requests SET status='collected', collected_at=COALESCE(collected_at, datetime('now')) WHERE id=? AND status='approved'")
     .run(col.request_id);
@@ -454,7 +489,8 @@ async function refund(requestId, { by = 'courier', note = '' } = {}) {
     let refundRef = null;
     const stripe = require('./stripe').getStripe();
     if (stripe && order.stripe_payment_intent_id && amount > 0) {
-      const r = await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id, amount }, { idempotencyKey: `trove-return-${rr.id}` });
+      const r = await stripe.refunds.create({ payment_intent: order.stripe_payment_intent_id, amount,
+        metadata: { trove_kind: 'return', order_id: String(order.id), return_request_id: String(rr.id) } }, { idempotencyKey: `trove-return-${rr.id}` });
       refundRef = (r && r.id) || null;
     } else if (!stripe || !order.stripe_payment_intent_id) {
       console.warn(`return ${rr.id} (${order.public_id}): refunded without a card refund (demo mode / no PaymentIntent)`);
@@ -489,9 +525,16 @@ async function refund(requestId, { by = 'courier', note = '' } = {}) {
  *  and the books close exactly. Call inside the refund transaction, after
  *  the request is stamped refunded. */
 function reverseCredits(order, requestId) {
+  return reverseCreditsFor(order, requestItems(requestId));
+}
+/** The same for any set of units going back ([{ shop_id, price_cents, qty }])
+ *  — a return request, or a cancellation before dispatch. The units must
+ *  already be counted as gone (request stamped refunded / cancelled_qty
+ *  bumped) so a shop's LAST unit closes its credit exactly. */
+function reverseCreditsFor(order, units) {
   if (order.rail === 'connect') return;
   const perShop = new Map();
-  for (const it of requestItems(requestId)) {
+  for (const it of units) {
     perShop.set(it.shop_id, (perShop.get(it.shop_id) || 0) + it.price_cents * it.qty);
   }
   for (const [shopId, gross] of perShop) {
@@ -499,7 +542,7 @@ function reverseCredits(order, requestId) {
       WHERE order_id=? AND shop_id=? AND type='credit_sale'`).get(order.id, shopId);
     if (!credit) continue; // connect-tier leftovers in a mixed cart have no ledger credit
     const shopDone = db.prepare(`SELECT COUNT(*) AS c FROM order_items oi
-      WHERE oi.order_id=? AND oi.shop_id=? AND ${refundedUnitsSql} < oi.qty`).get(order.id, shopId).c === 0;
+      WHERE oi.order_id=? AND oi.shop_id=? AND ${goneUnitsSql} < oi.qty`).get(order.id, shopId).c === 0;
     if (credit.settlement_id != null) {
       const already = -db.prepare(`SELECT COALESCE(SUM(amount_cents),0) AS s FROM seller_balances
         WHERE order_id=? AND shop_id=? AND type='debit_refund'`).get(order.id, shopId).s;
@@ -544,9 +587,9 @@ const emailItems = (requestId) => {
  * pickups for parcels that went out. Used by the admin's manual refund button
  * (returns use approve() → refund() above).
  */
-function applyRefundEffects(order) {
+function applyRefundEffects(order, { refundRef = null, bookReturns = true } = {}) {
   db.transaction(() => {
-    db.prepare("UPDATE orders SET refunded_at=datetime('now') WHERE id=?").run(order.id);
+    db.prepare("UPDATE orders SET refunded_at=datetime('now'), refund_ref=COALESCE(?, refund_ref) WHERE id=?").run(refundRef, order.id);
     if (order.rail !== 'connect') {
       const swept = db.prepare(`SELECT * FROM seller_balances
         WHERE order_id=? AND type='credit_sale' AND settlement_id IS NOT NULL`).all(order.id);
@@ -555,34 +598,72 @@ function applyRefundEffects(order) {
           VALUES (?,?, 'debit_refund', ?)`).run(c.shop_id, order.id, -c.amount_cents);
       }
     }
-    const o = db.prepare('SELECT vat_amount_cents, vat_reversed_cents, public_id FROM orders WHERE id=?').get(order.id);
-    if (o.vat_amount_cents > 0) {
-      db.prepare('UPDATE orders SET vat_reversed_cents=vat_amount_cents, credit_note_ref=? WHERE id=?').run(`CN-${o.public_id}`, order.id);
-    }
+    // This refund gives back what is still paid — the total less earlier
+    // item returns, cancellations and refunds made in the Stripe dashboard —
+    // and its credit note carries only the VAT those earlier credit notes
+    // did NOT already reverse. Crediting the order's full VAT here would
+    // credit the returned pieces' VAT twice.
+    const o = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
+    const earlier = db.prepare("SELECT COALESCE(SUM(refund_cents),0) AS s FROM return_requests WHERE order_id=? AND status='refunded'").get(order.id).s
+      + db.prepare("SELECT COALESCE(SUM(refund_cents),0) AS s FROM order_cancellations WHERE order_id=? AND status='refunded'").get(order.id).s
+      + (o.external_refund_cents || 0);
+    const vatLeft = Math.max(0, (o.vat_amount_cents || 0) - (o.vat_reversed_cents || 0));
+    db.prepare(`UPDATE orders SET whole_refund_cents=?, whole_refund_vat_cents=?, vat_reversed_cents=vat_reversed_cents + ?,
+        credit_note_ref=CASE WHEN ? > 0 THEN ? ELSE credit_note_ref END WHERE id=?`)
+      .run(Math.max(0, o.total_cents - earlier), vatLeft, vatLeft, vatLeft, `CN-${o.public_id}`, order.id);
   })();
 
-  // Logistics, best-effort after the money is sorted.
-  const delivery = require('./delivery');
-  for (const sh of db.prepare('SELECT * FROM shipments WHERE order_id=?').all(order.id)) {
-    if (['shipped', 'out_for_delivery', 'delivered'].includes(sh.status)) {
-      delivery.bookReversePickup(sh.id).then((r) => {
-        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
-          .run(sh.id, sh.status, `Return pickup booked${r && r.ref ? ' · ' + r.ref : ''}`);
-      }).catch((e) => console.error('Reverse pickup failed for shipment', sh.id, e.message));
-    } else if (sh.status === 'processing') {
-      db.prepare("UPDATE shipments SET status='cancelled', updated_at=datetime('now') WHERE id=?").run(sh.id);
-      db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'cancelled', 'Order refunded — do not ship')").run(sh.id);
-    }
-  }
   const transferred = db.prepare('SELECT DISTINCT transfer_id FROM order_items WHERE order_id=? AND transfer_id IS NOT NULL').all(order.id);
   if (transferred.length) {
     console.warn(`refund ${order.public_id}: reverse these Stripe Transfers by hand:`, transferred.map((t) => t.transfer_id).join(', '));
   }
+
+  // Logistics, after the money is sorted. 'shipped' on a courier-booked
+  // parcel only means PACKED (collection booked, driver not there yet), so:
+  //   - not collected yet (processing, or shipped with no collected_at):
+  //     cancelled in Trove now, the courier booking cancelled, the maker
+  //     emailed not to hand it over. A courier refusal flags the parcel.
+  //   - collected but not delivered (in transit): it can't be stopped from
+  //     here — flagged for a person (the courier must bring it back).
+  //   - delivered: a return collection is booked, as before.
+  const courier = require('./courier-ops');
+  const delivery = require('./delivery');
+  const jobs = [];
+  for (const sh of db.prepare('SELECT * FROM shipments WHERE order_id=?').all(order.id)) {
+    if (sh.status === 'cancelled') continue;
+    // A chargeback or a refund made in the Stripe dashboard: the books
+    // follow, but nobody asked for the piece back — no collection.
+    if (sh.status === 'delivered' && !bookReturns) continue;
+    if (sh.status === 'delivered') {
+      jobs.push(delivery.bookReversePickup(sh.id).then((r) => {
+        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
+          .run(sh.id, sh.status, `Return pickup booked${r && r.ref ? ' · ' + r.ref : ''}`);
+        return { shipmentId: sh.id, action: 'return_booked' };
+      }).catch((e) => {
+        console.error('Reverse pickup failed for shipment', sh.id, e.message);
+        return { shipmentId: sh.id, action: 'return_failed', error: e.message };
+      }));
+    } else if (sh.status === 'out_for_delivery' || sh.collected_at) {
+      db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, sh.status, 'Order refunded — the parcel is already with the courier');
+      courier.raise(sh.id, 'refunded_in_transit', [
+        'This order was refunded, but the courier already has this parcel, so it could not be stopped from Trove.',
+        'Ask the courier (OTO dashboard) to return it to the maker, or book a return collection once it is delivered.',
+      ]);
+      jobs.push(Promise.resolve({ shipmentId: sh.id, action: 'in_transit' }));
+    } else {
+      db.prepare("UPDATE shipments SET status='cancelled', cancelled_at=datetime('now'), updated_at=datetime('now') WHERE id=?").run(sh.id);
+      db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'cancelled', 'Order refunded — do not ship')").run(sh.id);
+      require('./notify').parcelCancelled({ shopId: sh.shop_id, publicId: order.public_id, whole: true,
+        items: db.prepare('SELECT name_snapshot AS name, qty - cancelled_qty AS qty FROM order_items WHERE order_id=? AND shop_id=? AND qty > cancelled_qty').all(order.id, sh.shop_id) });
+      jobs.push(courier.stopParcel(sh.id, 'Order refunded').then((r) => ({ shipmentId: sh.id, action: r.stopped ? 'cancelled' : 'cancel_failed', error: r.error })));
+    }
+  }
+  return Promise.all(jobs);
 }
 
 module.exports = {
   REASONS, LEGACY_REASONS, FAULT_REASONS, IN_FLIGHT, MAX_IMAGES, BUYER_RETURN_DAYS,
   reasonLabel, changeOfMindFee, feeCents, money, deliveryRefundRule, deliveryRefundCents, deliveryLeftCents, grossCents, requestItems, returnableItems, lockedItems, heldUnits,
-  ineligibleReason, deadline, fullyReturned,
+  ineligibleReason, deadline, fullyReturned, reverseCreditsFor,
   shape, create, cancelOwn, approve, bookCollections, markCollected, refund, applyRefundEffects, emailItems,
 };

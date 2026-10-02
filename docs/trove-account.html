@@ -625,12 +625,12 @@ function renderOrders(){
       body=sh.map(s=>{
         const color=safeColor(s.shop&&s.shop.color);
         const items=(s.items||[]).map(it=>`<div class="oline"><div class="im"><div style="position:absolute;inset:0;${grad(color)}"></div>${it.image?`<img src="${esc(it.image)}" alt="" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1" onerror="this.style.display='none'">`:''}</div>
-          <div><div class="nm">${esc(it.name)}</div><div class="qt">Qty ${esc(it.qty)}</div>${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
+          <div><div class="nm">${esc(it.name)}</div><div class="qt">Qty ${esc(it.qty)}</div>${it.cancelledQty?`<div class="qt" style="font-weight:600">${esc(it.cancelledQty)} cancelled and refunded</div>`:''}${optLabel(it.options)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">${esc(optLabel(it.options))}</div>`:''}${exText(it.extras)?`<div class="qt" style="color:var(--accent-ink);font-weight:600">+ ${esc(exText(it.extras))}</div>`:''}${it.personalization?`<div class="qt" style="color:var(--accent-ink);font-weight:600">Personalisation: “${esc(it.personalization)}”</div>`:''}</div><div class="pr">${aed(it.price*it.qty)}</div></div>`).join('');
         const last=(s.timeline||[]).slice(-1)[0];
         const tn=s.trackingNumber?`<div class="ship-track">${s.trackingUrl?`<a href="${esc(s.trackingUrl)}" target="_blank" rel="noopener">Track parcel ↗</a> · `:''}${s.carrier?esc(s.carrier)+' · ':''}${esc(s.trackingNumber)}</div>`:'';
         return `<div class="ship">
           <div class="ship-hd"><span class="oc-shop"><span class="gem"></span>${esc(s.shop?s.shop.name:'Shop')}</span><span class="opill ${SHIP_PILL[s.status]||'processing'}">${esc(s.statusLabel)}</span></div>
-          ${shipTracker(s.status)}
+          ${shipTracker(s.statusLabel==='Packed'?'processing':s.status)}
           ${last?`<div class="ship-note">${esc(last.note||last.label)}${last.at?' · '+fmtDate(last.at):''}</div>`:''}
           ${expectedLine(s)}
           ${tn}
@@ -655,9 +655,17 @@ function renderOrders(){
       </div>
       <div class="oc-body">${body}</div>
       <div class="oc-foot">
+        ${(o.cancellations||[]).map(c=>`<div class="ship-note" style="margin:0 0 8px">Cancelled before dispatch: ${c.items.map(i=>esc(i.name)+(i.qty>1?' ×'+esc(i.qty):'')).join(', ')} · ${aed(c.refund)} refunded${c.at?' '+fmtDate(c.at):''}</div>`).join('')}
+        ${docsHTML(o)}
         ${returnsFootHTML(o)}
       </div></div>`;
   }).join('');
+}
+/* Tax invoice + credit notes — only on orders where VAT was charged. */
+function docsHTML(o){
+  const d=o.documents||{}; if(!d.taxInvoice)return '';
+  const base=`/api/account/orders/${encodeURIComponent(o.id)}`;
+  return `<div class="ship-note" style="margin:0 0 8px">Tax invoice <a href="${base}/tax-invoice" target="_blank" rel="noopener">${esc(d.taxInvoice)}</a>${(d.creditNotes||[]).map(c=>` · credit note <a href="${base}/credit-notes/${encodeURIComponent(c.ref)}" target="_blank" rel="noopener">${esc(c.ref)}</a>`).join('')}</div>`;
 }
 function renderOverview(){
   const first=(ME&&ME.name?ME.name.split(' ')[0]:'there');

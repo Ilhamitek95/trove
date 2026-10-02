@@ -95,8 +95,8 @@ function summary(shopId, days) {
     WHERE shop_id = ? AND created_at > datetime('now', ?)`).get(shopId, w);
   const s = db.prepare(`SELECT
       COUNT(DISTINCT o.id) AS orders,
-      COALESCE(SUM(oi.qty), 0) AS units,
-      COALESCE(SUM(oi.price_cents * oi.qty), 0) AS gross
+      COALESCE(SUM(oi.qty - oi.cancelled_qty), 0) AS units,
+      COALESCE(SUM(oi.price_cents * (oi.qty - oi.cancelled_qty)), 0) AS gross
     FROM order_items oi JOIN orders o ON o.id = oi.order_id
     WHERE oi.shop_id = ? AND o.status IN ${PAID} AND o.created_at > datetime('now', ?)`).get(shopId, w);
 
@@ -145,9 +145,9 @@ function productRows(shopId, days) {
         WHERE e.product_id = p.id AND e.kind = 'product_view' AND e.created_at > datetime('now', ?)) AS views,
       (SELECT COUNT(*) FROM analytics_events e
         WHERE e.product_id = p.id AND e.kind = 'add_to_cart' AND e.created_at > datetime('now', ?)) AS adds,
-      COALESCE((SELECT SUM(oi.qty) FROM order_items oi JOIN orders o ON o.id = oi.order_id
+      COALESCE((SELECT SUM(oi.qty - oi.cancelled_qty) FROM order_items oi JOIN orders o ON o.id = oi.order_id
         WHERE oi.product_id = p.id AND o.status IN ${PAID} AND o.created_at > datetime('now', ?)), 0) AS units,
-      COALESCE((SELECT SUM(oi.price_cents * oi.qty) FROM order_items oi JOIN orders o ON o.id = oi.order_id
+      COALESCE((SELECT SUM(oi.price_cents * (oi.qty - oi.cancelled_qty)) FROM order_items oi JOIN orders o ON o.id = oi.order_id
         WHERE oi.product_id = p.id AND o.status IN ${PAID} AND o.created_at > datetime('now', ?)), 0) AS gross
     FROM products p
     WHERE p.shop_id = ? AND p.status <> 'hidden'

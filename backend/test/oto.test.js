@@ -303,16 +303,37 @@ test('OTO webhook: signed statuses drive the shipment, pick up courier + trackin
   assert.deepEqual(await r.json(), { received: true, matched: false });
 });
 
-test('shipmentError webhook: timeline note + hand-over cleared so re-marking packed retries', async () => {
+test('shipmentError webhook: booking recorded as failed, parcel back to packed-not-booked, admin flagged, the sweep re-books it', async () => {
   const { sh } = await paidShipment('TRV-OT08', 'pi_ot_8');
-  await require('../src/delivery').markReady(sh.id);
-  assert.ok(db.prepare('SELECT ready_at FROM shipments WHERE id=?').get(sh.id).ready_at);
+  const cookie = await ctx.loginAs(sellerEmail, 'testpass123');
+  await ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie, body: { status: 'shipped' } });
+  let row = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+  assert.ok(row.ready_at);
+  assert.equal(row.status, 'shipped');
   const ts = String(++tsN);
   const r = await hook({ orderId: sh.delivery_ref, errorCode: 'deliveryCompanyError', errorMessage: 'delivery company not allow to create shipment',
     deliveryCompany: 'aramex', timestamp: ts, signature: sign(sh.delivery_ref, 'deliveryCompanyError', ts) }, 'error');
   assert.equal(r.status, 200);
-  assert.equal(db.prepare('SELECT ready_at FROM shipments WHERE id=?').get(sh.id).ready_at, null);
-  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM shipment_events WHERE shipment_id=? AND note LIKE 'Courier booking failed (aramex)%'").get(sh.id).n, 1);
+  row = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+  assert.equal(row.ready_at, null);
+  assert.equal(row.status, 'processing', 'no courier is coming, so it is not shipped');
+  assert.ok(row.packed_at, 'still packed');
+  assert.match(row.booking_error, /deliveryCompanyError/);
+  assert.equal(row.attention, 'booking_failed');
+  // Neutral wording for the buyer, and no promise that is not kept.
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM shipment_events WHERE shipment_id=? AND note LIKE 'The courier booking did not go through%'").get(sh.id).n, 1);
+  assert.equal(db.prepare("SELECT COUNT(*) AS n FROM shipment_events WHERE shipment_id=? AND note LIKE '%Trove has been alerted%'").get(sh.id).n, 0);
+
+  // The hourly sweep books the collection again; the flag clears.
+  calls.length = 0;
+  const out = await require('../src/courier-ops').retryBookings();
+  assert.ok(out.ok >= 1);
+  row = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+  assert.equal(byPath('/createShipment').length, 1);
+  assert.equal(row.status, 'shipped');
+  assert.ok(row.ready_at);
+  assert.equal(row.booking_error, null);
+  assert.equal(row.attention, '');
 });
 
 test('returns: the courier collects the named pieces from the buyer and brings them to the maker', async () => {
