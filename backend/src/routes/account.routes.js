@@ -61,8 +61,12 @@ router.get('/orders', requireAuth, (req, res) => {
         deliveredAt: o.delivered_at || null,
         returnWindowEndsAt: o.return_window_ends_at || null,
         refundedAt: o.refunded_at || null,
+        // Tax invoice + credit notes (only once Trove is VAT-registered).
+        documents: require('../tax-docs').docsFor(o),
+        // Pieces Trove cancelled before dispatch, and what they refunded.
+        cancellations: require('../cancellations').forOrder(o.id).map((c) => ({ refund: c.refund, items: c.items.map((i) => ({ name: i.name, qty: i.qty })), at: c.refundedAt })),
         items: itemsStmt.all(o.id).map((i) => ({
-          name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, personalization: i.personalization || '',
+          name: i.name_snapshot, qty: i.qty, cancelledQty: i.cancelled_qty || 0, price: i.price_cents / 100, personalization: i.personalization || '',
           options: require('../options').parse(i.options),
           extras: require('../extras').parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })),
           productId: i.product_id, shopId: i.shop_id, orderItemId: i.id,
@@ -97,6 +101,22 @@ router.get('/orders', requireAuth, (req, res) => {
       };
     }),
   });
+});
+
+/* ---------------- Tax documents (buyer, own orders only) ----------------
+ * The printable tax invoice and tax credit notes — present only on orders
+ * where VAT was captured (src/tax-docs.js). Never indexed, never cached. */
+const taxDocs = require('../tax-docs');
+const ownOrder = (req) => db.prepare('SELECT * FROM orders WHERE public_id=? AND buyer_id=?').get(req.params.publicId, req.user.id);
+const sendDoc = (res, html) => {
+  if (!html) return res.status(404).json({ error: 'No tax document for this order' });
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.type('html').send(html);
+};
+router.get('/orders/:publicId/tax-invoice', requireAuth, (req, res) => sendDoc(res, taxDocs.invoiceHtml(ownOrder(req))));
+router.get('/orders/:publicId/credit-notes/:ref', requireAuth, (req, res) => {
+  const o = ownOrder(req);
+  sendDoc(res, o && o.tax_invoice_no ? taxDocs.creditNoteHtml(o, String(req.params.ref)) : null);
 });
 
 /* ---------------- Return requests (buyer) ----------------

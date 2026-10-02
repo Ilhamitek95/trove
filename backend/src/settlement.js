@@ -32,8 +32,10 @@ const PRIVATE_DIR = () => process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..'
  * window closed BEFORE the run start, the ORDER's buyer window closed too (on
  * a multi-shop order the buyer's clock starts at the last delivery, so every
  * other parcel must be delivered first), no return request for that shop's
- * pieces is still in flight, and the order was never
- * refunded. Orders placed under the old 30-day promise (return_days set by
+ * pieces is still in flight, the order was never refunded, and nothing
+ * holds it (orders.hold_reason: a card dispute, or a refund made straight in
+ * the Stripe dashboard that a person has to reconcile — src/stripe-events.js).
+ * Orders placed under the old 30-day promise (return_days set by
  * migration 016) keep the per-parcel hold they were sold under. */
 const ELIGIBLE_CREDITS = `
   SELECT b.id, b.shop_id, b.order_id, b.amount_cents
@@ -42,6 +44,7 @@ const ELIGIBLE_CREDITS = `
   JOIN shipments sh ON sh.order_id = b.order_id AND sh.shop_id = b.shop_id
   WHERE b.type = 'credit_sale' AND b.settlement_id IS NULL
     AND o.refunded_at IS NULL
+    AND COALESCE(o.hold_reason, '') = ''
     AND sh.status = 'delivered'
     AND sh.return_window_ends_at IS NOT NULL
     AND sh.return_window_ends_at < @at
@@ -278,11 +281,12 @@ function setHold(shopId, on) {
  * Trove actually bought — units refunded through a return before the run are
  * listed apart as returned, never as purchased (returns.refundedUnitsSql).
  */
-const NOTE_LINES = `SELECT oi.name_snapshot, oi.qty, oi.price_cents,
+// Units Trove cancelled before dispatch were never bought from the maker.
+const NOTE_LINES = `SELECT oi.name_snapshot, oi.qty - oi.cancelled_qty AS qty, oi.price_cents,
     COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
       JOIN return_requests r2 ON r2.id = ri.request_id
       WHERE ri.order_item_id = oi.id AND r2.status = 'refunded'), 0) AS returned
-  FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=? ORDER BY oi.id`;
+  FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=? AND oi.qty > oi.cancelled_qty ORDER BY oi.id`;
 function noteLines(publicId, shopId) {
   const kept = [], returned = [];
   for (const l of db.prepare(NOTE_LINES).all(publicId, shopId)) {

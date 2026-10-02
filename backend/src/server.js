@@ -225,8 +225,14 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     }
     if (sweepingOrders) return;
     sweepingOrders = true;
-    require('./order-sweep').sweepUnpaid()
-      .then(({ cancelled, skipped }) => { if (cancelled || skipped) console.log(`unpaid checkouts: cancelled ${cancelled}, left ${skipped} for the payment webhook`); })
+    const sweeps = require('./order-sweep');
+    sweeps.sweepUnpaid()
+      .then(({ cancelled, skipped, recovered }) => { if (cancelled || skipped || recovered) console.log(`unpaid checkouts: cancelled ${cancelled}, completed ${recovered || 0} paid with no webhook, left ${skipped} for the payment webhook`); })
+      .then(() => sweeps.sweepPaidMissing())
+      .then(({ recovered }) => { if (recovered) console.warn(`payment webhook missed: completed ${recovered} paid order(s)`); })
+      // Courier upkeep: retry failed bookings, flag uncollected parcels, read the OTO wallet.
+      .then(() => sweeps.sweepCourier())
+      .then((c) => { if (c.retried && c.retried.tried) console.log(`courier retries: ${c.retried.ok} booked, ${c.retried.failed} still failing`); })
       .catch((e) => console.error('unpaid checkout sweep failed:', e))
       .finally(() => { sweepingOrders = false; });
     // Pack-by reminders: maker once when the day passes, admin once two days on.
@@ -240,6 +246,11 @@ const server = app.listen(PORT, () => {
   console.log(`trove running on http://localhost:${PORT}`);
   console.log(`  • storefront: http://localhost:${PORT}/`);
   console.log(`  • API:        http://localhost:${PORT}/api/health   (stripe ${getStripe() ? 'configured' : 'OFF'})`);
+  // Without the signing secret every Stripe webhook is refused (400), so paid
+  // orders only complete through the hourly sweep — say so loudly.
+  if (process.env.STRIPE_SECRET_KEY && !process.env.STRIPE_WEBHOOK_SECRET) {
+    console.warn('  ⚠ STRIPE_SECRET_KEY is set but STRIPE_WEBHOOK_SECRET is not — payment webhooks will be refused; set it on Render.');
+  }
   otoBoot();
 });
 
@@ -251,6 +262,8 @@ function otoBoot() {
   const oto = require('./delivery/oto-live');
   oto.accountInfo()
     .then((a) => console.log(`  • delivery:   OTO connected (${(a && a.packageName) || 'plan unknown'}, wallet ${a && a.remainingCredit != null ? a.remainingCredit : '?'})`))
+    // Store the wallet reading for Admin → Overview (and warn if it is already low).
+    .then(() => require('./courier-ops').checkWallet().catch((e) => console.error('OTO wallet check failed:', e.message)))
     .then(() => {
       const secret = process.env.OTO_WEBHOOK_SECRET;
       const base = process.env.PUBLIC_URL || process.env.CLIENT_URL;

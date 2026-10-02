@@ -66,14 +66,46 @@ test('the sweep cancels day-old unpaid checkouts and their PaymentIntents, and l
   assert.ok(!list.data.orders.some((x) => x.publicId === old.orderId));
 });
 
-test('a PaymentIntent that was paid meanwhile is left for the webhook, not cancelled', async () => {
+test('a PaymentIntent still mid-payment is left for the webhook, not cancelled', async () => {
   const co = await openCheckout();
   age(co.orderId, 30);
   const pi = db.prepare('SELECT stripe_payment_intent_id AS pi FROM orders WHERE public_id=?').get(co.orderId).pi;
-  stripe.setIntentStatus(pi, 'succeeded');
+  stripe.setIntentStatus(pi, 'processing');
   const r = await sweepUnpaid();
   assert.ok(r.skipped >= 1);
   assert.equal(db.prepare('SELECT status FROM orders WHERE public_id=?').get(co.orderId).status, 'pending');
+});
+
+test('a PaymentIntent that SUCCEEDED but whose webhook never landed is completed by the sweep, once', async () => {
+  const co = await openCheckout();
+  age(co.orderId, 30);
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(co.orderId);
+  stripe.setIntentStatus(order.stripe_payment_intent_id, 'succeeded');
+  const r = await sweepUnpaid();
+  assert.ok(r.recovered >= 1);
+  const after = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
+  assert.equal(after.status, 'paid');
+  assert.ok(db.prepare('SELECT COUNT(*) AS c FROM shipments WHERE order_id=?').get(order.id).c >= 1, 'parcels opened');
+  assert.ok(db.prepare("SELECT COUNT(*) AS c FROM seller_balances WHERE order_id=? AND type='credit_sale'").get(order.id).c >= 1, 'makers credited');
+  assert.ok(db.prepare("SELECT 1 FROM webhook_events WHERE event_id=?").get(`sweep-${order.stripe_payment_intent_id}`));
+
+  // The real webhook arriving late changes nothing (no second credit, no second parcel).
+  const credits = db.prepare('SELECT COUNT(*) AS c FROM seller_balances WHERE order_id=?').get(order.id).c;
+  await ctx.postWebhook({ id: 'evt_late_ok', type: 'payment_intent.succeeded', data: { object: { id: order.stripe_payment_intent_id, metadata: { order_id: String(order.id) } } } });
+  assert.equal(db.prepare('SELECT COUNT(*) AS c FROM seller_balances WHERE order_id=?').get(order.id).c, credits);
+});
+
+test('within the first day: a paid order with a lost webhook is completed from 30 minutes on', async () => {
+  const { sweepPaidMissing } = require('../src/order-sweep');
+  const co = await openCheckout();
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(co.orderId);
+  stripe.setIntentStatus(order.stripe_payment_intent_id, 'succeeded');
+  let r = await sweepPaidMissing();
+  assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(order.id).status, 'pending', 'too fresh — the webhook may still be on its way');
+  age(co.orderId, 1);
+  r = await sweepPaidMissing();
+  assert.ok(r.recovered >= 1);
+  assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(order.id).status, 'paid');
 });
 
 test('a payment that still lands on a swept order is refunded automatically and flagged', async () => {

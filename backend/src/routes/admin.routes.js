@@ -198,7 +198,7 @@ router.get('/shops', requireAdmin, (_req, res) => {
     SELECT s.*, u.email AS owner_email, u.name AS owner_name,
       (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id) AS product_count,
       (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id AND p.status='live') AS live_count,
-      (SELECT COALESCE(SUM(oi.price_cents * oi.qty),0) FROM order_items oi
+      (SELECT COALESCE(SUM(oi.price_cents * (oi.qty - oi.cancelled_qty)),0) FROM order_items oi
          JOIN orders o ON o.id = oi.order_id
          WHERE oi.shop_id = s.id AND o.status IN ('paid','fulfilled')) AS sales_cents
     FROM shops s JOIN users u ON u.id = s.user_id
@@ -211,6 +211,9 @@ router.get('/shops', requireAdmin, (_req, res) => {
     pitchInstagram: s.pitch_instagram || '', pitchExperience: s.pitch_experience || '',
     pitchMaker: s.pitch_maker || '', pitchChannels: s.pitch_channels || '',
     pitchCapacity: s.pitch_capacity || '', pitchPhone: s.pitch_phone || '',
+    // The courier's pickup number (admin-only, never public): the one to call
+    // when a parcel is late or stuck.
+    pickupPhone: s.pickup_phone || '',
     tier: s.tier, hasBank: !!(s.iban_encrypted || s.payout_iban), stripeConnected: !!s.stripe_account_id,
     payoutSetupComplete: !!(s.iban_encrypted && s.agreement_accepted_at),
     licenseNumber: s.license_number || '', hasLicenseImage: !!s.license_image,
@@ -404,15 +407,34 @@ router.get('/orders', requireAdmin, (_req, res) => {
     FROM orders o
     WHERE o.status != 'pending' AND NOT (o.status = 'cancelled' AND o.attention = '' AND o.title_transferred_at IS NULL)
     ORDER BY o.created_at DESC, o.id DESC LIMIT 200`).all();
-  // Each shop parcel's pack-by day, and whether it has gone unpacked.
-  const shipStmt = db.prepare(`SELECT sh.id, sh.status, sh.ready_at, sh.pack_by_at, s.name AS shop_name
+  // Each shop parcel: its pack-by day and whether it has gone unpacked, and
+  // the courier's side — booked or not (with a Retry), collected or not,
+  // and anything a person must look at (src/courier-ops.js ATTENTION).
+  const shipStmt = db.prepare(`SELECT sh.*, s.name AS shop_name, s.pickup_phone, s.pitch_phone
     FROM shipments sh JOIN shops s ON s.id = sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);
+  const courier = require('../courier-ops');
+  const cancellations = require('../cancellations');
+  const live = require('../delivery').isLive();
+  const cancelledStmt = db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(refund_cents),0) AS cents FROM order_cancellations WHERE order_id=? AND status='refunded'");
   res.json({ orders: rows.map((o) => ({
     parcels: shipStmt.all(o.id).map((sh) => ({
-      shop: sh.shop_name, status: sh.status, packBy: sh.pack_by_at || null,
-      packed: sh.status !== 'processing' || !!sh.ready_at,
+      id: sh.id, shop: sh.shop_name, shopPhone: sh.pickup_phone || sh.pitch_phone || '',
+      status: sh.status, statusLabel: shipments.statusLabel(sh), packBy: sh.pack_by_at || null,
+      packed: sh.status !== 'processing' || !!sh.ready_at || !!sh.packed_at,
       packOverdue: !o.refunded_at && ['paid'].includes(o.status) && shipments.packOverdue(sh),
+      courierRef: sh.delivery_ref || '', carrier: sh.carrier || '',
+      collectedAt: sh.collected_at || null, readyAt: sh.ready_at || null,
+      bookingError: sh.booking_error || null,
+      // Retry is offered while a paid parcel still needs its courier booked.
+      canRetryCourier: !o.refunded_at && o.status === 'paid' && sh.status === 'processing'
+        && (!!sh.booking_error || (!!sh.packed_at && !sh.ready_at) || (live && !sh.delivery_ref)),
+      attention: sh.attention || null, attentionLabel: sh.attention ? (courier.ATTENTION[sh.attention] || sh.attention) : null,
+      cancellable: !o.refunded_at && ['paid', 'fulfilled'].includes(o.status) && o.rail !== 'connect' && cancellations.parcelOpen(sh),
     })),
+    cancelled: (() => { const c = cancelledStmt.get(o.id); return c.n ? { count: c.n, refundCents: c.cents } : null; })(),
+    hold: o.hold_reason || null,
+    dispute: o.dispute_status ? { status: o.dispute_status, dueBy: o.dispute_due_by || null } : null,
+    externalRefundCents: o.external_refund_cents || 0,
     // Trove is the merchant of record: support and the courier desk reach the
     // customer from here. Sellers get neither the email nor the phone.
     publicId: o.public_id, email: o.email, phone: o.phone || '', status: o.status,
@@ -517,7 +539,14 @@ function vatReport() {
     FROM return_requests rr JOIN orders o ON o.id = rr.order_id
     WHERE rr.status = 'refunded' AND rr.vat_reversed_cents > 0
     UNION ALL
-    SELECT ${quarterOf('o.refunded_at')}, o.rail, o.credit_note_ref, o.public_id, o.total_cents, o.vat_reversed_cents, o.refunded_at
+    SELECT ${quarterOf('oc.refunded_at')}, o.rail, oc.credit_note_ref, o.public_id, oc.refund_cents, oc.vat_reversed_cents, oc.refunded_at
+    FROM order_cancellations oc JOIN orders o ON o.id = oc.order_id
+    WHERE oc.status = 'refunded' AND oc.vat_reversed_cents > 0
+    UNION ALL
+    -- A whole-order refund's credit note carries only the VAT earlier credit
+    -- notes had not already reversed (whole_refund_*; older rows predate it).
+    SELECT ${quarterOf('o.refunded_at')}, o.rail, o.credit_note_ref, o.public_id, COALESCE(o.whole_refund_cents, o.total_cents),
+      COALESCE(o.whole_refund_vat_cents, o.vat_reversed_cents), o.refunded_at
     FROM orders o WHERE o.credit_note_ref IS NOT NULL AND o.refunded_at IS NOT NULL
     UNION ALL
     SELECT ${quarterOf('bk.refunded_at')}, 'services', bk.credit_note_ref, bk.code, bk.refund_cents, bk.vat_reversed_cents, bk.refunded_at
@@ -579,22 +608,150 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
     if (order.refunded_at) return res.status(409).json({ error: 'Order already refunded' });
     if (!['paid', 'fulfilled'].includes(order.status)) return res.status(409).json({ error: 'Only paid orders can be refunded' });
     if (!order.stripe_payment_intent_id) return res.status(409).json({ error: 'No card payment to refund' });
-    // Item-level returns already refunded part of this order — a full-order
-    // refund on top would pay the buyer twice for those items.
-    const partiallyReturned = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status IN ('approved','collected','refunded')").get(order.id).c;
-    if (partiallyReturned) return res.status(409).json({ error: 'Items from this order are already part of an approved return — handle the rest from the Returns view' });
+    // A return still on its way (approved/collected) refunds its own items
+    // when the courier has them — a full-order refund now would pay the buyer
+    // twice for those. Returns already REFUNDED (and cancellations) are fine:
+    // Stripe refunds only what is still paid, and the credit note carries
+    // only the VAT not already reversed (returns.applyRefundEffects).
+    const inFlight = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status IN ('approved','collected')").get(order.id).c;
+    if (inFlight) return res.status(409).json({ error: 'Items from this order are on their way back in an approved return — let that finish, or use Refund now on the return, before refunding the rest' });
 
     const stripe = require('../stripe').requireStripe();
-    await stripe.refunds.create({
+    const refund = await stripe.refunds.create({
       payment_intent: order.stripe_payment_intent_id,
       ...(order.rail === 'connect' ? { reverse_transfer: true, refund_application_fee: true } : {}),
-    });
+      // Tagged so the charge.refunded webhook knows Trove made this refund
+      // (an untagged one is an external refund made in the Stripe dashboard).
+      metadata: { trove_kind: 'order_refund', order_id: String(order.id) },
+    }, { idempotencyKey: `trove-order-refund-${order.id}` });
 
-    returns.applyRefundEffects(order);
+    // Parcels the courier hasn't collected are stopped (courier booking
+    // cancelled, maker told); delivered ones get a return collection.
+    const parcels = await returns.applyRefundEffects(order, { refundRef: (refund && refund.id) || null });
 
     const fresh = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
-    res.json({ ok: true, order: { publicId: fresh.public_id, refundedAt: fresh.refunded_at } });
+    res.json({ ok: true, order: { publicId: fresh.public_id, refundedAt: fresh.refunded_at }, parcels });
   } catch (e) { next(e); }
+});
+
+/* ---------------- Cancel pieces before dispatch (owner, 2026-10-02) ----------
+ * Per order line and unit: refund just those pieces (partial Stripe refund),
+ * reverse their makers' credit + VAT, take them off the parcel, cancel a
+ * parcel that is now empty (its courier booking too) and email the buyer and
+ * the makers. 'Parcel never ships' = every remaining unit of one parcel.
+ * See src/cancellations.js.                                                */
+const cancellations = require('../cancellations');
+const orderByPid = (pid) => db.prepare('SELECT * FROM orders WHERE public_id=?').get(pid);
+const sendErr = (res, e, next) => (e.status ? res.status(e.status).json({ error: e.message }) : next(e));
+
+// GET /api/admin/orders/:publicId/cancellable → the picker: every line with
+// how many units can still be cancelled (and why not), the delivery fee
+// still refundable, and the cancellations already made.
+router.get('/orders/:publicId/cancellable', requireAdmin, (req, res) => {
+  const order = orderByPid(req.params.publicId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  res.json({
+    publicId: order.public_id, blocked: cancellations.orderBlocked(order),
+    lines: cancellations.lines(order), deliveryPaid: (order.shipping_cents || 0) / 100,
+    deliveryLeft: cancellations.deliveryLeft(order) / 100,
+    reasons: cancellations.REASONS, cancellations: cancellations.forOrder(order.id),
+  });
+});
+
+// POST /api/admin/orders/:publicId/cancel-items
+//   { items:[{ id, qty }], reason?, note?, refundDelivery?: boolean, dryRun?: boolean }
+// dryRun returns what it would refund without touching anything.
+router.post('/orders/:publicId/cancel-items', requireAdmin, async (req, res, next) => {
+  try {
+    const order = orderByPid(req.params.publicId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const b = req.body || {};
+    const refundDelivery = b.refundDelivery === true ? true : b.refundDelivery === false ? false : null;
+    if (b.dryRun) {
+      const p = cancellations.plan(order, b.items, { refundDelivery });
+      return res.json({ ok: true, dryRun: true, itemsCents: p.itemsCents, deliveryCents: p.deliveryCents, refundCents: p.refundCents, whole: p.whole });
+    }
+    const r = await cancellations.cancel(order, b.items, { reason: b.reason, note: b.note, refundDelivery, byUserId: req.user.id });
+    res.json({ ok: true, ...r });
+  } catch (e) { sendErr(res, e, next); }
+});
+
+// POST /api/admin/orders/:publicId/parcels/:shipmentId/cancel { note?, refundDelivery? }
+// The parcel never ships: cancel and refund everything left in it.
+router.post('/orders/:publicId/parcels/:shipmentId/cancel', requireAdmin, async (req, res, next) => {
+  try {
+    const order = orderByPid(req.params.publicId);
+    if (!order) return res.status(404).json({ error: 'Order not found' });
+    const b = req.body || {};
+    const refundDelivery = b.refundDelivery === true ? true : b.refundDelivery === false ? false : null;
+    const r = await cancellations.cancelParcel(order, Number(req.params.shipmentId), { note: b.note, refundDelivery, byUserId: req.user.id });
+    res.json({ ok: true, ...r });
+  } catch (e) { sendErr(res, e, next); }
+});
+
+/* ---------------- Tax documents (admin copy) ---------------- */
+router.get('/orders/:publicId/tax-invoice', requireAdmin, (req, res) => {
+  const html = require('../tax-docs').invoiceHtml(orderByPid(req.params.publicId));
+  if (!html) return res.status(404).json({ error: 'No tax invoice for this order (VAT was not captured on it)' });
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.type('html').send(html);
+});
+router.get('/orders/:publicId/credit-notes/:ref', requireAdmin, (req, res) => {
+  const o = orderByPid(req.params.publicId);
+  const html = o ? require('../tax-docs').creditNoteHtml(o, String(req.params.ref)) : null;
+  if (!html) return res.status(404).json({ error: 'No such credit note on this order' });
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.type('html').send(html);
+});
+
+/* ---------------- Courier health ----------------
+ * Retry a parcel whose courier booking failed (or that is packed with no
+ * collection booked), clear a flag once handled, and read the OTO wallet. */
+router.post('/shipments/:id/retry-courier', requireAdmin, async (req, res, next) => {
+  try {
+    const sh = db.prepare('SELECT sh.*, o.status AS order_status, o.refunded_at FROM shipments sh JOIN orders o ON o.id = sh.order_id WHERE sh.id=?').get(req.params.id);
+    if (!sh) return res.status(404).json({ error: 'Parcel not found' });
+    if (sh.refunded_at || sh.order_status !== 'paid' || sh.status !== 'processing') return res.status(409).json({ error: 'Only a paid parcel that is still waiting for its courier can be re-booked' });
+    const courier = require('../courier-ops');
+    try {
+      if (sh.packed_at) await courier.handOver(sh.id);
+      else if (!(await courier.book(sh.id))) {
+        const err = db.prepare('SELECT booking_error FROM shipments WHERE id=?').get(sh.id).booking_error;
+        if (err) return res.status(502).json({ error: `The courier still refused: ${err}` });
+      }
+    } catch (e) { return res.status(502).json({ error: `The courier still refused: ${e.message}` }); }
+    const fresh = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+    res.json({ ok: true, shipment: { id: fresh.id, status: fresh.status, courierRef: fresh.delivery_ref || '', readyAt: fresh.ready_at || null, bookingError: fresh.booking_error || null } });
+  } catch (e) { next(e); }
+});
+
+router.post('/shipments/:id/clear-attention', requireAdmin, (req, res) => {
+  const r = db.prepare("UPDATE shipments SET attention='', attention_at=NULL WHERE id=? AND attention != ''").run(req.params.id);
+  if (!r.changes) return res.status(404).json({ error: 'Nothing flagged on that parcel' });
+  res.json({ ok: true });
+});
+
+// GET /api/admin/courier → which courier is connected + the OTO wallet as
+// last read by the hourly check. POST /api/admin/courier/check-wallet reads it now.
+router.get('/courier', requireAdmin, (_req, res) => res.json(require('../courier-ops').walletStatus()));
+router.post('/courier/check-wallet', requireAdmin, async (_req, res) => {
+  const courier = require('../courier-ops');
+  try { await courier.checkWallet(); res.json(courier.walletStatus()); }
+  catch (e) { res.status(502).json({ error: `OTO did not answer: ${e.message}`, ...courier.walletStatus() }); }
+});
+
+// POST /api/admin/orders/:publicId/release-hold { note? } → a person has
+// reconciled a dispute that was won, or a refund made in the Stripe
+// dashboard: the makers' credits on this order may settle again.
+router.post('/orders/:publicId/release-hold', requireAdmin, (req, res) => {
+  const order = orderByPid(req.params.publicId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  if (!order.hold_reason) return res.status(409).json({ error: 'Nothing is holding this order' });
+  if (order.hold_reason === 'dispute' && !['won', 'warning_closed'].includes(order.dispute_status || '')) {
+    return res.status(409).json({ error: 'The card dispute is still open — the hold lifts when Stripe closes it in Trove’s favour' });
+  }
+  db.prepare("UPDATE orders SET hold_reason='', attention=CASE WHEN attention IN ('dispute','external_refund') THEN '' ELSE attention END WHERE id=?").run(order.id);
+  res.json({ ok: true });
 });
 
 /* ---------------- Return requests (buyer-initiated) ----------------

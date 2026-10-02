@@ -73,27 +73,12 @@ function createApp() {
 
       if (order && order.status === 'pending') {
         // Paid effects live in src/paid-effects.js (shared with the demo-mode
-        // checkout). Per-shop groups feed the ledger credits and Rail B.
-        const pe = require('./paid-effects');
-        const groups = pe.perShopGroups(orderId);
-
+        // checkout and the hourly sweep that catches a missed webhook).
         // ONE transaction for every database effect of this payment, with the
-        // idempotency guard inside it: if the INSERT OR IGNORE of the event id
-        // changes nothing, Stripe redelivered an event we fully processed —
-        // bail out. If anything below throws, the event id rolls back with the
-        // rest, so Stripe's retry gets a clean second attempt.
-        const result = db.transaction(() => {
-          const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type);
-          if (!seen.changes) return null;
-          return pe.paidDbEffects(order, groups);
-        })();
-
-        // Courier pickups + Rail B leftover transfers — outside the
-        // transaction (network IO), failure never blocks the payment. A piece
-        // that sold out before this payment landed means the whole order is
-        // refunded instead (the order is already cancelled and flagged).
-        if (result && result.ok) pe.paidPostEffects(order, groups, stripe);
-        else if (result) pe.unavailablePostEffects(order, result.shortfall, stripe);
+        // idempotency guard inside it: a redelivered event changes nothing,
+        // and if anything throws the event id rolls back with the rest, so
+        // Stripe's retry gets a clean second attempt.
+        require('./paid-effects').completePaid(orderId, event.id, event.type, stripe);
       } else if (order && order.status === 'cancelled' && !order.refunded_at && !order.attention) {
         // Paid after the unpaid-checkout sweep cancelled it (the PaymentIntent
         // cancel lost the race): nothing was reserved for it, so refund it.
@@ -103,6 +88,21 @@ function createApp() {
           require('./paid-effects').unavailablePostEffects(order, [], stripe, { soldOut: false });
         }
       }
+    }
+
+    // Card disputes and refunds made outside Trove (src/stripe-events.js):
+    // applied once per event id; a failure rolls the id back so Stripe's
+    // retry gets another go.
+    if (require('./stripe-events').TYPES.includes(event.type)) {
+      const first = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type).changes;
+      if (!first) return res.json({ received: true, duplicate: true });
+      return require('./stripe-events').handle(event, stripe)
+        .then(() => res.json({ received: true }))
+        .catch((e) => {
+          console.error(`stripe ${event.type} handling failed:`, e.message);
+          db.prepare('DELETE FROM webhook_events WHERE event_id=?').run(event.id);
+          res.status(500).json({ error: 'Could not apply the event — Stripe will retry' });
+        });
     }
 
     if (event.type === 'account.updated') {

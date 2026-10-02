@@ -34,7 +34,7 @@ const TABLES_WIPED = [
   // (reviews and seller_balances point at orders, return items at order items …)
   'return_request_items', 'return_requests', 'reviews',
   'purchase_notes', 'settlement_items', 'seller_balances', 'settlements', 'payouts',
-  'shipment_events', 'shipments', 'order_items', 'orders', 'webhook_events',
+  'shipment_events', 'shipments', 'order_cancellation_items', 'order_cancellations', 'order_items', 'orders', 'webhook_events',
   'analytics_events', 'search_log', 'provider_credits', 'service_bookings',
   'addresses', 'sessions',
 ];

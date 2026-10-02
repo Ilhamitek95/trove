@@ -126,7 +126,7 @@ function shipmentFacts(shipmentId) {
     FROM shipments sh JOIN orders o ON o.id = sh.order_id JOIN shops s ON s.id = sh.shop_id JOIN users u ON u.id = s.user_id
     WHERE sh.id = ?`).get(shipmentId);
 }
-const packItems = (sh) => db.prepare('SELECT name_snapshot AS name, qty FROM order_items WHERE order_id=? AND shop_id=? ORDER BY id').all(sh.order_id, sh.shop_id);
+const packItems = (sh) => db.prepare('SELECT name_snapshot AS name, qty - cancelled_qty AS qty FROM order_items WHERE order_id=? AND shop_id=? AND qty > cancelled_qty ORDER BY id').all(sh.order_id, sh.shop_id);
 /** To the maker: the pack-by day has gone and the parcel is not marked Packed. */
 const packReminder = (shipmentId) => safely('pack-reminder', () => {
   const sh = shipmentFacts(shipmentId);
@@ -154,8 +154,23 @@ const idExpiring = (shop, expired) => safely('id-expiring', () =>
     link: `${accounts.siteUrl()}/sell?view=payments`,
   })));
 
+/* ---- operations alerts (courier, disputes, missed payments) ---- */
+/** To ADMIN_EMAIL: { subject, title, lines[], link?, cta?, kicker? } — plain text lines. */
+const adminAlert = (msg) => safely('admin-alert', () =>
+  deliver('admin-alert', accounts.adminEmail(), email().adminAlert({ link: `${accounts.siteUrl()}/admin`, ...msg })));
+
+/** To the maker: pieces cancelled from their parcel, or the whole parcel
+ *  refunded — leave them out / do not hand it to the courier. */
+const parcelCancelled = ({ shopId, publicId, items, whole }) => safely('parcel-cancelled', () => {
+  const s = shopRow(shopId);
+  if (!s) return null;
+  return deliver('parcel-cancelled', s.owner_email, email().parcelCancelledMaker({
+    shopName: s.name, ownerName: s.owner_name, publicId, items, whole, link: `${accounts.siteUrl()}/sell?view=orders`,
+  }));
+});
+
 module.exports = {
-  idExpiring,
+  idExpiring, adminAlert, parcelCancelled,
   packReminder, packOverdueAdmin, packByFor,
   welcomeVerify, passwordReset, passwordChanged, bankDetailsChanged,
   shopApplied, providerApplied, shopDecided, providerDecided, ordersToPack, packByDays,

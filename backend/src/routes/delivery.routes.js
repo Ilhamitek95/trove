@@ -26,8 +26,22 @@ const shipments = require('../shipments');
 
 const router = express.Router();
 
-/** Move a shipment forward from a courier event — never backwards out of delivered. */
+const courier = require('../courier-ops');
+
+/** Move a shipment forward from a courier event — never backwards out of
+ *  delivered, and never out of 'cancelled': Trove cancelled (and refunded)
+ *  that parcel, so a late courier event only lands on the timeline and a
+ *  person is told. Any step past processing means the courier has it. */
 function stepShipment(sh, status, note) {
+  if (sh.status === 'cancelled') {
+    timeline(sh, `Courier update on a cancelled parcel: ${note || shipments.noteFor(status)} — we are looking into it`);
+    courier.raise(sh.id, 'delivered_after_cancel', [
+      `The courier reports '${status.replace(/_/g, ' ')}' on a parcel Trove cancelled and refunded.`,
+      'Ask the courier to stop it and bring it back to the maker.',
+    ]);
+    return;
+  }
+  if (['shipped', 'out_for_delivery'].includes(status) && !(status === 'shipped' && /^Ready for collection/.test(note || ''))) courier.collected(sh.id);
   if (sh.status === status || sh.status === 'delivered') return;
   db.prepare("UPDATE shipments SET status=?, updated_at=datetime('now') WHERE id=?").run(status, sh.id);
   db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
@@ -142,9 +156,22 @@ router.post('/webhook', (req, res) => {
   } else if (event === 'out_for_delivery') {
     step('out_for_delivery', 'Out for delivery with Quiqup');
   } else if (IN_TRANSIT.has(event) || ['in_transit', 'picked_up', 'started'].includes(event)) {
-    if (sh.status === 'processing') step('shipped', event === 'ready_for_collection' ? 'Ready for collection · Quiqup' : 'Collected by Quiqup');
+    // ready_for_collection / out_for_collection / scheduled = still at the
+    // maker's; anything else = the courier has the parcel.
+    const pickedUp = !['ready_for_collection', 'out_for_collection', 'scheduled'].includes(event);
+    if (sh.status === 'cancelled') step('shipped', pickedUp ? 'Collected by Quiqup' : 'Ready for collection · Quiqup');
+    else if (pickedUp) {
+      const first = !sh.collected_at;
+      courier.collected(sh.id);
+      if (sh.status === 'processing') step('shipped', 'Collected by Quiqup');
+      else if (first) timeline(sh, 'Collected by Quiqup');
+    } else if (sh.status === 'processing') step('shipped', 'Ready for collection · Quiqup');
   } else if (NOTES[event]) {
     db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, sh.status, NOTES[event]);
+    if (['return_to_origin', 'out_for_return', 'returned_to_origin'].includes(event)) {
+      courier.raise(sh.id, 'returning', ['Quiqup reports the parcel is going back to the maker — the buyer does not have it and has not been refunded.',
+        'Decide whether to re-send it or cancel and refund it (Admin → Orders → Cancel items).']);
+    }
   }
   res.json({ received: true, matched: true });
 });
@@ -161,11 +188,22 @@ const OTO_NOTES = {
   pickupAttemted: 'Courier could not collect the parcel — they will try again',
   undeliveredAttempt: 'Delivery attempt failed — the courier will try again',
   shipmentOnHold: 'Delivery on hold with the courier',
-  returnProcessing: 'Delivery failed — the parcel is on its way back to the shop',
-  returned: 'Parcel returned to the shop',
+  returnProcessing: 'Delivery did not go through — the parcel is on its way back to the shop. We are looking into this',
+  returned: 'Parcel returned to the shop — we are looking into this',
   shipmentCanceled: 'Courier booking cancelled',
-  lostOrDamaged: 'The courier reports the parcel lost or damaged — Trove will follow up',
-  destroyed: 'The courier reports the parcel damaged beyond delivery — Trove will follow up',
+  lostOrDamaged: 'The courier reports a problem with the parcel — we are looking into this',
+  destroyed: 'The courier reports a problem with the parcel — we are looking into this',
+};
+// OTO statuses that need a person (src/courier-ops.js emails the admin once per flag).
+const OTO_ALERTS = {
+  lostOrDamaged: ['lost', 'The courier reports this parcel lost or damaged. The buyer has been told we are looking into it.',
+    'Check with OTO, then re-send the piece or cancel and refund it (Admin → Orders → Cancel items).'],
+  destroyed: ['lost', 'The courier reports this parcel damaged beyond delivery. The buyer has been told we are looking into it.',
+    'Check with OTO, then re-send the piece or cancel and refund it (Admin → Orders → Cancel items).'],
+  returnProcessing: ['returning', 'Delivery failed and the courier is taking the parcel back to the maker. The buyer does not have it and has not been refunded.',
+    'Contact the buyer, then re-send it or cancel and refund it (Admin → Orders → Cancel items).'],
+  returned: ['returning', 'The parcel went back to the maker after a failed delivery. The buyer does not have it and has not been refunded.',
+    'Contact the buyer, then re-send it or cancel and refund it (Admin → Orders → Cancel items).'],
 };
 const OTO_RETURN_NOTES = {
   newReturn: 'Return collection booked', returnShipmentProcessing: 'Return collection booked',
@@ -208,11 +246,18 @@ router.post('/oto-webhook', (req, res) => {
   if (!sh) return res.json({ received: true, matched: false });
 
   if (kind === 'error') {
-    // The courier refused the booking: log it, and clear the hand-over so
-    // marking the parcel packed again retries the booking.
-    console.error(`OTO shipment error for ${ref}:`, b.errorMessage || '', b.deliveryCompanyResponse || '');
-    db.prepare('UPDATE shipments SET ready_at=NULL WHERE id=?').run(sh.id);
-    timeline(sh, `Courier booking failed${b.deliveryCompany ? ' (' + b.deliveryCompany + ')' : ''} — Trove has been alerted`);
+    // The courier refused the booking after the fact: no driver is coming.
+    // The parcel goes back to 'packed, collection not booked' (processing +
+    // packed_at), the failure is recorded and the admin emailed, and the
+    // hourly sweep books it again (src/courier-ops.js).
+    db.prepare(`UPDATE shipments SET ready_at=NULL,
+        status = CASE WHEN status='shipped' AND collected_at IS NULL THEN 'processing' ELSE status END,
+        packed_at = COALESCE(packed_at, datetime('now'))
+      WHERE id=?`).run(sh.id);
+    sh.status = db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status;
+    const why = [b.errorCode, b.errorMessage, b.deliveryCompany ? `(${b.deliveryCompany})` : ''].filter(Boolean).join(' ') || 'shipment error';
+    courier.bookingFailed(sh.id, 'collection', Object.assign(new Error(`OTO: ${why}`), { otoCode: b.errorCode || '' }));
+    timeline(sh, 'The courier booking did not go through — we are booking another collection');
     return res.json({ received: true, matched: true });
   }
 
@@ -250,9 +295,22 @@ router.post('/oto-webhook', (req, res) => {
   } else if (status === 'outForDelivery') {
     stepShipment(sh, 'out_for_delivery', `Out for delivery with ${by}`);
   } else if (OTO_COLLECTED.has(status)) {
-    if (sh.status === 'processing') stepShipment(sh, 'shipped', `Collected by ${by}${sh.tracking_number && sh.tracking_number !== sh.delivery_ref ? ' · ' + sh.tracking_number : ''}`);
+    // The courier has it: stamp the collection once (the maker's Packed tap
+    // already moved a booked parcel to 'shipped', so this is the first time
+    // anything says the parcel actually left the maker).
+    const note = `Collected by ${by}${sh.tracking_number && sh.tracking_number !== sh.delivery_ref ? ' · ' + sh.tracking_number : ''}`;
+    if (sh.status === 'cancelled') stepShipment(sh, 'shipped', note);
+    else if (sh.status === 'processing') stepShipment(sh, 'shipped', note);
+    else if (!sh.collected_at && sh.status === 'shipped') { courier.collected(sh.id); timeline(sh, note); }
+    else courier.collected(sh.id);
   } else if (OTO_NOTES[status]) {
     timeline(sh, OTO_NOTES[status] + (b.attemptFailureReason ? ` (${b.attemptFailureReason})` : ''));
+    if (OTO_ALERTS[status]) courier.raise(sh.id, OTO_ALERTS[status][0], OTO_ALERTS[status].slice(1));
+    if (status === 'undeliveredAttempt') {
+      const tries = db.prepare("SELECT COUNT(*) AS n FROM shipment_events WHERE shipment_id=? AND note LIKE 'Delivery attempt failed%'").get(sh.id).n;
+      if (tries >= 2) courier.raise(sh.id, 'delivery_attempts', [`The courier has now failed to deliver this parcel ${tries} times${b.attemptFailureReason ? ` (latest: ${b.attemptFailureReason})` : ''}.`,
+        "Worth calling the buyer to check the address and when they're in. The buyer's phone is on the order in Admin → Orders."]);
+    }
   }
   res.json({ received: true, matched: true });
 });

@@ -86,6 +86,9 @@ function paidDbEffects(order, groups) {
   // Payment success is the moment Trove purchases the goods from its
   // suppliers: title transfers now, and the buyer-facing order is paid.
   db.prepare("UPDATE orders SET status='paid', title_transferred_at=datetime('now'), vat_amount_cents=? WHERE id=?").run(vat, order.id);
+  // A VAT-registered sale gets the next sequential tax invoice number
+  // (src/tax-docs.js) — inside this transaction, so numbers never skip or repeat.
+  if (vat > 0) require('./tax-docs').assignInvoiceNo(order.id);
   // One shipment per shop, so each supplier fulfils and tracks their own items.
   // Its pack-by date = today (the day the order is paid) + the slowest of
   // THAT shop's pieces in the order (make/pack time snapshotted at checkout).
@@ -128,7 +131,7 @@ function unavailablePostEffects(order, lines, stripe, { soldOut = true } = {}) {
     ? stripe.refunds.create({
       payment_intent: order.stripe_payment_intent_id,
       ...(order.rail === 'connect' ? { reverse_transfer: true, refund_application_fee: true } : {}),
-      metadata: { order_id: String(order.id), reason: soldOut ? 'sold_out' : 'expired' },
+      metadata: { order_id: String(order.id), reason: soldOut ? 'sold_out' : 'expired', trove_kind: 'unavailable' },
     }, { idempotencyKey: `trove-unavailable-${order.id}` }).then(() => {
       db.prepare("UPDATE orders SET refunded_at=COALESCE(refunded_at, datetime('now')) WHERE id=?").run(order.id);
       console.warn(`order ${order.public_id}: ${soldOut ? 'sold out before payment' : 'paid after it was cancelled'} — refunded in full automatically`);
@@ -159,7 +162,9 @@ function unavailablePostEffects(order, lines, stripe, { soldOut = true } = {}) {
 /** The receipt the confirmation page promises. Fire-and-forget: a mail
  *  failure must never unwind a paid order. Without RESEND_API_KEY it logs
  *  "email skipped" and resolves, so local dev and tests need no setup. */
-function sendConfirmation(order) {
+function sendConfirmation(orderIn) {
+  // Re-read: the caller's row predates the payment (VAT + invoice number are stamped then).
+  const order = db.prepare('SELECT * FROM orders WHERE id=?').get(orderIn.id) || orderIn;
   const email = require('./email');
   const options = require('./options');
   const items = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, s.name AS shop_name, p.images,
@@ -186,10 +191,10 @@ function sendConfirmation(order) {
 /** Courier pickups, the buyer's receipt + Rail B leftover transfers. Failure
  *  never blocks the payment — the seller stepper still works by hand. */
 function paidPostEffects(order, groups, stripe) {
-  const delivery = require('./delivery');
-  for (const sh of db.prepare('SELECT id FROM shipments WHERE order_id=?').all(order.id)) {
-    delivery.bookPickup(sh.id).catch((e) => console.error('Pickup booking failed for shipment', sh.id, e.message));
-  }
+  // A failed booking is recorded on the shipment, the admin is emailed and
+  // the hourly sweep retries it (src/courier-ops.js) — never just a log line.
+  const courier = require('./courier-ops');
+  for (const sh of db.prepare('SELECT id FROM shipments WHERE order_id=?').all(order.id)) courier.book(sh.id);
   try { sendConfirmation(order); } catch (e) { console.error('order-confirmation email failed:', e.message); }
   // Each maker hears about their own pieces only (no buyer contact details).
   require('./notify').ordersToPack(order);
@@ -219,4 +224,31 @@ function paidPostEffects(order, groups, stripe) {
   }
 }
 
-module.exports = { perShopGroups, takeStock, paidDbEffects, paidPostEffects, unavailablePostEffects, sendConfirmation };
+/**
+ * Complete a pending order whose payment succeeded — exactly once, whoever
+ * gets there first: the Stripe webhook (eventId = the Stripe event id) or
+ * the hourly sweep that finds a succeeded PaymentIntent the webhook never
+ * delivered (eventId = 'sweep-<pi id>'). ONE transaction holds the
+ * idempotency row, a fresh status check and every database effect; the
+ * network effects run after it. Returns null when there was nothing to do,
+ * else { ok } like paidDbEffects.
+ */
+function completePaid(orderId, eventId, eventType, stripe) {
+  const order = db.prepare('SELECT * FROM orders WHERE id=?').get(orderId);
+  if (!order || order.status !== 'pending') return null;
+  const groups = perShopGroups(orderId);
+  const result = db.transaction(() => {
+    const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(eventId, eventType);
+    if (!seen.changes) return null;
+    if (db.prepare('SELECT status FROM orders WHERE id=?').get(orderId).status !== 'pending') return null;
+    return paidDbEffects(order, groups);
+  })();
+  // Courier pickups + Rail B leftover transfers — outside the transaction
+  // (network IO), failure never blocks the payment. A piece that sold out
+  // before this payment landed means the whole order is refunded instead.
+  if (result && result.ok) paidPostEffects(order, groups, stripe);
+  else if (result) unavailablePostEffects(order, result.shortfall, stripe);
+  return result;
+}
+
+module.exports = { perShopGroups, takeStock, paidDbEffects, paidPostEffects, unavailablePostEffects, sendConfirmation, completePaid };

@@ -317,7 +317,7 @@
 
     <div class="view" id="view-orders">
       <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px"><h3>All orders</h3><div class="hint">Every order across the marketplace, newest first.</div></div>
+        <div style="padding:20px 22px 4px"><h3>All orders</h3><div class="hint">Every order across the marketplace, newest first. Each maker's parcel shows where it is with the courier and anything that needs you (a booking that failed, a parcel lost or not collected). <b>Cancel items</b> refunds just the pieces you pick that haven't left the maker — the makers are told to leave them out, and a parcel that ends up empty is cancelled with its courier booking. <b>Never shipped</b> does that for a whole parcel.</div></div>
         <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="ordersTable"></table></div>
       </div>
     </div>
@@ -389,6 +389,27 @@
     <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px">
       <button class="btn btn-ghost" onclick="closeTagModal()">Cancel</button>
       <button class="btn btn-coral" onclick="saveTagModal()">Save tags</button>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel pieces before dispatch: pick lines + units, see the refund, confirm. -->
+<div class="mscrim" id="cxScrim" onclick="if(event.target===this)closeCancelModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="cxTitle" style="width:640px">
+    <h3 id="cxTitle">Cancel pieces</h3>
+    <div class="hint" id="cxSub" style="margin-bottom:6px"></div>
+    <div id="cxLines"></div>
+    <div style="display:grid;gap:10px;margin-top:14px">
+      <label style="font-size:13px;font-weight:600">Why
+        <select id="cxReason" style="display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--paper)" onchange="cxPreview()"></select></label>
+      <label style="font-size:13px;font-weight:600">Note for the record (optional)
+        <input id="cxNote" maxlength="300" style="display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--paper)"></label>
+      <label style="font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center"><input type="checkbox" id="cxDelivery" onchange="cxDeliveryTouched=true;cxPreview()"> <span id="cxDeliveryLbl">Refund the delivery fee too</span></label>
+    </div>
+    <div id="cxSum" style="margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--cream);font-size:13.5px;font-weight:600"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeCancelModal()">Keep the order</button>
+      <button class="btn btn-coral" id="cxGo" onclick="cxSubmit()" disabled>Cancel and refund</button>
     </div>
   </div>
 </div>
@@ -471,6 +492,7 @@ async function reload(){
   try{ REVIEWS=(await TroveAPI.api('/api/admin/reviews')).reviews; }catch(_){ REVIEWS=[]; }
   try{ RETURNS=(await TroveAPI.api('/api/admin/returns')).returns; }catch(_){ RETURNS=[]; }
   try{ MESSAGES=(await TroveAPI.api('/api/contact/messages')).messages; }catch(_){ MESSAGES=[]; }
+  try{ COURIER=await TroveAPI.api('/api/admin/courier'); }catch(_){ COURIER=null; }
   // Site content loads once — later reloads must not clobber unsaved edits.
   if(!CMS){ try{ CMS=await TroveAPI.api('/api/admin/content'); cmsInitEdit(); }catch(_){ CMS=null; } }
   renderOverview();renderMembers();renderShops();renderProviders();renderOrders();renderProducts();renderTrends();renderReviews();renderReturns();renderCms();renderMessages();
@@ -516,6 +538,21 @@ async function reloadPayouts(){
 }
 
 /* ---------------- overview ---------------- */
+/* The prepaid OTO courier wallet: every booking is paid from it, so a low
+ * balance stops collections. Read hourly (and at boot); 'Check now' reads it
+ * on the spot. Hidden when no live courier is connected. */
+let COURIER=null;
+function courierStatHTML(){
+  const c=COURIER; if(!c||c.mode!=='oto')return '';
+  const v=c.empty?'Empty':c.remaining==null?'—':Number(c.remaining).toLocaleString('en-GB');
+  const n=c.empty?'a booking was refused for lack of credit — top it up':c.low?`credit left, under the ${c.threshold} warning level — top it up`:c.checkedAt?`checked ${fmtDate(c.checkedAt)}`:'not read yet';
+  return `<div class="stat ${c.low?'hot':''}"><div class="k">Courier wallet (OTO)</div><div class="v">${esc(v)}</div><div class="n">${esc(n)} · <a href="#" role="button" onclick="checkWallet();return false" style="color:inherit">check now</a></div></div>`;
+}
+async function checkWallet(){
+  try{ COURIER=await TroveAPI.api('/api/admin/courier/check-wallet',{method:'POST'}); toast('Wallet read'); }
+  catch(e){ toast(e.message||'OTO did not answer'); }
+  renderOverview();
+}
 function renderOverview(){
   const s=STATS;
   $('statCards').innerHTML=`
@@ -525,6 +562,7 @@ function renderOverview(){
     <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">gross, incl. fees</div></div>
     <div class="stat"><div class="k">Buyers</div><div class="v">${s.buyers}</div><div class="n">registered</div></div>
     <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>
+    ${courierStatHTML()}
     <div class="stat ${s.licensed&&s.licensed.awaiting?'hot':''}"><div class="k">Licensed sellers</div><div class="v">${s.licensed?s.licensed.total:0}</div><div class="n">${s.licensed&&s.licensed.total?`${s.licensed.verified} verified · ${s.licensed.awaiting} awaiting check`:'none yet — makers sell licence-free'}</div></div>
     <div class="stat ${s.providers&&s.providers.pending?'hot':''}"><div class="k">Service providers</div><div class="v">${s.providers?s.providers.approved:0}</div><div class="n">${s.providers&&s.providers.pending?`${s.providers.pending} waiting for review`:'live on the Services Marketplace'}</div></div>`;
   const b=$('pendBadge');const n=s.shops.pending;b.textContent=n;b.classList.toggle('zero',!n);
@@ -604,7 +642,7 @@ function renderMembers(){
   const bd=$('membersBadge'); bd.textContent=pending; bd.classList.toggle('zero',!pending);
   $('membersTable').innerHTML=`<thead><tr><th>Member</th><th>Shop · pieces</th><th>Services practice</th><th>Since</th><th></th></tr></thead>
     <tbody>${rows.map(m=>`<tr>
-      <td><div class="nm">${esc(m.name||'—')}</div><div class="sl">${esc(m.email)}</div>
+      <td><div class="nm">${esc(m.name||'—')}</div><div class="sl">${esc(m.email)}</div>${m.shop?makerPhoneHTML(m.shop):(m.provider&&m.provider.pitchPhone?`<div class="sl">WhatsApp ${esc(m.provider.pitchPhone)}</div>`:'')}
         <div class="sl" style="margin-top:4px">${m.shop&&m.provider?'<span class="pill" style="background:var(--sage-tint);color:var(--char)">shop + services</span>':m.shop?'<span class="pill" style="background:var(--rose-tint);color:var(--char)">shop only</span>':'<span class="pill" style="background:var(--rose-tint);color:var(--char)">services only</span>'}</div></td>
       <td>${memberSideHTML('shop',m.shop)}</td>
       <td>${memberSideHTML('provider',m.provider)}</td>
@@ -669,9 +707,15 @@ async function markIdChecked(id,checked){
   try{ await TroveAPI.api(`/api/admin/shops/${id}/identity-check`,{method:'POST',body:{checked}}); toast(checked?'ID marked as checked':'ID check undone'); await reload(); }
   catch(e){ toast(e.message||'Could not save'); }
 }
+/* The maker's numbers — the courier pickup phone and the WhatsApp from their
+ * application — so a late parcel is one call away. Admin-only. */
+function makerPhoneHTML(s){
+  const nums=[s.pickupPhone&&['Pickup',s.pickupPhone],s.pitchPhone&&s.pitchPhone!==s.pickupPhone&&['WhatsApp',s.pitchPhone]].filter(Boolean);
+  return nums.length?`<div class="sl">${nums.map(([k,v])=>`${k} <a href="tel:${esc(String(v).replace(/[^\d+]/g,''))}" style="color:inherit">${esc(v)}</a>`).join(' · ')}</div>`:'';
+}
 function shopRowHTML(s){
   return `<tr>
-    <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div></div></div></td>
+    <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div>${makerPhoneHTML(s)}</div></div></td>
     <td style="color:var(--muted)">${esc(s.location||'—')}</td>
     <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
     <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.salesCents)}</td>
@@ -1042,7 +1086,7 @@ function renderReturns(){
           :r.status==='declined'?` · declined: “${esc(r.declineReason||'')}”`
           :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${retMoneyNote(r.feePreview,r.deliveryPreview)||' (free collection)'}`}${r.order.deliveryPaid?` · delivery paid AED ${r.order.deliveryPaid}`:''}
       </div>
-      ${(r.collections||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--muted);font-weight:600">Courier: ${r.collections.map(c=>`${esc(c.status)}${c.ref?' · '+esc(c.ref):''}${c.note?' · '+esc(c.note):''}`).join(' &nbsp;|&nbsp; ')}</div>`:''}
+      ${(r.collections||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--muted);font-weight:600">Courier: ${r.collections.map(c=>`${esc(({not_needed:'nothing to collect',failed:'booking failed — the refund waits for it'})[c.status]||c.status)}${c.ref?' · '+esc(c.ref):''}${c.note?' · '+esc(c.note):''}`).join(' &nbsp;|&nbsp; ')}</div>`:''}
       ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px;align-items:center;flex-wrap:wrap">
         <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" id="retFee${r.id}" ${r.feePreview?'checked':''} ${r.feeIfCharged?'':'disabled'} onchange="retFeePreview(${r.id},true)">Charge the AED ${r.feeIfCharged||0} collection fee</label>
         ${r.deliveryIfRefunded?`<label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer" title="By the rule the original delivery comes back when the whole order is returned for a fault"><input type="checkbox" id="retDel${r.id}" ${r.deliveryPreview?'checked':''} onchange="retFeePreview(${r.id})">Refund the AED ${r.deliveryIfRefunded} original delivery</label>`:''}
@@ -1404,27 +1448,138 @@ function packByCell(o){
   const many=(o.parcels||[]).length>1;
   return open.map(p=>`<div style="font-size:12px;font-weight:700;margin-top:3px;color:${p.packOverdue?'#B3261E':'var(--muted)'}">${p.packOverdue?'Overdue · ':''}Pack by ${esc(day(p.packBy))}${many?' · '+esc(p.shop):''}</div>`).join('');
 }
+const ORDER_ATTN={oversold:'Sold out after payment — refunded automatically',oversold_refund_failed:'Sold out after payment — REFUND BY HAND',paid_after_cancel:'Paid after it was cancelled — refunded automatically',refund_failed:'Automatic refund failed — REFUND BY HAND',
+  dispute:'Card dispute open — answer it in Stripe',dispute_lost:'Card dispute lost — booked as refunded',external_refund:'Part refund made in Stripe — reconcile, then release the hold'};
+const red=s=>`<div style="font-size:12px;font-weight:700;color:#B3261E;margin-top:4px">${s}</div>`;
+const small=s=>`<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:3px">${s}</div>`;
+/* One maker's parcel: where it is with the courier, and its buttons. */
+function parcelHTML(o,p,many){
+  const open=!o.refundedAt&&['paid','fulfilled'].includes(o.status);
+  const courier=p.status==='cancelled'?'cancelled'
+    :p.collectedAt||['out_for_delivery','delivered'].includes(p.status)?`with ${esc(p.carrier||'the courier')}`
+    :p.readyAt?'packed · collection booked':p.courierRef?'courier order ready · not packed yet':'no courier booked yet';
+  return `<div style="border-top:1px solid var(--line);padding:6px 0 4px">
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="font-size:13px">${esc(p.shop)}</b><span class="pill ${esc(p.status)}" style="font-size:11px">${esc(p.statusLabel||p.status)}</span>
+      ${p.shopPhone?`<a href="tel:${esc(String(p.shopPhone).replace(/[^\d+]/g,''))}" style="font-size:12px;color:var(--muted)">${esc(p.shopPhone)}</a>`:''}</div>
+    ${small(courier)}
+    ${p.attentionLabel?red(`${esc(p.attentionLabel)}${p.bookingError?` — ${esc(p.bookingError)}`:''} <a href="#" role="button" onclick="clearParcelFlag(${Number(p.id)});return false" style="color:inherit;font-weight:600">mark handled</a>`):''}
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+      ${p.canRetryCourier?`<button class="btn btn-ghost btn-sm" onclick="retryCourier(${Number(p.id)})">Retry courier booking</button>`:''}
+      ${open&&p.cancellable?`<button class="btn btn-ghost btn-sm" onclick="openCancelModal('${esc(o.publicId)}',${Number(p.id)})" title="The maker can't send it: cancel and refund everything left in this parcel">Never shipped…</button>`:''}
+    </div></div>`;
+}
 function renderOrders(){
-  $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Shops</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
-    <tbody>${ORDERS.length?ORDERS.map(o=>`<tr>
+  $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Parcels</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
+    <tbody>${ORDERS.length?ORDERS.map(o=>{
+      const open=!o.refundedAt&&['paid','fulfilled'].includes(o.status);
+      const parcels=o.parcels||[];
+      return `<tr>
       <td style="font-weight:700">${esc(o.publicId)}</td>
       <td style="color:var(--muted)">${esc(o.email)}${o.phone?`<div style="font-size:12px">${esc(o.phone)}</div>`:''}</td>
-      <td>${o.shops.map(esc).join(', ')}${packByCell(o)}</td>
+      <td style="min-width:230px">${parcels.length?parcels.map(p=>parcelHTML(o,p,parcels.length>1)).join(''):o.shops.map(esc).join(', ')}${packByCell(o)}</td>
       <td>${o.itemCount}</td>
-      <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(o.totalCents)}</td>
-      <td>${o.refundedAt?`<span class="pill rejected">refunded</span>`:`<span class="pill ${esc(o.status)}">${esc(o.status)}</span>`}${o.attention?`<div style="font-size:12px;font-weight:700;color:#B3261E;margin-top:4px">${esc(({oversold:'Sold out after payment — refunded automatically',oversold_refund_failed:'Sold out after payment — REFUND BY HAND',paid_after_cancel:'Paid after it was cancelled — refunded automatically',refund_failed:'Automatic refund failed — REFUND BY HAND'})[o.attention]||o.attention)}</div>`:''}</td>
+      <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(o.totalCents)}${o.cancelled?small(`${money(o.cancelled.refundCents)} refunded in ${o.cancelled.count} cancellation${o.cancelled.count>1?'s':''}`):''}${o.externalRefundCents?small(`${money(o.externalRefundCents)} refunded in Stripe`):''}</td>
+      <td>${o.refundedAt?`<span class="pill rejected">refunded</span>`:`<span class="pill ${esc(o.status)}">${esc(o.status)}</span>`}${o.attention?red(esc(ORDER_ATTN[o.attention]||o.attention)):''}
+        ${o.dispute&&o.dispute.dueBy&&o.hold==='dispute'?small(`Evidence due ${esc(fmtDate(o.dispute.dueBy))}`):''}
+        ${o.hold?small(`Makers' payment held${o.hold==='external_refund'||(o.dispute&&['won','warning_closed'].includes(o.dispute.status))?` · <a href="#" role="button" onclick="releaseHold('${esc(o.publicId)}');return false" style="color:inherit">release hold</a>`:''}`):''}</td>
       <td style="color:var(--muted)">${fmtDate(o.createdAt)}</td>
-      <td style="text-align:right">${!o.refundedAt&&['paid','fulfilled'].includes(o.status)?`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`:''}</td>
-    </tr>`).join(''):`<tr><td colspan="8" class="empty">No orders yet.</td></tr>`}</tbody>`;
+      <td style="text-align:right"><div class="actions" style="justify-content:flex-end">${open&&parcels.some(p=>p.cancellable)?`<button class="btn btn-ghost" onclick="openCancelModal('${esc(o.publicId)}')">Cancel items…</button>`:''}${open?`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`:''}</div></td>
+    </tr>`;}).join(''):`<tr><td colspan="8" class="empty">No orders yet.</td></tr>`}</tbody>`;
 }
 async function refundOrder(publicId){
-  if(!confirm(`Refund ${publicId} in full? The buyer gets their money back, return pickups are booked for parcels on the move, and any already-settled supplier purchase nets against their next run.`))return;
+  if(!confirm(`Refund ${publicId} in full? The buyer gets back everything still paid. Parcels the courier hasn't collected are cancelled (courier booking too) and their makers told not to send them; delivered parcels get a return collection; any already-settled supplier purchase nets against their next run.`))return;
   try{
-    await TroveAPI.api('/api/admin/orders/'+publicId+'/refund',{method:'POST'});
-    toast(`${publicId} refunded`);
+    const r=await TroveAPI.api('/api/admin/orders/'+publicId+'/refund',{method:'POST'});
+    const stuck=(r.parcels||[]).filter(p=>p.action==='cancel_failed'||p.action==='in_transit').length;
+    toast(stuck?`${publicId} refunded — ${stuck} parcel${stuck>1?'s':''} need you (see the order)`:`${publicId} refunded`);
     await reload();
   }catch(e){ toast(e.message||'Could not refund'); }
 }
+async function retryCourier(id){
+  try{ const r=await TroveAPI.api(`/api/admin/shipments/${id}/retry-courier`,{method:'POST'}); toast(r.shipment&&r.shipment.readyAt?'Courier collection booked':'Courier order booked'); await reload(); }
+  catch(e){ toast(e.message||'The courier still refused'); }
+}
+async function clearParcelFlag(id){
+  try{ await TroveAPI.api(`/api/admin/shipments/${id}/clear-attention`,{method:'POST'}); toast('Marked as handled'); await reload(); }
+  catch(e){ toast(e.message||'Could not update'); }
+}
+async function releaseHold(publicId){
+  if(!confirm(`Release the hold on ${publicId}? The makers' credits on it can be paid in the next settlement run.`))return;
+  try{ await TroveAPI.api(`/api/admin/orders/${publicId}/release-hold`,{method:'POST'}); toast('Hold released'); await reload(); }
+  catch(e){ toast(e.message||'Could not release the hold'); }
+}
+
+/* ---- cancel pieces before dispatch (per line, per unit) ---- */
+let CX=null, cxDeliveryTouched=false, cxTimer=null, CX_RET=null;
+async function openCancelModal(publicId,shipmentId){
+  CX_RET=document.activeElement;
+  let data;
+  try{ data=await TroveAPI.api(`/api/admin/orders/${publicId}/cancellable`); }catch(e){ toast(e.message||'Could not load the order'); return; }
+  if(data.blocked){ toast(data.blocked); return; }
+  CX={publicId,shipmentId:shipmentId||null,data,picks:new Map()};
+  cxDeliveryTouched=false;
+  const lines=data.lines.filter(l=>!shipmentId||l.shipmentId===shipmentId);
+  // 'Never shipped' = every unit left in that parcel, ticked for you.
+  if(shipmentId) lines.forEach(l=>{ if(l.cancellable>0) CX.picks.set(l.id,l.cancellable); });
+  $('cxTitle').textContent=shipmentId?'This parcel never ships':'Cancel pieces';
+  $('cxSub').textContent=shipmentId
+    ?`Order ${publicId}: cancel and refund everything left in ${lines[0]?lines[0].shop+"'s":'this'} parcel. The maker is told not to send it and the courier booking is cancelled.`
+    :`Order ${publicId}: choose what to cancel. Only pieces the courier hasn't collected can be cancelled — anything delivered comes back as a return.`;
+  $('cxReason').innerHTML=Object.entries(data.reasons).map(([k,v])=>`<option value="${esc(k)}"${(shipmentId?'not_shipped':'buyer_request')===k?' selected':''}>${esc(v)}</option>`).join('');
+  $('cxNote').value='';
+  let shop='';
+  $('cxLines').innerHTML=lines.map(l=>{
+    const head=l.shop!==shop?`<div style="font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:12px 0 4px">${esc((shop=l.shop))}</div>`:'';
+    const opts=(l.options||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
+    return head+`<div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)">
+      <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px">${esc(l.name)}</div>
+        <div style="font-size:12px;color:var(--muted);font-weight:600">${esc(opts?opts+' · ':'')}${money(l.priceCents)} each · ${l.qty} ordered${l.cancelledQty?` · ${l.cancelledQty} already cancelled`:''}${l.why&&!l.cancellable?` · ${esc(l.why)}`:''}</div></div>
+      ${l.cancellable?`<label style="font-size:12px;font-weight:600;display:flex;gap:6px;align-items:center">Cancel
+        <input type="number" min="0" max="${l.cancellable}" value="${CX.picks.get(l.id)||0}" data-line="${l.id}" style="width:62px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font:inherit" oninput="cxPick(${l.id},this)"> of ${l.cancellable}</label>`:''}
+    </div>`;
+  }).join('')||'<div class="empty">Nothing on this order can be cancelled any more.</div>';
+  $('cxDelivery').checked=false;
+  $('cxDeliveryLbl').textContent=data.deliveryLeft>0?`Refund the AED ${data.deliveryLeft} delivery fee too`:'No delivery fee left to refund';
+  $('cxDelivery').disabled=!(data.deliveryLeft>0);
+  $('cxScrim').classList.add('open');
+  cxPreview();
+  const first=$('cxScrim').querySelector('input[type=number]'); if(first)first.focus();
+}
+function closeCancelModal(){ $('cxScrim').classList.remove('open'); CX=null; if(CX_RET&&CX_RET.focus&&document.contains(CX_RET))CX_RET.focus(); CX_RET=null; }
+function cxPick(id,el){
+  const l=CX.data.lines.find(x=>x.id===id); let v=parseInt(el.value,10); if(!Number.isFinite(v)||v<0)v=0; if(v>l.cancellable){v=l.cancellable;el.value=v;}
+  if(v)CX.picks.set(id,v); else CX.picks.delete(id);
+  clearTimeout(cxTimer); cxTimer=setTimeout(cxPreview,180);
+}
+const cxBody=()=>({items:[...CX.picks].map(([id,qty])=>({id,qty})),reason:$('cxReason').value,note:$('cxNote').value.trim(),...(cxDeliveryTouched?{refundDelivery:$('cxDelivery').checked}:{})});
+async function cxPreview(){
+  if(!CX)return;
+  if(!CX.picks.size){ $('cxSum').textContent='Pick at least one piece.'; $('cxGo').disabled=true; return; }
+  try{
+    const r=await TroveAPI.api(`/api/admin/orders/${CX.publicId}/cancel-items`,{method:'POST',body:{...cxBody(),dryRun:true}});
+    // The server's rule: the delivery fee goes back when nothing is left to deliver.
+    if(!cxDeliveryTouched)$('cxDelivery').checked=r.deliveryCents>0;
+    $('cxSum').innerHTML=`Refund to the buyer's card: <b>${money(r.refundCents)}</b>${r.deliveryCents?` (pieces ${money(r.itemsCents)} + delivery ${money(r.deliveryCents)})`:''}${r.whole?'<br>Nothing is left to deliver, so the whole order is cancelled.':''}`;
+    $('cxGo').disabled=false;
+  }catch(e){ $('cxSum').textContent=e.message||'Those pieces can’t be cancelled'; $('cxGo').disabled=true; }
+}
+async function cxSubmit(){
+  if(!CX||!CX.picks.size)return;
+  const sum=$('cxSum').textContent;
+  if(!confirm(`Cancel these pieces from ${CX.publicId} and refund them now? ${sum}\nThe buyer and the makers are emailed. This can't be undone.`))return;
+  $('cxGo').disabled=true;
+  try{
+    const path=CX.shipmentId&&CX.data.lines.filter(l=>l.shipmentId===CX.shipmentId&&l.cancellable>0).every(l=>CX.picks.get(l.id)===l.cancellable)
+      ?`/api/admin/orders/${CX.publicId}/parcels/${CX.shipmentId}/cancel`:`/api/admin/orders/${CX.publicId}/cancel-items`;
+    const body=path.endsWith('/cancel')?{note:$('cxNote').value.trim(),...(cxDeliveryTouched?{refundDelivery:$('cxDelivery').checked}:{})}:cxBody();
+    const r=await TroveAPI.api(path,{method:'POST',body});
+    const stuck=(r.parcels||[]).filter(p=>!p.stopped).length;
+    toast(`Refunded AED ${r.cancellation.refund}${stuck?' — a courier booking could not be cancelled (see the order)':''}`);
+    closeCancelModal();
+    await reload();
+  }catch(e){ toast(e.message||'Could not cancel'); $('cxGo').disabled=false; }
+}
+document.addEventListener('keydown',(e)=>{if(!$('cxScrim').classList.contains('open'))return;if(e.key==='Escape')closeCancelModal();else trapTab(e,$('cxScrim').querySelector('.modal'));});
 
 /* ---------------- settlements (supplier purchases) ---------------- */
 const SETTLE_PILL={draft:'pending',exported:'pending',paid:'approved'};
@@ -1508,16 +1663,10 @@ function renderPayouts(){
           <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(r.netVatCents)}</td>
         </tr>`).join('')}</tbody></table></div>`
        :`<div class="empty" style="padding:8px 22px 22px">No VAT captured yet.</div>`}
-      ${(VAT.creditNotes||[]).length?`<div style="padding:4px 22px 4px"><h3 style="font-size:17px">Credit notes</h3></div>
-        <div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Quarter</th><th>Reference</th><th>Order / booking</th><th>Refunded</th><th>VAT</th><th>Issued</th></tr></thead>
-        <tbody>${VAT.creditNotes.map(n=>`<tr>
-          <td style="font-weight:700">${esc(n.quarter)}</td>
-          <td>${esc(n.reference||'')}</td>
-          <td style="color:var(--muted)">${esc(n.order||'')}</td>
-          <td>${money(n.refundCents)}</td>
-          <td>${money(n.vatCents)}</td>
-          <td style="color:var(--muted)">${esc(n.issuedOn||'')}</td>
-        </tr>`).join('')}</tbody></table></div>`:''}
+      ${(VAT.creditNotes||[]).length?`<div style="padding:0 22px 4px"><h3 style="font-size:18px">Tax credit notes</h3><div class="hint">One per refund that gave VAT back — each carries only the VAT not already credited. Open one to print it.</div></div>
+      <div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Credit note</th><th>Order / booking</th><th>Quarter</th><th>Refunded</th><th>VAT credited</th><th>Issued</th></tr></thead>
+        <tbody>${VAT.creditNotes.map(n=>`<tr><td>${n.rail==='services'?`<b>${esc(n.reference||'')}</b>`:`<a href="/api/admin/orders/${encodeURIComponent(n.order)}/credit-notes/${encodeURIComponent(n.reference)}" target="_blank" rel="noopener" style="font-weight:700;color:inherit">${esc(n.reference)}</a>`}</td>
+          <td>${n.rail==='services'?esc(n.order||''):`<a href="/api/admin/orders/${encodeURIComponent(n.order)}/tax-invoice" target="_blank" rel="noopener" style="color:inherit">${esc(n.order)}</a>`}</td><td>${esc(n.quarter)}</td><td>${money(n.refundCents)}</td><td>${money(n.vatCents)}</td><td style="color:var(--muted)">${esc(n.issuedOn||'')}</td></tr>`).join('')}</tbody></table></div>`:''}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>Graduation queue</h3>

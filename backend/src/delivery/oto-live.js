@@ -16,6 +16,8 @@
  *   GET  /print/{orderId}        → printAWBURL, the label the maker prints
  *   POST /orderStatus            current status
  *   POST /createReturnShipment   return leg of a delivered order → <orderId>-R1
+ *   POST /cancelOrder            cancel an order the courier has not collected yet
+ *                                (Trove refunded or cancelled it before dispatch)
  *   GET|POST|PUT /webhook        orderStatus + shipmentError subscriptions
  *
  * Env: OTO_REFRESH_TOKEN       Settings → API Integrations → Connect in the OTO dashboard
@@ -53,13 +55,18 @@ async function token() {
 }
 const resetToken = () => { cached = { token: '', exp: 0 }; };
 
-async function call(method, path, body) {
+async function call(method, path, body, retried = false) {
   const res = await fetch(base() + path, {
     method,
     headers: { Authorization: `Bearer ${await token()}`, Accept: 'application/json', 'Content-Type': 'application/json' },
     body: body ? JSON.stringify(body) : undefined,
   });
-  if (res.status === 401) resetToken();
+  // An expired or revoked access token: refresh it and try exactly once more,
+  // so a booking never fails just because the cached token aged out.
+  if (res.status === 401) {
+    resetToken();
+    if (!retried) return call(method, path, body, true);
+  }
   const j = await res.json().catch(() => ({}));
   if (!res.ok || j.success === false) {
     const e = new Error(`OTO ${method} ${path} → ${res.status} ${j.otoErrorCode || ''} ${j.otoErrorMessage || j.message || ''}`.replace(/\s+/g, ' ').trim());
@@ -218,6 +225,14 @@ module.exports = {
     if (returnItems && returnItems.length) body.items = returnItems.map((i) => ({ sku: sku(i.order_item_id), quantity: String(i.qty) }));
     const j = await call('POST', '/createReturnShipment', body);
     return { ref: j.returnOrderId || `${body.orderId}-R`, trackingUrl: '' };
+  },
+
+  /** Trove refunded or cancelled the parcel before the courier collected it
+   *  (POST /cancelOrder { orderId }): no driver turns up. Throws when OTO
+   *  refuses — typically because the courier already has the parcel. */
+  async cancelPickup(ref) {
+    await call('POST', '/cancelOrder', { orderId: ref });
+    return { ref, cancelled: true };
   },
 
   /** Label: OTO hosts it; the seller route redirects the maker there. Null until the courier is booked. */

@@ -124,6 +124,12 @@ module.exports = {
     return shapeRes(await call('PUT', `/orders/${encodeURIComponent(ref)}/ready_for_collection`));
   },
 
+  /** Cancel an order Quiqup has not collected yet (Trove refunded it before dispatch). */
+  async cancelPickup(ref) {
+    await call('PUT', `/orders/${encodeURIComponent(ref)}/cancel`);
+    return { ref, cancelled: true };
+  },
+
   /** AWB label PDF for the parcel (Quiqup generates the barcode). */
   async getLabel(ref) {
     return call('GET', `/order_label/${encodeURIComponent(ref)}`, null, true);

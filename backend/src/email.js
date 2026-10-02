@@ -228,6 +228,10 @@ function orderConfirmation({ order, items, shops, ship, estimate }) {
       ...(order.service_fee_cents ? [totalRow('Service fee', aed(order.service_fee_cents))] : []),
       totalRow('Delivery', order.shipping_cents ? aed(order.shipping_cents) : 'Free'),
       totalRow('Total', aed(order.total_cents), true),
+      // Once Trove is VAT-registered: the VAT inside the total and the tax
+      // invoice number (the invoice itself is in the buyer's account).
+      ...(order.vat_amount_cents > 0 ? [totalRow('Includes VAT at 5%', aed(order.vat_amount_cents))] : []),
+      ...(order.tax_invoice_no ? [totalRow('Tax invoice', esc(order.tax_invoice_no))] : []),
     ])
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:30px 0 0;background:${CREAM};border:1px solid ${LINE};border-radius:14px"><tr>
         ${ship ? `<td class="stack" width="50%" valign="top" style="padding:18px 20px;font-family:${SANS};font-size:14.5px;line-height:1.6;color:${INK}">
@@ -826,3 +830,79 @@ function providerFeesSent({ providerName, ownerName, amountCents, reference, pay
 }
 
 module.exports.providerFeesSent = providerFeesSent;
+
+/* ---- operations alerts + cancellations (fix round 2026-10-02) ---- */
+
+/**
+ * A plain alert to the person who runs Trove: something needs a human (a
+ * courier booking failed, a parcel is lost, a card dispute arrived…).
+ * { subject, title, lines: [plain text — escaped here], link, cta, kicker }
+ */
+function adminAlert({ subject, title, lines = [], link, cta = 'Open the admin', kicker = '' }) {
+  const inner = panel(lines.map((l) => esc(l)).join('<br>'))
+    + (link ? button(esc(cta), esc(link)) : '');
+  return {
+    subject,
+    html: layout(title || subject, inner, {
+      tone: 'clay',
+      kicker: kicker ? esc(kicker) : '',
+      reason: "You're receiving this because you run Trove.",
+      preheader: lines[0] ? String(lines[0]).slice(0, 140) : subject,
+    }),
+  };
+}
+
+/**
+ * Part (or all) of an order cancelled before dispatch — to the buyer.
+ * { order, items[{ name, qty, price_cents, image }], money: { items, delivery, refund }, whole }
+ */
+function itemsCancelled({ order, items, money, whole = false }) {
+  const many = items.reduce((t, i) => t + i.qty, 0) > 1;
+  const inner =
+    panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(money.refund)}</span><br>is on its way back to your original payment method${money.delivery ? ` (including your ${aed(money.delivery)} delivery)` : ''}. Depending on your bank it can take 5–10 business days to appear.`)
+    + heading(whole ? 'Cancelled' : 'Cancelled from your order')
+    + itemsBlock(items)
+    + p(whole
+      ? 'Nothing from this order will be delivered, and you have not been charged for any of it.'
+      : 'Everything else on your order is still on its way, and your account shows where each parcel is.');
+  return {
+    subject: whole
+      ? `Your order ${order.public_id} is cancelled — ${aed(money.refund)} refunded`
+      : `Part of your order ${order.public_id} is cancelled — ${aed(money.refund)} refunded`,
+    html: layout(whole ? 'Your order is cancelled' : 'Part of your order is cancelled', inner, {
+      tone: 'clay',
+      kicker: `Order <b style="color:${INK}">${esc(order.public_id)}</b>`,
+      intro: whole
+        ? `We've cancelled order <b>${esc(order.public_id)}</b> before it was sent and refunded you in full.`
+        : `We've cancelled ${many ? 'some pieces' : 'a piece'} from order <b>${esc(order.public_id)}</b> before ${many ? 'they were' : 'it was'} sent, and refunded ${many ? 'them' : 'it'}.`,
+      preheader: `${aed(money.refund)} is on its way back to you.`,
+    }),
+  };
+}
+
+/**
+ * To the maker: pieces from their parcel are cancelled (or the whole parcel
+ * was refunded) — leave them out / do not hand the parcel to a courier.
+ * { shopName, ownerName, publicId, items[{ name, qty }], whole, link }
+ */
+function parcelCancelledMaker({ shopName, ownerName, publicId, items = [], whole = false, link }) {
+  const list = items.map((i) => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join('<br>');
+  const inner =
+    panel(whole
+      ? `<b>Please do not hand this parcel to a courier.</b> Your part of order ${esc(publicId)} was cancelled and refunded, so nothing from your shop goes out on it${list ? `:<br>${list}` : '.'}`
+      : `<b>Please leave these out of the parcel:</b><br>${list}<br>Everything else on the order still goes out as normal.`)
+    + p('If a courier arrives for a parcel that is cancelled, please send them away and let us know. Nothing is paid out for cancelled pieces.')
+    + button('Open the order', esc(link));
+  return {
+    subject: whole ? `Order ${publicId} cancelled — please do not send it` : `Order ${publicId}: pieces cancelled — leave them out`,
+    html: layout(whole ? 'This order is cancelled' : 'Pieces cancelled from an order', inner, {
+      tone: 'clay',
+      kicker: `Order <b style="color:${INK}">${esc(publicId)}</b> · ${esc(shopName)}`,
+      intro: `Hello ${firstNameOr(ownerName)}, Trove has cancelled ${whole ? 'your part of this order' : 'part of this order'} before it was sent.`,
+      reason: "You're receiving this because you sell on Trove.",
+      preheader: whole ? `Order ${publicId} was refunded — do not hand it to the courier.` : `Order ${publicId}: some pieces are cancelled.`,
+    }),
+  };
+}
+
+Object.assign(module.exports, { adminAlert, itemsCancelled, parcelCancelledMaker });

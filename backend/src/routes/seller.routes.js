@@ -526,13 +526,14 @@ const latestShopReturnStmt = () => db.prepare(`
  * 'Revenue · 30d' on the seller overview: the list value of this shop's
  * pieces on paid orders placed in the last 30 days, NET of refunds — a
  * whole-order refund drops the order, a refunded return drops just the
- * units that went back. Gross list prices (the buyer-facing number), in fils.
+ * units that went back, and units Trove cancelled before dispatch drop too.
+ * Gross list prices (the buyer-facing number), in fils.
  */
 function revenueSummary(shopId, days = 30) {
   const row = db.prepare(`
     SELECT COALESCE(SUM(oi.price_cents * oi.qty), 0) AS gross,
            COALESCE(SUM(CASE WHEN o.refunded_at IS NOT NULL THEN oi.price_cents * oi.qty
-             ELSE oi.price_cents * MIN(oi.qty, COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
+             ELSE oi.price_cents * MIN(oi.qty, oi.cancelled_qty + COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
                JOIN return_requests rr ON rr.id = ri.request_id
                WHERE ri.order_item_id = oi.id AND rr.status = 'refunded'), 0)) END), 0) AS refunded
     FROM order_items oi JOIN orders o ON o.id = oi.order_id
@@ -647,32 +648,65 @@ router.get('/shipments/:id/label', requireSeller, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-router.patch('/shipments/:id', requireSeller, (req, res, next) => {
+router.patch('/shipments/:id', requireSeller, async (req, res, next) => {
   try {
     const sh = db.prepare('SELECT * FROM shipments WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
     if (!sh) return res.status(404).json({ error: 'Shipment not found' });
     const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
     if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
+    const asAdmin = !!req.session.impersonatorId;
+    const shapeRow = () => shipments.shape(db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id));
 
-    // A courier-booked parcel (Trove booked it: delivery_ref set) is the
+    // Cancelling is Trove's call (Admin → Orders), and a cancelled parcel
+    // never goes out — a maker can't revive it.
+    if (!asAdmin && sh.status === 'cancelled') {
+      return res.status(409).json({ code: 'cancelled', error: 'Trove cancelled this parcel and refunded the buyer — please don’t send it' });
+    }
+    if (!asAdmin && status === 'cancelled' && sh.status !== 'cancelled') {
+      return res.status(400).json({ error: 'Only Trove can cancel a parcel — get in touch if a piece can’t be made' });
+    }
+
+    // A courier-managed parcel (Trove booked it — delivery_ref set — or Trove
+    // books every parcel because a live courier is connected) is the
     // courier's to move once it leaves the maker: the shop can only say it is
-    // packed (shipped = ready for collection) or step that back. Out for
-    // delivery and delivered come from the courier's webhook — delivered
-    // starts the return window and the payout clock, so a shop must never be
-    // able to set it — and the courier/tracking details Trove booked can't be
-    // overwritten. An admin in shop view keeps the full stepper for fixes.
+    // packed (shipped = packed, collection booked) or step that back while the
+    // courier hasn't collected it. Out for delivery and delivered come from
+    // the courier's webhook — delivered starts the return window and the
+    // payout clock, so a shop must never be able to set it — and the
+    // courier/tracking details Trove booked can't be overwritten. An admin in
+    // shop view keeps the full stepper for fixes.
     //
-    // A shipment WITHOUT a booking (the courier booking failed, or it predates
-    // courier bookings) keeps the full manual stepper: nobody else can confirm
-    // it, and the maker arranges that delivery by hand.
-    if (sh.delivery_ref && !req.session.impersonatorId) {
+    // Only a shipment WITHOUT a booking while no courier is connected (mock
+    // mode, or parcels from before courier bookings) keeps the full manual
+    // stepper: nobody else can confirm it.
+    const managed = !!sh.delivery_ref || require('../delivery').isLive();
+    if (managed && !asAdmin) {
       const PACKING = ['processing', 'shipped'];
       if (status && status !== sh.status && (!PACKING.includes(status) || !PACKING.includes(sh.status))) {
         return res.status(400).json({ code: 'courier_managed', error: 'The courier updates this parcel from collection onwards — you can only mark it packed or step that back' });
       }
+      if (status === 'processing' && sh.status === 'shipped' && sh.collected_at) {
+        return res.status(400).json({ code: 'courier_managed', error: 'The courier has already collected this parcel, so it can’t be stepped back' });
+      }
       const changed = (v, cur) => v != null && String(v).trim() !== String(cur || '').trim();
       if (changed(carrier, sh.carrier) || changed(trackingNumber, sh.tracking_number) || changed(trackingUrl, sh.tracking_url)) {
-        return res.status(400).json({ code: 'courier_managed', error: 'Trove booked the courier for this parcel, so its courier and tracking details can’t be changed here' });
+        return res.status(400).json({ code: 'courier_managed', error: 'Trove books the courier for this parcel, so its courier and tracking details can’t be changed here' });
+      }
+    }
+
+    // "Packed · ready for collection" on a courier-managed parcel: book the
+    // courier collection FIRST (and the courier order, if that failed at
+    // payment). Only once the courier has accepted does the parcel move to
+    // 'shipped'; if the booking fails it stays packed-but-not-booked, the
+    // admin is told and the hourly sweep retries (src/courier-ops.js) — the
+    // maker and buyer are never told a courier is coming when none is.
+    if (managed && status === 'shipped' && sh.status === 'processing' && !sh.ready_at) {
+      try {
+        await require('../courier-ops').handOver(sh.id);
+        return res.json({ shipment: shapeRow(), courierBooked: true });
+      } catch (_) {
+        return res.json({ shipment: shapeRow(), courierBooked: false,
+          notice: 'Thanks — it’s marked packed. The courier booking didn’t go through just now; Trove has been told and will book the collection, so there’s nothing more for you to do.' });
       }
     }
 
@@ -686,22 +720,23 @@ router.patch('/shipments/:id', requireSeller, (req, res, next) => {
       if (undoingDelivery) {
         db.prepare('UPDATE shipments SET delivered_at=NULL, return_window_ends_at=NULL WHERE id=?').run(sh.id);
       }
+      // Packed stamps follow the maker's taps: stepping back un-packs it (so
+      // the pack-by reminder still works); a manual 'shipped' means the maker
+      // handed it over themselves.
+      if (status === 'processing' && sh.status !== 'processing') db.prepare('UPDATE shipments SET packed_at=NULL WHERE id=?').run(sh.id);
+      if (status === 'shipped' && sh.status === 'processing') {
+        db.prepare(`UPDATE shipments SET packed_at=COALESCE(packed_at, datetime('now'))${managed ? '' : ", collected_at=COALESCE(collected_at, datetime('now'))"} WHERE id=?`).run(sh.id);
+      }
       if (status && status !== sh.status && status !== 'delivered') {
-        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
-          .run(sh.id, status, note || shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number));
+        const auto = managed && status === 'shipped' ? 'Packed — waiting for the courier to collect it'
+          : shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number);
+        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, status, note || auto);
         shipments.deriveOrderStatus(sh.order_id);
       }
     })();
     if (status === 'delivered') shipments.markDelivered(sh.id, 'seller');
-    // "Mark as shipped" on a courier-booked parcel = it is packed and can be
-    // collected: hand the order to the courier (once; failures only log —
-    // the maker can still call Quiqup by hand and the stepper stays usable).
-    if (status === 'shipped' && sh.status === 'processing' && sh.delivery_ref && !sh.ready_at) {
-      require('../delivery').markReady(sh.id).catch((e) => console.error('Ready-for-collection failed for shipment', sh.id, e.message));
-    }
 
-    const row = db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id);
-    res.json({ shipment: shipments.shape(row) });
+    res.json({ shipment: shapeRow() });
   } catch (e) { next(e); }
 });
 

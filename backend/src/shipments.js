@@ -17,13 +17,13 @@ const LABELS = {
   cancelled: 'Cancelled',
 };
 
-const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, p.image_seed, p.images FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND oi.shop_id=?');
+const itemsStmt = db.prepare('SELECT oi.name_snapshot, oi.qty, oi.cancelled_qty, oi.price_cents, oi.personalization, oi.options, oi.extras, p.image_seed, p.images FROM order_items oi LEFT JOIN products p ON p.id=oi.product_id WHERE oi.order_id=? AND oi.shop_id=?');
 const firstImage = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) && v[0] ? v[0] : null; } catch (_) { return null; } };
 const eventsStmt = db.prepare('SELECT status, note, created_at FROM shipment_events WHERE shipment_id=? ORDER BY id ASC');
 
 /** Not packed and its pack-by day has gone. */
 function packOverdue(s) {
-  if (!s.pack_by_at || s.status !== 'processing' || s.ready_at) return false;
+  if (!s.pack_by_at || s.status !== 'processing' || s.ready_at || s.packed_at) return false;
   return require('./lead-times').fromSql(s.pack_by_at).getTime() < Date.now();
 }
 /** { from, to } ISO instants for the buyer: pack-by day + the courier window. */
@@ -34,13 +34,21 @@ function arrivalWindow(packBySql) {
   return { from: new Date(t + fees.COURIER_TRANSIT_MIN_DAYS * day).toISOString(), to: new Date(t + fees.COURIER_TRANSIT_MAX_DAYS * day).toISOString() };
 }
 
+/** The label both sides see. A courier-booked parcel the courier has not
+ *  collected yet is 'Packed', never 'Shipped' (it is still at the maker's). */
+function statusLabel(s) {
+  if (s.status === 'shipped' && s.delivery_ref && !s.collected_at) return 'Packed';
+  if (s.status === 'processing' && s.packed_at) return 'Packed';
+  return LABELS[s.status] || s.status;
+}
+
 // Shape a shipment row (optionally joined with shop name/color/is_house) for the API.
 function shape(s) {
   const items = itemsStmt.all(s.order_id, s.shop_id);
   return {
     id: s.id,
     status: s.status,
-    statusLabel: LABELS[s.status] || s.status,
+    statusLabel: statusLabel(s),
     carrier: s.carrier || '',
     trackingNumber: s.tracking_number || '',
     trackingUrl: s.tracking_url || '',
@@ -49,6 +57,17 @@ function shape(s) {
     // "Ready for collection" step and the label button.
     deliveryRef: s.delivery_ref || '',
     readyAt: s.ready_at || null,
+    // Packed (the maker tapped it) vs collected (the courier reported having
+    // it) — 'shipped' on a courier-booked parcel means packed and waiting for
+    // the driver until collectedAt is set. courierPending = the maker packed
+    // but the collection booking has not gone through yet (Trove retries).
+    packedAt: s.packed_at || null,
+    collectedAt: s.collected_at || null,
+    cancelledAt: s.cancelled_at || null,
+    courierPending: !!(s.packed_at && s.status === 'processing' && !s.ready_at),
+    // Trove books the courier for this parcel (booked already, or a live
+    // courier is connected): the maker only marks it packed.
+    courierManaged: !!s.delivery_ref || require('./delivery').isLive(),
     deliveredAt: s.delivered_at || null,
     returnWindowEndsAt: s.return_window_ends_at || null,
     // Make/pack time: the day this shop should have the parcel packed by
@@ -61,10 +80,12 @@ function shape(s) {
     createdAt: s.created_at,
     updatedAt: s.updated_at,
     shop: { id: s.shop_id, name: s.shop_name, color: s.color, isHouse: !!s.is_house },
-    itemTotal: items.reduce((t, i) => t + i.price_cents * i.qty, 0) / 100,
+    // What is in the parcel: units Trove cancelled before dispatch are out
+    // (qty is what travels, cancelledQty what was taken off the order).
+    itemTotal: items.reduce((t, i) => t + i.price_cents * (i.qty - (i.cancelled_qty || 0)), 0) / 100,
     // `options` is what the buyer chose (Colour: Clay) — the maker needs it to
     // pack the right piece, so it travels with the shipment on both sides.
-    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, seed: i.image_seed || '', image: firstImage(i.images), personalization: i.personalization || '', options: require('./options').parse(i.options), extras: require('./extras').parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
+    items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty - (i.cancelled_qty || 0), cancelledQty: i.cancelled_qty || 0, price: i.price_cents / 100, seed: i.image_seed || '', image: firstImage(i.images), personalization: i.personalization || '', options: require('./options').parse(i.options), extras: require('./extras').parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
     timeline: eventsStmt.all(s.id).map((e) => ({ status: e.status, label: LABELS[e.status] || e.status, note: e.note, at: e.created_at })),
   };
 }
@@ -88,8 +109,13 @@ function noteFor(status, carrier, tracking) {
  * back to paid, stamps cleared.
  */
 function deriveOrderStatus(orderId) {
-  const notDelivered = db.prepare("SELECT COUNT(*) AS c FROM shipments WHERE order_id=? AND status!='delivered'").get(orderId).c;
-  if (!notDelivered) {
+  // A parcel Trove cancelled (every piece in it cancelled before dispatch)
+  // will never arrive, so it doesn't hold the order — the other makers'
+  // parcels complete it. An order whose parcels are ALL cancelled is never
+  // 'fulfilled' (nothing was delivered).
+  const c = db.prepare(`SELECT SUM(status NOT IN ('delivered','cancelled')) AS open, SUM(status='delivered') AS done
+    FROM shipments WHERE order_id=?`).get(orderId);
+  if (!c.open && c.done) {
     db.prepare(`UPDATE orders SET
         status = CASE WHEN status='paid' THEN 'fulfilled' ELSE status END,
         delivered_at = COALESCE(delivered_at, (SELECT MAX(delivered_at) FROM shipments WHERE order_id=orders.id)),
@@ -112,8 +138,20 @@ function markDelivered(shipmentId, source = 'seller') {
   const sh = db.prepare('SELECT * FROM shipments WHERE id=?').get(shipmentId);
   if (!sh) return null;
   if (sh.status === 'delivered') return sh;
+  // Trove cancelled this parcel (refund / cancellation before dispatch): a
+  // late courier 'delivered' must not revive it — no return window, no
+  // 'fulfilled' order. The timeline records it and a person is told.
+  if (sh.status === 'cancelled') {
+    db.prepare("INSERT INTO shipment_events (shipment_id, status, note) VALUES (?, 'cancelled', ?)")
+      .run(shipmentId, source === 'courier' ? 'The courier reports delivering this cancelled parcel — we are looking into it' : 'Delivery reported on a cancelled parcel — ignored');
+    require('./courier-ops').raise(shipmentId, 'delivered_after_cancel', [
+      'This parcel was cancelled and refunded, but a delivery was reported on it.',
+      'The buyer may have the piece without paying for it: arrange a return collection or contact the buyer.',
+    ]);
+    return sh;
+  }
   db.transaction(() => {
-    db.prepare(`UPDATE shipments SET status='delivered', delivered_at=datetime('now'),
+    db.prepare(`UPDATE shipments SET status='delivered', delivered_at=datetime('now'), collected_at=COALESCE(collected_at, datetime('now')),
         return_window_ends_at=datetime('now', '+' || ? || ' days'), updated_at=datetime('now') WHERE id=?`)
       .run(require('./config').RETURN_WINDOW_DAYS, shipmentId);
     db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)')
@@ -138,4 +176,4 @@ function assertUndoable(sh) {
   }
 }
 
-module.exports = { FLOW, LABELS, shape, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };
+module.exports = { FLOW, LABELS, shape, statusLabel, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };
