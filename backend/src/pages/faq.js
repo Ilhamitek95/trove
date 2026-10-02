@@ -153,8 +153,10 @@ ${f.serviceCommission}% of the price. See the
 
 By bank transfer from **${f.providerPayer} on Trove's behalf**, so look for
 that name on your statement. Your fee (the price less Trove's
-${f.serviceCommission}% platform fee) becomes payable once you mark the
-booking done, or ${f.providerGraceDays} days after the service date if you have not. Add your bank
+${f.serviceCommission}% platform fee) is provisional until the service date has
+passed and a ${f.providerGraceDays}-day window for any complaint or cancellation
+has closed. It is then paid on the next payout day, every other Tuesday, the
+same days Trove pays its makers. Add your bank
 details under Payouts in your provider dashboard; each fee there shows when it
 becomes payable and, once sent, the date and the transfer reference. Direct
 bookings are settled between you and the customer, so Trove pays nothing on

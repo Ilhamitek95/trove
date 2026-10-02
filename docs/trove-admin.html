@@ -299,7 +299,7 @@
       </div>
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h3>Provider payouts</h3>
-        <div class="hint">What providers are owed for bookings paid through Trove — payable once they mark a booking done, or 3 days after the service date. Paid by manual bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf: download the bank transfer file, send each transfer with its reference, then mark that provider paid here (they get an email). Providers without bank details wait and are left out of the file.</div></div>
+        <div class="hint">What providers are owed for bookings paid through Trove at this fortnight's run<span id="svcRunDate"></span>. A fee is payable once the service date has passed and the 3-day complaint window has closed (marking a booking done does not bring it forward), and goes out on the same every-other-Tuesday schedule as makers. Paid by manual bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf: download the bank transfer file, send each transfer with its reference, then mark that provider paid here (they get an email). Providers without bank details wait and are left out of the file.</div></div>
         <a class="btn btn-ghost" id="svcCsvBtn" style="display:none" href="#" onclick="setTimeout(loadServiceMoney,1200)">Download bank transfer file</a></div>
         <div id="svcCreditsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
@@ -724,16 +724,19 @@ async function loadServiceMoney(){
   const rows=[...(credits.eligible||[]),...(credits.excluded||[])].filter(r=>r.netCents>0);
   SVC_PAY=rows;
   if(credits.payerName)$('svcPayerName').textContent=credits.payerName;
+  $('svcRunDate').textContent=credits.runDate?` (run of ${credits.runDate}; next run ${credits.nextRunDate||''})`:'';
   const csv=$('svcCsvBtn');
   csv.href=`${TroveAPI.base}/api/admin/provider-payouts/export.csv`;
-  csv.style.display=rows.some(r=>r.payTo)?'':'none';
-  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed now</th><th>Pay to</th><th>Reference</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
+  csv.style.display=(credits.eligible||[]).length?'':'none';
+  const SVC_HOLD={bank_details_changed:'Bank details just changed — check with the provider by phone, then release',on_hold:'Provider suspended — payouts paused'};
+  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed this run</th><th>Pay to</th><th>Reference</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
       <td><b>${esc(r.name)}</b>${r.owner?`<br><span style="font-size:12px;color:var(--muted)">${esc(r.owner.email)}</span>`:''}</td>
       <td>${r.bookings.map(b=>esc(b.code)).join(', ')}</td>
       <td><b>${money(r.netCents)}</b>${r.debitCents?`<br><span style="font-size:12px;color:var(--muted)">after ${money(-r.debitCents)} refund adjustments</span>`:''}</td>
-      <td>${r.payTo?`<b>${esc(r.payTo.accountName||'')}</b><br><span style="font-size:12px;color:var(--muted)">${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}</span>`:'<span class="pill">Waiting for bank details</span>'}</td>
-      <td>${r.payTo?`<span style="font-size:12px;font-weight:700">${esc(r.reference||'')}</span>`:''}</td>
-      <td>${r.payTo?`<button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)})">Mark paid</button>`:''}</td>
+      <td>${r.payTo?`<b>${esc(r.payTo.accountName||'')}</b><br><span style="font-size:12px;color:var(--muted)">${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}</span>`:'<span class="pill">Waiting for bank details</span>'}${SVC_HOLD[r.reason]?`<br><span style="font-size:12px;font-weight:700">${esc(SVC_HOLD[r.reason])}</span>`:''}</td>
+      <td>${r.payTo&&!SVC_HOLD[r.reason]?`<span style="font-size:12px;font-weight:700">${esc(r.reference||'')}</span>`:''}</td>
+      <td>${r.reason==='bank_details_changed'?`<button class="btn btn-ghost btn-sm" onclick="releaseProviderHold(${Number(r.providerId)})">Release</button>`
+        :r.payTo&&!SVC_HOLD[r.reason]?`<button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)})">Mark paid</button>`:''}</td>
     </tr>`).join('')}</tbody></table></div>`
     :'<div class="empty">Nothing owed to providers right now.</div>';
 }
@@ -741,6 +744,12 @@ async function refundServiceBooking(id){
   if(!confirm('Refund this booking in full to the customer’s card? If it hasn’t happened yet it is cancelled too.'))return;
   try{await TroveAPI.api(`/api/admin/service-bookings/${id}/refund`,{method:'POST',body:{}});toast('Refunded in full');}
   catch(e){toast(e.message||'Could not refund');}
+  loadServiceMoney();
+}
+async function releaseProviderHold(id){
+  if(!confirm('Have you checked the new bank details with the provider (by phone, not by replying to the account)? Their fees then go to the new account.'))return;
+  try{await TroveAPI.api(`/api/admin/service-credits/${id}/release-hold`,{method:'POST',body:{}});toast('Hold released');}
+  catch(e){toast(e.message||'Could not release');}
   loadServiceMoney();
 }
 async function markProviderPaid(id){
@@ -1333,7 +1342,27 @@ async function refundOrder(publicId){
 
 /* ---------------- settlements (supplier purchases) ---------------- */
 const SETTLE_PILL={draft:'pending',exported:'pending',paid:'approved'};
-const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
+const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward',on_hold:'payouts on hold',bank_details_changed:'bank details just changed — check with the maker by phone before releasing'};
+function heldLine(h){
+  const why=h.suspended?'shop suspended — payouts paused until it is reinstated':(EXCLUDE_REASON[h.reason]||h.reason);
+  const btn=(h.reason==='on_hold'&&!h.suspended)||h.reason==='bank_details_changed'
+    ?` <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="setPayoutHold(${Number(h.shopId)},false)">Release</button>`:'';
+  return `<strong>${esc(h.name)}</strong> (${money(h.netCents)} — ${esc(why)})${btn}`;
+}
+async function setPayoutHold(shopId,hold){
+  if(hold&&!confirm('Hold this maker\'s payouts? Their money stays with Trove, unswept, until you release the hold.'))return;
+  if(!hold&&!confirm('Release the hold? Their money goes in the next settlement run.'))return;
+  try{ await TroveAPI.api(`/api/admin/shops/${shopId}/payout-hold`,{method:'POST',body:{hold:!!hold}}); toast(hold?'Payouts on hold':'Hold released'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not change the hold'); }
+}
+async function removeFromRun(stId,itemId,exported){
+  const msg=exported
+    ?'Take this maker out of the run and hold their payouts? The bank file was already downloaded — do NOT send their line. Their money waits for a later run; nothing is recorded as paid.'
+    :'Take this maker out of the run and hold their payouts? Their money waits for a later run; nothing is recorded as paid.';
+  if(!confirm(msg))return;
+  try{ await TroveAPI.api(`/api/admin/settlements/${stId}/items/${itemId}/remove`,{method:'POST',body:{hold:true}}); toast('Removed from the run and held'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not remove'); }
+}
 function renderPayouts(){
   const owed=PREVIEW.eligible||[], held=PREVIEW.excluded||[];
   $('payoutsWrap').innerHTML=`
@@ -1343,16 +1372,17 @@ function renderPayouts(){
           <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 15-day buyer return window has closed${PREVIEW.nextRunDate?` · next scheduled run ${esc(PREVIEW.nextRunDate)}`:''}</div></div>
         <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()">Run settlement</button>
       </div>
-      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th></tr></thead>
+      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th><th></th></tr></thead>
         <tbody>${owed.map(s=>`<tr>
           <td style="font-weight:700">${esc(s.name)}</td>
           <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}`:'<span style="color:var(--accent-ink);font-weight:700">no bank details</span>'}</td>
           <td>${money(s.creditCents)}</td>
           <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
           <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.netCents)}</td>
+          <td style="text-align:right"><button class="btn btn-ghost" title="Hold this maker's payouts while you look into something" onclick="setPayoutHold(${Number(s.shopId)},true)">Hold</button></td>
         </tr>`).join('')}</tbody></table>`
        :`<div class="empty" style="margin-top:8px">Nothing payable — no purchase has cleared its return window since the last run.</div>`}
-      ${held.length?`<div class="hint" style="margin:12px 2px 0">Held back: ${held.map(h=>`<strong>${esc(h.name)}</strong> (${money(h.netCents)} — ${EXCLUDE_REASON[h.reason]||h.reason})`).join(' · ')}</div>`:''}
+      ${held.length?`<div class="hint" style="margin:12px 2px 0;line-height:2">Held back: ${held.map(heldLine).join(' · ')}</div>`:''}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>Settlement history</h3></div>
@@ -1368,26 +1398,39 @@ function renderPayouts(){
           </div>
           <table class="tbl" style="margin-top:10px"><thead><tr><th>Supplier</th><th>Reference</th><th>Amount</th><th></th></tr></thead>
             <tbody>${st.items.map(i=>`<tr>
-              <td style="font-weight:700">${esc(i.shopName)}</td>
+              <td style="font-weight:700">${esc(i.shopName)}${i.bankChangedSinceRun&&st.status!=='paid'?`<div style="font-size:11.5px;color:var(--accent-ink);font-weight:700">Bank details changed since this run — the file pays the account below; check with the maker before sending</div>`:''}${i.bank&&i.bank.iban?`<div style="font-size:11.5px;color:var(--muted);font-weight:600">${esc(i.bank.name||'')} · ${esc(i.bank.accountName||'')} · ${esc(i.bank.iban)}</div>`:''}</td>
               <td style="color:var(--muted);font-size:12px">${esc(i.bankReference)}</td>
               <td style="font-family:var(--font-display);font-size:15px;font-weight:600">${money(i.amountCents)}</td>
-              <td style="text-align:right">${i.purchaseNoteId?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}</td>
+              <td style="text-align:right">${i.purchaseNoteId?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}${st.status!=='paid'?`<button class="btn btn-ghost" onclick="removeFromRun(${Number(st.id)},${Number(i.id)},${st.status==='exported'})">Remove &amp; hold</button>`:''}</td>
             </tr>`).join('')}</tbody></table>
         </div>`).join('')}</div>`
        :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every other Tuesday, or run one above.</div>`}
     </div>
     <div class="card" style="padding:0">
-      <div style="padding:20px 22px 4px"><h3>VAT by quarter</h3>
-        <div class="hint">${VAT.vatRegistered?'5% captured on every order (prices are VAT-inclusive).':'VAT capture is off (VAT_REGISTERED=false) — numbers appear here once Trove is registered.'}</div></div>
-      ${VAT.rows.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Quarter</th><th>Rail</th><th>Orders</th><th>Gross</th><th>VAT (5/105)</th></tr></thead>
+      <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px"><h3>VAT by quarter</h3>
+        <div class="hint">${VAT.vatRegistered?`5% captured on every order and every card booking (prices are VAT-inclusive; bookings on ${VAT.serviceVatBasis==='fee'?'Trove’s platform fee':'the full booking price'}). Quarters follow Dubai time. Output VAT counts in the sale’s quarter; a credit note reduces the quarter it was issued in.`:'VAT capture is off (VAT_REGISTERED=false) — numbers appear here once Trove is registered.'}</div></div>
+        ${VAT.rows.length||(VAT.creditNotes||[]).length?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/vat-report.csv">Download CSV</a>`:''}</div>
+      ${VAT.rows.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Quarter</th><th>Rail</th><th>Sales</th><th>Gross</th><th>Output VAT (5/105)</th><th>Reversed</th><th>Net VAT due</th></tr></thead>
         <tbody>${VAT.rows.map(r=>`<tr>
           <td style="font-weight:700">${esc(r.quarter)}</td>
           <td style="color:var(--muted)">${esc(r.rail)}</td>
           <td>${r.orders}</td>
           <td>${money(r.grossCents)}</td>
-          <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(r.vatCents)}</td>
+          <td>${money(r.vatCents)}</td>
+          <td style="color:var(--muted)">${r.reversedCents?'−'+money(r.reversedCents)+(r.creditNotes?` <span style="font-size:11.5px">(${r.creditNotes} credit note${r.creditNotes===1?'':'s'})</span>`:''):'—'}</td>
+          <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(r.netVatCents)}</td>
         </tr>`).join('')}</tbody></table></div>`
        :`<div class="empty" style="padding:8px 22px 22px">No VAT captured yet.</div>`}
+      ${(VAT.creditNotes||[]).length?`<div style="padding:4px 22px 4px"><h3 style="font-size:17px">Credit notes</h3></div>
+        <div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Quarter</th><th>Reference</th><th>Order / booking</th><th>Refunded</th><th>VAT</th><th>Issued</th></tr></thead>
+        <tbody>${VAT.creditNotes.map(n=>`<tr>
+          <td style="font-weight:700">${esc(n.quarter)}</td>
+          <td>${esc(n.reference||'')}</td>
+          <td style="color:var(--muted)">${esc(n.order||'')}</td>
+          <td>${money(n.refundCents)}</td>
+          <td>${money(n.vatCents)}</td>
+          <td style="color:var(--muted)">${esc(n.issuedOn||'')}</td>
+        </tr>`).join('')}</tbody></table></div>`:''}
     </div>
     <div class="card" style="padding:0">
       <div style="padding:20px 22px 4px"><h3>Graduation queue</h3>

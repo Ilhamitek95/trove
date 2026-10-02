@@ -425,36 +425,82 @@ router.post('/graduation/:shopId/approve', requireAdmin, async (req, res, next) 
  * (consignment: 5/105 of the full charge — Trove is the seller; connect:
  * 5/105 of the margin only). Refunds give VAT back: vat_reversed_cents on
  * the order, one credit note per refunded return (CN-<order>-R<id>) or per
- * whole-order refund (CN-<order>). Rows are by the SALE's quarter (output
- * VAT) and creditNotes by the REFUND's quarter, which is when a credit note
- * adjusts the return. No filing integration — just correct numbers. */
-router.get('/vat-report', requireAdmin, (_req, res) => {
-  const quarterOf = (col) => `strftime('%Y', ${col}) || '-Q' || ((CAST(strftime('%m', ${col}) AS INTEGER) + 2) / 3)`;
-  const rows = db.prepare(`
-    SELECT ${quarterOf('title_transferred_at')} AS quarter,
-           rail,
-           COUNT(*) AS orders,
-           SUM(total_cents) AS gross_cents,
-           SUM(vat_amount_cents) AS vat_cents,
-           SUM(vat_reversed_cents) AS reversed_cents
+ * whole-order refund (CN-<order>). Card bookings on the Services
+ * Marketplace are the 'services' rail: VAT captured at payment
+ * (service_bookings.vat_amount_cents, fees.SERVICE_VAT_BASIS) and given back
+ * on refund (credit note CN-<booking code>).
+ *
+ * Output VAT is counted in the SALE's quarter; a credit note reduces the
+ * quarter it was ISSUED in (the refund date), which is when it adjusts the
+ * return — so a row's reversedCents is the credit-note VAT of that quarter
+ * and netVatCents = vatCents − reversedCents is what that quarter's return
+ * shows for the rail. Timestamps are stored in UTC; quarters follow the
+ * Dubai calendar (UTC+4), so a sale at 01:30 on 1 January in Dubai belongs to
+ * Q1. No filing integration — just correct numbers. */
+const quarterOf = (col) => `strftime('%Y', datetime(${col}, '+4 hours')) || '-Q' || ((CAST(strftime('%m', datetime(${col}, '+4 hours')) AS INTEGER) + 2) / 3)`;
+/** 'YYYY-MM-DD HH:MM:SS' (UTC, SQLite) → the calendar day in Dubai. */
+const dubaiDay = (utc) => new Date(Date.parse(String(utc).replace(' ', 'T') + 'Z') + 4 * 3600000).toISOString().slice(0, 10);
+function vatReport() {
+  const sales = db.prepare(`
+    SELECT ${quarterOf('title_transferred_at')} AS quarter, rail, COUNT(*) AS n, SUM(total_cents) AS gross_cents, SUM(vat_amount_cents) AS vat_cents
     FROM orders
     WHERE status IN ('paid','fulfilled') AND vat_amount_cents > 0 AND title_transferred_at IS NOT NULL
-    GROUP BY quarter, rail
-    ORDER BY quarter DESC, rail`).all();
+    GROUP BY 1, 2
+    UNION ALL
+    SELECT ${quarterOf('paid_at')}, 'services', COUNT(*), SUM(amount_cents), SUM(vat_amount_cents)
+    FROM service_bookings
+    WHERE paid_at IS NOT NULL AND vat_amount_cents > 0
+    GROUP BY 1`).all();
   const notes = db.prepare(`
-    SELECT ${quarterOf('rr.refunded_at')} AS quarter, rr.credit_note_ref AS ref, o.public_id, rr.refund_cents, rr.vat_reversed_cents, rr.refunded_at
+    SELECT ${quarterOf('rr.refunded_at')} AS quarter, o.rail, rr.credit_note_ref AS ref, o.public_id AS doc, rr.refund_cents, rr.vat_reversed_cents, rr.refunded_at
     FROM return_requests rr JOIN orders o ON o.id = rr.order_id
     WHERE rr.status = 'refunded' AND rr.vat_reversed_cents > 0
     UNION ALL
-    SELECT ${quarterOf('o.refunded_at')}, o.credit_note_ref, o.public_id, o.total_cents, o.vat_reversed_cents, o.refunded_at
-    FROM orders o WHERE o.credit_note_ref IS NOT NULL
-    ORDER BY 6 DESC`).all();
-  res.json({
+    SELECT ${quarterOf('o.refunded_at')}, o.rail, o.credit_note_ref, o.public_id, o.total_cents, o.vat_reversed_cents, o.refunded_at
+    FROM orders o WHERE o.credit_note_ref IS NOT NULL AND o.refunded_at IS NOT NULL
+    UNION ALL
+    SELECT ${quarterOf('bk.refunded_at')}, 'services', bk.credit_note_ref, bk.code, bk.refund_cents, bk.vat_reversed_cents, bk.refunded_at
+    FROM service_bookings bk WHERE bk.refunded_at IS NOT NULL AND bk.vat_reversed_cents > 0
+    ORDER BY 7 DESC`).all();
+  const byKey = new Map();
+  const row = (quarter, rail) => {
+    const k = `${quarter}|${rail}`;
+    if (!byKey.has(k)) byKey.set(k, { quarter, rail, orders: 0, grossCents: 0, vatCents: 0, reversedCents: 0, creditNotes: 0 });
+    return byKey.get(k);
+  };
+  for (const s of sales) Object.assign(row(s.quarter, s.rail), { orders: s.n, grossCents: s.gross_cents, vatCents: s.vat_cents });
+  for (const n of notes) { const r = row(n.quarter, n.rail); r.reversedCents += n.vat_reversed_cents; r.creditNotes += 1; }
+  const rows = [...byKey.values()]
+    .map((r) => ({ ...r, netVatCents: r.vatCents - r.reversedCents }))
+    .sort((a, b) => (a.quarter === b.quarter ? a.rail.localeCompare(b.rail) : b.quarter.localeCompare(a.quarter)));
+  return {
     vatRegistered: cfg.vatRegistered(),
-    rows: rows.map((r) => ({ quarter: r.quarter, rail: r.rail, orders: r.orders, grossCents: r.gross_cents, vatCents: r.vat_cents,
-      reversedCents: r.reversed_cents || 0, netVatCents: r.vat_cents - (r.reversed_cents || 0) })),
-    creditNotes: notes.map((n) => ({ quarter: n.quarter, reference: n.ref, order: n.public_id, refundCents: n.refund_cents, vatCents: n.vat_reversed_cents, refundedAt: n.refunded_at })),
-  });
+    serviceVatBasis: require('../fees').SERVICE_VAT_BASIS,
+    rows,
+    creditNotes: notes.map((n) => ({ quarter: n.quarter, rail: n.rail, reference: n.ref, order: n.doc, refundCents: n.refund_cents, vatCents: n.vat_reversed_cents, refundedAt: n.refunded_at, issuedOn: n.refunded_at ? dubaiDay(n.refunded_at) : null })),
+  };
+}
+router.get('/vat-report', requireAdmin, (_req, res) => res.json(vatReport()));
+
+// GET /api/admin/vat-report.csv → the same figures for the accountant: one
+// line per quarter + rail, then every credit note.
+router.get('/vat-report.csv', requireAdmin, (_req, res) => {
+  const { csvCell } = require('../csv');
+  const r = vatReport();
+  const aed = (c) => ((c || 0) / 100).toFixed(2);
+  const lines = ['section,quarter,rail,reference,document,count,gross_aed,vat_aed,reversed_vat_aed,net_vat_aed,date'];
+  for (const q of r.rows) {
+    lines.push(['quarter', q.quarter, q.rail, '', '', String(q.orders), aed(q.grossCents), aed(q.vatCents), aed(q.reversedCents), aed(q.netVatCents), '']
+      .map((v, i) => (i >= 5 && i <= 9 ? v : csvCell(v))).join(','));
+  }
+  for (const n of r.creditNotes) {
+    lines.push(['credit_note', n.quarter, n.rail, n.reference, n.order, '', aed(n.refundCents), '', aed(n.vatCents), '', n.issuedOn || '']
+      .map((v, i) => (i >= 5 && i <= 9 ? v : csvCell(v))).join(','));
+  }
+  res.set('Cache-Control', 'no-store');
+  res.type('text/csv');
+  res.setHeader('Content-Disposition', 'attachment; filename="trove-vat-report.csv"');
+  res.send(lines.join('\r\n') + '\r\n');
 });
 
 /* ---------------- Refunds (whole order, admin-triggered) ----------------
@@ -632,7 +678,13 @@ router.post('/settlements/run', requireAdmin, (req, res) => {
 // GET /api/admin/settlements → run history with per-supplier items.
 router.get('/settlements', requireAdmin, (_req, res) => {
   const sts = db.prepare('SELECT * FROM settlements ORDER BY id DESC').all();
+  // bankChangedSinceRun: the shop's live bank details are no longer the ones
+  // copied into the run (the bank file still pays the copy) — check with the
+  // maker before sending. Ciphertexts are compared, never decrypted.
   const itemsStmt = db.prepare(`SELECT si.*, s.name AS shop_name, s.slug AS shop_slug,
+      (si.iban_encrypted IS NOT NULL AND (COALESCE(s.iban_encrypted,'') <> si.iban_encrypted
+        OR COALESCE(s.payout_account_name,'') <> COALESCE(si.payout_account_name,'')
+        OR COALESCE(s.payout_bank_name,'') <> COALESCE(si.payout_bank_name,''))) AS bank_changed,
       (SELECT pn.id FROM purchase_notes pn WHERE pn.settlement_item_id = si.id ORDER BY pn.id DESC LIMIT 1) AS note_id
     FROM settlement_items si JOIN shops s ON s.id=si.shop_id WHERE si.settlement_id=? ORDER BY si.id`);
   res.json({ settlements: sts.map((st) => ({
@@ -643,6 +695,7 @@ router.get('/settlements', requireAdmin, (_req, res) => {
       amountCents: i.amount_cents, creditCents: i.credit_cents, debitCents: i.debit_cents,
       itemCount: i.item_count, bankReference: i.bank_reference,
       bank: i.bank_snapshot ? JSON.parse(i.bank_snapshot) : null,
+      bankChangedSinceRun: !!i.bank_changed,
       purchaseNoteId: i.note_id || null,
     })),
   })) });
@@ -665,6 +718,31 @@ router.post('/settlements/:id/paid', requireAdmin, (req, res, next) => {
     const st = settlement.markPaid(Number(req.params.id));
     res.json({ ok: true, settlement: { id: st.id, status: st.status, paidAt: st.paid_at } });
   } catch (e) { next(e); }
+});
+
+// POST /api/admin/settlements/:id/items/:itemId/remove { hold? } → take one
+// supplier out of a draft or exported run; their ledger rows wait for a later
+// run, nothing is recorded as paid. hold:true also holds the shop's payouts.
+router.post('/settlements/:id/items/:itemId/remove', requireAdmin, (req, res, next) => {
+  try {
+    const r = settlement.removeItem(Number(req.params.id), Number(req.params.itemId), { hold: (req.body || {}).hold === true });
+    res.json({ ok: true, ...r });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ error: e.message });
+    next(e);
+  }
+});
+
+// POST /api/admin/shops/:id/payout-hold { hold: true|false } → hold a shop's
+// payouts while Trove investigates (Seller Agreement v4), or release a hold —
+// including the automatic one after a bank-details change, once the owner has
+// checked the change with the maker.
+router.post('/shops/:id/payout-hold', requireAdmin, (req, res) => {
+  const shop = db.prepare('SELECT id FROM shops WHERE id=?').get(req.params.id);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  settlement.setHold(shop.id, (req.body || {}).hold === true);
+  const s = db.prepare('SELECT id, status, payout_hold, payout_hold_reason FROM shops WHERE id=?').get(shop.id);
+  res.json({ ok: true, shop: { id: s.id, status: s.status, payoutHold: !!s.payout_hold, payoutHoldReason: s.payout_hold_reason } });
 });
 
 // GET /api/admin/purchase-notes/:id → stream a self-billed purchase note.

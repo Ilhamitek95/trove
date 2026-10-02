@@ -77,4 +77,21 @@ function maskIban(iban) {
 
 const sha256 = (text) => nodeCrypto.createHash('sha256').update(text).digest('hex');
 
-module.exports = { hasKey, encrypt, decrypt, encryptBuffer, decryptBuffer, maskIban, sha256 };
+/**
+ * Do two stored IBAN ciphertexts hold the same account? Used only to tell a
+ * real bank change from a re-save of the same IBAN (each encryption has a
+ * fresh IV, so equal accounts never have equal ciphertexts). Only a boolean
+ * leaves this function — the plaintext is never returned, logged or stored.
+ * An unreadable blob counts as different (the safe answer: hold + email).
+ */
+function sameIban(blobA, blobB) {
+  if (!blobA || !blobB) return false;
+  if (blobA === blobB) return true;
+  try {
+    const a = Buffer.from(decrypt(blobA).replace(/\s+/g, '').toUpperCase());
+    const b = Buffer.from(decrypt(blobB).replace(/\s+/g, '').toUpperCase());
+    return a.length === b.length && nodeCrypto.timingSafeEqual(a, b);
+  } catch (_) { return false; }
+}
+
+module.exports = { hasKey, encrypt, decrypt, encryptBuffer, decryptBuffer, maskIban, sha256, sameIban };

@@ -214,22 +214,28 @@
    * IBAN; "Use my shop's bank details" copies them server-side. */
   function creditStatus(c) {
     if (c.status === 'paid') return `<span class="st paid">Paid on ${esc(fmtDay(c.paidOn))}${c.reference ? ` · reference ${esc(c.reference)}` : ''}${c.payer ? ` · from ${esc(c.payer)}` : ''}</span>`;
-    if (c.status === 'payable') return `<span class="st">Payable on ${esc(fmtDay(c.payableOn || todayIso()))} · goes out with the next transfer</span>`;
+    if (c.status === 'ready') {
+      return c.payoutOn && c.payoutOn <= todayIso()
+        ? `<span class="st">Ready · in this fortnight’s transfers (run of ${esc(fmtDay(c.payoutOn))})</span>`
+        : `<span class="st">Ready for the next payout${c.payoutOn ? ` · ${esc(fmtDay(c.payoutOn))}` : ''}</span>`;
+    }
     if (c.status === 'refunded') return '<span class="st">Refunded to the customer — no fee is due</span>';
     if (c.status === 'deducted') return '<span class="st">Deducted from your next transfer (a paid booking was later refunded)</span>';
-    return `<span class="st">Waiting${c.payableOn ? ` · payable on ${esc(fmtDay(c.payableOn))}, or once you mark it done` : ' · payable once you mark it done'}</span>`;
+    return `<span class="st">Pending (provisional, may change if cancelled)${c.readyOn ? ` · ready on ${esc(fmtDay(c.readyOn))}` : ''}${c.payoutOn ? ` · expected payout ${esc(fmtDay(c.payoutOn))}` : ''}</span>`;
   }
   function payoutsCard() {
     const po = PP.payout; if (!po) return '';
     const e = po.earnings || {};
-    const owed = num(e.payableCents) + num(e.pendingCents);
+    const provisional = num(e.provisionalCents != null ? e.provisionalCents : e.pendingCents);
+    const ready = num(e.readyCents != null ? e.readyCents : e.payableCents);
+    const owed = provisional + ready;
     const d = po.details;
     const payerLine = `Your fee is paid by bank transfer from ${esc(po.payerName)} on Trove’s behalf — look for that name on your statement.`;
     const shopBtn = po.shopDetails
       ? `<button type="button" class="pp-btn pp-ghost" id="ppPayShop" onclick="ProviderPanel.usePayoutShop()">Use my shop’s bank details (${esc(po.shopDetails.bankName)} · ${esc(po.shopDetails.iban)})</button>`
       : '';
     const bank = d && !PP.payoutEditing
-      ? `<div class="pp-bank" id="ppPayView"><div class="grow"><b>${esc(d.accountName)}</b> · ${esc(d.bankName)}<br><span class="iban">${esc(d.iban)}</span>${d.source === 'shop' ? ' · copied from your shop' : ''}</div>
+      ? `<div class="pp-bank" id="ppPayView"><div class="grow"><b>${esc(d.accountName)}</b> · ${esc(d.bankName)}<br><span class="iban">${esc(d.iban)}</span>${d.source === 'shop' ? ' · copied from your shop' : ''}${d.held ? '<br>You changed these recently — for your protection Trove checks a change before the next transfer goes to the new account (we may call you).' : ''}</div>
           <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(true)">Change bank details</button></div>`
       : `<div id="ppPayForm">
           <div class="pp-err" id="ppPayErr" role="alert"></div>
@@ -239,6 +245,8 @@
           </div>
           <div class="pp-field"><label for="ppPayIban">IBAN</label><input id="ppPayIban" maxlength="34" autocomplete="off" spellcheck="false" placeholder="AE07 0331 2345 6789 0123 456"></div>
           <div class="pp-hint" style="margin-top:-4px">A UAE IBAN in your own name (AE followed by 21 digits). We store it encrypted and only ever show the last four digits.</div>
+          ${d && po.passwordToChange ? `<div class="pp-field"><label for="ppPayPw">Your Trove password — needed to change bank details</label><input id="ppPayPw" type="password" autocomplete="current-password"></div>` : ''}
+          ${d ? '<div class="pp-hint" style="margin-top:-4px">We email you whenever your bank details change, and the next transfer to a new account waits until Trove has checked it.</div>' : ''}
           <div class="pp-actions" style="flex-wrap:wrap">${shopBtn}${d ? '<button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(false)">Cancel</button>' : ''}
             <button type="button" class="pp-btn pp-dark" id="ppPaySave" onclick="ProviderPanel.savePayout()">Save bank details</button></div>
         </div>`;
@@ -246,9 +254,15 @@
       ? (po.credits || []).map((c) => `<div class="pp-cr"><div class="grow"><b>${esc(c.title)}</b> <span class="code">${esc(c.code)}</span>${c.serviceDate ? ` · ${esc(fmtDay(c.serviceDate))}` : ''}</div>
           <span class="amt">${c.amountCents < 0 ? '−' + esc(money(-c.amountCents)) : esc(money(c.amountCents))}</span>${creditStatus(c)}</div>`).join('')
       : '<div class="pp-empty">No fees yet. When a customer pays for a booking through Trove, your fee appears here with the date it becomes payable.</div>';
+    const grace = po.graceDays != null ? num(po.graceDays) : 3;
+    const sched = String(po.schedule || 'Every other Tuesday');
+    const summary = owed || num(e.paidCents) ? `<div class="pp-two" style="margin-bottom:6px">
+        <div><div class="pp-fee">${esc(money(provisional))}</div><div class="pp-hint" style="margin:2px 0 0">Pending (provisional, may change if cancelled)</div></div>
+        <div><div class="pp-fee">${esc(money(ready))}</div><div class="pp-hint" style="margin:2px 0 0">Ready for next payout${ready > 0 && e.nextPayoutDate ? ` · expected ${esc(fmtDay(e.nextPayoutDate))}` : ''}</div></div>
+      </div>${num(e.paidCents) ? `<div class="pp-hint">${esc(money(num(e.paidCents)))} paid to you so far.</div>` : ''}` : '';
     return `<div class="pp-card" id="ppPayouts" tabindex="-1"><h3>Payouts</h3>
-      <div class="pp-hint">${payerLine} Each fee becomes payable once you mark the booking done, or ${num(po.graceDays) || 3} days after the service date.</div>
-      ${owed || num(e.paidCents) ? `<div class="pp-fee" style="margin-bottom:6px">${esc(money(owed))} <small>owed to you${num(e.payableCents) > 0 ? ` · ${esc(money(num(e.payableCents)))} payable now` : ''}${num(e.paidCents) ? ` · ${esc(money(num(e.paidCents)))} paid so far` : ''}</small></div>` : ''}
+      <div class="pp-hint">${payerLine} A fee is provisional until the service date has passed and a ${grace}-day window for any complaint or cancellation has closed. It is then paid on the next payout day (${esc(sched)}), the same days Trove pays its makers.</div>
+      ${summary}
       <div class="pp-sub">Bank details</div>${bank}
       <div class="pp-sub">Your fees</div>${list}
     </div>`;
@@ -280,9 +294,24 @@
     const show = (m) => { err.textContent = m; err.style.display = 'block'; };
     if (!holder || !bank) return show('Add the account holder name and the bank name.');
     if (!/^AE\d{21}$/.test(iban)) return show('Enter a valid UAE IBAN (AE followed by 21 digits).');
-    return putPayout({ accountName: holder, bankName: bank, iban }, 'ppPaySave', 'Saving…');
+    const body = { accountName: holder, bankName: bank, iban };
+    if (!withPassword(body, show)) return undefined;
+    return putPayout(body, 'ppPaySave', 'Saving…');
   }
-  function usePayoutShop() { return putPayout({ useShop: true }, 'ppPayShop', 'Copying…'); }
+  // Changing details already on file asks for the account password again.
+  function withPassword(body, show) {
+    const pw = $('ppPayPw');
+    if (!pw) return true;
+    if (!pw.value) { show('Enter your Trove password to change your bank details.'); pw.focus(); return false; }
+    body.currentPassword = pw.value;
+    return true;
+  }
+  function usePayoutShop() {
+    const body = { useShop: true };
+    const err = $('ppPayErr');
+    if (!withPassword(body, (m) => { if (err) { err.textContent = m; err.style.display = 'block'; } else toast(m); })) return undefined;
+    return putPayout(body, 'ppPayShop', 'Copying…');
+  }
 
   /* ---------------- public profile (name, story, categories) ----------------
    * PATCH /api/provider/me accepts name, bio and categories — location is set
@@ -555,7 +584,9 @@
       ${b.status === 'awaiting_payment' ? `<div class="pp-bkacts">
         <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">Withdraw</button></div>` : ''}
       ${b.status === 'confirmed' ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">Mark as done</button>
+        ${!b.serviceDate || b.serviceDate <= todayIso()
+          ? `<button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">Mark as done</button>`
+          : `<span style="color:var(--muted,rgba(41,39,39,.72));font-size:12px;align-self:center">You can mark it done on ${esc(fmtDay(b.serviceDate))}</span>`}
         <button class="pp-btn pp-ghost" onclick="ProviderPanel.cancelBooking(${num(b.id)})">Cancel booking</button></div>` : ''}
     </div>`;
   }
@@ -567,7 +598,7 @@
     el.innerHTML = `<div class="pp">
       <div class="pp-card"><h3>New requests</h3><div class="pp-hint">Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.</div>
         ${open.length ? open.map(bkCard).join('') : '<div class="pp-empty">No new requests right now. Requests from the Services Marketplace land here.</div>'}</div>
-      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid by bank transfer after you mark the booking done (see Payouts on your overview). If you have to cancel, the customer is refunded in full.</div>
+      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid by bank transfer on the first fortnightly payout day after the service date and a short complaint window (see Payouts on your overview). If you have to cancel, the customer is refunded in full.</div>
         ${upcoming.length ? upcoming.map(bkCard).join('') : '<div class="pp-empty">Nothing confirmed yet.</div>'}</div>
       <div class="pp-card"><h3>History</h3>
         ${rest.length ? rest.map(bkCard).join('') : '<div class="pp-empty">Completed, declined and cancelled bookings end up here.</div>'}</div>

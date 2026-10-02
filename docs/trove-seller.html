@@ -1054,7 +1054,8 @@ function applyShop(s){
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
-    bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''}};
+    bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''},
+    bankHeld:s.payout_hold_reason==='bank_details_changed'};
   storeColor=SHOP.color;
   $('sideShop').textContent=SHOP.name; $('mShop').textContent=SHOP.name;
   ['sideAv','mAv'].forEach(id=>{const el=$(id); if(SHOP.image){el.style.background=`center/cover no-repeat url("${SHOP.image}")`;el.textContent='';}
@@ -2088,6 +2089,7 @@ function payoutSetupCard(){
       <div class="fee-row"><span class="muted">Bank</span><span>${esc(b.name||'')}</span></div>
       <div class="fee-row"><span class="muted">Account holder</span><span>${esc(b.accountName||'')}</span></div>
       <div class="fee-row"><span class="muted">IBAN</span><span>${esc(b.iban||'')}</span></div>
+      ${SHOP.bankHeld?`<div class="demo-note" style="margin:8px 0">You changed your bank details recently. For your protection, Trove checks a change before the next payment goes to the new account — we may call you to confirm.</div>`:''}
       ${SHOP.needsId?`<div class="fee-row"><span class="muted">Emirates ID</span><span>${SHOP.eidFront&&SHOP.eidBack?'On file ✓':'<b style="color:var(--accent-ink)">Missing — update your details</b>'}</span></div>
       <div class="fee-row"><span class="muted">Home address</span><span>${SHOP.sellerAddress?esc(SHOP.sellerAddress):'<b style="color:var(--accent-ink)">Missing</b>'}</span></div>`:''}
       <div class="fee-row"><span class="muted">Seller Agreement</span><span>Accepted · ${esc(SHOP.agreementVersion||'v1')}${SHOP.agreementUpdateDue?` · <a href="#" onclick="acceptAgreement();return false" style="color:var(--accent-ink)">accept ${esc(SHOP.currentAgreementVersion)}</a>`:''}</span></div>
@@ -2104,6 +2106,8 @@ function payoutSetupCard(){
     <div class="field"><label>Account holder name — must be your own account</label><input id="bkName" value="${esc(b.accountName||'')}" placeholder="As shown on your bank account"></div>
     <div class="field"><label>Bank</label><input id="bkBank" value="${esc(b.name||'')}" placeholder="e.g. Emirates NBD"></div>
     <div class="field"><label>IBAN</label><input id="bkIban" placeholder="AE followed by 21 digits"></div>
+    ${b.iban&&(!ME||ME.hasPassword!==false)?`<div class="field"><label for="bkPw">Your Trove password — needed to change payout details</label><input id="bkPw" type="password" autocomplete="current-password"></div>
+    <div class="demo-note" style="margin:-4px 0 12px">We email you whenever your bank details change, and the first payment to a new account waits until Trove has checked it.</div>`:''}
     ${SHOP.needsId?`
     <div class="up" style="margin-top:18px">Identity verification</div>
     <div class="demo-note" style="margin:6px 0 12px">You sell under Trove's consignment model without a trade licence, so Trove keeps a copy of your Emirates ID and your home address on record. The photos are stored encrypted and only Trove's admin can view them.</div>
@@ -2156,6 +2160,7 @@ async function savePayoutSetup(){
     iban:$('bkIban').value.trim(),
     acceptAgreement:$('psAgree').checked,
   };
+  if($('bkPw')){ body.currentPassword=$('bkPw').value; if(!body.currentPassword){ toast('Enter your Trove password to change your payout details'); return; } }
   if(SHOP.needsId){
     if(PSU_ID.front)body.eidFront=PSU_ID.front;
     if(PSU_ID.back)body.eidBack=PSU_ID.back;
@@ -2183,7 +2188,7 @@ async function savePayoutSetup(){
 function showAgreement(){ window.open('/seller-agreement','_blank','noopener'); }
 
 /* ---------------- ADMIN — fortnightly settlement run (house/admin only) ---------------- */
-const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
+const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward',on_hold:'payouts on hold (release in Admin → Settlements)',bank_details_changed:'bank details just changed — check and release in Admin → Settlements'};
 async function renderAdminPayouts(){
   const v=$('view-adminpayouts');
   v.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600">Loading settlements…</div>`;

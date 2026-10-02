@@ -9,7 +9,8 @@
  *     for from/hourly) + the service date and opens ONE PaymentIntent
  *   - the webhook marks the booking paid exactly once, snapshots the 10%
  *     split from the amount paid, credits the provider, releases the phone
- *   - completion (or 3 days after the service date) makes the credit payable
+ *   - a credit is payable only once the service date + 3-day window has
+ *     passed, in the next fortnightly run; done cannot come before the date
  *   - a paid booking that is cancelled — by anyone — is refunded in full; a
  *     payment landing after a decline is refunded automatically
  *   - the guest link only works with the right token, and is never cached
@@ -174,34 +175,68 @@ test('a product-order webhook path is untouched by a booking payment', async () 
   assert.equal(db.prepare('SELECT COUNT(*) AS c FROM orders').get().c, 0);
 });
 
-test('the credit becomes payable when the provider marks the booking done', async () => {
+test('a provider cannot mark a paid booking done before its service date', async () => {
+  // F003 (2026-10-02): an early 'done' used to make the fee payable at once
+  // and cut off the customer's cancellation. The service is in two days.
+  const early = await act(life.id, { action: 'complete' });
+  assert.equal(early.status, 409);
+  assert.match(early.data.error, /on or after its service date/);
+  assert.equal(row(life.id).status, 'confirmed', 'still confirmed');
+  assert.equal(row(life.id).completed_at, null);
   const credits = require('../src/service-credits');
-  assert.equal(credits.eligibleServiceCredits().length, 0, 'not before the service');
+  assert.equal(credits.eligibleServiceCredits(`${dayFromNow(1)} 00:00:00`).length, 0, 'nothing payable');
+  // the customer can still cancel before the day
+  const view = await api('GET', `/api/services/booking/${life.code}?t=${life.token}`);
+  assert.equal(view.data.booking.canCancel, true);
+});
+
+test('marking done on the day does not bring the fee forward — it waits for the 3-day window and the next run', async () => {
+  const credits = require('../src/service-credits');
+  db.prepare('UPDATE service_bookings SET service_date=? WHERE id=?').run(dayFromNow(0), life.id); // the service day has come
   const done = await act(life.id, { action: 'complete' });
+  assert.equal(done.status, 200, done.text);
   assert.equal(done.data.booking.status, 'completed');
-  const later = db.prepare("SELECT datetime('now','+1 minute') AS t").get().t;
-  const rows = credits.eligibleServiceCredits(later);
+  const ids = (t) => credits.eligibleServiceCredits(t).map((c) => c.booking_id);
+  for (const d of [0, 1, 2, 3]) assert.ok(!ids(`${dayFromNow(d)} 00:00:00`).includes(life.id), `a run on day +${d}: still provisional`);
+  const ready = `${dayFromNow(4)} 00:00:00`;
+  const rows = credits.eligibleServiceCredits(ready);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].amount_cents, 36000);
   // the settlement run shows it; with no payout details it is held back, not lost
-  const pv = require('../src/settlement').preview(later).serviceCredits;
+  const pv = require('../src/settlement').preview(ready).serviceCredits;
   assert.equal(pv.excluded.length, 1);
   assert.equal(pv.excluded[0].reason, 'payout_details_missing');
   assert.equal(pv.excluded[0].netCents, 36000);
   const me = await api('GET', '/api/provider/me', { cookie: providerCookie });
+  assert.equal(me.data.provider.earnings.provisionalCents, 36000, 'provisional until the window closes');
+  assert.equal(me.data.provider.earnings.readyCents, 0);
   assert.equal(me.data.provider.earnings.payableCents + me.data.provider.earnings.pendingCents, 36000);
   const adm = await api('GET', '/api/admin/service-credits', { cookie: adminCookie });
   assert.equal(adm.status, 200);
+  assert.equal(adm.data.eligible.length + adm.data.excluded.length, 0, 'not in this fortnight\'s batch');
+  assert.equal(require('../src/settlement').isRunDate(adm.data.runDate), true, 'the batch is cut at a run Tuesday');
 });
 
-test('a booking nobody marked done is payable 3 days after its service date', async () => {
+test('a fee is ready the day after service date + 3 days, whether or not it was marked done', async () => {
   const credits = require('../src/service-credits');
   const r = await book(svcIds.fixed);
   await act(r.data.booking.id, { action: 'confirm', serviceDate: dayFromNow(1) });
   await ctx.postWebhook(paidEvent(row(r.data.booking.id)));
   const ids = (t) => credits.eligibleServiceCredits(t).map((c) => c.booking_id);
-  assert.ok(!ids(`${dayFromNow(3)} 00:00:00`).includes(r.data.booking.id), 'day 2 after: not yet');
-  assert.ok(ids(`${dayFromNow(4)} 00:00:00`).includes(r.data.booking.id), 'day 3 after: payable');
+  assert.ok(!ids(`${dayFromNow(4)} 00:00:00`).includes(r.data.booking.id), 'day 3 after: window still open');
+  assert.ok(ids(`${dayFromNow(5)} 00:00:00`).includes(r.data.booking.id), 'day 4 after: ready');
+  assert.equal(credits.readyFrom(dayFromNow(1)), dayFromNow(5));
+});
+
+test('provider fees are paid on the makers\' fortnightly Tuesdays', () => {
+  const credits = require('../src/service-credits');
+  const settlement = require('../src/settlement');
+  const today = '2026-10-08'; // a Thursday, two days after the 6 Oct run
+  assert.equal(settlement.lastRunDate(today), '2026-10-06');
+  assert.equal(credits.currentCutoff(today), '2026-10-06 00:00:00', 'this fortnight\'s batch is cut at the last run');
+  assert.equal(credits.payoutDateFor('2026-10-07', today), '2026-10-20', 'ready after the run: the next one');
+  assert.equal(credits.payoutDateFor('2026-10-01', today), '2026-10-06', 'ready before the run: in this batch');
+  assert.equal(credits.payoutDateFor('2026-10-20', today), '2026-10-20');
 });
 
 test('admin marks a provider paid; a refund after that debits their next payment', async () => {
@@ -415,4 +450,96 @@ test('a payment event can never touch a booking that has no PaymentIntent of its
   const after = row(bk.id);
   assert.equal(after.paid_at, null);
   assert.equal(after.status, 'requested');
+});
+
+/* ---------------- F008: deleting a listing never takes open bookings with it ---------------- */
+
+test('a listing with an open booking cannot be deleted — hide it instead', async () => {
+  const s = await api('POST', '/api/provider/services', { cookie: providerCookie, body: { title: 'Doomed listing', category: 'workshops', priceCents: 50000, priceType: 'fixed', setting: 'home' } });
+  const sid = s.data.service.id;
+  const del = () => api('DELETE', `/api/provider/services/${sid}`, { cookie: providerCookie });
+  // a pay-by-card booking with an open pay link, and a direct request
+  const card = await book(sid);
+  await act(card.data.booking.id, { action: 'confirm', serviceDate: dayFromNow(4) });
+  assert.equal(row(card.data.booking.id).status, 'awaiting_payment');
+  const direct = await book(sid, { paymentMethod: 'direct' });
+  const r1 = await del();
+  assert.equal(r1.status, 409);
+  assert.match(r1.data.error, /open bookings/);
+  assert.ok(row(card.data.booking.id) && row(direct.data.booking.id), 'both bookings still exist');
+  // the customer's link still works
+  const tok = tokenOf(card.data.booking.viewPath);
+  assert.equal((await api('GET', `/api/services/booking/${card.data.booking.code}?t=${tok}`)).status, 200);
+  // hiding is always allowed
+  assert.equal((await api('PATCH', `/api/provider/services/${sid}`, { cookie: providerCookie, body: { status: 'hidden' } })).status, 200);
+
+  // once every booking is closed, the one that ever had a card intent still blocks (a money record)
+  await act(card.data.booking.id, { action: 'decline', reason: 'Fully booked' });
+  await act(direct.data.booking.id, { action: 'decline', reason: 'Fully booked' });
+  const r2 = await del();
+  assert.equal(r2.status, 409);
+  assert.match(r2.data.error, /paid through Trove/);
+
+  // a listing whose bookings are all closed and never touched a card can go
+  const s2 = await api('POST', '/api/provider/services', { cookie: providerCookie, body: { title: 'Quiet listing', category: 'workshops', priceCents: 50000, priceType: 'fixed', setting: 'home' } });
+  const d2 = await book(s2.data.service.id, { paymentMethod: 'direct' });
+  await act(d2.data.booking.id, { action: 'decline', reason: 'No' });
+  assert.equal((await api('DELETE', `/api/provider/services/${s2.data.service.id}`, { cookie: providerCookie })).status, 200);
+  // another provider's listing is never theirs to delete
+  assert.equal((await api('DELETE', `/api/provider/services/${sid}`, { cookie: adminCookie })).status, 403);
+});
+
+test('a booking payment that arrives with no booking to hold it is refunded in full', async () => {
+  mock.reset();
+  const ev = { id: `evt_svc_${++evt}`, type: 'payment_intent.succeeded', data: { object: {
+    id: 'pi_orphan_1', amount: 50000, amount_received: 50000, metadata: { kind: 'service_booking', booking_id: '999999', code: 'SRV-DEAD00' } } } };
+  assert.equal((await ctx.postWebhook(ev)).status, 200);
+  assert.ok(await until(() => mock.calls.some((c) => c.method === 'refunds.create')), 'a refund went out');
+  const refund = mock.calls.find((c) => c.method === 'refunds.create');
+  assert.equal(refund.params.payment_intent, 'pi_orphan_1');
+  assert.equal(refund.params.amount, undefined, 'in full');
+  // a redelivered event changes nothing
+  mock.reset();
+  await ctx.postWebhook(ev);
+  await new Promise((r) => setTimeout(r, 30));
+  assert.equal(mock.calls.filter((c) => c.method === 'refunds.create').length, 0);
+});
+
+/* ---------------- F433: VAT on card bookings ---------------- */
+
+test('once VAT-registered, a card booking records output VAT, and a refund reverses it with a credit note', async () => {
+  process.env.VAT_REGISTERED = '1';
+  try {
+    const r = await book(svcIds.fixed);
+    const id = r.data.booking.id;
+    await act(id, { action: 'confirm', serviceDate: dayFromNow(6) });
+    await ctx.postWebhook(paidEvent(row(id)));
+    const paid = row(id);
+    assert.equal(paid.vat_amount_cents, Math.round(40000 * 5 / 105), '5/105 of the whole booking (Trove is the contracting party)');
+    assert.equal(require('../src/service-bookings').serviceVat(40000, 4000), 1905);
+
+    const rep = await api('GET', '/api/admin/vat-report', { cookie: adminCookie });
+    const svcRow = rep.data.rows.find((x) => x.rail === 'services');
+    assert.ok(svcRow, 'a services rail in the VAT report');
+    assert.equal(svcRow.vatCents, 1905);
+    assert.equal(svcRow.grossCents, 40000);
+
+    const c = await act(id, { action: 'cancel', reason: 'Unwell' });
+    assert.equal(c.status, 200);
+    const after = row(id);
+    assert.equal(after.vat_reversed_cents, 1905);
+    assert.equal(after.credit_note_ref, `CN-${after.code}`);
+    const rep2 = await api('GET', '/api/admin/vat-report', { cookie: adminCookie });
+    const note = rep2.data.creditNotes.find((x) => x.reference === `CN-${after.code}`);
+    assert.ok(note, 'the credit note is listed');
+    assert.equal(note.rail, 'services');
+    assert.equal(note.vatCents, 1905);
+    const svc2 = rep2.data.rows.find((x) => x.rail === 'services' && x.quarter === note.quarter);
+    assert.equal(svc2.netVatCents, svc2.vatCents - svc2.reversedCents);
+  } finally { delete process.env.VAT_REGISTERED; }
+  // not registered: nothing captured
+  const r = await book(svcIds.fixed);
+  await act(r.data.booking.id, { action: 'confirm', serviceDate: dayFromNow(6) });
+  await ctx.postWebhook(paidEvent(row(r.data.booking.id)));
+  assert.equal(row(r.data.booking.id).vat_amount_cents, 0);
 });

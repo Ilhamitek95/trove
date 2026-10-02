@@ -4,10 +4,11 @@
  *
  *   GET  /api/admin/service-bookings               bookings, newest first (paid / attention first)
  *   POST /api/admin/service-bookings/:id/refund    refund a paid booking in full
- *   GET  /api/admin/service-credits                what providers are owed now, grouped per provider
+ *   GET  /api/admin/service-credits                what providers are owed at this fortnight's run, per provider
  *   GET  /api/admin/provider-payouts/export.csv    bank transfer file (the ONLY place a provider IBAN decrypts)
  *   POST /api/admin/service-credits/:providerId/paid  { reference?, amountCents? } close what was just paid by
  *                                                  bank transfer + email the provider a payment note
+ *   POST /api/admin/service-credits/:providerId/release-hold  the owner checked a bank-details change
  *
  * Kept in its own file (mounted beside admin.routes.js) so the booking money
  * flow reads in one place: src/service-bookings.js + src/service-credits.js.
@@ -90,6 +91,8 @@ router.post('/service-credits/:providerId/paid', requireAdmin, (req, res) => {
   const row = pv.eligible.concat(pv.excluded).find((r) => r.providerId === providerId && r.netCents > 0);
   if (!row) return res.status(404).json({ error: 'Nothing is payable to this provider right now' });
   if (!row.payTo) return res.status(409).json({ error: 'Waiting for bank details — this provider has not added them yet' });
+  if (row.reason === 'bank_details_changed') return res.status(409).json({ error: 'This provider changed their bank details — check the change with them, then release the hold first' });
+  if (row.reason === 'on_hold') return res.status(409).json({ error: 'This provider is suspended — their payouts are on hold' });
   if (b.amountCents !== undefined && Number(b.amountCents) !== row.netCents) {
     return res.status(409).json({ error: 'The amount owed has changed since the transfer file was made — download it again' });
   }
@@ -104,6 +107,15 @@ router.post('/service-credits/:providerId/paid', requireAdmin, (req, res) => {
     email.send({ to: r.owner.email, ...msg }).catch((e) => console.error('provider fees-sent email failed:', e.message));
   }
   res.json({ ok: true, providerId: r.providerId, amountCents: r.amountCents, reference: r.reference, payer: r.payer, rows: r.rows });
+});
+
+// POST /api/admin/service-credits/:providerId/release-hold → the owner has
+// checked a provider's bank change with them (by phone, not by replying to
+// the account): the next transfer may go to the new account.
+router.post('/service-credits/:providerId/release-hold', requireAdmin, (req, res) => {
+  const ok = require('../provider-payouts').releaseHold(Number(req.params.providerId));
+  if (!ok) return res.status(404).json({ error: 'No bank-change hold on this provider' });
+  res.json({ ok: true });
 });
 
 module.exports = router;

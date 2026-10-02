@@ -10,8 +10,8 @@
  *                  only ever returns the masked IBAN. A provider who also runs
  *                  a shop can copy the shop's details: the ciphertext is copied
  *                  server-side and never passes through the client.
- *   statement      the provider's own credits with a status each: waiting,
- *                  payable (on a date) or paid (on a date, with the reference).
+ *   statement      the provider's own credits with a status each: provisional
+ *                  (may change), ready (paid in the run on a date) or paid.
  *   transfer file  exportCsv() — the ONLY place a provider IBAN is decrypted,
  *                  mirroring settlement.exportCsv for shops. Admin-only route,
  *                  payable providers with bank details only.
@@ -25,6 +25,8 @@ const credits = require('./service-credits');
 const MASKED = (row) => (row ? {
   accountName: row.account_name, bankName: row.bank_name, iban: row.iban_masked,
   source: row.source, updatedAt: row.updated_at,
+  // A change waits for Trove's check before the first payment goes to it.
+  held: !!row.hold_reason,
 } : null);
 
 const detailsRow = (providerId) => db.prepare('SELECT * FROM provider_payout_details WHERE provider_id=?').get(providerId);
@@ -50,43 +52,75 @@ const fail = (status, error) => ({ status, error });
 
 /**
  * Save bank details. `body` is either { accountName, bankName, iban } or
- * { useShop: true }. Returns { details } or { status, error }.
+ * { useShop: true }, plus `currentPassword` when details are already on file.
+ * `req` (the request) carries the signed-in owner for that step-up check.
+ * Changing details already on file:
+ *   - needs the account password again (never possible while an admin views
+ *     the dashboard) — middleware.confirmOwner
+ *   - puts the provider's payouts on hold ('bank_details_changed') until the
+ *     owner checks it in Admin → Provider payouts, so a hijacked account
+ *     cannot redirect the next transfer
+ * Every save emails the account owner (masked IBAN only).
+ * Returns { details } or { status, error, code? }.
  */
-function saveDetails(provider, body = {}) {
+function saveDetails(provider, body = {}, req = null) {
+  const existing = detailsRow(provider.id);
+  if (existing && req) {
+    const authErr = require('./middleware').confirmOwner(req, body.currentPassword);
+    if (authErr) return authErr;
+  }
+  let next;
   if (body.useShop === true) {
     const shop = shopWithBank(provider.user_id);
     if (!shop) return fail(409, 'Your shop has no bank details on file yet — add them here instead');
-    upsert(provider.id, {
+    next = {
       accountName: shop.payout_account_name, bankName: shop.payout_bank_name,
       ibanEncrypted: shop.iban_encrypted, ibanMasked: shop.iban_masked, source: 'shop',
-    });
-    return { details: getDetails(provider.id) };
+    };
+  } else {
+    const v = require('./validate');
+    const accountName = String(body.accountName || '').trim().slice(0, 120);
+    const bankName = String(body.bankName || '').trim().slice(0, 120);
+    if (!accountName || !bankName) return fail(400, 'The account holder name and the bank name are both needed');
+    const nameErr = v.payoutNamesError(accountName, bankName);
+    if (nameErr) return fail(400, nameErr);
+    const iban = String(body.iban || '').replace(/\s+/g, '').toUpperCase();
+    const ibanErr = v.ibanError(iban);
+    if (ibanErr) return fail(400, ibanErr);
+    if (!pcrypto.hasKey()) return fail(503, 'Bank details are temporarily unavailable (encryption key not configured)');
+    next = { accountName, bankName, ibanEncrypted: pcrypto.encrypt(iban), ibanMasked: pcrypto.maskIban(iban), source: 'own' };
   }
-  const v = require('./validate');
-  const accountName = String(body.accountName || '').trim().slice(0, 120);
-  const bankName = String(body.bankName || '').trim().slice(0, 120);
-  if (!accountName || !bankName) return fail(400, 'The account holder name and the bank name are both needed');
-  if (v.hasMarkup(accountName) || v.hasMarkup(bankName)) return fail(400, 'Names cannot contain < or >');
-  const iban = String(body.iban || '').replace(/\s+/g, '').toUpperCase();
-  const ibanErr = v.ibanError(iban);
-  if (ibanErr) return fail(400, ibanErr);
-  if (!pcrypto.hasKey()) return fail(503, 'Bank details are temporarily unavailable (encryption key not configured)');
-  upsert(provider.id, {
-    accountName, bankName, ibanEncrypted: pcrypto.encrypt(iban), ibanMasked: pcrypto.maskIban(iban), source: 'own',
-  });
+  // A different account (not a first save, and not the same IBAN saved
+  // again) holds the next payment for the owner's check.
+  const changed = !!existing && !pcrypto.sameIban(existing.iban_encrypted, next.ibanEncrypted);
+  db.transaction(() => {
+    upsert(provider.id, next);
+    if (changed) {
+      db.prepare("UPDATE provider_payout_details SET hold_reason='bank_details_changed', changed_at=datetime('now') WHERE provider_id=?").run(provider.id);
+    }
+  })();
+  const owner = db.prepare('SELECT * FROM users WHERE id=?').get(provider.user_id);
+  if (!existing || changed || existing.account_name !== next.accountName || existing.bank_name !== next.bankName) {
+    require('./notify').bankDetailsChanged(owner, {
+      kind: 'provider', businessName: provider.name, bankName: next.bankName, iban: next.ibanMasked, held: changed,
+    });
+  }
   return { details: getDetails(provider.id) };
 }
 
-const addDays = (day, n) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+/** Admin: the owner checked a bank change — release the hold. */
+function releaseHold(providerId) {
+  return db.prepare("UPDATE provider_payout_details SET hold_reason='' WHERE provider_id=? AND hold_reason<>''").run(providerId).changes > 0;
+}
 
 /**
  * The provider's own statement: every fee Trove owes or has paid them, newest
  * first. Only booking code, service, date and their fee — nothing about the
- * customer.
+ * customer. An unpaid fee is 'provisional' (service date + complaint window
+ * not passed — it may change if the booking is cancelled) or 'ready' (paid in
+ * the run on `payoutOn`).
  */
-function statement(providerId) {
-  const now = db.prepare("SELECT datetime('now') AS t").get().t;
-  const payableIds = new Set(credits.eligibleServiceCredits(now).filter((c) => c.provider_id === providerId).map((c) => c.id));
+function statement(providerId, today = credits.dubaiToday()) {
   const rows = db.prepare(`SELECT c.*, bk.code, bk.title, bk.service_date, bk.status AS booking_status, bk.completed_at, bk.refunded_at
     FROM provider_credits c JOIN service_bookings bk ON bk.id = c.booking_id
     WHERE c.provider_id=? ORDER BY c.id DESC LIMIT 200`).all(providerId);
@@ -98,11 +132,9 @@ function statement(providerId) {
     if (c.paid_at) return { ...base, status: 'paid', paidOn: c.paid_at.slice(0, 10), reference: c.pay_reference, payer: c.payer_name || '' };
     if (c.type === 'debit_refund') return { ...base, status: 'deducted' };
     if (c.voided_at || c.refunded_at) return { ...base, status: 'refunded' };
-    const dates = [];
-    if (c.booking_status === 'completed' && c.completed_at) dates.push(c.completed_at.slice(0, 10));
-    if (c.service_date) dates.push(addDays(c.service_date, credits.GRACE_DAYS));
-    const payableOn = dates.sort()[0] || null;
-    return { ...base, status: payableIds.has(c.id) ? 'payable' : 'waiting', payableOn };
+    const readyOn = credits.readyFrom(c.service_date);
+    const payoutOn = readyOn ? credits.payoutDateFor(readyOn, today) : null;
+    return { ...base, status: readyOn && readyOn <= today ? 'ready' : 'provisional', readyOn, payoutOn };
   });
 }
 
@@ -117,7 +149,7 @@ const hasPaidBooking = (providerId) => !!db.prepare(
  */
 function exportCsv(runStart) {
   const pv = credits.preview(runStart);
-  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const esc = require('./csv').csvCell;
   const lines = ['provider,account_name,bank,iban,amount_aed,reference,bookings'];
   let count = 0;
   for (const r of pv.eligible) {
@@ -130,4 +162,4 @@ function exportCsv(runStart) {
   return { csv: lines.join('\r\n') + '\r\n', count };
 }
 
-module.exports = { getDetails, saveDetails, shopWithBank, statement, hasPaidBooking, exportCsv };
+module.exports = { getDetails, saveDetails, releaseHold, shopWithBank, statement, hasPaidBooking, exportCsv };

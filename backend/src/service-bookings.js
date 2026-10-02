@@ -199,26 +199,62 @@ function onPaymentSucceeded(event) {
   const result = db.transaction(() => {
     const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(event.id, event.type);
     if (!seen.changes) return null;
+    if (!pi.id) return null;
     const bk = get(Number(pi.metadata && pi.metadata.booking_id));
-    if (!bk || !pi.id || !bk.stripe_payment_intent_id || bk.stripe_payment_intent_id !== pi.id || bk.paid_at) return null;
+    // Money with no booking to hold it: the booking is gone (or this intent
+    // is not the booking's — a stale or duplicate one). Nothing can be
+    // delivered against it, so it goes straight back to the card.
+    if (!bk || !bk.stripe_payment_intent_id || bk.stripe_payment_intent_id !== pi.id) {
+      return { kind: 'orphan', pi: pi.id, bookingId: pi.metadata && pi.metadata.booking_id };
+    }
+    if (bk.paid_at) return null;
     const amount = Number(pi.amount_received || pi.amount) || bk.amount_cents;
     const split = fees.serviceSplit(amount);
+    const vat = serviceVat(amount, split.fee);
     if (bk.status === 'awaiting_payment') {
       db.prepare(`UPDATE service_bookings SET status='confirmed', paid_at=datetime('now'), amount_cents=?,
-          commission_cents=?, provider_net_cents=? WHERE id=?`).run(amount, split.fee, split.net, bk.id);
+          commission_cents=?, provider_net_cents=?, vat_amount_cents=? WHERE id=?`).run(amount, split.fee, split.net, vat, bk.id);
       require('./service-credits').creditBooking(get(bk.id));
       return { kind: 'paid', id: bk.id };
     }
     // Declined or cancelled while the customer was paying: nothing to deliver.
     if (!['declined', 'cancelled'].includes(bk.status)) return null;
     db.prepare(`UPDATE service_bookings SET paid_at=datetime('now'), amount_cents=?, commission_cents=?, provider_net_cents=?,
-        attention='paid_after_cancel' WHERE id=?`).run(amount, split.fee, split.net, bk.id);
+        vat_amount_cents=?, attention='paid_after_cancel' WHERE id=?`).run(amount, split.fee, split.net, vat, bk.id);
     return { kind: 'refund', id: bk.id };
   })();
   if (!result) return null;
   if (result.kind === 'paid') mail('paid', get(result.id));
+  else if (result.kind === 'orphan') refundOrphan(result);
   else refund(get(result.id), { reason: 'paid_after_cancel', notify: 'refunded' });
   return result;
+}
+
+/**
+ * A booking payment that landed with no booking to hold it (deleted, or a
+ * stale intent): refund it in full on Stripe and shout in the log so a person
+ * looks. Never throws.
+ */
+function refundOrphan({ pi, bookingId }) {
+  console.error(`ALERT service booking payment ${pi} (booking ${bookingId || '?'}) has no matching booking — refunding it in full`);
+  const stripe = require('./stripe').getStripe();
+  if (!stripe) { console.error(`ALERT ${pi}: no Stripe client — REFUND BY HAND in Stripe`); return Promise.resolve(false); }
+  return stripe.refunds.create({ payment_intent: pi, metadata: { reason: 'service_booking_missing', booking_id: String(bookingId || '') } },
+    { idempotencyKey: `trove-svc-orphan-refund-${pi}` })
+    .then(() => true)
+    .catch((e) => { console.error(`ALERT ${pi}: AUTOMATIC REFUND FAILED — refund by hand in Stripe:`, e.message); return false; });
+}
+
+/**
+ * Output VAT on a card booking (0 until VAT_REGISTERED). Prices are
+ * VAT-inclusive, like products: 5/105 of the whole booking when Trove is the
+ * customer's contracting party (fees.SERVICE_VAT_BASIS 'full', the default —
+ * the services terms say so), or of Trove's platform fee only ('fee').
+ */
+function serviceVat(amountCents, feeCents) {
+  const cfg = require('./config');
+  if (!cfg.vatRegistered()) return 0;
+  return cfg.vatFromGross(fees.SERVICE_VAT_BASIS === 'fee' ? feeCents : amountCents);
 }
 
 /* ---------------- refunds ---------------- */
@@ -248,7 +284,11 @@ async function refund(bk, { reason = 'cancelled', notify = null } = {}) {
     return false;
   }
   db.transaction(() => {
+    // A full refund gives all the output VAT back, recorded as a credit note
+    // (CN-<booking code>) in the refund's quarter — like an order refund.
     db.prepare(`UPDATE service_bookings SET refunded_at=COALESCE(refunded_at, datetime('now')), refund_cents=amount_cents,
+        vat_reversed_cents=vat_amount_cents,
+        credit_note_ref=CASE WHEN vat_amount_cents > 0 THEN 'CN-' || code ELSE credit_note_ref END,
         attention=CASE WHEN attention='refund_failed' THEN '' ELSE attention END WHERE id=?`).run(bk.id);
     require('./service-credits').reverseBooking(bk);
   })();
@@ -298,9 +338,18 @@ async function cancel(bk, { by, reason = '' }) {
   return { booking: get(bk.id), refunded };
 }
 
-/** Provider marks the booking done: the credit becomes payable. */
+/**
+ * Provider marks the booking done — only on or after the service day (Dubai).
+ * It records what happened; it does NOT make the provider's fee payable any
+ * sooner: that waits for the service date + the complaint window and the next
+ * fortnightly run (service-credits.js), so the customer's right to cancel
+ * before the day can never be cut short by an early 'done'.
+ */
 function complete(bk) {
   if (bk.status !== 'confirmed') return { status: 409, error: 'Only a confirmed booking can be marked done' };
+  if (bk.service_date && dubaiToday() < bk.service_date) {
+    return { status: 409, error: 'You can mark a booking done on or after its service date' };
+  }
   db.prepare("UPDATE service_bookings SET status='completed', completed_at=datetime('now') WHERE id=? AND status='confirmed'").run(bk.id);
   return { booking: get(bk.id) };
 }
@@ -342,5 +391,5 @@ async function paymentSession(bk) {
 module.exports = {
   paymentsEnabled, linkToken, tokenOk, viewUrl, payUrl, PAY_REF, byCodeAndToken,
   dubaiToday, serviceDateError, beforeService, confirmAmount,
-  confirm, onPaymentSucceeded, refund, decline, cancel, complete, forCustomer, paymentSession, mail,
+  confirm, onPaymentSucceeded, refund, decline, cancel, complete, forCustomer, paymentSession, mail, serviceVat, refundOrphan,
 };

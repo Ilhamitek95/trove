@@ -478,7 +478,7 @@ function bookingPaidProvider({ booking: bk, commissionPercent }) {
   const grace = require('./service-credits').GRACE_DAYS;
   const inner = panel(`<span style="font-family:${SERIF};font-size:26px;font-weight:600">${aed(bk.provider_net_cents)}</span><br>your fee after Trove's ${commissionPercent}% platform fee (the customer paid ${aed(bk.amount_cents)})`)
     + svcSummary(bk, { price: false, pay: false })
-    + p(`Paid through Trove. The customer's mobile is now in your dashboard — reach out to arrange the details. Your fee is paid by bank transfer from ${esc(require('./service-credits').payerName())} on Trove's behalf once you mark the booking done (or ${grace} days after the service date) — add your bank details under Payouts in your dashboard if you haven't yet.`)
+    + p(`Paid through Trove. The customer's mobile is now in your dashboard — reach out to arrange the details. Your fee is paid by bank transfer from ${esc(require('./service-credits').payerName())} on Trove's behalf on the first fortnightly payout day once the service date has passed and the ${grace}-day complaint window has closed — add your bank details under Payouts in your dashboard if you haven't yet.`)
     + button('Open your bookings', PROVIDER_LINK);
   return {
     subject: `Paid through Trove — ${bk.title}${bk.service_date ? ` on ${svcDate(bk.service_date)}` : ''}`,
@@ -599,6 +599,22 @@ function passwordChanged({ name, link }) {
   return {
     subject: 'Your Trove password was changed',
     html: layout('Password changed', inner, { tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: ACCOUNT_REASON, preheader: 'Your Trove password was just changed.' }),
+  };
+}
+
+/**
+ * Sent whenever the bank account Trove pays a maker or provider is changed,
+ * so an owner notices a change they did not make. Only the masked IBAN.
+ * { name, businessName, kind: 'shop' | 'provider', bankName, iban (masked), link }
+ */
+function bankDetailsChanged({ name, businessName, kind = 'shop', bankName, iban, link, held = true }) {
+  const inner =
+    panel(`<b>${esc(businessName)}</b><br>Payout account: ${esc(bankName)} · ${esc(iban)}`)
+    + p(`The bank account Trove pays ${kind === 'provider' ? 'your service fees' : 'your sales'} into has just been ${held ? 'changed' : 'saved'}.${held ? ' For your protection, the next payment to the new account waits until Trove has checked the change.' : ''}`)
+    + p(`If this was you, there is nothing else to do. If it was not, reply to this email straight away and <a href="${esc(link)}" style="color:${INK};font-weight:700">reset your password</a> — nothing will be paid to the new account until we hear from you.`);
+  return {
+    subject: held ? 'Your Trove payout bank details were changed' : 'Your Trove payout bank details were saved',
+    html: layout(held ? 'Bank details changed' : 'Bank details saved', inner, { tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: ACCOUNT_REASON, preheader: 'The bank account Trove pays you was just updated.' }),
   };
 }
 
@@ -741,7 +757,7 @@ function packOverdueAdmin({ shopName, publicId, items, packBy, link }) {
 
 Object.assign(module.exports, {
   packReminder, packOverdueAdmin,
-  passwordReset, welcomeVerify, passwordChanged,
+  passwordReset, welcomeVerify, passwordChanged, bankDetailsChanged,
   applicationReceived, applicationAlert, applicationApproved, applicationRejected, orderToPack,
 });
 

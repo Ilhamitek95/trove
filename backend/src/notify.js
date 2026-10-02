@@ -37,6 +37,12 @@ const passwordReset = (user) => safely('password-reset', () => {
 const passwordChanged = (user) => safely('password-changed', () =>
   deliver('password-changed', user.email, email().passwordChanged({ name: user.name, link: `${accounts.siteUrl()}/login?forgot=1` })));
 
+/** The payout bank account of a shop or practice changed: tell the account owner. */
+const bankDetailsChanged = (user, { kind, businessName, bankName, iban, held = true }) => safely('bank-details-changed', () =>
+  deliver('bank-details-changed', user && user.email, email().bankDetailsChanged({
+    name: user.name, businessName, kind, bankName, iban, held, link: `${accounts.siteUrl()}/login?forgot=1`,
+  })));
+
 /* ---- applications ---- */
 function shopRow(shopId) {
   return db.prepare('SELECT s.*, u.email AS owner_email, u.name AS owner_name FROM shops s JOIN users u ON u.id = s.user_id WHERE s.id = ?').get(shopId);
@@ -142,6 +148,6 @@ const packOverdueAdmin = (shipmentId) => safely('pack-overdue-admin', () => {
 
 module.exports = {
   packReminder, packOverdueAdmin, packByFor,
-  welcomeVerify, passwordReset, passwordChanged,
+  welcomeVerify, passwordReset, passwordChanged, bankDetailsChanged,
   shopApplied, providerApplied, shopDecided, providerDecided, ordersToPack, packByDays,
 };

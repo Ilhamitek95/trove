@@ -63,6 +63,23 @@ const OPEN_DEBITS = `
 
 const payoutSetupComplete = (shop) => !!(shop.iban_encrypted && shop.agreement_accepted_at);
 
+/**
+ * Why a shop's money is held back from every run until the owner releases it
+ * (Seller Agreement v4: Trove may pause a shop and hold back settlement while
+ * it investigates), or null:
+ *   'on_hold'               the shop is suspended, or the owner put its
+ *                           payouts on hold (shops.payout_hold, 'manual')
+ *   'bank_details_changed'  the maker changed their bank account: the first
+ *                           run after it waits for the owner's check
+ * Held rows stay unswept, so nothing is lost — they go in the run after the
+ * hold is lifted.
+ */
+function holdReason(shop) {
+  if (shop.status === 'suspended') return 'on_hold';
+  if (shop.payout_hold) return shop.payout_hold_reason === 'bank_details_changed' ? 'bank_details_changed' : 'on_hold';
+  return null;
+}
+
 const nowSql = () => db.prepare("SELECT datetime('now') AS t").get().t;
 
 /** Group eligible credits + open debits per shop as of runStart. */
@@ -100,9 +117,12 @@ function preview(runStart = nowSql()) {
       debitCents: b.debitCents,
       netCents: net,
       itemCount: b.creditIds.length,
+      suspended: shop.status === 'suspended',
       bank: { name: shop.payout_bank_name, accountName: shop.payout_account_name, iban: shop.iban_masked },
     };
+    const hold = holdReason(shop);
     if (shop.tier !== 'consignment' || !payoutSetupComplete(shop)) excluded.push({ ...row, reason: 'payout_setup_incomplete' });
+    else if (hold) excluded.push({ ...row, reason: hold });
     else if (net <= 0) excluded.push({ ...row, reason: 'netted_negative' });
     else eligible.push(row);
   }
@@ -136,10 +156,16 @@ function run(runDate) {
     const items = [];
     for (const r of eligible) {
       const b = perShop.get(r.shopId);
+      // The account the run is drafted against — ciphertext, holder and bank
+      // — is copied onto the item: the bank file pays THIS account, so a
+      // later change to the shop's live details cannot redirect the run.
+      const acct = db.prepare('SELECT iban_encrypted, payout_account_name, payout_bank_name FROM shops WHERE id=?').get(r.shopId);
       const itemId = db.prepare(`INSERT INTO settlement_items
-          (settlement_id, shop_id, amount_cents, credit_cents, debit_cents, item_count, bank_reference, bank_snapshot)
-        VALUES (?,?,?,?,?,?, '', ?)`)
-        .run(settlementId, r.shopId, r.netCents, r.creditCents, r.debitCents, r.itemCount, JSON.stringify(r.bank)).lastInsertRowid;
+          (settlement_id, shop_id, amount_cents, credit_cents, debit_cents, item_count, bank_reference, bank_snapshot,
+           iban_encrypted, payout_account_name, payout_bank_name)
+        VALUES (?,?,?,?,?,?, '', ?, ?,?,?)`)
+        .run(settlementId, r.shopId, r.netCents, r.creditCents, r.debitCents, r.itemCount, JSON.stringify(r.bank),
+          acct.iban_encrypted, acct.payout_account_name, acct.payout_bank_name).lastInsertRowid;
       const reference = `Purchase of handmade goods — PO #${itemId}`;
       db.prepare('UPDATE settlement_items SET bank_reference=? WHERE id=?').run(reference, itemId);
       for (const id of [...b.creditIds, ...b.debitIds]) stamp.run(settlementId, id);
@@ -159,9 +185,14 @@ function run(runDate) {
 function exportCsv(settlementId) {
   const st = db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
   if (!st) { const e = new Error('Settlement not found'); e.status = 404; throw e; }
-  const rows = db.prepare(`SELECT si.*, s.name AS shop_name, s.payout_bank_name, s.payout_account_name, s.iban_encrypted
+  // The account copied at run time (items drafted before that copy existed
+  // fall back to the shop's live details).
+  const rows = db.prepare(`SELECT si.id, si.amount_cents, si.bank_reference, s.name AS shop_name,
+      CASE WHEN si.iban_encrypted IS NOT NULL THEN si.payout_bank_name ELSE s.payout_bank_name END AS payout_bank_name,
+      CASE WHEN si.iban_encrypted IS NOT NULL THEN si.payout_account_name ELSE s.payout_account_name END AS payout_account_name,
+      COALESCE(si.iban_encrypted, s.iban_encrypted) AS iban_encrypted
     FROM settlement_items si JOIN shops s ON s.id = si.shop_id WHERE si.settlement_id=? ORDER BY si.id`).all(settlementId);
-  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const esc = require('./csv').csvCell;
   const lines = ['supplier,account_name,bank,iban,amount_aed,reference'];
   for (const r of rows) {
     const iban = r.iban_encrypted ? pcrypto.decrypt(r.iban_encrypted) : '';
@@ -198,6 +229,59 @@ function markPaid(settlementId) {
   return db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
 }
 
+/**
+ * Take one supplier out of a draft or exported run (an investigation, a
+ * bank change to check): the item is deleted and its ledger rows are
+ * un-stamped, so they wait for a later run exactly as before and nothing is
+ * recorded as paid. With `hold`, the shop's payouts are also put on hold so
+ * the next run does not sweep them straight back in. A paid run cannot be
+ * changed. If the run was already exported, that supplier's line in the
+ * downloaded bank file must not be sent — the caller says so.
+ */
+function removeItem(settlementId, itemId, { hold = false } = {}) {
+  const st = db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
+  if (!st) { const e = new Error('Settlement not found'); e.status = 404; throw e; }
+  if (st.status === 'paid') { const e = new Error('This run is already paid — it can no longer be changed'); e.status = 409; throw e; }
+  const item = db.prepare('SELECT * FROM settlement_items WHERE id=? AND settlement_id=?').get(itemId, settlementId);
+  if (!item) { const e = new Error('That supplier is not in this run'); e.status = 404; throw e; }
+  db.transaction(() => {
+    db.prepare("UPDATE seller_balances SET settlement_id=NULL WHERE settlement_id=? AND shop_id=? AND type IN ('credit_sale','debit_refund')")
+      .run(settlementId, item.shop_id);
+    db.prepare('DELETE FROM settlement_items WHERE id=?').run(item.id);
+    db.prepare('UPDATE settlements SET total_cents=(SELECT COALESCE(SUM(amount_cents),0) FROM settlement_items WHERE settlement_id=?) WHERE id=?')
+      .run(settlementId, settlementId);
+    if (hold) setHold(item.shop_id, true);
+  })();
+  return { removed: item.id, shopId: item.shop_id, amountCents: item.amount_cents, wasExported: st.status === 'exported' };
+}
+
+/** Put a shop's payouts on hold ('manual'), or release any hold (incl. a bank-change hold). */
+function setHold(shopId, on) {
+  return db.prepare(on
+    ? "UPDATE shops SET payout_hold=1, payout_hold_reason='manual' WHERE id=?"
+    : "UPDATE shops SET payout_hold=0, payout_hold_reason='' WHERE id=?").run(shopId).changes > 0;
+}
+
+/**
+ * The lines a purchase note lists for one order of one shop: only the units
+ * Trove actually bought — units refunded through a return before the run are
+ * listed apart as returned, never as purchased (returns.refundedUnitsSql).
+ */
+const NOTE_LINES = `SELECT oi.name_snapshot, oi.qty, oi.price_cents,
+    COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
+      JOIN return_requests r2 ON r2.id = ri.request_id
+      WHERE ri.order_item_id = oi.id AND r2.status = 'refunded'), 0) AS returned
+  FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=? ORDER BY oi.id`;
+function noteLines(publicId, shopId) {
+  const kept = [], returned = [];
+  for (const l of db.prepare(NOTE_LINES).all(publicId, shopId)) {
+    const back = Math.min(l.qty, Math.max(0, l.returned));
+    if (l.qty - back > 0) kept.push({ name: l.name_snapshot, qty: l.qty - back, priceCents: l.price_cents });
+    if (back > 0) returned.push({ name: l.name_snapshot, qty: back, priceCents: l.price_cents });
+  }
+  return { kept, returned, grossCents: kept.reduce((s, l) => s + l.priceCents * l.qty, 0) };
+}
+
 /** Self-billed purchase documentation: Trove generates the supplier's paper trail. */
 function generatePurchaseNote(item, settlement) {
   const shop = db.prepare('SELECT s.*, u.name AS owner_name FROM shops s JOIN users u ON u.id=s.user_id WHERE s.id=?').get(item.shop_id);
@@ -205,14 +289,14 @@ function generatePurchaseNote(item, settlement) {
     SELECT b.amount_cents, o.public_id, o.created_at
     FROM seller_balances b JOIN orders o ON o.id = b.order_id
     WHERE b.settlement_id=? AND b.shop_id=? AND b.type='credit_sale' ORDER BY o.created_at`).all(settlement.id, item.shop_id);
-  const lineStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents FROM order_items oi
-    JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=?`);
   const aed = (c) => `AED ${(c / 100).toFixed(2)}`;
+  const h = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const orderBlocks = orders.map((o) => {
-    const lines = lineStmt.all(o.public_id, item.shop_id);
-    const gross = lines.reduce((s, l) => s + l.price_cents * l.qty, 0);
+    const { kept, returned, grossCents: gross } = noteLines(o.public_id, item.shop_id);
+    const back = returned.length
+      ? `<br><span class="muted">Returned — not purchased: ${returned.map((l) => `${l.qty} × ${h(l.name)}`).join(', ')}</span>` : '';
     return `<tr><td>${o.public_id}</td><td>${o.created_at.slice(0, 10)}</td>
-      <td>${lines.map((l) => `${l.qty} × ${l.name_snapshot}`).join('<br>')}</td>
+      <td>${kept.map((l) => `${l.qty} × ${h(l.name)}`).join('<br>')}${back}</td>
       <td style="text-align:right">${aed(gross)}</td>
       <td style="text-align:right">${aed(gross - o.amount_cents)}</td>
       <td style="text-align:right"><strong>${aed(o.amount_cents)}</strong></td></tr>`;
@@ -226,7 +310,7 @@ td,th{padding:8px 6px;border-bottom:1px solid #e6ddd6;font-size:14px;text-align:
 .tot{font-size:16px}.muted{color:#6b625b;font-size:13px}</style></head><body>
 <h1>trove — self-billed purchase note</h1>
 <p class="muted">${item.bank_reference} · Settlement run ${settlement.run_date}</p>
-<p><strong>Supplier:</strong> ${shop.name} (${shop.owner_name})<br>
+<p><strong>Supplier:</strong> ${h(shop.name)} (${h(shop.owner_name)})<br>
 <strong>Emirates ID:</strong> ····${shop.emirates_id_last4 || '????'} ·
 <strong>Seller Agreement:</strong> ${shop.agreement_version || '—'}</p>
 <table><thead><tr><th>Order</th><th>Sale date</th><th>Goods</th><th style="text-align:right">List price</th><th style="text-align:right">Trove margin</th><th style="text-align:right">Purchase price</th></tr></thead>
@@ -269,6 +353,13 @@ function nextRunDate(from = dubaiToday()) {
   return fromDay(a + k * n);
 }
 
+/** The last run date on or before `from` (YYYY-MM-DD, default today in Dubai). */
+function lastRunDate(from = dubaiToday()) {
+  const f = toDay(from), a = toDay(fees.SETTLEMENT_ANCHOR_DATE), n = interval();
+  const k = Math.floor((f - a) / n);
+  return fromDay(a + k * n);
+}
+
 /** The next `count` run dates from `from` — for the dashboard and the tests. */
 function upcomingRunDates(count = 3, from = dubaiToday()) {
   const out = [nextRunDate(from)];
@@ -306,6 +397,6 @@ function balances(shopId) {
 }
 
 module.exports = {
-  preview, run, exportCsv, markPaid, balances, payoutSetupComplete, ELIGIBLE_CREDITS,
-  isRunDate, nextRunDate, upcomingRunDates, scheduleLabel, dubaiToday,
+  preview, run, exportCsv, markPaid, removeItem, setHold, holdReason, noteLines, balances, payoutSetupComplete, ELIGIBLE_CREDITS,
+  isRunDate, nextRunDate, lastRunDate, upcomingRunDates, scheduleLabel, dubaiToday,
 };

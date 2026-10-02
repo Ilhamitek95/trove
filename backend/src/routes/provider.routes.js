@@ -163,12 +163,27 @@ router.patch('/services/:id', (req, res) => {
 });
 
 router.delete('/services/:id', (req, res) => {
-  // A listing with a booking paid through Trove carries a money record —
-  // deleting it would take the booking with it (ON DELETE CASCADE). Hide it.
-  const paid = db.prepare('SELECT 1 FROM service_bookings WHERE service_id=? AND paid_at IS NOT NULL').get(req.params.id);
-  if (paid) return res.status(409).json({ error: 'This service has bookings paid through Trove, so it can’t be deleted — hide it instead' });
-  const r = db.prepare('DELETE FROM services WHERE id=? AND provider_id=?').run(req.params.id, req.provider.id);
-  if (!r.changes) return res.status(404).json({ error: 'Not found' });
+  // Bookings hang off the listing (ON DELETE CASCADE), so deleting it would
+  // silently take them along. Refuse while any booking is still open — a new
+  // request, one awaiting the customer's card (its pay link is live) or a
+  // confirmed date — or carries a card payment (a money record): those
+  // customers must be dealt with first, and hiding the listing stops new
+  // requests without touching them. Only a listing whose bookings are all
+  // closed and unpaid (declined / cancelled / done direct) can go.
+  const s = db.prepare('SELECT id FROM services WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
+  if (!s) return res.status(404).json({ error: 'Not found' });
+  const del = db.transaction(() => {
+    const blocking = db.prepare(`SELECT
+        SUM(CASE WHEN status IN ('requested','awaiting_payment','confirmed') THEN 1 ELSE 0 END) AS open,
+        SUM(CASE WHEN paid_at IS NOT NULL OR stripe_payment_intent_id IS NOT NULL THEN 1 ELSE 0 END) AS paid
+      FROM service_bookings WHERE service_id=?`).get(s.id);
+    if (blocking.open) return { status: 409, error: 'This service has open bookings, so it can’t be deleted — hide it instead, then confirm, complete or cancel those bookings' };
+    if (blocking.paid) return { status: 409, error: 'This service has bookings paid through Trove, so it can’t be deleted — hide it instead' };
+    db.prepare('DELETE FROM services WHERE id=? AND provider_id=?').run(s.id, req.provider.id);
+    return null;
+  });
+  const err = del();
+  if (err) return res.status(err.status).json({ error: err.error });
   res.json({ ok: true });
 });
 
@@ -176,7 +191,7 @@ router.delete('/services/:id', (req, res) => {
 // Fees for bookings paid through Trove are paid by bank transfer from the
 // payer named here (Serein Consultancy) on Trove's behalf. Only ever the
 // masked IBAN leaves the server — see src/provider-payouts.js.
-function payoutView(p) {
+function payoutView(p, user) {
   const pay = require('../provider-payouts');
   const credits = require('../service-credits');
   const shop = pay.shopWithBank(p.user_id);
@@ -185,19 +200,23 @@ function payoutView(p) {
     shopDetails: shop ? { name: shop.name, accountName: shop.payout_account_name, bankName: shop.payout_bank_name, iban: shop.iban_masked } : null,
     payerName: credits.payerName(),
     graceDays: credits.GRACE_DAYS,
+    schedule: require('../settlement').scheduleLabel(),
+    // Changing details already on file asks for the password again.
+    passwordToChange: !!pay.getDetails(p.id) && !!user && user.password_set !== 0,
     needsDetails: pay.hasPaidBooking(p.id) && !pay.getDetails(p.id),
     earnings: credits.providerBalances(p.id),
     credits: pay.statement(p.id),
   };
 }
 
-router.get('/payout', (req, res) => res.json(payoutView(req.provider)));
+router.get('/payout', (req, res) => res.json(payoutView(req.provider, req.user)));
 
 // PUT /api/provider/payout { accountName, bankName, iban } | { useShop: true }
+//   + currentPassword when bank details are already on file (a change).
 router.put('/payout', (req, res) => {
-  const r = require('../provider-payouts').saveDetails(req.provider, req.body || {});
-  if (r.error) return res.status(r.status).json({ error: r.error });
-  res.json(payoutView(req.provider));
+  const r = require('../provider-payouts').saveDetails(req.provider, req.body || {}, req);
+  if (r.error) return res.status(r.status).json({ error: r.error, ...(r.code ? { code: r.code } : {}) });
+  res.json(payoutView(req.provider, req.user));
 });
 
 /* ---------------- Bookings ---------------- */
@@ -237,7 +256,8 @@ router.get('/bookings', (req, res) => {
 //       PaymentIntent opens and the booking waits for the customer's card.
 //   { action: 'decline', reason? }   a new or unpaid request
 //   { action: 'cancel', reason? }    a confirmed booking — refunded in full if paid
-//   { action: 'complete' }           done: a paid booking's fee becomes payable
+//   { action: 'complete' }           done — on or after the service date only; it does not
+//                                    bring the fee forward (see service-credits.js)
 router.patch('/bookings/:id', async (req, res, next) => {
   try {
     const svc = require('../service-bookings');
