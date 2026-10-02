@@ -70,6 +70,17 @@ test('Provider Agreement v3: the payer is named and the liability cap is never z
   assert.match(md, /no less than AED 1,000/);
   assert.doesNotMatch(md, /limited to the subscription fees you paid Trove in the three months/);
   assert.equal(require('../src/service-credits').payerName(), 'Serein Consultancy LLC');
+  // Payout timing and bank-detail rules (group B, 2026-10-02).
+  assert.match(md, /mark a booking done only \*\*on or after its service date\*\*/);
+  assert.match(md, /\*\*provisional\*\* until the service date plus a \*\*3-day complaint window\*\*/);
+  assert.match(md, /\*\*fortnightly payout days, every other Tuesday\*\*/);
+  assert.match(md, /needs your \*\*account password\*\*/);
+  assert.match(md, /next payout is \*\*held until Trove has confirmed the change\*\*/);
+  assert.match(md, /\*\*VAT at 5%\*\*/);
+  assert.doesNotMatch(md, /three days after the service date if you have not/);
+  const terms = await legal('services-terms');
+  assert.match(terms, /within \*\*3 days\*\* of the service date/);
+  assert.match(terms, /\*\*VAT at 5%\*\*, always shown with the amount before you pay/);
 });
 
 test('Services pages name both payment routes instead of saying Trove only lists the service', () => {

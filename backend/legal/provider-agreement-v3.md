@@ -80,20 +80,28 @@ bookings are for you to agree with the customer before the service.
   booking, and **engages you as an independent contractor** to deliver it.
 - Trove keeps a **platform fee of 10%** of the amount the customer paid, and
   **pays you the remaining 90%** as your fee for delivering the service.
-- Your fee becomes payable once you have marked the booking done, or three
-  days after the service date if you have not. It is paid by **bank
-  transfer from Serein Consultancy LLC** (so that is the name you will see
-  on your statement) to an account **in your own name**, which you add under
-  Payouts in your dashboard. Each fee shows there when it becomes payable
-  and, once sent, the date and the transfer reference. You do not need to
-  invoice Trove.
+- You can mark a booking done only **on or after its service date**. Your
+  fee is **provisional** until the service date plus a **3-day complaint
+  window** has passed; it then becomes payable.
+- Payable fees are paid on Trove's **fortnightly payout days, every other
+  Tuesday** (the same days as makers), by **bank transfer from Serein
+  Consultancy LLC** (so that is the name you will see on your statement) to
+  an account **in your own name**, which you add under Payouts in your
+  dashboard. Each fee shows there when it becomes payable and, once sent,
+  the date and the transfer reference. You do not need to invoice Trove.
+- Changing bank details already on file needs your **account password**. If
+  the account number (IBAN) really changes, your next payout is **held until
+  Trove has confirmed the change** with you, to protect you from fraud;
+  nothing you are owed is lost.
 - If the service is not delivered, or you cancel a paid booking, Trove
   refunds the customer in full and nothing is payable to you. A customer who
   cancels a paid booking before the service date is also refunded in full. If a customer raises a dispute about a Trove-paid booking,
   Trove will look at it reasonably and decide what, if anything, is
   refunded; where a refund is made, your fee is reduced by the same share.
-- Trove's platform fee is inclusive of VAT where applicable. You remain
-  responsible for any VAT due on your own fee.
+- Trove's platform fee is inclusive of VAT where applicable. Once Trove is
+  registered for VAT, card bookings may carry **VAT at 5%**, shown to the
+  customer before they pay. You remain responsible for any VAT due on your
+  own fee.
 
 **No steering.** You may accept direct bookings freely, but you must not use
 Trove's marketplace to move a customer who chose to pay through Trove onto a

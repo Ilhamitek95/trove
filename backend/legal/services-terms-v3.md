@@ -63,13 +63,16 @@ deposit or cancellation terms with the provider before the service.
   as its independent contractor to deliver the service.
 - If the service is **not delivered**, Trove refunds you in full.
 - If something goes wrong with a service you paid for through Trove, tell
-  Trove within **7 days** of the service date. Trove will look at it
+  Trove within **3 days** of the service date (the provider's fee is held
+  until then, so it can still be put right). Trove will look at it
   reasonably and decide what, if anything, is refunded. Trove's total
   liability for a booking is **limited to the amount you paid** for it.
 - Paying through Trove does not make Trove the provider of the service or
   responsible for how it is performed. Section 5 still applies.
 
-Listed prices are the provider's own. Trove adds nothing on top.
+Listed prices are the provider's own. Trove adds nothing on top, except
+that once Trove is registered for VAT, a booking paid through Trove may carry
+**VAT at 5%**, always shown with the amount before you pay.
 
 ## 4. Cancelling
 
