@@ -105,8 +105,14 @@ test('no Collection pieces: the Collection is everywhere and the server draws it
   const home = (await get('/')).text;
   assert.match(home, /<html lang="en" class="house-soon[^"]*">/);
   assert.doesNotMatch(home, /no-house/);
-  assert.match(home, /<button class="btn btn-dark" id="heroShopBtn"[^>]*>Shop the Collection<\/button>/, 'the two-CTA hero');
-  assert.match(home, /<a class="txt-link" id="heroMarketLink"[^>]*>Explore the Marketplace<\/a>/);
+  assert.match(home, /<button class="btn btn-dark live-only" id="heroShopBtn"[^>]*>Shop the Collection<\/button>/, 'the two-CTA hero stays in the page for when the pieces land');
+  assert.match(home, /<a class="txt-link live-only" id="heroMarketLink"[^>]*>Explore the Marketplace<\/a>/);
+  // F154 (owner 2026-10-02): meanwhile the main hero button opens the Marketplace, and the tag says the line is coming
+  assert.match(home, /<a class="btn btn-dark soon-only" id="heroMarketBtn" href="\/shop">Shop the Marketplace<\/a>/);
+  assert.match(home, /<span class="l soon-only">Our own line · coming soon<\/span>/);
+  const store = read('trove.html');
+  assert.match(store, /html\.house-soon \.hero \.live-only\{display:none\}/);
+  assert.match(store, /\.hero \.soon-only\{display:none\}/, 'with Collection pieces the Collection button is back on its own');
   assert.match(home, /<a class="hero-tag" href="\/shop\/trove-collection"/);
   assert.match(home, /<section class="band house-section"[^>]*>/, 'the Our own band is back');
   assert.match(home, /<div class="copy soon-copy">[\s\S]*?The Trove Collection — our own line — is on its way\./);

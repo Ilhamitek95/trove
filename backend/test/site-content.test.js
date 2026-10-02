@@ -26,7 +26,7 @@ test('public content serves the built-in defaults', async () => {
   assert.equal(r.data.home.hero.h1, 'Curated|for *Living*.');
   assert.equal(r.data.sell.faq.items.length, 7);
   assert.deepEqual(r.data.home.weekly.productIds, []);
-  assert.match(r.data.site.promo.text, /Free delivery/);
+  assert.match(r.data.site.promo.text, /Delivery AED 30, free on orders over AED 200/);
   assert.match(r.data.site.footer.legal, /© 2026 Trove/);
 });
 

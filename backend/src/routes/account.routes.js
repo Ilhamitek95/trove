@@ -3,7 +3,7 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth, notInShopView } = require('../middleware');
 const shipments = require('../shipments');
-const { SERVICE_AREAS, isServiceable } = require('../service-area');
+const { SERVICE_AREAS, isServiceable, namesOtherEmirate } = require('../service-area');
 
 const returns = require('../returns');
 
@@ -219,7 +219,7 @@ router.get('/addresses', requireAuth, (req, res) => {
 router.post('/addresses', requireAuth, (req, res) => {
   const { label = 'Home', name, line, city, country = 'United Arab Emirates', phone = '', isDefault } = req.body || {};
   if (!name || !line || !city) return res.status(400).json({ error: 'name, line and city are required' });
-  if (!isServiceable(city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
+  if (!isServiceable(city) || namesOtherEmirate(line, city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
   if (isDefault) db.prepare('UPDATE addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
   const info = db.prepare('INSERT INTO addresses (user_id,label,name,line,city,country,phone,is_default) VALUES (?,?,?,?,?,?,?,?)')
     .run(req.user.id, label, name, line, city, country, phone, isDefault ? 1 : 0);
@@ -230,7 +230,7 @@ router.patch('/addresses/:id', requireAuth, (req, res) => {
   const a = db.prepare('SELECT * FROM addresses WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
   if (!a) return res.status(404).json({ error: 'Not found' });
   const b = req.body || {};
-  if (b.city !== undefined && !isServiceable(b.city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
+  if ((b.city !== undefined && !isServiceable(b.city)) || namesOtherEmirate(b.line, b.city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
   if (b.isDefault) db.prepare('UPDATE addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
   db.prepare('UPDATE addresses SET label=COALESCE(?,label), name=COALESCE(?,name), line=COALESCE(?,line), city=COALESCE(?,city), country=COALESCE(?,country), phone=COALESCE(?,phone), is_default=COALESCE(?,is_default) WHERE id=?')
     .run(b.label, b.name, b.line, b.city, b.country, b.phone, b.isDefault === undefined ? a.is_default : (b.isDefault ? 1 : 0), a.id);

@@ -30,7 +30,7 @@
   var LANG = window.TROVE_LANG === 'ar' || (hasDom && document.documentElement.lang === 'ar') ? 'ar' : 'en';
   var D = window.TROVE_I18N || {};
   // Mirrors LOCALIZED_RE in backend/src/i18n.js (test/i18n.test.js pins them equal).
-  var LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
+  var LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|order\/[A-Za-z0-9-]+\/thanks|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
   function pathOf(u) { return String(u || '').split(/[?#]/)[0] || '/'; }
   function localizable(u) { var p = pathOf(u); return LOCALIZED_RE.test(p.length > 1 ? p.replace(/\/+$/, '') : p); }
   function arUrl(u) {

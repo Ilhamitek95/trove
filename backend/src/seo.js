@@ -170,7 +170,7 @@ function withDefaultSocial(html, { base, url, noindex = false, path: pagePath })
 
 /* ---------------- storefront views ---------------- */
 const HOME_TITLE = 'Trove · Curated homeware by independent makers in Dubai & Abu Dhabi';
-const DEFAULT_DESCRIPTION = 'Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Free delivery on orders over AED 200.';
+const DEFAULT_DESCRIPTION = 'Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Delivery AED 30, free on orders over AED 200.';
 
 /** Switch the storefront's active view and make its title the page's one <h1>. */
 function activate(html, view) {
@@ -542,6 +542,16 @@ function shipLine(p, lang = 'en') {
     ? `Arrives in ${est.label} · made for you, ready to send in ${est.leadDays} days`
     : `Arrives in ${est.label} across Dubai & Abu Dhabi`;
 }
+/* The PDP's delivery-cost line, as the storefront's pdpDeliveryLine() says it:
+ * the AED 30 fee is stated where the buyer decides, not first in the basket
+ * (F155). A piece over the threshold makes the order free on its own. */
+function deliveryLine(p, lang = 'en') {
+  const [T] = tFor(lang);
+  const th = fees.FREE_DELIVERY_THRESHOLD_CENTS / 100;
+  return Number(p.price) > th
+    ? T('Free delivery on orders over {amount}', { amount: money(th, lang) })
+    : T('Delivery {fee} · free on orders over {amount}', { fee: money(fees.DELIVERY_FEE_CENTS / 100, lang), amount: money(th, lang) });
+}
 /** The PDP's Details + About the maker, as the storefront's pdpAccHTML() draws them (real fields only). */
 function pdpAccHtml(p, v, lang = 'en') {
   const [T] = tFor(lang);
@@ -590,6 +600,7 @@ function renderPiece(base, ref, lang = 'en') {
   html = fill(html, 'pdpDesc', esc(p.description || ''));
   html = fill(html, 'pdpAcc', pdpAccHtml(p, vendor, lang));
   html = text(html, 'pdpShipLine', shipLine(p, lang));
+  html = text(html, 'pdpFreeLine', deliveryLine(p, lang));
   const title = T('{name} by {maker} · Trove', { name: p.name, maker: p.shop.name });
   const description = compose(T('{price} from {maker}{where}. ', { price: money(p.price, lang), maker: p.shop.name, where: vendor.location ? `${lang === 'ar' ? '، ' : ', '}${vendor.location}` : '' }),
     p.description || '', T(' Delivered across Dubai and Abu Dhabi.'));
@@ -671,6 +682,21 @@ function renderSell(base, lang = 'en') {
     description: T('Open a shop on Trove: nothing up front, you set the price and keep {share}%. Trove handles photography, delivery and customer care in Dubai and Abu Dhabi.', { share: f.makerShare }),
     ld: [{ '@type': 'WebPage', '@id': `${base}/sell-on-trove#page`, url: `${base}/sell-on-trove`, name: T('Sell on Trove'), isPartOf: { '@id': `${base}/#website` }, about: orgRef(base) },
       crumbLd(base, [['Trove', '/'], [T('Sell on Trove'), '/sell-on-trove']])],
+  });
+}
+
+/**
+ * /order/<id>/thanks — the confirmation view of the storefront (F164). The
+ * order itself is fetched by the page from /api/checkout/receipt, so nothing
+ * about it is in this HTML; no canonical, never indexed.
+ */
+function renderThanks(base, lang = 'en') {
+  const [T] = tFor(lang);
+  const html = activate(storefront(lang), 'confirm');
+  return setHead(html, {
+    base, url: null, robots: 'noindex, nofollow', lang,
+    title: T('Thank you · Trove'),
+    description: T('Your Trove order.'),
   });
 }
 
@@ -990,6 +1016,6 @@ function sitemapEntries() {
 
 module.exports = {
   slugify, catSlug, pieceUrl, makerUrl, shopUrl, providerUrl, HOUSE_SLUG,
-  renderHome, renderShop, renderPiece, renderMaker, renderSell, renderServicesDirectory, renderProvider,
+  renderHome, renderShop, renderPiece, renderMaker, renderSell, renderThanks, renderServicesDirectory, renderProvider,
   legacyTarget, sitemapEntries, socialTags, withDefaultSocial, OG_IMAGE, DEFAULT_DESCRIPTION, HOME_TITLE,
 };

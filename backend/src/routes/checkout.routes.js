@@ -4,7 +4,8 @@ const crypto = require('crypto');
 const db = require('../db');
 const { requireStripe } = require('../stripe');
 const { SERVICE_FEE_CENTS, deliveryFor } = require('../fees');
-const { SERVICE_AREAS, isServiceable } = require('../service-area');
+const { SERVICE_AREAS, isDeliverable } = require('../service-area');
+const receipt = require('../order-receipt');
 const { normalizeUAEMobile } = require('../phone');
 const options = require('../options');
 const extras = require('../extras');
@@ -56,7 +57,7 @@ router.post('/', async (req, res, next) => {
     // mounts before the form is filled) — but if one is given, it must be
     // inside the service area.
     if (address && addressHasMarkup(address)) return res.status(400).json({ error: BAD_ADDRESS });
-    if (address && !isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
+    if (address && !isDeliverable(address)) return res.status(400).json({ error: OUT_OF_AREA });
     // Resolve the signed-in buyer ONCE, and only if they still exist: a
     // session outliving its user (deleted account, reseeded dev database)
     // would otherwise write a dangling buyer_id and fail the whole order on
@@ -184,7 +185,7 @@ router.post('/', async (req, res, next) => {
     // secret) — only the session that opened the order can complete or claim it.
     if (!stripeClient) {
       req.session.pendingOrderId = orderId;
-      return res.json({ orderId: pid, demo: true, amount: total, currency: CURRENCY() });
+      return res.json({ orderId: pid, demo: true, amount: total, currency: CURRENCY(), receiptKey: receipt.token(pid) });
     }
 
     // One PaymentIntent on Trove's account. On the connect rail the charge is
@@ -210,6 +211,7 @@ router.post('/', async (req, res, next) => {
     res.json({
       orderId: pid,
       clientSecret: intent.client_secret, // client confirms with Stripe.js
+      receiptKey: receipt.token(pid), // opens /order/<id>/thanks on this device (src/order-receipt.js)
       amount: total,
       currency: CURRENCY(),
     });
@@ -233,7 +235,7 @@ router.post('/update', (req, res) => {
   if (!address || !String(address.name || '').trim() || !String(address.line || '').trim())
     return res.status(400).json({ error: 'A delivery name and address are required' });
   if (addressHasMarkup(address)) return res.status(400).json({ error: BAD_ADDRESS });
-  if (!isServiceable(address.emirate || address.city)) return res.status(400).json({ error: OUT_OF_AREA });
+  if (!isDeliverable(address)) return res.status(400).json({ error: OUT_OF_AREA });
   // This is the last stop before the card is charged, so the courier number
   // has to be here — whether it arrived with the original call or not.
   const { phone, error: phoneError } = phoneFrom(req.body);
@@ -262,6 +264,20 @@ router.post('/claim', (req, res) => {
   if (!secretOk && !sessionOk) return res.status(403).json({ error: 'Not your order' });
   db.prepare('UPDATE orders SET buyer_id=? WHERE id=?').run(req.session.userId, order.id);
   res.json({ ok: true });
+});
+
+/**
+ * GET /api/checkout/receipt/:publicId  (?t=<receipt key> or X-Receipt-Key)
+ * What the confirmation page at /order/<id>/thanks shows — the pieces, the
+ * amounts paid, the delivery address and mobile. Only for the order's
+ * signed-in buyer, the session that placed it, or the holder of its receipt
+ * key (src/order-receipt.js); anyone else gets the same 404 as no order.
+ */
+router.get('/receipt/:publicId', (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String(req.params.publicId || ''));
+  res.set('Cache-Control', 'private, no-store');
+  if (!receipt.canRead(order, req)) return res.status(404).json({ error: 'Order not found' });
+  res.json({ receipt: receipt.shape(order) });
 });
 
 /**

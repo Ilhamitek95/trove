@@ -15,4 +15,19 @@ const isServiceable = (v) => {
   return SERVICE_AREAS.some((a) => s.includes(a.toLowerCase()));
 };
 
-module.exports = { SERVICE_AREAS, isServiceable };
+// The other five emirates, in English spellings people type and in Arabic.
+// An address whose area or street line names one of them is outside the
+// service area even when the Emirate box says Dubai (F192: 'Al Nahda,
+// Sharjah' with the box left on its old default was accepted, charged and
+// booked with the courier as Dubai). Whole words only, so 'Ras Al Khor'
+// (Dubai) never reads as Ras Al Khaimah.
+const OTHER_EMIRATES = /(^|[^a-z])(sharjah|shj|ajman|umm\s*al[\s-]*quwain|uaq|ras\s*al[\s-]*khaimah|fujairah|fujeirah)([^a-z]|$)|الشارقة|عجمان|أم\s*القيوين|ام\s*القيوين|رأس\s*الخيمة|راس\s*الخيمة|الفجيرة/i;
+const namesOtherEmirate = (...parts) => OTHER_EMIRATES.test(parts.map((p) => String(p || '')).join(' '));
+
+/**
+ * A delivery address Trove can deliver to: its emirate (or city) names Dubai
+ * or Abu Dhabi, and nothing in it names another emirate.
+ */
+const isDeliverable = (a) => !!a && isServiceable(a.emirate || a.city) && !namesOtherEmirate(a.line, a.city, a.emirate);
+
+module.exports = { SERVICE_AREAS, isServiceable, namesOtherEmirate, isDeliverable };

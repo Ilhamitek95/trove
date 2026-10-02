@@ -41,7 +41,7 @@ const I18N_DIR = path.join(__dirname, '..', '..', 'docs', 'i18n');
 /* ---------------- addresses ---------------- */
 
 /** Paths that have an Arabic twin (mirrored in docs/api.js — test/i18n.test.js pins them equal). */
-const LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
+const LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|order\/[A-Za-z0-9-]+\/thanks|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
 
 /** The path part of a local URL ('/shop?q=x#y' → '/shop'). */
 const pathOf = (u) => String(u || '').split(/[?#]/)[0] || '/';

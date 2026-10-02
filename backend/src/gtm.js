@@ -54,7 +54,8 @@ const SNIPPET = [
 ].join('\n');
 
 /* Addresses whose path or query is a bearer key (see the header comment). */
-const PRIVATE_PATH = /^\/(reset\/?$|services\/(booking|pay)\/)/i;
+// (order/<id>/thanks shows the buyer's address and mobile — F164)
+const PRIVATE_PATH = /^\/(reset\/?$|services\/(booking|pay)\/|order\/)/i;
 const PRIVATE_QUERY = ['token', 't', 'payment_intent_client_secret', 'setup_intent_client_secret'];
 
 /* Signed-in surfaces that show other people's personal data (see the header comment). */
