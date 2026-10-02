@@ -390,7 +390,7 @@ db.exec(`
 -- What Trove owes a provider for bookings paid through Trove: one credit per
 -- paid booking (the provider's fee after the platform fee), a debit if a
 -- booking is refunded after its credit was already paid out. Payable once the
--- provider marks the booking done or 3 days after the service date — see
+-- service date + the complaint window has passed, in the fortnightly run — see
 -- src/service-credits.js. settlement_id / paid_at close a row.
 CREATE TABLE IF NOT EXISTS provider_credits (
   id            INTEGER PRIMARY KEY AUTOINCREMENT,

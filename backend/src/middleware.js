@@ -112,4 +112,22 @@ function startSession(req, fields, { keep = ['pendingOrderId'] } = {}) {
   });
 }
 
-module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor, notInShopView };
+/**
+ * Step-up check before CHANGING payout bank details already on file: the
+ * account owner types their password again (a Google-only account has none
+ * to type — the change email and the payout hold still protect it), and an
+ * admin viewing someone's dashboard can never do it. Returns null when fine,
+ * else { status, code, error }.
+ */
+function confirmOwner(req, password) {
+  if (req.session && req.session.impersonatorId) {
+    return { status: 403, code: 'owner_only', error: 'Only the account owner can change bank details' };
+  }
+  const u = req.user;
+  if (u && u.password_set !== 0 && !verifyPassword(String(password || ''), u.password_hash)) {
+    return { status: 400, code: 'wrong_password', error: 'Enter your Trove password to change your bank details' };
+  }
+  return null;
+}
+
+module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor, notInShopView, confirmOwner };

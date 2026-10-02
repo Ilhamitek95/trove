@@ -44,6 +44,16 @@ const fees = {
   // platform fee and the provider's fee is the remainder.
   PROVIDER_SUB_FEE_CENTS: num(process.env.PROVIDER_SUB_FEE_CENTS, 3000), // AED 30.00 / month
   SERVICE_COMMISSION_PERCENT: num(process.env.SERVICE_COMMISSION_PERCENT, 10),
+  // A provider's fee for a card booking is provisional until the service date
+  // has passed AND this complaint/cancellation window has closed (owner,
+  // 2026-10-02); it is then paid in the next fortnightly run, on the same
+  // Tuesdays as makers (SETTLEMENT_ANCHOR_DATE / SETTLEMENT_INTERVAL_DAYS).
+  SERVICE_COMPLAINT_WINDOW_DAYS: num(process.env.SERVICE_COMPLAINT_WINDOW_DAYS, 3),
+  // Output VAT on card bookings once VAT_REGISTERED is on: 'full' = 5/105 of
+  // the whole booking (Trove is the customer's contracting party, as the
+  // services terms say), 'fee' = 5/105 of Trove's platform fee only (if the
+  // accountant treats Trove as an agent). Accountant to confirm.
+  SERVICE_VAT_BASIS: process.env.SERVICE_VAT_BASIS === 'fee' ? 'fee' : 'full',
   // Returns + maker payouts (owner, 2026-09-30: 'bi-weekly shop payments
   // with 15 days return policy').
   RETURN_WINDOW_DAYS: num(process.env.RETURN_WINDOW_DAYS, 15),

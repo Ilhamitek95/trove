@@ -10,8 +10,17 @@
  *   credit_service  written when the payment lands (one per booking)
  *        │          voided if the booking is refunded before it is paid out
  *        ▼
- *   eligible        the provider marked the booking done, or 3 days have
- *                   passed since the service date, and it was never refunded
+ *   provisional     until the service date has passed AND the complaint /
+ *                   cancellation window (fees.SERVICE_COMPLAINT_WINDOW_DAYS)
+ *                   has closed — it may still change if the booking is
+ *                   cancelled or refunded. Marking a booking done does NOT
+ *                   make it payable early (owner, 2026-10-02)
+ *        ▼
+ *   ready           window closed, never refunded: paid in the next
+ *                   fortnightly run, on the same Tuesdays as makers
+ *                   (settlement.isRunDate). A credit counts for the run
+ *                   whose date is AFTER its window closed, so the admin's
+ *                   batch is always cut at the latest run date
  *        ▼
  *   paid            paid_at + pay_reference stamped once the transfer went out
  *
@@ -30,14 +39,33 @@
  * which stamps paid_at, the reference and the payer on every row.
  */
 const db = require('./db');
+const fees = require('./fees');
+const settlement = require('./settlement');
 
-const GRACE_DAYS = 3; // a booking nobody marked done becomes payable this long after the service date
+// The complaint / cancellation window after the service date. A fee is ready
+// from the day after the window closes: service on the 10th, window 3 days →
+// ready on the 14th, paid in the first run on or after that.
+const GRACE_DAYS = Math.max(0, Math.round(fees.SERVICE_COMPLAINT_WINDOW_DAYS));
 
 /** Who sends provider transfers — shown to providers and on their statement. */
 const payerName = () => String(process.env.PROVIDER_PAYER_NAME || '').trim() || 'Serein Consultancy';
 
 /** Today's date on the Dubai calendar (UTC+4, no daylight saving). */
 const dubaiToday = (now = Date.now()) => new Date(now + 4 * 3600000).toISOString().slice(0, 10);
+
+const addDays = (day, n) => new Date(Date.parse(`${day}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+/** The first day a fee for a service on `serviceDate` is ready (window closed). */
+const readyFrom = (serviceDate) => (serviceDate ? addDays(serviceDate, GRACE_DAYS + 1) : null);
+/** The run a fee ready on `day` goes out in: the first run date on or after
+ *  it, but never before the current fortnight's run (a fee that waited for
+ *  bank details goes out with the batch being sent now). */
+const payoutDateFor = (day, today = dubaiToday()) => {
+  const last = settlement.lastRunDate(today);
+  return settlement.nextRunDate(day > last ? day : last);
+};
+/** The cut-off of the current fortnight's provider batch: the latest run date
+ *  on or before today (Dubai), as a runStart timestamp. */
+const currentCutoff = (today = dubaiToday()) => `${settlement.lastRunDate(today)} 00:00:00`;
 
 /** The bank reference for a provider's batch: TRV-SVC-<provider id>-<yyyymmdd>. */
 const payReference = (providerId, day = dubaiToday()) => `TRV-SVC-${Number(providerId)}-${String(day).replace(/-/g, '')}`;
@@ -64,26 +92,26 @@ function reverseBooking(bk) {
   }
 }
 
-/* The one eligibility rule. `runStart` is 'YYYY-MM-DD HH:MM:SS'. */
+/* The one eligibility rule. `runStart` is 'YYYY-MM-DD HH:MM:SS' — the run
+ * date. Payable only once the service date has passed and the complaint
+ * window closed BEFORE the run day; 'completed' (marked done) changes
+ * nothing about when it is paid. */
 const ELIGIBLE = `
   SELECT c.id, c.provider_id, c.booking_id, c.amount_cents, bk.code, bk.title, bk.service_date, bk.completed_at,
          bk.amount_cents AS paid_cents, bk.commission_cents
   FROM provider_credits c JOIN service_bookings bk ON bk.id = c.booking_id
   WHERE c.type = 'credit_service' AND c.paid_at IS NULL AND c.voided_at IS NULL AND c.settlement_id IS NULL
     AND bk.refunded_at IS NULL AND bk.paid_at IS NOT NULL
-    AND (
-      (bk.status = 'completed' AND bk.completed_at < ?)
-      OR (bk.status IN ('confirmed','completed') AND bk.service_date IS NOT NULL
-          AND date(bk.service_date, '+${GRACE_DAYS} days') <= date(?))
-    )`;
+    AND bk.status IN ('confirmed','completed') AND bk.service_date IS NOT NULL
+    AND date(bk.service_date, '+${GRACE_DAYS} days') < date(?)`;
 const OPEN_DEBITS = `SELECT id, provider_id, booking_id, amount_cents FROM provider_credits
   WHERE type='debit_refund' AND paid_at IS NULL AND settlement_id IS NULL`;
 
-const nowSql = () => db.prepare("SELECT datetime('now') AS t").get().t;
 
-/** Every payable service credit as of runStart (flat rows). */
-function eligibleServiceCredits(runStart = nowSql()) {
-  return db.prepare(ELIGIBLE).all(runStart, runStart);
+/** Every payable service credit as of runStart (flat rows). Default: the
+ *  current fortnight's run date. */
+function eligibleServiceCredits(runStart = currentCutoff()) {
+  return db.prepare(ELIGIBLE).all(runStart);
 }
 
 /**
@@ -91,7 +119,7 @@ function eligibleServiceCredits(runStart = nowSql()) {
  * back. `payTo` is the provider's own payout details (masked IBAN only) from
  * provider_payout_details; without them the provider waits for bank details.
  */
-function preview(runStart = nowSql()) {
+function preview(runStart = currentCutoff()) {
   const per = new Map();
   const bucket = (id) => {
     if (!per.has(id)) per.set(id, { creditIds: [], debitIds: [], creditCents: 0, debitCents: 0, bookings: [] });
@@ -109,6 +137,7 @@ function preview(runStart = nowSql()) {
   const eligible = [], excluded = [];
   for (const [providerId, b] of per) {
     const p = db.prepare(`SELECT p.id, p.name, p.slug, u.name AS owner_name, u.email AS owner_email,
+        p.status AS provider_status, d.hold_reason,
         d.bank_name AS payout_bank_name, d.account_name AS payout_account_name, d.iban_masked, d.provider_id AS has_details
       FROM service_providers p JOIN users u ON u.id = p.user_id
       LEFT JOIN provider_payout_details d ON d.provider_id = p.id
@@ -123,10 +152,16 @@ function preview(runStart = nowSql()) {
     };
     if (row.netCents <= 0) excluded.push({ ...row, reason: 'netted_negative' });
     else if (!row.payTo) excluded.push({ ...row, reason: 'payout_details_missing' });
+    else if (p && p.provider_status === 'suspended') excluded.push({ ...row, reason: 'on_hold' });
+    else if (p && p.hold_reason) excluded.push({ ...row, reason: p.hold_reason });
     else eligible.push(row);
   }
   return {
     eligible, excluded,
+    runDate: String(runStart).slice(0, 10),
+    nextRunDate: settlement.nextRunDate(addDays(String(runStart).slice(0, 10), 1)),
+    schedule: settlement.scheduleLabel(),
+    complaintWindowDays: GRACE_DAYS,
     totalNetCents: eligible.reduce((s, r) => s + r.netCents, 0),
     owedCents: [...eligible, ...excluded].reduce((s, r) => s + Math.max(0, r.netCents), 0),
   };
@@ -137,7 +172,7 @@ function preview(runStart = nowSql()) {
  * (manual payout from /admin). Stamps exactly the rows the preview showed,
  * with the reference and who sent the money.
  */
-function markPaid(providerId, reference, runStart = nowSql(), { payer = payerName() } = {}) {
+function markPaid(providerId, reference, runStart = currentCutoff(), { payer = payerName() } = {}) {
   const pv = preview(runStart);
   const row = [...pv.eligible, ...pv.excluded]
     .find((r) => r.providerId === Number(providerId) && r.netCents > 0);
@@ -151,14 +186,39 @@ function markPaid(providerId, reference, runStart = nowSql(), { payer = payerNam
   };
 }
 
-/** A provider's own money view. */
-function providerBalances(providerId, runStart = nowSql()) {
-  const payable = eligibleServiceCredits(runStart).filter((c) => c.provider_id === providerId).reduce((s, c) => s + c.amount_cents, 0);
+/**
+ * A provider's own money view (owner, 2026-10-02):
+ *   provisionalCents  fees whose service date + complaint window has not
+ *                     passed yet — may change if the booking is cancelled
+ *   readyCents        window closed, waiting for the fortnightly run
+ *                     (net of any refund adjustment still to deduct)
+ *   nextPayoutDate    the run the ready money goes out in
+ * pendingCents / payableCents carry the same two figures under their old names.
+ */
+function providerBalances(providerId, today = dubaiToday()) {
+  const open = db.prepare(`SELECT c.amount_cents, bk.service_date FROM provider_credits c JOIN service_bookings bk ON bk.id=c.booking_id
+    WHERE c.provider_id=? AND c.type='credit_service' AND c.paid_at IS NULL AND c.voided_at IS NULL AND bk.refunded_at IS NULL`).all(providerId);
+  let provisional = 0, ready = 0, firstReady = null;
+  for (const c of open) {
+    const from = readyFrom(c.service_date);
+    if (from && from <= today) {
+      ready += c.amount_cents;
+      if (!firstReady || from < firstReady) firstReady = from;
+    } else provisional += c.amount_cents;
+  }
   const debits = db.prepare(OPEN_DEBITS + ' AND provider_id=?').all(providerId).reduce((s, d) => s + d.amount_cents, 0);
-  const open = db.prepare(`SELECT COALESCE(SUM(c.amount_cents),0) AS t FROM provider_credits c JOIN service_bookings bk ON bk.id=c.booking_id
-    WHERE c.provider_id=? AND c.type='credit_service' AND c.paid_at IS NULL AND c.voided_at IS NULL AND bk.refunded_at IS NULL`).get(providerId).t;
   const paid = db.prepare('SELECT COALESCE(SUM(amount_cents),0) AS t FROM provider_credits WHERE provider_id=? AND paid_at IS NOT NULL').get(providerId).t;
-  return { pendingCents: open - payable, payableCents: payable + debits, paidCents: paid };
+  const readyCents = ready + debits;
+  return {
+    provisionalCents: provisional,
+    readyCents,
+    paidCents: paid,
+    nextPayoutDate: payoutDateFor(firstReady || today, today),
+    schedule: settlement.scheduleLabel(),
+    complaintWindowDays: GRACE_DAYS,
+    pendingCents: provisional,
+    payableCents: readyCents,
+  };
 }
 
-module.exports = { GRACE_DAYS, payerName, payReference, dubaiToday, creditBooking, reverseBooking, eligibleServiceCredits, preview, markPaid, providerBalances };
+module.exports = { GRACE_DAYS, readyFrom, payoutDateFor, currentCutoff, payerName, payReference, dubaiToday, creditBooking, reverseBooking, eligibleServiceCredits, preview, markPaid, providerBalances };

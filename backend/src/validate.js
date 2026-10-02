@@ -150,7 +150,21 @@ function ibanError(raw) {
   return null;
 }
 
+/**
+ * Account holder + bank name for payout details (makers and providers). Both
+ * end up in the bank transfer files the owner opens in a spreadsheet, so
+ * besides < > they may not start like a formula (= + - @). Returns an error
+ * message or null.
+ */
+function payoutNamesError(accountName, bankName) {
+  if (hasMarkup(accountName) || hasMarkup(bankName)) return 'Names cannot contain < or >';
+  const { startsLikeFormula } = require('./csv');
+  if (startsLikeFormula(accountName) || startsLikeFormula(bankName)) return 'Names cannot start with = + - or @';
+  return null;
+}
+
 module.exports = {
+  payoutNamesError,
   LIMITS, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MAX_STOCK, PRODUCT_STATUSES, MIN_PASSWORD, PASSWORD_ERROR,
   hasMarkup, shortText, longText, isHexColour, priceCents, stockError, variantsError,
   optionsMarkupError, extrasMarkupError, markupField, passwordError, ibanError,

@@ -75,7 +75,7 @@ test('happy path: photos stored encrypted, address saved, response scrubbed', as
 
 test('updating bank details later keeps the ID and address on file', async () => {
   const res = await ctx.api('POST', '/api/seller/payout-setup', {
-    cookie: plainCookie, body: { ...GOOD, bankName: 'Another Bank' },
+    cookie: plainCookie, body: { ...GOOD, bankName: 'Another Bank', currentPassword: 'testpass123' },
   });
   assert.equal(res.status, 200, res.text);
   const shop = db.prepare("SELECT * FROM shops WHERE slug='plain-pots'").get();

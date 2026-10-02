@@ -732,6 +732,18 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     const accountName = String(b.accountName || '').trim().slice(0, 120);
     const bankName = String(b.bankName || '').trim().slice(0, 120);
     if (!accountName || !bankName) return res.status(400).json({ error: 'Bank name and the account holder name are required' });
+    const nameErr = require('../validate').payoutNamesError(accountName, bankName);
+    if (nameErr) return res.status(400).json({ error: nameErr });
+    // Changing a bank account already on file: the owner types their
+    // password again (never possible while an admin views the dashboard).
+    const hadBank = !!req.shop.iban_encrypted;
+    // Renewing only the ID (IBAN left empty, same names) changes no bank
+    // detail, so it needs no password; any bank change does.
+    const bankTouched = !keepIban || req.shop.payout_account_name !== accountName || req.shop.payout_bank_name !== bankName;
+    if (hadBank && bankTouched) {
+      const authErr = require('../middleware').confirmOwner(req, b.currentPassword);
+      if (authErr) return res.status(authErr.status).json({ code: authErr.code, error: authErr.error });
+    }
 
     if (b.acceptAgreement !== true) return res.status(400).json({ error: 'You need to accept the Seller Agreement' });
     if (!pcrypto.hasKey()) return res.status(503).json({ error: 'Payout setup is temporarily unavailable (encryption key not configured)' });
@@ -765,15 +777,30 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);
     const agreementHash = pcrypto.sha256(require('fs').readFileSync(file, 'utf8'));
 
+    const blob = keepIban ? req.shop.iban_encrypted : pcrypto.encrypt(iban);
+    const masked = keepIban ? req.shop.iban_masked : pcrypto.maskIban(iban);
+    // A different account (not a re-save of the same IBAN, e.g. while
+    // renewing an Emirates ID) holds the next run for the owner's check
+    // (Admin → Settlements → Held back → Release). The maker is emailed on
+    // any change, so one they did not make is noticed at once.
+    const ibanChanged = hadBank && !keepIban && !pcrypto.sameIban(req.shop.iban_encrypted, blob);
+    const anyChange = !hadBank || ibanChanged || req.shop.payout_account_name !== accountName || req.shop.payout_bank_name !== bankName;
     db.prepare(`UPDATE shops SET
         emirates_id_last4=?, emirates_id_issue=?, emirates_id_expiry=?,
         payout_bank_name=?, payout_account_name=?,
         iban_encrypted=?, iban_masked=?, payout_iban='',
         agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=?
       WHERE id=?`)
-      .run(last4, issue, expiry, bankName, accountName,
-        keepIban ? req.shop.iban_encrypted : pcrypto.encrypt(iban), keepIban ? req.shop.iban_masked : pcrypto.maskIban(iban),
+      .run(last4, issue, expiry, bankName, accountName, blob, masked,
         cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+    if (ibanChanged) {
+      db.prepare(`UPDATE shops SET payout_hold=1, bank_changed_at=datetime('now'),
+          payout_hold_reason=CASE WHEN payout_hold=1 AND payout_hold_reason='manual' THEN 'manual' ELSE 'bank_details_changed' END
+        WHERE id=?`).run(req.shop.id);
+    }
+    if (anyChange) {
+      require('../notify').bankDetailsChanged(req.user, { kind: 'shop', businessName: req.shop.name, bankName, iban: masked, held: ibanChanged });
+    }
     if (address) db.prepare('UPDATE shops SET seller_address=? WHERE id=?').run(address, req.shop.id);
     // New ID details (photos, number, dates or address) need a fresh admin
     // check, and a new expiry earns a new reminder. Changing only the bank
