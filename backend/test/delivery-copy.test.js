@@ -47,10 +47,11 @@ test('site copy no longer promises 3–6 days for everything', async () => {
   assert.equal(v.items[0].head, 'Handpicked', 'anything else is left alone');
   // The buyer terms moved to v2 for exactly this clause; the seller agreement states no pack time.
   const legal = (await ctx.api('GET', '/api/legal/terms')).data;
-  assert.equal(legal.version, 'v2');
+  assert.equal(legal.version, require('../src/config').BUYER_TERMS_VERSION);
   assert.match(legal.markdown, /the time its maker states they need to make\s+or finish and pack it, plus \*\*1–4 days\*\* with our courier/);
   assert.doesNotMatch(legal.markdown, /Delivery usually takes \*\*3–6 days\*\*/);
   const sellerAgreement = fs.readFileSync(path.join(__dirname, '..', 'legal', 'seller-agreement-v4.md'), 'utf8');
   assert.doesNotMatch(sellerAgreement, /\b\d+\s*(?:working\s+)?(?:days?|hours?)\b[^.]*\bpack/i, 'no fixed pack time to contradict');
-  assert.equal(require('../src/config').AGREEMENT_VERSION, 'v4');
+  const current = fs.readFileSync(path.join(__dirname, '..', 'legal', `seller-agreement-${require('../src/config').AGREEMENT_VERSION}.md`), 'utf8');
+  assert.doesNotMatch(current, /\b\d+\s*(?:working\s+)?(?:days?|hours?)\b[^.]*\bpack/i, 'still no fixed pack time');
 });

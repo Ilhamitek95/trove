@@ -82,7 +82,7 @@ db.exec(`UPDATE shops SET tier='connect' WHERE payout_type='connect'`);
 const stampSetup = db.prepare(`UPDATE shops SET
   emirates_id_last4=?, emirates_id_issue='2023-05-01', emirates_id_expiry='2033-05-01',
   iban_masked=?, iban_encrypted=?, payout_iban=?,
-  agreement_version='v1', agreement_accepted_at=datetime('now','-21 days'), agreement_hash=''
+  agreement_version='${require('./config').AGREEMENT_VERSION}', agreement_accepted_at=datetime('now','-21 days'), agreement_hash=''
   WHERE id=?`);
 const SUPPLIER_IDS = { [house]: '1201', [kiln]: '4417', [ember]: '7830', [fern]: '2954' };
 for (const [shopId, last4] of Object.entries(SUPPLIER_IDS)) {

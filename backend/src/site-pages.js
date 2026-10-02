@@ -107,7 +107,10 @@ function hasHousePieces() {
 /** Company details for display: only the filled ones, with labels. */
 function companyRows(c) {
   const rows = [];
-  if (c.legalName) rows.push(['Legal name', c.legalName]);
+  if (c.legalName) {
+    rows.push(['Legal name', c.legalName]);
+    rows.push(['Trading as', 'Trove and Trove at Home']);
+  }
   if (c.tradeLicence) rows.push(['Trade licence', c.tradeLicence + (c.licenceAuthority ? `, ${c.licenceAuthority}` : '')]);
   else if (c.licenceAuthority) rows.push(['Licensing authority', c.licenceAuthority]);
   if (c.address) rows.push(['Registered address', c.address]);

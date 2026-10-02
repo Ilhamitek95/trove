@@ -29,15 +29,19 @@ const DEFAULTS = {
     legal: '© 2026 Trove · Dubai, UAE',
   },
   // Who Trove is, for the About, Contact and legal pages and the
-  // Organization structured data. Every field starts empty and may stay
-  // empty: the pages then say the details are being finalised, never show
-  // made-up ones. Filled in by the owner in /admin → Site content.
+  // Organization structured data. Owner, 2026-10-02: Trove and Trove at Home
+  // are brand names of Serein Consultancy LLC (Sharjah Media City (Shams)
+  // licence 2220356.01), the company every legal document names. The owner
+  // can still edit any field in /admin → Site content; a blank field is not
+  // shown, and with every field blank the pages say the details are being
+  // finalised (never made-up ones). VAT TRN stays blank until the owner
+  // decides on VAT registration.
   'site.company': {
-    legalName: '',
-    tradeLicence: '',
-    licenceAuthority: '',
-    address: '',
-    email: '',
+    legalName: 'Serein Consultancy LLC',
+    tradeLicence: '2220356.01',
+    licenceAuthority: 'Sharjah Media City (Shams), Sharjah, UAE',
+    address: 'Sharjah Media City (Shams), Sharjah, United Arab Emirates',
+    email: 'hello@troveathome.com',
     whatsapp: '',
     vatTrn: '',
   },

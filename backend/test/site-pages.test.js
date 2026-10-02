@@ -112,7 +112,7 @@ test('the agreements render their current version server-side, picked from confi
 });
 
 test('the buyer terms and privacy policy are served by /api/legal with version and hash', async () => {
-  for (const [doc, needle, version] of [['terms', 'seller of every product', 'v2'], ['buyer-terms', 'seller of every product', 'v2'], ['privacy', 'Personal Data Protection Law', 'v1']]) {
+  for (const [doc, needle, version] of [['terms', 'seller of every product', 'v3'], ['buyer-terms', 'seller of every product', 'v3'], ['privacy', 'Personal Data Protection Law', 'v2']]) {
     const r = await get('/api/legal/' + doc);
     assert.equal(r.status, 200, doc);
     assert.equal(r.data.version, version, doc);
@@ -141,17 +141,58 @@ test('the FAQ carries FAQPage structured data built from the same questions', as
   assert.match(res.text, /id="makers"/, 'the maker handbook anchor exists');
 });
 
-test('company details default to the neutral line, and never invented data', async () => {
+test('company details default to Serein Consultancy LLC, the company behind Trove (owner, 2026-10-02)', async () => {
   const content = require('../src/content');
-  for (const v of Object.values(content.DEFAULTS['site.company'])) assert.equal(v, '');
+  assert.deepEqual(content.DEFAULTS['site.company'], {
+    legalName: 'Serein Consultancy LLC',
+    tradeLicence: '2220356.01',
+    licenceAuthority: 'Sharjah Media City (Shams), Sharjah, UAE',
+    address: 'Sharjah Media City (Shams), Sharjah, United Arab Emirates',
+    email: 'hello@troveathome.com',
+    whatsapp: '',
+    vatTrn: '',
+  });
   for (const p of ['/about', '/contact', '/terms', '/privacy']) {
     const res = await get(p);
-    assert.ok(visible(res.text).includes('Company details are being finalised — write to us via the contact form'), p);
+    const text = visible(res.text);
+    assert.ok(text.includes('Serein Consultancy LLC'), p);
+    assert.ok(text.includes('2220356.01, Sharjah Media City (Shams), Sharjah, UAE'), p);
+    assert.ok(text.includes('Trove and Trove at Home'), `${p}: the brand names`);
+    assert.ok(!text.includes('VAT TRN'), `${p}: no VAT number until the owner decides`);
+    assert.ok(!text.includes('being finalised'), p);
     const org = ldBlocks(res.text)[0]['@graph'][0];
-    assert.equal(org.legalName, undefined, `${p}: no legal name until filled`);
-    assert.equal(org.contactPoint, undefined, `${p}: no contact point until filled`);
+    assert.equal(org.legalName, 'Serein Consultancy LLC', p);
+    assert.equal(org.vatID, undefined, p);
+    assert.equal(org.contactPoint.email, 'hello@troveathome.com', p);
+    assert.equal(org.contactPoint.telephone, undefined, `${p}: no WhatsApp number invented`);
   }
-  assert.match((await get('/llms.txt')).text, /Company details: being finalised/);
+  assert.match((await get('/llms.txt')).text, /Legal name: Serein Consultancy LLC/);
+});
+
+test('every legal document names the contracting company and its licence', async () => {
+  for (const doc of ['terms', 'privacy', 'seller-agreement', 'provider-agreement', 'services-terms']) {
+    const md = (await ctx.api('GET', `/api/legal/${doc}`)).data.markdown;
+    assert.match(md, /Serein Consultancy\s+LLC/, doc);
+    assert.match(md, /Sharjah Media City \(Shams\)/, doc);
+    assert.match(md, /2220356\.01/, doc);
+    assert.match(md, /Trove and Trove at Home are (?:its )?brand names/, doc);
+  }
+});
+
+test('an all-blank saved company override no longer hides the company (migration 022-E)', async () => {
+  const mig = require('../src/migrations/022-E-company-identity');
+  ctx.db.prepare("INSERT OR REPLACE INTO site_content (section, value) VALUES ('site.company', ?)")
+    .run(JSON.stringify({ legalName: '', tradeLicence: '', licenceAuthority: '', address: '', email: '', whatsapp: '', vatTrn: '' }));
+  assert.ok(visible((await get('/about')).text).includes('being finalised'), 'a blank override hides the defaults');
+  mig.up(ctx.db);
+  assert.equal(ctx.db.prepare("SELECT COUNT(*) n FROM site_content WHERE section='site.company'").get().n, 0);
+  assert.ok(visible((await get('/about')).text).includes('Serein Consultancy LLC'));
+  // The owner's own wording is never touched.
+  ctx.db.prepare("INSERT OR REPLACE INTO site_content (section, value) VALUES ('site.company', ?)")
+    .run(JSON.stringify({ legalName: 'Owner wording LLC', tradeLicence: '', licenceAuthority: '', address: '', email: '', whatsapp: '', vatTrn: '' }));
+  mig.up(ctx.db);
+  assert.equal(ctx.db.prepare("SELECT COUNT(*) n FROM site_content WHERE section='site.company'").get().n, 1);
+  ctx.db.prepare("DELETE FROM site_content WHERE section='site.company'").run();
 });
 
 test('the owner fills the company details in Site content and every page picks them up', async () => {
@@ -179,8 +220,14 @@ test('the owner fills the company details in Site content and every page picks t
   const store = ldBlocks((await get('/')).text)[0]['@graph'][0];
   assert.equal(store.contactPoint.email, 'hello@troveathome.com');
   assert.match((await get('/llms.txt')).text, /Legal name: Trove Home Trading L\.L\.C/);
+  // Every field blanked: the neutral line, never made-up details.
+  const blank = await ctx.api('PUT', '/api/admin/content/site.company', { cookie: adminCookie, body: { legalName: '', tradeLicence: '', licenceAuthority: '', address: '', email: '', whatsapp: '', vatTrn: '' } });
+  assert.equal(blank.status, 200, JSON.stringify(blank.data));
+  assert.ok(visible((await get('/about')).text).includes('Company details are being finalised — write to us via the contact form'));
+  assert.match((await get('/llms.txt')).text, /Company details: being finalised/);
+  // Removing the override goes back to the defaults.
   await ctx.api('DELETE', '/api/admin/content/site.company', { cookie: adminCookie });
-  assert.ok(visible((await get('/about')).text).includes('being finalised'));
+  assert.ok(visible((await get('/about')).text).includes('Serein Consultancy LLC'));
 });
 
 test('the storefront carries Organization + OnlineStore structured data', async () => {

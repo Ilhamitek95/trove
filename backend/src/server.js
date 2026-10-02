@@ -140,6 +140,17 @@ try {
   if (scrubbed || removed) console.log(`analytics: scrubbed ${scrubbed} visitor id(s), removed ${removed} old event(s)`);
 } catch (e) { console.error('analytics hygiene failed:', e.message); }
 
+// Privacy retention (src/privacy.js — the periods the Privacy Policy states):
+// contact messages after two years, return photos a year after the return
+// closed, a closed shop's ID documents after five years. At boot and nightly.
+function privacySweep() {
+  try {
+    const { messages, returnPhotos, idDocuments } = require('./privacy').sweep();
+    if (messages || returnPhotos || idDocuments) console.log(`privacy retention: removed ${messages} message(s), ${returnPhotos} return photo(s), ID documents of ${idDocuments} closed shop(s)`);
+  } catch (e) { console.error('privacy retention sweep failed:', e.message); }
+}
+privacySweep();
+
 /* ---------------- Scheduled jobs (single process, guarded) ---------------- */
 if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
   const cron = require('node-cron');
@@ -187,6 +198,9 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       console.error('emirates id expiry sweep failed:', e);
     }
   }, { timezone: 'Asia/Dubai' });
+
+  // Nightly privacy retention sweep (02:30 Dubai), before the backup.
+  cron.schedule('30 2 * * *', privacySweep, { timezone: 'Asia/Dubai' });
 
   // Nightly database backup (03:30 Dubai, the quietest hour) — see backup.js.
   cron.schedule('30 3 * * *', () => {

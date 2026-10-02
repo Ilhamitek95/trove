@@ -109,7 +109,7 @@ test('a provider with a paid booking and no bank details is asked for them', asy
   assert.equal(r.status, 200);
   assert.equal(r.data.details, null);
   assert.equal(r.data.needsDetails, true);
-  assert.equal(r.data.payerName, 'Serein Consultancy');
+  assert.equal(r.data.payerName, 'Serein Consultancy LLC');
   assert.equal(r.data.shopDetails, null, 'no shop, no shop option');
   assert.equal(r.data.credits.length, 2);
 });
@@ -190,7 +190,7 @@ test('the transfer file lists only payable fees of providers with bank details',
   assert.ok(!r.text.includes('Sara') && !r.text.includes('sara@test.local'), 'nothing about the customer');
 
   const adm = await api('GET', '/api/admin/service-credits', { cookie: adminCookie });
-  assert.equal(adm.data.payerName, 'Serein Consultancy');
+  assert.equal(adm.data.payerName, 'Serein Consultancy LLC');
   const c = adm.data.excluded.find((x) => x.providerId === P.C.id);
   assert.equal(c.reason, 'payout_details_missing');
   const a = adm.data.eligible.find((x) => x.providerId === P.A.id);
@@ -214,11 +214,11 @@ test('Mark paid stamps each fee with the reference and the payer, and emails the
   const r = await api('POST', `/api/admin/service-credits/${P.A.id}/paid`, { cookie: adminCookie, body: { reference: ref, amountCents: 36000 } });
   assert.equal(r.status, 200, r.text);
   assert.equal(r.data.amountCents, 36000);
-  assert.equal(r.data.payer, 'Serein Consultancy');
+  assert.equal(r.data.payer, 'Serein Consultancy LLC');
   const cr = db.prepare("SELECT * FROM provider_credits WHERE booking_id=? AND type='credit_service'").get(bkA.id);
   assert.ok(cr.paid_at);
   assert.equal(cr.pay_reference, ref);
-  assert.equal(cr.payer_name, 'Serein Consultancy');
+  assert.equal(cr.payer_name, 'Serein Consultancy LLC');
   const waiting = db.prepare("SELECT * FROM provider_credits WHERE booking_id=? AND type='credit_service'").get(bkA2.id);
   assert.equal(waiting.paid_at, null, 'a fee not yet payable stays open');
 
@@ -261,7 +261,7 @@ test('the provider sees provisional, ready and paid for each fee', async () => {
   const byCode = Object.fromEntries(a.data.credits.map((c) => [c.code, c]));
   assert.equal(byCode[bkA.code].status, 'paid');
   assert.equal(byCode[bkA.code].reference, `TRV-SVC-${P.A.id}-${todayDubai()}`);
-  assert.equal(byCode[bkA.code].payer, 'Serein Consultancy');
+  assert.equal(byCode[bkA.code].payer, 'Serein Consultancy LLC');
   assert.match(byCode[bkA.code].paidOn, /^\d{4}-\d{2}-\d{2}$/);
   assert.equal(byCode[bkA.code].amountCents, 36000);
   assert.equal(byCode[bkA2.code].status, 'provisional');

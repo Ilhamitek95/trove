@@ -29,13 +29,19 @@ function publicShop(shop) {
   // What still stands between this shop and approval / its first collection.
   safe.agreementAccepted = !!shop.agreement_accepted_at;
   safe.pickupReady = !!(shop.pickup_address && shop.pickup_phone);
-  // A maker who accepted an older Seller Agreement is asked, gently, to
-  // review the current one (never blocks selling or settlement).
+  // A maker who accepted an older Seller Agreement is asked to accept the
+  // current one. If their version is older than the terms the code applies
+  // (src/agreements.js), their pieces are off sale until they do
+  // (sellingPaused); otherwise it is a prompt only and selling carries on.
+  // Settlement of sales already made is never held back by this.
   const current = require('../config').AGREEMENT_VERSION;
+  const agreements = require('../agreements');
   safe.currentAgreementVersion = current;
   safe.agreementUpdateDue = !!(shop.agreement_accepted_at && shop.agreement_version !== current);
+  safe.sellingPaused = !agreements.canSell(shop);
+  safe.agreementChangeNote = safe.agreementUpdateDue ? agreements.changeNote(current) : '';
   // The Trove Collection is Trove's own line: no agreement, ID checks or payouts.
-  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, agreementAccepted: true });
+  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, agreementAccepted: true, sellingPaused: false, agreementChangeNote: '' });
   // Internal review bookkeeping stays in the admin panel.
   delete safe.identity_checked_by;
   return safe;

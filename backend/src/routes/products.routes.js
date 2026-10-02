@@ -54,6 +54,7 @@ const BASE = `
              FROM reviews WHERE product_id IS NOT NULL AND status = 'published'
              GROUP BY product_id) rv ON rv.product_id = p.id
   WHERE p.status = 'live' AND s.status = 'approved'
+    AND ${require('../agreements').sellableSql('s')}
 `;
 
 // GET /api/products?q=&category=&house=1&shop=slug

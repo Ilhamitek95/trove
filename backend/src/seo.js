@@ -798,7 +798,7 @@ function sitemapEntries() {
   const pieces = db.prepare(`SELECT p.id, p.name, p.category, s.slug AS shop_slug, s.is_house,
       COALESCE(p.updated_at, p.created_at) AS mod
     FROM products p JOIN shops s ON s.id = p.shop_id
-    WHERE p.status = 'live' AND s.status = 'approved' ORDER BY p.id`).all();
+    WHERE p.status = 'live' AND s.status = 'approved' AND ${require('./agreements').sellableSql('s')} ORDER BY p.id`).all();
   const newest = later(...pieces.map((p) => p.mod));
   add('/', newest, '1.0', 'daily');
   if (pieces.length) add('/shop', newest, '0.8', 'daily');

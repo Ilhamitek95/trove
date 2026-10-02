@@ -28,7 +28,7 @@ before(async () => {
   db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('admin@test.local',?, 'Admin','admin')").run(pw);
   const uid = db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('maker@test.local',?, 'Maker','seller')").run(pw).lastInsertRowid;
   shopId = db.prepare(`INSERT INTO shops (user_id,name,slug,status,payout_bank_name,payout_account_name,iban_encrypted,iban_masked,agreement_version,agreement_accepted_at)
-    VALUES (?,?,?, 'approved','Mashreq','Maker LLC',?,?, 'v1', datetime('now'))`)
+    VALUES (?,?,?, 'approved','Mashreq','Maker LLC',?,?, 'v4', datetime('now'))`)
     .run(uid, 'Worked Example Pots', 'we-pots', pcrypto.encrypt('AE070331234567890123456'), pcrypto.maskIban('AE070331234567890123456')).lastInsertRowid;
   // Identity established (src/identity.js): settlement pays only verified makers.
   db.prepare("UPDATE shops SET license_number='TL-TEST-1', license_verified_at=datetime('now') WHERE id=?").run(shopId);
