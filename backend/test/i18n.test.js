@@ -122,7 +122,7 @@ test('an Arabic page: lang/dir, the dictionary for its script, rtl.css, the swit
   assert.equal(res.status, 200);
   assert.match(res.text, /<html lang="ar" dir="rtl"/);
   assert.match(res.text, /window\.TROVE_LANG="ar";window\.TROVE_I18N=\{/);
-  assert.match(res.text, /<link rel="stylesheet" href="\/rtl\.css">/);
+  assert.match(res.text, /<link rel="stylesheet" href="\/rtl\.css(\?v=[a-f0-9]+)?">/);
   assert.match(res.text, /data-lang-switch href="\/shop\?hl=en" hreflang="en" lang="en"[^>]*>English</);
   assert.match(res.headers.get('set-cookie') || '', /trove_lang=ar/);
   const en = await ctx.api('GET', '/shop');

@@ -124,7 +124,7 @@ for (const p of RENDERED) {
     for (const [tag] of block(html, MNAV, 'mobile menu', p).matchAll(/<a\b[^>]*class="mn-link"[^>]*>/g)) {
       assert.ok(!/onclick/.test(tag), `${p}: a mobile menu link still has an in-page handler: ${tag}`);
     }
-    assert.match(html, /<script src="\/site-chrome\.js"><\/script>/, 'the header handlers are loaded');
+    assert.match(html, /<script src="\/site-chrome\.js(\?v=[a-f0-9]+)?"><\/script>/, 'the header handlers are loaded');
     assert.equal(footerSkeleton(block(html, FOOTER, 'footer', p)), footerSkeleton(block(store, FOOTER, 'footer', 'trove.html')), `${p}: footer differs from the storefront`);
     assert.equal((html.match(/<footer\b/g) || []).length, 1, `${p}: exactly one footer`);
   });

@@ -66,12 +66,12 @@ test('every public address has an Arabic twin: rtl, one h1, Arabic text, its own
     assert.equal(alt(html, 'en'), BASE + en, `${arPath}: hreflang en`);
     assert.equal(alt(html, 'x-default'), BASE + en, `${arPath}: x-default is English`);
     assert.match(html, /<meta property="og:locale" content="ar_AE">/);
-    assert.match(html, /<link rel="stylesheet" href="\/rtl\.css">/, `${arPath}: the rtl stylesheet`);
+    assert.match(html, /<link rel="stylesheet" href="\/rtl\.css(\?v=[a-f0-9]+)?">/, `${arPath}: the rtl stylesheet`);
     assert.match(html, /window\.TROVE_I18N=/, `${arPath}: the dictionary for the page's script`);
     for (const node of ld(html)) if (node.inLanguage) assert.equal(node.inLanguage, 'ar', `${arPath}: JSON-LD inLanguage`);
     // local links keep the reader in Arabic (assets and the API never get the prefix)
     assert.doesNotMatch(noScripts(html), /\shref="\/(shop|about|faq|services|returns)"/, `${arPath}: no English menu links`);
-    assert.match(html, /<script src="\/api\.js"><\/script>/);
+    assert.match(html, /<script src="\/api\.js(\?v=[a-f0-9]+)?"><\/script>/);
   }
 });
 
@@ -85,7 +85,7 @@ test('the English pages are unchanged and name their Arabic twin', async () => {
     assert.equal(canonical(html), BASE + en, `${en}: canonical`);
     assert.equal(alt(html, 'ar'), BASE + (en === '/' ? '/ar' : `/ar${en}`), `${en}: hreflang ar`);
     assert.equal(alt(html, 'x-default'), BASE + en);
-    assert.doesNotMatch(html, /href="\/rtl\.css"|window\.TROVE_I18N=/, `${en}: nothing Arabic loaded`);
+    assert.doesNotMatch(html, /href="\/rtl\.css|window\.TROVE_I18N=/,`${en}: nothing Arabic loaded`);
     assert.match(html, /data-lang-switch href="\/ar[^"]*"/, `${en}: the switch points at the twin`);
   }
 });

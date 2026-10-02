@@ -153,7 +153,7 @@ test('/services/<slug> serves the services page; asset paths under it do not', a
   let r = await api('GET', '/services/kiln-and-clay-workshops');
   assert.equal(r.status, 200);
   assert.ok(r.text.includes('id="pview"'), 'the services page with the profile view');
-  assert.ok(r.text.includes('src="/config.js"'), 'scripts resolve from the root at the nested path');
+  assert.match(r.text, /src="\/config\.js(\?v=[a-f0-9]+)?"/,'scripts resolve from the root at the nested path');
   r = await api('GET', '/services/config.js');
   assert.equal(r.status, 404);
   // Capitals fold to the one lowercase address (301), which is then a real 404.
