@@ -418,7 +418,10 @@ async function postAuthDest(){
   let dest = mode==='sell' ? '/sell' : '/account';
   try{
     const me=await TroveAPI.me();
-    if(me&&me.user&&me.user.role==='admin'&&!me.shop) dest='/admin'; // platform owner → admin panel
+    // Platform owner → admin panel, always. Since house mode /api/auth/me also
+    // returns the Trove Collection as the admin's shop, so the role is checked
+    // first; 'Manage Trove Collection' in the admin opens /sell.
+    if(me&&me.user&&me.user.role==='admin') dest='/admin';
     else if(me&&me.shop) dest='/sell';
     else if(me&&me.provider) dest='/provider'; // services provider without a shop → their dashboard
   }catch(_){}

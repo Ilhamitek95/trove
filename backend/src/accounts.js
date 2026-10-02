@@ -51,11 +51,15 @@ function spendToken(row) {
  * End every stored session of this user except `keepSid` (the one making the
  * change, if any). Sessions live as JSON in the sessions table; an admin in
  * "shop view" of this account is a session with userId = this user too, and
- * is signed out with the rest.
+ * is signed out with the rest. A session this user left in shop view
+ * (impersonatorId = this user) is ended too: its 'Back to admin' would
+ * otherwise hand an old session full admin powers after a password change.
  */
 function endOtherSessions(userId, keepSid = null) {
-  return db.prepare("DELETE FROM sessions WHERE json_extract(sess, '$.userId') = ? AND sid IS NOT ?")
-    .run(userId, keepSid).changes;
+  return db.prepare(`DELETE FROM sessions
+    WHERE (json_extract(sess, '$.userId') = ? OR json_extract(sess, '$.impersonatorId') = ?)
+      AND sid IS NOT ?`)
+    .run(userId, userId, keepSid).changes;
 }
 
 /** The public site address for links in emails. */

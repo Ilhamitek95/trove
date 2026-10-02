@@ -1,6 +1,11 @@
 'use strict';
 require('dotenv').config();
 const db = require('./db');
+// When each scheduled job last worked; a failure emails the owner once a day
+// and shows on the admin Overview (src/job-runs.js).
+const jobs = require('./job-runs');
+// A promise nobody caught must not vanish into the log unseen.
+process.on('unhandledRejection', (reason) => jobs.fail('unhandled', reason instanceof Error ? reason : new Error(String(reason))));
 
 // First-boot demo seed: SEED_DEMO=1 populates an EMPTY database with the demo
 // catalogue. It never touches a database that already has users, so it is safe
@@ -147,7 +152,8 @@ function privacySweep() {
   try {
     const { messages, returnPhotos, idDocuments } = require('./privacy').sweep();
     if (messages || returnPhotos || idDocuments) console.log(`privacy retention: removed ${messages} message(s), ${returnPhotos} return photo(s), ID documents of ${idDocuments} closed shop(s)`);
-  } catch (e) { console.error('privacy retention sweep failed:', e.message); }
+    jobs.ok('privacy');
+  } catch (e) { jobs.fail('privacy', e); }
 }
 privacySweep();
 
@@ -177,11 +183,14 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     settling = true;
     try {
       const result = settlement.run(today);
-      console.log(result
+      const line = result
         ? `fortnightly settlement #${result.settlementId}: ${result.items.length} supplier(s), AED ${(result.totalCents / 100).toFixed(2)}`
-        : 'fortnightly settlement: nothing payable this run');
+        : 'fortnightly settlement: nothing payable this run';
+      console.log(line);
+      jobs.ok('settlement', line);
     } catch (e) {
-      console.error('fortnightly settlement failed:', e);
+      // The owner is emailed (once a day at most): makers are waiting on this.
+      jobs.fail('settlement', e, { lines: ['No draft settlement was created this run Tuesday, so makers have not been paid. Open Trove payouts and press Run settlement once it is fixed.'] });
     } finally {
       settling = false;
     }
@@ -194,14 +203,15 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       const n = require('./graduation').scanCaps();
       if (n) console.log(`graduation scan: flagged ${n} supplier(s)`);
     } catch (e) {
-      console.error('graduation scan failed:', e);
+      jobs.fail('nightly-checks', e);
     }
     // Emirates ID expiry: remind makers 30 days ahead and at expiry (identity.js).
     try {
       const { reminded, expired } = require('./identity').sweepIdExpiry();
       if (reminded || expired) console.log(`emirates id: reminded ${reminded}, expired ${expired}`);
+      jobs.ok('nightly-checks');
     } catch (e) {
-      console.error('emirates id expiry sweep failed:', e);
+      jobs.fail('nightly-checks', e);
     }
   }, { timezone: 'Asia/Dubai' });
 
@@ -213,8 +223,9 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     try {
       const { file, kept, removed } = require('./backup').run();
       console.log(`backup: wrote ${file} (${kept} kept${removed.length ? `, pruned ${removed.length}` : ''})`);
+      jobs.ok('backup', require('path').basename(String(file)));
     } catch (e) {
-      console.error('backup failed:', e);
+      jobs.fail('backup', e, { lines: ['Last night the database backup was not written. Until it works again there is no fresh copy to restore from.'] });
     }
   }, { timezone: 'Asia/Dubai' });
 
@@ -239,12 +250,13 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       // Courier upkeep: retry failed bookings, flag uncollected parcels, read the OTO wallet.
       .then(() => sweeps.sweepCourier())
       .then((c) => { if (c.retried && c.retried.tried) console.log(`courier retries: ${c.retried.ok} booked, ${c.retried.failed} still failing`); })
-      .catch((e) => console.error('unpaid checkout sweep failed:', e))
+      .then(() => jobs.ok('order-sweep'))
+      .catch((e) => jobs.fail('order-sweep', e))
       .finally(() => { sweepingOrders = false; });
     // Pack-by reminders: maker once when the day passes, admin once two days on.
     require('./order-sweep').sweepPackBy()
-      .then(({ reminded, escalated }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); })
-      .catch((e) => console.error('pack-by sweep failed:', e));
+      .then(({ reminded, escalated }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); jobs.ok('pack-by'); })
+      .catch((e) => jobs.fail('pack-by', e));
   });
 }
 
@@ -273,10 +285,18 @@ function otoBoot() {
     .then(() => {
       const secret = process.env.OTO_WEBHOOK_SECRET;
       const base = process.env.PUBLIC_URL || process.env.CLIENT_URL;
-      if (!secret || !base || !/^https:/.test(base)) return console.warn('OTO webhooks not registered (needs OTO_WEBHOOK_SECRET + an https CLIENT_URL)');
-      return oto.ensureWebhooks(base, secret).then((types) => console.log(`OTO webhooks registered: ${types.join(', ')} → ${base}/api/delivery/oto-webhook`));
+      // Without the webhooks parcels never move past 'packed', which also
+      // blocks the return window and so every payout: the owner is told.
+      if (!secret || !base || !/^https:/.test(base)) {
+        return jobs.fail('oto-webhooks', new Error('OTO webhooks not registered: OTO_WEBHOOK_SECRET and an https PUBLIC_URL / CLIENT_URL are needed on Render'),
+          { lines: ['Courier status updates will not reach Trove, so parcels stay at Packed and the return window (and maker payouts) never start.'] });
+      }
+      return oto.ensureWebhooks(base, secret).then((types) => {
+        console.log(`OTO webhooks registered: ${types.join(', ')} → ${base}/api/delivery/oto-webhook`);
+        jobs.ok('oto-webhooks', types.join(', '));
+      });
     })
-    .catch((e) => console.error('OTO boot check failed:', e.message));
+    .catch((e) => jobs.fail('oto-webhooks', e, { lines: ['The courier connection check at start-up failed, so courier status updates may not reach Trove.'] }));
 }
 // Render's proxy keeps upstream connections open for ~60 s; Node's 5 s default
 // lets the proxy reuse a socket the app has just closed (sporadic 502s under

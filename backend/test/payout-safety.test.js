@@ -206,7 +206,10 @@ test('a suspended shop, or one the owner put on hold, is left out of the run', a
   assert.ok(!(r.items || []).some((i) => [sus.id, held.id].includes(i.shopId)), 'neither is swept');
   const unswept = db.prepare('SELECT COUNT(*) AS c FROM seller_balances WHERE shop_id IN (?,?) AND settlement_id IS NULL').get(sus.id, held.id).c;
   assert.equal(unswept, 2, 'their money waits, unswept');
-  if (r.created) assert.equal((await api('POST', `/api/admin/settlements/${r.settlementId}/paid`, { cookie: adminCookie })).status, 200);
+  if (r.created) {
+    await csvOf(r.settlementId); // Mark paid comes after the bank file (F185)
+    assert.equal((await api('POST', `/api/admin/settlements/${r.settlementId}/paid`, { cookie: adminCookie })).status, 200);
+  }
 });
 
 test('one supplier can be taken out of an exported run: rows un-stamped, nothing recorded as paid', async () => {
@@ -242,6 +245,7 @@ test('one supplier can be taken out of an exported run: rows un-stamped, nothing
   await api('POST', `/api/admin/shops/${b.id}/payout-hold`, { cookie: adminCookie, body: { hold: false } });
   const next = await runNow();
   assert.equal(next.items.find((i) => i.shopId === b.id).amountCents, 12000);
+  await csvOf(next.settlementId);
   await api('POST', `/api/admin/settlements/${next.settlementId}/paid`, { cookie: adminCookie });
 });
 
@@ -265,6 +269,7 @@ test('a purchase note lists only the pieces Trove bought, with the real margin',
 
   const r = await runNow();
   assert.equal(r.items.find((i) => i.shopId === s.id).amountCents, 11700);
+  await csvOf(r.settlementId);
   assert.equal((await api('POST', `/api/admin/settlements/${r.settlementId}/paid`, { cookie: adminCookie })).status, 200);
   const note = db.prepare('SELECT * FROM purchase_notes WHERE shop_id=?').get(s.id);
   const html = fs.readFileSync(note.html_path, 'utf8');

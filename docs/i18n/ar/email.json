@@ -302,5 +302,11 @@
   "Something else": "سبب آخر",
   "Thank you{first}. {who} preparing {pieces} now, and you can follow every step from your account.": "شكراً لك{first}. يجري الآن تجهيز {pieces} لدى {who}، ويمكنك متابعة كل خطوة من حسابك.",
   "your pieces": "قطعك",
-  "your piece": "قطعتك"
+  "your piece": "قطعتك",
+  "This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.": "هذه دفعتك عن {shop} من دورة التسوية بتاريخ {date}: تشمل كل قطعة انتهت مهلة إرجاعها البالغة 15 يوماً.",
+  "Open your payments": "افتح مدفوعاتك",
+  "Your dashboard has the purchase note listing every order in this payment.": "تجد في لوحة التحكم إشعار الشراء الذي يسرد كل طلب تشمله هذه الدفعة.",
+  "Your Trove payment is on its way — {amount}": "دفعتك من Trove في طريقها إليك — {amount}",
+  "Your payment is on its way": "دفعتك في طريقها إليك",
+  "Hello {name}, we've sent your payment by bank transfer.": "مرحباً {name}، لقد أرسلنا دفعتك بتحويل مصرفي."
 }

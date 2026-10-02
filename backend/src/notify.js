@@ -163,6 +163,33 @@ const idExpiring = (shop, expired) => safely('id-expiring', () => {
 const adminAlert = (msg) => safely('admin-alert', () =>
   deliver('admin-alert', accounts.adminEmail(), email().adminAlert({ link: `${accounts.siteUrl()}/admin`, ...msg })));
 
+/** To the maker: their fortnightly payment was sent (Admin → Mark paid). */
+const makerPaid = ({ shopId, amountCents, reference, runDate }) => safely('maker-paid', () => {
+  const s = shopRow(shopId);
+  if (!s || s.is_house) return null;
+  return deliver('maker-paid', s.owner_email, email().makerPaymentSent({
+    shopName: s.name, ownerName: s.owner_name, amountCents, reference, runDate,
+    payer: require('./service-credits').payerName(), link: `${accounts.siteUrl()}/sell?view=payments`, lang: s.owner_lang,
+  }));
+});
+
+/**
+ * A scheduled job failed (settlement, backup, courier set-up…): tell the
+ * owner by email instead of leaving it in the server log. Rate-limiting (one
+ * email per job per day) lives in src/job-runs.js, which calls this.
+ */
+const alertOwner = (subject, error, { job = '', lines = [] } = {}) => adminAlert({
+  subject: `Trove: ${subject}`,
+  title: subject,
+  kicker: job ? `Scheduled job: ${job}` : '',
+  lines: [
+    ...lines,
+    `What went wrong: ${String((error && error.message) || error || 'unknown error').slice(0, 400)}`,
+    'The admin Overview shows when each job last worked. If this keeps happening, ask your developer to look at the server log.',
+  ],
+  cta: 'Open the admin',
+});
+
 /** To the maker: pieces cancelled from their parcel, or the whole parcel
  *  refunded — leave them out / do not hand it to the courier. */
 const parcelCancelled = ({ shopId, publicId, items, whole }) => safely('parcel-cancelled', () => {
@@ -174,7 +201,7 @@ const parcelCancelled = ({ shopId, publicId, items, whole }) => safely('parcel-c
 });
 
 module.exports = {
-  idExpiring, adminAlert, parcelCancelled,
+  idExpiring, adminAlert, alertOwner, makerPaid, parcelCancelled,
   packReminder, packOverdueAdmin, packByFor,
   welcomeVerify, passwordReset, passwordChanged, bankDetailsChanged,
   shopApplied, providerApplied, shopDecided, providerDecided, ordersToPack, packByDays,

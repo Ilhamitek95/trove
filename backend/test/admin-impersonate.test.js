@@ -94,3 +94,21 @@ test('stop without a shop view is a 400', async () => {
   const r = await ctx.api('POST', '/api/auth/stop-impersonating', { cookie: adminCookie });
   assert.equal(r.status, 400);
 });
+
+// F064: changing the admin password must also end a session the admin left
+// parked in shop view, or its 'Back to admin' restores full admin powers.
+test('a password change ends a session the admin left in shop view', async () => {
+  const r = await ctx.api('POST', `/api/admin/impersonate/${approvedShopId}`, { cookie: adminCookie });
+  assert.equal(r.status, 200);
+  const parked = follow(r, adminCookie);
+  const other = await ctx.loginAs('admin-imp@test.local', 'testpass123');
+  const ch = await ctx.api('POST', '/api/auth/password', { cookie: other, body: { current: 'testpass123', password: 'NewAdminPass456!' } });
+  assert.equal(ch.status, 200);
+  const back = await ctx.api('POST', '/api/auth/stop-impersonating', { cookie: parked });
+  assert.notEqual(back.status, 200, 'the parked shop-view session is gone');
+  const stats = await ctx.api('GET', '/api/admin/stats', { cookie: follow(back, parked) });
+  assert.equal(stats.status, 401);
+  // The session that made the change carries on.
+  const mine = await ctx.api('GET', '/api/admin/stats', { cookie: follow(ch, other) });
+  assert.equal(mine.status, 200);
+});

@@ -65,7 +65,21 @@ router.post('/service-bookings/:id/refund', requireAdmin, async (req, res, next)
 });
 
 router.get('/service-credits', requireAdmin, (_req, res) => {
-  res.json({ ...credits.preview(), payerName: credits.payerName() });
+  const pv = credits.preview();
+  // The transfer file each provider was last given and not yet marked paid:
+  // 'Mark paid' closes exactly that (provider-payouts.closeBatch).
+  const pp = require('../provider-payouts');
+  const withBatch = (r) => {
+    const b = pp.openBatch(r.providerId);
+    return { ...r, batch: b ? { reference: b.reference, amountCents: b.amountCents, createdAt: b.createdAt, bookings: b.creditIds.length } : null };
+  };
+  const open = db.prepare(`SELECT DISTINCT b.provider_id AS id, p.name FROM provider_payout_batches b JOIN service_providers p ON p.id=b.provider_id
+    WHERE b.paid_at IS NULL AND b.superseded_at IS NULL`).all();
+  const shown = new Set([...pv.eligible, ...pv.excluded].map((r) => r.providerId));
+  // A downloaded batch whose provider is no longer payable now (e.g. a hold
+  // after the download) still needs closing once the transfer went out.
+  const extra = open.filter((o) => !shown.has(o.id)).map((o) => withBatch({ providerId: o.id, name: o.name, netCents: 0, bookings: [], creditIds: [], debitIds: [], reason: 'file_only' }));
+  res.json({ ...pv, eligible: pv.eligible.map(withBatch), excluded: [...pv.excluded.map(withBatch), ...extra], payerName: credits.payerName() });
 });
 
 // The provider bank transfer file: one line per provider payable now WITH
@@ -81,23 +95,27 @@ router.get('/provider-payouts/export.csv', requireAdmin, (_req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Mark a provider's batch paid once the transfer went out. `amountCents`
-// (what the admin saw in the transfer file) guards against a booking becoming
-// payable between the download and the click.
+// Mark a provider's batch paid once the transfer went out. It closes exactly
+// the batch frozen when the transfer file was downloaded (its rows, amount
+// and reference — provider-payouts.closeBatch), so a booking that became
+// payable after the download is never stamped paid. `amountCents` (what the
+// admin saw) must match that file.
 router.post('/service-credits/:providerId/paid', requireAdmin, (req, res) => {
   const providerId = Number(req.params.providerId);
   const b = req.body || {};
-  const pv = credits.preview();
-  const row = pv.eligible.concat(pv.excluded).find((r) => r.providerId === providerId && r.netCents > 0);
-  if (!row) return res.status(404).json({ error: 'Nothing is payable to this provider right now' });
-  if (!row.payTo) return res.status(409).json({ error: 'Waiting for bank details — this provider has not added them yet' });
-  if (row.reason === 'bank_details_changed') return res.status(409).json({ error: 'This provider changed their bank details — check the change with them, then release the hold first' });
-  if (row.reason === 'on_hold') return res.status(409).json({ error: 'This provider is suspended — their payouts are on hold' });
-  if (b.amountCents !== undefined && Number(b.amountCents) !== row.netCents) {
-    return res.status(409).json({ error: 'The amount owed has changed since the transfer file was made — download it again' });
+  const pp = require('../provider-payouts');
+  if (!pp.openBatch(providerId)) {
+    const pv = credits.preview();
+    const row = pv.eligible.concat(pv.excluded).find((r) => r.providerId === providerId && r.netCents > 0);
+    if (!row) return res.status(404).json({ error: 'Nothing is payable to this provider right now' });
+    if (!row.payTo) return res.status(409).json({ error: 'Waiting for bank details — this provider has not added them yet' });
+    if (row.reason === 'bank_details_changed') return res.status(409).json({ error: 'This provider changed their bank details — check the change with them, then release the hold first' });
+    if (row.reason === 'on_hold') return res.status(409).json({ error: 'This provider is suspended — their payouts are on hold' });
+    return res.status(409).json({ code: 'no_file', error: 'Download the bank transfer file first — Mark paid closes exactly what is in that file' });
   }
-  const r = credits.markPaid(providerId, b.reference);
+  const r = pp.closeBatch(providerId, { reference: b.reference, expectCents: b.amountCents });
   if (!r) return res.status(404).json({ error: 'Nothing is payable to this provider right now' });
+  if (r.error) return res.status(r.status).json({ error: r.error });
   if (r.owner && r.owner.email) {
     const email = require('../email');
     const msg = email.providerFeesSent({

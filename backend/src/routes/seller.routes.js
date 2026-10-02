@@ -662,6 +662,9 @@ router.patch('/shipments/:id', requireSeller, async (req, res, next) => {
     const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
     if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
     const asAdmin = !!req.session.impersonatorId;
+    // Admin → Activity records a shop-view change with what it was before
+    // (a parcel marked delivered starts the return window and payout clock).
+    res.locals.auditBefore = { status: sh.status, carrier: sh.carrier || '', trackingNumber: sh.tracking_number || '' };
     const shapeRow = () => shipments.shape(db.prepare('SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.id=?').get(sh.id));
 
     // Cancelling is Trove's call (Admin → Orders), and a cancelled parcel

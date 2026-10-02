@@ -43,8 +43,11 @@ router.get('/stats', requireAdmin, (_req, res) => {
   const shopRows = db.prepare('SELECT status, COUNT(*) AS c FROM shops GROUP BY status').all();
   const shops = { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 };
   for (const r of shopRows) { shops[r.status] = r.c; shops.total += r.c; }
-  const orders = db.prepare("SELECT COUNT(*) AS c FROM orders WHERE status IN ('paid','fulfilled')").get().c;
-  const gmv = db.prepare("SELECT COALESCE(SUM(total_cents),0) AS c FROM orders WHERE status IN ('paid','fulfilled')").get().c;
+  // Sales are net of refunds (whole-order, returns, cancellations, refunds
+  // made in Stripe); Orders leaves out orders refunded in full (F110).
+  const sales = require('../admin-ops').salesTotals();
+  const orders = sales.orders;
+  const gmv = sales.netCents;
   const buyers = db.prepare("SELECT COUNT(*) AS c FROM users WHERE role='buyer'").get().c;
   const products = db.prepare("SELECT COUNT(*) AS c FROM products WHERE status='live'").get().c;
   // Licensed sellers: applied with a trade/e-Trader license (connect_queue)
@@ -56,7 +59,7 @@ router.get('/stats', requireAdmin, (_req, res) => {
   const provRows = db.prepare('SELECT status, COUNT(*) AS c FROM service_providers GROUP BY status').all();
   const providers = { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 };
   for (const r of provRows) { providers[r.status] = r.c; providers.total += r.c; }
-  res.json({ shops, orders, gmvCents: gmv, buyers, liveProducts: products, providers,
+  res.json({ shops, orders, gmvCents: gmv, grossCents: sales.grossCents, refundedCents: sales.refundedCents, buyers, liveProducts: products, providers,
     licensed: { total: lic.total, verified: lic.verified, awaiting: lic.total - lic.verified } });
 });
 
@@ -67,6 +70,21 @@ router.get('/stats', requireAdmin, (_req, res) => {
 // and anything it skipped on purpose. See src/qa-cleanup.js.
 router.get('/maintenance/qa-cleanup', requireAdmin, (_req, res) => {
   res.json(require('../qa-cleanup').lastSummary(db));
+});
+
+// GET /api/admin/needs-you → ONE to-do list for the Overview (F111): every
+// kind of item waiting on the owner, gathered from every tab, with a count and
+// where to go — plus when each background job last worked (F145) and the
+// Orders badge counts.
+router.get('/needs-you', requireAdmin, (_req, res) => {
+  const ops = require('../admin-ops');
+  res.json({ items: ops.needsYou(), jobs: require('../job-runs').status(), orders: ops.orderCounts() });
+});
+
+// GET /api/admin/activity → the latest admin actions (F065): who did what,
+// when, in which shop view, and what it was before.
+router.get('/activity', requireAdmin, (req, res) => {
+  res.json({ actions: require('../admin-audit').latest(Number(req.query.limit) || 100) });
 });
 
 router.get('/search-trends', requireAdmin, (req, res) => {
@@ -96,6 +114,8 @@ router.get('/reviews', requireAdmin, (_req, res) => {
 router.patch('/reviews/:id', requireAdmin, (req, res) => {
   const { status } = req.body || {};
   if (!['published', 'hidden'].includes(status)) return res.status(400).json({ error: 'status must be published or hidden' });
+  const was = db.prepare('SELECT status FROM reviews WHERE id=?').get(req.params.id);
+  if (was) res.locals.auditBefore = { status: was.status };
   const r = db.prepare('UPDATE reviews SET status=? WHERE id=?').run(status, req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Not found' });
   if (status === 'published') tq('review', Number(req.params.id));
@@ -125,6 +145,7 @@ router.get('/products', requireAdmin, (_req, res) => {
 router.patch('/products/:id', requireAdmin, (req, res) => {
   const p = db.prepare('SELECT * FROM products WHERE id=?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  res.locals.auditBefore = { status: p.status, category: p.category, tags: p.tags };
   const b = req.body || {};
   if (b.status !== undefined && !['live', 'draft', 'hidden'].includes(b.status))
     return res.status(400).json({ error: 'status must be live, draft or hidden' });
@@ -204,9 +225,7 @@ router.get('/shops', requireAdmin, (_req, res) => {
     SELECT s.*, u.email AS owner_email, u.name AS owner_name,
       (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id) AS product_count,
       (SELECT COUNT(*) FROM products p WHERE p.shop_id = s.id AND p.status='live') AS live_count,
-      (SELECT COALESCE(SUM(oi.price_cents * (oi.qty - oi.cancelled_qty)),0) FROM order_items oi
-         JOIN orders o ON o.id = oi.order_id
-         WHERE oi.shop_id = s.id AND o.status IN ('paid','fulfilled')) AS sales_cents
+      ${require('../admin-ops').SHOP_SALES_SQL} AS sales_cents
     FROM shops s JOIN users u ON u.id = s.user_id
     ORDER BY CASE s.status WHEN 'pending' THEN 0 ELSE 1 END, s.created_at DESC`).all();
   res.json({ shops: rows.map((s) => ({
@@ -222,6 +241,13 @@ router.get('/shops', requireAdmin, (_req, res) => {
     pickupPhone: s.pickup_phone || '',
     tier: s.tier, hasBank: !!(s.iban_encrypted || s.payout_iban), stripeConnected: !!s.stripe_account_id,
     payoutSetupComplete: !!(s.iban_encrypted && s.agreement_accepted_at),
+    // What stops the settlement run paying this maker, named (F107): the same
+    // checks settlement.preview makes — bank details, the signed agreement and
+    // an established identity. The Trove Collection is never paid out.
+    payoutMissing: s.is_house || s.tier !== 'consignment' ? [] : [
+      !s.iban_encrypted && 'bank details', !s.agreement_accepted_at && 'signed agreement',
+      !identity.status(s).verified && 'identity check',
+    ].filter(Boolean),
     licenseNumber: s.license_number || '', hasLicenseImage: !!s.license_image,
     licenseVerifiedAt: s.license_verified_at || null,
     sellerAddress: s.seller_address || '', eidFront: !!s.eid_front_file, eidBack: !!s.eid_back_file,
@@ -275,6 +301,7 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  res.locals.auditBefore = { status: shop.status, note: shop.review_note || '' };
   // Approval puts the shop's live pieces on sale, so it waits for the
   // agreement and the pickup details (re-approving an approved shop is a no-op).
   if (status === 'approved' && shop.status !== 'approved') {
@@ -353,6 +380,7 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
   const p = db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Provider not found' });
+  res.locals.auditBefore = { status: p.status, note: p.review_note || '' };
   db.prepare('UPDATE service_providers SET status=? WHERE id=?').run(status, p.id);
   if (req.body.note !== undefined) db.prepare('UPDATE service_providers SET review_note=? WHERE id=?').run(reviewNote(req.body), p.id);
   if (status !== p.status) require('../notify').providerDecided(p.id, status);
@@ -407,14 +435,13 @@ router.post('/impersonate/:shopId', requireAdmin, (req, res, next) => {
 // is not an order — it stays out of the list until it is paid, and the
 // hourly sweep cancels it after 24 hours. Cancelled orders stay visible:
 // `attention` says when one needs a person (e.g. an automatic refund failed).
-router.get('/orders', requireAdmin, (_req, res) => {
-  const rows = db.prepare(`
-    SELECT o.*, (SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = o.id) AS item_count,
-      (SELECT GROUP_CONCAT(DISTINCT s.name) FROM order_items oi JOIN shops s ON s.id = oi.shop_id
-        WHERE oi.order_id = o.id) AS shop_names
-    FROM orders o
-    WHERE o.status != 'pending' AND NOT (o.status = 'cancelled' AND o.attention = '' AND o.title_transferred_at IS NULL)
-    ORDER BY o.created_at DESC, o.id DESC LIMIT 200`).all();
+// ?q= searches the order number, buyer email, mobile and delivery name;
+// ?filter= all | attention | overdue | open | refunded; ?before= pages back
+// (the previous page's `next`). 100 a page, newest first (F112).
+router.get('/orders', requireAdmin, (req, res) => {
+  const ops = require('../admin-ops');
+  const page = ops.listOrders({ q: req.query.q, filter: String(req.query.filter || 'all'), before: req.query.before, limit: req.query.limit });
+  const rows = page.rows;
   // Each shop parcel: its pack-by day and whether it has gone unpacked, and
   // the courier's side — booked or not (with a Retry), collected or not,
   // and anything a person must look at (src/courier-ops.js ATTENTION).
@@ -446,13 +473,36 @@ router.get('/orders', requireAdmin, (_req, res) => {
     // Trove is the merchant of record: support and the courier desk reach the
     // customer from here. Sellers get neither the email nor the phone.
     publicId: o.public_id, email: o.email, phone: o.phone || '', status: o.status,
-    totalCents: o.total_cents, itemCount: o.item_count,
+    totalCents: o.total_cents, itemCount: o.item_count, refundedCents: o.refunded_cents || 0,
     shops: o.shop_names ? o.shop_names.split(',') : [],
     createdAt: o.created_at,
     refundedAt: o.refunded_at || null,
     attention: o.attention || null,
     rail: o.rail,
-  })) });
+    deliveryEditedAt: o.delivery_edited_at || null,
+  })), next: page.next, counts: ops.orderCounts() });
+});
+
+// GET /api/admin/orders/:publicId → the whole order for the detail row:
+// lines with options and extras, delivery address and mobile, each parcel
+// with tracking and its history, returns, cancellations and refunds.
+router.get('/orders/:publicId', requireAdmin, (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(req.params.publicId);
+  if (!order || order.status === 'pending') return res.status(404).json({ error: 'Order not found' });
+  res.json({ order: require('../admin-ops').orderDetail(order) });
+});
+
+// PATCH /api/admin/orders/:publicId/delivery { address?: {name,line,line2,area,city,emirate,notes}, phone? }
+// Correct a mistyped flat number or mobile after payment, until a parcel is
+// packed (F199). A courier order that already holds the old address is
+// flagged so the owner changes it with the courier too.
+router.patch('/orders/:publicId/delivery', requireAdmin, (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(req.params.publicId);
+  if (!order) return res.status(404).json({ error: 'Order not found' });
+  res.locals.auditBefore = { ship: (() => { try { return JSON.parse(order.shipping_json || 'null'); } catch (_) { return null; } })(), phone: order.phone || '' };
+  const r = require('../admin-ops').editDelivery(order, req.body || {});
+  if (r.error) return res.status(r.status).json({ error: r.error });
+  res.json({ ...r, order: require('../admin-ops').orderDetail(db.prepare('SELECT * FROM orders WHERE id=?').get(order.id)) });
 });
 
 /* ---------------- Graduation to the Connect rail (Rail B) ---------------- */
@@ -895,10 +945,34 @@ router.get('/settlements/preview', requireAdmin, (_req, res) => {
 });
 
 // POST /api/admin/settlements/run { runDate? } → create the draft settlement.
-router.post('/settlements/run', requireAdmin, (req, res) => {
-  const result = settlement.run(req.body?.runDate);
-  if (!result) return res.json({ created: false });
-  res.status(201).json({ created: true, ...result });
+// A runDate later than today (Dubai) is refused: it would sweep purchases
+// whose return window is still open. Today's run cuts at the same moment the
+// preview card uses (settlement.cutoffFor).
+router.post('/settlements/run', requireAdmin, (req, res, next) => {
+  try {
+    const result = settlement.run(req.body?.runDate);
+    if (!result) return res.json({ created: false });
+    res.status(201).json({ created: true, ...result });
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ error: e.message });
+    next(e);
+  }
+});
+
+// POST /api/admin/settlements/:id/cancel → cancel a draft or exported run
+// (a wrong IBAN, a run made by mistake): its money waits for the next run.
+router.post('/settlements/:id/cancel', requireAdmin, (req, res, next) => {
+  try { res.json({ ok: true, ...settlement.cancelRun(Number(req.params.id)) }); }
+  catch (e) { if (e.status) return res.status(e.status).json({ error: e.message }); next(e); }
+});
+
+// POST /api/admin/settlements/:id/undo-paid → within 48 hours of 'Mark paid'
+// (it was clicked before the transfers went out): back to 'exported'.
+router.post('/settlements/:id/undo-paid', requireAdmin, (req, res, next) => {
+  try {
+    const st = settlement.undoPaid(Number(req.params.id));
+    res.json({ ok: true, settlement: { id: st.id, status: st.status, paidAt: st.paid_at } });
+  } catch (e) { if (e.status) return res.status(e.status).json({ error: e.message }); next(e); }
 });
 
 // GET /api/admin/settlements → run history with per-supplier items.
@@ -916,6 +990,8 @@ router.get('/settlements', requireAdmin, (_req, res) => {
   res.json({ settlements: sts.map((st) => ({
     id: st.id, runDate: st.run_date, status: st.status, totalCents: st.total_cents,
     createdAt: st.created_at, exportedAt: st.exported_at, paidAt: st.paid_at,
+    canUndoPaid: st.status === 'paid' && !!st.paid_at
+      && Date.now() - Date.parse(String(st.paid_at).replace(' ', 'T') + 'Z') <= settlement.UNDO_PAID_HOURS * 3600000,
     items: itemsStmt.all(st.id).map((i) => ({
       id: i.id, shopId: i.shop_id, shopName: i.shop_name, shopSlug: i.shop_slug,
       amountCents: i.amount_cents, creditCents: i.credit_cents, debitCents: i.debit_cents,
@@ -943,7 +1019,7 @@ router.post('/settlements/:id/paid', requireAdmin, (req, res, next) => {
   try {
     const st = settlement.markPaid(Number(req.params.id));
     res.json({ ok: true, settlement: { id: st.id, status: st.status, paidAt: st.paid_at } });
-  } catch (e) { next(e); }
+  } catch (e) { if (e.status) return res.status(e.status).json({ error: e.message }); next(e); }
 });
 
 // POST /api/admin/settlements/:id/items/:itemId/remove { hold? } → take one

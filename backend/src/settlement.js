@@ -143,6 +143,8 @@ function preview(runStart = nowSql()) {
   return {
     eligible,
     excluded,
+    // The cut-off this preview used (UTC): Run settlement today uses the same.
+    cutoffAt: runStart,
     totalNetCents: eligible.reduce((s, r) => s + r.netCents, 0),
     commissionPercent: fees.COMMISSION_PERCENT,
     // Service providers' fees for bookings paid through Trove, payable in the
@@ -152,15 +154,35 @@ function preview(runStart = nowSql()) {
   };
 }
 
+const badRequest = (msg) => { const e = new Error(msg); e.status = 400; return e; };
+
 /**
- * Create a draft settlement for runDate (YYYY-MM-DD): one settlement_item per
- * payable supplier, sweeping their credit AND debit rows. Returns null when
- * nothing is payable. Shops netting ≤ 0 or without payout setup keep their
- * rows unswept for a future run.
+ * The cut-off a run on `date` (YYYY-MM-DD, Dubai calendar) uses: a purchase is
+ * in the run when its return window closed before this moment. A run made
+ * today (the button, or the Tuesday cron) cuts at NOW — exactly what the
+ * 'Next settlement run' card previews, so the card never promises a payment
+ * the run then leaves out. A past date cuts at the end of that Dubai day.
+ * A future date is refused: it would sweep credits whose return window is
+ * still open.
+ */
+function cutoffFor(date) {
+  const today = dubaiToday();
+  if (!date || date === today) return nowSql();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(`${date}T00:00:00Z`))) throw badRequest('runDate must be a date like 2026-10-06');
+  if (date > today) throw badRequest('A settlement run can’t be dated in the future — purchases still inside their return window would be paid');
+  // 24:00 in Dubai (UTC+4) is 20:00 UTC on the same date.
+  return `${date} 20:00:00`;
+}
+
+/**
+ * Create a draft settlement for runDate (YYYY-MM-DD, default today in Dubai):
+ * one settlement_item per payable supplier, sweeping their credit AND debit
+ * rows. Returns null when nothing is payable. Shops netting ≤ 0 or without
+ * payout setup keep their rows unswept for a future run.
  */
 function run(runDate) {
-  const date = runDate || db.prepare("SELECT date('now') AS d").get().d;
-  const runStart = `${date} 00:00:00`;
+  const date = runDate || dubaiToday();
+  const runStart = cutoffFor(date);
   return db.transaction(() => {
     const { eligible } = preview(runStart);
     if (!eligible.length) return null;
@@ -228,6 +250,9 @@ function markPaid(settlementId) {
   const st = db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
   if (!st) { const e = new Error('Settlement not found'); e.status = 404; throw e; }
   if (st.status === 'paid') { const e = new Error('Settlement already paid'); e.status = 409; throw e; }
+  // The order is Run → Download the bank file → send the transfers → Mark
+  // paid. A draft whose file was never downloaded cannot have been paid.
+  if (st.status !== 'exported') { const e = new Error('Download the bank file and send the transfers first — then mark the run paid'); e.status = 409; throw e; }
   const items = db.prepare('SELECT * FROM settlement_items WHERE settlement_id=?').all(settlementId);
   db.transaction(() => {
     for (const it of items) {
@@ -240,6 +265,56 @@ function markPaid(settlementId) {
     try { generatePurchaseNote(it, st); }
     catch (e) { console.error(`purchase note failed for settlement item ${it.id}:`, e.message); }
   }
+  // Each maker gets a payment note, like providers do (best-effort).
+  for (const it of items) require('./notify').makerPaid({ shopId: it.shop_id, amountCents: it.amount_cents, reference: it.bank_reference, runDate: st.run_date });
+  return db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
+}
+
+/** How long after 'Mark paid' the admin can still undo it. */
+const UNDO_PAID_HOURS = 48;
+
+/**
+ * Cancel a draft or exported run (a wrong IBAN, a run made by mistake): every
+ * ledger row it swept is un-stamped, so the money waits for the next run
+ * exactly as before, and the run is removed. Nothing is recorded as paid. If
+ * the bank file was already downloaded, none of its lines may be sent — the
+ * caller says so.
+ */
+function cancelRun(settlementId) {
+  const st = db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
+  if (!st) { const e = new Error('Settlement not found'); e.status = 404; throw e; }
+  if (st.status === 'paid') { const e = new Error('This run is marked paid — use Undo paid first (within 48 hours)'); e.status = 409; throw e; }
+  db.transaction(() => {
+    db.prepare("UPDATE seller_balances SET settlement_id=NULL WHERE settlement_id=? AND type IN ('credit_sale','debit_refund')").run(settlementId);
+    db.prepare('DELETE FROM settlement_items WHERE settlement_id=?').run(settlementId);
+    db.prepare('DELETE FROM settlements WHERE id=?').run(settlementId);
+  })();
+  return { cancelled: st.id, wasExported: st.status === 'exported', totalCents: st.total_cents };
+}
+
+/**
+ * Undo 'Mark paid' within UNDO_PAID_HOURS (it was clicked before the
+ * transfers really went out): the negative payout rows and the purchase notes
+ * go, and the run is back to 'exported' — ready to mark paid again, or to
+ * cancel. The makers were emailed a payment note; the caller tells the admin
+ * to let them know.
+ */
+function undoPaid(settlementId, now = Date.now()) {
+  const st = db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
+  if (!st) { const e = new Error('Settlement not found'); e.status = 404; throw e; }
+  if (st.status !== 'paid') { const e = new Error('Only a run marked paid can be undone'); e.status = 409; throw e; }
+  const paidAt = Date.parse(String(st.paid_at).replace(' ', 'T') + 'Z');
+  if (!Number.isFinite(paidAt) || now - paidAt > UNDO_PAID_HOURS * 3600000) {
+    const e = new Error(`'Mark paid' can only be undone within ${UNDO_PAID_HOURS} hours`); e.status = 409; throw e;
+  }
+  const notes = db.prepare(`SELECT pn.id, pn.html_path FROM purchase_notes pn JOIN settlement_items si ON si.id = pn.settlement_item_id
+    WHERE si.settlement_id=?`).all(settlementId);
+  db.transaction(() => {
+    db.prepare("DELETE FROM seller_balances WHERE settlement_id=? AND type='payout'").run(settlementId);
+    for (const n of notes) db.prepare('DELETE FROM purchase_notes WHERE id=?').run(n.id);
+    db.prepare("UPDATE settlements SET status='exported', paid_at=NULL WHERE id=?").run(settlementId);
+  })();
+  for (const n of notes) { try { fs.unlinkSync(n.html_path); } catch (_) { /* already gone */ } }
   return db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
 }
 
@@ -412,6 +487,6 @@ function balances(shopId) {
 }
 
 module.exports = {
-  preview, run, exportCsv, markPaid, removeItem, setHold, holdReason, noteLines, balances, payoutSetupComplete, ELIGIBLE_CREDITS,
+  preview, run, cutoffFor, exportCsv, markPaid, cancelRun, undoPaid, UNDO_PAID_HOURS, removeItem, setHold, holdReason, noteLines, balances, payoutSetupComplete, ELIGIBLE_CREDITS,
   isRunDate, nextRunDate, lastRunDate, upcomingRunDates, scheduleLabel, dubaiToday,
 };

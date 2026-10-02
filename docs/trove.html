@@ -1760,7 +1760,7 @@ function img(seed){
     `<g fill="#292727" opacity=".28"><circle cx="${(cx+310)%600+20}" cy="${(cy+140)%720+30}" r="4"/><circle cx="${(cx2+90)%600+20}" cy="${(cy2+430)%720+30}" r="4"/></g></svg>`;
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
-function aed(n){return troveIso('AED '+n.toLocaleString('en-GB'));}
+function aed(n){return troveMoney(n);} /* shared formatter (api.js): en-GB digits, 0 or 2 decimals */
 /* Every API or CMS string that reaches innerHTML goes through esc(). */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 /* A value for an inline handler: a JSON string literal, HTML-escaped, so a
