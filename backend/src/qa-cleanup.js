@@ -179,6 +179,8 @@ function plan(db, opts = {}) {
     ['reviews', `id IN ${inList(reviewRows.map((r) => r.id))}`],
     ['shipment_events', `shipment_id IN (SELECT id FROM shipments WHERE order_id IN ${O} OR shop_id IN ${S})`],
     ['shipments', `order_id IN ${O} OR shop_id IN ${S}`],
+    ['order_cancellation_items', `cancellation_id IN (SELECT id FROM order_cancellations WHERE order_id IN ${O})`],
+    ['order_cancellations', `order_id IN ${O}`],
     ['order_items', `order_id IN ${O}`],
     ['orders', `id IN ${O}`],
     ['analytics_events', `shop_id IN ${S} OR product_id IN ${P}`],

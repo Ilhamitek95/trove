@@ -19,6 +19,9 @@ let shopId, productId, sellerEmail = 'oto@test.local';
 const calls = [];
 const locations = new Set();
 const hooks = [];
+let currentToken = 'at-1';   // the fake rotates it to play an expired access token
+let refuseCancel = false;
+let walletCredit = 250;
 const byPath = (p) => calls.filter((c) => c.path === p);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitFor(fn, ms = 2000) {
@@ -46,9 +49,12 @@ function otoApi(req, res) {
     calls.push({ method: req.method, path, body, auth: req.headers.authorization || '' });
     const send = (code, j) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(j)); };
     if (path === '/refreshToken') return body.refresh_token === 'rt-test'
-      ? send(200, { success: true, access_token: 'at-1', token_type: 'Bearer', expires_in: '3600' })
+      ? send(200, { success: true, access_token: currentToken, token_type: 'Bearer', expires_in: '3600' })
       : send(401, { success: false, otoErrorMessage: 'bad refresh token' });
-    if (req.headers.authorization !== 'Bearer at-1') return send(401, { message: 'Jwt is expired', code: 401 });
+    if (req.headers.authorization !== `Bearer ${currentToken}`) return send(401, { message: 'Jwt is expired', code: 401 });
+    if (path === '/cancelOrder') return refuseCancel
+      ? send(400, { success: false, otoErrorCode: 'OTO1203', otoErrorMessage: 'Order can not be cancelled' })
+      : send(200, { success: true, message: 'order cancelled' });
     if (path === '/createPickupLocation') {
       if (locations.has(body.code)) return send(400, { success: false, otoErrorCode: 'OTO1010', otoErrorMessage: 'Pickup location code already exists' });
       locations.add(body.code); return send(200, { success: true, pickupLocationCode: body.code, message: 'warehouse has been created' });
@@ -62,7 +68,7 @@ function otoApi(req, res) {
     if (path.startsWith('/print/')) return send(200, { success: true, printAWBURL: 'https://app.tryoto.com/print/awb?enc=abc', trackingNumber: 'OTO123' });
     if (path === '/createReturnShipment') return send(200, { success: true, returnOrderId: body.orderId + '-R1', message: 'A new return order is created for return shipment' });
     if (path === '/orderStatus') return send(200, { success: true, status: 'pickedUp' });
-    if (path === '/accountInfo') return send(200, { packageName: 'freePackage', remainingCredit: 250 });
+    if (path === '/accountInfo') return send(200, { packageName: 'freePackage', remainingCredit: walletCredit });
     if (path === '/webhook' && req.method === 'GET') return send(200, { success: true, webhooks: hooks });
     if (path === '/webhook' && req.method === 'POST') { hooks.push({ id: hooks.length + 1, ...body }); return send(200, { success: true, id: String(hooks.length) }); }
     if (path === '/webhook' && req.method === 'PUT') { Object.assign(hooks.find((h) => h.id === body.id), body); return send(200, { success: true }); }
@@ -408,4 +414,74 @@ test('return refund waits for OTO: approval books createReturnShipment, reverseP
   assert.ok(done.collected_at);
   assert.equal(refunds(), before + 1, 'refunded once the courier has it');
   assert.equal(ctx.stripeMock.calls.filter((c) => c.method === 'refunds.create').at(-1).params.amount, 23000, 'faulty piece: no collection fee, and the whole order back for a fault refunds its AED 30 delivery too');
+});
+
+test('an expired access token is refreshed and the call retried once, not failed', async () => {
+  const oto = require('../src/delivery/oto-live');
+  await oto.accountInfo(); // warm the cache with at-1
+  currentToken = 'at-2';   // OTO now rejects at-1
+  try {
+    calls.length = 0;
+    const a = await oto.accountInfo();
+    assert.equal(a.packageName, 'freePackage');
+    assert.equal(byPath('/refreshToken').length, 1);
+    assert.equal(byPath('/accountInfo').length, 2, 'refused once, then retried with the new token');
+  } finally { currentToken = 'at-1'; oto._resetToken(); }
+});
+
+test('refund of a packed, uncollected parcel cancels the OTO order; a refusal flags it', async () => {
+  const cookie = await ctx.loginAs(sellerEmail, 'testpass123');
+  const admin = db.prepare("SELECT id FROM users WHERE email='otoadmin@test.local'").get()
+    || { id: db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('otoadmin@test.local',?,'Admin','admin')").run(require('../src/middleware').hashPassword('testpass123')).lastInsertRowid };
+  assert.ok(admin.id);
+  const adminCookie = await ctx.loginAs('otoadmin@test.local', 'testpass123');
+
+  const { sh } = await paidShipment('TRV-OT20', 'pi_ot_20');
+  await ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie, body: { status: 'shipped' } });
+  calls.length = 0;
+  let r = await ctx.api('POST', '/api/admin/orders/TRV-OT20/refund', { cookie: adminCookie });
+  assert.equal(r.status, 200, r.text);
+  assert.deepEqual(byPath('/cancelOrder').map((c) => c.body), [{ orderId: sh.delivery_ref }]);
+  assert.equal(byPath('/createReturnShipment').length, 0, 'no return leg for a parcel that never left');
+  assert.equal(db.prepare('SELECT status FROM shipments WHERE id=?').get(sh.id).status, 'cancelled');
+
+  const two = await paidShipment('TRV-OT21', 'pi_ot_21');
+  refuseCancel = true;
+  try {
+    r = await ctx.api('POST', '/api/admin/orders/TRV-OT21/refund', { cookie: adminCookie });
+    assert.equal(r.data.parcels[0].action, 'cancel_failed');
+    assert.equal(db.prepare('SELECT attention FROM shipments WHERE id=?').get(two.sh.id).attention, 'courier_cancel_failed');
+  } finally { refuseCancel = false; }
+});
+
+test('lost or damaged / going back to the shop: neutral words for the buyer, a flag + email for the admin', async () => {
+  const { sh } = await paidShipment('TRV-OT22', 'pi_ot_22');
+  await signedHook(sh.delivery_ref, 'lostOrDamaged');
+  const row = db.prepare('SELECT * FROM shipments WHERE id=?').get(sh.id);
+  assert.equal(row.attention, 'lost');
+  const note = db.prepare('SELECT note FROM shipment_events WHERE shipment_id=? ORDER BY id DESC LIMIT 1').get(sh.id).note;
+  assert.match(note, /we are looking into this/);
+  assert.doesNotMatch(note, /Trove will follow up|Trove has been alerted/);
+  // Two failed delivery attempts → a person calls the buyer.
+  await signedHook(sh.delivery_ref, 'undeliveredAttempt');
+  db.prepare("UPDATE shipments SET attention='' WHERE id=?").run(sh.id);
+  await signedHook(sh.delivery_ref, 'undeliveredAttempt');
+  assert.equal(db.prepare('SELECT attention FROM shipments WHERE id=?').get(sh.id).attention, 'delivery_attempts');
+});
+
+test('the prepaid wallet: read hourly, the owner emailed once when it runs low, the flag clears after a top-up', async () => {
+  const courier = require('../src/courier-ops');
+  walletCredit = 120;
+  let w = await courier.checkWallet();
+  assert.deepEqual(w, { remaining: 120, low: true });
+  assert.ok(courier.getState('oto_wallet_alerted'), 'alert sent');
+  const st = courier.walletStatus();
+  assert.equal(st.mode, 'oto');
+  assert.equal(st.remaining, 120);
+  assert.equal(st.low, true);
+  walletCredit = 900;
+  w = await courier.checkWallet();
+  assert.equal(w.low, false);
+  assert.equal(courier.getState('oto_wallet_alerted'), null, 'ready to warn again next time');
+  walletCredit = 250;
 });
