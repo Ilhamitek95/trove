@@ -138,12 +138,15 @@ function socialTags({ base, url, title, description, image, imageAlt, type = 'we
 /** Swap the title + description and add the head tags (+ JSON-LD). */
 function setHead(html, opts) {
   const { title, description, ld = [] } = opts;
-  let out = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`);
+  // Every replacement below is a FUNCTION: the text carries seller-written
+  // names, and a string replacement would read "$'", "$&" or "$`" in them as
+  // commands that paste chunks of the page in (F074).
+  let out = html.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(title)}</title>`);
   const meta = `<meta name="description" content="${esc(description)}">`;
-  out = /<meta name="description"[^>]*>/.test(out) ? out.replace(/<meta name="description"[^>]*>/, meta) : out.replace('</title>', `</title>\n${meta}`);
+  out = /<meta name="description"[^>]*>/.test(out) ? out.replace(/<meta name="description"[^>]*>/, () => meta) : out.replace('</title>', () => `</title>\n${meta}`);
   // Trove itself rides along on every page: offers, pages and makers point at it by @id.
   const graph = ldScript({ '@graph': [sitePages.organizationLd(opts.base, content.company()), ...ld] });
-  return out.replace('</head>', `${socialTags(opts)}\n${graph}\n</head>`);
+  return out.replace('</head>', () => `${socialTags(opts)}\n${graph}\n</head>`);
 }
 
 /**
@@ -161,8 +164,8 @@ function withDefaultSocial(html, { base, url, noindex = false, path: pagePath })
   const title = t.replace(/&amp;/g, '&');
   const description = d ? d.replace(/&amp;/g, '&') : fallback;
   let out = html;
-  if (!d) out = out.replace('</title>', `</title>\n<meta name="description" content="${esc(fallback)}">`);
-  return out.replace('</head>', `${socialTags({ base, url: noindex ? null : url, title, description })}\n</head>`);
+  if (!d) out = out.replace('</title>', () => `</title>\n<meta name="description" content="${esc(fallback)}">`);
+  return out.replace('</head>', () => `${socialTags({ base, url: noindex ? null : url, title, description })}\n</head>`);
 }
 
 /* ---------------- storefront views ---------------- */
@@ -198,8 +201,8 @@ function attr(html, id, name, value) {
   if (!m) throw new Error(`seo: #${id} is missing in the page source`);
   let attrs = m[2];
   const a = new RegExp(`\\s${name}="[^"]*"`);
-  attrs = a.test(attrs) ? attrs.replace(a, ` ${name}="${esc(value)}"`) : `${attrs} ${name}="${esc(value)}"`;
-  return html.replace(m[0], `<${m[1]}${attrs}>`);
+  attrs = a.test(attrs) ? attrs.replace(a, () => ` ${name}="${esc(value)}"`) : `${attrs} ${name}="${esc(value)}"`;
+  return html.replace(m[0], () => `<${m[1]}${attrs}>`);
 }
 
 /** A product card, as the storefront's productCard() draws it (it re-renders over this). */
@@ -331,8 +334,8 @@ function renderShop(base, slug, { search, lang = 'en' } = {}) {
   const list = cat === 'all' ? all : cat === 'House' ? all.filter((p) => p.shop.isHouse) : all.filter((p) => p.category === cat);
   const label = cat === 'all' ? T('Shop all') : T(catLabel(cat));
   let html = activate(storefront(), 'shop');
-  html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, `$1${esc(label)}$2`);
-  html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, `$1<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? `<span>${esc(T('Shop all'))}</span>` : `<a href="/shop">${esc(T('Shop all'))}</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}$2`);
+  html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, (m, a, b) => `${a}${esc(label)}${b}`);
+  html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, (m, a, b) => `${a}<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? `<span>${esc(T('Shop all'))}</span>` : `<a href="/shop">${esc(T('Shop all'))}</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}${b}`);
   html = fill(html, 'shopGrid', list.length || cat !== 'House' ? list.map((p) => cardHtml(p, byShop[p.shop.slug], lang)).join('')
     : houseSoonShelf(all, byShop, lang));
   if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="shopGrid">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="shopGrid">`);

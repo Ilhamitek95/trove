@@ -437,3 +437,42 @@ test('the storefront and every Services view send exactly one <h1> in the raw pa
   const one = (await get(`/services/${pr.slug}`)).text;
   assert.match(one, /<h1 id="pvName"[^>]*>[^<]+<\/h1>/, 'the provider name is the page heading');
 });
+
+test("a '$' in seller-written names never breaks a server-rendered page (F074)", async () => {
+  // In a STRING replacement, $' $& and $` paste chunks of the page in; every
+  // replace that carries a name must use a function replacer.
+  const NASTY = "Café $'Noir' $& $` $$ $1";
+  const p = livePiece();
+  const shop = db.prepare('SELECT id, name, slug, bio FROM shops WHERE slug = ?').get(p.slug);
+  const pr = db.prepare("SELECT id, name, bio, slug FROM service_providers WHERE status = 'approved' ORDER BY id LIMIT 1").get();
+  const svc = db.prepare("SELECT id, title FROM services WHERE provider_id = ? AND status = 'live' LIMIT 1").get(pr.id);
+  const cat = db.prepare('SELECT category FROM products WHERE id = ?').get(p.id).category;
+  try {
+    db.prepare('UPDATE products SET name = ?, description = ? WHERE id = ?').run(`Mug ${NASTY}`, `Thrown by hand. ${NASTY}`, p.id);
+    db.prepare('UPDATE shops SET name = ?, bio = ? WHERE id = ?').run(`Kiln ${NASTY}`, `Our story ${NASTY}`, shop.id);
+    db.prepare('UPDATE service_providers SET name = ?, bio = ? WHERE id = ?').run(`Noor ${NASTY}`, `Bio ${NASTY}`, pr.id);
+    if (svc) db.prepare('UPDATE services SET title = ? WHERE id = ?').run(`Letters ${NASTY}`, svc.id);
+    const piece = { ...p, name: `Mug ${NASTY}` };
+    const urls = ['/', '/shop', `/shop/${seo.slugify(cat)}`, seo.pieceUrl(piece), `/makers/${shop.slug}`, '/services', `/services/${pr.slug}`];
+    for (const u of urls) {
+      for (const pre of ['', '/ar']) {
+        const addr = pre && u === '/' ? '/ar' : pre + u;
+        const res = await get(addr);
+        assert.equal(res.status, 200, addr);
+        const html = res.text;
+        assert.equal((html.match(/<\/head>/g) || []).length, 1, `${addr}: one </head>`);
+        assert.equal((html.match(/<body[\s>]/g) || []).length, 1, `${addr}: one <body>`);
+        assert.equal((html.match(/<title>/g) || []).length, 1, `${addr}: one <title>`);
+        assert.doesNotThrow(() => ld(html), `${addr}: JSON-LD still parses`);
+      }
+    }
+    const pdp = (await get(seo.pieceUrl(piece))).text;
+    assert.ok(visible(pdp).includes(`Mug ${NASTY}`), 'the name shows exactly as written');
+    assert.ok(ld(pdp).some((n) => n.name === `Mug ${NASTY}`), 'and in the Product data');
+  } finally {
+    db.prepare('UPDATE products SET name = ?, description = ? WHERE id = ?').run(p.name, p.description, p.id);
+    db.prepare('UPDATE shops SET name = ?, bio = ? WHERE id = ?').run(shop.name, shop.bio, shop.id);
+    db.prepare('UPDATE service_providers SET name = ?, bio = ? WHERE id = ?').run(pr.name, pr.bio, pr.id);
+    if (svc) db.prepare('UPDATE services SET title = ? WHERE id = ?').run(svc.title, svc.id);
+  }
+});
