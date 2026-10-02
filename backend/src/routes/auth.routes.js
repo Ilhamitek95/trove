@@ -47,6 +47,9 @@ router.post('/register', (req, res, next) => {
   if (nameCheck.error) return res.status(400).json({ error: nameCheck.error });
   const wantsShop = role === 'seller' || role === 'both';
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  // A NEW account's address must look like one (an existing account keeps
+  // working with whatever it was created with).
+  if (!existing && validate.emailError(email)) return res.status(400).json({ error: validate.EMAIL_ERROR });
   if (!existing && !password) return res.status(400).json({ error: 'email, password and name are required' });
   if (!existing) {
     const pwErr = validate.passwordError(password);

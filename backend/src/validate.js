@@ -163,7 +163,24 @@ function payoutNamesError(accountName, bankName) {
   return null;
 }
 
+/**
+ * A new account's email address (sign-up, provider enrolment): a simple
+ * shape check — something@something.tld, no spaces, at most 254 characters.
+ * A typo like 'layla@gmailcom' or 'not-an-email' would otherwise create an
+ * account whose receipts and reset links go nowhere (and, with no '@', one
+ * that can never sign in again — login reads it as a phone number).
+ * Returns an error message or null. Common domain slips get a suggestion.
+ */
+const EMAIL_SHAPE = /^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)*\.[^\s@<>.]{2,}$/;
+const EMAIL_ERROR = "That email address doesn't look right — check it and try again";
+function emailError(email) {
+  const e = String(email == null ? '' : email).trim();
+  if (!e || e.length > 254 || !EMAIL_SHAPE.test(e)) return EMAIL_ERROR;
+  return null;
+}
+
 module.exports = {
+  emailError, EMAIL_ERROR,
   payoutNamesError,
   LIMITS, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MAX_STOCK, PRODUCT_STATUSES, MIN_PASSWORD, PASSWORD_ERROR,
   hasMarkup, shortText, longText, isHexColour, priceCents, stockError, variantsError,

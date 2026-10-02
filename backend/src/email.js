@@ -1117,3 +1117,112 @@ function parcelCancelledMaker({ shopName, ownerName, publicId, items = [], whole
 }
 
 Object.assign(module.exports, { adminAlert, itemsCancelled, parcelCancelledMaker });
+
+/* ---- third-review round 2 (2026-10-02): refunds, deliveries, makers ---- */
+
+/**
+ * Trove refunded a whole order (the admin's Refund button) — to the buyer.
+ * { order, items[{ name, qty, price_cents, image }], amountCents,
+ *   collection: a return collection was booked for delivered parcels,
+ *   inTransit: a parcel was already with the courier and could not be stopped }
+ */
+function orderRefunded({ order, items = [], amountCents, collection = false, inTransit = false, lang }) {
+  const { T, A, I, p, heading, panel, itemsBlock, layout, orderKicker, serif } = kit(lang || langFor({ order }));
+  const amount = amountCents != null ? amountCents : order.total_cents;
+  const id = `<b>${esc(I(order.public_id))}</b>`;
+  const inner =
+    panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(amount)}</span><br>${T('is on its way back to your original payment method. Depending on your bank it can take 5–10 business days to appear.')}`)
+    + (items.length ? heading(T('Refunded')) + itemsBlock(items) : '')
+    + (collection ? p(T('Our courier will be in touch to collect the pieces you already have — please keep them packed and ready. There is nothing to pay for the collection.')) : '')
+    + (inTransit ? p(T('One parcel was already with the courier. If it still reaches you, please keep it packed: we will arrange to collect it, at no cost to you.')) : '')
+    + (!collection && !inTransit ? p(T('Nothing from this order will be delivered.')) : '');
+  return {
+    subject: T('Your order {id} is refunded — {amount}', { id: I(order.public_id), amount: A(amount) }),
+    html: layout(T('Your order is refunded'), inner, {
+      tone: 'clay',
+      kicker: orderKicker(order.public_id),
+      intro: T('We have refunded order {id} in full.', { id }),
+      preheader: T('{amount} is on its way back to you.', { amount: A(amount) }),
+    }),
+  };
+}
+
+/**
+ * A parcel arrived — to the buyer, once per parcel: what came, and until when
+ * it can be sent back (the 15-day clock starts at delivery).
+ * { order, items[{ name, qty, price_cents, image }], shopName, deadline (SQLite UTC), account, lang }
+ */
+function parcelDelivered({ order, items = [], shopName, deadline, account = true, lang }) {
+  const { T, I, p, note, heading, panel, button, itemsBlock, layout, orderKicker, date } = kit(lang || langFor({ order }));
+  const until = date(deadline);
+  const inner =
+    heading(items.length > 1 ? T('Your pieces') : T('Your piece'))
+    + itemsBlock(items)
+    + (until ? panel(T('Returns are open until {date}. If anything is not right, you can ask to send it back from your account until then.', { date: `<b>${esc(until)}</b>` })) : '')
+    + (account
+      ? button(T('Review or return'), `${SITE_LINK}/account`) + note(T('Loved it? A short review helps the maker and the next shopper.'))
+      : p(T('You checked out as a guest. To request a return, sign in or create a Trove account with {email} and confirm the address: the order then appears in your account.', { email: esc(I(order.email)) })));
+  return {
+    subject: T('Delivered — your parcel from {shop}', { shop: shopName }),
+    html: layout(T('Your parcel has arrived'), inner, {
+      kicker: orderKicker(order.public_id),
+      intro: T('Your parcel from {shop} has been delivered.', { shop: `<b>${esc(shopName)}</b>` }),
+      preheader: until ? T('Delivered — returns are open until {date}.', { date: until }) : T('Your parcel has been delivered.'),
+    }),
+  };
+}
+
+/**
+ * To the maker: pieces from one of their parcels are coming back — a buyer
+ * return Trove approved, or a whole order Trove refunded after delivery.
+ * Nothing about the buyer. { shopName, ownerName, publicId, items[{ name, qty }],
+ * reasonLabel, refundedOrder, netted (a payment already made is deducted), link, lang }
+ */
+function returnComingMaker({ shopName, ownerName, publicId, items = [], reasonLabel = '', refundedOrder = false, netted = false, link, lang }) {
+  const k = kit(lang);
+  const { T, I, p, panel, button, layout, orderKicker } = k;
+  const list = items.map((i) => `${esc(pieceName(k.lang, i.name))}${i.qty > 1 ? ' ×' + i.qty : ''}`).join('<br>');
+  const inner =
+    panel(`${list}${reasonLabel ? `<br>${T('Reason: {reason}', { reason: `<b>${esc(T(reasonLabel))}</b>` })}` : ''}`)
+    + p(T('Our courier brings it back to your pickup address — there is nothing to arrange or pay.'))
+    + p(netted
+      ? T('You were already paid for it, so that amount is deducted from your next fortnightly payment. The purchase note in your dashboard shows the details.')
+      : T('Nothing is paid out for pieces that come back. If it arrives damaged or not as it left you, let us know through the Contact page.'))
+    + button(T('Open your returns'), esc(link));
+  return {
+    subject: T('A return is on its way back to you — order {id}', { id: I(publicId) }),
+    html: layout(T('A return is on its way back'), inner, {
+      tone: 'clay',
+      kicker: orderKicker(publicId, ` · ${esc(shopName)}`),
+      intro: refundedOrder
+        ? T('Hello {name}, Trove refunded this order after it was delivered, so the pieces from your shop are coming back to you.', { name: firstNameOr(ownerName, T) })
+        : T('Hello {name}, Trove has approved a return on this order, so these pieces are coming back to you.', { name: firstNameOr(ownerName, T) }),
+      reason: T("You're receiving this because you sell on Trove."),
+      preheader: T('Order {id}: pieces are coming back to you.', { id: I(publicId) }),
+    }),
+  };
+}
+
+/**
+ * To the maker: their fortnightly payment has gone out (settlement marked
+ * paid). { shopName, ownerName, amountCents, reference, payer, link, lang }
+ */
+function payoutSent({ shopName, ownerName, amountCents, reference, payer, link, lang }) {
+  const { T, A, I, p, note, panel, button, layout, serif } = kit(lang);
+  const inner =
+    panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(amountCents)}</span><br>${T('reference {ref}', { ref: `<b>${esc(I(reference))}</b>` })}`)
+    + p(T("This payment was sent from {payer} on Trove's behalf, so look for that name on your bank statement. Please allow 1–2 working days for it to arrive.", { payer: `<b>${esc(payer)}</b>` }))
+    + button(T('Open your payments'), esc(link))
+    + note(T('The purchase note for this payment, listing every piece it covers, is in your dashboard under Payments.'));
+  return {
+    subject: T('Your Trove payment is on its way — {amount}', { amount: A(amountCents) }),
+    html: layout(T('Your payment is on its way'), inner, {
+      kicker: esc(shopName),
+      intro: T("Hello {name}, we've sent your payment for {shop} by bank transfer.", { name: firstNameOr(ownerName, T), shop: esc(shopName) }),
+      reason: T("You're receiving this because you sell on Trove."),
+      preheader: T('{amount} sent — reference {ref}.', { amount: A(amountCents), ref: I(reference) }),
+    }),
+  };
+}
+
+Object.assign(module.exports, { orderRefunded, parcelDelivered, returnComingMaker, payoutSent });

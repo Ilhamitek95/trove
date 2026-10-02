@@ -144,6 +144,9 @@ function unavailablePostEffects(order, lines, stripe, { soldOut = true } = {}) {
     : Promise.resolve(false); // demo mode: no money was taken
 
   return refund.then((refunded) => {
+    // The owner hears about every order that could not go ahead — and must
+    // act by hand when the automatic refund failed (demo mode: no money moved).
+    if (refunded || (stripe && order.stripe_payment_intent_id)) require('./notify').ownerSoldOut(order.id, { refunded, soldOut });
     if (!refunded) return refunded;
     try {
       const email = require('./email');
@@ -198,6 +201,8 @@ function paidPostEffects(order, groups, stripe) {
   try { sendConfirmation(order); } catch (e) { console.error('order-confirmation email failed:', e.message); }
   // Each maker hears about their own pieces only (no buyer contact details).
   require('./notify').ordersToPack(order);
+  // …and the owner hears a new order is in (first name + order number only).
+  require('./notify').ownerNewOrder(order.id);
 
   if (order.rail === 'connect') return;
   // Rail B leftover: a mixed cart can contain a connect-tier shop's items;

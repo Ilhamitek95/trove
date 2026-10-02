@@ -173,7 +173,157 @@ const parcelCancelled = ({ shopId, publicId, items, whole }) => safely('parcel-c
   }));
 });
 
+/* ---- refunds, deliveries, returns and payments (third review, round 2) ---- */
+const orderRow = (orderId) => db.prepare('SELECT * FROM orders WHERE id=?').get(orderId);
+/** The buyer's first name only — owner alerts carry nothing more about them. */
+function buyerFirstName(order) {
+  let name = '';
+  try { name = (JSON.parse(order.shipping_json || '{}') || {}).name || ''; } catch (_) { /* fall through */ }
+  if (!name && order.buyer_id) name = (db.prepare('SELECT name FROM users WHERE id=?').get(order.buyer_id) || {}).name || '';
+  return String(name).trim().split(/\s+/)[0] || 'a guest';
+}
+const aedText = (cents) => `AED ${((cents || 0) / 100).toLocaleString('en-GB', { maximumFractionDigits: 2 })}`;
+/** Units still on the order: not cancelled before dispatch, not refunded through a return. */
+const LIVE_UNITS_SQL = `oi.qty - oi.cancelled_qty - COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
+    JOIN return_requests r2 ON r2.id = ri.request_id WHERE ri.order_item_id = oi.id AND r2.status = 'refunded'), 0)`;
+
+/**
+ * To the buyer: Trove refunded the whole order. `parcels` = what
+ * returns.applyRefundEffects did to each parcel (return collection booked,
+ * already in transit, cancelled) so the email says what happens next.
+ */
+const orderRefunded = (orderId, parcels = []) => safely('order-refunded', () => {
+  const order = orderRow(orderId);
+  if (!order) return null;
+  const items = db.prepare(`SELECT oi.name_snapshot, ${LIVE_UNITS_SQL} AS qty, oi.price_cents, p.images
+      FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ? ORDER BY oi.id`).all(order.id)
+    .filter((i) => i.qty > 0)
+    .map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, image: email().productImage({ images: i.images, name: i.name_snapshot }) }));
+  const acts = (parcels || []).map((p) => p && p.action);
+  return deliver('order-refunded', order.email, email().orderRefunded({
+    order, items,
+    amountCents: order.whole_refund_cents != null ? order.whole_refund_cents : order.total_cents,
+    collection: acts.some((a) => a === 'return_booked' || a === 'return_failed'),
+    inTransit: acts.includes('in_transit'),
+  }));
+});
+
+/** To the buyer: one parcel was delivered — what came, and the return deadline. */
+const parcelDelivered = (shipmentId) => safely('parcel-delivered', () => {
+  const sh = db.prepare('SELECT sh.*, s.name AS shop_name FROM shipments sh JOIN shops s ON s.id = sh.shop_id WHERE sh.id=?').get(shipmentId);
+  if (!sh || sh.status !== 'delivered') return null;
+  const order = orderRow(sh.order_id);
+  if (!order || order.refunded_at) return null;
+  const items = db.prepare(`SELECT oi.name_snapshot, oi.qty - oi.cancelled_qty AS qty, oi.price_cents, p.images
+      FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ? AND oi.shop_id = ? AND oi.qty > oi.cancelled_qty ORDER BY oi.id`).all(order.id, sh.shop_id)
+    .map((i) => ({ name: i.name_snapshot, qty: i.qty, price_cents: i.price_cents, image: email().productImage({ images: i.images, name: i.name_snapshot }) }));
+  const deadline = require('./returns').parcelDeadline(order, sh);
+  return deliver('parcel-delivered', order.email, email().parcelDelivered({
+    order, items, shopName: sh.shop_name, deadline, account: !!order.buyer_id,
+  }));
+});
+
+/** Has this shop already been paid (credit swept into a settlement) for this order? */
+const alreadySettled = (orderId, shopId) => !!db.prepare(`SELECT 1 FROM seller_balances
+  WHERE order_id=? AND shop_id=? AND type='credit_sale' AND settlement_id IS NOT NULL`).get(orderId, shopId);
+
+/**
+ * To each maker whose pieces are coming back: a return Trove approved
+ * (`requestId`), or — with { shopId, items, refundedOrder: true } — a whole
+ * order refunded after delivery. Never anything about the buyer.
+ */
+function returnComing({ order, shopId, items, reasonLabel = '', refundedOrder = false }) {
+  const s = shopRow(shopId);
+  if (!s || !items.length) return Promise.resolve(null);
+  return deliver('return-coming', s.owner_email, email().returnComingMaker({
+    shopName: s.name, ownerName: s.owner_name, publicId: order.public_id, items, reasonLabel, refundedOrder,
+    netted: alreadySettled(order.id, shopId), link: `${accounts.siteUrl()}/sell?view=returns`, lang: s.owner_lang,
+  }));
+}
+const returnApprovedMakers = (requestId) => safely('return-coming', () => {
+  const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(requestId);
+  if (!rr) return null;
+  const order = orderRow(rr.order_id);
+  const returns = require('./returns');
+  const items = returns.requestItems(rr.id);
+  return Promise.all([...new Set(items.map((i) => i.shop_id))].map((shopId) => returnComing({
+    order, shopId, reasonLabel: returns.reasonLabel(rr.reason),
+    items: items.filter((i) => i.shop_id === shopId).map((i) => ({ name: i.name_snapshot, qty: i.qty })),
+  })));
+});
+const refundedParcelComing = (orderId, shopId) => safely('return-coming', () => {
+  const order = orderRow(orderId);
+  if (!order) return null;
+  const items = db.prepare(`SELECT oi.name_snapshot AS name, ${LIVE_UNITS_SQL} AS qty FROM order_items oi WHERE oi.order_id=? AND oi.shop_id=? ORDER BY oi.id`)
+    .all(orderId, shopId).filter((i) => i.qty > 0);
+  return returnComing({ order, shopId, items, refundedOrder: true });
+});
+
+/** To the maker: their settlement payment has gone out. */
+const payoutSent = (settlementItemId) => safely('payout-sent', () => {
+  const it = db.prepare('SELECT * FROM settlement_items WHERE id=?').get(settlementItemId);
+  if (!it || !(it.amount_cents > 0)) return null;
+  const s = shopRow(it.shop_id);
+  if (!s || s.is_house) return null;
+  return deliver('payout-sent', s.owner_email, email().payoutSent({
+    shopName: s.name, ownerName: s.owner_name, amountCents: it.amount_cents, reference: it.bank_reference,
+    payer: require('./service-credits').payerName(), link: `${accounts.siteUrl()}/sell?view=payments`, lang: s.owner_lang,
+  }));
+});
+
+/* Owner alerts (owner 2026-10-02: tell me about each new paid order, return
+ * request and automatic sold-out refund — short, the buyer's first name and
+ * the order number only). Always English. */
+const ownerNewOrder = (orderId) => safely('owner-new-order', () => {
+  const o = orderRow(orderId);
+  if (!o) return null;
+  const shops = db.prepare('SELECT DISTINCT s.name FROM order_items oi JOIN shops s ON s.id = oi.shop_id WHERE oi.order_id=? ORDER BY s.name').all(o.id).map((r) => r.name);
+  const units = db.prepare('SELECT COALESCE(SUM(qty),0) AS n FROM order_items WHERE order_id=?').get(o.id).n;
+  return adminAlert({
+    subject: `New order ${o.public_id} — ${aedText(o.total_cents)}`,
+    title: 'A new order is in',
+    kicker: `Order ${o.public_id}`,
+    lines: [
+      `${buyerFirstName(o)} paid ${aedText(o.total_cents)} for ${units} ${units === 1 ? 'piece' : 'pieces'}.`,
+      `${shops.length === 1 ? 'Shop' : 'Shops'}: ${shops.join(', ')}. Each maker has been asked to pack.`,
+    ],
+  });
+});
+const ownerReturnRequested = (requestId) => safely('owner-return-requested', () => {
+  const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(requestId);
+  if (!rr) return null;
+  const o = orderRow(rr.order_id);
+  const returns = require('./returns');
+  const items = returns.requestItems(rr.id);
+  return adminAlert({
+    subject: `Return request on order ${o.public_id} — needs your decision`,
+    title: 'A return request is waiting',
+    kicker: `Order ${o.public_id}`,
+    lines: [
+      `${buyerFirstName(o)} asked to send back ${items.map((i) => `${i.name_snapshot}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ')}.`,
+      `Reason: ${returns.reasonLabel(rr.reason)}. Approve or decline it in the admin under Returns — the buyer was told to expect an answer within a couple of days.`,
+    ],
+  });
+});
+const ownerSoldOut = (orderId, { refunded, soldOut = true } = {}) => safely('owner-sold-out', () => {
+  const o = orderRow(orderId);
+  if (!o) return null;
+  return adminAlert({
+    subject: refunded ? `Order ${o.public_id} could not go ahead — refunded automatically` : `ACTION: order ${o.public_id} could not go ahead and the automatic refund FAILED`,
+    title: refunded ? 'An order was refunded automatically' : 'An automatic refund failed',
+    kicker: `Order ${o.public_id}`,
+    lines: [
+      soldOut
+        ? `${buyerFirstName(o)} paid ${aedText(o.total_cents)}, but a piece sold out between checkout and payment, so nothing was sent.`
+        : `${buyerFirstName(o)} paid ${aedText(o.total_cents)} after the checkout had already expired, so the order could not go ahead.`,
+      refunded ? 'The full amount was refunded and the buyer was emailed. Nothing else to do.' : 'Refund the payment by hand in Stripe, then email the buyer.',
+    ],
+  });
+});
+
 module.exports = {
+  orderRefunded, parcelDelivered, returnApprovedMakers, refundedParcelComing, payoutSent,
+  ownerNewOrder, ownerReturnRequested, ownerSoldOut,
   idExpiring, adminAlert, parcelCancelled,
   packReminder, packOverdueAdmin, packByFor,
   welcomeVerify, passwordReset, passwordChanged, bankDetailsChanged,

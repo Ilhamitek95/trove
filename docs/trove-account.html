@@ -141,6 +141,26 @@
   .ship-items .oline{margin-bottom:10px}
   .ship-items .oline:last-child{margin-bottom:0}
   .oc-foot{display:flex;gap:10px;padding:14px 22px;border-top:1px solid var(--line-soft);flex-wrap:wrap}
+  /* order details (address + money) and the help links, in the order card footer */
+  .oc-details{width:100%;font-size:13px;color:var(--char)}
+  .oc-details summary{cursor:pointer;font-weight:700;font-size:12.5px;color:var(--accent-ink)}
+  .oc-details .odg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;line-height:1.55}
+  .oc-details .odk{font-size:11.5px;color:var(--muted);font-weight:700;margin-bottom:3px}
+  .oc-details .odr{display:flex;justify-content:space-between;gap:10px}
+  .oc-help{width:100%;display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;font-weight:700}
+  .oc-help a{color:var(--accent-ink)}
+  @media (max-width:560px){.oc-details .odg{grid-template-columns:1fr}}
+  /* service bookings */
+  .bkcard{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 18px;margin-bottom:10px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .bkcard .grow{flex:1;min-width:200px}
+  .bkcard .t{font-weight:700;font-size:14px}
+  .bkcard .s{font-size:12.5px;color:var(--muted);font-weight:500;margin-top:2px;line-height:1.5}
+  .bkcard .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .bkcard .acts a,.bkcard .acts button{font-size:12.5px;font-weight:700;color:var(--accent-ink);background:none;border:0;cursor:pointer;font-family:inherit;padding:0}
+  .bkcard .acts a.pay{background:var(--char);color:var(--cream-2);padding:8px 14px;border-radius:999px;text-decoration:none}
+  .bkpill{font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:var(--rose-tint);color:var(--accent-ink)}
+  .bkpill.confirmed,.bkpill.completed{background:var(--green-bg);color:var(--green)}
+  .bkpill.declined,.bkpill.cancelled{background:#F0EBE8;color:var(--muted)}
 
   /* product grid (wishlist) */
   .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
@@ -377,6 +397,7 @@
     <nav class="menu" aria-label="Account">
       <a class="mitem on" data-v="overview" onclick="go('overview')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
       <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg>Orders<span class="pill" id="ordPill">0</span></a>
+      <a class="mitem" data-v="bookings" onclick="go('bookings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Service bookings<span class="pill zero" id="bkPill">0</span></a>
       <a class="mitem" data-v="addresses" onclick="go('addresses')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Addresses</a>
       <a class="mitem" data-v="details" onclick="go('details')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>My details</a>
     </nav>
@@ -408,6 +429,7 @@
           <div class="card stat"><div class="lbl">Saved addresses</div><div class="big" id="oAddr">0</div><div class="s" id="oAddrSub">none saved yet</div></div>
         </div>
         <div class="card track" style="display:none"></div>
+        <div id="bkNudge"></div>
         <div class="quick-links">
           <button type="button" class="ql" onclick="go('orders')"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16"/></svg></div><div class="t">Your orders</div><div class="d">Track, return &amp; review</div></button>
           <a class="ql" href="/"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg></div><div class="t">Keep shopping</div><div class="d">Back to the shop</div></a>
@@ -418,6 +440,9 @@
 
       <!-- ORDERS -->
       <div class="view" id="view-orders"><div id="reviewNudge"></div><div id="ordersList"></div><div id="myReviews"></div></div>
+
+      <!-- SERVICE BOOKINGS (the Services Marketplace) -->
+      <div class="view" id="view-bookings"><div id="bookingsList"></div></div>
 
       <!-- ADDRESSES -->
       <div class="view" id="view-addresses">
@@ -521,7 +546,11 @@
 /* ---------- DATA ---------- */
 let orders=[];
 let addresses=[];
+let bookings=[];
 let ME=null;
+// A failed load is remembered apart from an empty one, so "No orders yet"
+// is only ever said when the server really answered with none.
+let ordersErr=false, addrErr=false, reviewsErr=false, bookingsErr=false;
 
 /* ---------- HELPERS ---------- */
 const $=id=>document.getElementById(id);
@@ -591,7 +620,6 @@ document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest
 let toastT; function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
 /* ---------- ORDERS ---------- */
-const ORDER_STATUS={paid:[_t('Processing'),'processing'],fulfilled:[_t('On the way'),'shipped'],cancelled:[_t('Cancelled'),'processing'],failed:[_t('Payment failed'),'processing']};
 function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:troveDate(d,{day:'numeric',month:'short',year:'numeric'}); }
 /* Expected arrival for a parcel still on its way: its maker's pack-by day +
  * the courier's 1–4 days (server-fed as s.expected = { from, to }). */
@@ -625,24 +653,39 @@ function shipTracker(status){
     return `<div class="pstep ${done?'done':now?'now':''}"><div class="pline"></div><div class="dot">${done?'✓':now?'●':''}</div><div class="pl">${SHIP_STEP[s]}</div></div>`;
   }).join('')+`</div>`;
 }
-// Roll the per-shop shipment statuses up into one headline label for the order.
-function orderStatusLabel(o){
-  if(o.refundedAt) return [_t('Refunded'),'processing'];
+/* ONE buyer-facing state per order, read the same way everywhere (pill,
+ * overview counts, latest-order tracker): refunded · cancelled · delivered ·
+ * partly delivered · on the way · processing. A cancelled parcel will never
+ * arrive, so it is left out — one delivered parcel + one cancelled = delivered. */
+function orderState(o){
+  if(o.refundedAt) return 'refunded';
+  if(o.status==='cancelled'||o.status==='failed') return 'cancelled';
   const sh=o.shipments||[];
-  if(!sh.length) return ORDER_STATUS[o.status]||[_t('Processing'),'processing'];
-  if(sh.every(s=>s.status==='delivered')) return [_t('Delivered'),'delivered'];
-  if(sh.every(s=>s.status==='cancelled')) return [_t('Cancelled'),'processing'];
-  if(sh.some(s=>s.status==='delivered')) return [_t('Partly delivered'),'shipped'];
-  if(sh.some(s=>s.status==='shipped'||s.status==='out_for_delivery')) return [_t('On the way'),'shipped'];
-  return [_t('Processing'),'processing'];
+  if(!sh.length) return o.status==='fulfilled'?'delivered':'processing';
+  const live=sh.filter(s=>s.status!=='cancelled');
+  if(!live.length) return 'cancelled';
+  if(live.every(s=>s.status==='delivered')) return 'delivered';
+  if(live.some(s=>s.status==='delivered')) return 'partly';
+  if(live.some(s=>s.status==='shipped'||s.status==='out_for_delivery')) return 'on_the_way';
+  return 'processing';
 }
+const ORDER_PILL={refunded:[_t('Refunded'),'processing'],cancelled:[_t('Cancelled'),'processing'],delivered:[_t('Delivered'),'delivered'],partly:[_t('Partly delivered'),'shipped'],on_the_way:[_t('On the way'),'shipped'],processing:[_t('Processing'),'processing']};
+/* Still moving: something in it has yet to arrive. */
+const isActive=o=>['partly','on_the_way','processing'].includes(orderState(o));
+function orderStatusLabel(o){ return ORDER_PILL[orderState(o)]; }
 /* Orders placed as a guest join the account once its email is confirmed
  * (src/guest-orders.js), so an unconfirmed account says how to bring them in. */
 function guestOrdersHint(){
   if(!ME||ME.emailVerified)return '';
   return `<div class="card" style="margin-bottom:14px;font-size:14px;line-height:1.55">${_t('Bought something as a guest with {email}? Confirm your email address and those orders appear here, ready to track and return.',{email:ME.email?troveIso(esc(ME.email)):_t('this email')})} <button type="button" class="btn btn-ghost" style="margin-top:8px" onclick="resendVerify()">${_t('Send the confirm link again')}</button></div>`;
 }
+/* A request that failed is NOT an empty list: say so, with a retry. */
+function loadErrorHTML(what,retry){
+  return `<div class="card empty-state"><div class="big">${what}</div><p>${_t('This is on our side, not yours — please try again in a moment.')}</p><button type="button" class="btn btn-dark" onclick="${retry}">${_t('Try again')}</button></div>`;
+}
+async function retryOrders(){ await reloadOrders(); renderOrders(); renderOverview(); }
 function renderOrders(){
+  if(ordersErr){ $('ordersList').innerHTML=loadErrorHTML(_t('We couldn’t load your orders just now'),'retryOrders()'); return; }
   if(!orders.length){ $('ordersList').innerHTML=guestOrdersHint()+`<div class="card empty-state"><div class="es-ic" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg></div><div class="big">${_t('No orders yet')}</div><p>${_t('When you buy something it appears here — track each parcel, request a return within 15 days of delivery and review what you loved.')}</p><a class="btn btn-coral" href="/">${_t('Start shopping')}</a></div>`; return; }
   $('ordersList').innerHTML=guestOrdersHint()+orders.map(o=>{
     const [label,cls]=orderStatusLabel(o);
@@ -660,6 +703,7 @@ function renderOrders(){
           ${shipTracker(s.statusLabel==='Packed'?'processing':s.status)}
           ${last?`<div class="ship-note">${esc(noteTr(last.note||last.label||''))}${last.at?' · '+fmtDate(last.at):''}</div>`:''}
           ${expectedLine(s)}
+          ${s.returnUntil&&!o.refundedAt?`<div class="ship-note" style="margin-top:6px">${_t('Returns for this parcel open until {date}',{date:fmtDate(s.returnUntil)})}</div>`:''}
           ${tn}
           <div class="ship-items">${items}</div>
         </div>`;
@@ -683,10 +727,36 @@ function renderOrders(){
       <div class="oc-body">${body}</div>
       <div class="oc-foot">
         ${(o.cancellations||[]).map(c=>`<div class="ship-note" style="margin:0 0 8px">${_t('Cancelled before dispatch: {items} · {amount} refunded',{items:c.items.map(i=>esc(i.name)+(i.qty>1?' ×'+esc(i.qty):'')).join(_t(', ')),amount:aed(c.refund)})}${c.at?' '+fmtDate(c.at):''}</div>`).join('')}
+        ${o.couldNotGoAhead?`<div class="ship-note" style="margin:0 0 8px">${_t('This order couldn’t go ahead because a piece sold out just before your payment. Nothing was sent and {amount} was refunded to your card in full.',{amount:aed(o.total)})}</div>`:''}
         ${docsHTML(o)}
         ${returnsFootHTML(o)}
+        ${detailsHTML(o)}
+        ${helpHTML(o)}
       </div></div>`;
   }).join('');
+}
+/* The order's own record: where it is going and what was paid. */
+function detailsHTML(o){
+  const d=o.details; if(!d)return '';
+  const a=d.shipTo;
+  const row=(k,v)=>`<div class="odr"><span>${k}</span><b>${v}</b></div>`;
+  return `<details class="oc-details"><summary>${_t('Order details')}</summary><div class="odg">
+    ${a?`<div><div class="odk">${_t('Delivering to')}</div>${esc(a.name)}<br>${esc(a.line)}${a.line2?'<br>'+esc(a.line2):''}<br>${esc(a.city)}</div>`:''}
+    <div><div class="odk">${_t('Payment')}</div>
+      ${row(_t('Items'),aed(d.subtotal))}
+      ${d.serviceFee?row(_t('Service fee'),aed(d.serviceFee)):''}
+      ${row(_t('Delivery'),d.delivery?aed(d.delivery):_t('Free'))}
+      ${row(_t('Total'),aed(d.total))}
+      ${d.paidByCard?`<div style="color:var(--muted);font-size:12px;margin-top:4px">${_t('Paid by card')}</div>`:''}
+    </div></div></details>`;
+}
+/* Help with an order: the contact form with the order number filled in. Before
+ * anything has been handed to the courier, the Terms let the buyer ask to cancel. */
+function helpHTML(o){
+  const id=encodeURIComponent(o.id), st=orderState(o);
+  const sh=(o.shipments||[]).filter(s=>s.status!=='cancelled');
+  const beforeDispatch=st==='processing'&&sh.length&&sh.every(s=>s.status==='processing'&&!s.packedAt);
+  return `<div class="oc-help"><a href="${troveUrl('/contact?topic=order&order='+id)}">${_t('Need help with this order?')}</a>${beforeDispatch?`<a href="${troveUrl('/contact?topic=order&order='+id+'&cancel=1')}">${_t('Ask to cancel')}</a>`:''}</div>`;
 }
 /* Tax invoice + credit notes — only on orders where VAT was charged. */
 function docsHTML(o){
@@ -699,32 +769,49 @@ function renderOverview(){
   const hello=document.querySelector('#view-overview .hello'); if(hello)hello.innerHTML=_t('Hello, {name}.',{name:`<em>${esc(first)}</em>`});
   // Every caption here reads off the real orders — they used to be hardcoded
   // ("1 on the way"), so a brand-new account was told about parcels it
-  // didn't have. An order is active until every parcel in it is delivered.
-  const active=orders.filter(o=>o.status==='paid').length;
-  const delivered=orders.filter(o=>o.status==='fulfilled').length;
-  $('oActive').textContent=active;
-  $('oActiveSub').textContent=active
-    ? _tn(active,'{n} on the way','{n} on the way')
-    : (delivered?_tn(delivered,'{n} delivered · nothing on the way','{n} delivered · nothing on the way'):_t('nothing on the way'));
-  $('oTotal').textContent=orders.length;
-  $('oTotalSub').textContent=orders.length?_tn(orders.length,'one order placed','{n} orders placed'):_t('no orders yet');
-  $('oAddr').textContent=addresses.length;
-  $('oAddrSub').textContent=addresses.length?_t('ready for checkout'):_t('none saved yet');
-  const latest=orders[0], track=document.querySelector('#view-overview .track');
+  // didn't have. One state per order (orderState): an order is active while
+  // something in it is still to arrive — never when refunded or cancelled.
+  const track=document.querySelector('#view-overview .track');
+  if(ordersErr){
+    // Unknown is not zero: no counts until the orders load.
+    ['oActive','oTotal'].forEach(id=>$(id).textContent='–');
+    $('oActiveSub').textContent=$('oTotalSub').textContent=_t('couldn’t load just now');
+    if(track){ track.style.display=''; track.innerHTML=`<div style="font-size:13px;font-weight:600;text-align:center">${_t('We couldn’t load your orders just now')} · <a href="#" onclick="retryOrders();return false" style="color:var(--accent-ink);font-weight:700">${_t('Try again')}</a></div>`; }
+  } else {
+    const active=orders.filter(isActive).length;
+    const delivered=orders.filter(o=>orderState(o)==='delivered').length;
+    $('oActive').textContent=active;
+    $('oActiveSub').textContent=active
+      ? _tn(active,'{n} on the way','{n} on the way')
+      : (delivered?_tn(delivered,'{n} delivered · nothing on the way','{n} delivered · nothing on the way'):_t('nothing on the way'));
+    $('oTotal').textContent=orders.length;
+    $('oTotalSub').textContent=orders.length?_tn(orders.length,'one order placed','{n} orders placed'):_t('no orders yet');
+  }
+  if(addrErr){ $('oAddr').textContent='–'; $('oAddrSub').textContent=_t('couldn’t load just now'); }
+  else { $('oAddr').textContent=addresses.length; $('oAddrSub').textContent=addresses.length?_t('ready for checkout'):_t('none saved yet'); }
+  const latest=ordersErr?null:orders[0];
   if(latest&&track){
     track.style.display='';
     const [lbl,cls]=orderStatusLabel(latest);
-    const sh=latest.shipments||[];
-    // Headline progress = the least-advanced parcel, so "on the way" never overstates.
-    const overall=sh.length?SHIP_FLOW[Math.min(...sh.map(s=>{const i=SHIP_FLOW.indexOf(s.status);return i<0?0:i;}))]:'processing';
+    const st=orderState(latest);
+    // Parcels that will never arrive are not part of the progress.
+    const sh=(latest.shipments||[]).filter(s=>s.status!=='cancelled');
+    // Headline progress = the least-advanced parcel still coming, so "on the way" never overstates.
+    const overall=sh.length?SHIP_FLOW[Math.min(...sh.map(s=>{const i=SHIP_FLOW.indexOf(s.statusLabel==='Packed'?'processing':s.status);return i<0?0:i;}))]:'processing';
+    const ended=st==='refunded'
+      ? `<div class="ship-note">${latest.refundedAt?_t('Refunded on {date}',{date:fmtDate(latest.refundedAt)}):_t('Refunded')}</div>`
+      : st==='cancelled' ? `<div class="ship-note">${latest.couldNotGoAhead?_t('This order couldn’t go ahead — refunded in full.'):_t('This order was cancelled.')}</div>` : '';
     track.innerHTML=`<div class="th"><div><div style="font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700">${_t('Latest order')}</div><div class="oid" id="trackId">${troveIso(esc(latest.id))}</div></div><span class="opill ${cls}">${lbl}</span></div>`
-      + shipTracker(overall)
-      + `<div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">${sh.length>1?_t('{n} parcels, tracked separately — ',{n:sh.length}):''}<a href="#" onclick="go('orders');return false" style="color:var(--accent-ink);font-weight:700">${_t('view details →')}</a></div>`;
-  } else if(track){ track.style.display='none'; }
+      + (ended||shipTracker(st==='delivered'?'delivered':overall))
+      + `<div style="font-size:12.5px;color:var(--muted);font-weight:600;text-align:center;margin-top:14px">${!ended&&sh.length>1?_t('{n} parcels, tracked separately — ',{n:sh.length}):''}<a href="#" onclick="go('orders');return false" style="color:var(--accent-ink);font-weight:700">${_t('view details →')}</a></div>`;
+  } else if(track&&!ordersErr){ track.style.display='none'; }
+  renderBookingNudge();
 }
 
 /* ---------- ADDRESSES ---------- */
+async function retryAddresses(){ await reloadAddresses(); renderOverview(); }
 function renderAddr(){
+  if(addrErr){ $('addrList').innerHTML=loadErrorHTML(_t('We couldn’t load your addresses just now'),'retryAddresses()'); return; }
   $('addrList').innerHTML=addresses.map(a=>`<div class="addr-card ${a.def?'def':''}">
     ${a.def?`<span class="badge">${_t('Default')}</span>`:''}
     <h4>${esc(a.label)}</h4>
@@ -773,8 +860,9 @@ let reviewables={products:[],shops:[]}, myReviews=[];
 let rvTarget=null, rvRating=0, rvImages=[];   // images: /uploads URLs or data URLs
 const rstars=r=>'★★★★★'.slice(0,Math.round(+r))+'☆☆☆☆☆'.slice(0,5-Math.round(+r));
 async function reloadReviews(){
-  try{ reviewables=await TroveAPI.api('/api/account/reviewables'); }catch(_){ reviewables={products:[],shops:[]}; }
-  try{ myReviews=(await TroveAPI.api('/api/account/reviews')).reviews||[]; }catch(_){ myReviews=[]; }
+  reviewsErr=false;
+  try{ reviewables=await TroveAPI.api('/api/account/reviewables'); }catch(_){ reviewables={products:[],shops:[]}; reviewsErr=true; }
+  try{ myReviews=(await TroveAPI.api('/api/account/reviews')).reviews||[]; }catch(_){ myReviews=[]; reviewsErr=true; }
   renderReviewNudge(); renderMyReviews();
 }
 function renderReviewNudge(){
@@ -802,6 +890,7 @@ function reviewAt(kind,i){
 }
 function renderMyReviews(){
   const w=$('myReviews'); if(!w)return;
+  if(reviewsErr){w.innerHTML=`<div class="ship-note" style="margin:18px 0">${_t('We couldn’t load your reviews just now')} · <a href="#" onclick="reloadReviews();return false" style="color:var(--accent-ink);font-weight:700">${_t('Try again')}</a></div>`;return;}
   if(!myReviews.length){w.innerHTML='';return;}
   w.innerHTML=`<div class="myrev"><h3>${_t('Your reviews')}</h3>
     ${myReviews.map(r=>`<div class="r">
@@ -918,8 +1007,19 @@ function returnsFootHTML(o){
     return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">${_t('Return declined for <b>{items}</b> — {reason}',{items:what(rq),reason:esc(rq.declineReason||_t('we emailed you the details'))})}</span>`;
   }).join('');
   if(o.refundedAt&&!reqs.some(q=>q.status==='refunded'))out+=`<span class="ship-note" style="margin:0">${_t('Refunded on {date}',{date:fmtDate(o.refundedAt)})}</span>`;
-  if(r.eligible)out+=`<span class="ship-note" style="margin:0">${_t('Returns open until {date} ({n} days from delivery)',{date:fmtDate(r.deadline),n:Number(r.windowDays)||15})}</span>
+  // Returns open per parcel: with more than one parcel each shows its own
+  // last day, so the footer only names a date when there is one.
+  const days=Number(r.windowDays)||15;
+  const live=(o.shipments||[]).filter(s=>s.status!=='cancelled');
+  const dates=[...new Set(live.map(s=>s.returnUntil).filter(Boolean))];
+  if(r.eligible)out+=`<span class="ship-note" style="margin:0">${dates.length>1?_t('Each parcel can be returned within {n} days of its delivery',{n:days}):_t('Returns open until {date} ({n} days from delivery)',{date:fmtDate(r.deadline),n:days})}</span>
     <button class="btn btn-ghost btn-sm" onclick="openReturn(${jsq(o.id)})">${_t('Request a return')}</button>`;
+  else if(!o.refundedAt&&['paid','fulfilled'].includes(o.status)&&!reqs.some(q=>['requested','approved','collected'].includes(q.status))){
+    // Say why the button isn't there.
+    const help=`<a href="${troveUrl('/contact?topic=returns&order='+encodeURIComponent(o.id))}" style="color:var(--accent-ink)">${_t('contact us')}</a>`;
+    if(live.length&&!live.some(s=>s.status==='delivered'))out+=`<span class="ship-note" style="margin:0">${_t('Returns open once your parcel has been delivered. Something wrong already? Please {contact}.',{contact:help})}</span>`;
+    else if(r.blocked&&/closed/.test(r.blocked))out+=`<span class="ship-note" style="margin:0">${_t('The {n}-day return window for this order has closed.',{n:days})}</span>`;
+  }
   return out;
 }
 let rtOrder=null, rtImages=[], rtPicked=new Map(); // order item id → units going back
@@ -942,7 +1042,7 @@ function renderRtItems(){
     // the same piece (different colour, or one gift-wrapped) are otherwise
     // impossible to tell apart, and the refund includes what the extras cost.
     const nm=`${esc(i.name)}${i.qty>1?' ×'+i.qty:''}${optLabel(i.options)?` <span style="color:var(--muted);font-weight:600">· ${esc(optLabel(i.options))}</span>`:''}${exText(i.extras)?` <span style="color:var(--muted);font-weight:600">· ${esc(exText(i.extras))}</span>`:''}${i.personalised?` <span style="color:var(--muted);font-weight:600">· ${_t('personalised')}</span>`:''}`;
-    if(!(i.available>0))return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='requested'?_t('already requested'):_t('already returned')}</span></label>`;
+    if(!(i.available>0))return `<label class="rti off"><input type="checkbox" disabled><span class="nm">${nm}</span><span class="lk">${i.locked==='requested'?_t('already requested'):i.locked==='not_delivered'?_t('not delivered yet'):i.locked==='closed'?_t('return window closed'):_t('already returned')}</span></label>`;
     const on=rtPicked.has(i.id), n=rtPicked.get(i.id)||i.available;
     // More than one unit left on the line → pick how many go back.
     const qty=i.available>1?`<select onclick="event.stopPropagation()" onchange="setRtQty(${Number(i.id)},this.value)" aria-label="${_t('How many {name} go back',{name:esc(i.name)})}">${Array.from({length:i.available},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===n?'selected':''}>${_t('{k} of {n}',{k,n:i.available})}</option>`).join('')}</select>`:'';
@@ -973,7 +1073,8 @@ function updateRtMoney(){
   // The whole order back for a fault → the original delivery comes back too
   // (the server decides for real at approval; this is the preview).
   const fault=(r.personalisedReasons||[]).includes(reason);
-  const all=(r.items||[]).every(i=>!(i.available>0)||(rtPicked.get(i.id)||0)>=i.available);
+  // A piece still on its way (or past its window) is not coming back, so the order isn't whole.
+  const all=(r.items||[]).every(i=>!['not_delivered','closed'].includes(i.locked)&&(!(i.available>0)||(rtPicked.get(i.id)||0)>=i.available));
   const delivery=fault&&all&&r.wholeOrderFaultDelivery>0?Number(r.wholeOrderFaultDelivery):0;
   const refund=Math.max(0,gross-(feeApplies?r.fee:0))+delivery;
   $('rtMoney').innerHTML=_t("You'll get <b>{amount}</b> back to your card once our courier has collected the item.",{amount:aed(refund)})+' '
@@ -1031,7 +1132,7 @@ async function withdrawReturn(orderId,requestId){
 }
 
 /* ---------- ROUTER ---------- */
-const TITLES={overview:[_t('Overview'),_t('Welcome back')],orders:[_t('Your orders'),_t('Track, return and review')],addresses:[_t('Addresses'),_t('Where we deliver')],details:[_t('My details'),_t('Your profile')]};
+const TITLES={overview:[_t('Overview'),_t('Welcome back')],orders:[_t('Your orders'),_t('Track, return and review')],bookings:[_t('Service bookings'),_t('Your Services Marketplace bookings')],addresses:[_t('Addresses'),_t('Where we deliver')],details:[_t('My details'),_t('Your profile')]};
 /* mobile: the sidebar itself slides in as a collapsible menu (.side.open);
  * same elements as desktop, so active-state toggles and sign-out just work */
 function openMenu(){$('sideMenu').classList.add('open');$('menuScrim').classList.add('open');document.body.style.overflow='hidden';$('menuBtn').setAttribute('aria-expanded','true');Modal.open($('sideMenu'),closeMenu,$('sideMenu').querySelector('.side-close'));}
@@ -1050,18 +1151,66 @@ function go(v){
   document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
   $('mhSec').textContent=TITLES[v][0];
-  if(v==='orders')renderOrders(); if(v==='addresses')renderAddr();
+  if(v==='orders')renderOrders(); if(v==='addresses')renderAddr(); if(v==='bookings')renderBookings();
   window.scrollTo(0,0);
 }
 
 /* ---------- DATA LOADING + BOOT ---------- */
 async function reloadOrders(){
-  try{ const {orders:o}=await TroveAPI.api('/api/account/orders'); orders=o||[]; }catch(_){ orders=[]; }
+  try{ const {orders:o}=await TroveAPI.api('/api/account/orders'); orders=o||[]; ordersErr=false; }catch(_){ orders=[]; ordersErr=true; }
   if($('ordPill')){$('ordPill').textContent=orders.length;$('ordPill').classList.toggle('zero',!orders.length);}
 }
 async function reloadAddresses(){
-  try{ const {addresses:a}=await TroveAPI.api('/api/account/addresses'); addresses=(a||[]).map(x=>({id:x.id,label:x.label,name:x.name,line:x.line,city:x.city,country:x.country,phone:x.phone,def:!!x.is_default})); }catch(_){ addresses=[]; }
+  try{ const {addresses:a}=await TroveAPI.api('/api/account/addresses'); addresses=(a||[]).map(x=>({id:x.id,label:x.label,name:x.name,line:x.line,city:x.city,country:x.country,phone:x.phone,def:!!x.is_default})); addrErr=false; }catch(_){ addresses=[]; addrErr=true; }
   renderAddr();
+}
+
+/* ---------- SERVICE BOOKINGS ----------
+ * The bookings a signed-in customer made on the Services Marketplace (the
+ * same list as 'Your bookings' on /services): pay, details, cancel. */
+async function reloadBookings(){
+  try{ bookings=(await TroveAPI.api('/api/services/my-bookings')).bookings||[]; bookingsErr=false; }catch(_){ bookings=[]; bookingsErr=true; }
+  const waiting=bookings.filter(b=>b.canPay).length;
+  if($('bkPill')){$('bkPill').textContent=waiting||bookings.length;$('bkPill').classList.toggle('zero',!bookings.length);}
+}
+const BK_STATUS={requested:[_t('Waiting for the provider'),''],awaiting_payment:[_t('Confirmed · pay to secure'),''],confirmed:[_t('Confirmed'),'confirmed'],completed:[_t('Done'),'completed'],declined:[_t('Declined'),'declined'],cancelled:[_t('Cancelled'),'cancelled']};
+function bkPay(b){
+  if(b.paymentMethod!=='trove')return _t('Settling directly with the provider');
+  if(b.refunded)return _t('Refunded in full');
+  if(b.paid)return _t('Paid through Trove');
+  return _t('Paying through Trove by card');
+}
+function bkDay(d){const t=new Date(String(d)+'T00:00:00Z');return isNaN(t)?String(d):troveDate(t,{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}
+async function retryBookings(){ await reloadBookings(); renderBookings(); renderBookingNudge(); }
+function renderBookings(){
+  const el=$('bookingsList'); if(!el)return;
+  if(bookingsErr){ el.innerHTML=loadErrorHTML(_t('We couldn’t load your bookings just now'),'retryBookings()'); return; }
+  if(!bookings.length){ el.innerHTML=`<div class="card empty-state"><div class="big">${_t('No service bookings yet')}</div><p>${_t('Book a local maker or specialist on the Services Marketplace and your bookings appear here.')}</p><a class="btn btn-coral" href="${troveUrl('/services')}">${_t('Browse services')}</a></div>`; return; }
+  el.innerHTML=bookings.map(b=>{
+    const st=BK_STATUS[b.status]||[b.status,''];
+    const when=b.serviceDate?` · ${esc(bkDay(b.serviceDate))}`:(b.preferredDate?` · ${esc(b.preferredDate)}`:'');
+    return `<div class="bkcard">
+      <div class="grow"><div class="t">${esc(b.title)} · ${esc(b.providerName)}</div>
+      <div class="s"><bdi>${esc(b.code)}</bdi>${when}${b.amountCents?` · ${troveMoney(b.amountCents/100)}`:''} · ${bkPay(b)}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
+      <span class="bkpill ${st[1]}">${esc(st[0])}</span>
+      <span class="acts">${b.payPath?`<a class="pay" href="${esc(troveUrl(b.payPath))}">${_t('Pay {amount}',{amount:troveMoney(b.amountCents/100)})}</a>`:''}
+      ${b.viewPath?`<a href="${esc(troveUrl(b.viewPath))}">${_t('Details')}</a>`:''}
+      ${b.canCancel?`<button type="button" onclick="cancelBooking(${Number(b.id)},${b.paid?1:0},${Number(b.amountCents)||0})">${_t('Cancel')}</button>`:''}</span>
+    </div>`;}).join('');
+}
+async function cancelBooking(id,paid,amount){
+  if(!confirm(paid?_t('Cancel this booking? The {amount} you paid comes back to your card in full.',{amount:troveMoney(amount/100)}):_t('Cancel this booking?')))return;
+  try{
+    const r=await TroveAPI.api('/api/services/bookings/'+id+'/cancel',{method:'POST'});
+    toast(r&&r.refunded?_t('Booking cancelled — refund on its way'):_t('Booking cancelled'));
+    await reloadBookings(); renderBookings(); renderBookingNudge();
+  }catch(e){ toast(e.message||_t('Could not cancel')); }
+}
+/* Overview: bookings waiting for the customer's payment. */
+function renderBookingNudge(){
+  const w=$('bkNudge'); if(!w)return;
+  const n=bookings.filter(b=>b.canPay).length;
+  w.innerHTML=n?`<div class="card" style="margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div style="font-size:14px;font-weight:600">${_tn(n,'{n} service booking is waiting for your payment','{n} service bookings are waiting for your payment')}</div><button type="button" class="btn btn-dark btn-sm" onclick="go('bookings')">${_t('View bookings')}</button></div>`:'';
 }
 function initUser(){
   const n=ME.name||_t('there'), first=n.split(' ')[0];
@@ -1112,10 +1261,18 @@ async function savePassword(){
 }
 async function boot(){
   let session=null;
-  try{ session=await TroveAPI.me(); }catch(_){}
+  // me() answers null only when signed out; anything else (a 502 during a
+  // deploy, no connection) is an error — say so and offer a retry rather
+  // than sending a signed-in buyer to the sign-in page.
+  try{ session=await TroveAPI.me(); }
+  catch(_){
+    $('pageTitle').textContent=_t('Your account');
+    document.querySelector('.content').innerHTML=loadErrorHTML(_t('We couldn’t reach Trove just now'),'location.reload()');
+    return;
+  }
   if(!session||!session.user){ location.href=troveUrl('/login'); return; }
   ME=session.user; initUser();
-  await Promise.all([reloadOrders(), reloadAddresses(), reloadReviews()]);
+  await Promise.all([reloadOrders(), reloadAddresses(), reloadReviews(), reloadBookings()]);
   renderOverview();
   // Old links to #wishlist, #payments or #following land on the overview.
   const _sec=(location.hash||'').replace('#','');

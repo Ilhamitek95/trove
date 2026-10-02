@@ -78,5 +78,7 @@
   "This page needs the link from your reset email.": "This page needs the link from your reset email.",
   "This reset link has expired or was already used — ask for a new one below.": "This reset link has expired or was already used — ask for a new one below.",
   "Thank you — your email is confirmed. Sign in to carry on.": "Thank you — your email is confirmed. Sign in to carry on.",
-  "That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.": "That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details."
+  "That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.": "That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.",
+  "That email doesn’t look right — did you mean {email}?": "That email doesn’t look right — did you mean {email}?",
+  "That email address doesn't look right — check it and try again": "That email address doesn't look right — check it and try again"
 }

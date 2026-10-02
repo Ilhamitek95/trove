@@ -239,6 +239,8 @@ function markPaid(settlementId) {
   for (const it of items) {
     try { generatePurchaseNote(it, st); }
     catch (e) { console.error(`purchase note failed for settlement item ${it.id}:`, e.message); }
+    // The maker hears the money has gone out (amount + bank reference).
+    require('./notify').payoutSent(it.id);
   }
   return db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
 }

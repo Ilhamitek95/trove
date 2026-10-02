@@ -146,7 +146,9 @@ test('F056: packed is not collected — Packed until the courier reports the pic
   assert.equal(row.attention, '', 'the flag clears');
   acct = (await ctx.api('GET', '/api/account/orders', { cookie: buyerCookie })).data.orders.find((x) => x.id === 'TRV-CO04');
   assert.equal(acct.shipments[0].statusLabel, 'Shipped');
-  assert.ok(acct.shipments[0].timeline.some((e) => e.note === 'Collected by Quiqup'));
+  // The buyer reads a friendly step, never the courier's raw note (F090).
+  assert.ok(acct.shipments[0].timeline.some((e) => /^Handed to the courier/.test(e.note)));
+  assert.ok(!acct.shipments[0].timeline.some((e) => e.note === 'Collected by Quiqup'));
   // Once collected, the maker can't step it back.
   const back = await ctx.api('PATCH', `/api/seller/shipments/${sh.id}`, { cookie: makerCookie, body: { status: 'processing' } });
   assert.equal(back.status, 400);

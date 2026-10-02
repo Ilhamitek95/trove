@@ -495,7 +495,10 @@ ${companyBlockHtml(c, { lang })}`;
   const script = `<script>
 (function(){
   var f=document.getElementById('cForm'),m=document.getElementById('cMsg'),b=document.getElementById('cSend');
-  var t=new URLSearchParams(location.search).get('topic');if(t){var s=document.getElementById('cTopic');for(var i=0;i<s.options.length;i++)if(s.options[i].value===t)s.value=t;}
+  var q=new URLSearchParams(location.search),t=q.get('topic');if(t){var s=document.getElementById('cTopic');for(var i=0;i<s.options.length;i++)if(s.options[i].value===t)s.value=t;}
+  /* From an order in My account: the order number (and a cancel request) come filled in. */
+  var o=q.get('order');if(o&&/^[A-Za-z0-9-]{1,30}$/.test(o))document.getElementById('cOrder').value=o.toUpperCase();
+  if(q.get('cancel')==='1'&&!document.getElementById('cBody').value)document.getElementById('cBody').value=${js('I would like to cancel this order before it is sent, please.')};
   f.addEventListener('submit',async function(e){
     e.preventDefault();
     var d={};new FormData(f).forEach(function(v,k){d[k]=String(v);});
