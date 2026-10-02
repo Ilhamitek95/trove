@@ -258,6 +258,9 @@ function createApp() {
     res.json({ version: d.version, markdown: d.markdown, sha256: d.sha256, ...(d.arabic ? { arabic: d.arabic } : {}) });
   });
 
+  // Admin → Activity: a lasting record of every admin write and every write
+  // made in shop view (src/admin-audit.js), written after the response.
+  app.use('/api', require('./admin-audit').middleware);
   app.use('/api/auth', require('./routes/auth.routes'));
   app.use('/api/products', require('./routes/products.routes'));
   app.use('/api/shops', require('./routes/shops.routes'));

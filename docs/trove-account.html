@@ -569,7 +569,7 @@ function img(seed){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 250"><rect width="200" height="250" fill="${bg}"/><ellipse cx="${cx}" cy="${cy}" rx="${r1}" ry="${Math.round(r1*.82)}" fill="${a}" opacity=".9" transform="rotate(${rot} ${cx} ${cy})"/><ellipse cx="${200-cx}" cy="${250-cy}" rx="${r2}" ry="${Math.round(r2*.78)}" fill="${b}" opacity=".85" transform="rotate(${(rot+64)%180} ${200-cx} ${250-cy})"/></svg>`;
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
-function aed(n){return troveMoney(Math.round(n));}
+function aed(n){return troveMoney(n);} /* shared formatter (api.js): en-GB digits, fils shown — never rounded */
 
 /* ---------- ACCESSIBILITY HELPERS ----------
  * Modal: the address drawer, the review and return dialogs and the phone

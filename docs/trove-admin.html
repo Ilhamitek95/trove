@@ -226,6 +226,23 @@
   .cmsbadge.dirty{background:var(--sage);color:var(--char)}
   .rprev{font-family:var(--font-display);font-size:20px;line-height:1.15;color:var(--char);margin-top:7px;padding:8px 12px;background:var(--paper);border:1px dashed var(--line);border-radius:10px}
   .rprev em{font-style:normal;color:var(--char);text-decoration:underline;text-decoration-color:var(--coral);text-decoration-thickness:2px;text-underline-offset:3px}
+  /* Needs you: one row per kind of item waiting on the owner */
+  .needs-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-top:1px solid var(--line-soft);cursor:pointer;width:100%;text-align:left;font:inherit}
+  .needs-row:first-child{border-top:none}
+  .needs-row:hover .nl{text-decoration:underline}
+  .needs-row .nc{min-width:30px;height:30px;border-radius:999px;background:var(--rose-tint);display:grid;place-items:center;font-weight:700;font-size:13px;padding:0 8px}
+  .needs-row.urgent .nc{background:var(--char);color:var(--cream)}
+  .needs-row .nl{font-weight:700;font-size:13.5px}
+  .needs-row .nh{font-size:12px;color:var(--muted);font-weight:600}
+  .needs-row .go{margin-left:auto;font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
+  .odetail td{background:var(--cream)}
+  .dvform{display:grid;gap:10px;margin-top:10px}
+  .dvform label{font-size:13px;font-weight:600}
+  .dvform input,.dvform select{display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;font:inherit;background:var(--paper)}
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;font-size:12px;font-weight:700}
+  .steps span{padding:4px 10px;border-radius:999px;background:var(--rose-tint);color:var(--muted)}
+  .steps span.done{background:#E4ECE5;color:var(--char)}
+  .steps span.now{background:var(--char);color:var(--cream)}
 </style>
 </head>
 <body>
@@ -241,13 +258,14 @@
     <a class="mitem" data-v="shops" onclick="go('shops')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Shops<span class="badge zero" id="pendBadge">0</span></a>
     <a class="mitem" data-v="providers" onclick="go('providers')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14.7 6.3a4 4 0 1 0-5.4 5.9L4 17.5V20h2.5l5.3-5.3a4 4 0 0 0 5.9-5.4l-2.9 2.9-2.1-2.1z"/></svg>Providers<span class="badge zero" id="provBadge">0</span></a>
     <a class="mitem" data-v="products" onclick="go('products')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M20.6 13.4 12 22 2 12l8.6-8.6a2 2 0 0 1 1.4-.6h6a2 2 0 0 1 2 2v6a2 2 0 0 1-.6 1.4z" transform="scale(.9) translate(1.5 0)"/><circle cx="16" cy="8" r="1.4"/></svg>Products</a>
-    <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6 5 2H2"/></svg>Orders</a>
+    <a class="mitem" data-v="orders" onclick="go('orders')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 6h15l-1.5 9h-12z"/><circle cx="9" cy="20" r="1.3"/><circle cx="18" cy="20" r="1.3"/><path d="M6 6 5 2H2"/></svg>Orders<span class="badge zero" id="ordBadge" title="Orders that need you: flagged or past their pack-by day">0</span></a>
     <a class="mitem" data-v="reviews" onclick="go('reviews')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg>Reviews</a>
     <a class="mitem" data-v="returns" onclick="go('returns')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 5v6h6"/><path d="M3.5 11A9 9 0 1 1 6 17.7"/></svg>Returns<span class="badge zero" id="retBadge">0</span></a>
     <a class="mitem" data-v="sitecontent" onclick="go('sitecontent')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Site content</a>
     <a class="mitem" data-v="translations" onclick="go('translations')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3Z"/></svg>Translations<span class="badge zero" id="trBadge">0</span></a>
     <a class="mitem" data-v="messages" onclick="go('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages<span class="badge zero" id="msgBadge">0</span></a>
     <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Trove payouts</a>
+    <a class="mitem" data-v="activity" onclick="go('activity')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity</a>
     <div class="sfoot">
       <a href="/" target="_blank" rel="noopener">View storefront ↗</a>
       <a href="/login" onclick="signOut();return false">Sign out</a>
@@ -258,8 +276,18 @@
     <div class="top"><div><h1 id="pageTitle">Overview</h1><div class="sub" id="pageSub"></div></div></div>
 
     <div class="view active" id="view-overview">
+      <div class="card needs-card">
+        <h3>Needs you</h3>
+        <div class="hint">Everything waiting on you, from every tab, most urgent first. Tap a row to go straight there.</div>
+        <div id="needsList"><div class="empty">Loading…</div></div>
+      </div>
       <div class="house-slot"></div>
       <div class="cards" id="statCards"></div>
+      <div class="card">
+        <h3>Background jobs</h3>
+        <div class="hint">When the jobs that run on their own last worked. If one fails you get an email (once a day at most) and it shows in Needs you.</div>
+        <div id="jobsList"></div>
+      </div>
       <div class="card">
         <h3>Waiting for your review</h3>
         <div class="hint">New shops stay hidden from shoppers until you approve them.</div>
@@ -300,7 +328,7 @@
       </div>
       <div class="card" style="padding:0">
         <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h3>Provider payouts</h3>
-        <div class="hint">What providers are owed for bookings paid through Trove at this fortnight's run<span id="svcRunDate"></span>. A fee is payable once the service date has passed and the 3-day complaint window has closed (marking a booking done does not bring it forward), and goes out on the same every-other-Tuesday schedule as makers. Paid by manual bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf: download the bank transfer file, send each transfer with its reference, then mark that provider paid here (they get an email). Providers without bank details wait and are left out of the file.</div></div>
+        <div class="hint">What providers are owed for bookings paid through Trove at this fortnight's run<span id="svcRunDate"></span>. A fee is payable once the service date has passed and the 3-day complaint window has closed (marking a booking done does not bring it forward), and goes out on the same every-other-Tuesday schedule as makers. Paid by manual bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf: download the bank transfer file, send each transfer with its reference, then mark that provider paid here (they get an email). Mark paid closes exactly what was in the file you downloaded — anything that became payable after it waits for the next file. Providers without bank details wait and are left out of the file.</div></div>
         <a class="btn btn-ghost" id="svcCsvBtn" style="display:none" href="#" onclick="setTimeout(loadServiceMoney,1200)">Download bank transfer file</a></div>
         <div id="svcCreditsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
@@ -318,8 +346,15 @@
 
     <div class="view" id="view-orders">
       <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px"><h3>All orders</h3><div class="hint">Every order across the marketplace, newest first. Each maker's parcel shows where it is with the courier and anything that needs you (a booking that failed, a parcel lost or not collected). <b>Cancel items</b> refunds just the pieces you pick that haven't left the maker — the makers are told to leave them out, and a parcel that ends up empty is cancelled with its courier booking. <b>Never shipped</b> does that for a whole parcel.</div></div>
+        <div style="padding:20px 22px 4px"><h3>All orders</h3><div class="hint">Every order across the marketplace, newest first. Each maker's parcel shows where it is with the courier and anything that needs you (a booking that failed, a parcel lost or not collected). <b>Details</b> opens the whole order: what was bought, the delivery address and mobile, tracking, returns and refunds — and <b>Edit delivery details</b> fixes a mistyped flat or mobile until the parcel is packed. <b>Cancel items</b> refunds just the pieces you pick that haven't left the maker — the makers are told to leave them out, and a parcel that ends up empty is cancelled with its courier booking. <b>Never shipped</b> does that for a whole parcel.</div></div>
+        <div class="revbar">
+          <div class="rchips" id="ordChips"></div>
+          <input id="ordSearch" aria-label="Search orders" placeholder="Order number, email, mobile or name…" onkeydown="if(event.key==='Enter')searchOrders()">
+          <button class="btn btn-ghost" onclick="searchOrders()">Search</button>
+          <span class="rcount" id="ordCount"></span>
+        </div>
         <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="ordersTable"></table></div>
+        <div id="ordMore" style="padding:0 22px 18px"></div>
       </div>
     </div>
 
@@ -382,6 +417,13 @@
     <div class="view" id="view-payouts">
       <div id="payoutsWrap"></div>
     </div>
+
+    <div class="view" id="view-activity">
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px"><h3>What was done, and when</h3><div class="hint">The latest 100 changes made from this admin, and anything changed while in a maker's shop view — approvals, refunds, payouts, hides, parcel updates. Kept for good, so a dispute with a maker or a buyer can be answered. Bank numbers, codes and people's contact details are never stored here.</div></div>
+        <div class="tscroll" style="padding:0 10px 10px"><table class="tbl" id="activityTable"></table></div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -426,6 +468,27 @@
   </div>
 </div>
 
+<!-- Correct the delivery details of a paid order until a parcel is packed. -->
+<div class="mscrim" id="dvScrim" onclick="if(event.target===this)closeDeliveryModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="dvTitle">
+    <h3 id="dvTitle">Edit delivery details</h3>
+    <div class="hint" id="dvSub" style="margin-bottom:6px"></div>
+    <div class="dvform">
+      <label>Name<input id="dvName" maxlength="200"></label>
+      <label>Address line (building, flat)<input id="dvLine" maxlength="200"></label>
+      <label>Second line (optional)<input id="dvLine2" maxlength="200"></label>
+      <label>Area<input id="dvArea" maxlength="200"></label>
+      <label>Emirate<select id="dvEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></label>
+      <label>Courier notes (optional)<input id="dvNotes" maxlength="200"></label>
+      <label>Mobile<input id="dvPhone" maxlength="20" inputmode="tel"></label>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn-ghost" onclick="closeDeliveryModal()">Cancel</button>
+      <button class="btn btn-coral" id="dvGo" onclick="saveDelivery()">Save details</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
@@ -440,8 +503,8 @@ function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'
    uploads, https or an inline image, ever reach a style attribute. */
 const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#BD9C8C';
 const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"'()\\\s<>]*$/.test(u)?u:'';};
-function aed(n){return 'AED '+Math.round(n).toLocaleString();}
-function money(c){const n=(c||0)/100;return Number.isInteger(n)?aed(n):'AED '+n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function aed(n){return troveMoney(n);} /* shared formatter (api.js): en-GB digits, fils shown — never rounded */
+function money(c){return troveMoney((c||0)/100);}
 function fmtDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?s:d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
 
 /* ---------------- accessibility helpers ----------------
@@ -481,7 +544,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to book the collection; the refund follows the pickup'],translations:['Translations','Arabic for everything people write: status, retranslate, hand edits'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Trove payouts','Pay your managed sellers']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to book the collection; the refund follows the pickup'],translations:['Translations','Arabic for everything people write: status, retranslate, hand edits'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Trove payouts','Pay your managed sellers'],activity:['Activity','Who changed what, and when']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -495,10 +558,10 @@ async function reload(){
   const [stats,shops,orders,products]=await Promise.all([
     TroveAPI.api('/api/admin/stats'),
     TroveAPI.api('/api/admin/shops'),
-    TroveAPI.api('/api/admin/orders'),
+    TroveAPI.api(ordersUrl()),
     TroveAPI.api('/api/admin/products'),
   ]);
-  STATS=stats;SHOPS=shops.shops;ORDERS=orders.orders;PRODUCTS=products.products;
+  STATS=stats;SHOPS=shops.shops;ORDERS=orders.orders;ORD_NEXT=orders.next||null;ORD_COUNTS=orders.counts||null;PRODUCTS=products.products;
   try{ PROVIDERS=(await TroveAPI.api('/api/admin/providers')).providers; }catch(_){ PROVIDERS=[]; }
   try{ TRENDS=(await TroveAPI.api('/api/admin/search-trends')).terms; }catch(_){ TRENDS=[]; }
   try{ REVIEWS=(await TroveAPI.api('/api/admin/reviews')).reviews; }catch(_){ REVIEWS=[]; }
@@ -511,6 +574,66 @@ async function reload(){
   reloadHouse();
   reloadPayouts();
   reloadTranslations();
+  reloadNeeds();
+  reloadActivity();
+}
+
+/* ---------------- Needs you: one to-do list (GET /api/admin/needs-you) ----------------
+ * Every kind of item waiting on the owner, gathered server-side from every
+ * tab: refunds to make by hand, returns to decide, overdue packs,
+ * applications, IDs to check, runs to send, providers to pay, messages,
+ * failing background jobs. A row opens the tab (and the Orders filter). */
+let NEEDS=null;
+async function reloadNeeds(){
+  try{ NEEDS=await TroveAPI.api('/api/admin/needs-you'); }catch(_){ NEEDS=null; }
+  renderNeeds();
+}
+function renderNeeds(){
+  const w=$('needsList'); if(!w)return;
+  if(!NEEDS){ w.innerHTML='<div class="empty">Could not load the list — refresh to try again.</div>'; return; }
+  w.innerHTML=NEEDS.items.length?NEEDS.items.map(i=>`<button type="button" class="needs-row${i.urgent?' urgent':''}" onclick="needsGo('${esc(i.view)}','${esc(i.filter||'')}')">
+      <span class="nc">${Number(i.count)}</span>
+      <span><span class="nl">${esc(i.label)}</span>${i.hint?`<br><span class="nh">${esc(i.hint)}</span>`:''}</span>
+      <span class="go">Open ›</span></button>`).join('')
+    :'<div class="empty">Nothing needs you right now.</div>';
+  const o=NEEDS.orders||{}; const nb=(o.attention||0)+(o.overdue||0);
+  const b=$('ordBadge'); if(b){ b.textContent=nb; b.classList.toggle('zero',!nb); }
+  const jobs=NEEDS.jobs||[];
+  $('jobsList').innerHTML=jobs.length?`<table class="tbl"><thead><tr><th>Job</th><th>Last worked</th><th>Last problem</th></tr></thead><tbody>${jobs.map(j=>`<tr>
+      <td style="font-weight:700">${esc(j.label)}</td>
+      <td>${j.lastOkAt?esc(fmtDateTime(j.lastOkAt)):'<span style="color:var(--muted)">not yet</span>'}</td>
+      <td>${j.lastErrorAt?`<span style="${j.failing?'color:#B3261E;font-weight:700':'color:var(--muted)'}">${esc(fmtDateTime(j.lastErrorAt))} · ${esc(j.lastError)}</span>`:'<span style="color:var(--muted)">none</span>'}</td>
+    </tr>`).join('')}</tbody></table>`
+    :'<div class="empty">No background job has reported yet — they report after their first run (the backup runs nightly at 03:30).</div>';
+}
+function fmtDateTime(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'Z');return isNaN(d)?s:d.toLocaleString('en-GB',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',timeZone:'Asia/Dubai'});}
+function needsGo(view,filter){
+  if(view==='orders'&&filter){ ORD_FILTER=filter; ORD_Q=''; const s=$('ordSearch'); if(s)s.value=''; loadOrders(); }
+  go(view);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ---------------- Activity (GET /api/admin/activity) ---------------- */
+let ACTIVITY=[];
+async function reloadActivity(){
+  try{ ACTIVITY=(await TroveAPI.api('/api/admin/activity')).actions; }catch(_){ ACTIVITY=[]; }
+  renderActivity();
+}
+function auditVal(v){
+  if(v==null)return '';
+  if(typeof v!=='object')return esc(String(v));
+  return Object.entries(v).map(([k,x])=>`${esc(k)}: ${esc(typeof x==='object'&&x!==null?JSON.stringify(x):String(x))}`).join(' · ');
+}
+function renderActivity(){
+  const t=$('activityTable'); if(!t)return;
+  t.innerHTML=`<thead><tr><th>When</th><th>What</th><th>On</th><th>Before</th><th>Asked for</th><th>Who</th></tr></thead><tbody>${ACTIVITY.length?ACTIVITY.map(a=>`<tr>
+      <td style="white-space:nowrap;color:var(--muted)">${esc(fmtDateTime(a.at))}</td>
+      <td style="font-weight:700">${esc(a.action)}${a.shopView?`<div class="sl">in shop view of ${esc(a.shopView)}</div>`:''}${a.note?`<div class="sl">${esc(a.note)}</div>`:''}</td>
+      <td style="color:var(--muted)">${esc(a.target)}</td>
+      <td style="font-size:12px;max-width:220px">${auditVal(a.before)}</td>
+      <td style="font-size:12px;max-width:260px">${auditVal(a.after)}</td>
+      <td style="color:var(--muted);font-size:12px">${esc(a.admin)}</td>
+    </tr>`).join(''):'<tr><td colspan="6" class="empty">Nothing recorded yet — every change you make from here on is listed.</td></tr>'}</tbody>`;
 }
 
 /* ---------------- Translations (Arabic, backend/src/translate.js) ---------------- */
@@ -596,6 +719,7 @@ async function reloadPayouts(){
   try{ GRAD=await TroveAPI.api('/api/admin/graduation'); }catch(_){ GRAD={queue:[],railBEnabled:false}; }
   try{ VAT=await TroveAPI.api('/api/admin/vat-report'); }catch(_){ VAT={vatRegistered:false,rows:[]}; }
   renderPayouts();
+  if(typeof NEEDS!=='undefined'&&NEEDS)reloadNeeds(); // a run sent or paid changes the to-do list
 }
 
 /* ---------------- overview ---------------- */
@@ -619,8 +743,8 @@ function renderOverview(){
   $('statCards').innerHTML=`
     <div class="stat ${s.shops.pending?'hot':''}"><div class="k">Pending approval</div><div class="v">${s.shops.pending}</div><div class="n">new shop${s.shops.pending===1?'':'s'} waiting</div></div>
     <div class="stat"><div class="k">Live shops</div><div class="v">${s.shops.approved}</div><div class="n">of ${s.shops.total} total</div></div>
-    <div class="stat"><div class="k">Orders</div><div class="v">${s.orders}</div><div class="n">paid &amp; fulfilled</div></div>
-    <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">gross, incl. fees</div></div>
+    <div class="stat"><div class="k">Orders</div><div class="v">${s.orders}</div><div class="n">paid, not refunded in full</div></div>
+    <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">after refunds · incl. delivery${s.refundedCents?` · ${money(s.refundedCents)} refunded`:''}</div></div>
     <div class="stat"><div class="k">Buyers</div><div class="v">${s.buyers}</div><div class="n">registered</div></div>
     <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>
     ${courierStatHTML()}
@@ -652,7 +776,8 @@ function applicationCardHTML(s){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px">
       ${s.category?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">${esc(s.category)}</span>`:''}
       ${s.location?`<span class="pill" style="background:var(--rose-tint);color:var(--char)">📍 ${esc(s.location)}</span>`:''}
-      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.payoutType==='connect'?'Own Stripe':'Fortnightly payout'}</span>
+      <span class="pill" style="background:var(--rose-tint);color:var(--char)">${s.tier==='connect'?'Own Stripe':'Fortnightly payout'}</span>
+      ${(s.payoutMissing||[]).length?`<span class="pill pending" style="color:var(--accent-ink)">Payout not set up: ${esc(s.payoutMissing.join(', '))}</span>`:''}
     </div>
     ${applicationFactsHTML(s)}
     <div class="pvstory" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px">
@@ -774,20 +899,28 @@ function makerPhoneHTML(s){
   const nums=[s.pickupPhone&&['Pickup',s.pickupPhone],s.pitchPhone&&s.pitchPhone!==s.pickupPhone&&['WhatsApp',s.pitchPhone]].filter(Boolean);
   return nums.length?`<div class="sl">${nums.map(([k,v])=>`${k} <a href="tel:${esc(String(v).replace(/[^\d+]/g,''))}" style="color:inherit">${esc(v)}</a>`).join(' · ')}</div>`:'';
 }
+/* How the maker is paid (tier), and — named — what stops the settlement run
+ * paying them: bank details, the signed agreement, the identity check. */
+function payoutCellHTML(s){
+  if(s.isHouse) return 'Trove keeps it';
+  if(s.tier==='connect') return 'Own Stripe';
+  const m=s.payoutMissing||[];
+  return m.length?`Fortnightly<div><span class="pill pending" style="color:var(--accent-ink);margin-top:4px" title="The settlement run cannot pay this maker until this is done">Payout not set up</span></div><div class="sl">missing: ${esc(m.join(', '))}</div>`:'Fortnightly';
+}
 function shopRowHTML(s){
   return `<tr>
     <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div>${makerPhoneHTML(s)}</div></div></td>
     <td style="color:var(--muted)">${esc(s.location||'—')}</td>
     <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
     <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.salesCents)}</td>
-    <td style="color:var(--muted)">${s.payoutType==='connect'?'Stripe':'Fortnightly'}${s.payoutType==='managed'&&!s.hasBank?' <span style="color:var(--accent-ink)">· no bank</span>':''}</td>
+    <td style="color:var(--muted)">${payoutCellHTML(s)}</td>
     <td>${idCellHTML(s)}</td>
     <td><span class="pill ${esc(s.status)}">${esc(s.status)}</span></td>
     <td><div class="actions">${s.isHouse?`<a class="btn btn-dark" href="/sell" title="Run your own shop from the seller dashboard">Manage</a>`:`<button class="btn btn-ghost" onclick="viewAsShop(${s.id})" title="Open the seller dashboard as this shop">👁 Shop view</button>`}${shopActions(s)}</div></td>
   </tr>`;
 }
 function renderShops(){
-  $('shopsTable').innerHTML=`<thead><tr><th>Shop</th><th>Location</th><th>Products</th><th>Sales</th><th>Payout</th><th>Identity</th><th>Status</th><th></th></tr></thead>
+  $('shopsTable').innerHTML=`<thead><tr><th>Shop</th><th>Location</th><th>Products</th><th title="Pieces sold, less cancellations, refunded returns and refunded orders">Sales after refunds</th><th>Payout</th><th>Identity</th><th>Status</th><th></th></tr></thead>
     <tbody>${SHOPS.map(shopRowHTML).join('')}</tbody>`;
 }
 async function setShopStatus(id,status,confirmFirst){
@@ -873,7 +1006,7 @@ async function loadServiceMoney(){
       <td>${b.paidAt&&!b.refundedAt?`<button class="btn btn-ghost btn-sm" onclick="refundServiceBooking(${Number(b.id)})">Refund</button>`:''}</td>
     </tr>`).join('')}</tbody></table></div>`
     :'<div class="empty">No bookings paid through Trove yet.</div>';
-  const rows=[...(credits.eligible||[]),...(credits.excluded||[])].filter(r=>r.netCents>0);
+  const rows=[...(credits.eligible||[]),...(credits.excluded||[])].filter(r=>r.netCents>0||r.batch);
   SVC_PAY=rows;
   if(credits.payerName)$('svcPayerName').textContent=credits.payerName;
   $('svcRunDate').textContent=credits.runDate?` (run of ${credits.runDate}; next run ${credits.nextRunDate||''})`:'';
@@ -881,14 +1014,17 @@ async function loadServiceMoney(){
   csv.href=`${TroveAPI.base}/api/admin/provider-payouts/export.csv`;
   csv.style.display=(credits.eligible||[]).length?'':'none';
   const SVC_HOLD={bank_details_changed:'Bank details just changed — check with the provider by phone, then release',on_hold:'Provider suspended — payouts paused'};
-  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed this run</th><th>Pay to</th><th>Reference</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
+  // 'Mark paid' closes the batch frozen when the transfer file was downloaded
+  // (its amount and reference) — never what became payable after it.
+  $('svcCreditsWrap').innerHTML=rows.length?`<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>Provider</th><th>Bookings</th><th>Owed this run</th><th>Pay to</th><th>In your transfer file</th><th></th></tr></thead><tbody>${rows.map(r=>`<tr>
       <td><b>${esc(r.name)}</b>${r.owner?`<br><span style="font-size:12px;color:var(--muted)">${esc(r.owner.email)}</span>`:''}</td>
-      <td>${r.bookings.map(b=>esc(b.code)).join(', ')}</td>
+      <td>${(r.bookings||[]).map(b=>esc(b.code)).join(', ')}</td>
       <td><b>${money(r.netCents)}</b>${r.debitCents?`<br><span style="font-size:12px;color:var(--muted)">after ${money(-r.debitCents)} refund adjustments</span>`:''}</td>
-      <td>${r.payTo?`<b>${esc(r.payTo.accountName||'')}</b><br><span style="font-size:12px;color:var(--muted)">${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}</span>`:'<span class="pill">Waiting for bank details</span>'}${SVC_HOLD[r.reason]?`<br><span style="font-size:12px;font-weight:700">${esc(SVC_HOLD[r.reason])}</span>`:''}</td>
-      <td>${r.payTo&&!SVC_HOLD[r.reason]?`<span style="font-size:12px;font-weight:700">${esc(r.reference||'')}</span>`:''}</td>
-      <td>${r.reason==='bank_details_changed'?`<button class="btn btn-ghost btn-sm" onclick="releaseProviderHold(${Number(r.providerId)})">Release</button>`
-        :r.payTo&&!SVC_HOLD[r.reason]?`<button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)})">Mark paid</button>`:''}</td>
+      <td>${r.payTo?`<b>${esc(r.payTo.accountName||'')}</b><br><span style="font-size:12px;color:var(--muted)">${esc(r.payTo.bank||'')} · ${esc(r.payTo.iban||'')}</span>`:r.reason==='file_only'?'':'<span class="pill">Waiting for bank details</span>'}${SVC_HOLD[r.reason]?`<br><span style="font-size:12px;font-weight:700">${esc(SVC_HOLD[r.reason])}</span>`:''}</td>
+      <td>${r.batch?`<b>${money(r.batch.amountCents)}</b><br><span style="font-size:12px;font-weight:700">${esc(r.batch.reference)}</span><br><span style="font-size:12px;color:var(--muted)">file made ${esc(fmtDateTime(r.batch.createdAt))}${r.batch.amountCents!==r.netCents?' · the rest goes in the next file':''}</span>`
+        :r.payTo&&!SVC_HOLD[r.reason]?'<span style="font-size:12px;color:var(--muted)">not in a file yet — download it</span>':''}</td>
+      <td>${r.reason==='bank_details_changed'&&!r.batch?`<button class="btn btn-ghost btn-sm" onclick="releaseProviderHold(${Number(r.providerId)})">Release</button>`
+        :r.batch?`<button class="btn btn-ghost btn-sm" onclick="markProviderPaid(${Number(r.providerId)})">Mark paid</button>`:''}</td>
     </tr>`).join('')}</tbody></table></div>`
     :'<div class="empty">Nothing owed to providers right now.</div>';
 }
@@ -905,11 +1041,11 @@ async function releaseProviderHold(id){
   loadServiceMoney();
 }
 async function markProviderPaid(id){
-  const r=SVC_PAY.find(x=>x.providerId===id);if(!r)return;
-  const payer=$('svcPayerName').textContent;
-  const ref=prompt(`Mark ${money(r.netCents)} to ${r.name} as sent by bank transfer from ${payer}? We email them a payment note. Transfer reference:`,r.reference||'');
+  const r=SVC_PAY.find(x=>x.providerId===id);if(!r||!r.batch)return;
+  const payer=$('svcPayerName').textContent, b=r.batch;
+  const ref=prompt(`Mark the ${money(b.amountCents)} in your transfer file (made ${fmtDateTime(b.createdAt)}) to ${r.name} as sent by bank transfer from ${payer}? We email them a payment note. Transfer reference:`,b.reference||'');
   if(ref===null)return;
-  try{await TroveAPI.api(`/api/admin/service-credits/${id}/paid`,{method:'POST',body:{reference:ref,amountCents:r.netCents}});toast('Marked paid — the provider has been emailed');}
+  try{await TroveAPI.api(`/api/admin/service-credits/${id}/paid`,{method:'POST',body:{reference:ref,amountCents:b.amountCents}});toast('Marked paid — the provider has been emailed');}
   catch(e){toast(e.message||'Could not mark paid');}
   loadServiceMoney();
 }
@@ -1529,13 +1665,71 @@ function parcelHTML(o,p,many){
       ${open&&p.cancellable?`<button class="btn btn-ghost btn-sm" onclick="openCancelModal('${esc(o.publicId)}',${Number(p.id)})" title="The maker can't send it: cancel and refund everything left in this parcel">Never shipped…</button>`:''}
     </div></div>`;
 }
+/* Search, filter chips and paging (GET /api/admin/orders?q=&filter=&before=). */
+let ORD_FILTER='all', ORD_Q='', ORD_NEXT=null, ORD_COUNTS=null, ORD_OPEN={};
+const ORD_CHIPS=[['all','All'],['attention','Needs attention'],['overdue','Overdue packing'],['open','Open'],['refunded','Refunded']];
+function ordersUrl(before){
+  const p=new URLSearchParams();
+  if(ORD_Q)p.set('q',ORD_Q);
+  if(ORD_FILTER!=='all')p.set('filter',ORD_FILTER);
+  if(before)p.set('before',before);
+  const s=p.toString();
+  return '/api/admin/orders'+(s?'?'+s:'');
+}
+async function loadOrders(){
+  try{ const r=await TroveAPI.api(ordersUrl()); ORDERS=r.orders; ORD_NEXT=r.next||null; ORD_COUNTS=r.counts||ORD_COUNTS; ORD_OPEN={}; renderOrders(); }
+  catch(e){ toast(e.message||'Could not load the orders'); }
+}
+async function loadMoreOrders(btn){
+  if(!ORD_NEXT)return;
+  if(btn)btn.disabled=true;
+  try{ const r=await TroveAPI.api(ordersUrl(ORD_NEXT)); ORDERS=ORDERS.concat(r.orders); ORD_NEXT=r.next||null; renderOrders(); }
+  catch(e){ toast(e.message||'Could not load more'); if(btn)btn.disabled=false; }
+}
+function searchOrders(){ ORD_Q=($('ordSearch').value||'').trim(); loadOrders(); }
+function setOrdFilter(f){ ORD_FILTER=f; loadOrders(); }
+async function toggleOrderDetail(pid){
+  if(ORD_OPEN[pid]){ delete ORD_OPEN[pid]; renderOrders(); return; }
+  ORD_OPEN[pid]='loading'; renderOrders();
+  try{ ORD_OPEN[pid]=(await TroveAPI.api('/api/admin/orders/'+encodeURIComponent(pid))).order; }
+  catch(e){ delete ORD_OPEN[pid]; toast(e.message||'Could not open the order'); }
+  renderOrders();
+}
+const optText=a=>(a||[]).map(x=>x.name&&x.value!==undefined?`${x.name}: ${x.value}`:(x.name||'')).filter(Boolean).join(' · ');
+function orderDetailHTML(d){
+  if(d==='loading')return '<div class="empty">Loading the order…</div>';
+  const ship=d.ship||{};
+  const addr=[ship.name,ship.line,ship.line2,ship.area,ship.city,ship.emirate].filter(Boolean).map(esc).join(', ');
+  const h=s=>`<div style="font-size:10.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin:12px 0 4px">${s}</div>`;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 22px;padding:6px 4px 10px">
+    <div>${h('What was bought')}${d.lines.map(l=>`<div style="font-size:13px;margin:3px 0"><b>${esc(l.name)}</b> × ${l.qty}${l.cancelledQty?` <span style="color:var(--muted)">(${l.cancelledQty} cancelled)</span>`:''}${l.returnedQty?` <span style="color:var(--muted)">(${l.returnedQty} returned)</span>`:''} · ${money(l.priceCents)} each<div class="sl">${esc(l.shop)}${optText(l.options)?' · '+esc(optText(l.options)):''}${(l.extras||[]).length?' · extras: '+esc(l.extras.map(x=>x.name).join(', ')):''}${l.personalisation?' · personalised: “'+esc(l.personalisation)+'”':''}</div></div>`).join('')}
+      <div class="sl" style="margin-top:6px">Pieces ${money(d.subtotalCents)} · delivery ${money(d.deliveryCents)} · total ${money(d.totalCents)}${d.refundedCents?` · <b style="color:var(--char)">refunded ${money(d.refundedCents)}</b>`:''}</div></div>
+    <div>${h('Deliver to')}<div style="font-size:13px">${addr||'<span style="color:var(--muted)">no address</span>'}</div>
+      ${ship.notes?`<div class="sl">Notes: ${esc(ship.notes)}</div>`:''}
+      <div class="sl">Mobile ${d.phone?`<a href="tel:${esc(d.phone)}" style="color:inherit">${esc(d.phone)}</a>`:'—'} · ${esc(d.email)}</div>
+      ${d.deliveryEditedAt?`<div class="sl">Corrected ${esc(fmtDateTime(d.deliveryEditedAt))}</div>`:''}
+      <div style="margin-top:8px">${d.deliveryEditable?`<button class="btn btn-ghost btn-sm" onclick="openDeliveryModal('${esc(d.publicId)}')">Edit delivery details</button>`:`<span class="sl">${esc(d.deliveryEditBlocked||'')}</span>`}</div></div>
+    <div>${h('Parcels')}${d.parcels.map(p=>`<div style="font-size:13px;margin:3px 0 8px"><b>${esc(p.shop)}</b> · ${esc(p.statusLabel||p.status)}
+      <div class="sl">${p.carrier?esc(p.carrier)+' · ':''}${p.trackingUrl?`<a href="${esc(p.trackingUrl)}" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">track ${esc(p.trackingNumber||p.courierRef||'')}</a>`:esc(p.courierRef||'no courier booking yet')}</div>
+      <div class="sl">${p.packBy?`pack by ${esc(fmtDate(p.packBy))}${p.packOverdue?' · <b style="color:#B3261E">overdue</b>':''}`:''}${p.collectedAt?` · collected ${esc(fmtDate(p.collectedAt))}`:''}${p.deliveredAt?` · delivered ${esc(fmtDate(p.deliveredAt))}`:''}${p.returnWindowEndsAt?` · returns close ${esc(fmtDate(p.returnWindowEndsAt))}`:''}</div>
+      ${p.events.length?`<div class="sl">${p.events.slice(-4).map(e=>`${esc(fmtDate(e.at))}: ${esc(e.note||e.status)}`).join('<br>')}</div>`:''}</div>`).join('')}</div>
+    ${d.returns.length||d.cancellations.length?`<div>${h('Returns, cancellations and refunds')}
+      ${d.returns.map(r=>`<div class="sl">Return · ${esc(r.status)} · ${esc(r.reason)} · ${fmtDate(r.createdAt)}${r.refundedAt?` · refunded ${money(r.refundCents)}`:''}</div>`).join('')}
+      ${d.cancellations.map(c=>`<div class="sl">Cancellation · ${esc(c.status)} · ${money(c.refundCents)}${c.note?' · '+esc(c.note):''}</div>`).join('')}
+      ${d.refundedAt?`<div class="sl">Whole order refunded ${esc(fmtDate(d.refundedAt))}</div>`:''}</div>`:''}
+  </div>`;
+}
 function renderOrders(){
+  const c=ORD_COUNTS||{};
+  $('ordChips').innerHTML=ORD_CHIPS.map(([k,lb])=>`<button class="rchip ${ORD_FILTER===k?'on':''}" onclick="setOrdFilter('${k}')">${lb}${c[k]!=null?`<span class="n">${c[k]}</span>`:''}</button>`).join('');
+  $('ordCount').textContent=ORD_Q?`${ORDERS.length}${ORD_NEXT?'+':''} matching “${ORD_Q}”`:'';
+  $('ordMore').innerHTML=ORD_NEXT?'<button class="btn btn-ghost" onclick="loadMoreOrders(this)">Show older orders</button>':'';
   $('ordersTable').innerHTML=`<thead><tr><th>Order</th><th>Buyer</th><th>Parcels</th><th>Items</th><th>Total</th><th>Status</th><th>Placed</th><th></th></tr></thead>
     <tbody>${ORDERS.length?ORDERS.map(o=>{
       const open=!o.refundedAt&&['paid','fulfilled'].includes(o.status);
       const parcels=o.parcels||[];
       return `<tr>
-      <td style="font-weight:700">${esc(o.publicId)}</td>
+      <td style="font-weight:700">${esc(o.publicId)}<div><button class="btn btn-ghost btn-sm" style="margin-top:4px;padding:4px 10px;font-size:11.5px" aria-expanded="${ORD_OPEN[o.publicId]?'true':'false'}" onclick="toggleOrderDetail('${esc(o.publicId)}')">${ORD_OPEN[o.publicId]?'Hide details':'Details'}</button></div></td>
       <td style="color:var(--muted)">${esc(o.email)}${o.phone?`<div style="font-size:12px">${esc(o.phone)}</div>`:''}</td>
       <td style="min-width:230px">${parcels.length?parcels.map(p=>parcelHTML(o,p,parcels.length>1)).join(''):o.shops.map(esc).join(', ')}${packByCell(o)}</td>
       <td>${o.itemCount}</td>
@@ -1545,8 +1739,35 @@ function renderOrders(){
         ${o.hold?small(`Makers' payment held${o.hold==='external_refund'||(o.dispute&&['won','warning_closed'].includes(o.dispute.status))?` · <a href="#" role="button" onclick="releaseHold('${esc(o.publicId)}');return false" style="color:inherit">release hold</a>`:''}`):''}</td>
       <td style="color:var(--muted)">${fmtDate(o.createdAt)}</td>
       <td style="text-align:right"><div class="actions" style="justify-content:flex-end">${open&&parcels.some(p=>p.cancellable)?`<button class="btn btn-ghost" onclick="openCancelModal('${esc(o.publicId)}')">Cancel items…</button>`:''}${open?`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`:''}</div></td>
-    </tr>`;}).join(''):`<tr><td colspan="8" class="empty">No orders yet.</td></tr>`}</tbody>`;
+    </tr>${ORD_OPEN[o.publicId]?`<tr class="odetail"><td colspan="8">${orderDetailHTML(ORD_OPEN[o.publicId])}</td></tr>`:''}`;}).join(''):`<tr><td colspan="8" class="empty">${ORD_Q||ORD_FILTER!=='all'?'No orders match.':'No orders yet.'}</td></tr>`}</tbody>`;
 }
+
+/* ---- correct the delivery details (PATCH /api/admin/orders/:id/delivery) ---- */
+let DV=null, DV_RET=null;
+function openDeliveryModal(pid){
+  const d=ORD_OPEN[pid]; if(!d||d==='loading')return;
+  DV_RET=document.activeElement; DV=pid;
+  const s=d.ship||{};
+  $('dvSub').textContent=`Order ${pid}. Fix a mistyped flat number or mobile before the parcel is packed. Dubai and Abu Dhabi only.`;
+  $('dvName').value=s.name||''; $('dvLine').value=s.line||''; $('dvLine2').value=s.line2||''; $('dvArea').value=s.area||'';
+  $('dvEmirate').value=/abu/i.test(s.emirate||s.city||'')?'Abu Dhabi':'Dubai'; $('dvNotes').value=s.notes||''; $('dvPhone').value=d.phone||'';
+  $('dvScrim').classList.add('open'); $('dvLine').focus();
+}
+function closeDeliveryModal(){ $('dvScrim').classList.remove('open'); DV=null; if(DV_RET&&DV_RET.focus&&document.contains(DV_RET))DV_RET.focus(); DV_RET=null; }
+async function saveDelivery(){
+  if(!DV)return;
+  const em=$('dvEmirate').value;
+  const body={address:{name:$('dvName').value,line:$('dvLine').value,line2:$('dvLine2').value,area:$('dvArea').value,city:em,emirate:em,notes:$('dvNotes').value},phone:$('dvPhone').value};
+  $('dvGo').disabled=true;
+  try{
+    const r=await TroveAPI.api(`/api/admin/orders/${encodeURIComponent(DV)}/delivery`,{method:'PATCH',body});
+    ORD_OPEN[DV]=r.order;
+    toast(!r.changed?'Nothing changed':r.flagged?'Saved — the courier already has the old details: change them with OTO too (the parcel is flagged)':'Delivery details saved');
+    closeDeliveryModal(); renderOrders();
+  }catch(e){ toast(e.message||'Could not save'); }
+  finally{ $('dvGo').disabled=false; }
+}
+document.addEventListener('keydown',(e)=>{if(!$('dvScrim').classList.contains('open'))return;if(e.key==='Escape')closeDeliveryModal();else trapTab(e,$('dvScrim').querySelector('.modal'));});
 async function refundOrder(publicId){
   if(!confirm(`Refund ${publicId} in full? The buyer gets back everything still paid. Parcels the courier hasn't collected are cancelled (courier booking too) and their makers told not to send them; delivered parcels get a return collection; any already-settled supplier purchase nets against their next run.`))return;
   try{
@@ -1672,7 +1893,7 @@ function renderPayouts(){
     <div class="card">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
         <div><h3>Next settlement run</h3>
-          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 15-day buyer return window has closed${PREVIEW.nextRunDate?` · next scheduled run ${esc(PREVIEW.nextRunDate)}`:''}</div></div>
+          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 15-day buyer return window closed before ${PREVIEW.cutoffAt?esc(fmtDateTime(PREVIEW.cutoffAt)):'now'} (Dubai time) — Run settlement uses this same cut-off${PREVIEW.nextRunDate?` · next scheduled run ${esc(PREVIEW.nextRunDate)}`:''}</div></div>
         <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()">Run settlement</button>
       </div>
       ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th><th></th></tr></thead>
@@ -1696,9 +1917,12 @@ function renderPayouts(){
             <span class="pill ${SETTLE_PILL[st.status]||'pending'}">${st.status}</span>
             <span style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(st.totalCents)}</span>
             <span style="flex:1"></span>
-            <a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(reloadPayouts,1200)">Download bank CSV</a>
-            ${st.status!=='paid'?`<button class="btn btn-coral" onclick="markSettlementPaid(${st.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">paid ${fmtDate(st.paidAt)}</span>`}
+            <a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(reloadPayouts,1200)">${st.status==='draft'?'1. Download bank CSV':'Download bank CSV again'}</a>
+            ${st.status==='exported'?`<button class="btn btn-coral" onclick="markSettlementPaid(${st.id})">3. Mark paid</button>`:''}
+            ${st.status!=='paid'?`<button class="btn btn-ghost" onclick="cancelSettlement(${st.id},${st.status==='exported'})" title="Its money waits for the next run; nothing is recorded as paid">Cancel this run</button>`
+              :`<span style="color:var(--muted);font-size:12px">paid ${fmtDate(st.paidAt)}</span>${st.canUndoPaid?` <button class="btn btn-ghost" onclick="undoSettlementPaid(${st.id})" title="Only if the transfers did not actually go out">Undo paid</button>`:''}`}
           </div>
+          ${settleSteps(st)}
           <table class="tbl" style="margin-top:10px"><thead><tr><th>Supplier</th><th>Reference</th><th>Amount</th><th></th></tr></thead>
             <tbody>${st.items.map(i=>`<tr>
               <td style="font-weight:700">${esc(i.shopName)}${i.bankChangedSinceRun&&st.status!=='paid'?`<div style="font-size:11.5px;color:var(--accent-ink);font-weight:700">Bank details changed since this run — the file pays the account below; check with the maker before sending</div>`:''}${i.bank&&i.bank.iban?`<div style="font-size:11.5px;color:var(--muted);font-weight:600">${esc(i.bank.name||'')} · ${esc(i.bank.accountName||'')} · ${esc(i.bank.iban)}</div>`:''}</td>
@@ -1765,10 +1989,32 @@ async function runSettlement(){
     reloadPayouts();
   }catch(e){ toast(e.message||'Could not run the settlement'); }
 }
+/* Run → 1. download the bank file → 2. send the transfers in your bank → 3.
+ * mark paid. 'Mark paid' is offered only once the file was downloaded; a run
+ * can be cancelled until it is paid, and 'paid' undone within 48 hours. */
+function settleSteps(st){
+  const s=st.status, cls=(done,now)=>done?'done':now?'now':'';
+  return `<div class="steps" aria-label="Steps for this run">
+    <span class="${cls(s!=='draft',s==='draft')}">1. Download the bank file</span>
+    <span class="${cls(s==='paid',s==='exported')}">2. Send the transfers in your bank</span>
+    <span class="${cls(s==='paid',false)}">3. Mark paid — makers are emailed</span></div>`;
+}
 async function markSettlementPaid(id){
-  if(!confirm('Mark this settlement as paid? Do this after the bank transfers have gone out — it writes the payout ledger and generates the purchase notes.'))return;
-  try{ await TroveAPI.api('/api/admin/settlements/'+id+'/paid',{method:'POST'}); toast('Settlement marked paid'); reloadPayouts(); }
+  if(!confirm('Have the bank transfers in the file gone out? Marking the run paid writes the payout ledger, makes the purchase notes and emails each maker that their money was sent. You can undo it within 48 hours.'))return;
+  try{ await TroveAPI.api('/api/admin/settlements/'+id+'/paid',{method:'POST'}); toast('Settlement marked paid — makers emailed'); reloadPayouts(); }
   catch(e){ toast(e.message||'Could not mark as paid'); }
+}
+async function cancelSettlement(id,exported){
+  if(!confirm(exported
+    ?'Cancel this run? You already downloaded its bank file — do NOT send any of its transfers. Every maker’s money in it waits for the next run; nothing is recorded as paid.'
+    :'Cancel this run? Every maker’s money in it waits for the next run; nothing is recorded as paid.'))return;
+  try{ await TroveAPI.api(`/api/admin/settlements/${id}/cancel`,{method:'POST',body:{}}); toast('Run cancelled'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not cancel the run'); }
+}
+async function undoSettlementPaid(id){
+  if(!confirm('Undo “paid” for this run? Only do this if the transfers did not actually go out. The payout records and purchase notes are withdrawn and the run goes back to step 2. The makers were already emailed that the money was sent — let them know.'))return;
+  try{ await TroveAPI.api(`/api/admin/settlements/${id}/undo-paid`,{method:'POST',body:{}}); toast('Back to “send the transfers”'); reloadPayouts(); }
+  catch(e){ toast(e.message||'Could not undo'); }
 }
 async function markLegacyPaid(id){
   try{ await TroveAPI.api('/api/admin/payouts/'+id+'/paid',{method:'POST'}); toast('Marked as paid'); reloadPayouts(); }

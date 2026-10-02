@@ -43,6 +43,9 @@ const ATTENTION = {
   not_collected: 'Packed but not collected for over a day',
   refunded_in_transit: 'Refunded while the courier has the parcel',
   delivery_attempts: 'Repeated failed delivery attempts',
+  // Set by Admin → Orders → Edit delivery details (src/admin-ops.js) when the
+  // courier already holds the old address: change it in the OTO dashboard too.
+  address_changed: 'Delivery details corrected after the courier order was made — update them with the courier too',
 };
 
 const facts = (id) => db.prepare(`SELECT sh.*, o.public_id, o.status AS order_status, o.refunded_at AS order_refunded_at,

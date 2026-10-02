@@ -334,5 +334,8 @@
   "Your Trove payment is on its way — {amount}": "Your Trove payment is on its way — {amount}",
   "Your payment is on its way": "Your payment is on its way",
   "Hello {name}, we've sent your payment for {shop} by bank transfer.": "Hello {name}, we've sent your payment for {shop} by bank transfer.",
-  "{amount} sent — reference {ref}.": "{amount} sent — reference {ref}."
+  "{amount} sent — reference {ref}.": "{amount} sent — reference {ref}.",
+  "This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.": "This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.",
+  "Your dashboard has the purchase note listing every order in this payment.": "Your dashboard has the purchase note listing every order in this payment.",
+  "Hello {name}, we've sent your payment by bank transfer.": "Hello {name}, we've sent your payment by bank transfer."
 }

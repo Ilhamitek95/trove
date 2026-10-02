@@ -329,10 +329,13 @@
   "Hello {name}, Trove refunded this order after it was delivered, so the pieces from your shop are coming back to you.": "مرحباً {name}، أعادت Trove مبلغ هذا الطلب بعد توصيله، لذا ستعود إليك القطع الخاصة بمتجرك.",
   "Hello {name}, Trove has approved a return on this order, so these pieces are coming back to you.": "مرحباً {name}، وافقت Trove على إرجاع في هذا الطلب، لذا ستعود إليك هذه القطع.",
   "Order {id}: pieces are coming back to you.": "الطلب {id}: قطع في طريق عودتها إليك.",
-  "Open your payments": "افتح المدفوعات",
+  "Open your payments": "افتح مدفوعاتك",
   "The purchase note for this payment, listing every piece it covers, is in your dashboard under Payments.": "تجد مذكرة الشراء الخاصة بهذه الدفعة، وفيها كل القطع التي تشملها، في لوحة التحكم ضمن المدفوعات.",
   "Your Trove payment is on its way — {amount}": "دفعتك من Trove في طريقها إليك — {amount}",
   "Your payment is on its way": "دفعتك في طريقها إليك",
   "Hello {name}, we've sent your payment for {shop} by bank transfer.": "مرحباً {name}، أرسلنا دفعتك الخاصة بـ {shop} بتحويل مصرفي.",
-  "{amount} sent — reference {ref}.": "أُرسل {amount} — المرجع {ref}."
+  "{amount} sent — reference {ref}.": "أُرسل {amount} — المرجع {ref}.",
+  "This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.": "هذه دفعتك عن {shop} من دورة التسوية بتاريخ {date}: تشمل كل قطعة انتهت مهلة إرجاعها البالغة 15 يوماً.",
+  "Your dashboard has the purchase note listing every order in this payment.": "تجد في لوحة التحكم إشعار الشراء الذي يسرد كل طلب تشمله هذه الدفعة.",
+  "Hello {name}, we've sent your payment by bank transfer.": "مرحباً {name}، لقد أرسلنا دفعتك بتحويل مصرفي."
 }

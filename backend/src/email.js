@@ -1029,6 +1029,31 @@ function providerFeesSent({ providerName, ownerName, amountCents, reference, pay
 
 module.exports.providerFeesSent = providerFeesSent;
 
+/**
+ * Payment note — to a maker once admin has marked their fortnightly
+ * settlement paid. The purchase note with every order lives in their dashboard.
+ * { shopName, ownerName, amountCents, reference, runDate, payer, link, lang }
+ */
+function makerPaymentSent({ shopName, ownerName, amountCents, reference, runDate, payer, link, lang }) {
+  const { T, A, I, p, note, panel, button, layout, serif } = kit(lang);
+  const inner = panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(amountCents)}</span><br>${T('reference {ref}', { ref: `<b>${esc(I(reference))}</b>` })}`)
+    + p(T('This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.', { shop: `<b>${esc(shopName)}</b>`, date: esc(I(runDate)) }))
+    + p(T("This payment was sent from {payer} on Trove's behalf, so look for that name on your bank statement. Please allow 1–2 working days for it to arrive.", { payer: `<b>${esc(payer)}</b>` }))
+    + button(T('Open your payments'), esc(link))
+    + note(T('Your dashboard has the purchase note listing every order in this payment.'));
+  return {
+    subject: T('Your Trove payment is on its way — {amount}', { amount: A(amountCents) }),
+    html: layout(T('Your payment is on its way'), inner, {
+      tone: 'sage',
+      kicker: T('Payment reference {ref}', { ref: `<b style="color:${INK}">${esc(I(reference))}</b>` }),
+      intro: T("Hello {name}, we've sent your payment by bank transfer.", { name: firstNameOr(ownerName, T) }),
+      reason: T("You're receiving this because you sell on Trove."),
+      preheader: T("{amount} sent from {payer} on Trove's behalf — reference {ref}.", { amount: A(amountCents), payer, ref: I(reference) }),
+    }),
+  };
+}
+module.exports.makerPaymentSent = makerPaymentSent;
+
 /* ---- operations alerts + cancellations (fix round 2026-10-02) ---- */
 
 /**

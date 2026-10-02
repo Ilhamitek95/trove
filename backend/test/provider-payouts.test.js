@@ -245,6 +245,11 @@ test('the payer name comes from PROVIDER_PAYER_NAME when set', async () => {
   process.env.PROVIDER_PAYER_NAME = 'Serein Consultancy FZ-LLC';
   try {
     sent.length = 0;
+    // Mark paid closes the batch frozen in the downloaded file (F105).
+    const none = await api('POST', `/api/admin/service-credits/${P.B.id}/paid`, { cookie: adminCookie, body: {} });
+    assert.equal(none.status, 409);
+    assert.equal(none.data.code, 'no_file');
+    await api('GET', '/api/admin/provider-payouts/export.csv', { cookie: adminCookie });
     const r = await api('POST', `/api/admin/service-credits/${P.B.id}/paid`, { cookie: adminCookie, body: {} });
     assert.equal(r.status, 200, r.text);
     assert.equal(r.data.reference, `TRV-SVC-${P.B.id}-${todayDubai()}`, 'the default reference');
@@ -347,4 +352,45 @@ test('the provider transfer file defuses formula-looking practice names', async 
     const line = csv.text.split('\r\n').find((l) => l.includes('HYPERLINK'));
     assert.ok(line && line.startsWith(`"'=HYPERLINK(`), line);
   } finally { db.prepare('UPDATE service_providers SET name=? WHERE id=?').run('Noor Frames', P.A.id); }
+});
+
+/* ---------------- F105: Mark paid closes exactly the downloaded file ---------------- */
+
+test('Mark paid closes the transfer file that was downloaded, not what became payable later', async () => {
+  const first = await paidBooking('B');
+  const file = await api('GET', '/api/admin/provider-payouts/export.csv', { cookie: adminCookie });
+  const line = file.text.split('\r\n').find((l) => l.includes(first.code));
+  assert.ok(line, 'the first fee is in the file');
+  const ref = `TRV-SVC-${P.B.id}-${todayDubai()}`;
+  assert.ok(line.includes(ref));
+  const fileCents = Math.round(Number(line.split(',')[4]) * 100);
+
+  // Days later a second booking becomes payable; the page now shows more.
+  const later = await paidBooking('B');
+  const adm = await api('GET', '/api/admin/service-credits', { cookie: adminCookie });
+  const row = adm.data.eligible.find((x) => x.providerId === P.B.id);
+  assert.ok(row.netCents > fileCents, 'more is payable now than was in the file');
+  assert.equal(row.batch.amountCents, fileCents, 'the page knows what the file held');
+  assert.equal(row.batch.reference, ref);
+
+  // The bigger on-screen amount is refused; closing the file pays only it.
+  const wrong = await api('POST', `/api/admin/service-credits/${P.B.id}/paid`, { cookie: adminCookie, body: { amountCents: row.netCents } });
+  assert.equal(wrong.status, 409);
+  sent.length = 0;
+  const ok = await api('POST', `/api/admin/service-credits/${P.B.id}/paid`, { cookie: adminCookie, body: { amountCents: fileCents } });
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(ok.data.amountCents, fileCents);
+  assert.equal(ok.data.reference, ref, 'the reference on the bank transfer');
+  const c1 = db.prepare("SELECT * FROM provider_credits WHERE booking_id=? AND type='credit_service'").get(first.id);
+  const c2 = db.prepare("SELECT * FROM provider_credits WHERE booking_id=? AND type='credit_service'").get(later.id);
+  assert.ok(c1.paid_at);
+  assert.equal(c1.pay_reference, ref);
+  assert.equal(c2.paid_at, null, 'a fee that was not in the file stays owed');
+  await new Promise((res) => setTimeout(res, 20));
+  const mail = sent.find((m) => m.to === 'mara@test.local');
+  assert.ok(mail && mail.html.includes(first.code) && !mail.html.includes(later.code), 'the email lists only what was sent');
+
+  // The next file carries the rest.
+  const next = await api('GET', '/api/admin/provider-payouts/export.csv', { cookie: adminCookie });
+  assert.ok(next.text.includes(later.code) && !next.text.includes(first.code));
 });

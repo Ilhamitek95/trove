@@ -69,7 +69,8 @@ test('refund AFTER settlement: debit -12000 drives the balance negative and nets
   db.prepare("UPDATE orders SET delivered_at=datetime('now','-16 days'), return_window_ends_at=datetime('now','-1 day') WHERE id=(SELECT order_id FROM shipments WHERE id=?)").run(sh.id);
   const run = await ctx.api('POST', '/api/admin/settlements/run', { cookie: adminCookie, body: {} });
   assert.equal(run.status, 201);
-  await ctx.api('POST', `/api/admin/settlements/${run.data.settlementId}/paid`, { cookie: adminCookie });
+  await ctx.api('GET', `/api/admin/settlements/${run.data.settlementId}/export.csv`, { cookie: adminCookie });
+  assert.equal((await ctx.api('POST', `/api/admin/settlements/${run.data.settlementId}/paid`, { cookie: adminCookie })).status, 200);
 
   const res = await ctx.api('POST', '/api/admin/orders/TRV-REF02/refund', { cookie: adminCookie });
   assert.equal(res.status, 200, res.text);
