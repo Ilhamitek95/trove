@@ -13,7 +13,9 @@ Answers for shoppers, makers and service providers. If yours is not here,
 
 ### Who am I buying from?
 
-Trove. Trove is the seller of every product on troveathome.com: when your
+Trove, a brand name of Serein Consultancy LLC (licensed by Sharjah Media
+City (Shams), licence no. 2220356.01). Trove is the seller of every product
+on troveathome.com: when your
 order is confirmed, Trove buys the piece from its maker and sells it to you.
 You pay Trove, and Trove is responsible to you for the order, including
 returns and refunds. See the [Terms of Sale](/terms).
@@ -119,9 +121,12 @@ soap, perfume or supplements.
 
 Trove buys your pieces and resells them, so many home makers can start
 without one. If you do not have a licence, Trove will ask for your Emirates
-ID and home address before your first payout, to verify who you are. As your
-sales grow, you may be asked to get a UAE e-Trader or trade licence. Check
-your own situation with the relevant authority if you are unsure.
+ID and home address before your first payout, to verify who you are. Once
+the settlements Trove pays you in any 30 days reach **${f.licenceThreshold}**,
+we will ask you to get a UAE e-Trader or trade licence to keep growing on
+Trove (this is the threshold the [Seller Agreement](/seller-agreement)
+refers to). Check your own situation with the relevant authority if you are
+unsure.
 
 ## Services Marketplace {#services}
 
@@ -129,8 +134,11 @@ your own situation with the relevant authority if you are unsure.
 
 Independent providers: makers, creatives and professionals running their own
 businesses. Trove reviews every provider before listing them, but **the
-provider, not Trove, is responsible for the service**. See the
-[Services Terms](/services-terms).
+provider, not Trove, is responsible for the service** and performs it. Who you
+contract with depends on how you pay: **pay through Trove** and Trove is your
+contracting party for that booking and refunds you in full if the service is
+not delivered; **settle directly** and the arrangement, and any refund, is
+between you and the provider. See the [Services Terms](/services-terms).
 
 ### How do I pay for a service?
 
@@ -151,7 +159,7 @@ ${f.serviceCommission}% of the price. See the
 
 ### How do providers get paid for bookings paid through Trove?
 
-By bank transfer from **${f.providerPayer} on Trove's behalf**, so look for
+By bank transfer from **${f.providerPayer}**, the company behind Trove, so look for
 that name on your statement. Your fee (the price less Trove's
 ${f.serviceCommission}% platform fee) becomes payable once you mark the
 booking done, or ${f.providerGraceDays} days after the service date if you have not. Add your bank
@@ -169,6 +177,10 @@ help you back in.
 
 ### How do I see or delete my personal data?
 
-Write to us through the [Contact page](/contact) and choose Privacy and my
-data. The [Privacy Policy](/privacy) explains what we keep and your rights.
+Write to us through the [Contact page](/contact) from the email address on
+your account and choose Privacy and my data. Within 30 days we send you a
+copy of your data as a file, or close and anonymise your account: your name,
+email address, mobile number and addresses are removed, and only the order
+and payment records the law requires us to keep stay, without your details.
+The [Privacy Policy](/privacy) explains what we keep and for how long.
 `;

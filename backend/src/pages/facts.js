@@ -23,9 +23,18 @@ function facts() {
   // Worked examples for the returns page: a piece worth three quarters of the
   // free-delivery threshold, alone and inside an order above it.
   const piece = Math.round((fees.FREE_DELIVERY_THRESHOLD_CENTS * 0.75) / 1000) * 1000;
+  // A second, smaller piece for the part-order example (the two together
+  // still sit at or below the threshold, so the order paid for delivery).
+  const second = Math.round((fees.FREE_DELIVERY_THRESHOLD_CENTS * 0.2) / 1000) * 1000;
   return {
     exPiece: aed(piece),
     exPieceLessFee: aed(Math.max(0, piece - fees.DELIVERY_FEE_CENTS)),
+    // A whole order returned for a fault also gets its delivery charge back
+    // (returns.deliveryRefundRule) — the single-piece fault example says so.
+    exPiecePlusDelivery: aed(piece + fees.DELIVERY_FEE_CENTS),
+    exSecondPiece: aed(second),
+    exTwoPieceOrder: aed(piece + second),
+    exDeliveryRefunded: aed(fees.DELIVERY_FEE_CENTS),
     exBigOrder: aed(fees.FREE_DELIVERY_THRESHOLD_CENTS + 6000),
     returnDays: RETURN_DAYS,
     payoutRhythm: PAYOUT_RHYTHM,
@@ -44,6 +53,9 @@ function facts() {
     transitDays: `${fees.COURIER_TRANSIT_MIN_DAYS}–${fees.COURIER_TRANSIT_MAX_DAYS} days`,
     maxLeadWeeks: Math.round(fees.LEAD_DAYS_MAX / 7),
     areas: 'Dubai and Abu Dhabi',
+    // The licence threshold the Seller Agreement points makers to: paid
+    // settlements in a trailing 30 days (graduation.js, GRADUATION_THRESHOLD_AED).
+    licenceThreshold: aed(require('../config').graduationThresholdCents()),
   };
 }
 

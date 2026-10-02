@@ -21,13 +21,19 @@ function publicShop(shop) {
   safe.eidFrontProvided = !!eid_front_file;
   safe.eidBackProvided = !!eid_back_file;
   safe.needsIdVerification = !shop.connect_queue && !shop.license_verified_at;
-  // A maker who accepted an older Seller Agreement is asked, gently, to
-  // review the current one (never blocks selling or settlement).
+  // A maker who accepted an older Seller Agreement is asked to accept the
+  // current one. If their version is older than the terms the code applies
+  // (src/agreements.js), their pieces are off sale until they do
+  // (sellingPaused); otherwise it is a prompt only and selling carries on.
+  // Settlement of sales already made is never held back by this.
   const current = require('../config').AGREEMENT_VERSION;
+  const agreements = require('../agreements');
   safe.currentAgreementVersion = current;
   safe.agreementUpdateDue = !!(shop.agreement_accepted_at && shop.agreement_version !== current);
+  safe.sellingPaused = !agreements.canSell(shop);
+  safe.agreementChangeNote = safe.agreementUpdateDue ? agreements.changeNote(current) : '';
   // The Trove Collection is Trove's own line: no agreement, ID checks or payouts.
-  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false });
+  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, sellingPaused: false, agreementChangeNote: '' });
   return safe;
 }
 

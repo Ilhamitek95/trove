@@ -42,8 +42,9 @@ received it, with its packaging where possible.
 ## How to return a piece
 
 1. Go to **Your account → Orders** and open the order.
-2. Choose **Request a return**, pick the pieces going back and tell us why. A
-   photo helps, and we may ask for one if a piece arrived damaged.
+2. Choose **Request a return**, pick the pieces going back, tell us why and
+   **add at least one photo** of what you are sending back. A request cannot
+   be sent without a photo.
 3. We review the request and email you our decision.
 4. Once approved, our courier contacts you to collect the piece.
 5. **We refund you once the courier has collected the return.**
@@ -68,10 +69,22 @@ any change-of-mind return, it is kept.
 - **There is never a collection fee when a piece is faulty, damaged or not
   what you ordered**, whatever the order value.
 
-Examples: you return a ${f.exPiece} vase from a ${f.exPiece} order because you
-changed your mind: you receive ${f.exPieceLessFee}. The same vase arrives
-chipped: you receive ${f.exPiece}. You return a ${f.exPiece} vase from a
-${f.exBigOrder} order because you changed your mind: you receive ${f.exPiece}.
+Examples:
+
+- You return an ${f.exPiece} vase, the only piece in its order (so you paid
+  ${f.exPiece} plus ${f.deliveryFee} delivery), because you changed your mind:
+  you receive **${f.exPieceLessFee}**. The delivery charge is kept and the
+  collection fee comes off.
+- The same vase arrives chipped: you receive **${f.exPiecePlusDelivery}**, the
+  ${f.exPiece} piece plus the ${f.exDeliveryRefunded} delivery charge, because
+  the whole order came back with a fault. There is no collection fee.
+- You ordered that vase and an ${f.exSecondPiece} trinket dish together (an
+  ${f.exTwoPieceOrder} order) and only the vase arrives chipped: you receive
+  **${f.exPiece}**. The delivery charge is kept, because the dish stays with
+  you, and there is no collection fee.
+- You return an ${f.exPiece} vase from an ${f.exBigOrder} order because you
+  changed your mind: you receive **${f.exPiece}**. Delivery and collection
+  were free.
 
 ## Personalised pieces {#personalised}
 
@@ -85,7 +98,8 @@ for.
 If a piece arrives damaged, faulty or is not what you ordered, request a
 return within ${f.returnDays} days of delivery and choose the reason that fits.
 There is no collection fee, and we refund the full price of the piece once
-the courier has collected it. Nothing here affects your rights as a consumer
+the courier has collected it, plus the delivery charge if the whole order
+came back for that reason. Nothing here affects your rights as a consumer
 under UAE law.
 
 ## Services bookings

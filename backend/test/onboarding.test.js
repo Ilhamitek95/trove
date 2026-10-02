@@ -21,7 +21,7 @@ after(async () => { await ctx.close(); });
 test('the seller agreement is served with a verifiable hash', async () => {
   const res = await ctx.api('GET', '/api/legal/seller-agreement');
   assert.equal(res.status, 200);
-  assert.equal(res.data.version, 'v4');
+  assert.equal(res.data.version, 'v5');
   assert.match(res.data.markdown, /Trove purchases that piece from you/);
   assert.match(res.data.markdown, /accountable for the goods you supply/);
   assert.equal(res.data.sha256, require('../src/crypto').sha256(res.data.markdown));
@@ -60,7 +60,7 @@ test('payout-setup validation: last4, expiry, IBAN, agreement', async () => {
   assert.ok(shop.iban_encrypted);
   assert.equal(shop.payout_iban, '');
   assert.equal(shop.emirates_id_last4, '4417');
-  assert.equal(shop.agreement_version, 'v4');
+  assert.equal(shop.agreement_version, 'v5');
   assert.ok(shop.agreement_accepted_at);
   assert.ok(shop.agreement_hash);
   assert.equal(require('../src/crypto').decrypt(shop.iban_encrypted), 'AE070331234567890123456');
@@ -103,24 +103,33 @@ test('register without a license leaves connect_queue off', async () => {
   assert.equal(shop.license_number, '');
 });
 
-test('Seller Agreement v4: fortnightly payouts, 15-day returns, and a gentle re-acceptance for older versions', async () => {
+test('Seller Agreement v5 names the company; v4 makers keep selling and are asked to accept', async () => {
   const legal = await ctx.api('GET', '/api/legal/seller-agreement');
-  assert.equal(legal.data.version, 'v4');
+  assert.equal(legal.data.version, 'v5');
   assert.match(legal.data.markdown, /fortnightly, every other Tuesday/);
   assert.match(legal.data.markdown, /15-day return window has closed/);
   assert.match(legal.data.markdown, /refunded once the\s+courier has collected it/);
-  assert.doesNotMatch(legal.data.markdown, /weekly|7-day/, 'no old cadence left in v4');
-  // v3 stays untouched as the signed record.
-  const v3 = require('fs').readFileSync(require('path').join(__dirname, '..', 'legal', 'seller-agreement-v3.md'), 'utf8');
-  assert.match(v3, /weekly, on Tuesdays/);
+  assert.match(legal.data.markdown, /\*\*Serein Consultancy\s+LLC\*\*, a limited liability company licensed by Sharjah Media City \(Shams\),\s+licence no\. 2220356\.01/);
+  assert.match(legal.data.markdown, /Trove and Trove at Home are its brand names/);
+  assert.match(legal.data.markdown, /licence\s+threshold stated in the maker section of the \[Help centre\]\(\/faq#makers\)/, 'the threshold is one a maker can find');
+  assert.doesNotMatch(legal.data.markdown, /published threshold/);
+  const flat = legal.data.markdown.replace(/\s+/g, ' ');
+  assert.match(flat, /Trove emails you \*\*30 days before it expires\*\*\. While it has expired, settlements to you \*\*pause\*\*/);
+  assert.match(flat, /Before your shop is approved, you accept this agreement and give Trove a \*\*collection \(pickup\) address and phone\*\*/);
+  assert.match(flat, /\*\*full delivery address\*\* only for a parcel you deliver yourself, and only until that order's return window closes/);
+  assert.doesNotMatch(legal.data.markdown, /weekly|7-day/, 'no old cadence');
+  // Older versions stay untouched as the signed record.
+  const read = (v) => require('fs').readFileSync(require('path').join(__dirname, '..', 'legal', `seller-agreement-${v}.md`), 'utf8');
+  assert.match(read('v3'), /weekly, on Tuesdays/);
+  assert.match(read('v4'), /Trove's published threshold/);
 
-  // A maker who accepted v3 is asked to review v4 — but nothing is blocked.
-  db.prepare("UPDATE shops SET agreement_version='v3' WHERE slug='test-pots'").run();
+  // A v4 maker: v5 changes no money term, so selling carries on; they are asked to accept.
+  db.prepare("UPDATE shops SET agreement_version='v4' WHERE slug='test-pots'").run();
   let me = await ctx.api('GET', '/api/seller/me', { cookie: sellerCookie });
   assert.equal(me.data.shop.agreementUpdateDue, true);
-  assert.equal(me.data.shop.currentAgreementVersion, 'v4');
-  const settle = await ctx.api('GET', '/api/seller/settlements', { cookie: sellerCookie });
-  assert.equal(settle.data.payoutSetupComplete, true, 'payouts still set up on the old version');
+  assert.equal(me.data.shop.sellingPaused, false);
+  assert.equal(me.data.shop.currentAgreementVersion, 'v5');
+  assert.match(me.data.shop.agreementChangeNote, /Serein Consultancy LLC/);
 
   let res = await ctx.api('POST', '/api/seller/agreement', { cookie: sellerCookie, body: {} });
   assert.equal(res.status, 400, 'acceptance must be explicit');
@@ -128,8 +137,48 @@ test('Seller Agreement v4: fortnightly payouts, 15-day returns, and a gentle re-
   assert.equal(res.status, 200, res.text);
   assert.equal(res.data.shop.agreementUpdateDue, false);
   const shop = db.prepare("SELECT * FROM shops WHERE slug='test-pots'").get();
-  assert.equal(shop.agreement_version, 'v4');
-  assert.equal(shop.agreement_hash, require('../src/crypto').sha256(legal.data.markdown), 'hash of the exact v4 text');
+  assert.equal(shop.agreement_version, 'v5');
+  assert.equal(shop.agreement_hash, require('../src/crypto').sha256(legal.data.markdown), 'hash of the exact v5 text');
   me = await ctx.api('GET', '/api/seller/me', { cookie: sellerCookie });
   assert.equal(me.data.shop.agreementUpdateDue, false);
+});
+
+test('a maker on v1–v3 cannot sell on terms they never accepted until they accept the current agreement', async () => {
+  const shop = db.prepare("SELECT * FROM shops WHERE slug='test-pots'").get();
+  const pid = db.prepare(`INSERT INTO products (shop_id, name, price_cents, stock, status) VALUES (?, 'Gate test bowl', 9000, 3, 'live')`)
+    .run(shop.id).lastInsertRowid;
+  const listed = async () => (await ctx.api('GET', '/api/products')).data.products.some((p) => p.id === pid);
+  const checkout = () => ctx.api('POST', '/api/checkout', { body: { items: [{ productId: pid, qty: 1 }], email: 'buyer@test.local' } });
+  assert.equal(await listed(), true, 'on the current version the piece is on sale');
+
+  // v3 promised weekly runs and a 7-day hold; the code now applies v4 terms.
+  db.prepare("UPDATE shops SET agreement_version='v3' WHERE id=?").run(shop.id);
+  const me = await ctx.api('GET', '/api/seller/me', { cookie: sellerCookie });
+  assert.equal(me.data.shop.agreementUpdateDue, true);
+  assert.equal(me.data.shop.sellingPaused, true, 'the dashboard says the pieces are off sale');
+  assert.equal(await listed(), false, 'hidden from the catalogue');
+  assert.equal((await ctx.api('GET', `/api/products/${pid}`)).status, 404, 'no piece page either');
+  const blocked = await checkout();
+  assert.equal(blocked.status, 400);
+  assert.match(blocked.data.error, /unavailable/);
+  const settle = await ctx.api('GET', '/api/seller/settlements', { cookie: sellerCookie });
+  assert.equal(settle.data.payoutSetupComplete, true, 'money already owed is not held back');
+  for (const v of ['v1', 'v2', '', null]) {
+    db.prepare('UPDATE shops SET agreement_version=? WHERE id=?').run(v, shop.id);
+    assert.equal(await listed(), false, `version ${v} is off sale`);
+  }
+
+  const res = await ctx.api('POST', '/api/seller/agreement', { cookie: sellerCookie, body: { accept: true } });
+  assert.equal(res.status, 200, res.text);
+  assert.equal(res.data.shop.sellingPaused, false);
+  assert.equal(await listed(), true, 'back on sale once accepted');
+  const ok = await checkout();
+  assert.equal(ok.status, 200, ok.text);
+
+  // The rule itself.
+  const agreements = require('../src/agreements');
+  assert.equal(agreements.canSell({ agreement_accepted_at: 'x', agreement_version: 'v4' }), true, 'v4 carries the terms the code applies');
+  assert.equal(agreements.canSell({ agreement_accepted_at: 'x', agreement_version: 'v3' }), false);
+  assert.equal(agreements.canSell({ is_house: 1, agreement_accepted_at: 'x', agreement_version: 'v1' }), true, 'the Trove Collection has no agreement');
+  db.prepare("UPDATE products SET status='hidden' WHERE id=?").run(pid);
 });

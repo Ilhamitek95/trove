@@ -1051,6 +1051,7 @@ function applyShop(s){
     payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
     agreementUpdateDue:!!s.agreementUpdateDue,currentAgreementVersion:s.currentAgreementVersion||'',
+    sellingPaused:!!s.sellingPaused,agreementChangeNote:s.agreementChangeNote||'',
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
@@ -1930,12 +1931,17 @@ async function confirmLeadTimes(btn){
   try{ await TroveAPI.api('/api/seller/products/confirm-lead-times',{method:'POST',body:{ids:products.filter(p=>!p.leadConfirmed).map(p=>p.id)}}); toast('Thanks — make times confirmed'); await reloadProducts(); renderOverview(); }
   catch(e){ toast(e.message||'Could not save'); if(btn){btn.disabled=false;btn.textContent="They're all ready in 2 days";} }
 }
-/* A newer Seller Agreement: a gentle prompt, never a block — selling and
-   settlement carry on while it is showing. */
+/* A newer Seller Agreement. When the maker's accepted version is older than
+   the terms Trove now applies, their pieces are off sale until they accept
+   (sellingPaused, set by the server — src/agreements.js); otherwise it is a
+   prompt and selling carries on. Sales already made settle either way. */
 function agreementBannerHTML(){
   if(!SHOP.agreementUpdateDue)return '';
+  const note=SHOP.agreementChangeNote?` Version ${esc(SHOP.currentAgreementVersion)} ${esc(SHOP.agreementChangeNote)}.`:'';
+  const head=SHOP.sellingPaused?'Your pieces are off sale until you accept the updated Seller Agreement':'Please review and accept the updated Seller Agreement';
+  const why=SHOP.sellingPaused?` You accepted an earlier version, and Trove now pays makers fortnightly, every other Tuesday, once the buyer's ${retDays()}-day return window has closed. Nothing is sold on terms you have not agreed, so shoppers cannot buy your pieces until you accept. Sales you have already made are paid as normal.`:'';
   return `<div class="banner" id="agreeBanner"><div class="bi" style="background:var(--rose);color:var(--char)">T</div>
-    <div><h4>Please review and accept the updated Seller Agreement</h4><p>Version ${esc(SHOP.currentAgreementVersion)} moves payouts to every other Tuesday and pays each sale once the buyer's ${retDays()}-day return window has closed. <a href="/seller-agreement" target="_blank" rel="noopener" style="color:var(--cream);text-decoration:underline;font-weight:700">Read the updated agreement</a></p></div>
+    <div><h4>${head}</h4><p>${why}${note} <a href="/seller-agreement" target="_blank" rel="noopener" style="color:var(--cream);text-decoration:underline;font-weight:700">Read the updated agreement</a></p></div>
     <button class="btn btn-coral" onclick="acceptAgreement(this)">I accept</button></div>`;
 }
 async function acceptAgreement(btn){

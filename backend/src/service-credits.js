@@ -34,7 +34,7 @@ const db = require('./db');
 const GRACE_DAYS = 3; // a booking nobody marked done becomes payable this long after the service date
 
 /** Who sends provider transfers — shown to providers and on their statement. */
-const payerName = () => String(process.env.PROVIDER_PAYER_NAME || '').trim() || 'Serein Consultancy';
+const payerName = () => String(process.env.PROVIDER_PAYER_NAME || '').trim() || 'Serein Consultancy LLC'; // the company behind Trove (owner, 2026-10-02)
 
 /** Today's date on the Dubai calendar (UTC+4, no daylight saving). */
 const dubaiToday = (now = Date.now()) => new Date(now + 4 * 3600000).toISOString().slice(0, 10);

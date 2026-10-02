@@ -70,7 +70,7 @@ router.post('/', async (req, res, next) => {
     if (phoneError) return res.status(400).json({ error: phoneError });
 
     // Resolve products + recompute everything from the DB.
-    const get = db.prepare(`SELECT p.*, s.id AS shop_id, s.is_house FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=? AND p.status='live' AND s.status='approved'`);
+    const get = db.prepare(`SELECT p.*, s.id AS shop_id, s.is_house FROM products p JOIN shops s ON s.id=p.shop_id WHERE p.id=? AND p.status='live' AND s.status='approved' AND ${require('../agreements').sellableSql('s')}`);
     const lines = [];
     let subtotal = 0;
     // Two lines can point at the same piece (different personalisation), so

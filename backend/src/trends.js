@@ -45,7 +45,7 @@ function popularSearches(days = 30, limit = 6) {
     LIMIT 40`).all(`-${Math.max(1, days)} days`).map((r) => r.q);
   const hits = db.prepare(`
     SELECT COUNT(*) AS c FROM products p JOIN shops s ON s.id = p.shop_id
-    WHERE p.status = 'live' AND s.status = 'approved'
+    WHERE p.status = 'live' AND s.status = 'approved' AND ${require('./agreements').sellableSql('s')}
       AND (p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ? OR p.tags LIKE ?)`);
   const out = [];
   for (const q of candidates) {

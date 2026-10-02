@@ -248,6 +248,7 @@ function createApp() {
   app.use('/api/products', require('./routes/products.routes'));
   app.use('/api/shops', require('./routes/shops.routes'));
   app.use('/api/seller', require('./routes/seller.routes'));
+  app.use('/api/admin/privacy', require('./routes/privacy.routes'));
   app.use('/api/admin', require('./routes/admin.routes'));
   app.use('/api/admin', require('./routes/admin-bookings.routes'));
   app.use('/api/checkout', require('./routes/checkout.routes'));
