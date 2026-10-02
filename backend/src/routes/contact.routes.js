@@ -9,8 +9,8 @@
  *
  * The message is written to contact_messages BEFORE the email goes out, and
  * the email is fire-and-forget, so nothing is lost if Resend is down or not
- * configured. It goes to CONTACT_EMAIL (env), else the company email in
- * Site content, else ADMIN_EMAIL.
+ * configured. It goes to CONTACT_EMAIL (env), else ADMIN_EMAIL, else the
+ * company email in Site content.
  *
  * The form also works without JavaScript: a urlencoded post is answered with
  * a redirect back to /contact (?sent=1 or ?error=<code>) instead of JSON.
@@ -46,8 +46,11 @@ function problem(b) {
   return null;
 }
 
+// The owner's own inbox comes before the public company address: until the
+// troveathome.com mailbox exists (no MX record on 2026-10-02, F197) mail to
+// hello@troveathome.com bounces, and a contact message must never vanish.
 function recipient() {
-  return (process.env.CONTACT_EMAIL || content.company().email || process.env.ADMIN_EMAIL || '').trim();
+  return (process.env.CONTACT_EMAIL || process.env.ADMIN_EMAIL || content.company().email || '').trim();
 }
 
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

@@ -37,6 +37,8 @@ services:
       #   PAYOUT_ENC_KEY   64 hex chars — REQUIRED before suppliers can complete
       #                    payout setup or settlement CSVs can be exported.
       #                    Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      #   EMAIL_REPLY_TO   a mailbox that really receives mail (hello@troveathome.com
+      #                    once forwarding exists); unset = emails stay no-reply
       #   BACKUP_S3_ENDPOINT, BACKUP_S3_BUCKET, BACKUP_S3_KEY_ID, BACKUP_S3_SECRET,
       #   BACKUP_ENC_KEY   encrypted nightly off-site copy of the database, photos
       #                    and private documents (Cloudflare R2 / any S3). Setup

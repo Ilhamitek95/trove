@@ -13,6 +13,11 @@
  *                   (the domain must be verified in the Resend dashboard).
  *                   A no-reply address: nobody reads replies, so the
  *                   templates point people to their account, never "reply".
+ *   EMAIL_REPLY_TO  optional: a mailbox that really receives mail (e.g.
+ *                   hello@troveathome.com once forwarding is set up). Set,
+ *                   every email carries it as reply-to and the footer invites
+ *                   replies instead of saying they are not read.
+ * Every email also carries a plain-text part (textOf), for deliverability.
  *
  * Markup is table-based with inline styles — the only layout every inbox
  * (Gmail, Outlook, Apple Mail, phones) renders the same. Brand rules hold
@@ -32,19 +37,53 @@ const i18n = require('./i18n');
 const enabled = () => !!process.env.RESEND_API_KEY;
 const from = () => process.env.EMAIL_FROM || 'Trove <noreply@troveathome.com>';
 
+/**
+ * Where a reply lands (F197): EMAIL_REPLY_TO — set it on Render once that
+ * inbox really receives mail (troveathome.com had no MX record on
+ * 2026-10-02). Unset, emails stay no-reply and the footer says so; set,
+ * replies go there and the footer invites them.
+ */
+function replyTo() {
+  const env = String(process.env.EMAIL_REPLY_TO || '').trim();
+  return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(env) ? env : '';
+}
+
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", apos: "'", nbsp: ' ' };
+/** A plain-text version of an email's HTML (sent alongside it: better delivery, readable anywhere). */
+function textOf(html) {
+  return String(html || '')
+    .replace(/<(style|script|head)\b[\s\S]*?<\/\1>/gi, '')
+    .replace(/<div style="display:none[^"]*">[\s\S]*?<\/div>/gi, '') // the hidden inbox preview line
+    .replace(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (m, href, label) => {
+      const l = label.replace(/<[^>]+>/g, '').trim();
+      return /^mailto:/i.test(href) || !l || l === href ? (l || href) : `${l} (${href})`;
+    })
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|tr|h[1-6]|li|table)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (m, e) => ENTITIES[e])
+    .replace(/&#(\d+);/g, (m, n) => String.fromCharCode(Number(n)))
+    .replace(/[⁦-⁩​-‍͏­﻿]/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/ *\n */g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 async function send({ to, subject, html }) {
   if (!to) return { skipped: true };
   if (!enabled()) {
     console.log(`email skipped (no RESEND_API_KEY): "${subject}" -> ${to}`);
     return { skipped: true };
   }
+  const reply = replyTo();
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       authorization: `Bearer ${process.env.RESEND_API_KEY}`,
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ from: from(), to: [to], subject, html }),
+    body: JSON.stringify({ from: from(), to: [to], subject, html, text: textOf(html), ...(reply ? { reply_to: reply } : {}) }),
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
   console.log(`email sent: "${subject}" -> ${to}`);
@@ -295,7 +334,7 @@ function kit(lang) {
       <a href="${SITE_LINK}${ar ? '/ar' : ''}/account" style="color:${INK};text-decoration:none;font-weight:700">${T('Your account')}</a><br>
       ${T('Trove · Curated for Living · Dubai, UAE')}<br>
       ${esc(reason)}<br>
-      ${T("This is an automated email from a no-reply address, so replies aren't read.")}
+      ${replyTo() ? T('Questions? Reply to this email and a real person will read it.') : T("This is an automated email from a no-reply address, so replies aren't read.")}
     </td></tr>
   </table>
 </td></tr></table>
@@ -486,7 +525,7 @@ function orderUnavailable({ order, items, soldOut = true, lang }) {
   };
 }
 
-module.exports = { enabled, send, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined, langFor, kit, dayLabel, localLink, pieceName };
+module.exports = { enabled, send, textOf, replyTo, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined, langFor, kit, dayLabel, localLink, pieceName };
 
 /* ---- return refunded (appended 2026-09-30) ----
  * Sent when the courier has collected a returned item (or Trove refunds it
