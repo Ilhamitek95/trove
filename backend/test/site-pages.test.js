@@ -158,11 +158,11 @@ test('company details default to Serein Consultancy LLC, the company behind Trov
     assert.ok(text.includes('Serein Consultancy LLC'), p);
     assert.ok(text.includes('2220356.01, Sharjah Media City (Shams), Sharjah, UAE'), p);
     assert.ok(text.includes('Trove and Trove at Home'), `${p}: the brand names`);
-    assert.ok(!text.includes('VAT TRN'), `${p}: no VAT number until the owner decides`);
+    assert.ok(text.includes('104316607100003'), `${p}: the VAT TRN (VAT-registered, owner 2026-10-02)`);
     assert.ok(!text.includes('being finalised'), p);
     const org = ldBlocks(res.text)[0]['@graph'][0];
     assert.equal(org.legalName, 'Serein Consultancy LLC', p);
-    assert.equal(org.vatID, undefined, p);
+    assert.equal(org.vatID, '104316607100003', p);
     assert.equal(org.contactPoint.email, 'hello@troveathome.com', p);
     assert.equal(org.contactPoint.telephone, undefined, `${p}: no WhatsApp number invented`);
   }
