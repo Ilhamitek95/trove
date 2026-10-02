@@ -107,5 +107,6 @@
   "Please choose what your message is about.": "يُرجى اختيار موضوع رسالتك.",
   "Order numbers look like TRV-1A2B3C.": "تبدو أرقام الطلبات هكذا: TRV-1A2B3C.",
   "Please write a little more so we can help (at least 10 characters).": "يُرجى كتابة المزيد قليلًا حتى نتمكن من المساعدة (10 أحرف على الأقل).",
-  "Please keep your message under 4,000 characters.": "يُرجى ألا تتجاوز رسالتك 4,000 حرف."
+  "Please keep your message under 4,000 characters.": "يُرجى ألا تتجاوز رسالتك 4,000 حرف.",
+  "The small copy of the image is too large": "النسخة المصغّرة من الصورة كبيرة جدًا"
 }

@@ -346,6 +346,7 @@
   .vcard .cover .grad{position:absolute;inset:0}
   .vcard .cover img{position:absolute;inset:0;filter:saturate(.85);opacity:.92}
   .vcard .av{width:68px;height:68px;border-radius:50%;border:4px solid var(--cream);margin:0 auto;position:relative;display:grid;place-items:center;font-family:var(--font-display);font-size:30px;color:var(--cream);font-weight:600}
+  .vcard .av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%}
   .vcard h3{font-size:24px;font-weight:600;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px}
   .vcard .loc{font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:600;margin-top:2px}
   .vcard p{font-size:14px;color:var(--ink-80);margin:14px auto 0;max-width:34ch;font-weight:400}
@@ -1880,6 +1881,7 @@ function imgRetry(el){
   const n=(+el.dataset.rt||0)+1;
   if(n>2){el.style.display='none';return;}
   el.dataset.rt=n;
+  if(el.srcset)el.removeAttribute('srcset'); // retry with the plain full photo
   const base=el.src.split(/[?#]/)[0];
   setTimeout(()=>{el.src=`${base}?rt=${n}`;},700*n);
 }
@@ -1904,6 +1906,12 @@ function pImg(p,i){
   if(!i&&STOCK_IMG[p.nameEn||p.name])return STOCK_IMG[p.nameEn||p.name];
   return img(p.seed+(i?'ab'[i-1]||'':''));
 }
+/* Card-size photos (F131): the maker's upload has a 480 px copy for cards,
+ * the basket and thumbnails; the product page keeps the full photo. Older
+ * uploads without one fall back to the full file. */
+function pSmall(p){return p.images&&p.images[0]&&p.thumbs&&p.thumbs[0]||'';}
+function pThumb(p){return pSmall(p)||pImg(p);}
+function pSrcset(p,sizes){const t=pSmall(p);return t?` srcset="${esc(t)} 480w, ${esc(p.images[0])} 1400w" sizes="${sizes||'(max-width:700px) 50vw, 320px'}"`:'';}
 /* Admin-set crop for a piece in a homepage section (Site content → crop on a
  * picked piece): focal point steers object-position, zoom scales from it. */
 function cropCss(sec,p){
@@ -1920,7 +1928,7 @@ function productCard(p,eager,crop){
   return `<article class="card">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
-      <img src="${esc(pImg(p))}" alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
+      <img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
       ${p.was?`<span class="sale">${_t('Sale')}</span>`:''}${pIsStock(p)?ILLUS:''}
       <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>
     </div>
@@ -1972,7 +1980,7 @@ function renderHome(){
   house=house.slice(0,4);
   $('houseGallery').className='gallery'+(house.length<=2?' two':'');
   $('houseGallery').innerHTML=house.map(p=>`<a class="g" href="${esc(pieceUrl(p))}">
-    <div class="grad" style="${grad('#292727')}"></div><img src="${esc(pImg(p))}" alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></a>`).join('');
+    <div class="grad" style="${grad('#292727')}"></div><img src="${esc(pImg(p))}"${pSrcset(p)} alt="${esc(p.name)}" decoding="async" style="${cropCss('home.collection',p)}" onerror="imgRetry(this)"><span class="gname">${esc(p.name)}</span></a>`).join('');
   stagger($('houseGallery'),.1);
 
   // Every maker rides the carousel (admin can hand-pick and order them);
@@ -1987,14 +1995,14 @@ function renderHome(){
     const np=v.prods!=null?v.prods:PRODUCTS.filter(p=>p.vendor===k).length;
     const sc=v.provider?Number(v.provider.serviceCount)||0:0;
     return `<article class="vcard">
-    <div class="cover"><div class="grad" style="${grad(v.color)}"></div>${ownImg(v)?`<img src="${esc(ownImg(v))}" alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%">`:''}</div>
-    <div class="av" style="${ownImg(v)?`background:center/cover no-repeat url('${esc(ownImg(v))}')`:`background:${v.color}`}">${ownImg(v)?'':esc((v.name||'?')[0])}</div>
+    <div class="cover"><div class="grad" style="${grad(v.color)}"></div>${ownImg(v)?`<img src="${esc(ownImg(v))}"${v.imgSmall?` srcset="${esc(v.imgSmall)} 480w, ${esc(ownImg(v))} 1200w" sizes="(max-width:700px) 300px, 360px"`:''} alt="" loading="lazy" decoding="async" style="object-fit:cover;width:100%;height:100%">`:''}</div>
+    <div class="av" style="background:${ownImg(v)?'var(--cream)':safeColor(v.color)}">${ownImg(v)?`<img src="${esc(v.imgSmall||ownImg(v))}" alt="" loading="lazy" decoding="async">`:esc((v.name||'?')[0])}</div>
     <h3><a class="vcard-link" href="${esc(makerUrl(k))}">${esc(v.name)}</a></h3>
     <div class="loc">${esc(v.loc)}</div>
     <p>${esc(v.bio)}</p>
     <div class="vmeta"><span>${_tn(Number(np)||0,'<b>{n}</b> piece','<b>{n}</b> pieces')}</span>${v.rating?`<span><b>${esc(v.rating)}★</b></span>`:''}${v.provider?`<span>${_tn(sc,'<b>{n}</b> service','<b>{n}</b> services')}</span>`:''}</div>
   </article>`;}).join('');
-  $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true">${makerCards.replace(/<a class="vcard-link"/g,'<a tabindex="-1" class="vcard-link"')}</div></div>`;
+  $('vendorGrid').innerHTML=`<div class="vtrack"><div class="vset">${makerCards}</div><div class="vset" aria-hidden="true" inert>${makerCards.replace(/<a class="vcard-link"/g,'<a tabindex="-1" class="vcard-link"')}</div></div>`;
   initMakerCarousel();
   renderMakerStory();
   const share=100-Number(FEES.commissionPercent);
@@ -2007,7 +2015,7 @@ function firstPieceHTML(p){
   const where=V.house?_t('The Trove Collection'):[V.name,V.loc].filter(Boolean).join(' · ');
   const u=esc(pieceUrl(p));
   return `<article class="fcard">
-    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</a>
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</a>
     <div class="fc-body">
       <div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(where)}</div>
       <h3><a href="${u}">${esc(p.name)}</a></h3>
@@ -2085,7 +2093,7 @@ function renderHeroDeck(){
   }
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
     return `<article class="hc" data-k="${k}" onclick="hcTap(${k},event)" aria-label="${esc(p.name)}">
-      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}" alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</div>
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}"${pSrcset(p,'(max-width:700px) 80vw, 420px')} alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</div>
       <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3><a href="${esc(pieceUrl(p))}" tabindex="-1">${esc(p.name)}</a></h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">${_t('View piece →')}</span></div></div>
     </article>`;}).join('');
@@ -2172,7 +2180,7 @@ function renderCatMosaic(){
   if(tabs){ const pillars=new Set(CATS.filter(c=>PRODUCTS.some(p=>p.cat===c.name)).map(c=>c.pillar)); tabs.style.display=pillars.size>1?'':'none'; }
   $('catRail').innerHTML=list.map(c=>{
     const cls='cat'+(feat.has(c.name)?' feat':wide.has(c.name)?' wide':'');
-    const stack=c.items.slice(0,3).map(p=>`<img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
+    const stack=c.items.slice(0,3).map(p=>`<img src="${esc(pThumb(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">`).join('');
     const count=_tn(c.n,'{n} piece','{n} pieces');
     return `<a class="${cls}" style="--t0:${c.color};--t1:${shade(c.color,14)};--t2:${shade(c.color,-10)}" href="${esc(shopUrl(c.name))}" aria-label="${esc(_t(c.name))} — ${count}">
       <div class="cat-bg"></div><span class="blob"></span>
@@ -2886,7 +2894,7 @@ function renderCart(){
       const unit=unitPrice(p,opts)+extrasPrice(p,extras), have=unitStock(p,opts);
       const short=have!=null&&have<qty;
       html+=`<div class="citem">
-        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
+        <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pThumb(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
         <div class="ci"><div class="n">${esc(p.name)}</div><div class="v">${esc(V.name)}</div>
           ${(opts&&opts.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(optShow(p,opts))}</div>`:''}
           ${(extras&&extras.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(exLabel(p,extras))}</div>`:''}
@@ -3050,7 +3058,7 @@ function renderCheckout(){
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${esc(V.name)}</div>`;
-    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pImg(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${esc(p.name)}</div><div class="qt">${_t('Qty {n}',{n:qty})}${(opts&&opts.length)?` · ${esc(optShow(p,opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
+    items.forEach(({p,qty,note,opts,extras})=>{const unit=unitPrice(p,opts)+extrasPrice(p,extras);sub+=unit*qty;html+=`<div class="co-li"><div class="im"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pThumb(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div><div><div class="nm">${esc(p.name)}</div><div class="qt">${_t('Qty {n}',{n:qty})}${(opts&&opts.length)?` · ${esc(optShow(p,opts))}`:''}${(extras&&extras.length)?` · ${esc(exLabel(p,extras))}`:''}${note?` · “${esc(note)}”`:''}</div></div><div class="pr">${aed(unit*qty)}</div></div>`;});
     html+='</div>';});
   $('coSummary').innerHTML=html;
   const fb=feeBreakdown(sub);
@@ -3321,12 +3329,12 @@ async function fetchCatalog(){
   try{
     const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
     VENDORS={};
-    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.isHouse?_t(s.name):s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,bio:s.bio,prods:s.productCount,since:s.since,joined:s.joined||null,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
+    sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.isHouse?_t(s.name):s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,imgSmall:safeImg(s.imageSmall)||null,bio:s.bio,prods:s.productCount,since:s.since,joined:s.joined||null,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
       // On an Arabic page name/description/options arrive translated (?lang=ar);
       // nameEn keeps the address slug and the matched stock photo unchanged.
-      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null};
+      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: catalogue did not load —',e.message);}

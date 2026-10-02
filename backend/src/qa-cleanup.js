@@ -275,7 +275,17 @@ function removeFiles(db, files) {
     try { fs.unlinkSync(abs); removed.push(ref); }
     catch (e) { kept.push({ file: ref, reason: e.code === 'ENOENT' ? 'already gone' : e.message }); }
   };
-  for (const u of files.uploads) unlink(u, path.resolve(upRoot, u.slice('/uploads/'.length)), upRoot);
+  for (const u of files.uploads) {
+    unlink(u, path.resolve(upRoot, u.slice('/uploads/'.length)), upRoot);
+    // ...and its 480 px copy (uploads.smallOf) once the photo itself is gone.
+    if (removed.includes(u)) {
+      for (const ext of ['jpg', 'png', 'webp']) {
+        const small = u.replace(/\.(jpg|png|webp)$/, `.w480.${ext}`);
+        const abs = path.resolve(upRoot, small.slice('/uploads/'.length));
+        if (small !== u && inside(upRoot, abs) && fs.existsSync(abs)) { try { fs.unlinkSync(abs); removed.push(small); } catch (_) { /* best effort */ } }
+      }
+    }
+  }
   for (const p of files.private) unlink(p, path.resolve(path.isAbsolute(p) ? p : path.join(privRoot, p)), privRoot);
   return { removed, kept };
 }

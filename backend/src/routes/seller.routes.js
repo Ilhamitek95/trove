@@ -179,9 +179,10 @@ router.post('/me/license', requireSeller, notHouse, notInShopView, (req, res) =>
 // { image: null } to go back to the colour tile. The old file is cleaned up.
 router.post('/me/image', requireSeller, (req, res, next) => {
   try {
-    const { image } = req.body || {};
+    const { image, small } = req.body || {};
     let url = '';
-    if (image) url = uploads.saveDataUrl(image, 'shops', `shop-${req.shop.id}`);
+    // `small`: the browser's 480 px copy for cards and avatars (optional).
+    if (image) url = uploads.saveDataUrl(image, 'shops', `shop-${req.shop.id}`, { small: typeof small === 'string' ? small : null });
     uploads.removeByUrl(req.shop.image);
     db.prepare('UPDATE shops SET image=? WHERE id=?').run(url, req.shop.id);
     res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
@@ -250,17 +251,24 @@ function productFields(b, partial) {
    brand-motif tile. */
 const MAX_PRODUCT_IMAGES = 4;
 const parseImagesCol = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } };
-function imagesError(list) {
+function imagesError(list, smalls) {
   if (!Array.isArray(list)) return 'images must be a list';
   if (list.length > MAX_PRODUCT_IMAGES) return `Up to ${MAX_PRODUCT_IMAGES} photos per product`;
+  if (smalls !== undefined && smalls !== null && (!Array.isArray(smalls) || smalls.length > MAX_PRODUCT_IMAGES)) return 'imagesSmall must be a list';
   return null;
 }
-function applyProductImages(shopId, productId, incoming, existing) {
+/**
+ * `smalls` (optional, body.imagesSmall) runs parallel to `incoming`: for a
+ * new photo (data URL) its 480 px copy made by the browser, kept beside the
+ * full file for cards and the basket (uploads.smallOf, F131).
+ */
+function applyProductImages(shopId, productId, incoming, existing, smalls) {
   const kept = [];
   incoming.forEach((im, i) => {
     if (typeof im !== 'string' || !im) return;
     if (im.startsWith('/uploads/products/')) { if (existing.includes(im) && !kept.includes(im)) kept.push(im); return; }
-    kept.push(uploads.saveDataUrl(im, 'products', `prod-${shopId}-${productId}-${i}`));
+    const small = Array.isArray(smalls) && typeof smalls[i] === 'string' && smalls[i] ? smalls[i] : null;
+    kept.push(uploads.saveDataUrl(im, 'products', `prod-${shopId}-${productId}-${i}`, { small }));
   });
   existing.forEach((old) => { if (!kept.includes(old)) uploads.removeByUrl(old); });
   db.prepare('UPDATE products SET images=? WHERE id=?').run(JSON.stringify(kept), productId);
@@ -343,7 +351,7 @@ router.post('/products', requireSeller, (req, res) => {
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
   if (images !== undefined) {
-    const imgErr = imagesError(images);
+    const imgErr = imagesError(images, (req.body || {}).imagesSmall);
     if (imgErr) return res.status(400).json({ error: imgErr });
   }
   const optErr = productOptions.optionsError(options);
@@ -363,7 +371,7 @@ router.post('/products', requireSeller, (req, res) => {
       lead ?? fees.LEAD_DAYS_DEFAULT, lead == null ? 0 : 1);
   tq('product', info.lastInsertRowid);
   if (images !== undefined && images.length) {
-    try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
+    try { applyProductImages(req.shop.id, info.lastInsertRowid, images, [], (req.body || {}).imagesSmall); }
     catch (e) {
       // A bad photo must not leave a half-created product behind.
       db.prepare('DELETE FROM products WHERE id=?').run(info.lastInsertRowid);
@@ -421,7 +429,7 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   const leadErr = leadTimes.leadDaysError(b.leadDays);
   if (leadErr) return res.status(400).json({ error: leadErr });
   if (b.images !== undefined) {
-    const imgErr = imagesError(b.images);
+    const imgErr = imagesError(b.images, b.imagesSmall);
     if (imgErr) return res.status(400).json({ error: imgErr });
   }
   db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
@@ -459,7 +467,7 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     // stock box in the products table doesn't apply, so hold the derived sum.
     db.prepare('UPDATE products SET stock=? WHERE id=?').run(productOptions.totalStock(p.variants), p.id);
   }
-  if (b.images !== undefined) applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images));
+  if (b.images !== undefined) applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images), b.imagesSmall);
   tq('product', p.id);
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });

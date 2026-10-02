@@ -24,6 +24,8 @@ function shape(p) {
     stock: p.stock,
     imageSeed: p.image_seed,
     images: parseImages(p.images),
+    // Each photo's 480 px copy for cards and the basket, or null (uploads.smallOf).
+    thumbs: parseImages(p.images).map((u) => require('../uploads').smallOf(u)),
     // The interim matched photo the storefront shows when there are no
     // uploads (docs/api.js TROVE_STOCK_IMG), so the native app shows it too.
     stockImage: stockCover(p.name),
@@ -43,7 +45,7 @@ function shape(p) {
     // minDays, maxDays, label: '3–6 days' }. The app can adopt it as is.
     leadDays: leadTimes.leadOf(p.lead_days),
     estimate: leadTimes.estimate(p.lead_days),
-    shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, image: p.shop_image || null, isHouse: !!p.is_house },
+    shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, image: p.shop_image || null, imageSmall: require('../uploads').smallOf(p.shop_image), isHouse: !!p.is_house },
   };
 }
 

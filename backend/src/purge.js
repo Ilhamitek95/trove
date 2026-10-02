@@ -204,9 +204,12 @@ function filePlan(db, keep) {
   const upRoot = path.resolve(uploadsDir());
   const privRoot = path.resolve(privateDir());
   const remove = [];
+  // A kept photo's 480 px copy (<name>.w480.<ext>, see uploads.smallOf) stays with it.
+  const keptStems = new Set([...ups].map((u) => u.replace(/\.(jpg|png|webp)$/, '')));
+  const isKeptSmall = (url) => { const m = /^(.*)\.w480\.(jpg|png|webp)$/.exec(url); return !!m && keptStems.has(m[1]); };
   for (const f of walk(upRoot)) {
     const url = '/uploads/' + path.relative(upRoot, f).split(path.sep).join('/');
-    if (!ups.has(url)) remove.push(f);
+    if (!ups.has(url) && !isKeptSmall(url)) remove.push(f);
   }
   for (const f of walk(privRoot)) {
     if (!priv.has(path.resolve(f))) remove.push(f);

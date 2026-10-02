@@ -94,3 +94,50 @@ test('deleting a product cleans its photo files off the disk', async () => {
   assert.equal(res.status, 200);
   assert.ok(!fs.existsSync(onDisk(url)), 'photo removed with the product');
 });
+
+test('small copies (F131): stored beside the photo, listed as thumbs, used by cards, removed with the photo', async () => {
+  let res = await ctx.api('POST', '/api/seller/products', { cookie: sellerCookie,
+    body: { name: 'Thumbed Bowl', price: 80, stock: 2, status: 'live', images: [PNG, PNG], imagesSmall: [PNG, null] } });
+  assert.equal(res.status, 201, res.text);
+  const id = res.data.product.id;
+  const stored = JSON.parse(res.data.product.images);
+  const small0 = stored[0].replace(/\.png$/, '.w480.png');
+  assert.ok(fs.existsSync(onDisk(small0)), 'the small copy sits beside the full photo');
+  assert.ok(!fs.existsSync(onDisk(stored[1].replace(/\.png$/, '.w480.png'))), 'no small copy sent, none stored');
+
+  res = await ctx.api('GET', '/api/products');
+  const pub = res.data.products.find((p) => p.id === id);
+  assert.deepEqual(pub.thumbs, [small0, null]);
+  assert.equal((await fetch(ctx.baseUrl + small0)).status, 200);
+
+  // Server-rendered shop cards offer the small copy through srcset.
+  const shopPage = await ctx.api('GET', '/shop', { headers: { accept: 'text/html' } });
+  assert.ok(shopPage.text.includes(`srcset="${small0} 480w, ${stored[0]} 1400w"`), 'card srcset uses the small copy');
+
+  // A small copy that is not a real image refuses the whole save.
+  res = await ctx.api('POST', '/api/seller/products', { cookie: sellerCookie,
+    body: { name: 'Bad Small', price: 10, images: [PNG], imagesSmall: ['data:image/png;base64,aGVsbG8='] } });
+  assert.equal(res.status, 400);
+  assert.equal(db.prepare("SELECT COUNT(*) AS c FROM products WHERE name='Bad Small'").get().c, 0);
+
+  // Dropping the photo removes its small copy too.
+  res = await ctx.api('PATCH', `/api/seller/products/${id}`, { cookie: sellerCookie, body: { images: [stored[1]] } });
+  assert.equal(res.status, 200, res.text);
+  assert.ok(!fs.existsSync(onDisk(stored[0])));
+  assert.ok(!fs.existsSync(onDisk(small0)), 'small copy removed with its photo');
+  res = await ctx.api('GET', '/api/products');
+  assert.deepEqual(res.data.products.find((p) => p.id === id).thumbs, [null]);
+});
+
+test('shop banner small copy: saved with the banner and offered as imageSmall', async () => {
+  let res = await ctx.api('POST', '/api/seller/me/image', { cookie: sellerCookie, body: { image: PNG, small: PNG } });
+  assert.equal(res.status, 200, res.text);
+  const shops = (await ctx.api('GET', '/api/shops')).data.shops;
+  const s = shops.find((x) => x.slug === 'test-pots');
+  assert.match(s.image, /^\/uploads\/shops\//);
+  assert.equal(s.imageSmall, s.image.replace(/\.png$/, '.w480.png'));
+  assert.ok(fs.existsSync(onDisk(s.imageSmall)));
+  res = await ctx.api('POST', '/api/seller/me/image', { cookie: sellerCookie, body: { image: null } });
+  assert.equal(res.status, 200);
+  assert.ok(!fs.existsSync(onDisk(s.imageSmall)), 'small banner removed with the banner');
+});

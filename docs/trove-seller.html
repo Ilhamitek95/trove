@@ -1440,6 +1440,16 @@ function setVariantPrice(i,v){
 /* drawer — product photos (client downsizes to keep uploads small; the
    server stores them under /uploads/products and the first is the cover) */
 let drawerImages=[];
+/* Each new photo's 480 px-wide copy (keyed by its data URL), uploaded with it
+ * so shop cards and baskets load a small file instead of the full photo. */
+const DRAWER_SMALL=new Map();
+function smallCopy(src){
+  const s=Math.min(1,480/src.width);
+  if(s===1)return null; // already small: the full photo is the small one
+  const c=document.createElement('canvas');c.width=Math.round(src.width*s);c.height=Math.round(src.height*s);
+  const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(src,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',.8);
+}
 function renderDrawerPhotos(){
   const w=$('dPhotos');w.innerHTML='';
   drawerImages.forEach((u,i)=>{
@@ -1462,7 +1472,9 @@ function prodAddFiles(files){
       const s=Math.min(1,1400/Math.max(im.width,im.height));
       const c=document.createElement('canvas');c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);
       c.getContext('2d').drawImage(im,0,0,c.width,c.height);
-      drawerImages.push(c.toDataURL('image/jpeg',.85));drawerDirty=true;renderDrawerPhotos();updateDrawerPreview();
+      const full=c.toDataURL('image/jpeg',.85);
+      DRAWER_SMALL.set(full,smallCopy(c));
+      drawerImages.push(full);drawerDirty=true;renderDrawerPhotos();updateDrawerPreview();
     };im.src=rd.result;};
     rd.readAsDataURL(f);
   });
@@ -1528,7 +1540,7 @@ function fieldError(inputId,msg){const f=$(inputId).closest('.field');f.classLis
 function openAdd(){editingId=null;$('drawerTitle').textContent=_t('Add product');$('drawerSub').textContent=_t('Takes about a minute — you can always save it as a draft.');$('drawerSave').textContent=_t('Add product');
   $('dName').value='';$('dDesc').value='';fillCatOptions();$('dCat').selectedIndex=0;$('dPrice').value='';$('dCompare').value='';$('dStock').value='';$('dLead').value=2;
   drawerTags=[];suggestedTags=[];renderDrawerTags();$('dTagIn').value='';
-  drawerImages=[];renderDrawerPhotos();
+  drawerImages=[];DRAWER_SMALL.clear();renderDrawerPhotos();
   drawerOptions=[];drawerVariants=[];drawerStockMemory=new Map();renderDrawerOptions();
   drawerExtras=[];renderDrawerExtras();
   fillPerso(null);setSegStatus('live');updateFee();updateDrawerPreview();clearFieldErrors();hideDiscard();drawerDirty=false;openDrawer();}
@@ -1571,7 +1583,7 @@ $('drawerSave').onclick=async()=>{
   if($('dTagIn').value.trim()){addDrawerTag($('dTagIn').value);$('dTagIn').value='';}   // catch a half-typed tag
   const body={name,description:$('dDesc').value.trim(),category:$('dCat').value,price,
     compareAt:compare,stock:parseInt($('dStock').value)||0,status:drawerStatus,
-    tags:drawerTags,personalization:readPerso(),images:drawerImages,
+    tags:drawerTags,personalization:readPerso(),images:drawerImages,imagesSmall:drawerImages.map(u=>DRAWER_SMALL.get(u)||null),
     options:drawerOptionsPayload(),variants:drawerVariants,extras:drawerExtrasPayload(),leadDays:lead};
   // A piece Trove hid keeps its status: edits save, going live is Trove's call.
   const editingP=editingId&&products.find(x=>x.id===editingId);
@@ -2444,7 +2456,7 @@ async function applyCrop(){
   out.getContext('2d').drawImage(CROP.img,g.dx,g.dy,g.dw,g.dh);
   const btn=$('cmApply'),label=btn.textContent;btn.textContent=_t('Uploading…');btn.disabled=true;
   try{
-    const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:out.toDataURL('image/jpeg',0.85)}});
+    const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:out.toDataURL('image/jpeg',0.85),small:smallCopy(out)}});
     applyShop(shop);updatePreview();closeCrop();toast(_t('Shop photo updated'));
   }catch(e){toast(e.message||_t('Could not upload the photo'));}
   btn.textContent=label;btn.disabled=false;

@@ -95,6 +95,12 @@ const safeImg = (u) => { u = String(u || ''); return /^(\/(?!\/)|https:\/\/)[^"'
 const safeColor = (c) => (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || '')) ? String(c) : '#DBC7BD');
 /** A piece's cover: the maker's first photo, else the matched stock shot. */
 const coverOf = (p) => safeImg((p.images || [])[0]) || safeImg(p.stockImage) || '';
+/** srcset for a card: the 480 px copy of the maker's photo when it has one (F131), as the storefront draws it. */
+const srcsetOf = (p) => {
+  const full = safeImg((p.images || [])[0]);
+  const small = full && safeImg((p.thumbs || [])[0]);
+  return small ? ` srcset="${esc(small)} 480w, ${esc(full)} 1400w" sizes="(max-width:700px) 50vw, 320px"` : '';
+};
 /** The cover is a stand-in stock shot, not the maker's own photo: the page says so. */
 const isStock = (p) => !safeImg((p.images || [])[0]) && !!safeImg(p.stockImage);
 const illus = (lang) => `<span class="illus">${esc(i18n.t(lang, 'Illustrative photo'))}</span>`;
@@ -208,7 +214,7 @@ function cardHtml(p, vendor, lang = 'en') {
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
   return `<article class="card">
-    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
+    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
       <button class="add" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button></div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
@@ -252,7 +258,7 @@ function firstPieceHtml(p, vendor, lang = 'en') {
   const u = esc(pieceUrl(p));
   const cover = coverOf(p);
   return `<article class="fcard">
-    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}</a>
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}</a>
     <div class="fc-body">
       <div class="vrow ${p.shop.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(where)}</div>
       <h3><a href="${u}">${esc(p.name)}</a></h3>

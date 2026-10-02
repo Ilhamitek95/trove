@@ -25,6 +25,7 @@ function shape(s) {
     location: s.location,
     color: s.color,
     image: s.image || null,
+    imageSmall: require('../uploads').smallOf(s.image), // 480 px copy for cards/avatars, or null
     isHouse: !!s.is_house,
     productCount: s.product_count || 0,
     since: s.created_at ? String(s.created_at).slice(0, 4) : null,
