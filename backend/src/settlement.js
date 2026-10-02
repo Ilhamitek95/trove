@@ -411,7 +411,65 @@ function balances(shopId) {
   };
 }
 
+/**
+ * What a maker is still waiting for, per order, and when it is due — so the
+ * dashboard can say 'On its way' with a date instead of a bare total.
+ * One row per order with unswept credits that are NOT yet payable:
+ *   reason  'not_delivered'  their parcel hasn't been delivered yet
+ *           'other_parcel'   their parcel is delivered, but the buyer's other
+ *                            parcel(s) in the same order aren't — the buyer's
+ *                            return window starts at the last delivery
+ *           'return_window'  the buyer's return window is still open
+ *           'return'         a return for their pieces is in progress
+ *           'held'           Trove is looking into the order (e.g. a dispute)
+ *   readyOn     the day the window closes (return_window only, else null)
+ *   payoutDate  the run it lands in (return_window only, else null)
+ * Rows are ordered by payoutDate (known dates first).
+ */
+function pendingBreakdown(shopId, now = nowSql()) {
+  const eligible = new Set(db.prepare(ELIGIBLE_CREDITS + ' AND b.shop_id = @shop').all({ at: now, shop: shopId }).map((r) => r.id));
+  const rows = db.prepare(`
+    SELECT b.id, b.amount_cents, o.public_id, COALESCE(o.hold_reason,'') AS hold_reason, o.return_days,
+           o.return_window_ends_at AS order_window, sh.status AS sh_status, sh.return_window_ends_at AS sh_window,
+           (SELECT COUNT(*) FROM shipments s2 WHERE s2.order_id = b.order_id AND s2.id <> sh.id
+              AND s2.status NOT IN ('delivered','cancelled')) AS others_open,
+           EXISTS (SELECT 1 FROM return_requests rr
+              JOIN return_request_items ri ON ri.request_id = rr.id
+              JOIN order_items oi ON oi.id = ri.order_item_id
+              WHERE rr.order_id = b.order_id AND oi.shop_id = b.shop_id
+                AND rr.status IN ('requested','approved','collected')) AS return_open
+    FROM seller_balances b
+    JOIN orders o ON o.id = b.order_id
+    JOIN shipments sh ON sh.order_id = b.order_id AND sh.shop_id = b.shop_id
+    WHERE b.type = 'credit_sale' AND b.settlement_id IS NULL AND b.shop_id = ? AND o.refunded_at IS NULL
+    ORDER BY b.id`).all(shopId);
+  const soonest = nextRunDate();
+  const byOrder = new Map();
+  for (const r of rows) {
+    if (eligible.has(r.id)) continue;
+    let reason; let end = null;
+    if (r.hold_reason) reason = 'held';
+    else if (r.return_open) reason = 'return';
+    else if (r.sh_status !== 'delivered' || !r.sh_window) reason = 'not_delivered';
+    else if (r.return_days == null && r.others_open) reason = 'other_parcel';
+    else {
+      reason = 'return_window';
+      end = r.return_days == null && r.order_window && r.order_window > r.sh_window ? r.order_window : r.sh_window;
+    }
+    const readyOn = end ? String(end).slice(0, 10) : null;
+    // A credit counts for a run whose start (the run date, 00:00) is after
+    // the window closed: the first run date after the closing day.
+    let payoutDate = readyOn ? nextRunDate(fromDay(toDay(readyOn) + 1)) : null;
+    if (payoutDate && payoutDate < soonest) payoutDate = soonest;
+    const cur = byOrder.get(r.public_id);
+    if (cur) { cur.amountCents += r.amount_cents; continue; }
+    byOrder.set(r.public_id, { order: r.public_id, amountCents: r.amount_cents, reason, readyOn, payoutDate });
+  }
+  return [...byOrder.values()].sort((a, b) => (a.payoutDate || '9999').localeCompare(b.payoutDate || '9999'));
+}
+
 module.exports = {
+  pendingBreakdown,
   preview, run, exportCsv, markPaid, removeItem, setHold, holdReason, noteLines, balances, payoutSetupComplete, ELIGIBLE_CREDITS,
   isRunDate, nextRunDate, lastRunDate, upcomingRunDates, scheduleLabel, dubaiToday,
 };

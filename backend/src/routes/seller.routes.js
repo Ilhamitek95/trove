@@ -569,7 +569,7 @@ function sellerShip(r) {
 }
 router.get('/orders', requireSeller, (req, res) => {
   const rows = db.prepare(`
-    SELECT sh.*, o.public_id, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
+    SELECT sh.*, o.public_id, o.created_at AS order_created, o.status AS order_status, o.shipping_json, o.return_days AS order_return_days,
            s.name AS shop_name, s.color, s.is_house
     FROM shipments sh
     JOIN orders o ON o.id = sh.order_id
@@ -577,10 +577,15 @@ router.get('/orders', requireSeller, (req, res) => {
     WHERE sh.shop_id = ?
     ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
   const latestReq = latestShopReturnStmt();
+  // On an order shared with other makers the buyer's return window starts at
+  // the LAST delivery, so a delivered parcel's payment waits for the others.
+  const othersOpen = db.prepare(`SELECT COUNT(*) AS n FROM shipments WHERE order_id=? AND id<>?
+    AND status NOT IN ('delivered','cancelled')`);
   res.json({ summary: revenueSummary(req.shop.id), orders: rows.map((r) => {
     const rr = latestReq.get(r.order_id, req.shop.id);
     return {
       ...shipments.shape(r),
+      waitingForOtherParcels: r.status === 'delivered' && r.order_return_days == null && othersOpen.get(r.order_id, r.id).n > 0,
       order: { publicId: r.public_id, createdAt: r.order_created, status: r.order_status, ship: sellerShip(r) },
       returnRequest: rr ? shopReturnShape(rr, req.shop.id) : null,
     };
@@ -761,13 +766,25 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     const cfg = require('../config');
     const b = req.body || {};
 
-    const last4 = String(b.emiratesIdLast4 || '').trim();
-    if (!/^\d{4}$/.test(last4)) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
-    const expiry = String(b.emiratesIdExpiry || '').trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(expiry) || expiry <= new Date().toISOString().slice(0, 10))
+    // Emirates ID details: an empty field keeps what is on file, so changing
+    // only the bank details never asks for them again. A maker with a
+    // Trove-verified trade licence isn't asked for them at all.
+    const needsId = identity.needsEmiratesId(req.shop);
+    const givenLast4 = String(b.emiratesIdLast4 || '').trim();
+    if (givenLast4 && !/^\d{4}$/.test(givenLast4)) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
+    const last4 = givenLast4 || req.shop.emirates_id_last4 || '';
+    if (needsId && !last4) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
+    const givenExpiry = String(b.emiratesIdExpiry || '').trim();
+    const todayIso = new Date().toISOString().slice(0, 10);
+    if (givenExpiry && (!/^\d{4}-\d{2}-\d{2}$/.test(givenExpiry) || givenExpiry <= todayIso))
       return res.status(400).json({ error: 'Your Emirates ID expiry date must be in the future' });
-    const issue = String(b.emiratesIdIssue || '').trim();
-    if (issue && !/^\d{4}-\d{2}-\d{2}$/.test(issue)) return res.status(400).json({ error: 'Emirates ID issue date must be YYYY-MM-DD' });
+    const expiry = givenExpiry || req.shop.emirates_id_expiry || '';
+    if (needsId && (!expiry || expiry <= todayIso)) {
+      return res.status(400).json({ error: expiry ? 'The Emirates ID on file has expired — enter your renewed ID’s expiry date' : 'Your Emirates ID expiry date must be in the future' });
+    }
+    const givenIssue = String(b.emiratesIdIssue || '').trim();
+    if (givenIssue && !/^\d{4}-\d{2}-\d{2}$/.test(givenIssue)) return res.status(400).json({ error: 'Emirates ID issue date must be YYYY-MM-DD' });
+    const issue = givenIssue || req.shop.emirates_id_issue || '';
 
     // Updating only the ID details (a renewed Emirates ID) keeps the IBAN on
     // file when the field is left empty — the maker never retypes it.
@@ -793,14 +810,17 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
       if (authErr) return res.status(authErr.status).json({ code: authErr.code, error: authErr.error });
     }
 
-    if (b.acceptAgreement !== true) return res.status(400).json({ error: 'You need to accept the Seller Agreement' });
+    // The Seller Agreement is accepted once per version: a maker who has
+    // already accepted the current one isn't asked to tick it again.
+    const agreedCurrent = !!req.shop.agreement_accepted_at && req.shop.agreement_version === cfg.AGREEMENT_VERSION;
+    const accepting = b.acceptAgreement === true;
+    if (!agreedCurrent && !accepting) return res.status(400).json({ error: 'You need to accept the Seller Agreement' });
     if (!pcrypto.hasKey()) return res.status(503).json({ error: 'Payout setup is temporarily unavailable (encryption key not configured)' });
 
     // Identity verification — suppliers WITHOUT an admin-verified trade /
     // e-Trader licence must have Emirates ID photos + a home address on file
     // (a typed licence number alone no longer skips this). Photos are
     // encrypted at rest under PRIVATE_DIR; only admins can view them.
-    const needsId = identity.needsEmiratesId(req.shop);
     const address = String(b.address || '').trim().slice(0, 240);
     if (needsId) {
       if (!address && !req.shop.seller_address)
@@ -836,11 +856,13 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     db.prepare(`UPDATE shops SET
         emirates_id_last4=?, emirates_id_issue=?, emirates_id_expiry=?,
         payout_bank_name=?, payout_account_name=?,
-        iban_encrypted=?, iban_masked=?, payout_iban='',
-        agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=?
+        iban_encrypted=?, iban_masked=?, payout_iban=''
       WHERE id=?`)
-      .run(last4, issue, expiry, bankName, accountName, blob, masked,
-        cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+      .run(last4, issue, expiry, bankName, accountName, blob, masked, req.shop.id);
+    if (accepting && !agreedCurrent) {
+      db.prepare(`UPDATE shops SET agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=? WHERE id=?`)
+        .run(cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
+    }
     if (ibanChanged) {
       db.prepare(`UPDATE shops SET payout_hold=1, bank_changed_at=datetime('now'),
           payout_hold_reason=CASE WHEN payout_hold=1 AND payout_hold_reason='manual' THEN 'manual' ELSE 'bank_details_changed' END
@@ -912,6 +934,8 @@ router.get('/settlements', requireSeller, (req, res) => {
     nextRunDate: settlement.nextRunDate(),
     upcomingRunDates: settlement.upcomingRunDates(3),
     returnWindowDays: fees.RETURN_WINDOW_DAYS,
+    // What is still on its way, per order, with the run it lands in.
+    pending: settlement.pendingBreakdown(req.shop.id),
     history: history.map((h) => ({
       id: h.id, runDate: h.run_date, status: h.status, paidAt: h.paid_at,
       amountCents: h.amount_cents, creditCents: h.credit_cents, debitCents: h.debit_cents,

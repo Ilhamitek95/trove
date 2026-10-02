@@ -199,5 +199,12 @@
   "Booking cancelled": "Booking cancelled",
   "Could not cancel": "Could not cancel",
   "A short note for the customer (optional):": "A short note for the customer (optional):",
-  "Request declined": "Request declined"
+  "Request declined": "Request declined",
+  "Reply now": "Reply now",
+  "waiting for your reply — open them": "waiting for your reply — open them",
+  "Needs your reply": "Needs your reply",
+  "{n} booking requests need your reply.": {
+    "one": "One booking request needs your reply.",
+    "other": "{n} booking requests need your reply."
+  }
 }

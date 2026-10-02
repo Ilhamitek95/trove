@@ -199,10 +199,14 @@
     const agLine = ag.version
       ? _t('<a href="{url}" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement {version}</a> accepted {date} — your services are your own responsibility; Trove lists them.', { url: agUrl, version: esc(ag.version), date: fmtDate(ag.acceptedAt) })
       : _t('<a href="{url}" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — your services are your own responsibility; Trove lists them.', { url: agUrl });
-    el.innerHTML = `<div class="pp">${payBanner}${banner}
+    // Requests waiting for an answer come first (when they live on another tab).
+    const replyBanner = s.open && !PP.els.requests
+      ? `<div class="pp-banner pending">${_tn(s.open, 'One booking request needs your reply.', '{n} booking requests need your reply.')} <a href="#ppNewRequests" onclick="ProviderPanel.showRequests(event)" style="text-decoration:underline">${_t('Reply now')}</a></div>`
+      : '';
+    el.innerHTML = `<div class="pp">${replyBanner}${payBanner}${banner}
       <div class="pp-cards">
         <div class="pp-stat"><div class="k">${_t('Live services')}</div><div class="v">${num(s.live)}</div><div class="n">${_t('of {n} listed', { n: num(s.total) })}</div></div>
-        <div class="pp-stat"><div class="k">${_t('New requests')}</div><div class="v">${num(s.open)}</div><div class="n">${_t('waiting for your reply')}</div></div>
+        <a class="pp-stat" href="#ppNewRequests" onclick="ProviderPanel.showRequests(event)" style="display:block;color:inherit;text-decoration:none"><div class="k">${_t('New requests')}</div><div class="v">${num(s.open)}</div><div class="n">${s.open ? _t('waiting for your reply — open them') : _t('waiting for your reply')}</div></a>
         <div class="pp-stat"><div class="k">${_t('Confirmed')}</div><div class="v">${num(s.upcoming)}</div><div class="n">${_t('bookings ahead')}</div></div>
         <div class="pp-stat"><div class="k">${_t('Completed')}</div><div class="v">${num(s.done)}</div><div class="n">${_t('services delivered')}</div></div>
       </div>
@@ -600,14 +604,29 @@
         <button class="pp-btn pp-ghost" onclick="ProviderPanel.cancelBooking(${num(b.id)})">${_t('Cancel booking')}</button></div>` : ''}
     </div>`;
   }
+  function requestsCard(open) {
+    return `<div class="pp-card" id="ppNewRequests"><h3>${open.length ? _t('Needs your reply') : _t('New requests')}</h3><div class="pp-hint">${_t('Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.')}</div>
+        ${open.length ? open.map(bkCard).join('') : `<div class="pp-empty">${_t('No new requests right now. Requests from the Services Marketplace land here.')}</div>`}</div>`;
+  }
+  /* Requests that need an answer, mounted at the TOP of a dashboard (the shop
+     dashboard's Services tab) so they never sit below the reference sections.
+     Shows only while there is something to answer. */
+  function renderRequests() {
+    const el = PP.els.requests; if (!el) return;
+    const open = PP.bookings.filter((b) => b.status === 'requested');
+    el.innerHTML = open.length ? `<div class="pp">${requestsCard(open)}</div>` : '';
+  }
   function renderBookings() {
+    renderRequests();
     const el = PP.els.bookings; if (!el) return;
     const open = PP.bookings.filter((b) => b.status === 'requested');
     const upcoming = PP.bookings.filter((b) => ['awaiting_payment', 'confirmed'].includes(b.status));
     const rest = PP.bookings.filter((b) => !['requested', 'awaiting_payment', 'confirmed'].includes(b.status));
+    // With a requests block mounted above, open requests are shown there only
+    // (one copy of each card — their form fields have ids).
+    const top = PP.els.requests ? '' : requestsCard(open);
     el.innerHTML = `<div class="pp">
-      <div class="pp-card"><h3>${_t('New requests')}</h3><div class="pp-hint">${_t('Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.')}</div>
-        ${open.length ? open.map(bkCard).join('') : `<div class="pp-empty">${_t('No new requests right now. Requests from the Services Marketplace land here.')}</div>`}</div>
+      ${top}
       <div class="pp-card"><h3>${_t('Confirmed')}</h3><div class="pp-hint">${_t('Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid by bank transfer on the first fortnightly payout day after the service date and a short complaint window (see Payouts on your overview). If you have to cancel, the customer is refunded in full.')}</div>
         ${upcoming.length ? upcoming.map(bkCard).join('') : `<div class="pp-empty">${_t('Nothing confirmed yet.')}</div>`}</div>
       <div class="pp-card"><h3>${_t('History')}</h3>
@@ -667,10 +686,18 @@
   function mountOverview(el) { PP.els.overview = el; renderOverview(); }
   function mountServices(el) { PP.els.services = el; el.innerHTML = `<div class="pp">${editorMarkup()}</div>`; fillCatSelect(); renderServices(); }
   function mountBookings(el) { PP.els.bookings = el; renderBookings(); }
+  function mountRequests(el) { PP.els.requests = el; renderRequests(); }
+  /* 'New requests' on the overview: jump to where the requests are. */
+  function showRequests(ev) {
+    if (ev) ev.preventDefault();
+    if (PP.opts.onShowBookings && !PP.els.requests) { PP.opts.onShowBookings(); return; }
+    const el = $('ppNewRequests'); if (!el) return;
+    el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }
 
   window.ProviderPanel = {
     init(opts) { PP.opts = opts || {}; injectCss(); return load(); },
-    mountOverview, mountServices, mountBookings, refresh, stats,
+    mountOverview, mountServices, mountBookings, mountRequests, showRequests, refresh, stats,
     openEditor, closeEditor, saveService, toggleLive, deleteService, actBooking, declineBooking,
     openConfirm, sendConfirm, cancelBooking,
     toggleProfCat, saveProfile, openPreview, closePreview,

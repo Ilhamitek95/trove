@@ -430,8 +430,10 @@ test('F014/F029: the editor keeps Hidden; the overview asks for pickup details a
   assert.match(seller, /data-s="hidden"[^>]*>Hidden<\/button>/, 'Hidden is a Visibility choice');
   assert.match(seller, /setSegStatus\(p\.status\);/, 'a hidden piece opens as Hidden, not Live');
   assert.doesNotMatch(seller, /p\.status==='hidden'\?'live'/);
-  assert.match(seller, /setupBannerHTML\(\) \+ idExpiryBannerHTML\(\) \+ agreementBannerHTML\(\)/);
-  assert.match(seller, /Where should the courier collect\?/);
+  // F305 (2026-10-02): the stacked banners became one 'To do' card.
+  assert.match(seller, /todoCardHTML\(managed, sc, firstSale\)/);
+  assert.match(seller, /Add your courier pickup address and phone/);
+  assert.match(seller, /Accept the Seller Agreement/);
   assert.match(seller, /SHOP\.pickupPhone\|\|SHOP\.whatsapp/, 'pickup phone prefilled from the WhatsApp number');
   assert.match(seller, /body\.shop-view \.owner-only\{display:none!important\}/);
 });
