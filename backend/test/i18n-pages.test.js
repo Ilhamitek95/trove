@@ -230,3 +230,16 @@ test('what people wrote shows in Arabic only while its translation is current', 
   assert.match(html, /كوب خزفي مضلّع/, 'the unchanged name keeps its Arabic');
   db.prepare("DELETE FROM translations WHERE entity = 'product' AND entity_id = ?").run(String(p.id));
 });
+
+test('Arabic pages give the cookie banner Arabic text (iubenda has no Arabic)', async () => {
+  const html = (await get('/ar/about')).text;
+  const cfg = html.match(/_iub\.csConfiguration=\{lang:"ar",banner:(\{.*?\}),/);
+  assert.ok(cfg, 'banner config present');
+  const banner = JSON.parse(cfg[1]);
+  assert.equal(banner.acceptButtonCaption, 'قبول');
+  assert.equal(banner.rejectButtonCaption, 'رفض');
+  assert.match(banner.content, /\/ar\/privacy/);
+  assert.doesNotMatch(banner.content, /تسويق|إعلانات مخصصة/, 'no marketing purpose');
+  const en = (await get('/about')).text;
+  assert.doesNotMatch(en, /banner:\{/, 'English pages keep the dashboard text');
+});
