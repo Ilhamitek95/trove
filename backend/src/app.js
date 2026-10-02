@@ -246,10 +246,12 @@ function createApp() {
   // Each version comes from config.js (see src/site-pages.js LEGAL), and the
   // same file is rendered into the page at /terms, /privacy, /seller-agreement…
   const sitePages = require('./site-pages');
+  // ?lang=ar adds the Arabic convenience translation; version/markdown/sha256
+  // stay the English ones, which acceptance records point at.
   app.get('/api/legal/:doc', (req, res) => {
-    const d = sitePages.legalDoc(req.params.doc);
+    const d = sitePages.legalDoc(req.params.doc, req.lang);
     if (!d) return res.status(404).json({ error: 'Not found' });
-    res.json({ version: d.version, markdown: d.markdown, sha256: d.sha256 });
+    res.json({ version: d.version, markdown: d.markdown, sha256: d.sha256, ...(d.arabic ? { arabic: d.arabic } : {}) });
   });
 
   app.use('/api/auth', require('./routes/auth.routes'));

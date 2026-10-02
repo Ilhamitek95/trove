@@ -89,7 +89,9 @@ function bundleNames(lang = 'en') {
 /** The merged dictionary of some bundles ('common' is always first). */
 function dict(lang, names = []) {
   const out = {};
-  for (const n of ['common', ...names.filter((x) => x && x !== 'common')]) Object.assign(out, bundle(lang, n));
+  // 'errors' (the server's user-facing error messages, which docs/api.js
+  // runs through _t) rides along with 'common' on every page.
+  for (const n of ['errors', 'common', ...names.filter((x) => x && x !== 'common' && x !== 'errors')]) Object.assign(out, bundle(lang, n));
   return out;
 }
 
@@ -247,7 +249,7 @@ function translateHtml(html, d, { links = false } = {}) {
         const key = di[1] ? decode(di[1]) : inner.replace(/\s+/g, ' ').trim();
         const v = d[key];
         out += trTag(tag, d, { translate: true, links });
-        out += typeof v === 'string' && v ? isoPrices(v) : translateHtml(inner, d, { links });
+        out += typeof v === 'string' && v ? translateHtml(isoPrices(v), {}, { links }) : translateHtml(inner, d, { links });
         out += html.slice(close.start, close.end);
         i = close.end;
         continue;
@@ -316,6 +318,8 @@ function finishPage(html, { lang = 'en', base = '', path: reqPath = '/', query =
   });
   out = out.replace('<meta property="og:locale" content="en_GB">', '<meta property="og:locale" content="ar_AE">\n<meta property="og:locale:alternate" content="en_GB">');
   out = out.replace(/"inLanguage":"en"/g, '"inLanguage":"ar"');
+  // The cookie banner (iubenda) in Arabic too.
+  out = out.replace('_iub.csConfiguration={', '_iub.csConfiguration={lang:"ar",');
   const data = `<script>window.TROVE_LANG="ar";window.TROVE_I18N=${JSON.stringify(d).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')};</script>`;
   if (/<meta charset="utf-8">/i.test(out)) out = out.replace(/<meta charset="utf-8">/i, (m) => `${m}\n${data}`);
   else out = out.replace(/<head>/i, (m) => `${m}\n${data}`);

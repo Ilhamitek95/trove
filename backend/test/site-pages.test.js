@@ -380,5 +380,5 @@ test('the default copy never promises Collection pieces; the Collection is never
   assert.doesNotMatch(store, /no-house|NO_HOUSE_COPY/, 'no runtime hiding of the Collection');
   // before its first piece the band says what is coming instead
   assert.match(store, /<div class="copy soon-copy">[\s\S]*?The Trove Collection — our own line — is on its way\.[\s\S]*?<a class="btn btn-dark" href="\/shop">Explore the Marketplace<\/a>/);
-  assert.match(store, /head='Our own line lands soon'/);
+  assert.match(store, /head=_t\('Our own line lands soon'\)/);
 });

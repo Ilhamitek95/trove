@@ -17,6 +17,9 @@ const tax = require('../service-taxonomy');
 const fees = require('../fees');
 
 const router = express.Router();
+// Arabic (src/translate.js): a save queues its translation; it never waits for it.
+const tq = (entity, id) => require('../translate').queue(entity, id);
+
 router.use(requireProvider);
 
 const parseJson = (s, fb) => { try { const v = JSON.parse(s); return v == null ? fb : v; } catch (_) { return fb; } };
@@ -81,6 +84,7 @@ router.patch('/me', (req, res) => {
   if (keys.length) {
     db.prepare(`UPDATE service_providers SET ${keys.map((k) => `${k}=?`).join(', ')} WHERE id=?`)
       .run(...keys.map((k) => updates[k]), req.provider.id);
+    tq('provider', req.provider.id);
   }
   res.json({ provider: providerMe(db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.provider.id)) });
 });
@@ -146,6 +150,7 @@ router.post('/services', (req, res) => {
       (provider_id, title, category, description, price_cents, price_type, duration, setting, status)
     VALUES (?,?,?,?,?,?,?,?,?)`)
     .run(req.provider.id, f.title, f.category, f.description, f.price_cents, f.price_type, f.duration, f.setting, f.status);
+  tq('service', info.lastInsertRowid);
   res.status(201).json({ service: shapeService(db.prepare('SELECT * FROM services WHERE id=?').get(info.lastInsertRowid)) });
 });
 
@@ -158,6 +163,7 @@ router.patch('/services/:id', (req, res) => {
   if (keys.length) {
     db.prepare(`UPDATE services SET ${keys.map((k) => `${k}=?`).join(', ')} WHERE id=?`)
       .run(...keys.map((k) => v.fields[k]), s.id);
+    tq('service', s.id);
   }
   res.json({ service: shapeService(db.prepare('SELECT * FROM services WHERE id=?').get(s.id)) });
 });

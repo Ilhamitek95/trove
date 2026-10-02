@@ -142,10 +142,12 @@ function upsert(buyer, { productId = null, shopId = null, rating, body = '', ima
     db.prepare(`UPDATE reviews SET rating=?, body=?, images=?, order_id=?,
       status=CASE WHEN status='hidden' THEN 'hidden' ELSE 'published' END,
       updated_at=strftime('%Y-%m-%d %H:%M:%f','now') WHERE id=?`).run(rating, body, imagesJson, orderId, existing.id);
+    require('./translate').queue('review', existing.id);
     return { id: existing.id, updated: true };
   }
   const info = db.prepare(`INSERT INTO reviews (buyer_id, shop_id, product_id, order_id, rating, body, images)
     VALUES (?,?,?,?,?,?,?)`).run(buyer.id, shopId, productId, orderId, rating, body, imagesJson);
+  require('./translate').queue('review', info.lastInsertRowid);
   return { id: info.lastInsertRowid, updated: false };
 }
 

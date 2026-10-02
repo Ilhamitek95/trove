@@ -151,6 +151,12 @@ function privacySweep() {
 }
 privacySweep();
 
+// Arabic for what people write (src/translate.js): a sweep shortly after
+// boot and every hour queues anything public with missing or out-of-date
+// Arabic; the background worker translates within the daily budget. Off
+// without ANTHROPIC_API_KEY (Arabic pages then show the English).
+require('./translate').start();
+
 /* ---------------- Scheduled jobs (single process, guarded) ---------------- */
 if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
   const cron = require('node-cron');

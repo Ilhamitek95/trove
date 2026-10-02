@@ -10,6 +10,9 @@ const uploads = require('../uploads');
 const leadTimes = require('../lead-times');
 
 const router = express.Router();
+// Arabic (src/translate.js): a save queues its translation; it never waits for it.
+const tq = (entity, id) => require('../translate').queue(entity, id);
+
 const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
 // The buyer's delivery address is snapshotted as JSON on the order at checkout.
 function parseShip(json) { try { return json ? JSON.parse(json) : null; } catch (_) { return null; } }
@@ -98,6 +101,7 @@ router.post('/enable-services', requireSeller, notHouse, notInShopView, (req, re
       shop.pitch_instagram || '', shop.pitch_links || '', shop.pitch_phone || '',
       config.PROVIDER_AGREEMENT_VERSION);
   const p = db.prepare('SELECT id, name, slug, status, sub_started_at FROM service_providers WHERE id = ?').get(info.lastInsertRowid);
+  tq('provider', p.id);
   res.status(201).json({ provider: { id: p.id, name: p.name, slug: p.slug, status: p.status, subStartedAt: p.sub_started_at || null } });
 });
 
@@ -150,6 +154,7 @@ router.patch('/me', requireSeller, (req, res) => {
   db.prepare(`UPDATE shops SET name=COALESCE(?,name), bio=COALESCE(?,bio), location=COALESCE(?,location), color=COALESCE(?,color),
       pickup_address=COALESCE(?,pickup_address), pickup_phone=COALESCE(?,pickup_phone) WHERE id=?`)
     .run(cleanName, cleanBio, cleanLocation, color == null ? null : color, pickup, pickupTel, req.shop.id);
+  tq('shop', req.shop.id);
   res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
@@ -356,6 +361,7 @@ router.post('/products', requireSeller, (req, res) => {
     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, f.name, f.description, category, f.price_cents, f.compare_at_cents ?? null, opt.stock, f.status, f.image_seed,
       JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization),
       lead ?? fees.LEAD_DAYS_DEFAULT, lead == null ? 0 : 1);
+  tq('product', info.lastInsertRowid);
   if (images !== undefined && images.length) {
     try { applyProductImages(req.shop.id, info.lastInsertRowid, images, []); }
     catch (e) {
@@ -454,6 +460,7 @@ router.patch('/products/:id', requireSeller, (req, res) => {
     db.prepare('UPDATE products SET stock=? WHERE id=?').run(productOptions.totalStock(p.variants), p.id);
   }
   if (b.images !== undefined) applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images));
+  tq('product', p.id);
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });
 

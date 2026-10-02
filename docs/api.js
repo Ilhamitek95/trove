@@ -145,7 +145,9 @@
     let data = null;
     if (text) { try { data = JSON.parse(text); } catch (_) { data = { raw: text }; } }
     if (!res.ok) {
-      const err = new Error((data && data.error) || res.statusText || 'Something went wrong');
+      // A server message the dictionaries know reads in the page's language.
+      const raw = (data && data.error) || res.statusText || 'Something went wrong';
+      const err = new Error(window._t ? window._t(raw) : raw);
       err.status = res.status;
       err.data = data;
       throw err;

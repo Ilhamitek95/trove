@@ -9,6 +9,8 @@ const db = require('./db');
 const accounts = require('./accounts');
 
 const email = () => require('./email');
+/** The recipient account's language (users.lang) for a user row or an email address. */
+const langOfUser = (user) => (user && (user.lang === 'ar' || user.lang === 'en') ? user.lang : email().langFor(user && user.id ? { userId: user.id } : { email: user && user.email }));
 
 function deliver(label, to, msg) {
   if (!to || !msg) return Promise.resolve(null);
@@ -25,30 +27,30 @@ function safely(label, fn) {
 const welcomeVerify = (user) => safely('welcome', () => {
   const token = accounts.issueToken(user, 'verify');
   const link = `${accounts.siteUrl()}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
-  return deliver('welcome', user.email, email().welcomeVerify({ name: user.name, link }));
+  return deliver('welcome', user.email, email().welcomeVerify({ name: user.name, link, lang: langOfUser(user) }));
 });
 
 const passwordReset = (user) => safely('password-reset', () => {
   const token = accounts.issueToken(user, 'reset');
   const link = `${accounts.siteUrl()}/reset?token=${encodeURIComponent(token)}`;
-  return deliver('password-reset', user.email, email().passwordReset({ name: user.name, link }));
+  return deliver('password-reset', user.email, email().passwordReset({ name: user.name, link, lang: langOfUser(user) }));
 });
 
 const passwordChanged = (user) => safely('password-changed', () =>
-  deliver('password-changed', user.email, email().passwordChanged({ name: user.name, link: `${accounts.siteUrl()}/login?forgot=1` })));
+  deliver('password-changed', user.email, email().passwordChanged({ name: user.name, link: `${accounts.siteUrl()}/login?forgot=1`, lang: langOfUser(user) })));
 
 /** The payout bank account of a shop or practice changed: tell the account owner. */
 const bankDetailsChanged = (user, { kind, businessName, bankName, iban, held = true }) => safely('bank-details-changed', () =>
   deliver('bank-details-changed', user && user.email, email().bankDetailsChanged({
-    name: user.name, businessName, kind, bankName, iban, held, link: `${accounts.siteUrl()}/login?forgot=1`,
+    name: user.name, businessName, kind, bankName, iban, held, link: `${accounts.siteUrl()}/login?forgot=1`, lang: langOfUser(user),
   })));
 
 /* ---- applications ---- */
 function shopRow(shopId) {
-  return db.prepare('SELECT s.*, u.email AS owner_email, u.name AS owner_name FROM shops s JOIN users u ON u.id = s.user_id WHERE s.id = ?').get(shopId);
+  return db.prepare('SELECT s.*, u.email AS owner_email, u.name AS owner_name, u.lang AS owner_lang FROM shops s JOIN users u ON u.id = s.user_id WHERE s.id = ?').get(shopId);
 }
 function providerRow(providerId) {
-  return db.prepare('SELECT p.*, u.email AS owner_email, u.name AS owner_name FROM service_providers p JOIN users u ON u.id = p.user_id WHERE p.id = ?').get(providerId);
+  return db.prepare('SELECT p.*, u.email AS owner_email, u.name AS owner_name, u.lang AS owner_lang FROM service_providers p JOIN users u ON u.id = p.user_id WHERE p.id = ?').get(providerId);
 }
 const dashboard = (kind) => `${accounts.siteUrl()}${kind === 'shop' ? '/sell' : '/provider'}`;
 
@@ -59,7 +61,7 @@ function applied(kind, row) {
   })();
   return Promise.all([
     deliver(`${kind}-application-received`, row.owner_email,
-      email().applicationReceived({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind) })),
+      email().applicationReceived({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind), lang: row.owner_lang })),
     deliver(`${kind}-application-alert`, accounts.adminEmail(),
       email().applicationAlert({ kind, businessName: row.name, applicantName: row.owner_name, location: row.location, category, link: `${accounts.siteUrl()}/admin` })),
   ]);
@@ -71,11 +73,11 @@ function decided(kind, row, status) {
   if (!row) return Promise.resolve(null);
   if (status === 'approved') {
     return deliver(`${kind}-approved`, row.owner_email,
-      email().applicationApproved({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind) }));
+      email().applicationApproved({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind), lang: row.owner_lang }));
   }
   if (status === 'rejected') {
     return deliver(`${kind}-rejected`, row.owner_email,
-      email().applicationRejected({ kind, name: row.owner_name, businessName: row.name, adminNote: row.review_note || '', link: accounts.siteUrl() }));
+      email().applicationRejected({ kind, name: row.owner_name, businessName: row.name, adminNote: row.review_note || '', link: accounts.siteUrl(), lang: row.owner_lang }));
   }
   return Promise.resolve(null);
 }
@@ -102,7 +104,7 @@ function packByFor(order, shopId) {
 const ordersToPack = (order) => safely('order-to-pack', () => {
   const options = require('./options');
   const extras = require('./extras');
-  const shops = db.prepare(`SELECT DISTINCT s.id, s.name, u.email AS owner_email, u.name AS owner_name
+  const shops = db.prepare(`SELECT DISTINCT s.id, s.name, u.email AS owner_email, u.name AS owner_name, u.lang AS owner_lang
     FROM order_items oi JOIN shops s ON s.id = oi.shop_id JOIN users u ON u.id = s.user_id
     WHERE oi.order_id = ?`).all(order.id);
   const itemsStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, p.images
@@ -115,14 +117,14 @@ const ordersToPack = (order) => safely('order-to-pack', () => {
     }));
     return deliver('order-to-pack', s.owner_email, email().orderToPack({
       shopName: s.name, ownerName: s.owner_name, publicId: order.public_id, items,
-      packBy: require('./lead-times').dubaiDay(packByFor(order, s.id)), link: `${accounts.siteUrl()}/sell?view=orders`,
+      packBy: email().dayLabel(s.owner_lang, packByFor(order, s.id)), link: `${accounts.siteUrl()}/sell?view=orders`, lang: s.owner_lang,
     }));
   }));
 });
 
 /* ---- pack-by reminders (hourly sweep, src/order-sweep.js) ---- */
 function shipmentFacts(shipmentId) {
-  return db.prepare(`SELECT sh.*, o.public_id, s.name AS shop_name, u.email AS owner_email, u.name AS owner_name
+  return db.prepare(`SELECT sh.*, o.public_id, s.name AS shop_name, u.email AS owner_email, u.name AS owner_name, u.lang AS owner_lang
     FROM shipments sh JOIN orders o ON o.id = sh.order_id JOIN shops s ON s.id = sh.shop_id JOIN users u ON u.id = s.user_id
     WHERE sh.id = ?`).get(shipmentId);
 }
@@ -133,7 +135,7 @@ const packReminder = (shipmentId) => safely('pack-reminder', () => {
   if (!sh) return null;
   return deliver('pack-reminder', sh.owner_email, email().packReminder({
     shopName: sh.shop_name, ownerName: sh.owner_name, publicId: sh.public_id, items: packItems(sh),
-    packBy: require('./lead-times').dubaiDay(sh.pack_by_at), link: `${accounts.siteUrl()}/sell?view=orders`,
+    packBy: email().dayLabel(sh.owner_lang, sh.pack_by_at), link: `${accounts.siteUrl()}/sell?view=orders`, lang: sh.owner_lang,
   }));
 });
 /** To the admin: two days past the pack-by day, still not packed. */
@@ -147,12 +149,14 @@ const packOverdueAdmin = (shipmentId) => safely('pack-overdue-admin', () => {
 });
 
 /** To a maker whose Emirates ID expires soon (or has): update it under Payouts. */
-const idExpiring = (shop, expired) => safely('id-expiring', () =>
-  deliver('id-expiring', shop.owner_email, email().idExpiring({
-    name: shop.owner_name, shopName: shop.name, expired,
-    expiry: require('./lead-times').dubaiDay(`${shop.emirates_id_expiry} 08:00:00`, { year: true }),
+const idExpiring = (shop, expired) => safely('id-expiring', () => {
+  const lang = email().langFor({ email: shop.owner_email });
+  return deliver('id-expiring', shop.owner_email, email().idExpiring({
+    name: shop.owner_name, shopName: shop.name, expired, lang,
+    expiry: email().dayLabel(lang, `${shop.emirates_id_expiry} 08:00:00`, { year: true }),
     link: `${accounts.siteUrl()}/sell?view=payments`,
-  })));
+  }));
+});
 
 /* ---- operations alerts (courier, disputes, missed payments) ---- */
 /** To ADMIN_EMAIL: { subject, title, lines[], link?, cta?, kicker? } — plain text lines. */
@@ -165,7 +169,7 @@ const parcelCancelled = ({ shopId, publicId, items, whole }) => safely('parcel-c
   const s = shopRow(shopId);
   if (!s) return null;
   return deliver('parcel-cancelled', s.owner_email, email().parcelCancelledMaker({
-    shopName: s.name, ownerName: s.owner_name, publicId, items, whole, link: `${accounts.siteUrl()}/sell?view=orders`,
+    shopName: s.name, ownerName: s.owner_name, publicId, items, whole, link: `${accounts.siteUrl()}/sell?view=orders`, lang: s.owner_lang,
   }));
 });
 

@@ -83,6 +83,12 @@
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%)}
+  /* ---- Arabic (right to left) ---- */
+  [dir="rtl"] .side{border-right:0;border-left:1px solid var(--line)}
+  [dir="rtl"] .side .logo,[dir="rtl"] .mbar .mlogo{direction:ltr;text-align:right}
+  [dir="rtl"] .side .logo span{margin-left:0;margin-right:7px}
+  [dir="rtl"] .badge{margin-left:0;margin-right:auto}
+  @media(max-width:820px){[dir="rtl"] .mbar .mwho{margin-left:0;margin-right:auto;text-align:left}}
 </style>
 </head>
 <body>
@@ -125,13 +131,13 @@ const $=id=>document.getElementById(id);
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','Your practice at a glance'],services:['My services','What customers can book'],bookings:['Bookings','Requests, confirmed visits and history']};
+const TITLES={overview:[_t('Overview'),_t('Your practice at a glance')],services:[_t('My services'),_t('What customers can book')],bookings:[_t('Bookings'),_t('Requests, confirmed visits and history')]};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
   document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
-  $('topActions').innerHTML=v==='services'?'<button class="btn btn-dark" onclick="ProviderPanel.openEditor()">+ Add a service</button>':'';
+  $('topActions').innerHTML=v==='services'?'<button class="btn btn-dark" onclick="ProviderPanel.openEditor()">'+_t('+ Add a service')+'</button>':'';
   window.scrollTo(0,0);
 }
 function buildMobileTabs(){
@@ -143,26 +149,26 @@ function setBadges(s){
 }
 
 function showWho(P){
-  const st=P.status==='approved'?'Live provider':P.status==='pending'?'In review':P.status==='rejected'?'Not approved':P.status==='suspended'?'Suspended':P.status;
+  const st=P.status==='approved'?_t('Live provider'):P.status==='pending'?_t('In review'):P.status==='rejected'?_t('Not approved'):P.status==='suspended'?_t('Suspended'):P.status;
   $('whoName').textContent=P.name; $('mWhoName').textContent=P.name;
   $('whoAv').textContent=(P.name||'·')[0].toUpperCase();
   $('whoStatus').textContent=st; $('mWhoStatus').textContent=st;
 }
 /* ---------------- boot ---------------- */
-async function signOut(){await TroveAPI.logout();window.location.href='/login';}
+async function signOut(){await TroveAPI.logout();window.location.href=troveUrl('/login');}
 (async function boot(){
   let me=null;
   try{me=await TroveAPI.me();}catch(_){}
-  if(!me||!me.user){window.location.href='/login';return;}
-  if(!me.provider){window.location.href='/apply?for=services';return;}
+  if(!me||!me.user){window.location.href=troveUrl('/login');return;}
+  if(!me.provider){window.location.href=troveUrl('/apply?for=services');return;}
   try{
     await ProviderPanel.init({toast,onChange:setBadges,onOpenEditor:()=>{if(!$('view-services').classList.contains('active'))go('services');},onProfile:showWho});
-  }catch(e){$('gate').textContent=e.message||'Could not load your dashboard — refresh to try again.';return;}
+  }catch(e){$('gate').textContent=e.message||_t('Could not load your dashboard — refresh to try again.');return;}
   showWho(ProviderPanel.provider);
   // One account, shop + services: point at the other dashboard.
   if(me.shop){
     $('shopLink').style.display=''; $('mShopLink').style.display='';
-    $('shopNote').innerHTML=`<div class="shopnote">You also run <b>${String(me.shop.name||'a shop').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</b> on Trove — your pieces, orders and payouts live in the <a href="/sell">shop dashboard</a>, where this Services tab also appears.</div>`;
+    $('shopNote').innerHTML=`<div class="shopnote">${_t('You also run <b>{shop}</b> on Trove — your pieces, orders and payouts live in the <a href="/sell">shop dashboard</a>, where this Services tab also appears.',{shop:String(me.shop.name||_t('a shop')).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')})}</div>`;
   }
   $('gate').style.display='none';$('shell').style.display='grid';
   buildMobileTabs();

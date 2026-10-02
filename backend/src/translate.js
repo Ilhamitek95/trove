@@ -153,9 +153,7 @@ function needs(entity, id) {
 
 /** The Arabic for the current English of these fields ({field: arabic}); a field whose
  *  English changed since it was translated is left out (the page shows the English). */
-const memo = new Map();
 function current(entity, id, src) {
-  const key = `${entity}:${id}`;
   const rows = stored(entity, id);
   const out = {};
   for (const [field, text] of Object.entries(src || {})) {
@@ -163,7 +161,6 @@ function current(entity, id, src) {
     const r = rows[field];
     if (r && r.source_hash === sha(text)) out[field] = r.text;
   }
-  memo.delete(key);
   return out;
 }
 
@@ -422,7 +419,9 @@ function product(p, lang) {
   (p.options || []).forEach((g, i) => { src[`options.${i}.name`] = g.name; (g.values || []).forEach((v, j) => { src[`options.${i}.values.${j}`] = v; }); });
   (p.extras || []).forEach((e, i) => { src[`extras.${i}.name`] = e.name; });
   const tr = current('product', p.id, src);
-  const out = { ...p };
+  // nameEn: the English name the storefront still needs for slugs, matched
+  // stock photos and analytics item names.
+  const out = { ...p, nameEn: p.name };
   if (tr.name) out.name = tr.name;
   if (tr.description) out.description = tr.description;
   if (out.personalization && tr.personalization_prompt) out.personalization = { ...out.personalization, prompt: tr.personalization_prompt };

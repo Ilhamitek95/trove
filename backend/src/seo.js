@@ -31,6 +31,8 @@ const sitePages = require('./site-pages');
 const content = require('./content');
 const fees = require('./fees');
 const tax = require('./service-taxonomy');
+const i18n = require('./i18n');
+const tr = require('./translate');
 
 const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
 const OG_IMAGE = '/img/og-default.jpg';
@@ -47,7 +49,8 @@ function slugify(s) {
 const HOUSE_SLUG = 'trove-collection';
 const catSlug = (name) => (name === 'House' ? HOUSE_SLUG : slugify(name));
 const catLabel = (name) => (name === 'House' ? 'Trove Collection' : name);
-function pieceUrl(p) { const s = slugify(p.name); return `/pieces/${p.id}${s ? '-' + s : ''}`; }
+// The slug is always made from the English name (an Arabic page's piece carries it as nameEn).
+function pieceUrl(p) { const s = slugify(p.nameEn || p.name); return `/pieces/${p.id}${s ? '-' + s : ''}`; }
 const makerUrl = (slug) => `/makers/${encodeURIComponent(slug)}`;
 /** Where a shop lives: a maker at /makers/<slug>; the Trove Collection is its own shelf. */
 const shopHref = (shop) => (shop && shop.isHouse ? `/shop/${HOUSE_SLUG}` : makerUrl(shop.slug));
@@ -63,11 +66,17 @@ const liveProducts = () => products().liveProducts();
 const approvedShops = () => shops().approvedShops();
 
 /* ---------------- small helpers ---------------- */
-function money(amount) {
+function money(amount, lang = 'en') {
   const n = Number(amount) || 0;
-  return 'AED ' + (Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+  return i18n.iso(lang, 'AED ' + (Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })));
 }
-const moneyCents = (c) => money((Number(c) || 0) / 100);
+const moneyCents = (c, lang = 'en') => money((Number(c) || 0) / 100, lang);
+/** Lookups bound to a language: T(key, vars) and TN(n, one, other, vars), keys in docs/i18n/ar/server.json. */
+const tFor = (lang) => [(k, v) => i18n.t(lang, k, v), (n, a, b, v) => i18n.tn(lang, n, a, b, v)];
+/** The noun after a separately printed count ('3' + 'pieces'): Arabic takes the plural only for 3–10. */
+const noun = (lang, n, one, other) => (lang === 'ar'
+  ? i18n.t(lang, n >= 3 && n <= 10 ? other : one)
+  : (n === 1 ? one : other));
 const abs = (base, u) => (!u ? '' : /^https?:\/\//.test(u) ? u : base + (u.startsWith('/') ? u : '/' + u));
 const clip = (s, n = 158) => {
   const t = String(s || '').replace(/\s+/g, ' ').trim();
@@ -88,7 +97,7 @@ const safeColor = (c) => (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || '')
 const coverOf = (p) => safeImg((p.images || [])[0]) || safeImg(p.stockImage) || '';
 /** The cover is a stand-in stock shot, not the maker's own photo: the page says so. */
 const isStock = (p) => !safeImg((p.images || [])[0]) && !!safeImg(p.stockImage);
-const ILLUS = '<span class="illus">Illustrative photo</span>';
+const illus = (lang) => `<span class="illus">${esc(i18n.t(lang, 'Illustrative photo'))}</span>`;
 const ldScript = (obj) => `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', ...obj }).replace(/</g, '\\u003c')}</script>`;
 
 function readDoc(file, cache) {
@@ -103,7 +112,7 @@ const servicesCache = { stamp: 0, html: '' };
 /* ---------------- <head> ---------------- */
 
 /** The social + canonical tags every public page carries. */
-function socialTags({ base, url, title, description, image, imageAlt, type = 'website', robots }) {
+function socialTags({ base, url, title, description, image, imageAlt, type = 'website', robots, lang = 'en' }) {
   const img = image || base + OG_IMAGE;
   const isDefault = !image;
   return [
@@ -117,7 +126,7 @@ function socialTags({ base, url, title, description, image, imageAlt, type = 'we
     url ? `<meta property="og:url" content="${esc(url)}">` : '',
     `<meta property="og:image" content="${esc(img)}">`,
     isDefault ? '<meta property="og:image:width" content="1200">\n<meta property="og:image:height" content="630">' : '',
-    `<meta property="og:image:alt" content="${esc(imageAlt || OG_IMAGE_ALT)}">`,
+    `<meta property="og:image:alt" content="${esc(imageAlt || i18n.t(lang, OG_IMAGE_ALT))}">`,
     '<meta name="twitter:card" content="summary_large_image">',
     `<meta name="twitter:title" content="${esc(title)}">`,
     `<meta name="twitter:description" content="${esc(description)}">`,
@@ -194,16 +203,17 @@ function attr(html, id, name, value) {
 }
 
 /** A product card, as the storefront's productCard() draws it (it re-renders over this). */
-function cardHtml(p, vendor) {
+function cardHtml(p, vendor, lang = 'en') {
+  const [T] = tFor(lang);
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
   return `<article class="card">
-    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}
-      <button class="add" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">Add to basket</button></div>
+    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
+      <button class="add" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button></div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
-    <div class="foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span></div>
-    <button class="add add-row" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">Add to basket</button>
+    <div class="foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span></div>
+    <button class="add add-row" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button>
   </article>`;
 }
 
@@ -229,48 +239,55 @@ function storefront() {
 const addHtmlClass = (html, cls) => html.replace(/<html lang="en"( class="([^"]*)")?>/, (m, a, c) => `<html lang="en" class="${c ? c + ' ' : ''}${cls}">`);
 
 /** The one-piece hero, as the storefront's heroSoloHTML() draws it. */
-function heroSoloHtml(p, vendor) {
-  const meta = p.shop.isHouse ? 'The Trove Collection' : (vendor && vendor.location ? `Made in ${vendor.location}` : '');
+function heroSoloHtml(p, vendor, lang = 'en') {
+  const [T] = tFor(lang);
+  const meta = p.shop.isHouse ? T('The Trove Collection') : (vendor && vendor.location ? T('Made in {place}', { place: vendor.location }) : '');
   const cover = coverOf(p);
-  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="${esc(p.name)}" fetchpriority="high" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}</span><span class="hs-cap">${meta ? `<span class="hs-meta">${esc(meta)}</span>` : ''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">by ${esc(p.shop.name)}</span><span class="hc-foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span><span class="hc-go">View piece →</span></span></span></a>`;
+  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="${esc(p.name)}" fetchpriority="high" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}</span><span class="hs-cap">${meta ? `<span class="hs-meta">${esc(meta)}</span>` : ''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">${esc(T('by {maker}', { maker: p.shop.name }))}</span><span class="hc-foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span><span class="hc-go">${esc(T('View piece →'))}</span></span></span></a>`;
 }
 /** One of 'The first pieces', as the storefront's firstPieceHTML() draws it. */
-function firstPieceHtml(p, vendor) {
-  const where = p.shop.isHouse ? 'The Trove Collection' : [p.shop.name, vendor && vendor.location].filter(Boolean).join(' · ');
+function firstPieceHtml(p, vendor, lang = 'en') {
+  const [T] = tFor(lang);
+  const where = p.shop.isHouse ? T('The Trove Collection') : [p.shop.name, vendor && vendor.location].filter(Boolean).join(' · ');
   const u = esc(pieceUrl(p));
   const cover = coverOf(p);
   return `<article class="fcard">
-    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? '<span class="sale">Sale</span>' : ''}${isStock(p) ? ILLUS : ''}</a>
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}</a>
     <div class="fc-body">
       <div class="vrow ${p.shop.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(where)}</div>
       <h3><a href="${u}">${esc(p.name)}</a></h3>
       ${p.description ? `<p class="fc-desc">${esc(clip(p.description, 220))}</p>` : ''}
-      <span class="price">${p.compareAt ? `<s>${money(p.compareAt)}</s>` : ''}${money(p.price)}</span>
-      <div class="fc-acts"><a class="btn btn-dark" href="${u}">See the piece</a>${p.shop.isHouse ? '' : `<a class="txt-link" href="${esc(makerUrl(p.shop.slug))}">More from ${esc(p.shop.name)}</a>`}</div>
+      <span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span>
+      <div class="fc-acts"><a class="btn btn-dark" href="${u}">${esc(T('See the piece'))}</a>${p.shop.isHouse ? '' : `<a class="txt-link" href="${esc(makerUrl(p.shop.slug))}">${esc(T('More from {maker}', { maker: p.shop.name }))}</a>`}</div>
     </div>
   </article>`;
 }
 
-function renderHome(base) {
-  const list = liveProducts();
-  const byShop = Object.fromEntries(approvedShops().map((s) => [s.slug, s]));
+/** The public catalogue in the page's language (Arabic overlays from src/translate.js). */
+const productsIn = (lang) => tr.products(liveProducts(), lang);
+const shopsIn = (lang) => tr.shops(approvedShops(), lang);
+
+function renderHome(base, lang = 'en') {
+  const [T] = tFor(lang);
+  const list = productsIn(lang);
+  const byShop = Object.fromEntries(shopsIn(lang).map((s) => [s.slug, s]));
   let html = activate(storefront(), 'home');
   // One piece: the editorial hero, drawn now so the first paint is final.
   const heroPicks = (content.getPublic().home || {}).hero;
   if (list.length === 1 && !(heroPicks && Array.isArray(heroPicks.productIds) && heroPicks.productIds.length > 1)) {
     html = html.replace('<div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel" aria-label="Featured pieces">', '<div class="hstage solo" id="heroStage" aria-label="Featured piece">');
-    html = fill(html, 'heroDeck', heroSoloHtml(list[0], byShop[list[0].shop.slug]));
+    html = fill(html, 'heroDeck', heroSoloHtml(list[0], byShop[list[0].shop.slug], lang));
   }
   if (list.length > 0 && list.length < 3) {
     // A small catalogue: 'The first pieces' instead of one tile + one card.
     html = addHtmlClass(html, 'few-pieces');
     html = html.replace('<div class="pgrid" id="trendingGrid"></div>', `<div class="firsts n${list.length}" id="trendingGrid"></div>`);
-    html = text(html, 'weeklyEyebrow', 'Just arrived');
-    html = text(html, 'weeklyHeading', list.length === 1 ? 'The first piece' : 'The first pieces');
-    html = fill(html, 'trendingGrid', list.map((p) => firstPieceHtml(p, byShop[p.shop.slug])).join(''));
+    html = text(html, 'weeklyEyebrow', T('Just arrived'));
+    html = text(html, 'weeklyHeading', list.length === 1 ? T('The first piece') : T('The first pieces'));
+    html = fill(html, 'trendingGrid', list.map((p) => firstPieceHtml(p, byShop[p.shop.slug], lang)).join(''));
   } else {
     // The newest pieces as real links (the page's script swaps in the curated picks).
-    html = fill(html, 'trendingGrid', list.slice(0, 8).map((p) => cardHtml(p, byShop[p.shop.slug])).join(''));
+    html = fill(html, 'trendingGrid', list.slice(0, 8).map((p) => cardHtml(p, byShop[p.shop.slug], lang)).join(''));
   }
   const website = {
     '@type': 'WebSite', '@id': `${base}/#website`, url: `${base}/`, name: 'Trove', alternateName: 'Trove at Home',
@@ -278,16 +295,17 @@ function renderHome(base) {
     potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `${base}/shop?q={search_term_string}` }, 'query-input': 'required name=search_term_string' },
   };
   return setHead(html, {
-    base, url: `${base}/`, title: HOME_TITLE, description: DEFAULT_DESCRIPTION,
+    base, url: `${base}/`, title: T(HOME_TITLE), description: T(DEFAULT_DESCRIPTION), lang,
     ld: [website],
   });
 }
 
 /** The Collection's shelf before its first piece, as the storefront's emptyStateHTML() draws it. */
-function houseSoonShelf(all, byShop) {
+function houseSoonShelf(all, byShop, lang = 'en') {
+  const [T] = tFor(lang);
   const recs = all.slice(0, 4);
-  return `<div class="noresult"><div class="big">Our own line lands soon</div><p>The Trove Collection is still in the workshop. In the meantime, these pieces from our makers are worth a look.</p><div class="nr-actions"><a class="btn btn-dark" href="/shop">Shop everything</a></div></div>`
-    + (recs.length ? `<div class="nr-rechead"><span class="eyebrow">You might like</span></div>${recs.map((p) => cardHtml(p, byShop[p.shop.slug])).join('')}` : '');
+  return `<div class="noresult"><div class="big">${esc(T('Our own line lands soon'))}</div><p>${esc(T('The Trove Collection is still in the workshop. In the meantime, these pieces from our makers are worth a look.'))}</p><div class="nr-actions"><a class="btn btn-dark" href="/shop">${esc(T('Shop everything'))}</a></div></div>`
+    + (recs.length ? `<div class="nr-rechead"><span class="eyebrow">${esc(T('You might like'))}</span></div>${recs.map((p) => cardHtml(p, byShop[p.shop.slug], lang)).join('')}` : '');
 }
 
 /** Every category name that has a page: the taxonomy plus anything live. */
@@ -304,41 +322,44 @@ function categoryFromSlug(slug, list) {
  * /shop and /shop/<category>. Returns { html } or { notFound }. A search
  * (?q=) is the same page, canonical to the shelf and kept out of the index.
  */
-function renderShop(base, slug, { search } = {}) {
-  const all = liveProducts();
+function renderShop(base, slug, { search, lang = 'en' } = {}) {
+  const [T, TN] = tFor(lang);
+  const all = productsIn(lang);
   const cat = slug ? categoryFromSlug(slug, all) : 'all';
   if (!cat) return { notFound: true };
-  const byShop = Object.fromEntries(approvedShops().map((s) => [s.slug, s]));
+  const byShop = Object.fromEntries(shopsIn(lang).map((s) => [s.slug, s]));
   const list = cat === 'all' ? all : cat === 'House' ? all.filter((p) => p.shop.isHouse) : all.filter((p) => p.category === cat);
-  const label = cat === 'all' ? 'Shop all' : catLabel(cat);
+  const label = cat === 'all' ? T('Shop all') : T(catLabel(cat));
   let html = activate(storefront(), 'shop');
   html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, `$1${esc(label)}$2`);
-  html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, `$1<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? '<span>Shop all</span>' : `<a href="/shop">Shop all</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}$2`);
-  html = fill(html, 'shopGrid', list.length || cat !== 'House' ? list.map((p) => cardHtml(p, byShop[p.shop.slug])).join('')
-    : houseSoonShelf(all, byShop));
+  html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, `$1<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? `<span>${esc(T('Shop all'))}</span>` : `<a href="/shop">${esc(T('Shop all'))}</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}$2`);
+  html = fill(html, 'shopGrid', list.length || cat !== 'House' ? list.map((p) => cardHtml(p, byShop[p.shop.slug], lang)).join('')
+    : houseSoonShelf(all, byShop, lang));
   if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="shopGrid">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="shopGrid">`);
   const shopN = new Set(list.map((p) => p.shop.slug)).size;
   html = text(html, 'resCount', String(list.length));
-  html = text(html, 'resNoun', list.length === 1 ? 'piece' : 'pieces');
+  html = text(html, 'resNoun', noun(lang, list.length, 'piece', 'pieces'));
   html = text(html, 'shopCount', String(shopN));
-  html = text(html, 'shopNoun', shopN === 1 ? 'shop' : 'shops');
+  html = text(html, 'shopNoun', noun(lang, shopN, 'shop', 'shops'));
   const u = shopUrl(cat);
-  const title = cat === 'all' ? 'Shop all homeware · Trove' : `${label} · Trove`;
+  const title = cat === 'all' ? T('Shop all homeware · Trove') : T('{label} · Trove', { label });
   const description = cat === 'all'
-    ? `Every piece on Trove: ${list.length} handmade and designed ${list.length === 1 ? 'piece' : 'pieces'} from independent makers, delivered across Dubai and Abu Dhabi.`
+    ? TN(list.length, 'Every piece on Trove: {n} handmade and designed piece from independent makers, delivered across Dubai and Abu Dhabi.', 'Every piece on Trove: {n} handmade and designed pieces from independent makers, delivered across Dubai and Abu Dhabi.')
     : cat === 'House'
-      ? (list.length ? 'The Trove Collection: homeware designed by Trove, made with quality materials, delivered across Dubai and Abu Dhabi.'
-        : 'The Trove Collection, Trove’s own line of homeware, is on its way. Until it lands, shop handmade pieces from independent makers across Dubai and Abu Dhabi.')
-      : `${label} on Trove: ${list.length ? `${list.length} ${list.length === 1 ? 'piece' : 'pieces'} ` : 'pieces '}handmade by independent makers, delivered across Dubai and Abu Dhabi.`;
+      ? (list.length ? T('The Trove Collection: homeware designed by Trove, made with quality materials, delivered across Dubai and Abu Dhabi.')
+        : T('The Trove Collection, Trove’s own line of homeware, is on its way. Until it lands, shop handmade pieces from independent makers across Dubai and Abu Dhabi.'))
+      : list.length
+        ? TN(list.length, '{label} on Trove: {n} piece handmade by independent makers, delivered across Dubai and Abu Dhabi.', '{label} on Trove: {n} pieces handmade by independent makers, delivered across Dubai and Abu Dhabi.', { label })
+        : T('{label} on Trove: pieces handmade by independent makers, delivered across Dubai and Abu Dhabi.', { label });
   const itemList = {
     '@type': 'ItemList', name: label, numberOfItems: list.length,
     itemListElement: list.slice(0, 50).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: base + pieceUrl(p), name: p.name })),
   };
-  const crumbs = [['Trove', '/'], ['Shop all', '/shop']];
+  const crumbs = [['Trove', '/'], [T('Shop all'), '/shop']];
   if (cat !== 'all') crumbs.push([label, u]);
   return {
     html: setHead(html, {
-      base, url: base + u, title: search != null ? `Search results · Trove` : title, description,
+      base, url: base + u, title: search != null ? T('Search results · Trove') : title, description, lang,
       // An empty shelf or a search result is not a page worth indexing.
       // (the Trove Collection's shelf is a real page even before its first piece)
       robots: search != null || (!list.length && cat !== 'House') ? 'noindex, follow' : '',
@@ -347,7 +368,7 @@ function renderShop(base, slug, { search } = {}) {
   };
 }
 
-function productLd(base, p, url) {
+function productLd(base, p, url, lang = 'en') {
   const images = (p.images || []).map(safeImg).filter(Boolean).map((u) => abs(base, u));
   if (!images.length && safeImg(p.stockImage)) images.push(p.stockImage);
   const f = require('./pages/facts').facts();
@@ -359,7 +380,7 @@ function productLd(base, p, url) {
     url,
     sku: String(p.id),
     description: p.description || undefined,
-    category: catLabel(p.category) || undefined,
+    category: (p.category && i18n.t(lang, catLabel(p.category))) || undefined,
     image: images.length ? images : undefined,
     keywords: (p.tags || []).join(', ') || undefined,
     // The maker made it; Trove sells it (merchant of record — the Terms of Sale).
@@ -400,80 +421,104 @@ function productLd(base, p, url) {
 }
 
 /** 'September 2026' from a shop's joined month ('YYYY-MM'), or ''. */
-function sinceLabel(joined) {
+function sinceLabel(joined, lang = 'en') {
   if (!/^\d{4}-\d{2}$/.test(joined || '')) return '';
-  return new Date(`${joined}-01T00:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  return new Date(`${joined}-01T00:00:00Z`).toLocaleDateString(lang === 'ar' ? 'ar-AE-u-nu-latn-ca-gregory' : 'en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+}
+/** Arabic counted noun for days: 1 يوم, 2 يومان, 3–10 أيام, 11+ يوماً. */
+const daysAr = (n) => (n === 1 ? 'يوم واحد' : n === 2 ? 'يومان' : n >= 3 && n <= 10 ? `${n} أيام` : `${n} يوماً`);
+/** '3–6 days' in the page's language. */
+function rangeLabel(est, lang) {
+  if (lang !== 'ar') return est.label;
+  const max = Number(est.maxDays);
+  return `${est.minDays}–${max} ${max >= 3 && max <= 10 ? 'أيام' : 'يوماً'}`;
 }
 /* Per-piece delivery lines — the storefront's shipLine()/leadLine() say
  * exactly the same (test/lead-times.test.js pins both). */
-function leadLine(lead) {
+function leadLine(lead, lang = 'en') {
   const n = Number(lead) || fees.LEAD_DAYS_DEFAULT;
+  if (lang === 'ar') return i18n.t(lang, '{days} after your order', { days: daysAr(n) });
   return `${n} day${n === 1 ? '' : 's'} after your order`;
 }
-function shipLine(p) {
+function shipLine(p, lang = 'en') {
   const est = p.estimate || require('./lead-times').estimate(p.leadDays);
+  if (lang === 'ar') {
+    const [T] = tFor(lang);
+    const label = rangeLabel(est, lang);
+    return est.leadDays > fees.LEAD_DAYS_DEFAULT
+      ? T('Arrives in {label} · made for you, ready to send in {lead}', { label, lead: daysAr(est.leadDays) })
+      : T('Arrives in {label} across Dubai & Abu Dhabi', { label });
+  }
   return est.leadDays > fees.LEAD_DAYS_DEFAULT
     ? `Arrives in ${est.label} · made for you, ready to send in ${est.leadDays} days`
     : `Arrives in ${est.label} across Dubai & Abu Dhabi`;
 }
 /** The PDP's Details + About the maker, as the storefront's pdpAccHTML() draws them (real fields only). */
-function pdpAccHtml(p, v) {
+function pdpAccHtml(p, v, lang = 'en') {
+  const [T] = tFor(lang);
   const aed = (n) => Number(n).toLocaleString('en-US');
-  const rows = [['Category', p.category]];
-  (p.options || []).forEach((g) => rows.push([g.name, g.values.join(', ')]));
-  if ((p.extras || []).length) rows.push(['Extras', p.extras.map((e) => e.name + (e.price ? ` (+AED ${aed(e.price)})` : '')).join(', ')]);
+  const ol = p.optionLabels || {};
+  const el = p.extraLabels || {};
+  const rows = [[T('Category'), T(catLabel(p.category))]];
+  (p.options || []).forEach((g) => rows.push([ol[g.name] || g.name, g.values.map((x) => ol[`${g.name}:${x}`] || x).join(lang === 'ar' ? '، ' : ', ')]));
+  if ((p.extras || []).length) rows.push([T('Extras'), p.extras.map((e) => (el[e.name] || e.name) + (e.price ? ` (${i18n.iso(lang, `+AED ${aed(e.price)}`)})` : '')).join(lang === 'ar' ? '، ' : ', ')]);
   const per = p.personalization;
-  if (per) rows.push(['Personalisation', `${per.required ? 'Required' : 'Optional'}, up to ${per.maxLen} characters`]);
-  rows.push(['Ready to send in', leadLine(p.leadDays)]);
+  if (per) rows.push([T('Personalisation'), per.required ? T('Required, up to {n} characters', { n: per.maxLen }) : T('Optional, up to {n} characters', { n: per.maxLen })]);
+  rows.push([T('Ready to send in'), leadLine(p.leadDays, lang)]);
   const house = !!p.shop.isHouse;
-  const since = sinceLabel(v.joined);
-  const meta = [house ? '' : v.location, since ? `On Trove since ${since}` : ''].filter(Boolean).join(' · ');
-  return `<details class="acc" open><summary>Details<span class="faq-tg" aria-hidden="true">+</span></summary><dl class="acc-dl">${rows.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl></details>`
-    + `<details class="acc"><summary>${house ? 'About the Trove Collection' : 'About the maker'}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(p.shop.name)}</b>${meta ? `<div class="acc-meta">${esc(meta)}</div>` : ''}${v.bio ? `<p>${esc(v.bio)}</p>` : ''}<a class="link-more" href="${esc(shopHref(p.shop))}">Visit ${esc(p.shop.name)} →</a></div></details>`;
+  const since = sinceLabel(v.joined, lang);
+  const meta = [house ? '' : v.location, since ? T('On Trove since {date}', { date: since }) : ''].filter(Boolean).join(' · ');
+  return `<details class="acc" open><summary>${esc(T('Details'))}<span class="faq-tg" aria-hidden="true">+</span></summary><dl class="acc-dl">${rows.map(([k, val]) => `<div><dt>${esc(k)}</dt><dd>${esc(val)}</dd></div>`).join('')}</dl></details>`
+    + `<details class="acc"><summary>${esc(house ? T('About the Trove Collection') : T('About the maker'))}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="acc-body"><b class="acc-mk">${esc(p.shop.name)}</b>${meta ? `<div class="acc-meta">${esc(meta)}</div>` : ''}${v.bio ? `<p>${esc(v.bio)}</p>` : ''}<a class="link-more" href="${esc(shopHref(p.shop))}">${esc(T('Visit {maker} →', { maker: p.shop.name }))}</a></div></details>`;
 }
 
 /** /pieces/<ref>. Returns { html } | { redirect } | { notFound }. */
-function renderPiece(base, ref) {
+function renderPiece(base, ref, lang = 'en') {
+  const [T] = tFor(lang);
   const m = String(ref || '').match(/^(\d{1,12})(?:-([a-z0-9-]*))?$/i);
   if (!m) return { notFound: true };
-  const p = products().liveProduct(Number(m[1]));
-  if (!p) return { notFound: true };
-  const canonical = pieceUrl(p);
+  const en = products().liveProduct(Number(m[1]));
+  if (!en) return { notFound: true };
+  // the address is the English name's slug in both languages
+  const canonical = pieceUrl(en);
   if (`/pieces/${ref}` !== canonical) return { redirect: canonical };
+  const p = tr.product(en, lang);
   const url = base + canonical;
-  const vendor = approvedShops().find((s) => s.slug === p.shop.slug) || {};
-  const cover = coverOf(p);
-  const catName = catLabel(p.category);
+  const vendor = shopsIn(lang).find((s) => s.slug === p.shop.slug) || {};
+  const cover = coverOf(en);
+  const catName = T(catLabel(p.category));
   let html = activate(storefront(), 'pdp');
   html = fill(html, 'pdpCrumb', `<a href="${esc(shopUrl(p.category))}">${esc(catName)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`);
   html = attr(html, 'pdpGrad', 'style', `background:${safeColor(p.shop.color)}`);
   if (cover) html = attr(attr(html, 'pdpImg', 'src', cover), 'pdpImg', 'alt', p.name);
   // one picture: no thumbnail rail; a stock stand-in says so
   if ((p.images || []).length < 2) html = html.replace('<div class="gallery" id="pdpGallery">', '<div class="gallery one" id="pdpGallery">');
-  if (isStock(p)) html = html.replace('<span class="illus" id="pdpIllus" hidden>', '<span class="illus" id="pdpIllus">');
+  if (isStock(en)) html = html.replace('<span class="illus" id="pdpIllus" hidden>', '<span class="illus" id="pdpIllus">');
   html = attr(html, 'pdpVendorLink', 'href', shopHref(p.shop));
   html = fill(html, 'pdpVendorLink', esc(p.shop.name));
   html = fill(html, 'pdpName', esc(p.name));
-  html = fill(html, 'pdpPrice', `${p.compareAt ? `<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${money(p.compareAt)}</s>` : ''}${money(p.price)}`);
+  html = fill(html, 'pdpPrice', `${p.compareAt ? `<s style="color:var(--muted);font-weight:400;font-size:18px;margin-inline-end:8px">${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}`);
   html = fill(html, 'pdpDesc', esc(p.description || ''));
-  html = fill(html, 'pdpAcc', pdpAccHtml(p, vendor));
-  html = text(html, 'pdpShipLine', shipLine(p));
-  const title = `${p.name} by ${p.shop.name} · Trove`;
-  const description = compose(`${money(p.price)} from ${p.shop.name}${vendor.location ? `, ${vendor.location}` : ''}. `,
-    p.description || '', ' Delivered across Dubai and Abu Dhabi.');
-  const crumbs = [['Trove', '/'], ['Shop all', '/shop'], [catName, shopUrl(p.category)], [p.name, canonical]];
+  html = fill(html, 'pdpAcc', pdpAccHtml(p, vendor, lang));
+  html = text(html, 'pdpShipLine', shipLine(p, lang));
+  const title = T('{name} by {maker} · Trove', { name: p.name, maker: p.shop.name });
+  const description = compose(T('{price} from {maker}{where}. ', { price: money(p.price, lang), maker: p.shop.name, where: vendor.location ? `${lang === 'ar' ? '، ' : ', '}${vendor.location}` : '' }),
+    p.description || '', T(' Delivered across Dubai and Abu Dhabi.'));
+  const crumbs = [['Trove', '/'], [T('Shop all'), '/shop'], [catName, shopUrl(p.category)], [p.name, canonical]];
   return {
     html: setHead(html, {
-      base, url, title, description, type: 'product',
+      base, url, title, description, type: 'product', lang,
       image: cover ? abs(base, cover) : '', imageAlt: p.name,
-      ld: [productLd(base, p, url), crumbLd(base, crumbs)],
+      ld: [productLd(base, p, url, lang), crumbLd(base, crumbs)],
     }).replace('</head>', `<meta property="product:price:amount" content="${Number(p.price).toFixed(2)}">\n<meta property="product:price:currency" content="AED">\n</head>`),
   };
 }
 
 /** /makers/<slug>. Returns { html } | { redirect } | { notFound }. */
-function renderMaker(base, slug) {
-  const s = approvedShops().find((x) => x.slug === slug) || approvedShops().find((x) => x.slug.toLowerCase() === String(slug).toLowerCase());
+function renderMaker(base, slug, lang = 'en') {
+  const [T, TN] = tFor(lang);
+  const all = shopsIn(lang);
+  const s = all.find((x) => x.slug === slug) || all.find((x) => x.slug.toLowerCase() === String(slug).toLowerCase());
   // The Trove Collection is not a maker: its page is its shelf.
   if ((s && s.isHouse) || String(slug).toLowerCase() === HOUSE_SLUG) return { redirect: shopUrl('House') };
   if (!s) return { notFound: true };
@@ -482,14 +527,14 @@ function renderMaker(base, slug) {
   if (s.slug !== slug && s.slug === s.slug.toLowerCase()) return { redirect: makerUrl(s.slug) };
   const u = makerUrl(s.slug);
   const url = base + u;
-  const list = liveProducts().filter((p) => p.shop.slug === s.slug);
+  const list = productsIn(lang).filter((p) => p.shop.slug === s.slug);
   let html = activate(storefront(), 'vendor');
   html = fill(html, 'vName', esc(s.name));
-  const since = sinceLabel(s.joined);
-  const rating = s.rating ? `${s.rating.avg}★ from ${s.rating.count} ${s.rating.count === 1 ? 'review' : 'reviews'}` : '';
-  html = fill(html, 'vMeta', esc([s.isHouse ? '' : s.location, since ? `On Trove since ${since}` : '', `${list.length} ${list.length === 1 ? 'piece' : 'pieces'}`, rating].filter(Boolean).join(' · ')));
+  const since = sinceLabel(s.joined, lang);
+  const rating = s.rating ? TN(s.rating.count, '{avg}★ from {n} review', '{avg}★ from {n} reviews', { avg: s.rating.avg }) : '';
+  html = fill(html, 'vMeta', esc([s.isHouse ? '' : s.location, since ? T('On Trove since {date}', { date: since }) : '', TN(list.length, '{n} piece', '{n} pieces'), rating].filter(Boolean).join(' · ')));
   html = fill(html, 'vBio', esc(s.bio || ''));
-  html = text(html, 'vPiecesHead', `Pieces by ${s.name}`);
+  html = text(html, 'vPiecesHead', T('Pieces by {maker}', { maker: s.name }));
   // the maker's own photo, else the calm colour panel (a stock stand-in reads as unrelated)
   const own = safeImg(s.image) && !/^https:\/\/images\.unsplash\.com\//.test(s.image) ? s.image : '';
   const c = safeColor(s.color);
@@ -498,11 +543,12 @@ function renderMaker(base, slug) {
   html = attr(html, 'vLav', 'style', own ? `background:center/cover no-repeat url("${own}")` : `background:${c}`);
   html = fill(html, 'vLav', own ? '' : esc((s.name || '?')[0]));
   if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="vendorProducts">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="vendorProducts">`);
-  html = fill(html, 'vendorProducts', list.length ? list.map((p) => cardHtml(p, s)).join('')
-    : '<p style="color:var(--muted);font-weight:400">This shop is restocking — check back soon.</p>');
-  const title = `${s.name}${s.location ? `, ${s.location}` : ''} · Maker on Trove`;
-  const description = compose(`${list.length} ${list.length === 1 ? 'piece' : 'pieces'} by ${s.name}${s.location ? `, ${s.location}` : ''}. `,
-    s.bio || '', ' Delivered across Dubai and Abu Dhabi.');
+  html = fill(html, 'vendorProducts', list.length ? list.map((p) => cardHtml(p, s, lang)).join('')
+    : `<p style="color:var(--muted);font-weight:400">${esc(T('This shop is restocking — check back soon.'))}</p>`);
+  const where = s.location ? `${lang === 'ar' ? '، ' : ', '}${s.location}` : '';
+  const title = T('{maker}{where} · Maker on Trove', { maker: s.name, where });
+  const description = compose(TN(list.length, '{n} piece by {maker}{where}. ', '{n} pieces by {maker}{where}. ', { maker: s.name, where }),
+    s.bio || '', T(' Delivered across Dubai and Abu Dhabi.'));
   const image = own ? abs(base, own) : (list[0] && coverOf(list[0]) ? abs(base, coverOf(list[0])) : '');
   const maker = {
     '@type': 'Organization',
@@ -511,30 +557,31 @@ function renderMaker(base, slug) {
     url,
     description: s.bio || undefined,
     image: image || undefined,
-    address: s.location ? { '@type': 'PostalAddress', addressLocality: s.location.split(',')[0].trim(), addressCountry: 'AE' } : undefined,
+    address: s.location ? { '@type': 'PostalAddress', addressLocality: s.location.split(/[,،]/)[0].trim(), addressCountry: 'AE' } : undefined,
     memberOf: orgRef(base),
   };
   const itemList = {
-    '@type': 'ItemList', name: `Pieces by ${s.name}`, numberOfItems: list.length,
+    '@type': 'ItemList', name: T('Pieces by {maker}', { maker: s.name }), numberOfItems: list.length,
     itemListElement: list.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: base + pieceUrl(p), name: p.name })),
   };
   const page = { '@type': 'ProfilePage', '@id': `${url}#page`, url, name: title, mainEntity: { '@id': `${url}#maker` }, isPartOf: { '@id': `${base}/#website` } };
   return {
     html: setHead(html, {
-      base, url, title, description, image, imageAlt: s.name, type: 'profile',
-      ld: [JSON.parse(JSON.stringify(maker)), itemList, page, crumbLd(base, [['Trove', '/'], ['Makers', '/#vendors'], [s.name, u]])],
+      base, url, title, description, image, imageAlt: s.name, type: 'profile', lang,
+      ld: [JSON.parse(JSON.stringify(maker)), itemList, page, crumbLd(base, [['Trove', '/'], [T('Makers'), '/#vendors'], [s.name, u]])],
     }),
   };
 }
 
-function renderSell(base) {
+function renderSell(base, lang = 'en') {
+  const [T] = tFor(lang);
   const f = require('./pages/facts').facts();
   const html = activate(storefront(), 'sell');
   return setHead(html, {
-    base, url: `${base}/sell-on-trove`, title: 'Sell your handmade pieces on Trove',
-    description: `Open a shop on Trove: nothing up front, you set the price and keep ${f.makerShare}%. Trove handles photography, delivery and customer care in Dubai and Abu Dhabi.`,
-    ld: [{ '@type': 'WebPage', '@id': `${base}/sell-on-trove#page`, url: `${base}/sell-on-trove`, name: 'Sell on Trove', isPartOf: { '@id': `${base}/#website` }, about: orgRef(base) },
-      crumbLd(base, [['Trove', '/'], ['Sell on Trove', '/sell-on-trove']])],
+    base, url: `${base}/sell-on-trove`, title: T('Sell your handmade pieces on Trove'), lang,
+    description: T('Open a shop on Trove: nothing up front, you set the price and keep {share}%. Trove handles photography, delivery and customer care in Dubai and Abu Dhabi.', { share: f.makerShare }),
+    ld: [{ '@type': 'WebPage', '@id': `${base}/sell-on-trove#page`, url: `${base}/sell-on-trove`, name: T('Sell on Trove'), isPartOf: { '@id': `${base}/#website` }, about: orgRef(base) },
+      crumbLd(base, [['Trove', '/'], [T('Sell on Trove'), '/sell-on-trove']])],
   });
 }
 
@@ -577,10 +624,10 @@ function legacyTarget(query) {
 // Ports of trove-services.html's own card markup, so the page's script
 // re-renders over identical content (no layout shift) and a crawler reads it.
 const SETTING_LABEL = { home: 'At your place', studio: "At the provider's studio", remote: 'Remote' };
-function priceLabel(s) {
-  if (s.priceType === 'from') return 'From ' + moneyCents(s.priceCents);
-  if (s.priceType === 'hourly') return moneyCents(s.priceCents) + ' / hour';
-  return moneyCents(s.priceCents);
+function priceLabel(s, lang = 'en') {
+  if (s.priceType === 'from') return i18n.t(lang, 'From {price}', { price: moneyCents(s.priceCents, lang) });
+  if (s.priceType === 'hourly') return i18n.t(lang, '{price} / hour', { price: moneyCents(s.priceCents, lang) });
+  return moneyCents(s.priceCents, lang);
 }
 function shade(hex, p) {
   const n = parseInt(hex.slice(1), 16);
@@ -595,77 +642,87 @@ function motifSvg(seed, c, slice) {
   return `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'${slice ? " preserveAspectRatio='xMidYMid slice'" : ''}><rect width='160' height='100' fill='${c}'/><ellipse cx='${cx}' cy='${cy}' rx='${r}' ry='${Math.round(r * 0.72)}' fill='${c2}' opacity='0.85'/><ellipse cx='${cx2}' cy='${cy2}' rx='${r2}' ry='${Math.round(r2 * 1.2)}' fill='${c3}' opacity='0.55'/><ellipse cx='${(cx + cx2) >> 1}' cy='${100 - cy}' rx='${Math.round(r2 * 0.8)}' ry='${Math.round(r2 * 0.5)}' fill='${shade(c, 28)}' opacity='0.7'/></svg>`;
 }
 const motifUrl = (seed, c) => `data:image/svg+xml;utf8,${encodeURIComponent(motifSvg(seed, c, true))}`;
-function svTile(s) {
-  const cat = tax.bySlug(s.category);
-  return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat ? cat.name : 'Service')}</span></div>`;
+/** A service category in the page's language (src/service-taxonomy.js carries the Arabic). */
+const svcCat = (slug, lang) => tax.bySlug(slug, lang);
+function svTile(s, lang = 'en') {
+  const cat = svcCat(s.category, lang);
+  return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat ? cat.name : i18n.t(lang, 'Service'))}</span></div>`;
 }
-const catNames = (slugs) => (slugs || []).map((sl) => { const c = tax.bySlug(sl); return c ? c.name : null; }).filter(Boolean);
-function svCardHtml(s) {
+const catNames = (slugs, lang = 'en') => (slugs || []).map((sl) => { const c = svcCat(sl, lang); return c ? c.name : null; }).filter(Boolean);
+function svCardHtml(s, lang = 'en') {
+  const [T] = tFor(lang);
   return `<div class="svcard" onclick="openService(${Number(s.id)})">
-    ${svTile(s)}
+    ${svTile(s, lang)}
     <div class="svbody">
       <div class="t">${esc(s.title)}</div>
-      <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || 'Dubai')}</div>
-      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting] || '')}</span><button type="button" class="sv-req" aria-label="Request ${esc(s.title)}" onclick="event.stopPropagation();openService(${Number(s.id)})">Request</button></div>
+      <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || T('Dubai'))}</div>
+      <div class="meta"><span class="price">${priceLabel(s, lang)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting] ? T(SETTING_LABEL[s.setting]) : '')}</span><button type="button" class="sv-req" aria-label="${esc(T('Request {title}', { title: s.title }))}" onclick="event.stopPropagation();openService(${Number(s.id)})">${esc(T('Request'))}</button></div>
     </div>
   </div>`;
 }
-function provCardHtml(p) {
+function provCardHtml(p, lang = 'en') {
+  const [T, TN] = tFor(lang);
+  const n = Number(p.serviceCount) || 0;
   return `<article class="pcard" role="link" tabindex="0">
     <div class="cover vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}"></div>
     <div class="av" style="background:${safeColor(p.color)}">${esc((p.name || '?')[0])}</div>
     <h3><a class="pcard-link" href="${esc(providerUrl(p.slug))}">${esc(p.name)}</a></h3>
-    <div class="loc">${esc(p.location || 'Dubai')}</div>
+    <div class="loc">${esc(p.location || T('Dubai'))}</div>
     <p>${esc(p.bio)}</p>
-    <div class="pmeta"><span><b>${Number(p.serviceCount) || 0}</b> ${p.serviceCount === 1 ? 'service' : 'services'}</span>${p.fromCents ? `<span>from <b>${moneyCents(p.fromCents)}</b></span>` : ''}</div>
-    <div class="pcats">${catNames(p.categories).map((n) => `<span class="tagchip">${esc(n)}</span>`).join('')}</div>
-    ${p.shop && p.shop.productCount ? `<span class="also">Also sells pieces · ${esc(p.shop.name)}</span>` : ''}
+    <div class="pmeta"><span>${lang === 'ar' ? esc(TN(n, '{n} service', '{n} services')) : `<b>${n}</b> ${p.serviceCount === 1 ? 'service' : 'services'}`}</span>${p.fromCents ? `<span>${lang === 'ar' ? esc(T('from {price}', { price: moneyCents(p.fromCents, lang) })) : `from <b>${moneyCents(p.fromCents)}</b>`}</span>` : ''}</div>
+    <div class="pcats">${catNames(p.categories, lang).map((c) => `<span class="tagchip">${esc(c)}</span>`).join('')}</div>
+    ${p.shop && p.shop.productCount ? `<span class="also">${esc(T('Also sells pieces · {shop}', { shop: p.shop.name }))}</span>` : ''}
   </article>`;
 }
 function servicesPage() { return readDoc('trove-services.html', servicesCache); }
 
 /** The directory's first paint, as the page's script draws it for 'At home'. */
-function directoryMarkup(html) {
-  const services = servicesData().liveServices();
-  const providers = servicesData().approvedProviders();
+function directoryMarkup(html, lang = 'en') {
+  const [T, TN] = tFor(lang);
+  const services = tr.services(servicesData().liveServices(), lang);
+  const providers = tr.providers(servicesData().approvedProviders(), lang);
   const audience = 'home';
+  const loc = tax.localized ? tax.localized(lang) : { audiences: tax.AUDIENCES, categories: tax.SERVICE_CATEGORIES };
   const AUD_ICON = {
     home: { tint: '#CAD5CC', svg: '<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>' },
     makers: { tint: '#F8D7E4', svg: '<path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/>' },
   };
-  const aud = tax.AUDIENCES.map((a) => {
+  const aud = loc.audiences.map((a) => {
     const ic = AUD_ICON[a.key] || { tint: '#DBC7BD', svg: '<circle cx="12" cy="12" r="7"/>' };
     return `<button class="audbtn ${audience === a.key ? 'on' : ''}" aria-pressed="${audience === a.key}">
       <span class="ofic" style="background:${ic.tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</svg></span>
       <span><b>${esc(a.name)}</b><small>${esc(a.sub)}</small></span>
-      <span class="arr">→</span>
+      <span class="arr">${lang === 'ar' ? '←' : '→'}</span>
     </button>`;
   }).join('');
-  const cats = tax.SERVICE_CATEGORIES.filter((c) => c.audience === audience);
+  const cats = loc.categories.filter((c) => c.audience === audience);
   const live = cats.filter((c) => services.some((s) => s.category === c.slug));
   const empty = cats.filter((c) => !live.includes(c));
   const dir = live.map((c) => {
     const list = services.filter((s) => s.category === c.slug); const n = list.length;
     const min = n ? Math.min(...list.map((s) => s.priceCents || 0)) : 0;
     return `<div class="dcard ${n ? 'live' : ''} ">
-      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n ? '' : 'none'}">${n ? `${n} ${n === 1 ? 'service' : 'services'}` : 'Be the first'}</span></div>
+      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n ? '' : 'none'}">${n ? esc(TN(n, '{n} service', '{n} services')) : esc(T('Be the first'))}</span></div>
       <div class="blurb">${esc(c.blurb)}</div>
       <p class="ex">${c.examples.map(esc).join(' · ')}</p>
       <div class="foot">${n
-    ? `<span class="from">${min ? 'From ' + moneyCents(min) : ''}</span><span class="go">See services →</span>`
-    : '<span></span><a href="/apply?for=services">Offer this →</a>'}</div>
+    ? `<span class="from">${min ? esc(T('From {price}', { price: moneyCents(min, lang) })) : ''}</span><span class="go">${esc(T('See services →'))}</span>`
+    : `<span></span><a href="/apply?for=services">${esc(T('Offer this →'))}</a>`}</div>
     </div>`;
-  }).join('') + (empty.length ? `<div class="soon"><div><b>Coming soon</b><p>${empty.map((c) => esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">Offer a service →</a></div>` : '');
+  }).join('') + (empty.length ? `<div class="soon"><div><b>${esc(T('Coming soon'))}</b><p>${empty.map((c) => esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">${esc(T('Offer a service →'))}</a></div>` : '');
   const all = services.filter((s) => cats.some((c) => c.slug === s.category));
   let results;
   if (!all.length) {
-    results = `<div class="empty">No providers offer services ${esc((tax.AUDIENCES.find((a) => a.key === audience) || {}).name.toLowerCase())} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href="/apply?for=services">Become a provider</a> and be the first name here.</div>`;
+    const audName = ((loc.audiences.find((a) => a.key === audience) || {}).name || '');
+    results = lang === 'ar'
+      ? `<div class="empty">${esc(T('No providers offer services {audience} yet — the Services Marketplace is just opening. Do one of these beautifully yourself?', { audience: audName }))} <a href="/apply?for=services">${esc(T('Become a provider'))}</a> ${esc(T('and be the first name here.'))}</div>`
+      : `<div class="empty">No providers offer services ${esc(audName.toLowerCase())} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href="/apply?for=services">Become a provider</a> and be the first name here.</div>`;
   } else {
     const CAP = 8; const capped = all.length > CAP;
     results = `<section class="results" id="resultsSec">
-    <div class="rhead"><h2>All services</h2><span>${all.length} ${all.length === 1 ? 'service' : 'services'}</span></div>
-    <div class="svgrid">${(capped ? all.slice(0, CAP) : all).map(svCardHtml).join('')}</div>
-    ${capped ? `<button class="showall">Show all ${all.length} services</button>` : ''}
+    <div class="rhead"><h2>${esc(T('All services'))}</h2><span>${esc(TN(all.length, '{n} service', '{n} services'))}</span></div>
+    <div class="svgrid">${(capped ? all.slice(0, CAP) : all).map((s) => svCardHtml(s, lang)).join('')}</div>
+    ${capped ? `<button class="showall">${esc(T('Show all {n} services', { n: all.length }))}</button>` : ''}
   </section>`;
   }
   let out = fill(html, 'audSwitch', aud);
@@ -676,36 +733,39 @@ function directoryMarkup(html) {
     const audSet = new Set(cats.map((c) => c.slug));
     const rel = (p) => ((p.categories || []).some((sl) => audSet.has(sl)) ? 1 : 0);
     out = out.replace('<section class="band" id="providers" hidden>', '<section class="band" id="providers">');
-    out = fill(out, 'provGrid', [...providers].sort((a, b) => rel(b) - rel(a)).map(provCardHtml).join(''));
+    out = fill(out, 'provGrid', [...providers].sort((a, b) => rel(b) - rel(a)).map((p) => provCardHtml(p, lang)).join(''));
   }
   return { html: out, services, providers };
 }
 
-function servicesLd(base) {
+function servicesLd(base, lang = 'en') {
   return {
-    '@type': 'CollectionPage', '@id': `${base}/services#page`, url: `${base}/services`, name: 'Trove Services Marketplace',
+    '@type': 'CollectionPage', '@id': `${base}/services#page`, url: `${base}/services`, name: i18n.t(lang, 'Trove Services Marketplace'),
     isPartOf: { '@id': `${base}/#website` }, about: orgRef(base), inLanguage: 'en',
   };
 }
 
-function renderServicesDirectory(base) {
-  const { html, providers } = directoryMarkup(servicesPage());
+function renderServicesDirectory(base, lang = 'en') {
+  const [T] = tFor(lang);
+  const { html, providers } = directoryMarkup(servicesPage(), lang);
   const itemList = {
-    '@type': 'ItemList', name: 'Service providers on Trove', numberOfItems: providers.length,
+    '@type': 'ItemList', name: T('Service providers on Trove'), numberOfItems: providers.length,
     itemListElement: providers.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: base + providerUrl(p.slug), name: p.name })),
   };
   return setHead(html, {
-    base, url: `${base}/services`, title: 'Services Marketplace · Trove',
-    description: 'Creative services at your place in Dubai and Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.',
-    ld: [servicesLd(base), itemList, crumbLd(base, [['Trove', '/'], ['Services Marketplace', '/services']])],
+    base, url: `${base}/services`, title: T('Services Marketplace · Trove'), lang,
+    description: T('Creative services at your place in Dubai and Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.'),
+    ld: [servicesLd(base, lang), itemList, crumbLd(base, [['Trove', '/'], [T('Services Marketplace'), '/services']])],
   });
 }
 
 /** /services/<slug>: one approved provider. Returns { html } | { notFound }. */
-function renderProvider(base, slug) {
+function renderProvider(base, slug, lang = 'en') {
+  const [T, TN] = tFor(lang);
   const page = servicesData().providerPage(slug);
   if (!page) return { notFound: true };
-  const { provider: p, services } = page;
+  const p = tr.provider(page.provider, lang);
+  const services = tr.services(page.services, lang);
   const u = providerUrl(p.slug);
   const url = base + u;
   let html = servicesPage();
@@ -717,31 +777,37 @@ function renderProvider(base, slug) {
   html = attr(html, 'pvAv', 'style', `background:${safeColor(p.color)}`);
   html = fill(html, 'pvAv', esc((p.name || '?')[0]));
   html = fill(html, 'pvName', esc(p.name));
-  html = fill(html, 'pvLoc', esc(p.location || 'Dubai'));
+  html = fill(html, 'pvLoc', esc(p.location || T('Dubai')));
   html = fill(html, 'pvBio', esc(p.bio || ''));
-  const emirate = (p.location || 'Dubai').split(',').pop().trim();
-  html = fill(html, 'pvStats', `<div><b>${Number(p.serviceCount) || 0}</b><span>${p.serviceCount === 1 ? 'SERVICE' : 'SERVICES'}</span></div><div><b>${esc(emirate)}</b><span>BASED IN</span></div>${p.since ? `<div><b>${esc(p.since)}</b><span>ON TROVE SINCE</span></div>` : ''}`);
-  html = fill(html, 'pvCats', catNames(p.categories).map((n) => `<span class="tagchip">${esc(n)}</span>`).join(''));
-  html = fill(html, 'pvCount', `${services.length} ${services.length === 1 ? 'service' : 'services'}`);
-  html = fill(html, 'pvGrid', services.length ? services.map(svCardHtml).join('')
-    : `<div class="empty" style="grid-column:1/-1">${esc(p.name)} hasn't listed a service yet — check back soon.</div>`);
+  // the emirate comes from the English location (the Arabic one may use '،')
+  const emirateEn = (page.provider.location || 'Dubai').split(',').pop().trim();
+  const emirate = (p.location || T('Dubai')).split(/[,،]/).pop().trim();
+  const n = Number(p.serviceCount) || 0;
+  html = fill(html, 'pvStats', `<div><b>${n}</b><span>${esc(lang === 'ar' ? noun(lang, n, 'SERVICE', 'SERVICES') : (p.serviceCount === 1 ? 'SERVICE' : 'SERVICES'))}</span></div><div><b>${esc(emirate)}</b><span>${esc(T('BASED IN'))}</span></div>${p.since ? `<div><b>${esc(p.since)}</b><span>${esc(T('ON TROVE SINCE'))}</span></div>` : ''}`);
+  html = fill(html, 'pvCats', catNames(p.categories, lang).map((c) => `<span class="tagchip">${esc(c)}</span>`).join(''));
+  html = fill(html, 'pvCount', esc(TN(services.length, '{n} service', '{n} services')));
+  html = fill(html, 'pvGrid', services.length ? services.map((s) => svCardHtml(s, lang)).join('')
+    : `<div class="empty" style="grid-column:1/-1">${esc(T("{name} hasn't listed a service yet — check back soon.", { name: p.name }))}</div>`);
   // Their shop's pieces, when the same account sells on the storefront.
   if (p.shop && p.shop.productCount) {
-    const pieces = liveProducts().filter((x) => x.shop.slug === p.shop.slug).slice(0, 8);
+    const pieces = productsIn(lang).filter((x) => x.shop.slug === p.shop.slug).slice(0, 8);
     if (pieces.length) {
       html = html.replace('<div class="pv-shop" id="pvShop" hidden>', '<div class="pv-shop" id="pvShop">');
-      html = fill(html, 'pvShopCount', `${p.shop.productCount} ${p.shop.productCount === 1 ? 'piece' : 'pieces'} · ${esc(p.shop.name)}`);
+      html = fill(html, 'pvShopCount', `${esc(TN(p.shop.productCount, '{n} piece', '{n} pieces'))} · ${esc(p.shop.name)}`);
       html = attr(html, 'pvShopLink', 'href', makerUrl(p.shop.slug));
       html = fill(html, 'pvPieces', pieces.map((pr) => {
         const img = coverOf(pr) || motifUrl(hashOf(pr.name), safeColor(p.color));
-        return `<a class="pc" href="${esc(pieceUrl(pr))}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">${money(pr.price)}</div></div></a>`;
+        return `<a class="pc" href="${esc(pieceUrl(pr))}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">${money(pr.price, lang)}</div></div></a>`;
       }).join(''));
     }
   }
-  const title = `${p.name}${p.location ? `, ${p.location}` : ''} · Trove Services Marketplace`;
-  const from = services.length ? `, from ${moneyCents(Math.min(...services.map((s) => s.priceCents || 0)))}` : '';
-  const description = compose(`${services.length ? `${services.length} ${services.length === 1 ? 'service' : 'services'}${from}, booked` : 'Book'} in Dubai and Abu Dhabi. `,
-    p.bio || services.map((s) => s.title).join(', '), '');
+  const where = p.location ? `${lang === 'ar' ? '، ' : ', '}${p.location}` : '';
+  const title = T('{name}{where} · Trove Services Marketplace', { name: p.name, where });
+  const minCents = services.length ? Math.min(...services.map((s) => s.priceCents || 0)) : 0;
+  const head = services.length
+    ? TN(services.length, '{n} service, from {price}, booked in Dubai and Abu Dhabi. ', '{n} services, from {price}, booked in Dubai and Abu Dhabi. ', { price: moneyCents(minCents, lang) })
+    : T('Book in Dubai and Abu Dhabi. ');
+  const description = compose(head, p.bio || services.map((s) => s.title).join(lang === 'ar' ? '، ' : ', '), '');
   const business = {
     '@type': ['LocalBusiness', 'ProfessionalService'],
     '@id': `${url}#provider`,
@@ -749,17 +815,17 @@ function renderProvider(base, slug) {
     url,
     description: p.bio || undefined,
     image: `${base}${OG_IMAGE}`,
-    address: { '@type': 'PostalAddress', addressLocality: emirate, addressCountry: 'AE' },
+    address: { '@type': 'PostalAddress', addressLocality: emirateEn, addressCountry: 'AE' },
     areaServed: [
       { '@type': 'City', name: 'Dubai', containedInPlace: { '@type': 'Country', name: 'United Arab Emirates' } },
       { '@type': 'City', name: 'Abu Dhabi', containedInPlace: { '@type': 'Country', name: 'United Arab Emirates' } },
     ],
     currenciesAccepted: 'AED',
-    priceRange: services.length ? `From ${moneyCents(Math.min(...services.map((s) => s.priceCents || 0)))}` : undefined,
-    knowsAbout: catNames(p.categories),
+    priceRange: services.length ? `From ${moneyCents(minCents)}` : undefined,
+    knowsAbout: catNames(p.categories, lang),
     hasOfferCatalog: {
       '@type': 'OfferCatalog',
-      name: `Services by ${p.name}`,
+      name: T('Services by {name}', { name: p.name }),
       itemListElement: services.map((s) => ({
         '@type': 'Offer',
         url,
@@ -772,7 +838,7 @@ function renderProvider(base, slug) {
         },
         itemOffered: {
           '@type': 'Service', name: s.title, description: s.description || undefined,
-          serviceType: (tax.bySlug(s.category) || {}).name,
+          serviceType: (svcCat(s.category, lang) || {}).name,
           provider: { '@id': `${url}#provider` },
           areaServed: s.setting === 'remote' ? 'AE' : ['Dubai', 'Abu Dhabi'],
         },
@@ -781,8 +847,8 @@ function renderProvider(base, slug) {
   };
   return {
     html: setHead(html, {
-      base, url, title, description, type: 'profile',
-      ld: [JSON.parse(JSON.stringify(business)), crumbLd(base, [['Trove', '/'], ['Services Marketplace', '/services'], [p.name, u]])],
+      base, url, title, description, type: 'profile', lang,
+      ld: [JSON.parse(JSON.stringify(business)), crumbLd(base, [['Trove', '/'], [T('Services Marketplace'), '/services'], [p.name, u]])],
     }),
   };
 }

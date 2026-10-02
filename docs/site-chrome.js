@@ -88,8 +88,8 @@
     var el = $('cartCount'); if (!el) return;
     el.textContent = n; el.classList.toggle('hide', n === 0);
   }
-  window.openCart = function () { location.href = '/?cart=1'; };
-  window.runSearch = function (q) { location.href = '/?q=' + encodeURIComponent((q || '').trim()); };
+  window.openCart = function () { location.href = (window.troveUrl ? troveUrl('/') : '/') + '?cart=1'; };
+  window.runSearch = function (q) { location.href = (window.troveUrl ? troveUrl('/') : '/') + '?q=' + encodeURIComponent((q || '').trim()); };
   window.openMenu = function (focusSearch) {
     $('mnav').classList.add('open'); $('uiScrim').classList.add('open'); document.body.style.overflow = 'hidden';
     window.TroveDialog.open($('mnav'), { onClose: window.closeSheets, focus: focusSearch ? $('mSearchInput') : null });
@@ -119,10 +119,10 @@
     if (!u) return;
     $('amAv').textContent = ((u.name || '?').trim()[0] || '·').toUpperCase();
     $('amName').textContent = u.name; $('amEmail').textContent = u.email;
-    $('authLabel').textContent = 'Sign out';
+    $('authLabel').textContent = window._t ? _t('Sign out') : 'Sign out';
     var a = $('authLink'); a.removeAttribute('href'); a.style.cursor = 'pointer';
     a.setAttribute('role', 'button'); a.tabIndex = 0;
-    a.onclick = async function () { try { await TroveAPI.logout(); } catch (_) {} location.href = '/'; };
+    a.onclick = async function () { try { await TroveAPI.logout(); } catch (_) {} location.href = window.troveUrl ? troveUrl('/') : '/'; };
   }
   updateCartCount();
   renderAuth();

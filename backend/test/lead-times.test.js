@@ -106,7 +106,7 @@ test('existing pieces get 2 days; makers confirm them in one tap or by saving a 
   assert.match(html, /<label for="dLead">Ready to send in<\/label>/);
   assert.match(html, /How long you need to make or finish and pack this piece after it's ordered\. Made-to-order pieces can take up to 6 weeks\./);
   for (const d of [2, 5, 7, 14, 21]) assert.match(html, new RegExp(`onclick="pickLead\\(${d}\\)">${d} days</button>`));
-  assert.match(html, /'Buyers will see: Arrives in '\+etaLabel\(n\)/);
+  assert.match(html, /_t\('Buyers will see: Arrives in \{eta\}',\{eta:etaLabel\(n\)\}\)/);
   assert.match(html, /Confirm make time/);
 });
 
@@ -160,6 +160,9 @@ test('the storefront says exactly what the server renders (PDP line, details row
   const html = fs.readFileSync(path.join(DOCS, 'trove.html'), 'utf8');
   const grab = (re) => { const m = html.match(re); assert.ok(m, String(re)); return m[0]; };
   const src = [
+    // the English side of docs/api.js's _t/_tn/troveIso (the page wraps its strings for the Arabic edition)
+    'const fill=(s,v)=>String(s).replace(/\\{(\\w+)\\}/g,(m,k)=>(v&&v[k]!=null?String(v[k]):m));',
+    'const _t=(k,v)=>fill(k,v), _tn=(n,one,other,v)=>fill(n===1?one:other,{n,...(v||{})}), troveIso=s=>String(s);',
     'let FEES={courierTransitMinDays:1,courierTransitMaxDays:4,leadDaysDefault:2};',
     grab(/const LEAD_DEFAULT=[^\n]*/), grab(/const leadOfP=[^\n]*/),
     grab(/function estOf\(lead\)\{[\s\S]*?\n\}/), grab(/function leadLine\(lead\)\{[^\n]*/),
@@ -180,10 +183,10 @@ test('the storefront says exactly what the server renders (PDP line, details row
   assert.equal(oe.perShop.b.label, '15–18 days');
   assert.equal(oe.separately, true);
   // The basket line, the checkout per-shop rows and the confirmation use them.
-  assert.match(html, /<div class="v c-eta">Arrives in \$\{esc\(estOf\(leadOfP\(p\)\)\.label\)\}<\/div>/);
+  assert.match(html, /<div class="v c-eta">\$\{_t\('Arrives in \{label\}',\{label:esc\(estOf\(leadOfP\(p\)\)\.label\)\}\)\}<\/div>/);
   assert.match(html, /\$\{esc\(coEst\.perShop\[v\]\.label\)\}/);
   assert.match(html, /Pieces arrive separately as each is ready/);
-  assert.match(html, /arrives in \$\{esc\(cfEst\.perShop\[v\]\.label\)\}/);
+  assert.match(html, /arrives in \{label\}',\{label:esc\(cfEst\.perShop\[v\]\.label\)\}/);
   assert.doesNotMatch(html, /<b>3–6 days<\/b>/, 'no fixed promise left in the checkout');
   assert.doesNotMatch(html, /arrives 3–6 days/);
 });

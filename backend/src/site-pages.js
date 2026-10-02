@@ -24,6 +24,7 @@ const config = require('./config');
 const content = require('./content');
 const gtm = require('./gtm');
 const { facts } = require('./pages/facts');
+const i18n = require('./i18n');
 
 const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
 const LEGAL_DIR = path.join(__dirname, '..', 'legal');
@@ -59,13 +60,28 @@ const LEGAL = {
 // The API names the buyer terms after its file; both spellings resolve.
 const LEGAL_ALIASES = { 'buyer-terms': 'terms' };
 
-function legalDoc(name) {
+/**
+ * A legal document, always the English text that governs (its hash is what
+ * acceptance records point at). With lang 'ar', `arabic` carries the
+ * convenience translation (backend/legal/<file>-<version>-ar.md) when it
+ * exists: { markdown, sha256, translationOf: <the English sha256> }.
+ */
+function legalDoc(name, lang = 'en') {
   const key = LEGAL_ALIASES[name] || name;
   const d = Object.prototype.hasOwnProperty.call(LEGAL, key) ? LEGAL[key] : null;
   if (!d) return null;
   const version = d.version();
   const markdown = fs.readFileSync(path.join(LEGAL_DIR, `${d.file}-${version}.md`), 'utf8');
-  return { key, ...d, version, markdown, sha256: require('./crypto').sha256(markdown) };
+  const sha256 = require('./crypto').sha256(markdown);
+  const out = { key, ...d, version, markdown, sha256 };
+  if (lang === 'ar') {
+    const f = path.join(LEGAL_DIR, `${d.file}-${version}-ar.md`);
+    if (fs.existsSync(f)) {
+      const ar = fs.readFileSync(f, 'utf8');
+      out.arabic = { markdown: ar, sha256: require('./crypto').sha256(ar), translationOf: sha256 };
+    }
+  }
+  return out;
 }
 
 /* ---- the shared header, copied from the Services page ---- */
@@ -105,33 +121,41 @@ function hasHousePieces() {
 }
 
 /** Company details for display: only the filled ones, with labels. */
-function companyRows(c) {
+function companyRows(c, lang = 'en') {
+  const T = (k) => i18n.t(lang, k);
   const rows = [];
   if (c.legalName) {
-    rows.push(['Legal name', c.legalName]);
-    rows.push(['Trading as', 'Trove and Trove at Home']);
+    rows.push([T('Legal name'), c.legalName]);
+    rows.push([T('Trading as'), T('Trove and Trove at Home')]);
   }
-  if (c.tradeLicence) rows.push(['Trade licence', c.tradeLicence + (c.licenceAuthority ? `, ${c.licenceAuthority}` : '')]);
-  else if (c.licenceAuthority) rows.push(['Licensing authority', c.licenceAuthority]);
-  if (c.address) rows.push(['Registered address', c.address]);
-  if (c.vatTrn) rows.push(['VAT TRN', c.vatTrn]);
-  if (c.email) rows.push(['Email', c.email]);
-  if (c.whatsapp) rows.push(['WhatsApp', c.whatsapp]);
+  // the licensing authority is the owner's own wording; Shams has a known Arabic name
+  const authority = lang === 'ar' && c.licenceAuthority ? T(c.licenceAuthority) : c.licenceAuthority;
+  if (c.tradeLicence) rows.push([T('Trade licence'), (lang === 'ar' ? i18n.iso(lang, c.tradeLicence) : c.tradeLicence) + (authority ? `${lang === 'ar' ? '، ' : ', '}${authority}` : '')]);
+  else if (c.licenceAuthority) rows.push([T('Licensing authority'), authority]);
+  if (c.address) rows.push([T('Registered address'), lang === 'ar' ? T(c.address) : c.address]);
+  if (c.vatTrn) rows.push([T('VAT TRN'), c.vatTrn, 'ltr']);
+  if (c.email) rows.push([T('Email'), c.email, 'email']);
+  if (c.whatsapp) rows.push(['WhatsApp', c.whatsapp, 'whatsapp']);
   return rows;
 }
 const waLink = (n) => 'https://wa.me/' + String(n).replace(/[^0-9]/g, '');
 
-function companyBlockHtml(c, { heading = 'Company details', id = 'company' } = {}) {
-  const rows = companyRows(c);
+function companyBlockHtml(c, { heading = 'Company details', id = 'company', lang = 'en' } = {}) {
+  const rows = companyRows(c, lang);
   const body = rows.length
-    ? `<dl class="co-dl">${rows.map(([k, v]) => {
+    ? `<dl class="co-dl">${rows.map(([k, v, kind]) => {
       let val = esc(v);
-      if (k === 'Email') val = `<a href="mailto:${esc(v)}">${esc(v)}</a>`;
-      if (k === 'WhatsApp') val = `<a href="${esc(waLink(v))}" rel="noopener">${esc(v)}</a>`;
+      if (kind === 'email') val = `<a href="mailto:${esc(v)}" dir="ltr">${esc(v)}</a>`;
+      if (kind === 'whatsapp') val = `<a href="${esc(waLink(v))}" rel="noopener" dir="ltr">${esc(v)}</a>`;
+      if (kind === 'ltr' && lang === 'ar') val = `<span dir="ltr">${val}</span>`;
+      if (kind === 'email' && lang !== 'ar') val = val.replace(' dir="ltr"', '');
+      if (kind === 'whatsapp' && lang !== 'ar') val = val.replace(' dir="ltr"', '');
       return `<div><dt>${esc(k)}</dt><dd>${val}</dd></div>`;
     }).join('')}</dl>`
-    : `<p class="co-pending">${esc(content.COMPANY_PENDING.replace(/the contact form\.$/, ''))}<a href="/contact">the contact form</a>.</p>`;
-  return `<section class="co-card" id="${id}"><h2>${esc(heading)}</h2>${body}</section>`;
+    : lang === 'ar'
+      ? `<p class="co-pending">${esc(i18n.t(lang, 'Company details are being finalised — write to us via'))} <a href="/contact">${esc(i18n.t(lang, 'the contact form'))}</a>.</p>`
+      : `<p class="co-pending">${esc(content.COMPANY_PENDING.replace(/the contact form\.$/, ''))}<a href="/contact">the contact form</a>.</p>`;
+  return `<section class="co-card" id="${id}"><h2>${esc(i18n.t(lang, heading))}</h2>${body}</section>`;
 }
 function companyText(c) {
   const rows = companyRows(c);
@@ -250,6 +274,16 @@ const PAGE_CSS = `
   .direct b{display:block;font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:4px}
   .direct span,.direct a{font-size:15px;font-weight:600;user-select:all;word-break:break-word}
   .direct a{text-decoration:underline}
+  /* the Arabic edition: a translation note, and right-to-left lists and fields */
+  .tr-note{background:var(--sage-tint,#EEF2EF);border:1px solid var(--line);border-radius:16px;padding:14px 18px;margin:16px 0 4px;font-size:14.5px;line-height:1.7;color:var(--ink-80);font-weight:500}
+  .tr-note p{margin:0}
+  .tr-note a{text-decoration:underline;font-weight:600}
+  [dir="rtl"] .prose ul,[dir="rtl"] .prose ol{margin:10px 22px 10px 0}
+  [dir="rtl"] .prose li{padding-left:0;padding-right:2px}
+  [dir="rtl"] .cform .hp{left:auto;right:-9999px}
+  [dir="rtl"] .prose{font-size:16px;line-height:1.9}
+  [dir="rtl"] .page h1{line-height:1.3}
+  [dir="rtl"] .hash{direction:rtl}
   @media(max-width:620px){
     .page{padding:32px 20px 10px}
     .prose h2{font-size:26px;margin-top:32px}
@@ -267,9 +301,10 @@ function footerHtml(siteContent) {
     .replace(/(<span data-cms="site\.footer\.legal">)[^<]*(<\/span>)/, (m, a, b) => a + esc(f.legal) + b);
 }
 
-function shell({ base, pathName, title, description, h1, sub = '', crumb = '', body, ld = [], extraHead = '', script = '' }) {
+function shell({ base, pathName, title, description, h1, sub = '', crumb = '', body, ld = [], extraHead = '', script = '', lang = 'en' }) {
   const ch = chrome();
-  const siteContent = content.getPublic();
+  // the admin-edited promo + footer lines, in Arabic when the page is (src/translate.js)
+  const siteContent = require('./translate').siteContent(content.getPublic(), lang);
   const promo = (siteContent.site && siteContent.site.promo && siteContent.site.promo.text) || '';
   const header = ch.header.replace(
     /(<div class="wrap" data-cms="site\.promo\.text">)[^<]*(<\/div>)/,
@@ -288,8 +323,9 @@ ${gtm.SNIPPET}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>${esc(fullTitle)}</title>
+<meta name="trove-i18n" content="server">
 <meta name="description" content="${esc(description)}">
-${require('./seo').socialTags({ base, url, title: fullTitle, description })}
+${require('./seo').socialTags({ base, url, title: fullTitle, description, lang })}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -328,32 +364,49 @@ function webPageLd(base, pathName, name, type = 'WebPage') {
   return { '@type': type, '@id': `${base}${pathName}#page`, url: `${base}${pathName}`, name, isPartOf: { '@id': `${base}/#organization` }, inLanguage: 'en' };
 }
 
-function renderAbout(base) {
-  const src = require('./pages/about')(facts());
+/** Arabic page bodies: prices in a left-to-right isolate; a link back to the English
+ *  version (?hl=en) is the language switch, so it keeps its English address. */
+function arBody(html, lang) {
+  if (lang !== 'ar') return html;
+  return i18n.isoPrices(html).replace(/<a href="(\/[^"?#]*)\?hl=en"/g, '<a data-lang-switch href="$1?hl=en" hreflang="en" lang="en"');
+}
+/** The help sources in the page's language. */
+const helpSource = (name, lang) => (lang === 'ar'
+  ? require(`./pages/${name}-ar`)(require('./pages/facts-ar').factsAr())
+  : require(`./pages/${name}`)(facts()));
+
+function renderAbout(base, lang = 'en') {
+  const T = (k, v) => i18n.t(lang, k, v);
+  const src = helpSource('about', lang);
   const c = content.company();
   return shell({
-    base, pathName: '/about', title: 'About Trove', h1: 'About Trove',
-    description: 'Trove is a curated marketplace for homeware and handmade pieces by independent makers, delivering across Dubai and Abu Dhabi. How curation works, who it is for, and who we are.',
-    body: `<div class="toc"><a href="#curation">How curation works</a><a href="#who-trove-is-for">Who Trove is for</a><a href="#company">Company details</a></div>
+    base, pathName: '/about', title: T('About Trove'), h1: T('About Trove'), lang,
+    description: T('Trove is a curated marketplace for homeware and handmade pieces by independent makers, delivering across Dubai and Abu Dhabi. How curation works, who it is for, and who we are.'),
+    body: arBody(`<div class="toc"><a href="#curation">${esc(T('How curation works'))}</a><a href="#who-trove-is-for">${esc(T('Who Trove is for'))}</a><a href="#company">${esc(T('Company details'))}</a></div>
 <div class="prose">${md.toHtml(src)}</div>
-${companyBlockHtml(c)}`,
-    ld: [webPageLd(base, '/about', 'About Trove', 'AboutPage')],
+${companyBlockHtml(c, { lang })}`, lang),
+    ld: [webPageLd(base, '/about', T('About Trove'), 'AboutPage')],
   });
 }
 
-function renderReturns(base) {
-  const src = require('./pages/delivery-returns')(facts());
+function renderReturns(base, lang = 'en') {
+  const T = (k, v) => i18n.t(lang, k, v);
+  const src = helpSource('delivery-returns', lang);
+  const fa = lang === 'ar' ? require('./pages/facts-ar').factsAr() : null;
   return shell({
-    base, pathName: '/returns', title: 'Delivery & Returns', h1: 'Delivery & Returns',
-    description: `Trove delivers to Dubai and Abu Dhabi, with the delivery time shown on every piece (most arrive in ${facts().deliveryDays}): AED 30 on orders of AED 200 and below, free above. Returns within ${facts().returnDays} days of delivery, collected by our courier.`,
-    body: `<div class="toc"><a href="#delivery">Delivery</a><a href="#returns">Returns</a><a href="#the-collection-fee">Collection fee</a><a href="#personalised">Personalised pieces</a></div>
-<div class="prose">${md.toHtml(src)}</div>`,
-    ld: [webPageLd(base, '/returns', 'Delivery & Returns')],
+    base, pathName: '/returns', title: T('Delivery & Returns'), h1: T('Delivery & Returns'), lang,
+    description: lang === 'ar'
+      ? T('Trove delivers to Dubai and Abu Dhabi, with the delivery time shown on every piece (most arrive in {days}): AED 30 on orders of AED 200 and below, free above. Returns within {returns} of delivery, collected by our courier.', { days: fa.deliveryDays, returns: fa.returnDaysText })
+      : `Trove delivers to Dubai and Abu Dhabi, with the delivery time shown on every piece (most arrive in ${facts().deliveryDays}): AED 30 on orders of AED 200 and below, free above. Returns within ${facts().returnDays} days of delivery, collected by our courier.`,
+    body: arBody(`<div class="toc"><a href="#delivery">${esc(T('Delivery'))}</a><a href="#returns">${esc(T('Returns'))}</a><a href="#the-collection-fee">${esc(T('Collection fee'))}</a><a href="#personalised">${esc(T('Personalised pieces'))}</a></div>
+<div class="prose">${md.toHtml(src)}</div>`, lang),
+    ld: [webPageLd(base, '/returns', T('Delivery & Returns'))],
   });
 }
 
-function renderFaq(base) {
-  const src = require('./pages/faq')(facts());
+function renderFaq(base, lang = 'en') {
+  const T = (k, v) => i18n.t(lang, k, v);
+  const src = helpSource('faq', lang);
   const sections = faqSections(src);
   const toc = src.match(/^## .*$/gm).map((h) => {
     const m = h.match(/\{#([a-z0-9-]+)\}/);
@@ -363,7 +416,7 @@ function renderFaq(base) {
     '@type': 'FAQPage',
     '@id': `${base}/faq#page`,
     url: `${base}/faq`,
-    name: 'Trove Help centre',
+    name: T('Trove Help centre'),
     mainEntity: sections.flatMap((s) => s.items.map((it) => ({
       '@type': 'Question',
       name: it.q,
@@ -371,9 +424,9 @@ function renderFaq(base) {
     }))),
   };
   return shell({
-    base, pathName: '/faq', title: 'Help centre', h1: 'Help centre',
-    description: 'Answers about buying on Trove (payment, delivery to Dubai and Abu Dhabi, 15-day returns), selling as a maker (60% to you, fortnightly payouts) and the Services Marketplace.',
-    body: `<div class="toc">${toc}</div><div class="prose">${md.toHtml(src)}</div>`,
+    base, pathName: '/faq', title: T('Help centre'), h1: T('Help centre'), lang,
+    description: T('Answers about buying on Trove (payment, delivery to Dubai and Abu Dhabi, 15-day returns), selling as a maker (60% to you, fortnightly payouts) and the Services Marketplace.'),
+    body: arBody(`<div class="toc">${toc}</div><div class="prose">${md.toHtml(src)}</div>`, lang),
     ld: [faqLd],
   });
 }
@@ -387,34 +440,41 @@ const TOPICS = [
   ['other', 'Something else'],
 ];
 
-function renderContact(base, { sent = false, error = '' } = {}) {
+function renderContact(base, { sent = false, error = '', lang = 'en' } = {}) {
+  const T = (k, v) => i18n.t(lang, k, v);
   const c = content.company();
+  const ltr = lang === 'ar' ? ' dir="ltr"' : '';
   const direct = [];
-  if (c.email) direct.push(`<div><b>Email</b><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></div>`);
-  if (c.whatsapp) direct.push(`<div><b>WhatsApp</b><a href="${esc(waLink(c.whatsapp))}" rel="noopener">${esc(c.whatsapp)}</a></div>`);
+  if (c.email) direct.push(`<div><b>${esc(T('Email'))}</b><a href="mailto:${esc(c.email)}"${ltr}>${esc(c.email)}</a></div>`);
+  if (c.whatsapp) direct.push(`<div><b>WhatsApp</b><a href="${esc(waLink(c.whatsapp))}" rel="noopener"${ltr}>${esc(c.whatsapp)}</a></div>`);
+  const thanks = T('Thank you — your message is with us. We will reply to the email address you gave.');
   const msg = sent
-    ? '<div class="cmsg ok" id="cMsg" role="status">Thank you — your message is with us. We will reply to the email address you gave.</div>'
+    ? `<div class="cmsg ok" id="cMsg" role="status">${esc(thanks)}</div>`
     : `<div class="cmsg${error ? ' err' : ''}" id="cMsg" role="status">${esc(error)}</div>`;
-  const body = `<p class="lede">Questions about an order, a return, selling on Trove or anything else: write to us here and a real person will reply by email. If it is about an order, please include the order number (it starts with TRV-).</p>
+  const body = `<p class="lede">${esc(T('Questions about an order, a return, selling on Trove or anything else: write to us here and a real person will reply by email. If it is about an order, please include the order number (it starts with TRV-).'))}</p>
 ${direct.length ? `<div class="direct">${direct.join('')}</div>` : ''}
 <form class="cform" id="cForm" method="post" action="/api/contact" novalidate>
   ${msg}
   <div class="row2">
-    <div><label for="cName">YOUR NAME</label><input id="cName" name="name" autocomplete="name" maxlength="80" required></div>
-    <div><label for="cEmail">EMAIL</label><input id="cEmail" name="email" type="email" autocomplete="email" maxlength="254" required></div>
+    <div><label for="cName">${esc(T('YOUR NAME'))}</label><input id="cName" name="name" autocomplete="name" maxlength="80" required></div>
+    <div><label for="cEmail">${esc(T('EMAIL'))}</label><input id="cEmail" name="email" type="email" autocomplete="email" maxlength="254" required></div>
   </div>
   <div class="row2">
-    <div><label for="cTopic">WHAT IS IT ABOUT?</label><select id="cTopic" name="topic">${TOPICS.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}</select></div>
-    <div><label for="cOrder">ORDER NUMBER (IF ANY)</label><input id="cOrder" name="orderRef" maxlength="30" placeholder="TRV-…"></div>
+    <div><label for="cTopic">${esc(T('WHAT IS IT ABOUT?'))}</label><select id="cTopic" name="topic">${TOPICS.map(([v, l]) => `<option value="${v}">${esc(T(l))}</option>`).join('')}</select></div>
+    <div><label for="cOrder">${esc(T('ORDER NUMBER (IF ANY)'))}</label><input id="cOrder" name="orderRef" maxlength="30" placeholder="TRV-…"${ltr}></div>
   </div>
-  <div><label for="cBody">YOUR MESSAGE</label><textarea id="cBody" name="message" maxlength="4000" required></textarea></div>
-  <div class="hp" aria-hidden="true"><label for="cWeb">Leave this empty</label><input id="cWeb" name="website" tabindex="-1" autocomplete="off"></div>
-  <p class="note">We use your details only to answer you. See the <a href="/privacy">Privacy Policy</a>.</p>
-  <button type="submit" id="cSend">Send message</button>
+  <div><label for="cBody">${esc(T('YOUR MESSAGE'))}</label><textarea id="cBody" name="message" maxlength="4000" required></textarea></div>
+  <div class="hp" aria-hidden="true"><label for="cWeb">${esc(T('Leave this empty'))}</label><input id="cWeb" name="website" tabindex="-1" autocomplete="off"></div>
+  <p class="note">${lang === 'ar' ? `${esc(T('We use your details only to answer you. See the'))} <a href="/privacy">${esc(T('Privacy Policy'))}</a>.` : 'We use your details only to answer you. See the <a href="/privacy">Privacy Policy</a>.'}</p>
+  <button type="submit" id="cSend">${esc(T('Send message'))}</button>
 </form>
-<div class="prose"><h2 id="quick-answers">Quick answers</h2>
-<ul><li><a href="/returns">Delivery &amp; Returns</a>: costs, timings and how to send a piece back.</li><li><a href="/faq">Help centre</a>: buying, selling and services questions.</li><li><a href="/account#orders">Your orders</a>: track a parcel or request a return.</li></ul></div>
-${companyBlockHtml(c)}`;
+<div class="prose"><h2 id="quick-answers">${esc(T('Quick answers'))}</h2>
+${lang === 'ar'
+    ? `<ul><li><a href="/returns">${esc(T('Delivery & Returns'))}</a>: ${esc(T('costs, timings and how to send a piece back.'))}</li><li><a href="/faq">${esc(T('Help centre'))}</a>: ${esc(T('buying, selling and services questions.'))}</li><li><a href="/account#orders">${esc(T('Your orders'))}</a>: ${esc(T('track a parcel or request a return.'))}</li></ul></div>`
+    : '<ul><li><a href="/returns">Delivery &amp; Returns</a>: costs, timings and how to send a piece back.</li><li><a href="/faq">Help centre</a>: buying, selling and services questions.</li><li><a href="/account#orders">Your orders</a>: track a parcel or request a return.</li></ul></div>'}
+${companyBlockHtml(c, { lang })}`;
+  // The form's own messages, in the page's language (JSON-encoded into the script).
+  const js = (k) => JSON.stringify(T(k)).replace(/</g, '\\u003c');
   const script = `<script>
 (function(){
   var f=document.getElementById('cForm'),m=document.getElementById('cMsg'),b=document.getElementById('cSend');
@@ -422,38 +482,76 @@ ${companyBlockHtml(c)}`;
   f.addEventListener('submit',async function(e){
     e.preventDefault();
     var d={};new FormData(f).forEach(function(v,k){d[k]=String(v);});
-    m.className='cmsg';m.textContent='';b.disabled=true;b.textContent='Sending…';
+    m.className='cmsg';m.textContent='';b.disabled=true;b.textContent=${js('Sending…')};
     try{
       await TroveAPI.api('/api/contact',{method:'POST',body:d});
-      f.reset();m.className='cmsg ok';m.textContent='Thank you — your message is with us. We will reply to the email address you gave.';
-    }catch(err){m.className='cmsg err';m.textContent=err.message||'That did not send — please try again.';}
-    b.disabled=false;b.textContent='Send message';m.scrollIntoView({block:'nearest',behavior:'smooth'});
+      f.reset();m.className='cmsg ok';m.textContent=${js('Thank you — your message is with us. We will reply to the email address you gave.')};
+    }catch(err){m.className='cmsg err';m.textContent=err.message||${js('That did not send — please try again.')};}
+    b.disabled=false;b.textContent=${js('Send message')};m.scrollIntoView({block:'nearest',behavior:'smooth'});
   });
 })();
 </script>`;
   return shell({
-    base, pathName: '/contact', title: 'Contact', h1: 'Contact us',
-    description: 'Contact Trove about an order, a return, selling on Trove or the Services Marketplace. We deliver across Dubai and Abu Dhabi.',
-    body, script, ld: [webPageLd(base, '/contact', 'Contact Trove', 'ContactPage')],
+    base, pathName: '/contact', title: T('Contact'), h1: T('Contact us'), lang,
+    description: T('Contact Trove about an order, a return, selling on Trove or the Services Marketplace. We deliver across Dubai and Abu Dhabi.'),
+    body: arBody(body, lang), script, ld: [webPageLd(base, '/contact', T('Contact Trove'), 'ContactPage')],
   });
 }
 
-function renderLegal(base, name) {
-  const d = legalDoc(name);
+/**
+ * Arabic headings have no Latin slug: give the Arabic document's h2/h3 the
+ * English document's ids, heading for heading, so /privacy#2-what-we-collect
+ * and /ar/privacy#2-what-we-collect land on the same section.
+ */
+function alignIds(arHtml, enHtml) {
+  for (const lvl of [2, 3]) {
+    const ids = [...enHtml.matchAll(new RegExp(`<h${lvl} id="([^"]*)">`, 'g'))].map((m) => m[1]);
+    let i = 0;
+    const count = (arHtml.match(new RegExp(`<h${lvl} id="[^"]*">`, 'g')) || []).length;
+    arHtml = arHtml.replace(new RegExp(`<h${lvl} id="([^"]*)">`, 'g'), (m, id) => {
+      const n = i++;
+      if (id) return m;
+      return `<h${lvl} id="${count === ids.length ? ids[n] : `s${lvl}-${n + 1}`}">`;
+    });
+  }
+  return arHtml;
+}
+
+function renderLegal(base, name, lang = 'en') {
+  const T = (k, v) => i18n.t(lang, k, v);
+  const d = legalDoc(name, lang);
   const c = content.company();
-  const firstBold = d.markdown.match(/^\*\*(.+)\*\*\s*$/m);
-  const sub = firstBold ? esc(firstBold[1]) : `Version ${esc(d.version)}`;
-  const bodySrc = firstBold ? d.markdown.replace(firstBold[0], '') : d.markdown;
+  const ar = lang === 'ar' && d.arabic ? d.arabic.markdown : null;
+  // The Arabic file opens with a blockquote: a translation for convenience, the English prevails.
+  let note = '';
+  let src = ar || d.markdown;
+  if (ar) {
+    const q = src.match(/^(?:>[^\n]*\n?)+/m);
+    if (q) {
+      note = `<div class="tr-note" role="note">${md.toHtml(q[0].replace(/^>\s?/gm, ''))}</div>`;
+      src = src.replace(q[0], '');
+    }
+  } else if (lang === 'ar') {
+    note = `<div class="tr-note" role="note"><p>${esc(T('The Arabic translation of this document is being prepared. The English text below is the version that applies.'))}</p></div>`;
+  }
+  const firstBold = src.match(/^\*\*(.+)\*\*\s*$/m);
+  const sub = firstBold ? esc(firstBold[1]) : esc(T('Version {v}', { v: d.version }));
+  const bodySrc = firstBold ? src.replace(firstBold[0], '') : src;
   const apiName = name === 'terms' ? 'buyer-terms' : name;
   const buyerDoc = name === 'terms' || name === 'privacy';
   const others = [['/terms', 'Terms of Sale'], ['/privacy', 'Privacy Policy'], ['/returns', 'Delivery & Returns'], ['/services-terms', 'Services Terms'], ['/seller-agreement', 'Seller Agreement'], ['/provider-agreement', 'Provider Agreement']]
     .filter(([p]) => p !== d.path);
+  let prose = md.toHtml(bodySrc);
+  if (ar) prose = alignIds(prose, md.toHtml(d.markdown));
+  const hash = lang === 'ar'
+    ? `<div class="hash">${esc(T('Document integrity (SHA-256) of the English version, which applies:'))} <span dir="ltr">${esc(d.sha256)}</span> · ${esc(T('Machine-readable copy:'))} <a href="/api/legal/${esc(apiName)}" dir="ltr">/api/legal/${esc(apiName)}</a> · <a href="${d.path}?hl=en">${esc(T('Read the English version'))}</a><br>${esc(T('Also see:'))} ${others.map(([p, l]) => `<a href="${p}">${esc(T(l))}</a>`).join(' · ')}</div>`
+    : `<div class="hash">Document integrity (SHA-256): ${esc(d.sha256)} · Machine-readable copy: <a href="/api/legal/${esc(apiName)}">/api/legal/${esc(apiName)}</a><br>Also see: ${others.map(([p, l]) => `<a href="${p}">${esc(l)}</a>`).join(' · ')}</div>`;
   return shell({
-    base, pathName: d.path, title: d.title, h1: d.title, description: d.description, sub,
-    body: `<div class="prose">${md.toHtml(bodySrc)}</div>
-${buyerDoc ? companyBlockHtml(c) : ''}
-<div class="hash">Document integrity (SHA-256): ${esc(d.sha256)} · Machine-readable copy: <a href="/api/legal/${esc(apiName)}">/api/legal/${esc(apiName)}</a><br>Also see: ${others.map(([p, l]) => `<a href="${p}">${esc(l)}</a>`).join(' · ')}</div>`,
-    ld: [webPageLd(base, d.path, d.title)],
+    base, pathName: d.path, title: T(d.title), h1: T(d.title), description: T(d.description), sub, lang,
+    body: arBody(`${note}<div class="prose">${prose}</div>
+${buyerDoc ? companyBlockHtml(c, { lang }) : ''}
+${hash}`, lang),
+    ld: [webPageLd(base, d.path, T(d.title))],
   });
 }
 

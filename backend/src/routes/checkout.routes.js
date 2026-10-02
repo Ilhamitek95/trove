@@ -164,8 +164,9 @@ router.post('/', async (req, res, next) => {
       pid = publicId();
       try {
         orderId = db.transaction(() => {
-          const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail)
-            VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail);
+          const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail,lang)
+            VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?, ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail,
+              req.lang === 'ar' ? 'ar' : 'en'); // the checkout page's language: a guest's order emails follow it
           const oid = info.lastInsertRowid;
           // lead_days is snapshotted so a later edit never moves this order's promise.
           const ins = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,personalization,options,extras,lead_days) VALUES (?,?,?,?,?,?,?,?,?,?)');

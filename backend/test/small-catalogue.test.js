@@ -43,7 +43,7 @@ test('the storefront script draws the same small-catalogue layouts the server do
   assert.match(store, /\.hstage\.solo \.hs-bar\{visibility:hidden\}/);
   // the maker story is real shop data only: name, place, joined month, bio, link
   assert.match(store, /<section class="band" id="makerStory"[^>]*hidden>/);
-  assert.match(store, /'On Trove since '\+sinceLabel\(v\)/);
+  assert.match(store, /_t\('On Trove since \{date\}',\{date:sinceLabel\(v\)\}\)/);
   // the sell band's figures, the share from the live commission
   assert.match(store, /<b id="sfShare">60%<\/b>/);
   assert.match(store, /100-Number\(FEES\.commissionPercent\)/);
@@ -137,7 +137,7 @@ test('a maker: Pieces by <maker>, a meta line with the joined month, the calm pa
   // the API hands over the joined month for the storefront's own drawing
   const { data } = await ctx.api('GET', '/api/shops/kiln-and-clay');
   assert.match(data.shop.joined, /^\d{4}-\d{2}$/);
-  assert.match(store, /\$\('vPiecesHead'\)\.textContent='Pieces by '\+v\.name/);
+  assert.match(store, /\$\('vPiecesHead'\)\.textContent=_t\('Pieces by \{name\}',\{name:v\.name\}\)/);
 });
 
 /* ---------------- the Services Marketplace ---------------- */

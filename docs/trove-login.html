@@ -130,6 +130,13 @@
   .pweye{width:44px;height:44px;right:2px}
   @media(max-width:860px){.field .fl a{padding:16px 0;margin:-16px 0}.swap a{display:inline-block;padding:14px 2px 13px;margin:-14px 0 -13px}}
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  /* ---- Arabic (right to left) ---- */
+  [dir="rtl"] .deco{right:auto;left:-80px}
+  [dir="rtl"] .pw input{padding-right:15px;padding-left:48px}
+  [dir="rtl"] .pweye{right:auto;left:2px}
+  [dir="rtl"] .bmid{max-width:34ch}
+  [dir="rtl"] .bmid h1{line-height:1.3}
+  [dir="rtl"] #pass,[dir="rtl"] #pass2,[dir="rtl"] #code{direction:ltr;text-align:right}
 </style>
 </head>
 <body>
@@ -139,10 +146,10 @@
     <a class="logo serif" href="/" aria-label="Trove — home" id="logoLink">trove</a>
     <div class="bmid">
       <span class="eyebrow" id="bEyebrow">Welcome back</span>
-      <h1 id="bTitle">Beautiful things, <em>gathered</em>.</h1>
+      <h1 id="bTitle" data-i18n>Beautiful things, <em>gathered</em>.</h1>
       <p id="bText">Sign in to pick up where you left off — your orders, your shops, your Trove.</p>
     </div>
-    <p class="mprop" id="mProp">Curated pieces from makers in Dubai &amp; Abu Dhabi.</p>
+    <p class="mprop" id="mProp" data-i18n>Curated pieces from makers in Dubai &amp; Abu Dhabi.</p>
     <div class="quote" id="bQuote">Every maker on Trove is reviewed by a real person before their work goes on sale.</div>
     <div class="deco"></div>
   </div>
@@ -177,7 +184,7 @@
       <label id="trustRow" style="display:none;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:0 0 12px;cursor:pointer"><input type="checkbox" id="trust" checked style="margin-top:2px"><span>Trust this browser for 30 days — only on a device you use alone</span></label>
       <div id="authErr" role="alert" style="display:none;color:var(--accent-ink);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
-      <p class="agree" id="regAgree"><span id="regAgreeLead">By continuing with Google or creating an account</span> you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      <p class="agree" id="regAgree" data-i18n><span id="regAgreeLead">By continuing with Google or creating an account</span> you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       <button class="submit" id="submitBtn" onclick="signIn()">Sign in</button>
 
       <div class="or" id="orRow">or</div>
@@ -191,18 +198,18 @@
   </div>
 </div>
 
-<script src="config.js"></script>
-<script src="api.js"></script>
+<script src="/config.js"></script>
+<script src="/api.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let mode='shop', registering=false;
 const COPY={
-  shop:{eyebrow:'Welcome back',title:'Beautiful things, <em>gathered</em>.',text:'Sign in to pick up where you left off — your orders, your shops, your Trove.',
-        quote:'Every maker on Trove is reviewed by a real person before their work goes on sale.',prop:'Curated pieces from makers in Dubai &amp; Abu Dhabi.',
-        aTitle:'Sign in to shop',aLede:'Your account and your orders.'},
-  sell:{eyebrow:'For sellers',title:'Your shop, <em>beautifully</em> run.',text:'Sign in to manage products, orders and payouts from your Trove dashboard.',
-        quote:'You keep 60% of every sale. Trove photographs, markets and delivers your work.',prop:'Keep 60% · we photograph, market and deliver',
-        aTitle:'Sign in to your shop',aLede:'Manage products, orders and payments.'}
+  shop:{eyebrow:_t('Welcome back'),title:_t('Beautiful things, <em>gathered</em>.'),text:_t('Sign in to pick up where you left off — your orders, your shops, your Trove.'),
+        quote:_t('Every maker on Trove is reviewed by a real person before their work goes on sale.'),prop:_t('Curated pieces from makers in Dubai &amp; Abu Dhabi.'),
+        aTitle:_t('Sign in to shop'),aLede:_t('Your account and your orders.')},
+  sell:{eyebrow:_t('For sellers'),title:_t('Your shop, <em>beautifully</em> run.'),text:_t('Sign in to manage products, orders and payouts from your Trove dashboard.'),
+        quote:_t('You keep 60% of every sale. Trove photographs, markets and delivers your work.'),prop:_t('Keep 60% · we photograph, market and deliver'),
+        aTitle:_t('Sign in to your shop'),aLede:_t('Manage products, orders and payments.')}
 };
 function setMode(m){
   mode=m; registering=false;
@@ -225,26 +232,26 @@ function setMode(m){
 // Sellers apply through the dedicated application page (/apply) so
 // the curation team gets their full story; buyers still register inline here.
 function toggleRegister(){
-  if(mode==='sell'&&!registering){window.location.href='/apply';return;}
+  if(mode==='sell'&&!registering){window.location.href=troveUrl('/apply');return;}
   registering=!registering;updateRegisterUI();
 }
 function updateRegisterUI(){
   const c=COPY[mode];
-  document.getElementById('submitBtn').textContent=registering?'Create account':'Sign in';
-  document.getElementById('aTitle').textContent=registering?'Create your account':c.aTitle;
+  document.getElementById('submitBtn').textContent=registering?_t('Create account'):_t('Sign in');
+  document.getElementById('aTitle').textContent=registering?_t('Create your account'):c.aTitle;
   document.getElementById('swap').innerHTML=registering
-    ? `Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>`
-    : (mode==='sell'?`Not selling yet? <a href="/apply">Apply to open a shop</a>`:`New to Trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
+    ? _t('Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>')
+    : (mode==='sell'?_t('Not selling yet? <a href="/apply">Apply to open a shop</a>'):_t('New to Trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>'));
   $('nameField').style.display=registering?'block':'none';
   // A first Google sign-in opens an account, so the agreement line shows in both modes.
   $('regAgree').style.display='block';
-  $('regAgreeLead').textContent=registering?'By creating an account':'By continuing with Google or creating an account';
+  $('regAgreeLead').textContent=registering?_t('By creating an account'):_t('By continuing with Google or creating an account');
   $('shopField').style.display=(registering&&mode==='sell')?'block':'none';
   // Phone mode: the mobile number is the identifier. Email stays visible while
   // registering (order updates and receipts go there).
   $('mobileField').style.display=phoneMode?'block':'none';
   $('emailField').style.display=(!phoneMode||registering)?'block':'none';
-  $('emailLabel').textContent=(phoneMode&&registering)?'Email (for order updates)':'Email';
+  $('emailLabel').textContent=(phoneMode&&registering)?_t('Email (for order updates)'):_t('Email');
   $('authErr').style.display='none';
 }
 /* Enter in any field submits, like a real form. */
@@ -255,7 +262,7 @@ function togglePw(id,btn){
   const i=document.getElementById(id), show=i.type==='password';
   i.type=show?'text':'password';
   btn.classList.toggle('off',show);
-  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+  btn.setAttribute('aria-label',show?_t('Hide password'):_t('Show password'));
 }
 
 /* ---- UAE mobile sign-in (phone + password) ---- */
@@ -263,7 +270,7 @@ let phoneMode=false;
 function togglePhone(){
   phoneMode=!phoneMode;
   $('phoneBtn').classList.toggle('on',phoneMode);$('phoneBtn').setAttribute('aria-pressed',String(phoneMode));
-  $('phoneBtnLabel').textContent=phoneMode?'Use email instead':'UAE mobile';
+  $('phoneBtnLabel').textContent=phoneMode?_t('Use email instead'):_t('UAE mobile');
   updateRegisterUI();
   if(phoneMode)$('mobile').focus();
 }
@@ -285,36 +292,36 @@ function setView(v){
   $('orRow').style.display=alt?'none':''; $('socialRow').style.display=alt?'none':'';
   $('regAgree').style.display=alt?'none':'block';
   $('codeField').style.display=v==='code'?'block':'none'; $('trustRow').style.display=v==='code'?'flex':'none';
-  if(!alt){ $('pass').setAttribute('autocomplete','current-password'); $('pass').placeholder='Your password';
-    $('passLabel').textContent='Password'; $('forgotLink').style.display=''; $('pass2Field').style.display='none'; $('passField').style.display='';
-    if(location.pathname==='/reset'||/[?&](forgot|token)=/.test(location.search)) history.replaceState(null,'','/login');
+  if(!alt){ $('pass').setAttribute('autocomplete','current-password'); $('pass').placeholder=_t('Your password');
+    $('passLabel').textContent=_t('Password'); $('forgotLink').style.display=''; $('pass2Field').style.display='none'; $('passField').style.display='';
+    if(trovePath(location.pathname)==='/reset'||/[?&](forgot|token)=/.test(location.search)) history.replaceState(null,'','/login');
     setMode(mode); return; }
-  registering=false; phoneMode=false; $('phoneBtn').classList.remove('on'); $('phoneBtnLabel').textContent='UAE mobile';
+  registering=false; phoneMode=false; $('phoneBtn').classList.remove('on'); $('phoneBtnLabel').textContent=_t('UAE mobile');
   ['nameField','mobileField','shopField'].forEach(id=>$(id).style.display='none');
   $('forgotLink').style.display='none';
   if(v==='code'){
-    $('aTitle').textContent='Check your email';
-    $('aLede').textContent=`We sent a 6-digit code to ${CODE_TO||'your email'}. It expires in 10 minutes.`;
+    $('aTitle').textContent=_t('Check your email');
+    $('aLede').textContent=_t('We sent a 6-digit code to {to}. It expires in 10 minutes.',{to:CODE_TO?troveIso(CODE_TO):_t('your email')});
     $('emailField').style.display='none'; $('passField').style.display='none'; $('pass2Field').style.display='none';
-    $('submitBtn').textContent='Finish signing in';
-    $('swap').innerHTML='No email? <a href="#" onclick="resendCode();return false">Send a new code</a> · <a href="#" onclick="setView(\'signin\');return false">Start again</a>';
+    $('submitBtn').textContent=_t('Finish signing in');
+    $('swap').innerHTML=_t('No email? <a href="#" onclick="resendCode();return false">Send a new code</a> · <a href="#" onclick="setView(\'signin\');return false">Start again</a>');
     $('code').value=''; setTimeout(()=>$('code').focus(),0);
   }else if(v==='forgot'){
-    $('aTitle').textContent='Reset your password';
-    $('aLede').textContent='Enter the email on your account and we will send you a link to choose a new one.';
-    $('emailField').style.display='block'; $('emailLabel').textContent='Email';
+    $('aTitle').textContent=_t('Reset your password');
+    $('aLede').textContent=_t('Enter the email on your account and we will send you a link to choose a new one.');
+    $('emailField').style.display='block'; $('emailLabel').textContent=_t('Email');
     $('passField').style.display='none'; $('pass2Field').style.display='none';
-    $('submitBtn').textContent='Send reset link';
-    $('swap').innerHTML='Remembered it? <a href="#" onclick="setView(\'signin\');return false">Sign in</a>';
+    $('submitBtn').textContent=_t('Send reset link');
+    $('swap').innerHTML=_t('Remembered it? <a href="#" onclick="setView(\'signin\');return false">Sign in</a>');
     setTimeout(()=>$('email').focus(),0);
   }else{
-    $('aTitle').textContent='Choose a new password';
-    $('aLede').textContent='At least 8 characters. Every device signed in to your account will be signed out.';
+    $('aTitle').textContent=_t('Choose a new password');
+    $('aLede').textContent=_t('At least 8 characters. Every device signed in to your account will be signed out.');
     $('emailField').style.display='none';
     $('passField').style.display=''; $('pass2Field').style.display='block';
-    $('passLabel').textContent='New password'; $('pass').placeholder='At least 8 characters'; $('pass').setAttribute('autocomplete','new-password');
-    $('submitBtn').textContent='Save and sign in';
-    $('swap').innerHTML='Link not working? <a href="#" onclick="setView(\'forgot\');return false">Send a new one</a>';
+    $('passLabel').textContent=_t('New password'); $('pass').placeholder=_t('At least 8 characters'); $('pass').setAttribute('autocomplete','new-password');
+    $('submitBtn').textContent=_t('Save and sign in');
+    $('swap').innerHTML=_t('Link not working? <a href="#" onclick="setView(\'forgot\');return false">Send a new one</a>');
   }
 }
 /* The admin's second sign-in step: the server emailed a 6-digit code. */
@@ -322,41 +329,41 @@ let CODE_TO='';
 function needsCode(r){ if(r&&r.needsCode){ CODE_TO=r.sentTo||''; setView('code'); return true; } return false; }
 async function submitCode(){
   const code=$('code').value.replace(/\s+/g,'');
-  if(!/^\d{6}$/.test(code)) return showErr('Enter the 6-digit code from the email.');
-  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
+  if(!/^\d{6}$/.test(code)) return showErr(_t('Enter the 6-digit code from the email.'));
+  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent=_t('One moment…');
   try{
     await TroveAPI.api('/api/auth/admin-code',{method:'POST',body:{code,trust:$('trust').checked}});
     window.location.href=await postAuthDest();
   }catch(e){
-    btn.disabled=false; btn.style.opacity='1'; btn.textContent='Finish signing in';
-    showErr(e.message||'That code did not work.');
+    btn.disabled=false; btn.style.opacity='1'; btn.textContent=_t('Finish signing in');
+    showErr(e.message||_t('That code did not work.'));
     if(e.data&&e.data.code==='no_challenge') setTimeout(()=>setView('signin'),2500);
   }
 }
 async function resendCode(){
-  try{ const r=await TroveAPI.api('/api/auth/admin-code/resend',{method:'POST'}); CODE_TO=r.sentTo||CODE_TO; note('A new code is on its way.'); }
-  catch(e){ showErr(e.message||'Could not send a new code — start again.'); }
+  try{ const r=await TroveAPI.api('/api/auth/admin-code/resend',{method:'POST'}); CODE_TO=r.sentTo||CODE_TO; note(_t('A new code is on its way.')); }
+  catch(e){ showErr(e.message||_t('Could not send a new code — start again.')); }
 }
 async function sendForgot(){
   const email=$('email').value.trim();
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showErr('Enter the email address on your account.');
-  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
-  try{ const r=await TroveAPI.api('/api/auth/forgot',{method:'POST',body:{email}}); note(r.message||'Check your inbox for a link to reset your password.'); }
-  catch(e){ showErr(e.message||'Could not send the link — please try again.'); }
-  finally{ btn.disabled=false; btn.style.opacity='1'; btn.textContent='Send reset link'; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showErr(_t('Enter the email address on your account.'));
+  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent=_t('One moment…');
+  try{ const r=await TroveAPI.api('/api/auth/forgot',{method:'POST',body:{email}}); note(troveLang==='ar'||!r.message?_t('Check your inbox for a link to reset your password.'):r.message); }
+  catch(e){ showErr(e.message||_t('Could not send the link — please try again.')); }
+  finally{ btn.disabled=false; btn.style.opacity='1'; btn.textContent=_t('Send reset link'); }
 }
 async function saveReset(){
   const pw=$('pass').value, pw2=$('pass2').value;
-  if(pw.length<8) return showErr('Choose a password of at least 8 characters.');
-  if(pw!==pw2) return showErr('The two passwords do not match.');
-  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
+  if(pw.length<8) return showErr(_t('Choose a password of at least 8 characters.'));
+  if(pw!==pw2) return showErr(_t('The two passwords do not match.'));
+  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent=_t('One moment…');
   try{
     const r=await TroveAPI.api('/api/auth/reset',{method:'POST',body:{token:RESET_TOKEN,password:pw}});
     if(needsCode(r)){ btn.disabled=false; btn.style.opacity='1'; return; }
     window.location.href=await postAuthDest();
   }catch(e){
-    btn.disabled=false; btn.style.opacity='1'; btn.textContent='Save and sign in';
-    showErr(e.message||'Could not save your new password.');
+    btn.disabled=false; btn.style.opacity='1'; btn.textContent=_t('Save and sign in');
+    showErr(e.message||_t('Could not save your new password.'));
   }
 }
 
@@ -367,16 +374,16 @@ async function signIn(){
   if(view==='code') return submitCode();
 
   // No backend reachable → keep the prototype clickable (demo behaviour).
-  if(!(await TroveAPI.health())){ window.location.href = mode==='sell' ? '/sell' : '/account'; return; }
+  if(!(await TroveAPI.health())){ window.location.href = troveUrl(mode==='sell' ? '/sell' : '/account'); return; }
 
   const email=$('email').value.trim(), pass=$('pass').value, name=$('name').value.trim(), mob=$('mobile').value.trim();
-  if(phoneMode&&!validUAEMobile(mob)) return showErr('Enter a UAE mobile number, like 050 123 4567.');
-  if(!pass) return showErr(phoneMode?'Enter your mobile number and password.':'Enter your email and password.');
-  if((!phoneMode||registering)&&!email) return showErr(phoneMode?'Enter your email too — order updates go there.':'Enter your email and password.');
-  if(registering&&!name) return showErr('Enter your name.');
+  if(phoneMode&&!validUAEMobile(mob)) return showErr(_t('Enter a UAE mobile number, like 050 123 4567.'));
+  if(!pass) return showErr(phoneMode?_t('Enter your mobile number and password.'):_t('Enter your email and password.'));
+  if((!phoneMode||registering)&&!email) return showErr(phoneMode?_t('Enter your email too — order updates go there.'):_t('Enter your email and password.'));
+  if(registering&&!name) return showErr(_t('Enter your name.'));
 
   const label=btn.textContent;
-  btn.textContent='One moment…'; btn.style.opacity='.7'; btn.disabled=true;
+  btn.textContent=_t('One moment…'); btn.style.opacity='.7'; btn.disabled=true;
   try{
     // Analytics (GA4 via Tag Manager): which of the two happened and how —
     // never who. A seller form that attached a shop to an existing account
@@ -397,7 +404,7 @@ async function signIn(){
     window.location.href=(await Promise.all([postAuthDest(),gaAuth(ga[0],ga[1])]))[0];
   }catch(e){
     btn.textContent=label; btn.style.opacity='1'; btn.disabled=false;
-    showErr(e.message||'Could not sign you in.');
+    showErr(e.message||_t('Could not sign you in.'));
   }
 }
 
@@ -415,7 +422,7 @@ async function postAuthDest(){
     else if(me&&me.shop) dest='/sell';
     else if(me&&me.provider) dest='/provider'; // services provider without a shop → their dashboard
   }catch(_){}
-  return dest;
+  return dest==='/admin'?dest:troveUrl(dest); // the admin panel stays English
 }
 
 /* ---- Sign in with Google (Google Identity Services) ----
@@ -426,7 +433,7 @@ async function onGoogleCredential(resp){
     const r=await TroveAPI.api('/api/auth/google',{method:'POST',body:{credential:resp.credential}});
     if(needsCode(r)) return;
     window.location.href=(await Promise.all([postAuthDest(),gaAuth(r&&r.created?'sign_up':'login','google')]))[0];
-  }catch(e){ showErr(e.message||"Google sign-in didn't work — please try again."); }
+  }catch(e){ showErr(e.message||_t("Google sign-in didn't work — please try again.")); }
 }
 (async function initGoogle(){
   let clientId=null;
@@ -437,7 +444,7 @@ async function onGoogleCredential(resp){
   (function ready(){
     if(!(window.google&&google.accounts&&google.accounts.id)) return setTimeout(ready,150);
     google.accounts.id.initialize({client_id:clientId,callback:onGoogleCredential});
-    google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'continue_with',width:180,locale:'en-GB'});
+    google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'continue_with',width:180,locale:troveLang==='ar'?'ar':'en-GB'});
   })();
 })();
 
@@ -445,15 +452,15 @@ async function onGoogleCredential(resp){
    welcome email's confirm link landing here with ?verified=1 / ?verify=expired. */
 (async function arrivals(){
   const q=new URLSearchParams(location.search);
-  if(location.pathname==='/reset'||RESET_TOKEN){
+  if(trovePath(location.pathname)==='/reset'||RESET_TOKEN){
     setView('reset');
-    if(!RESET_TOKEN){ showErr('This page needs the link from your reset email.'); return; }
-    try{ const r=await TroveAPI.api('/api/auth/reset?token='+encodeURIComponent(RESET_TOKEN)); if(!r.valid) showErr('This reset link has expired or was already used — ask for a new one below.'); }catch(_){}
+    if(!RESET_TOKEN){ showErr(_t('This page needs the link from your reset email.')); return; }
+    try{ const r=await TroveAPI.api('/api/auth/reset?token='+encodeURIComponent(RESET_TOKEN)); if(!r.valid) showErr(_t('This reset link has expired or was already used — ask for a new one below.')); }catch(_){}
     return;
   }
   if(q.get('forgot')) setView('forgot');
-  else if(q.get('verified')) note('Thank you — your email is confirmed. Sign in to carry on.');
-  else if(q.get('verify')==='expired') note('That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.');
+  else if(q.get('verified')) note(_t('Thank you — your email is confirmed. Sign in to carry on.'));
+  else if(q.get('verify')==='expired') note(_t('That confirmation link has expired or was already used. Sign in and you can ask for a new one under My details.'));
 })();
 </script>
 </body>

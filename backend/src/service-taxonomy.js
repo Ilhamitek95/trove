@@ -150,8 +150,165 @@ const SERVICE_CATEGORIES = [
   },
 ];
 
+/* -------- Arabic (Modern Standard Arabic), hand-written --------
+ * Same keys and order as above. The English objects stay exactly as they
+ * are (validation, slugs, tests); localized('ar') / bySlug(slug, 'ar')
+ * hand back copies with the Arabic text in the same fields. */
+const AUDIENCES_AR = {
+  home: { name: 'في منزلك', sub: 'للمتسوّقين والمضيفين' },
+  makers: { name: 'للصنّاع', sub: 'للبائعين والعلامات التجارية الصغيرة' },
+};
+const CATEGORIES_AR = {
+  'made-to-order': {
+    name: 'صناعة حسب الطلب وتخصيص',
+    blurb: 'قطع تُصنع خصيصاً لك، وأغراضك الخاصة بلمسة شخصية.',
+    examples: [
+      'جداريات — لغرف الأطفال والجدران المميّزة',
+      'الخط اليدوي والخط العربي — لافتات وأظرف وقرطاسية وكتابة حيّة',
+      'تخصيص قطعك الخاصة — تطريز وحروف أولى ونقش ورسم يدوي',
+      'قطع للذكرى — ألحفة من ملابس الطفولة وألبومات مجلّدة يدوياً ودفاتر وصفات',
+      'بورتريهات حيّة — رسم سريع وكاريكاتير وبورتريهات للحيوانات الأليفة',
+    ],
+  },
+  'care-repair': {
+    name: 'العناية والإصلاح',
+    blurb: 'قطع عزيزة تعود إليها الحياة، وبيوت تستعيد أناقتها.',
+    examples: [
+      'تعليق اللوحات وتنسيق جدران المعارض ونصائح التأطير',
+      'إصلاح الخزف وفن الكينتسوغي',
+      'ترميم الأثاث وتجديده بطلاء الطباشير وإعادة نسج القش والتنجيد',
+      'ستائر ووسائد مفصّلة حسب المقاس',
+      'تعديلات الخياطة وإصلاح السجاد والأغطية',
+    ],
+  },
+  'styling-celebrations': {
+    name: 'التنسيق والمناسبات',
+    blurb: 'غرف منسّقة وموائد مُعدّة ومناسبات تزداد جمالاً.',
+    examples: [
+      'تنسيق الموائد والمناسبات',
+      'تركيبات البالونات والخلفيات والزهور',
+      'تنسيق المنزل في المواسم — رمضان والعيد وديوالي والميلاد واليوم الوطني',
+      'تغليف الهدايا وأعمال الشرائط والسلال والتوزيعات',
+      'أفكار الحفلات وتنسيق يوم المناسبة',
+      'تجهيزات حفلات استقبال المولود والكشف عن جنسه وغرف الأطفال',
+      'استشارات التنسيق الداخلي وتنسيق الرفوف وأعلى المدفأة ونصائح الألوان وتجهيز المنزل للعرض',
+    ],
+  },
+  workshops: {
+    name: 'ورش عمل في المنزل',
+    blurb: 'صانع يأتي إليك — أمسيات حِرفية للأصدقاء والعائلات والصغار.',
+    examples: [
+      'تشكيل الفخار يدوياً وحفلات الرسم والألوان المائية',
+      'التطريز والنسيج والمكرمية والطباعة بالقوالب',
+      'صبّ الشموع وصناعة الأكاليل والخط',
+      'دروس الخياطة والحياكة',
+      'أعياد ميلاد حِرفية للأطفال وأمسيات حِرفية في العطلات',
+      'جلسات حِرفية لحفلات العروس وللعائلات',
+    ],
+  },
+  'portraits-photography': {
+    name: 'البورتريه والتصوير',
+    blurb: 'أحبّاؤك وبيتك ولحظاتك المميّزة — بعدسة جميلة.',
+    examples: [
+      'جلسات تصوير عائلية وللمواليد والحوامل في المنزل',
+      'جلسات تصوير للمناسبات واللحظات اليومية',
+      'رسّامون ومخطّطون حيّون في المناسبات',
+    ],
+  },
+  'live-entertainment': {
+    name: 'ترفيه إبداعي حيّ',
+    blurb: 'عروض تصنع اللقاء.',
+    examples: [
+      'الحكواتي وعروض الدمى',
+      'عزف العود والعروض الصوتية',
+      'عروض الشعر والخط',
+    ],
+  },
+  'content-visuals': {
+    name: 'المحتوى والمرئيات',
+    blurb: 'تصوير وأفلام تُنصف قطعك.',
+    examples: [
+      'تصوير المنتجات والتصوير المسطّح وتصوير نمط الحياة في الاستوديو الخاص بك',
+      'التنقيح والتحرير',
+      'مقاطع ريلز وفيديوهات من كواليس الصناعة',
+      'تنسيق المنتجات وتوفير الإكسسوارات',
+    ],
+  },
+  'brand-design': {
+    name: 'العلامة التجارية والتصميم',
+    blurb: 'هوية مدروسة بقدر العمل نفسه.',
+    examples: [
+      'تصميم الشعار والهوية',
+      'التغليف والملصقات وبطاقات التعليق وبطاقات العناية',
+      'الرسم التوضيحي وتصميم النقوش',
+      'تنسيق الكتالوجات وكتيّبات المجموعات',
+      'تصميم أكشاك الأسواق والمتاجر المؤقتة',
+    ],
+  },
+  'words-both-languages': {
+    name: 'الكلمات، باللغتين',
+    blurb: 'قصتك تُروى بإتقان — بالإنجليزية والعربية.',
+    examples: [
+      'أوصاف المنتجات والسير التعريفية وقصة العلامة',
+      'نصوص تسويقية وتعليقات بالإنجليزية والعربية',
+      'النشرات البريدية ورسائل الإطلاق',
+    ],
+  },
+  'social-growth': {
+    name: 'التواصل الاجتماعي والنمو',
+    blurb: 'نموّ ثابت وصادق للعلامات الصغيرة.',
+    examples: [
+      'إعداد إنستغرام وتيك توك وتقويمات المحتوى والإدارة الشهرية',
+      'تخطيط الإطلاق والحملات',
+      'إعلانات Meta وGoogle بميزانيات صغيرة',
+      'تحسين محركات البحث وملف Google التجاري ومراجعات التحليلات',
+    ],
+  },
+  'selling-support': {
+    name: 'دعم المتجر والمبيعات',
+    blurb: 'الجانب العملي من البيع، نتولّاه عنك.',
+    examples: [
+      'إعداد الموقع والمتجر الإلكتروني والنطاق والبريد',
+      'نصائح التسعير والهوامش',
+      'عروض البيع بالجملة والتواصل لهدايا الشركات',
+      'تنظيم المتاجر المؤقتة والأسواق',
+      'تنسيق التعاون بين الصنّاع',
+      'إعداد مسك الدفاتر والاستعداد لضريبة القيمة المضافة (استشارة فقط)',
+    ],
+  },
+  coaching: {
+    name: 'الإرشاد',
+    blurb: 'شخص يسبقك بخطوات، يقف إلى جانبك.',
+    examples: [
+      'إرشاد في الأعمال الصغيرة والتسعير والإطلاق',
+      'إرشاد «أول 100 عملية بيع»',
+      'إرشاد في ملف الأعمال وتجهيز الاستوديو',
+    ],
+  },
+};
+
+/** The audiences + categories with their text in a language (same shapes). */
+function localized(lang) {
+  if (lang !== 'ar') return { audiences: AUDIENCES, categories: SERVICE_CATEGORIES };
+  return {
+    audiences: AUDIENCES.map((a) => ({ ...a, ...(AUDIENCES_AR[a.key] || {}) })),
+    categories: SERVICE_CATEGORIES.map((c) => ({ ...c, ...(CATEGORIES_AR[c.slug] || {}) })),
+  };
+}
+
 const CATEGORY_SLUGS = SERVICE_CATEGORIES.map((c) => c.slug);
-const bySlug = (slug) => SERVICE_CATEGORIES.find((c) => c.slug === slug) || null;
+/** A category by slug; with lang 'ar' a copy with the Arabic text. */
+const bySlug = (slug, lang) => {
+  const c = SERVICE_CATEGORIES.find((x) => x.slug === slug) || null;
+  return c && lang === 'ar' && CATEGORIES_AR[slug] ? { ...c, ...CATEGORIES_AR[slug] } : c;
+};
+/** An audience by key, localized like bySlug. */
+const audience = (key, lang) => {
+  const a = AUDIENCES.find((x) => x.key === key) || null;
+  return a && lang === 'ar' && AUDIENCES_AR[key] ? { ...a, ...AUDIENCES_AR[key] } : a;
+};
+/** Just the category's display name ('' when unknown). */
+const nameOf = (slug, lang) => { const c = bySlug(slug, lang); return c ? c.name : ''; };
 
 // How a service is priced. "from" = starting price, the final quote depends
 // on the brief; "hourly" = per hour on site.
@@ -169,4 +326,4 @@ function serviceCategoryError(slug) {
   return null;
 }
 
-module.exports = { AUDIENCES, SERVICE_CATEGORIES, CATEGORY_SLUGS, bySlug, PRICE_TYPES, SETTINGS, serviceCategoryError };
+module.exports = { AUDIENCES, SERVICE_CATEGORIES, CATEGORY_SLUGS, bySlug, audience, nameOf, localized, CATEGORIES_AR, AUDIENCES_AR, PRICE_TYPES, SETTINGS, serviceCategoryError };

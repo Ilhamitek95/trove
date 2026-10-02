@@ -144,6 +144,14 @@
   .pweye{width:44px;height:44px;right:2px}
   @media(max-width:860px){.catopt,.back,.next{min-height:44px}.signin a{display:inline-block;padding:14px 4px;margin:-14px 0}}
   @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  /* ---- Arabic (right to left) ---- */
+  [dir="rtl"] .deco{right:auto;left:-90px}
+  [dir="rtl"] .pw input{padding-right:15px;padding-left:48px}
+  [dir="rtl"] .pweye{right:auto;left:2px}
+  [dir="rtl"] .field .count{float:left}
+  [dir="rtl"] .role{text-align:right}
+  [dir="rtl"] .bmid h1{line-height:1.3}
+  [dir="rtl"] #fPass,[dir="rtl"] #fInsta,[dir="rtl"] #fLinks,[dir="rtl"] #fLicNo{direction:ltr;text-align:right}
 </style>
 </head>
 <body>
@@ -152,7 +160,7 @@
     <div class="logo"><a href="/" aria-label="Trove — home">trove</a></div>
     <div class="bmid">
       <span class="eyebrow" id="bEyebrow">Join Trove</span>
-      <h1 id="bTitle">Tell us what you <em>make</em>.</h1>
+      <h1 id="bTitle" data-i18n>Tell us what you <em>make</em>.</h1>
       <p id="bIntro">Trove is curated — every maker and every provider is reviewed by a real person before going live. The more you tell us, the faster we can say yes. We're open in Dubai &amp; Abu Dhabi.</p>
       <p id="bIntro2">Pieces come with photography, marketing, delivery, payments and customer care included. Services get their own page, booking requests straight to your dashboard, and one flat fee.</p>
       <div class="bsteps">
@@ -175,7 +183,7 @@
       <div id="step1">
         <h2>First, about you.</h2>
         <p class="lede">One account for everything you do on Trove — pieces, services, or both.</p>
-        <div class="note" id="signedNote">You're signed in as <b id="signedWho"></b> — this will be added to your account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
+        <div class="note" id="signedNote" data-i18n>You're signed in as <b id="signedWho"></b> — this will be added to your account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
         <div class="field"><label id="rolesLabel">What are you bringing to Trove?</label>
           <div class="roles" id="roles" role="group" aria-labelledby="rolesLabel">
             <button type="button" class="role on" aria-pressed="true" data-role="maker" onclick="setRole('maker')">
@@ -210,20 +218,20 @@
         <div class="field"><label id="fNameLabel" for="fShop">Shop name</label><input id="fShop" placeholder="e.g. Kiln &amp; Clay"><div class="help" id="fNameHelp" style="display:none">One name for your shop and your services practice.</div></div>
         <div class="ftwo r-maker">
           <div class="field"><label for="fCat">What do you mainly make?</label>
-            <select id="fCat"><option>Home &amp; Living</option><option>Wall Art &amp; Prints</option><option>Ceramics</option><option>Stationery</option><option>Jewellery</option><option>Personalised Gifts</option><option>Children's</option><option>Pet Accessories</option><option>Wellness &amp; Self-Care</option><option>Accessories</option><option>Seasonal</option><option>Handmade Crafts</option><option>Other</option></select></div>
+            <select id="fCat"><option value="Home &amp; Living">Home &amp; Living</option><option value="Wall Art &amp; Prints">Wall Art &amp; Prints</option><option value="Ceramics">Ceramics</option><option value="Stationery">Stationery</option><option value="Jewellery">Jewellery</option><option value="Personalised Gifts">Personalised Gifts</option><option value="Children's">Children's</option><option value="Pet Accessories">Pet Accessories</option><option value="Wellness &amp; Self-Care">Wellness &amp; Self-Care</option><option value="Accessories">Accessories</option><option value="Seasonal">Seasonal</option><option value="Handmade Crafts">Handmade Crafts</option><option value="Other">Other</option></select></div>
           <div class="field"><label for="fMaker">Who makes your products?</label>
-            <select id="fMaker"><option>I make everything myself</option><option>Me and a small team</option><option>I design, a workshop produces</option></select></div>
+            <select id="fMaker"><option value="I make everything myself">I make everything myself</option><option value="Me and a small team">Me and a small team</option><option value="I design, a workshop produces">I design, a workshop produces</option></select></div>
         </div>
-        <div class="field r-provider"><label id="catLabel">What services will you offer? <span class="opt">· pick one to three</span></label>
+        <div class="field r-provider"><label id="catLabel" data-i18n>What services will you offer? <span class="opt">· pick one to three</span></label>
           <div id="catPicker" role="group" aria-labelledby="catLabel"><div class="help">Loading categories…</div></div></div>
         <div class="ftwo">
           <div class="field"><label for="fLoc">Where are you based?</label>
-            <select id="fLoc"><option>Dubai, UAE</option><option>Abu Dhabi, UAE</option></select>
+            <select id="fLoc"><option value="Dubai, UAE">Dubai, UAE</option><option value="Abu Dhabi, UAE">Abu Dhabi, UAE</option></select>
             <div class="help">Trove is open in Dubai &amp; Abu Dhabi for now.</div></div>
           <div class="field"><label id="fExpLabel" for="fExp">How long have you been making?</label>
-            <select id="fExp"><option>Just starting out</option><option>Under a year</option><option>1–3 years</option><option>3+ years</option></select></div>
+            <select id="fExp"><option value="Just starting out">Just starting out</option><option value="Under a year">Under a year</option><option value="1–3 years">1–3 years</option><option value="3+ years">3+ years</option></select></div>
         </div>
-        <div class="field"><label id="fAboutLabel" for="fAbout">About you &amp; your craft <span class="count" id="aboutCount"></span></label>
+        <div class="field"><label id="fAboutLabel" for="fAbout" data-i18n>About you &amp; your craft <span class="count" id="aboutCount"></span></label>
           <textarea id="fAbout" maxlength="2000" oninput="countAbout()" placeholder="Who are you? What do you make or do, and how? What makes it special? Write it like you'd tell a friend."></textarea>
           <div class="help">A few honest sentences are perfect — this also becomes your public story.</div></div>
         <div class="field r-maker"><label for="fLic">Do you have a UAE trade licence?</label>
@@ -249,9 +257,9 @@
           <textarea id="fServices" maxlength="2000" placeholder="One per line, e.g.&#10;Pottery hand-building workshop at your home — AED 1,200 per group&#10;Nursery wall mural — from AED 900&#10;Gallery-wall hanging — AED 450"></textarea></div>
         <div class="ftwo r-maker">
           <div class="field"><label for="fChannels">Where do you sell today?</label>
-            <select id="fChannels"><option>Not selling yet</option><option>Instagram / WhatsApp</option><option>Markets &amp; pop-ups</option><option>My own website</option><option>Another website</option></select></div>
+            <select id="fChannels"><option value="Not selling yet">Not selling yet</option><option value="Instagram / WhatsApp">Instagram / WhatsApp</option><option value="Markets &amp; pop-ups">Markets &amp; pop-ups</option><option value="My own website">My own website</option><option value="Another website">Another website</option></select></div>
           <div class="field"><label for="fCap">Orders you could handle monthly</label>
-            <select id="fCap"><option>Up to 10</option><option>10–30</option><option>30–100</option><option>100+</option></select></div>
+            <select id="fCap"><option value="Up to 10">Up to 10</option><option value="10–30">10–30</option><option value="30–100">30–100</option><option value="100+">100+</option></select></div>
         </div>
         <div class="field"><label for="fInsta">Instagram <span class="opt r-provider-only">· or a portfolio link below</span></label>
           <input id="fInsta" placeholder="@yourwork or instagram.com/yourwork">
@@ -265,12 +273,12 @@
         </div>
         <div class="subbox r-provider">
           <div class="fee" id="subFee">Free <small>during launch</small></div>
-          <p><span id="subFeeNote">Free during launch — the AED 30/month listing fee starts later; we'll give you 30 days' notice.</span> The only other cost is a 10% platform fee on bookings paid through Trove — direct bookings carry no commission. The service itself is always yours to deliver.</p>
-          <label><input type="checkbox" id="fAgreeSvc"><span>I understand how the listing fee works and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
+          <p data-i18n><span id="subFeeNote">Free during launch — the AED 30/month listing fee starts later; we'll give you 30 days' notice.</span> The only other cost is a 10% platform fee on bookings paid through Trove — direct bookings carry no commission. The service itself is always yours to deliver.</p>
+          <label><input type="checkbox" id="fAgreeSvc"><span data-i18n>I understand how the listing fee works and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
         </div>
-        <p class="help r-maker" style="margin:4px 0 10px">Before your shop is approved you'll accept the <a href="/seller-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Seller Agreement</a> — the plain-English terms Trove buys your pieces on, including the Emirates ID check before your first payment. Worth a read now.</p>
+        <p class="help r-maker" style="margin:4px 0 10px" data-i18n>Before your shop is approved you'll accept the <a href="/seller-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Seller Agreement</a> — the plain-English terms Trove buys your pieces on, including the Emirates ID check before your first payment. Worth a read now.</p>
         <div class="btnrow"><button class="back" onclick="toStep(2)">← Back</button><button class="next coral" id="submitBtn" onclick="submitApp()">Submit application</button></div>
-        <p class="help" style="margin-top:12px">By applying you agree to our <a href="/privacy" target="_blank" rel="noopener" style="text-decoration:underline">Privacy Policy</a>, which explains how Trove uses the details on this form.</p>
+        <p class="help" style="margin-top:12px" data-i18n>By applying you agree to our <a href="/privacy" target="_blank" rel="noopener" style="text-decoration:underline">Privacy Policy</a>, which explains how Trove uses the details on this form.</p>
       </div>
 
       <!-- SUCCESS -->
@@ -280,7 +288,7 @@
         <p id="doneText"></p>
         <div class="what" id="doneWarn" style="display:none"></div>
         <div class="what"><b>While you wait</b><span id="doneWait"></span></div>
-        <div class="btnrow"><button class="next" id="doneBtn" onclick="location.href='/sell'">Set up your shop →</button></div>
+        <div class="btnrow"><button class="next" id="doneBtn" onclick="location.href=troveUrl('/sell')">Set up your shop →</button></div>
       </div>
     </div>
   </div>
@@ -297,19 +305,22 @@ let ROLE='maker';   // maker | provider | both
 
 /* ---------------- the three doors ---------------- */
 const COPY={
-  maker:{prop:'Keep 60% · we photograph, market and deliver',eyebrow:'Open your shop',title:'Tell us what you <em>make</em>.',s2:'Your shop',s3:"What you'll sell",
-    s2Title:'Now, your shop.',s2Lede:'This is what our curation team reads first — tell us who you are and what you make.',
-    name:'Shop name',exp:'How long have you been making?',about:'About you &amp; your craft',
-    s3Title:'What will you sell?',s3Lede:'List the pieces you\'re planning to sell — rough ideas are fine.',roleHelp:'A shop on the storefront. Trove buys your pieces from you and resells them — photography, delivery, payments and customer care included.'},
-  provider:{prop:'Free during launch · keep 100% of direct bookings',eyebrow:'Become a provider',title:'Tell us what you <em>do</em>.',s2:'Your practice',s3:"What you'll offer",
-    s2Title:'Now, your practice.',s2Lede:'Who you are, what you do, and where you do it.',
-    name:'Practice or studio name',exp:'How long have you been at it?',about:'About you &amp; your work',
-    s3Title:'What will you offer?',s3Lede:'List the services you\'re planning to offer — rough ideas and rough prices are fine.',roleHelp:'A page on the Services Marketplace, booking requests to your dashboard, free to list during launch and no commission on direct bookings.'},
-  both:{prop:'Keep 60% on pieces · keep 100% of direct bookings',eyebrow:'Open your shop &amp; practice',title:'Tell us what you <em>make</em> — and do.',s2:'Your shop &amp; practice',s3:"What you'll sell &amp; offer",
-    s2Title:'Now, your shop and practice.',s2Lede:'One name, one story — pieces on the storefront and services on the Services Marketplace.',
-    name:'Shop &amp; practice name',exp:'How long have you been at it?',about:'About you &amp; your work',
-    s3Title:'What will you sell and offer?',s3Lede:'Pieces and services — rough ideas and rough prices are fine.',roleHelp:'Both, on one account: a shop for your pieces and a page for your services, reviewed together, one dashboard.'},
+  maker:{prop:_t('Keep 60% · we photograph, market and deliver'),eyebrow:_t('Open your shop'),title:_t('Tell us what you <em>make</em>.'),s2:_t('Your shop'),s3:_t("What you'll sell"),
+    s2Title:_t('Now, your shop.'),s2Lede:_t('This is what our curation team reads first — tell us who you are and what you make.'),
+    name:_t('Shop name'),exp:_t('How long have you been making?'),about:_t('About you &amp; your craft'),
+    s3Title:_t('What will you sell?'),s3Lede:_t('List the pieces you\'re planning to sell — rough ideas are fine.'),roleHelp:_t('A shop on the storefront. Trove buys your pieces from you and resells them — photography, delivery, payments and customer care included.')},
+  provider:{prop:_t('Free during launch · keep 100% of direct bookings'),eyebrow:_t('Become a provider'),title:_t('Tell us what you <em>do</em>.'),s2:_t('Your practice'),s3:_t("What you'll offer"),
+    s2Title:_t('Now, your practice.'),s2Lede:_t('Who you are, what you do, and where you do it.'),
+    name:_t('Practice or studio name'),exp:_t('How long have you been at it?'),about:_t('About you &amp; your work'),
+    s3Title:_t('What will you offer?'),s3Lede:_t('List the services you\'re planning to offer — rough ideas and rough prices are fine.'),roleHelp:_t('A page on the Services Marketplace, booking requests to your dashboard, free to list during launch and no commission on direct bookings.')},
+  both:{prop:_t('Keep 60% on pieces · keep 100% of direct bookings'),eyebrow:_t('Open your shop &amp; practice'),title:_t('Tell us what you <em>make</em> — and do.'),s2:_t('Your shop &amp; practice'),s3:_t("What you'll sell &amp; offer"),
+    s2Title:_t('Now, your shop and practice.'),s2Lede:_t('One name, one story — pieces on the storefront and services on the Services Marketplace.'),
+    name:_t('Shop &amp; practice name'),exp:_t('How long have you been at it?'),about:_t('About you &amp; your work'),
+    s3Title:_t('What will you sell and offer?'),s3Lede:_t('Pieces and services — rough ideas and rough prices are fine.'),roleHelp:_t('Both, on one account: a shop for your pieces and a page for your services, reviewed together, one dashboard.')},
 };
+// Example lines in the two planning boxes (set here so the line breaks survive translation).
+$('fProducts').placeholder=_t('One per line, e.g.\nHand-thrown stoneware mugs — AED 60–80\nSpeckled serving bowls\nSmall-batch glazed planters');
+$('fServices').placeholder=_t('One per line, e.g.\nPottery hand-building workshop at your home — AED 1,200 per group\nNursery wall mural — from AED 900\nGallery-wall hanging — AED 450');
 function setRole(r){
   ROLE=r;
   document.querySelectorAll('.role').forEach(b=>{b.classList.toggle('on',b.dataset.role===r);b.setAttribute('aria-pressed',String(b.dataset.role===r));});
@@ -322,19 +333,19 @@ function setRole(r){
   document.querySelectorAll('.r-maker').forEach(el=>el.style.display=(r==='maker'||r==='both')?'':'none');
   document.querySelectorAll('.r-provider').forEach(el=>el.style.display=(r==='provider'||r==='both')?'':'none');
   document.querySelectorAll('.r-provider-only').forEach(el=>el.style.display=r==='provider'?'':'none');
-  $('fShop').placeholder=r==='provider'?'e.g. Reem Makes':'e.g. Kiln & Clay';
-  $('doneBtn').textContent=r==='provider'?'Set up your services →':'Set up your shop →';
-  $('doneBtn').onclick=()=>{location.href=r==='provider'?'/provider':'/sell';};
-  document.title=r==='provider'?'Trove · Become a provider':r==='both'?'Trove · Open your shop & practice':'Trove · Open your shop';
+  $('fShop').placeholder=r==='provider'?_t('e.g. Reem Makes'):_t('e.g. Kiln & Clay');
+  $('doneBtn').textContent=r==='provider'?_t('Set up your services →'):_t('Set up your shop →');
+  $('doneBtn').onclick=()=>{location.href=troveUrl(r==='provider'?'/provider':'/sell');};
+  document.title=r==='provider'?_t('Trove · Become a provider'):r==='both'?_t('Trove · Open your shop & practice'):_t('Trove · Open your shop');
   if(r!=='maker'&&!TAX)loadTax();
 }
 async function loadTax(){
   try{
     TAX=await TroveAPI.api('/api/services/taxonomy');
     // Free during launch (owner, 2026-09-30): the fee shown is the one that starts later.
-    if(TAX.providerSubFeeCents)$('subFeeNote').textContent='Free during launch — the AED '+Math.round(TAX.providerSubFeeCents/100)+'/month listing fee starts later; we\'ll give you 30 days\' notice.';
+    if(TAX.providerSubFeeCents)$('subFeeNote').textContent=_t('Free during launch — the {fee}/month listing fee starts later; we\'ll give you 30 days\' notice.',{fee:troveMoney(Math.round(TAX.providerSubFeeCents/100))});
     renderCatPicker();
-  }catch(_){ $('catPicker').innerHTML='<div class="help">Couldn’t load the category list — refresh to try again.</div>'; }
+  }catch(_){ $('catPicker').innerHTML='<div class="help">'+_t('Couldn’t load the category list — refresh to try again.')+'</div>'; }
 }
 function renderCatPicker(){
   $('catPicker').innerHTML=TAX.audiences.map(a=>{
@@ -344,7 +355,7 @@ function renderCatPicker(){
 }
 function toggleCat(slug){
   if(PICKED.includes(slug))PICKED=PICKED.filter(s=>s!==slug);
-  else{ if(PICKED.length>=3){showErr('Three categories is the limit — unpick one first.');return;} PICKED.push(slug); }
+  else{ if(PICKED.length>=3){showErr(_t('Three categories is the limit — unpick one first.'));return;} PICKED.push(slug); }
   hideErr();renderCatPicker();
 }
 
@@ -356,7 +367,7 @@ function toggleCat(slug){
     const me=await TroveAPI.me();
     if(me&&me.user){
       ME=me;
-      if(me.shop){location.href='/sell';return;}            // a shop already: services are added from the dashboard
+      if(me.shop){location.href=troveUrl('/sell');return;}            // a shop already: services are added from the dashboard
       SIGNED_IN=true;
       $('fName').value=$('fName').value||me.user.name||'';
       $('fEmail').value=me.user.email||'';
@@ -365,14 +376,14 @@ function toggleCat(slug){
       $('signedWho').textContent=me.user.email;
       $('signedNote').style.display='block';
       if(me.provider){                                        // already a provider: only a shop can be added
-        document.querySelectorAll('.role[data-role=provider],.role[data-role=both]').forEach(b=>{b.disabled=true;b.classList.add('off');b.title='This account already offers services';});
+        document.querySelectorAll('.role[data-role=provider],.role[data-role=both]').forEach(b=>{b.disabled=true;b.classList.add('off');b.title=_t('This account already offers services');});
         setRole('maker');return;
       }
     }
   }catch(_){}
   setRole(want);
 })();
-async function signOutApply(){ await TroveAPI.logout(); location.href='/apply'; }
+async function signOutApply(){ await TroveAPI.logout(); location.href=troveUrl('/apply'); }
 
 /* ---------------- wizard plumbing ---------------- */
 document.querySelectorAll('#step1 input,#step2 input,#step3 input:not([type=checkbox]):not([type=file])').forEach(el=>{
@@ -386,11 +397,11 @@ function togglePw(id,btn){
   const i=$(id), show=i.type==='password';
   i.type=show?'text':'password';
   btn.classList.toggle('off',show);
-  btn.setAttribute('aria-label',show?'Hide password':'Show password');
+  btn.setAttribute('aria-label',show?_t('Hide password'):_t('Show password'));
 }
 function showErr(m){const e=$('err');e.textContent=m;e.style.display='block';window.scrollTo(0,0);}
 /* Phones lose the step list in the brand panel, so the step name sits above the bar. */
-function setStepLabel(){const names=[null,'About you',$('bs2t').textContent,$('bs3t').textContent];$('mStep').textContent=`Step ${step} of 3 · ${names[step]}`;}
+function setStepLabel(){const names=[null,_t('About you'),$('bs2t').textContent,$('bs3t').textContent];$('mStep').textContent=_t('Step {step} of 3 · {name}',{step,name:names[step]});}
 function hideErr(){$('err').style.display='none';}
 function countAbout(){const v=$('fAbout').value;const c=$('aboutCount');if(c)c.textContent=v.length?v.length+' / 2000':'';}
 function toggleLic(){ $('licWrap').style.display=$('fLic').value==='yes'?'block':'none'; }
@@ -399,17 +410,17 @@ const wantsServices=()=>ROLE==='provider'||ROLE==='both';
 
 function validate(target){
   if(target>1&&step===1&&target>step){
-    if(!$('fName').value.trim())return 'Please tell us your name.';
+    if(!$('fName').value.trim())return _t('Please tell us your name.');
     const em=$('fEmail').value.trim();
-    if(!em||!/^\S+@\S+\.\S+$/.test(em))return 'That email doesn’t look right — mind checking it?';
-    if(!SIGNED_IN&&$('fPass').value.length<8)return 'Your password needs at least 8 characters.';
+    if(!em||!/^\S+@\S+\.\S+$/.test(em))return _t('That email doesn’t look right — mind checking it?');
+    if(!SIGNED_IN&&$('fPass').value.length<8)return _t('Your password needs at least 8 characters.');
   }
   if(target>2&&step===2&&target>step){
-    if(!$('fShop').value.trim())return wantsShop()?'Give your shop a name — you can change it later.':'Give your practice a name — you can change it later.';
-    if(wantsServices()&&!PICKED.length)return 'Pick at least one service category.';
-    if(!$('fLoc').value.trim())return 'Tell us where you’re based.';
-    if($('fAbout').value.trim().length<30)return 'Tell us a little more about you and your work — a few sentences helps us say yes faster.';
-    if(wantsShop()&&$('fLic').value==='yes'&&!$('fLicNo').value.trim())return 'Add your licence number — or switch back to “Not yet”.';
+    if(!$('fShop').value.trim())return wantsShop()?_t('Give your shop a name — you can change it later.'):_t('Give your practice a name — you can change it later.');
+    if(wantsServices()&&!PICKED.length)return _t('Pick at least one service category.');
+    if(!$('fLoc').value.trim())return _t('Tell us where you’re based.');
+    if($('fAbout').value.trim().length<30)return _t('Tell us a little more about you and your work — a few sentences helps us say yes faster.');
+    if(wantsShop()&&$('fLic').value==='yes'&&!$('fLicNo').value.trim())return _t('Add your licence number — or switch back to “Not yet”.');
   }
   return null;
 }
@@ -447,14 +458,14 @@ function toStep(target){
 /* ---------------- submit: one form, one account ---------------- */
 async function submitApp(){
   hideErr();
-  if(wantsShop()&&!$('fProducts').value.trim()){showErr('List at least one thing you’re planning to sell.');return;}
-  if(wantsServices()&&!$('fServices').value.trim()){showErr('List at least one service you’re planning to offer.');return;}
-  if(wantsShop()&&!$('fInsta').value.trim()){showErr('Share your Instagram — it’s how our curation team sees your work.');return;}
-  if(!wantsShop()&&!$('fInsta').value.trim()&&!$('fLinks').value.trim()){showErr('Share your Instagram or a portfolio link — it’s how our curation team sees your work.');return;}
-  if(!$('fPhone').value.trim()){showErr('Add your WhatsApp number so our curation team can reach you.');return;}
-  if(wantsServices()&&!$('fAgreeSvc').checked){showErr('Tick the services box — it covers the listing fee and the Provider Agreement.');return;}
+  if(wantsShop()&&!$('fProducts').value.trim()){showErr(_t('List at least one thing you’re planning to sell.'));return;}
+  if(wantsServices()&&!$('fServices').value.trim()){showErr(_t('List at least one service you’re planning to offer.'));return;}
+  if(wantsShop()&&!$('fInsta').value.trim()){showErr(_t('Share your Instagram — it’s how our curation team sees your work.'));return;}
+  if(!wantsShop()&&!$('fInsta').value.trim()&&!$('fLinks').value.trim()){showErr(_t('Share your Instagram or a portfolio link — it’s how our curation team sees your work.'));return;}
+  if(!$('fPhone').value.trim()){showErr(_t('Add your WhatsApp number so our curation team can reach you.'));return;}
+  if(wantsServices()&&!$('fAgreeSvc').checked){showErr(_t('Tick the services box — it covers the listing fee and the Provider Agreement.'));return;}
   const btn=$('submitBtn');const label=btn.textContent;
-  btn.textContent='Sending…';btn.disabled=true;btn.style.opacity='.7';
+  btn.textContent=_t('Sending…');btn.disabled=true;btn.style.opacity='.7';
   const name=$('fName').value.trim(), email=$('fEmail').value.trim(), practice=$('fShop').value.trim();
   const common={location:$('fLoc').value.trim(),about:$('fAbout').value.trim(),experience:$('fExp').value,
     instagram:$('fInsta').value.trim(),links:$('fLinks').value.trim(),phone:$('fPhone').value.trim()};
@@ -485,13 +496,13 @@ async function submitApp(){
     if(signedUp&&window.troveTrack)troveTrack('sign_up',{method:'email'});
     // Done screen
     const first=name.split(' ')[0];
-    const what=ROLE==='maker'?`<b>${esc(practice)}</b> is now with our curation team`:ROLE==='provider'?`<b>${esc(practice)}</b> is now with our curation team`:`<b>${esc(practice)}</b> — your shop and your services practice — is now with our curation team`;
-    $('doneText').innerHTML=`Thanks <b>${esc(first)}</b> — ${what}. Every maker and provider on Trove is reviewed by a real person, usually within a day or two.`;
+    const what=ROLE==='both'?_t('<b>{name}</b> — your shop and your services practice — is now with our curation team',{name:esc(practice)}):_t('<b>{name}</b> is now with our curation team',{name:esc(practice)});
+    $('doneText').innerHTML=_t('Thanks <b>{first}</b> — {what}. Every maker and provider on Trove is reviewed by a real person, usually within a day or two.',{first:esc(first),what});
     $('doneWait').textContent=ROLE==='provider'
-      ?'You\'re signed in already. Add your services and set your prices now — everything goes live the moment you\'re approved, and listing is free during launch.'
-      :ROLE==='both'?'You\'re signed in already. Set up your storefront, add your first pieces, and add your services from the Services tab — everything goes live the moment you\'re approved.'
-      :'You\'re signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you\'re approved.';
-    if(servicesWarn){$('doneWarn').style.display='';$('doneWarn').innerHTML=`<b>Your services</b><span>Your shop application is in, but the services part didn’t go through (${esc(servicesWarn)}). You can switch on services from the Services tab of your dashboard.</span>`;}
+      ?_t('You\'re signed in already. Add your services and set your prices now — everything goes live the moment you\'re approved, and listing is free during launch.')
+      :ROLE==='both'?_t('You\'re signed in already. Set up your storefront, add your first pieces, and add your services from the Services tab — everything goes live the moment you\'re approved.')
+      :_t('You\'re signed in already. You can set up your storefront, add your first products and finish your payout setup — everything goes live the moment you\'re approved.');
+    if(servicesWarn){$('doneWarn').style.display='';$('doneWarn').innerHTML=_t('<b>Your services</b><span>Your shop application is in, but the services part didn’t go through ({error}). You can switch on services from the Services tab of your dashboard.</span>',{error:esc(servicesWarn)});}
     ['step1','step2','step3'].forEach(id=>$(id).style.display='none');
     document.querySelector('.crumbs').style.display='none';$('mStep').style.display='none';
     ['bs1','bs2','bs3'].forEach(id=>{$(id).classList.add('done');$(id).classList.remove('on');});
@@ -500,11 +511,11 @@ async function submitApp(){
   }catch(e){
     btn.textContent=label;btn.disabled=false;btn.style.opacity='1';
     const code=e.data&&e.data.code;
-    if(e.status===409&&code==='already_has_shop'){toStep(1);showErr('This account already runs a shop on Trove — sign in to manage it.');}
-    else if(e.status===409&&code==='already_provider'){toStep(1);showErr('This account already offers services on Trove — sign in to manage them.');}
-    else if(e.status===409&&code==='sign_in_required'){toStep(1);showErr('An account with this email already exists. Sign in first, then add your services from your dashboard — or apply with a different email.');}
-    else if(e.status===409){toStep(1);showErr('An account with this email already exists. To add this to it, use that account’s password here — or apply with a different email.');}
-    else showErr(e.message||'Something went wrong — please try again.');
+    if(e.status===409&&code==='already_has_shop'){toStep(1);showErr(_t('This account already runs a shop on Trove — sign in to manage it.'));}
+    else if(e.status===409&&code==='already_provider'){toStep(1);showErr(_t('This account already offers services on Trove — sign in to manage them.'));}
+    else if(e.status===409&&code==='sign_in_required'){toStep(1);showErr(_t('An account with this email already exists. Sign in first, then add your services from your dashboard — or apply with a different email.'));}
+    else if(e.status===409){toStep(1);showErr(_t('An account with this email already exists. To add this to it, use that account’s password here — or apply with a different email.'));}
+    else showErr(e.message||_t('Something went wrong — please try again.'));
   }
 }
 </script>

@@ -64,10 +64,12 @@ function shapeService(row) {
 
 /* ---------------- Browse ---------------- */
 
-router.get('/taxonomy', (_req, res) => {
+router.get('/taxonomy', (req, res) => {
+  // Arabic pages ask with ?lang=ar: the same shapes, Arabic text (service-taxonomy.js).
+  const t = tax.localized(req.lang);
   res.json({
-    audiences: tax.AUDIENCES,
-    categories: tax.SERVICE_CATEGORIES,
+    audiences: t.audiences,
+    categories: t.categories,
     providerSubFeeCents: fees.PROVIDER_SUB_FEE_CENTS,
   });
 });
@@ -307,14 +309,15 @@ router.post('/:id(\\d+)/book', (req, res) => {
   const info = db.prepare(`INSERT INTO service_bookings
       (code, service_id, provider_id, buyer_id, name, email, phone, area,
        preferred_date, notes, payment_method, title, price_cents, price_type,
-       terms_version, commission_cents, provider_net_cents)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+       terms_version, commission_cents, provider_net_cents, lang)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
     .run(code, row.id, row.provider_id, req.session.userId || null,
       name, email, phone, String(b.area).trim().slice(0, 60),
       String(b.preferredDate || '').trim().slice(0, 60),
       String(b.notes || '').trim().slice(0, 1000),
       paymentMethod, row.title, row.price_cents, row.price_type,
-      require('../config').SERVICES_TERMS_VERSION, split.fee, split.net);
+      require('../config').SERVICES_TERMS_VERSION, split.fee, split.net,
+      req.lang === 'ar' ? 'ar' : 'en'); // the customer's emails follow the page they booked from
 
   const created = db.prepare('SELECT * FROM service_bookings WHERE id = ?').get(info.lastInsertRowid);
   svc.mail('requested', created);

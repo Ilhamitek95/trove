@@ -245,7 +245,7 @@ test('A: the collection fee is per return request, and the buyer form says to se
   assert.equal(a.fee + b.fee, 60);
   // … which is why the form tells the buyer to send them together.
   const html = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'trove-account.html'), 'utf8');
-  assert.match(html, /Returning more than one piece\?<\/b> Send them back together and the \$\{aed\(r\.fee\)\} collection fee is charged once\./);
+  assert.match(html, /Returning more than one piece\?<\/b> Send them back together and the \{amount\} collection fee is charged once\.',\{amount:aed\(r\.fee\)\}/);
   // Only when it could apply: a fee on the order, change of mind (or no reason yet), more than one piece.
   assert.match(html, /const together=r\.fee>0&&\(!reason\|\|reason==='changed-mind'\)&&units>1/);
 });

@@ -26,7 +26,7 @@ testEnv({});
 const { DEFAULTS } = require('../src/content');
 
 const DOCS = path.join(__dirname, '..', '..', 'docs');
-const read = (f) => fs.readFileSync(path.join(DOCS, f), 'utf8');
+const read = (f) => fs.readFileSync(path.join(DOCS, f), 'utf8').replace(/\r\n/g, '\n'); // line endings are not content
 const store = read('trove.html');
 
 // Pages that carry the storefront header (add a page here when it gets one).

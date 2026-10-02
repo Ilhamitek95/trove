@@ -428,7 +428,7 @@ test('the provider dashboard shows the fee as free during launch, never a runnin
   const read = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'docs', f), 'utf8');
   const panel = read('provider-panel.js');
   assert.match(panel, /Awaiting the customer’s card payment/);
-  assert.match(panel, /if \(b\.paid\) return `<span class="pp-paid">Paid through Trove/, 'paid wording only once paid');
+  assert.match(panel, /if \(b\.paid\) return `<span class="pp-paid">\$\{_t\('Paid through Trove'\)/, 'paid wording only once paid');
   assert.doesNotMatch(panel, /Running since/);
   for (const f of ['trove-apply.html', 'trove-seller.html', 'trove-services.html']) {
     assert.match(read(f), /30 days/, `${f} gives the notice period`);

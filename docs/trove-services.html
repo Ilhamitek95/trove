@@ -451,6 +451,24 @@
   }
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:12px 22px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;z-index:80}
   .toast.show{opacity:1;transform:translateX(-50%)}
+  /* Arabic (right-to-left): the physical sides above, mirrored (docs/rtl.css does the shared chrome) */
+  [dir="rtl"] .audbtn{text-align:right;padding:14px 14px 14px 18px}
+  [dir="rtl"] .audbtn .arr{margin-left:0;margin-right:auto}
+  @media(hover:hover){[dir="rtl"] .audbtn:hover .arr{transform:translateX(-3px)}}
+  [dir="rtl"] .dcard{text-align:right}
+  [dir="rtl"] .svtile::before{left:auto;right:16px}
+  [dir="rtl"] .svbody .meta .sv-req{margin-left:0;margin-right:8px}
+  [dir="rtl"] .bv-rows b{text-align:left}
+  [dir="rtl"] .modal .x{right:auto;left:16px}
+  [dir="rtl"] .modal h3{padding-right:0;padding-left:40px}
+  [dir="rtl"] .hiw::before{left:auto;right:50%;border-left:0;border-right:1.5px dashed rgba(41,39,39,.18)}
+  [dir="rtl"] .steps::before{left:auto;right:15px;border-left:0;border-right:1.5px dashed rgba(41,39,39,.22)}
+  @media(max-width:620px){[dir="rtl"] .steps::before{right:13px}}
+  [dir="rtl"] .bkcard .s bdi,[dir="rtl"] .kick bdi,[dir="rtl"] .booked .code{direction:ltr;unicode-bidi:isolate}
+  [dir="rtl"] .payopt,[dir="rtl"] .terms,[dir="rtl"] .field label{text-align:right}
+  [dir="rtl"] .pv-stats span{font-size:12px}
+  /* what providers wrote reads in its own direction until its Arabic lands (src/translate.js) */
+  [dir="rtl"] :is(.modal .desc,.svbody .t,#svTitle,.pcard p,#pvBio,.bkcard .t,.tagchip){unicode-bidi:plaintext}
 </style>
 </head>
 <body>
@@ -551,7 +569,7 @@
 <section class="hero">
   <div class="wrap lead">
     <span class="eyebrow">Services Marketplace · Dubai &amp; Abu Dhabi</span>
-    <h1 class="hero-t">Skilled hands, <span>at your place</span>.</h1>
+    <h1 class="hero-t" data-i18n>Skilled hands, <span>at your place</span>.</h1>
     <p>Trove's makers and creatives, bookable. Made-to-order, repairs, styling and workshops for your home; photography, design and shop support for your brand.</p>
     <div class="h-terms">
       <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Reviewed by a real person</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Their prices, nothing added</span>
@@ -602,7 +620,7 @@
       <details class="faq"><summary>How do I get paid for bookings paid through Trove?<span class="faq-tg">+</span></summary>
         <div class="faq-a">By bank transfer from Serein Consultancy LLC, the company behind Trove,, so look for that name on your statement. Your fee — the price less the 10% platform fee — is provisional until the service date has passed and a 3-day window for any complaint or cancellation has closed; it is then paid on the next payout day, every other Tuesday, the same days Trove pays its makers. Add your bank details under Payouts in your dashboard; each fee there shows when it’s payable and, once sent, the date and the transfer reference.</div></details>
       <details class="faq"><summary>Who is responsible for the service?<span class="faq-tg">+</span></summary>
-        <div class="faq-a">The provider performs it, always: Trove doesn't perform or supervise the work. Who you contract with depends on how you pay. Pay through Trove by card and Trove is your contracting party for that booking and refunds you in full if the service isn't delivered. Settle directly and the arrangement, and any refund, is between you and the provider. The <a href="/provider-agreement" style="text-decoration:underline">Provider Agreement</a> and the <a href="/services-terms" style="text-decoration:underline">Services Terms</a> both say so plainly — read them before you apply or book.</div></details>
+        <div class="faq-a" data-i18n>The provider performs it, always: Trove doesn't perform or supervise the work. Who you contract with depends on how you pay. Pay through Trove by card and Trove is your contracting party for that booking and refunds you in full if the service isn't delivered. Settle directly and the arrangement, and any refund, is between you and the provider. The <a href="/provider-agreement" style="text-decoration:underline">Provider Agreement</a> and the <a href="/services-terms" style="text-decoration:underline">Services Terms</a> both say so plainly — read them before you apply or book.</div></details>
       <details class="faq"><summary>Why can't I see the customer's number straight away?<span class="faq-tg">+</span></summary>
         <div class="faq-a">The same privacy stance as the rest of Trove: contact details change hands only when there's a confirmed arrangement to use them for. The mobile is released the moment you confirm; the email address stays with Trove.</div></details>
       <details class="faq"><summary>What can I offer?<span class="faq-tg">+</span></summary>
@@ -618,7 +636,7 @@
 
   <div class="ctaband">
     <div>
-      <h2>Good at something? <span>Offer it on Trove.</span></h2>
+      <h2 data-i18n>Good at something? <span>Offer it on Trove.</span></h2>
       <p>List your services beside the region's best makers — every booking request lands in your own dashboard.</p>
     </div>
     <a class="btn" href="/apply?for=services">Become a provider →</a>
@@ -680,8 +698,8 @@ let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('
  * button and menu hand over to it too; the account menu is live here. */
 const CART_KEY='trove.cart.v1';
 function updateCartCount(){let n=0;try{n=(JSON.parse(localStorage.getItem(CART_KEY)||'[]')||[]).reduce((s,c)=>s+(parseInt(c&&c.qty)||0),0);}catch(_){}const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);}
-function openCart(){location.href='/?cart=1';}
-function runSearch(q){location.href='/?q='+encodeURIComponent((q||'').trim());}
+function openCart(){location.href=troveUrl('/?cart=1');}
+function runSearch(q){location.href=troveUrl('/?q='+encodeURIComponent((q||'').trim()));}
 /* The mobile menu and the booking modal are dialogs (site-chrome.js TroveDialog). */
 function openMenu(focusSearch){$('mnav').classList.add('open');$('uiScrim').classList.add('open');document.body.style.overflow='hidden';TroveDialog.open($('mnav'),{onClose:closeSheets,focus:focusSearch?$('mSearchInput'):null});}
 function closeSheets(){$('mnav').classList.remove('open');$('uiScrim').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('mnav'));}
@@ -689,17 +707,17 @@ function toggleAcct(e){e.stopPropagation();const open=$('acctMenu').classList.to
 function closeAcct(){const m=$('acctMenu');if(!m)return;m.classList.remove('open');const b=document.querySelector('[aria-controls="acctMenu"]');if(b)b.setAttribute('aria-expanded','false');}
 document.addEventListener('click',closeAcct);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();closeModal();closeAcct();}});
-async function signOut(){await TroveAPI.logout();location.href='/';}
+async function signOut(){await TroveAPI.logout();location.href=troveUrl('/');}
 function renderAuth(){
   const u=ME&&ME.user;
   if(u){
     $('amAv').textContent=((u.name||'?').trim()[0]||'·').toUpperCase();
     $('amName').textContent=u.name; $('amEmail').textContent=u.email;
-    $('authLabel').textContent='Sign out';
+    $('authLabel').textContent=_t('Sign out');
     $('authLink').removeAttribute('href'); $('authLink').style.cursor='pointer'; $('authLink').setAttribute('role','button'); $('authLink').tabIndex=0; $('authLink').onclick=signOut;
   }else{
-    $('amName').textContent='Welcome'; $('amEmail').textContent='Sign in to your account'; $('amAv').textContent='·';
-    $('authLabel').textContent='Sign in';
+    $('amName').textContent=_t('Welcome'); $('amEmail').textContent=_t('Sign in to your account'); $('amAv').textContent='·';
+    $('authLabel').textContent=_t('Sign in');
   }
 }
 /* The promo bar shows the same admin-editable line as the storefront. */
@@ -707,13 +725,13 @@ async function loadPromo(){
   try{const c=await TroveAPI.api('/api/content');document.querySelectorAll('[data-cms]').forEach(el=>{const v=el.dataset.cms.split('.').reduce((o,k)=>(o==null?undefined:o[k]),c);if(typeof v==='string')el.textContent=v;});}catch(_){}
 }
 
-function money(c){const n=(c||0)/100;return 'AED '+(Number.isInteger(n)?n.toLocaleString('en-GB'):n.toLocaleString('en-GB',{minimumFractionDigits:2}));}
+function money(c){const n=(c||0)/100;return troveIso('AED '+(Number.isInteger(n)?n.toLocaleString('en-GB'):n.toLocaleString('en-GB',{minimumFractionDigits:2})));}
 function priceLabel(s){
-  if(s.priceType==='from')return 'From '+money(s.priceCents);
-  if(s.priceType==='hourly')return money(s.priceCents)+' / hour';
+  if(s.priceType==='from')return _t('From {price}',{price:money(s.priceCents)});
+  if(s.priceType==='hourly')return _t('{price} / hour',{price:money(s.priceCents)});
   return money(s.priceCents);
 }
-const SETTING_LABEL={home:'At your place',studio:"At the provider's studio",remote:'Remote'};
+const SETTING_LABEL={home:_t('At your place'),studio:_t("At the provider's studio"),remote:_t('Remote')};
 
 /* Deterministic brand-motif tile per service (no photography yet — same
    approach as the product marketplace). */
@@ -729,7 +747,7 @@ function motifUrl(seed,c){
 /* One calm brand tile for every service without photos, named by its category. */
 function svTile(s){
   const cat=TAX&&TAX.categories.find(c=>c.slug===s.category);
-  return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat?cat.name:'Service')}</span></div>`;
+  return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat?cat.name:_t('Service'))}</span></div>`;
 }
 
 /* ---------------- rendering ---------------- */
@@ -743,7 +761,7 @@ function renderAudSwitch(){
     return `<button class="audbtn ${state.audience===a.key?'on':''}" onclick="setAudience(${jsq(a.key)})" aria-pressed="${state.audience===a.key}">
       <span class="ofic" style="background:${ic.tint}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ic.svg}</svg></span>
       <span><b>${esc(a.name)}</b><small>${esc(a.sub)}</small></span>
-      <span class="arr">→</span>
+      <span class="arr">${_t('→')}</span>
     </button>`;}).join('');
 }
 function setAudience(k){state.audience=k;state.cat=null;state.showAll=false;renderAll();}
@@ -767,17 +785,17 @@ function renderDir(){
     const min=n?Math.min(...list.map(s=>s.priceCents||0)):0;
     const on=state.cat===c.slug;
     return `<div class="dcard ${n?'live':''} ${on?'on':''}" ${n?`onclick="setCat(${jsq(c.slug)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setCat(${jsq(c.slug)})}" role="button" tabindex="0" aria-pressed="${on}"`:''}>
-      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n?'':'none'}">${n?`${n} ${n===1?'service':'services'}`:'Be the first'}</span></div>
+      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n?'':'none'}">${n?_tn(n,'{n} service','{n} services'):_t('Be the first')}</span></div>
       <div class="blurb">${esc(c.blurb)}</div>
       <p class="ex">${c.examples.map(esc).join(' · ')}</p>
       <div class="foot">${n
-        ?`<span class="from">${min?'From '+money(min):''}</span><span class="go">${on?'Showing below ↓':'See services →'}</span>`
-        :`<span></span><a href="/apply?for=services" onclick="event.stopPropagation()">Offer this →</a>`}</div>
+        ?`<span class="from">${min?_t('From {price}',{price:money(min)}):''}</span><span class="go">${on?_t('Showing below ↓'):_t('See services →')}</span>`
+        :`<span></span><a href="/apply?for=services" onclick="event.stopPropagation()">${_t('Offer this →')}</a>`}</div>
     </div>`;
   }).join('')+(empty.length?soonStrip(empty):'');
 }
 function soonStrip(empty){
-  return `<div class="soon"><div><b>Coming soon</b><p>${empty.map(c=>esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">Offer a service →</a></div>`;
+  return `<div class="soon"><div><b>${_t('Coming soon')}</b><p>${empty.map(c=>esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">${_t('Offer a service →')}</a></div>`;
 }
 
 function svCardHTML(s){
@@ -785,8 +803,8 @@ function svCardHTML(s){
     ${svTile(s)}
     <div class="svbody">
       <div class="t">${esc(s.title)}</div>
-      <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}</div>
-      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span><button type="button" class="sv-req" aria-label="Request ${esc(s.title)}" onclick="event.stopPropagation();openService(${Number(s.id)})">Request</button></div>
+      <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}</div>
+      <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span><button type="button" class="sv-req" aria-label="${esc(_t('Request {title}',{title:s.title}))}" onclick="event.stopPropagation();openService(${Number(s.id)})">${_t('Request')}</button></div>
     </div>
   </div>`;
 }
@@ -796,7 +814,7 @@ function renderResults(){
   const all=SERVICES.filter(s=>cats.some(c=>c.slug===s.category));
   if(!all.length){
     const aud=(TAX.audiences.find(a=>a.key===state.audience)||{}).name||'';
-    el.innerHTML=`<div class="empty">No providers offer services ${esc(aud.toLowerCase())} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href="/apply?for=services">Become a provider</a> and be the first name here.</div>`;
+    el.innerHTML=`<div class="empty">${_t('No providers offer services {audience} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href="/apply?for=services">Become a provider</a> and be the first name here.',{audience:esc(troveLang==='ar'?aud:aud.toLowerCase())})}</div>`;
     return;
   }
   const cat=state.cat?cats.find(c=>c.slug===state.cat):null;
@@ -804,43 +822,43 @@ function renderResults(){
   const CAP=8, capped=!cat&&!state.showAll&&list.length>CAP;
   const shown=capped?list.slice(0,CAP):list;
   el.innerHTML=`<section class="results" id="resultsSec">
-    <div class="rhead"><h2>${cat?esc(cat.name):'All services'}</h2><span>${list.length} ${list.length===1?'service':'services'}</span>${cat?'<button onclick="setCat(null)">Show everything</button>':''}</div>
+    <div class="rhead"><h2>${cat?esc(cat.name):_t('All services')}</h2><span>${_tn(list.length,'{n} service','{n} services')}</span>${cat?`<button onclick="setCat(null)">${_t('Show everything')}</button>`:''}</div>
     <div class="svgrid">${shown.map(svCardHTML).join('')}</div>
-    ${capped?`<button class="showall" onclick="state.showAll=true;renderResults()">Show all ${list.length} services</button>`:''}
+    ${capped?`<button class="showall" onclick="state.showAll=true;renderResults()">${_tn(list.length,'Show all {n} services','Show all {n} services')}</button>`:''}
   </section>`;
 }
 
 function renderMyBookings(){
   const el=$('myBookings');
   if(!ME||!MYBOOKINGS.length){el.innerHTML='';return;}
-  const STATUS={requested:['Waiting for the provider','pill'],awaiting_payment:['Confirmed · pay to secure','pill awaiting_payment'],confirmed:['Confirmed','pill confirmed'],completed:['Done','pill completed'],declined:['Declined','pill declined'],cancelled:['Cancelled','pill cancelled']};
-  el.innerHTML=`<div class="mybook"><h3>Your bookings</h3>${MYBOOKINGS.map(b=>{
+  const STATUS={requested:[_t('Waiting for the provider'),'pill'],awaiting_payment:[_t('Confirmed · pay to secure'),'pill awaiting_payment'],confirmed:[_t('Confirmed'),'pill confirmed'],completed:[_t('Done'),'pill completed'],declined:[_t('Declined'),'pill declined'],cancelled:[_t('Cancelled'),'pill cancelled']};
+  el.innerHTML=`<div class="mybook"><h3>${_t('Your bookings')}</h3>${MYBOOKINGS.map(b=>{
     const st=STATUS[b.status]||[b.status,'pill'];
     return `<div class="bkcard">
       <div class="grow"><div class="t">${esc(b.title)} · ${esc(b.providerName)}</div>
-      <div class="s">${esc(b.code)}${b.serviceDate?` · ${esc(fmtDay(b.serviceDate))}`:(b.preferredDate?` · ${esc(b.preferredDate)}`:'')}${b.amountCents?` · ${money(b.amountCents)}`:''} · ${payWord(b)}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
+      <div class="s"><bdi>${esc(b.code)}</bdi>${b.serviceDate?` · ${esc(fmtDay(b.serviceDate))}`:(b.preferredDate?` · ${esc(b.preferredDate)}`:'')}${b.amountCents?` · ${money(b.amountCents)}`:''} · ${payWord(b)}${b.status==='declined'&&b.declineReason?`<br>“${esc(b.declineReason)}”`:''}</div></div>
       <span class="${st[1]}">${esc(st[0])}</span>
-      <span class="acts">${b.payPath?`<a class="paylink" href="${esc(b.payPath)}">Pay ${money(b.amountCents)}</a>`:''}
-      ${b.viewPath?`<a class="linkbtn" href="${esc(b.viewPath)}">Details</a>`:''}
-      ${b.canCancel?`<button class="linkbtn" onclick="cancelBooking(${Number(b.id)},${b.paid?1:0},${Number(b.amountCents)||0})">Cancel</button>`:''}</span>
+      <span class="acts">${b.payPath?`<a class="paylink" href="${esc(b.payPath)}">${_t('Pay {amount}',{amount:money(b.amountCents)})}</a>`:''}
+      ${b.viewPath?`<a class="linkbtn" href="${esc(b.viewPath)}">${_t('Details')}</a>`:''}
+      ${b.canCancel?`<button class="linkbtn" onclick="cancelBooking(${Number(b.id)},${b.paid?1:0},${Number(b.amountCents)||0})">${_t('Cancel')}</button>`:''}</span>
     </div>`;}).join('')}</div>`;
 }
 
 /* How a booking is paid, in the customer's words. */
 function payWord(b){
-  if(b.paymentMethod!=='trove')return 'Settling directly with the provider';
-  if(b.refunded)return 'Refunded in full';
-  if(b.paid)return 'Paid through Trove';
-  return 'Paying through Trove by card';
+  if(b.paymentMethod!=='trove')return _t('Settling directly with the provider');
+  if(b.refunded)return _t('Refunded in full');
+  if(b.paid)return _t('Paid through Trove');
+  return _t('Paying through Trove by card');
 }
-function fmtDay(d){const t=new Date(String(d)+'T00:00:00Z');return isNaN(t)?String(d):t.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}
+function fmtDay(d){const t=new Date(String(d)+'T00:00:00Z');return isNaN(t)?String(d):troveDate(t,{weekday:'short',day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});}
 async function cancelBooking(id,paid,amount){
-  if(!confirm(paid?`Cancel this booking? The ${money(amount)} you paid comes back to your card in full.`:'Cancel this booking?'))return;
+  if(!confirm(paid?_t('Cancel this booking? The {amount} you paid comes back to your card in full.',{amount:money(amount)}):_t('Cancel this booking?')))return;
   try{
     const r=await TroveAPI.api('/api/services/bookings/'+id+'/cancel',{method:'POST'});
-    toast(r&&r.refunded?'Booking cancelled — refund on its way':'Booking cancelled');
+    toast(r&&r.refunded?_t('Booking cancelled — refund on its way'):_t('Booking cancelled'));
     await loadMyBookings();renderMyBookings();
-  }catch(e){toast(e.message||'Could not cancel');}
+  }catch(e){toast(e.message||_t('Could not cancel'));}
 }
 
 function catNames(slugs){return (slugs||[]).map(sl=>{const c=TAX.categories.find(x=>x.slug===sl);return c?c.name:null;}).filter(Boolean);}
@@ -849,11 +867,11 @@ function provCardHTML(p){
     <div class="cover vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}"></div>
     <div class="av" style="background:${safeColor(p.color)}">${esc((p.name||'?')[0])}</div>
     <h3><a class="pcard-link" href="/services/${esc(encodeURIComponent(p.slug))}" tabindex="-1">${esc(p.name)}</a></h3>
-    <div class="loc">${esc(p.location||'Dubai')}</div>
+    <div class="loc">${esc(p.location||_t('Dubai'))}</div>
     <p>${esc(p.bio)}</p>
-    <div class="pmeta"><span><b>${Number(p.serviceCount)||0}</b> ${p.serviceCount===1?'service':'services'}</span>${p.fromCents?`<span>from <b>${money(p.fromCents)}</b></span>`:''}</div>
+    <div class="pmeta"><span>${_tn(Number(p.serviceCount)||0,'<b>{n}</b> service','<b>{n}</b> services')}</span>${p.fromCents?`<span>${_t('from <b>{price}</b>',{price:money(p.fromCents)})}</span>`:''}</div>
     <div class="pcats">${catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('')}</div>
-    ${p.shop&&p.shop.productCount?`<span class="also">Also sells pieces · ${esc(p.shop.name)}</span>`:''}
+    ${p.shop&&p.shop.productCount?`<span class="also">${_t('Also sells pieces · {shop}',{shop:esc(p.shop.name)})}</span>`:''}
   </article>`;
 }
 /* Providers working in the chosen audience come first; everyone stays listed. */
@@ -871,23 +889,23 @@ const PV_RE=/^\/services\/([a-z0-9-]+)\/?$/;
 async function openProvider(slug,push=true){
   let data;
   try{data=await TroveAPI.api('/api/services/providers/'+encodeURIComponent(slug));}
-  catch(_){toast('That provider isn’t listed');if(!push)closeProvider(false);return;}
+  catch(_){toast(_t('That provider isn’t listed'));if(!push)closeProvider(false);return;}
   const p=data.provider;
   for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
   $('pvHero').className='pv-hero vpanel'; $('pvHero').style.cssText=`--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}`;
   $('pvAv').style.background=safeColor(p.color);$('pvAv').textContent=(p.name||'?')[0];
   pageH1('pv');
   $('pvName').textContent=p.name;
-  $('pvLoc').textContent=p.location||'Dubai';$('pvBio').textContent=p.bio||'';
-  const emirate=(p.location||'Dubai').split(',').pop().trim();
-  $('pvStats').innerHTML=`<div><b>${Number(p.serviceCount)||0}</b><span>${p.serviceCount===1?'SERVICE':'SERVICES'}</span></div><div><b>${esc(emirate)}</b><span>BASED IN</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>ON TROVE SINCE</span></div>`:''}`;
+  $('pvLoc').textContent=p.location||_t('Dubai');$('pvBio').textContent=p.bio||'';
+  const emirate=(p.location||_t('Dubai')).split(/[,،]/).pop().trim();
+  $('pvStats').innerHTML=`<div><b>${Number(p.serviceCount)||0}</b><span>${p.serviceCount===1?_t('SERVICE'):_t('SERVICES')}</span></div><div><b>${esc(emirate)}</b><span>${_t('BASED IN')}</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>${_t('ON TROVE SINCE')}</span></div>`:''}`;
   $('pvCats').innerHTML=catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('');
-  $('pvCount').textContent=`${data.services.length} ${data.services.length===1?'service':'services'}`;
+  $('pvCount').textContent=_tn(data.services.length,'{n} service','{n} services');
   $('pvGrid').innerHTML=data.services.length?data.services.map(svCardHTML).join('')
-    :`<div class="empty" style="grid-column:1/-1">${esc(p.name)} hasn't listed a service yet — check back soon.</div>`;
+    :`<div class="empty" style="grid-column:1/-1">${_t("{name} hasn't listed a service yet — check back soon.",{name:esc(p.name)})}</div>`;
   loadProviderPieces(p);
   document.body.classList.add('pv');$('pview').hidden=false;
-  document.title=`${p.name}${p.location?', '+p.location:''} · Trove Services Marketplace`;
+  document.title=_t('{name} · Trove Services Marketplace',{name:`${p.name}${p.location?(troveLang==='ar'?'، ':', ')+p.location:''}`});
   if(push)history.pushState({provider:slug},'','/services/'+encodeURIComponent(slug));
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -902,11 +920,11 @@ async function loadProviderPieces(p){
     const {products}=await TroveAPI.api('/api/products?shop='+encodeURIComponent(p.shop.slug));
     const live=(products||[]).slice(0,8);
     if(!live.length){box.hidden=true;return;}
-    $('pvShopCount').textContent=`${p.shop.productCount} ${p.shop.productCount===1?'piece':'pieces'} · ${p.shop.name}`;
+    $('pvShopCount').textContent=`${_tn(p.shop.productCount,'{n} piece','{n} pieces')} · ${p.shop.name}`;
     $('pvShopLink').href=makerUrl(p.shop.slug);
     $('pvPieces').innerHTML=live.map(pr=>{
       const img=safeImg(pr.images&&pr.images[0])||motifUrl(hashOf(pr.name),safeColor(p.color));
-      return `<a class="pc" href="${esc(pieceUrl(pr))}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">AED ${Number(pr.price).toLocaleString('en-GB')}</div></div></a>`;
+      return `<a class="pc" href="${esc(pieceUrl(pr))}"><div class="pcimg" style="background-image:url(&quot;${esc(img)}&quot;)"></div><div class="pcb"><div class="pct">${esc(pr.name)}</div><div class="pcp">${troveIso('AED '+Number(pr.price).toLocaleString('en-GB'))}</div></div></a>`;
     }).join('');
     box.hidden=false;
   }catch(_){box.hidden=true;}
@@ -914,10 +932,10 @@ async function loadProviderPieces(p){
 function closeProvider(push=true){
   document.body.classList.remove('pv');$('pview').hidden=true;
   pageH1('dir');
-  document.title='Services Marketplace · Trove';
-  if(push&&PV_RE.test(location.pathname))history.pushState({},'','/services');
+  document.title=_t('Services Marketplace · Trove');
+  if(push&&PV_RE.test(trovePath(location.pathname)))history.pushState({},'','/services');
 }
-window.addEventListener('popstate',()=>{const m=location.pathname.match(PV_RE);if(m)openProvider(m[1],false);else closeProvider(false);});
+window.addEventListener('popstate',()=>{const m=trovePath(location.pathname).match(PV_RE);if(m)openProvider(m[1],false);else closeProvider(false);});
 function jumpTo(id){if(document.body.classList.contains('pv'))closeProvider();const el=$(id);if(el&&!el.hidden)el.scrollIntoView({behavior:'smooth'});}
 
 function renderAll(){renderAudSwitch();renderDir();renderResults();renderProviders();renderMyBookings();}
@@ -932,9 +950,9 @@ function openService(id){
   // the page can show the card form) — the server refuses it otherwise.
   const paymentsLive=!!(CFG&&CFG.serviceCardPayments)&&!!TroveAPI.stripeKey;
   $('svModal').innerHTML=`
-    <button class="x" onclick="closeModal()" aria-label="Close this service"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    <button class="x" onclick="closeModal()" aria-label="${esc(_t('Close this service'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <h3 id="svTitle">${esc(s.title)}</h3>
-    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||'Dubai')}${cat?` · ${esc(cat.name)}`:''}</div>
+    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}${cat?` · ${esc(cat.name)}`:''}</div>
     ${s.description?`<div class="desc">${esc(s.description)}</div>`:''}
     <div class="meta">
       <span class="price">${priceLabel(s)}</span><span style="flex:1"></span>
@@ -942,24 +960,24 @@ function openService(id){
       <span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span>
     </div>
     <div class="formgrid" id="bookForm">
-      <h4>Request a booking</h4>
+      <h4>${_t('Request a booking')}</h4>
       <div class="err" id="bkErr"></div>
       <div class="ftwo">
-        <div class="field"><label for="bkName">Your name</label><input id="bkName" autocomplete="name"></div>
-        <div class="field"><label for="bkEmail">Email</label><input id="bkEmail" type="email" autocomplete="email"></div>
+        <div class="field"><label for="bkName">${_t('Your name')}</label><input id="bkName" autocomplete="name"></div>
+        <div class="field"><label for="bkEmail">${_t('Email')}</label><input id="bkEmail" type="email" autocomplete="email"></div>
       </div>
       <div class="ftwo">
-        <div class="field"><label for="bkPhone">UAE mobile</label><input id="bkPhone" placeholder="05x xxx xxxx" autocomplete="tel"></div>
-        <div class="field"><label for="bkArea">Where</label><select id="bkArea"><option>Dubai</option><option>Abu Dhabi</option></select></div>
+        <div class="field"><label for="bkPhone">${_t('UAE mobile')}</label><input id="bkPhone" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
+        <div class="field"><label for="bkArea">${_t('Where')}</label><select id="bkArea"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
       </div>
-      <div class="field"><label for="bkDate">When suits you? <span style="text-transform:none;letter-spacing:0;color:var(--muted)">· optional</span></label><input id="bkDate" placeholder="e.g. a Friday afternoon, or 14 September"></div>
-      <div class="field"><label for="bkNotes">Tell them about it</label><textarea id="bkNotes" maxlength="1000" placeholder="What you have in mind, how many people, anything they should know."></textarea></div>
+      <div class="field"><label for="bkDate">${_t('When suits you?')} <span style="text-transform:none;letter-spacing:0;color:var(--muted)">${_t('· optional')}</span></label><input id="bkDate" placeholder="${esc(_t('e.g. a Friday afternoon, or 14 September'))}"></div>
+      <div class="field"><label for="bkNotes">${_t('Tell them about it')}</label><textarea id="bkNotes" maxlength="1000" placeholder="${esc(_t('What you have in mind, how many people, anything they should know.'))}"></textarea></div>
       <div class="payrow">
-        <label class="payopt"><input type="radio" name="bkPay" value="direct" checked><span><b>Settle directly with the provider</b><span>Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.</span></span></label>
-        <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="trove" ${paymentsLive?'':'disabled'}><span><b>Pay through Trove by card</b><span>${paymentsLive?'Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.':'Card payment isn’t available right now — please settle directly for now.'}</span></span></label>
+        <label class="payopt"><input type="radio" name="bkPay" value="direct" checked><span><b>${_t('Settle directly with the provider')}</b><span>${_t('Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.')}</span></span></label>
+        <label class="payopt ${paymentsLive?'':'off'}"><input type="radio" name="bkPay" value="trove" ${paymentsLive?'':'disabled'}><span><b>${_t('Pay through Trove by card')}</b><span>${paymentsLive?_t('Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.'):_t('Card payment isn’t available right now — please settle directly for now.')}</span></span></label>
       </div>
-      <label class="terms"><input type="checkbox" id="bkTerms"><span>I accept the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a> — the provider, not Trove, is responsible for the service.</span></label>
-      <button class="submit" id="bkSubmit" onclick="submitBooking()">Send booking request</button>
+      <label class="terms"><input type="checkbox" id="bkTerms"><span>${_t('I accept the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a> — the provider, not Trove, is responsible for the service.')}</span></label>
+      <button class="submit" id="bkSubmit" onclick="submitBooking()">${_t('Send booking request')}</button>
     </div>`;
   if(ME&&ME.user){
     $('bkName').value=ME.user.name||'';
@@ -977,11 +995,11 @@ function closeModal(){if(!$('svScrim').classList.contains('open'))return;$('svSc
 async function submitBooking(){
   const err=$('bkErr');err.style.display='none';
   const show=m=>{err.textContent=m;err.style.display='block';};
-  if(!$('bkName').value.trim())return show('Please tell us your name.');
-  if(!/^\S+@\S+\.\S+$/.test($('bkEmail').value.trim()))return show('That email doesn’t look right — mind checking it?');
-  if(!$('bkPhone').value.trim())return show('Add a UAE mobile so the provider can reach you once they confirm.');
-  if(!$('bkTerms').checked)return show('Please accept the Services Terms — they say plainly that the provider, not Trove, is responsible for the service.');
-  const btn=$('bkSubmit');btn.disabled=true;btn.textContent='Sending…';
+  if(!$('bkName').value.trim())return show(_t('Please tell us your name.'));
+  if(!/^\S+@\S+\.\S+$/.test($('bkEmail').value.trim()))return show(_t('That email doesn’t look right — mind checking it?'));
+  if(!$('bkPhone').value.trim())return show(_t('Add a UAE mobile so the provider can reach you once they confirm.'));
+  if(!$('bkTerms').checked)return show(_t('Please accept the Services Terms — they say plainly that the provider, not Trove, is responsible for the service.'));
+  const btn=$('bkSubmit');btn.disabled=true;btn.textContent=_t('Sending…');
   const trove=((document.querySelector('input[name=bkPay]:checked')||{}).value)==='trove';
   try{
     const r=await TroveAPI.api('/api/services/'+CURRENT.id+'/book',{method:'POST',body:{
@@ -996,14 +1014,14 @@ async function submitBooking(){
     }});
     $('bookForm').innerHTML=`<div class="booked">
       <div class="mark">✓</div>
-      <h4>Request sent.</h4>
-      <p>Your booking <span class="code">${esc(r.booking.code)}</span> is with ${esc(CURRENT.provider.name)}. ${trove?'Nothing is charged yet — once they confirm the date and price, we email you a secure link to pay.':'Once they confirm, they’ll reach you on your mobile to arrange the details.'}</p>
-      <p style="font-size:12.5px;color:var(--muted)">We’ve emailed you a private link to follow, pay for or cancel this booking.${r.booking.viewPath?` <a href="${esc(r.booking.viewPath)}" style="text-decoration:underline;font-weight:700">View it now</a>`:''}</p>
+      <h4>${_t('Request sent.')}</h4>
+      <p>${_t('Your booking {code} is with {provider}.',{code:`<span class="code">${esc(r.booking.code)}</span>`,provider:esc(CURRENT.provider.name)})} ${trove?_t('Nothing is charged yet — once they confirm the date and price, we email you a secure link to pay.'):_t('Once they confirm, they’ll reach you on your mobile to arrange the details.')}</p>
+      <p style="font-size:12.5px;color:var(--muted)">${_t('We’ve emailed you a private link to follow, pay for or cancel this booking.')}${r.booking.viewPath?` <a href="${esc(r.booking.viewPath)}" style="text-decoration:underline;font-weight:700">${_t('View it now')}</a>`:''}</p>
     </div>`;
     if(ME&&ME.user){await loadMyBookings();renderMyBookings();}
   }catch(e){
-    btn.disabled=false;btn.textContent='Send booking request';
-    show(e.message||'Something went wrong — please try again.');
+    btn.disabled=false;btn.textContent=_t('Send booking request');
+    show(e.message||_t('Something went wrong — please try again.'));
   }
 }
 
@@ -1019,7 +1037,7 @@ function loadStripeJs(){
   return new Promise((resolve,reject)=>{
     if(window.Stripe)return resolve();
     const s=document.createElement('script');s.src='https://js.stripe.com/v3/';
-    s.onload=resolve;s.onerror=()=>reject(new Error('Could not load the payment form. Check your connection and refresh.'));
+    s.onload=resolve;s.onerror=()=>reject(new Error(_t('Could not load the payment form. Check your connection and refresh.')));
     document.head.appendChild(s);
   });
 }
@@ -1029,11 +1047,11 @@ async function fetchBooking(){
 }
 async function openBookingView(code,t,wantPay){
   document.body.classList.add('bv');$('bkview').hidden=false;pageH1('bv');
-  document.title='Your booking · Trove';
+  document.title=_t('Your booking · Trove');
   BV={code,t,b:null};
   try{await fetchBooking();}
   catch(_){
-    $('bvCard').innerHTML=`<div class="kick">BOOKING</div><${BV_H}>We couldn’t find that booking.</${BV_H}><p class="lede">Check you opened the whole link from your email — it’s private to your booking. Still stuck? Contact Trove with your booking code.</p>`;
+    $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')}</div><${BV_H}>${_t('We couldn’t find that booking.')}</${BV_H}><p class="lede">${_t('Check you opened the whole link from your email — it’s private to your booking. Still stuck? Contact Trove with your booking code.')}</p>`;
     return;
   }
   // Back from a card check (3-D Secure): Stripe adds these to the return address.
@@ -1045,81 +1063,81 @@ async function openBookingView(code,t,wantPay){
 function bvHeadline(b){
   const who=esc(b.providerName);
   switch(b.status){
-    case 'requested':return ['Waiting for '+who, b.paymentMethod==='trove'
-      ?`Your request is with ${who}. Nothing is charged yet — once they confirm the date and price, we email you a secure link to pay.`
-      :`Your request is with ${who}. Once they confirm, they’ll reach you on your mobile to arrange the details.`];
-    case 'awaiting_payment':return ['Confirmed — pay to secure it',`${who} has accepted your request. Pay by card to secure the booking; once it’s paid, they get your mobile to arrange the details.`];
-    case 'confirmed':return [b.paid?'Paid and secured':'Confirmed', b.paid
-      ?`Thank you — your payment is in, and ${who} has your mobile to arrange the details. If the service isn’t delivered, Trove refunds you in full.`
-      :`${who} has your mobile and will be in touch to arrange the details. You settle with them directly.`];
-    case 'completed':return ['Done','This booking is marked as done. We hope it was lovely.'];
-    case 'declined':return ['Not this time',`${who} can’t take this booking.${b.declineReason?` Their note: “${esc(b.declineReason)}”`:''}`];
-    case 'cancelled':return ['Cancelled',b.cancelledBy==='customer'?'You cancelled this booking.':`This booking was cancelled${b.cancelledBy==='provider'?' by '+who:''}.${b.declineReason?` “${esc(b.declineReason)}”`:''}`];
+    case 'requested':return [_t('Waiting for {who}',{who}), b.paymentMethod==='trove'
+      ?_t('Your request is with {who}. Nothing is charged yet — once they confirm the date and price, we email you a secure link to pay.',{who})
+      :_t('Your request is with {who}. Once they confirm, they’ll reach you on your mobile to arrange the details.',{who})];
+    case 'awaiting_payment':return [_t('Confirmed — pay to secure it'),_t('{who} has accepted your request. Pay by card to secure the booking; once it’s paid, they get your mobile to arrange the details.',{who})];
+    case 'confirmed':return [b.paid?_t('Paid and secured'):_t('Confirmed'), b.paid
+      ?_t('Thank you — your payment is in, and {who} has your mobile to arrange the details. If the service isn’t delivered, Trove refunds you in full.',{who})
+      :_t('{who} has your mobile and will be in touch to arrange the details. You settle with them directly.',{who})];
+    case 'completed':return [_t('Done'),_t('This booking is marked as done. We hope it was lovely.')];
+    case 'declined':return [_t('Not this time'),_t('{who} can’t take this booking.',{who})+(b.declineReason?' '+_t('Their note: “{note}”',{note:esc(b.declineReason)}):'')];
+    case 'cancelled':return [_t('Cancelled'),(b.cancelledBy==='customer'?_t('You cancelled this booking.'):b.cancelledBy==='provider'?_t('This booking was cancelled by {who}.',{who}):_t('This booking was cancelled.'))+(b.cancelledBy!=='customer'&&b.declineReason?` “${esc(b.declineReason)}”`:'')];
     default:return [esc(b.status),''];
   }
 }
 function renderBookingView(){
   const b=BV.b;const [h,lede]=bvHeadline(b);
-  const rows=[['Service',esc(b.title)],['With',`<a href="/services/${esc(b.providerSlug)}" style="text-decoration:underline">${esc(b.providerName)}</a>`],['Where',esc(b.area)],
-    b.serviceDate?['Date',esc(fmtDay(b.serviceDate))]:(b.preferredDate?['You asked for',esc(b.preferredDate)]:null),
-    ['Price',b.amountCents?money(b.amountCents):priceLabel(b)],['Paying',esc(payWord(b))]].filter(Boolean);
+  const rows=[[_t('Service'),esc(b.title)],[_t('With'),`<a href="/services/${esc(b.providerSlug)}" style="text-decoration:underline">${esc(b.providerName)}</a>`],[_t('Where'),esc(_t(b.area))],
+    b.serviceDate?[_t('Date'),esc(fmtDay(b.serviceDate))]:(b.preferredDate?[_t('You asked for'),esc(b.preferredDate)]:null),
+    [_t('Price'),b.amountCents?money(b.amountCents):priceLabel(b)],[_t('Paying'),esc(payWord(b))]].filter(Boolean);
   let refundNote='';
-  if(b.refunded)refundNote=`<div class="bv-flag">${money(b.refundCents||b.amountCents)} is on its way back to your card. Depending on your bank it can take 5–10 business days to appear.</div>`;
-  else if(b.paid&&['cancelled','declined'].includes(b.status))refundNote='<div class="bv-flag warm">You paid for this booking, so it will be refunded in full — you’ll get an email when it’s done.</div>';
+  if(b.refunded)refundNote=`<div class="bv-flag">${_t('{amount} is on its way back to your card. Depending on your bank it can take 5–10 business days to appear.',{amount:money(b.refundCents||b.amountCents)})}</div>`;
+  else if(b.paid&&['cancelled','declined'].includes(b.status))refundNote=`<div class="bv-flag warm">${_t('You paid for this booking, so it will be refunded in full — you’ll get an email when it’s done.')}</div>`;
   let pay='';
   if(b.status==='awaiting_payment'&&!b.paid){
     pay=b.canPay?`<div class="bv-pay"><div class="bv-amount">${money(b.amountCents)}</div>
       <div id="bv-payment-element"></div><div class="bv-status" id="bvPayStatus"></div>
-      <button class="submit" id="bvPayBtn" onclick="payBooking()">Pay by card</button>
-      <div class="bv-note">Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a>.</div></div>`
-      :'<div class="bv-flag warm">Card payment isn’t available right now — please try again a little later.</div>';
+      <button class="submit" id="bvPayBtn" onclick="payBooking()">${_t('Pay by card')}</button>
+      <div class="bv-note">${_t('Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a>.')}</div></div>`
+      :`<div class="bv-flag warm">${_t('Card payment isn’t available right now — please try again a little later.')}</div>`;
   }
-  $('bvCard').innerHTML=`<div class="kick">BOOKING ${esc(b.code)}</div><${BV_H}>${h}</${BV_H}><p class="lede">${lede}</p>
+  $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')} <bdi>${esc(b.code)}</bdi></div><${BV_H}>${h}</${BV_H}><p class="lede">${lede}</p>
     <div class="bv-rows">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>
     ${refundNote}${pay}
-    ${b.canCancel?`<button class="bv-cancel" onclick="cancelFromLink()">Cancel this booking</button>`:''}
-    ${!b.canCancel&&['confirmed','awaiting_payment'].includes(b.status)?'<div class="bv-note">The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.</div>':''}`;
+    ${b.canCancel?`<button class="bv-cancel" onclick="cancelFromLink()">${_t('Cancel this booking')}</button>`:''}
+    ${!b.canCancel&&['confirmed','awaiting_payment'].includes(b.status)?`<div class="bv-note">${_t('The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.')}</div>`:''}`;
 }
 async function mountBookingPay(){
   const st=$('bvPayStatus'),btn=$('bvPayBtn');if(!st)return;
-  st.textContent='Preparing secure payment…';btn.disabled=true;
+  st.textContent=_t('Preparing secure payment…');btn.disabled=true;
   try{
-    if(!TroveAPI.stripeKey)throw new Error('Card payments are unavailable on this page right now — please try again later.');
+    if(!TroveAPI.stripeKey)throw new Error(_t('Card payments are unavailable on this page right now — please try again later.'));
     const s=await TroveAPI.api(`/api/services/booking/${encodeURIComponent(BV.code)}/pay`,{method:'POST',body:{t:BV.t}});
     await loadStripeJs();
     if(!bvStripe)bvStripe=window.Stripe(TroveAPI.stripeKey);
     bvElements=bvStripe.elements({clientSecret:s.clientSecret});
     bvElements.create('payment').mount('#bv-payment-element');
-    st.textContent='';btn.textContent='Pay '+money(s.amountCents);btn.disabled=false;
-  }catch(e){st.textContent=e.message||'The payment form could not load — please try again.';btn.disabled=false;btn.textContent='Try again';}
+    st.textContent='';btn.textContent=_t('Pay {amount}',{amount:money(s.amountCents)});btn.disabled=false;
+  }catch(e){st.textContent=e.message||_t('The payment form could not load — please try again.');btn.disabled=false;btn.textContent=_t('Try again');}
 }
 async function payBooking(){
   if(!bvElements)return mountBookingPay();
   const st=$('bvPayStatus'),btn=$('bvPayBtn');
   btn.disabled=true;st.textContent='';
-  const back=`${location.origin}/services/booking/${BV.code}?t=${BV.t}`;
+  const back=location.origin+troveUrl(`/services/booking/${BV.code}?t=${BV.t}`);
   const {error}=await bvStripe.confirmPayment({elements:bvElements,confirmParams:{return_url:back},redirect:'if_required'});
   if(error){st.textContent=error.message;btn.disabled=false;return;}
   waitForPaid();
 }
 /* The webhook marks the booking paid a moment after the card goes through. */
 async function waitForPaid(){
-  const st=$('bvPayStatus');if(st)st.textContent='Payment received — confirming your booking…';
+  const st=$('bvPayStatus');if(st)st.textContent=_t('Payment received — confirming your booking…');
   for(let i=0;i<20;i++){
     try{if((await fetchBooking()).paid)break;}catch(_){}
     await new Promise(r=>setTimeout(r,1500));
   }
   renderBookingView();
-  if(!BV.b.paid)$('bvCard').insertAdjacentHTML('beforeend','<div class="bv-flag">Your payment is being confirmed — this can take a minute. We’ll email you as soon as it’s done.</div>');
+  if(!BV.b.paid)$('bvCard').insertAdjacentHTML('beforeend',`<div class="bv-flag">${_t('Your payment is being confirmed — this can take a minute. We’ll email you as soon as it’s done.')}</div>`);
 }
 async function cancelFromLink(){
   const b=BV.b;
-  if(!confirm(b.paid?`Cancel this booking? The ${money(b.amountCents)} you paid comes back to your card in full.`:'Cancel this booking?'))return;
+  if(!confirm(b.paid?_t('Cancel this booking? The {amount} you paid comes back to your card in full.',{amount:money(b.amountCents)}):_t('Cancel this booking?')))return;
   try{
     const r=await TroveAPI.api(`/api/services/booking/${encodeURIComponent(BV.code)}/cancel`,{method:'POST',body:{t:BV.t}});
     BV.b=r.booking;renderBookingView();
-    toast(r.refunded?'Booking cancelled — refund on its way':'Booking cancelled');
-  }catch(e){toast(e.message||'Could not cancel');}
+    toast(r.refunded?_t('Booking cancelled — refund on its way'):_t('Booking cancelled'));
+  }catch(e){toast(e.message||_t('Could not cancel'));}
 }
 
 /* ---------------- boot ---------------- */
@@ -1136,11 +1154,12 @@ async function loadMyBookings(){
   renderAuth();
   if(ME&&ME.user)await loadMyBookings();
   renderAll();
-  const bv=location.pathname.match(BV_RE), pay=location.pathname.match(PAY_RE);
+  const path=trovePath(location.pathname);
+  const bv=path.match(BV_RE), pay=path.match(PAY_RE);
   if(bv)return openBookingView(bv[1].toUpperCase(),new URLSearchParams(location.search).get('t')||'',false);
   if(pay)return openBookingView(pay[1],pay[2],true);
-  const m=location.pathname.match(PV_RE);
-  if(m){history.replaceState({provider:m[1]},'',location.pathname);await openProvider(m[1],false);}
+  const m=path.match(PV_RE);
+  if(m){history.replaceState({provider:m[1]},'',path);await openProvider(m[1],false);}
 })();
 </script>
 </body>

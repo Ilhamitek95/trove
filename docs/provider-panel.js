@@ -22,10 +22,13 @@
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const num = (n) => Number(n) || 0;
   const api = (p, o) => TroveAPI.api(p, o);
-  function money(c) { const n = (c || 0) / 100; return 'AED ' + (Number.isInteger(n) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { minimumFractionDigits: 2 })); }
-  function priceLabel(s) { if (s.priceType === 'from') return 'From ' + money(s.priceCents); if (s.priceType === 'hourly') return money(s.priceCents) + ' / hour'; return money(s.priceCents); }
-  function fmtDate(s) { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T') + 'Z'); return isNaN(d) ? s : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }); }
-  const SETTING_LABEL = { home: "At the customer's place", studio: 'At my studio', remote: 'Remote' };
+  // Interface text goes through _t()/_tn() (docs/api.js): Arabic on /ar pages.
+  // Prices sit in a left-to-right isolate there (troveMoney) so 'AED 120' never scrambles.
+  function money(c) { return troveMoney((c || 0) / 100); }
+  function priceLabel(s) { if (s.priceType === 'from') return _t('From {price}', { price: money(s.priceCents) }); if (s.priceType === 'hourly') return _t('{price} / hour', { price: money(s.priceCents) }); return money(s.priceCents); }
+  function fmtDate(s) { if (!s) return ''; const d = new Date(String(s).replace(' ', 'T') + 'Z'); return isNaN(d) ? s : troveDate(d, { day: 'numeric', month: 'short', year: 'numeric' }); }
+  const SETTING_LABEL = { home: _t("At the customer's place"), studio: _t('At my studio'), remote: _t('Remote') };
+  const SERVICE_STATUS = { live: _t('live'), hidden: _t('hidden'), draft: _t('draft') };
   const pct = () => (PP.provider && PP.provider.commissionPercent) || 10;
 
   const CSS = `
@@ -138,6 +141,9 @@
   .pp .pp-banner a,.pp .pp-bkbody a{padding:12px 0;margin:-12px 0}
 }
 @media(prefers-reduced-motion:reduce){.pp *,.pp-pv *{transition:none!important;animation:none!important}}
+/* Arabic (right to left): codes, IBANs and numbers read left to right */
+[dir="rtl"] .pp .iban,[dir="rtl"] .pp .code,[dir="rtl"] .pp .amt{direction:ltr;unicode-bidi:isolate}
+[dir="rtl"] .pp #ppPayIban,[dir="rtl"] .pp input[type="number"]{direction:ltr;text-align:right}
 `;
   function injectCss() { if ($('ppCss')) return; const st = document.createElement('style'); st.id = 'ppCss'; st.textContent = CSS; document.head.appendChild(st); }
   function toast(m) {
@@ -176,31 +182,32 @@
   function renderOverview() {
     const el = PP.els.overview; if (!el || !PP.provider) return;
     const s = stats(); const st = PP.provider.status; const p = PP.provider;
-    const banner = st === 'pending' ? '<div class="pp-banner pending">Your services profile is with our curation team — usually a day or two. Add your services now and everything goes live the moment you’re approved.</div>'
-      : st === 'rejected' ? '<div class="pp-banner bad">This application wasn’t approved this time. If things have moved on — new work, new portfolio — get in touch and we’ll take another look.</div>'
-      : st === 'suspended' ? '<div class="pp-banner bad">Your services profile is suspended and your services are off the public page. Get in touch with the Trove team.</div>'
-      : `<div class="pp-banner good">You’re live — your services are on the public <a href="/services/${esc(p.slug)}" target="_blank" rel="noopener" style="text-decoration:underline">Services Marketplace</a>.</div>`;
+    const banner = st === 'pending' ? `<div class="pp-banner pending">${_t('Your services profile is with our curation team — usually a day or two. Add your services now and everything goes live the moment you’re approved.')}</div>`
+      : st === 'rejected' ? `<div class="pp-banner bad">${_t('This application wasn’t approved this time. If things have moved on — new work, new portfolio — get in touch and we’ll take another look.')}</div>`
+      : st === 'suspended' ? `<div class="pp-banner bad">${_t('Your services profile is suspended and your services are off the public page. Get in touch with the Trove team.')}</div>`
+      : `<div class="pp-banner good">${_t('You’re live — your services are on the public <a href="{url}" target="_blank" rel="noopener" style="text-decoration:underline">Services Marketplace</a>.', { url: troveUrl('/services/' + esc(p.slug)) })}</div>`;
     const fee = p.subscription ? p.subscription.feeCents : 3000;
     // Owner, 2026-09-30: free during launch — nothing is running or billed.
-    const subHint = `The ${esc(money(fee))}/month listing fee starts later; we'll give you 30 days' notice before it does. No commission on direct bookings; a ${pct()}% platform fee only on bookings paid through Trove.`;
+    const subHint = _t('The {fee}/month listing fee starts later; we\'ll give you 30 days\' notice before it does. No commission on direct bookings; a {pct}% platform fee only on bookings paid through Trove.', { fee: esc(money(fee)), pct: pct() });
     const earnLine = payoutsCard();
     const po = PP.payout;
     const payBanner = po && po.needsDetails
-      ? `<div class="pp-banner pending" id="ppPayBanner">You have a booking paid through Trove — add your bank details under <a href="#ppPayouts" onclick="ProviderPanel.focusPayouts(event)" style="text-decoration:underline">Payouts</a> so we can send your fee.</div>`
+      ? `<div class="pp-banner pending" id="ppPayBanner">${_t('You have a booking paid through Trove — add your bank details under <a href="#ppPayouts" onclick="ProviderPanel.focusPayouts(event)" style="text-decoration:underline">Payouts</a> so we can send your fee.')}</div>`
       : '';
     const ag = p.agreement || {};
+    const agUrl = troveUrl('/provider-agreement');
     const agLine = ag.version
-      ? `<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement ${esc(ag.version)}</a> accepted ${fmtDate(ag.acceptedAt)} — your services are your own responsibility; Trove lists them.`
-      : `<a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — your services are your own responsibility; Trove lists them.`;
+      ? _t('<a href="{url}" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement {version}</a> accepted {date} — your services are your own responsibility; Trove lists them.', { url: agUrl, version: esc(ag.version), date: fmtDate(ag.acceptedAt) })
+      : _t('<a href="{url}" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — your services are your own responsibility; Trove lists them.', { url: agUrl });
     el.innerHTML = `<div class="pp">${payBanner}${banner}
       <div class="pp-cards">
-        <div class="pp-stat"><div class="k">Live services</div><div class="v">${num(s.live)}</div><div class="n">of ${num(s.total)} listed</div></div>
-        <div class="pp-stat"><div class="k">New requests</div><div class="v">${num(s.open)}</div><div class="n">waiting for your reply</div></div>
-        <div class="pp-stat"><div class="k">Confirmed</div><div class="v">${num(s.upcoming)}</div><div class="n">bookings ahead</div></div>
-        <div class="pp-stat"><div class="k">Completed</div><div class="v">${num(s.done)}</div><div class="n">services delivered</div></div>
+        <div class="pp-stat"><div class="k">${_t('Live services')}</div><div class="v">${num(s.live)}</div><div class="n">${_t('of {n} listed', { n: num(s.total) })}</div></div>
+        <div class="pp-stat"><div class="k">${_t('New requests')}</div><div class="v">${num(s.open)}</div><div class="n">${_t('waiting for your reply')}</div></div>
+        <div class="pp-stat"><div class="k">${_t('Confirmed')}</div><div class="v">${num(s.upcoming)}</div><div class="n">${_t('bookings ahead')}</div></div>
+        <div class="pp-stat"><div class="k">${_t('Completed')}</div><div class="v">${num(s.done)}</div><div class="n">${_t('services delivered')}</div></div>
       </div>
-      <div class="pp-card"><h3>Your listing fee</h3>
-        <div class="pp-fee">Free <small>during launch</small></div>
+      <div class="pp-card"><h3>${_t('Your listing fee')}</h3>
+        <div class="pp-fee">${_t('Free <small>during launch</small>')}</div>
         <div class="pp-hint" style="margin-top:8px">${subHint}</div>
         <div class="pp-hint" style="margin:0">${agLine}</div>
       </div>${earnLine}${profileCard()}</div>`;
@@ -213,15 +220,15 @@
    * Consultancy) on Trove's behalf. The server only ever sends the masked
    * IBAN; "Use my shop's bank details" copies them server-side. */
   function creditStatus(c) {
-    if (c.status === 'paid') return `<span class="st paid">Paid on ${esc(fmtDay(c.paidOn))}${c.reference ? ` · reference ${esc(c.reference)}` : ''}${c.payer ? ` · from ${esc(c.payer)}` : ''}</span>`;
+    if (c.status === 'paid') return `<span class="st paid">${_t('Paid on {date}', { date: esc(fmtDay(c.paidOn)) })}${c.reference ? ' · ' + _t('reference {ref}', { ref: troveIso(esc(c.reference)) }) : ''}${c.payer ? ' · ' + _t('from {payer}', { payer: esc(c.payer) }) : ''}</span>`;
     if (c.status === 'ready') {
       return c.payoutOn && c.payoutOn <= todayIso()
-        ? `<span class="st">Ready · in this fortnight’s transfers (run of ${esc(fmtDay(c.payoutOn))})</span>`
-        : `<span class="st">Ready for the next payout${c.payoutOn ? ` · ${esc(fmtDay(c.payoutOn))}` : ''}</span>`;
+        ? `<span class="st">${_t('Ready · in this fortnight’s transfers (run of {date})', { date: esc(fmtDay(c.payoutOn)) })}</span>`
+        : `<span class="st">${_t('Ready for the next payout')}${c.payoutOn ? ` · ${esc(fmtDay(c.payoutOn))}` : ''}</span>`;
     }
-    if (c.status === 'refunded') return '<span class="st">Refunded to the customer — no fee is due</span>';
-    if (c.status === 'deducted') return '<span class="st">Deducted from your next transfer (a paid booking was later refunded)</span>';
-    return `<span class="st">Pending (provisional, may change if cancelled)${c.readyOn ? ` · ready on ${esc(fmtDay(c.readyOn))}` : ''}${c.payoutOn ? ` · expected payout ${esc(fmtDay(c.payoutOn))}` : ''}</span>`;
+    if (c.status === 'refunded') return `<span class="st">${_t('Refunded to the customer — no fee is due')}</span>`;
+    if (c.status === 'deducted') return `<span class="st">${_t('Deducted from your next transfer (a paid booking was later refunded)')}</span>`;
+    return `<span class="st">${_t('Pending (provisional, may change if cancelled)')}${c.readyOn ? ' · ' + _t('ready on {date}', { date: esc(fmtDay(c.readyOn)) }) : ''}${c.payoutOn ? ' · ' + _t('expected payout {date}', { date: esc(fmtDay(c.payoutOn)) }) : ''}</span>`;
   }
   function payoutsCard() {
     const po = PP.payout; if (!po) return '';
@@ -230,41 +237,41 @@
     const ready = num(e.readyCents != null ? e.readyCents : e.payableCents);
     const owed = provisional + ready;
     const d = po.details;
-    const payerLine = `Your fee is paid by bank transfer from ${esc(po.payerName)} on Trove’s behalf — look for that name on your statement.`;
+    const payerLine = _t('Your fee is paid by bank transfer from {payer} on Trove’s behalf — look for that name on your statement.', { payer: esc(po.payerName) });
     const shopBtn = po.shopDetails
-      ? `<button type="button" class="pp-btn pp-ghost" id="ppPayShop" onclick="ProviderPanel.usePayoutShop()">Use my shop’s bank details (${esc(po.shopDetails.bankName)} · ${esc(po.shopDetails.iban)})</button>`
+      ? `<button type="button" class="pp-btn pp-ghost" id="ppPayShop" onclick="ProviderPanel.usePayoutShop()">${_t('Use my shop’s bank details ({bank} · {iban})', { bank: esc(po.shopDetails.bankName), iban: troveIso(esc(po.shopDetails.iban)) })}</button>`
       : '';
     const bank = d && !PP.payoutEditing
-      ? `<div class="pp-bank" id="ppPayView"><div class="grow"><b>${esc(d.accountName)}</b> · ${esc(d.bankName)}<br><span class="iban">${esc(d.iban)}</span>${d.source === 'shop' ? ' · copied from your shop' : ''}${d.held ? '<br>You changed these recently — for your protection Trove checks a change before the next transfer goes to the new account (we may call you).' : ''}</div>
-          <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(true)">Change bank details</button></div>`
+      ? `<div class="pp-bank" id="ppPayView"><div class="grow"><b>${esc(d.accountName)}</b> · ${esc(d.bankName)}<br><span class="iban">${esc(d.iban)}</span>${d.source === 'shop' ? ' · ' + _t('copied from your shop') : ''}${d.held ? '<br>' + _t('You changed these recently — for your protection Trove checks a change before the next transfer goes to the new account (we may call you).') : ''}</div>
+          <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(true)">${_t('Change bank details')}</button></div>`
       : `<div id="ppPayForm">
           <div class="pp-err" id="ppPayErr" role="alert"></div>
           <div class="pp-two">
-            <div class="pp-field"><label for="ppPayHolder">Account holder name</label><input id="ppPayHolder" maxlength="120" autocomplete="name" placeholder="As it appears on your bank account"></div>
-            <div class="pp-field"><label for="ppPayBank">Bank name</label><input id="ppPayBank" maxlength="120" placeholder="e.g. Emirates NBD"></div>
+            <div class="pp-field"><label for="ppPayHolder">${_t('Account holder name')}</label><input id="ppPayHolder" maxlength="120" autocomplete="name" placeholder="${esc(_t('As it appears on your bank account'))}"></div>
+            <div class="pp-field"><label for="ppPayBank">${_t('Bank name')}</label><input id="ppPayBank" maxlength="120" placeholder="${esc(_t('e.g. Emirates NBD'))}"></div>
           </div>
           <div class="pp-field"><label for="ppPayIban">IBAN</label><input id="ppPayIban" maxlength="34" autocomplete="off" spellcheck="false" placeholder="AE07 0331 2345 6789 0123 456"></div>
-          <div class="pp-hint" style="margin-top:-4px">A UAE IBAN in your own name (AE followed by 21 digits). We store it encrypted and only ever show the last four digits.</div>
-          ${d && po.passwordToChange ? `<div class="pp-field"><label for="ppPayPw">Your Trove password — needed to change bank details</label><input id="ppPayPw" type="password" autocomplete="current-password"></div>` : ''}
-          ${d ? '<div class="pp-hint" style="margin-top:-4px">We email you whenever your bank details change, and the next transfer to a new account waits until Trove has checked it.</div>' : ''}
-          <div class="pp-actions" style="flex-wrap:wrap">${shopBtn}${d ? '<button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(false)">Cancel</button>' : ''}
-            <button type="button" class="pp-btn pp-dark" id="ppPaySave" onclick="ProviderPanel.savePayout()">Save bank details</button></div>
+          <div class="pp-hint" style="margin-top:-4px">${_t('A UAE IBAN in your own name (AE followed by 21 digits). We store it encrypted and only ever show the last four digits.')}</div>
+          ${d && po.passwordToChange ? `<div class="pp-field"><label for="ppPayPw">${_t('Your Trove password — needed to change bank details')}</label><input id="ppPayPw" type="password" autocomplete="current-password"></div>` : ''}
+          ${d ? `<div class="pp-hint" style="margin-top:-4px">${_t('We email you whenever your bank details change, and the next transfer to a new account waits until Trove has checked it.')}</div>` : ''}
+          <div class="pp-actions" style="flex-wrap:wrap">${shopBtn}${d ? `<button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.editPayout(false)">${_t('Cancel')}</button>` : ''}
+            <button type="button" class="pp-btn pp-dark" id="ppPaySave" onclick="ProviderPanel.savePayout()">${_t('Save bank details')}</button></div>
         </div>`;
     const list = (po.credits || []).length
       ? (po.credits || []).map((c) => `<div class="pp-cr"><div class="grow"><b>${esc(c.title)}</b> <span class="code">${esc(c.code)}</span>${c.serviceDate ? ` · ${esc(fmtDay(c.serviceDate))}` : ''}</div>
           <span class="amt">${c.amountCents < 0 ? '−' + esc(money(-c.amountCents)) : esc(money(c.amountCents))}</span>${creditStatus(c)}</div>`).join('')
-      : '<div class="pp-empty">No fees yet. When a customer pays for a booking through Trove, your fee appears here with the date it becomes payable.</div>';
+      : `<div class="pp-empty">${_t('No fees yet. When a customer pays for a booking through Trove, your fee appears here with the date it becomes payable.')}</div>`;
     const grace = po.graceDays != null ? num(po.graceDays) : 3;
-    const sched = String(po.schedule || 'Every other Tuesday');
+    const sched = String(po.schedule ? _t(po.schedule) : _t('Every other Tuesday'));
     const summary = owed || num(e.paidCents) ? `<div class="pp-two" style="margin-bottom:6px">
-        <div><div class="pp-fee">${esc(money(provisional))}</div><div class="pp-hint" style="margin:2px 0 0">Pending (provisional, may change if cancelled)</div></div>
-        <div><div class="pp-fee">${esc(money(ready))}</div><div class="pp-hint" style="margin:2px 0 0">Ready for next payout${ready > 0 && e.nextPayoutDate ? ` · expected ${esc(fmtDay(e.nextPayoutDate))}` : ''}</div></div>
-      </div>${num(e.paidCents) ? `<div class="pp-hint">${esc(money(num(e.paidCents)))} paid to you so far.</div>` : ''}` : '';
-    return `<div class="pp-card" id="ppPayouts" tabindex="-1"><h3>Payouts</h3>
-      <div class="pp-hint">${payerLine} A fee is provisional until the service date has passed and a ${grace}-day window for any complaint or cancellation has closed. It is then paid on the next payout day (${esc(sched)}), the same days Trove pays its makers.</div>
+        <div><div class="pp-fee">${esc(money(provisional))}</div><div class="pp-hint" style="margin:2px 0 0">${_t('Pending (provisional, may change if cancelled)')}</div></div>
+        <div><div class="pp-fee">${esc(money(ready))}</div><div class="pp-hint" style="margin:2px 0 0">${_t('Ready for next payout')}${ready > 0 && e.nextPayoutDate ? ' · ' + _t('expected {date}', { date: esc(fmtDay(e.nextPayoutDate)) }) : ''}</div></div>
+      </div>${num(e.paidCents) ? `<div class="pp-hint">${_t('{amount} paid to you so far.', { amount: esc(money(num(e.paidCents))) })}</div>` : ''}` : '';
+    return `<div class="pp-card" id="ppPayouts" tabindex="-1"><h3>${_t('Payouts')}</h3>
+      <div class="pp-hint">${payerLine} ${_t('A fee is provisional until the service date has passed and a {days}-day window for any complaint or cancellation has closed. It is then paid on the next payout day ({schedule}), the same days Trove pays its makers.', { days: grace, schedule: esc(sched) })}</div>
       ${summary}
-      <div class="pp-sub">Bank details</div>${bank}
-      <div class="pp-sub">Your fees</div>${list}
+      <div class="pp-sub">${_t('Bank details')}</div>${bank}
+      <div class="pp-sub">${_t('Your fees')}</div>${list}
     </div>`;
   }
   function editPayout(on) { PP.payoutEditing = !!on; renderOverview(); const f = $(on ? 'ppPayHolder' : 'ppPayouts'); if (f) f.focus(); }
@@ -282,9 +289,9 @@
     try {
       PP.payout = await api('/api/provider/payout', { method: 'PUT', body });
       PP.payoutEditing = false;
-      toast('Bank details saved'); renderOverview();
+      toast(_t('Bank details saved')); renderOverview();
       return;
-    } catch (e) { show(e.message || 'Could not save — try again.'); }
+    } catch (e) { show(e.message || _t('Could not save — try again.')); }
     const b2 = $(btnId); if (b2) { b2.disabled = false; b2.textContent = label; }
   }
   function savePayout() {
@@ -292,17 +299,17 @@
     const iban = $('ppPayIban').value.replace(/\s+/g, '').toUpperCase();
     const err = $('ppPayErr');
     const show = (m) => { err.textContent = m; err.style.display = 'block'; };
-    if (!holder || !bank) return show('Add the account holder name and the bank name.');
-    if (!/^AE\d{21}$/.test(iban)) return show('Enter a valid UAE IBAN (AE followed by 21 digits).');
+    if (!holder || !bank) return show(_t('Add the account holder name and the bank name.'));
+    if (!/^AE\d{21}$/.test(iban)) return show(_t('Enter a valid UAE IBAN (AE followed by 21 digits).'));
     const body = { accountName: holder, bankName: bank, iban };
     if (!withPassword(body, show)) return undefined;
-    return putPayout(body, 'ppPaySave', 'Saving…');
+    return putPayout(body, 'ppPaySave', _t('Saving…'));
   }
   // Changing details already on file asks for the account password again.
   function withPassword(body, show) {
     const pw = $('ppPayPw');
     if (!pw) return true;
-    if (!pw.value) { show('Enter your Trove password to change your bank details.'); pw.focus(); return false; }
+    if (!pw.value) { show(_t('Enter your Trove password to change your bank details.')); pw.focus(); return false; }
     body.currentPassword = pw.value;
     return true;
   }
@@ -310,7 +317,7 @@
     const body = { useShop: true };
     const err = $('ppPayErr');
     if (!withPassword(body, (m) => { if (err) { err.textContent = m; err.style.display = 'block'; } else toast(m); })) return undefined;
-    return putPayout(body, 'ppPayShop', 'Copying…');
+    return putPayout(body, 'ppPayShop', _t('Copying…'));
   }
 
   /* ---------------- public profile (name, story, categories) ----------------
@@ -327,23 +334,23 @@
         `<button type="button" class="pp-catopt ${PROF_CATS.includes(c.slug) ? 'on' : ''}" data-slug="${esc(c.slug)}" aria-pressed="${PROF_CATS.includes(c.slug)}" onclick="ProviderPanel.toggleProfCat(${esc(JSON.stringify(c.slug))})">${esc(c.name)}</button>`).join('')}</div>`;
     }).join('') : '';
     return `<div class="pp-card" id="ppProfile">
-      <div class="pp-profhead"><div><h3 id="ppProfTitle">Your public page</h3>
-        <div class="pp-hint" style="margin-bottom:0">What customers read on the Services Marketplace${live ? '' : ' once you’re approved'}.</div></div>
+      <div class="pp-profhead"><div><h3 id="ppProfTitle">${_t('Your public page')}</h3>
+        <div class="pp-hint" style="margin-bottom:0">${live ? _t('What customers read on the Services Marketplace.') : _t('What customers read on the Services Marketplace once you’re approved.')}</div></div>
         <div class="pp-proflinks">
-          <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.openPreview()">Preview your page</button>
-          ${live ? `<a class="pp-btn pp-ghost" href="/services/${esc(encodeURIComponent(p.slug))}" target="_blank" rel="noopener">View it live ↗</a>` : ''}
+          <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.openPreview()">${_t('Preview your page')}</button>
+          ${live ? `<a class="pp-btn pp-ghost" href="${troveUrl('/services/' + esc(encodeURIComponent(p.slug)))}" target="_blank" rel="noopener">${_t('View it live ↗')}</a>` : ''}
         </div></div>
       <div class="pp-err" id="ppProfErr" role="alert" style="margin-top:12px"></div>
-      <div class="pp-field" style="margin-top:14px"><label for="ppProfName">Practice name</label><input id="ppProfName" maxlength="60" value="${esc(p.name)}"></div>
-      <div class="pp-field"><label for="ppProfBio">Your story</label><textarea id="ppProfBio" maxlength="2000" placeholder="Who you are, what you do and how you work — a few honest sentences.">${esc(p.bio || '')}</textarea></div>
-      <div class="pp-field"><label id="ppProfCatLbl">Categories <span style="text-transform:none;letter-spacing:0;font-weight:600">· one to three</span></label>
+      <div class="pp-field" style="margin-top:14px"><label for="ppProfName">${_t('Practice name')}</label><input id="ppProfName" maxlength="60" value="${esc(p.name)}"></div>
+      <div class="pp-field"><label for="ppProfBio">${_t('Your story')}</label><textarea id="ppProfBio" maxlength="2000" placeholder="${esc(_t('Who you are, what you do and how you work — a few honest sentences.'))}">${esc(p.bio || '')}</textarea></div>
+      <div class="pp-field"><label id="ppProfCatLbl">${_t('Categories <span style="text-transform:none;letter-spacing:0;font-weight:600">· one to three</span>')}</label>
         <div role="group" aria-labelledby="ppProfCatLbl">${cats}</div></div>
-      <div class="pp-actions"><button type="button" class="pp-btn pp-dark" id="ppProfSave" onclick="ProviderPanel.saveProfile()">Save profile</button></div>
+      <div class="pp-actions"><button type="button" class="pp-btn pp-dark" id="ppProfSave" onclick="ProviderPanel.saveProfile()">${_t('Save profile')}</button></div>
     </div>`;
   }
   function toggleProfCat(slug) {
     if (PROF_CATS.includes(slug)) PROF_CATS = PROF_CATS.filter((s) => s !== slug);
-    else { if (PROF_CATS.length >= 3) { toast('Three categories is the limit — unpick one first'); return; } PROF_CATS.push(slug); }
+    else { if (PROF_CATS.length >= 3) { toast(_t('Three categories is the limit — unpick one first')); return; } PROF_CATS.push(slug); }
     // keep typed text: only the chips re-render
     document.querySelectorAll('#ppProfile .pp-catopt').forEach((b) => {
       const on = PROF_CATS.includes(b.dataset.slug);
@@ -354,16 +361,16 @@
     const err = $('ppProfErr'); err.style.display = 'none';
     const show = (m) => { err.textContent = m; err.style.display = 'block'; };
     const name = $('ppProfName').value.trim();
-    if (!name) return show('Your practice needs a name.');
-    if (!PROF_CATS.length) return show('Pick at least one category.');
-    const btn = $('ppProfSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    if (!name) return show(_t('Your practice needs a name.'));
+    if (!PROF_CATS.length) return show(_t('Pick at least one category.'));
+    const btn = $('ppProfSave'); btn.disabled = true; btn.textContent = _t('Saving…');
     try {
       const r = await api('/api/provider/me', { method: 'PATCH', body: { name, bio: $('ppProfBio').value.trim(), categories: PROF_CATS } });
       PP.provider = { ...PP.provider, ...r.provider }; PROF_CATS = (PP.provider.categories || []).slice();
-      toast('Profile saved'); renderOverview(); changed();
+      toast(_t('Profile saved')); renderOverview(); changed();
       if (PP.opts.onProfile) try { PP.opts.onProfile(PP.provider); } catch (_) {}
-    } catch (e) { show(e.message || 'Could not save — try again.'); }
-    const b2 = $('ppProfSave'); if (b2) { b2.disabled = false; b2.textContent = 'Save profile'; }
+    } catch (e) { show(e.message || _t('Could not save — try again.')); }
+    const b2 = $('ppProfSave'); if (b2) { b2.disabled = false; b2.textContent = _t('Save profile'); }
   }
 
   /* ---------------- preview of the public page ----------------
@@ -375,7 +382,7 @@
     let el = $('ppPv'); if (el) return el;
     el = document.createElement('div'); el.id = 'ppPv'; el.className = 'pp-pv';
     el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-labelledby', 'ppPvTitle'); el.setAttribute('aria-hidden', 'true');
-    el.innerHTML = '<div class="pv-back"></div><div class="pv-card"><div class="pv-top"><span>Customer preview</span><button type="button" class="pv-x" id="ppPvX" aria-label="Close preview"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div><div id="ppPvBody"></div></div>';
+    el.innerHTML = '<div class="pv-back"></div><div class="pv-card"><div class="pv-top"><span>' + _t('Customer preview') + '</span><button type="button" class="pv-x" id="ppPvX" aria-label="' + esc(_t('Close preview')) + '"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 6-12 12M6 6l12 12"/></svg></button></div><div id="ppPvBody"></div></div>';
     document.body.appendChild(el);
     el.querySelector('.pv-back').onclick = closePreview; $('ppPvX').onclick = closePreview;
     el.addEventListener('keydown', (e) => {
@@ -395,16 +402,16 @@
     const bio = $('ppProfBio') ? $('ppProfBio').value.trim() : (p.bio || '');
     const cats = (PROF_CATS || p.categories || []).map(catName);
     const live = PP.services.filter((s) => s.status === 'live');
-    const rib = p.status === 'approved' ? 'Preview — this is how customers see your page.' : 'Preview — not public yet. Your page and live services appear the moment Trove approves your profile.';
+    const rib = p.status === 'approved' ? _t('Preview — this is how customers see your page.') : _t('Preview — not public yet. Your page and live services appear the moment Trove approves your profile.');
     $('ppPvBody').innerHTML = `<div class="pv-rib">${rib}</div>
       <div class="pv-head"><div class="pv-av" style="background:${/^#[0-9a-f]{6}$/i.test(p.color || '') ? p.color : '#F2E9E4'}">${esc((name || '?')[0].toUpperCase())}</div>
         <h2 id="ppPvTitle">${esc(name)}</h2>${p.location ? `<div class="pv-loc">${esc(p.location)}</div>` : ''}
         ${cats.length ? `<div class="pv-chips">${cats.map((c) => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
-        ${bio ? `<p class="pv-bio">${esc(bio)}</p>` : '<p class="pv-bio" style="color:var(--muted,rgba(41,39,39,.72))">No story yet — add a few sentences under Your public page.</p>'}</div>
-      <h3>What ${esc(name)} offers</h3>
+        ${bio ? `<p class="pv-bio">${esc(bio)}</p>` : `<p class="pv-bio" style="color:var(--muted,rgba(41,39,39,.72))">${_t('No story yet — add a few sentences under Your public page.')}</p>`}</div>
+      <h3>${_t('What {name} offers', { name: esc(name) })}</h3>
       ${live.length ? live.map((s) => `<div class="pv-svc"><b>${esc(s.title)}</b><div class="pv-meta">${esc(catName(s.category))} · ${esc(SETTING_LABEL[s.setting] || '')}${s.duration ? ' · ' + esc(s.duration) : ''}</div><div class="pv-price">${priceLabel(s)}</div>${s.description ? `<div class="pv-desc">${esc(s.description)}</div>` : ''}</div>`).join('')
-        : '<p class="pv-note" style="margin-top:0">No live services yet — add one under My services and set it to live.</p>'}
-      <p class="pv-note">Customers send a booking request from this page. Your email and phone are never shown.</p>`;
+        : `<p class="pv-note" style="margin-top:0">${_t('No live services yet — add one under My services and set it to live.')}</p>`}
+      <p class="pv-note">${_t('Customers send a booking request from this page. Your email and phone are never shown.')}</p>`;
     PV_RET = document.activeElement;
     el.classList.add('open'); el.removeAttribute('aria-hidden'); document.body.style.overflow = 'hidden';
     el.querySelector('.pv-card').scrollTop = 0;
@@ -419,31 +426,31 @@
   /* ---------------- services ---------------- */
   function editorMarkup() {
     return `<div class="pp-card" id="ppEditor" role="region" aria-labelledby="ppEdTitle" style="display:none">
-      <h3 id="ppEdTitle" tabindex="-1">Add a service</h3>
-      <div class="pp-hint">Set the price the way you charge — a fixed price, a starting price, or per hour. Direct bookings carry no commission; bookings paid through Trove carry a ${pct()}% platform fee.</div>
+      <h3 id="ppEdTitle" tabindex="-1">${_t('Add a service')}</h3>
+      <div class="pp-hint">${_t('Set the price the way you charge — a fixed price, a starting price, or per hour. Direct bookings carry no commission; bookings paid through Trove carry a {pct}% platform fee.', { pct: pct() })}</div>
       <div class="pp-err" id="ppEdErr" role="alert"></div>
-      <div class="pp-field"><label for="ppEdName">Service name</label><input id="ppEdName" maxlength="90" placeholder="e.g. Pottery hand-building workshop at your home"></div>
+      <div class="pp-field"><label for="ppEdName">${_t('Service name')}</label><input id="ppEdName" maxlength="90" placeholder="${esc(_t('e.g. Pottery hand-building workshop at your home'))}"></div>
       <div class="pp-two">
-        <div class="pp-field"><label for="ppEdCat">Category</label><select id="ppEdCat"></select></div>
-        <div class="pp-field"><label for="ppEdSetting">Where does it happen?</label>
-          <select id="ppEdSetting"><option value="home">At the customer's place</option><option value="studio">At my studio</option><option value="remote">Remote</option></select></div>
+        <div class="pp-field"><label for="ppEdCat">${_t('Category')}</label><select id="ppEdCat"></select></div>
+        <div class="pp-field"><label for="ppEdSetting">${_t('Where does it happen?')}</label>
+          <select id="ppEdSetting"><option value="home">${esc(SETTING_LABEL.home)}</option><option value="studio">${esc(SETTING_LABEL.studio)}</option><option value="remote">${esc(SETTING_LABEL.remote)}</option></select></div>
       </div>
       <div class="pp-three">
-        <div class="pp-field"><label for="ppEdPrice">Price (AED)</label><input id="ppEdPrice" type="number" min="1" step="0.01" inputmode="decimal" placeholder="350"></div>
-        <div class="pp-field"><label for="ppEdPriceType">Price works as</label>
-          <select id="ppEdPriceType"><option value="fixed">Fixed price</option><option value="from">Starting price</option><option value="hourly">Per hour</option></select></div>
-        <div class="pp-field"><label for="ppEdDuration">How long? <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span></label><input id="ppEdDuration" maxlength="60" placeholder="e.g. 2–3 hours"></div>
+        <div class="pp-field"><label for="ppEdPrice">${_t('Price (AED)')}</label><input id="ppEdPrice" type="number" min="1" step="0.01" inputmode="decimal" placeholder="350"></div>
+        <div class="pp-field"><label for="ppEdPriceType">${_t('Price works as')}</label>
+          <select id="ppEdPriceType"><option value="fixed">${_t('Fixed price')}</option><option value="from">${_t('Starting price')}</option><option value="hourly">${_t('Per hour')}</option></select></div>
+        <div class="pp-field"><label for="ppEdDuration">${_t('How long? <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>')}</label><input id="ppEdDuration" maxlength="60" placeholder="${esc(_t('e.g. 2–3 hours'))}"></div>
       </div>
-      <div class="pp-field"><label for="ppEdDesc">Description</label><textarea id="ppEdDesc" maxlength="2000" placeholder="What's included, what you bring, how many people it suits, how booking works."></textarea></div>
+      <div class="pp-field"><label for="ppEdDesc">${_t('Description')}</label><textarea id="ppEdDesc" maxlength="2000" placeholder="${esc(_t("What's included, what you bring, how many people it suits, how booking works."))}"></textarea></div>
       <div class="pp-actions">
-        <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.closeEditor()">Cancel</button>
-        <button class="pp-btn pp-dark" id="ppEdSave" onclick="ProviderPanel.saveService()">Save service</button>
+        <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.closeEditor()">${_t('Cancel')}</button>
+        <button class="pp-btn pp-dark" id="ppEdSave" onclick="ProviderPanel.saveService()">${_t('Save service')}</button>
       </div>
     </div>
     <div class="pp-card">
-      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1"><h3>My services</h3>
-      <div class="pp-hint">Live services appear on the public Services Marketplace as soon as your profile is approved. Hide one to take it off without deleting it.</div></div>
-      <button class="pp-btn pp-dark" onclick="ProviderPanel.openEditor()">+ Add a service</button></div>
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap"><div style="flex:1"><h3>${_t('My services')}</h3>
+      <div class="pp-hint">${_t('Live services appear on the public Services Marketplace as soon as your profile is approved. Hide one to take it off without deleting it.')}</div></div>
+      <button class="pp-btn pp-dark" onclick="ProviderPanel.openEditor()">${_t('+ Add a service')}</button></div>
       <div id="ppSvList"></div>
     </div>`;
   }
@@ -458,18 +465,18 @@
       <div class="pp-row">
         <div class="grow"><div class="t">${esc(s.title)}</div>
           <div class="s">${esc(catName(s.category))} · ${priceLabel(s)}${s.duration ? ` · ${esc(s.duration)}` : ''} · ${esc(SETTING_LABEL[s.setting] || '')}</div></div>
-        <span class="pp-pill ${esc(s.status)}">${esc(s.status)}</span>
-        <button class="pp-link" aria-label="Edit ${esc(s.title)}" onclick="ProviderPanel.openEditor(${num(s.id)})">Edit</button>
-        <button class="pp-link" aria-label="${s.status === 'live' ? 'Hide' : 'Make live'} ${esc(s.title)}" onclick="ProviderPanel.toggleLive(${num(s.id)})">${s.status === 'live' ? 'Hide' : 'Make live'}</button>
-        <button class="pp-link" aria-label="Delete ${esc(s.title)}" onclick="ProviderPanel.deleteService(${num(s.id)})">Delete</button>
+        <span class="pp-pill ${esc(s.status)}">${esc(SERVICE_STATUS[s.status] || s.status)}</span>
+        <button class="pp-link" aria-label="${esc(_t('Edit {title}', { title: s.title }))}" onclick="ProviderPanel.openEditor(${num(s.id)})">${_t('Edit')}</button>
+        <button class="pp-link" aria-label="${esc(s.status === 'live' ? _t('Hide {title}', { title: s.title }) : _t('Make live {title}', { title: s.title }))}" onclick="ProviderPanel.toggleLive(${num(s.id)})">${s.status === 'live' ? _t('Hide') : _t('Make live')}</button>
+        <button class="pp-link" aria-label="${esc(_t('Delete {title}', { title: s.title }))}" onclick="ProviderPanel.deleteService(${num(s.id)})">${_t('Delete')}</button>
       </div>`).join('')
-      : '<div class="pp-empty">Nothing listed yet — add your first service and it’s ready the moment you’re approved.</div>';
+      : `<div class="pp-empty">${_t('Nothing listed yet — add your first service and it’s ready the moment you’re approved.')}</div>`;
   }
   function openEditor(id) {
     const ed = $('ppEditor'); if (!ed) return;
     PP.editing = id ? PP.services.find((s) => s.id === id) : null;
     const E = PP.editing;
-    $('ppEdTitle').textContent = E ? 'Edit service' : 'Add a service';
+    $('ppEdTitle').textContent = E ? _t('Edit service') : _t('Add a service');
     $('ppEdErr').style.display = 'none';
     $('ppEdName').value = E ? E.title : '';
     $('ppEdCat').value = E ? E.category : ((PP.provider.categories || [])[0] || PP.tax.categories[0].slug);
@@ -496,98 +503,101 @@
     const err = $('ppEdErr'); err.style.display = 'none';
     const show = (m) => { err.textContent = m; err.style.display = 'block'; };
     const price = Math.round(Number($('ppEdPrice').value) * 100);
-    if (!$('ppEdName').value.trim()) return show('Give the service a name.');
-    if (!Number.isFinite(price) || price < 100) return show('Set a price of at least AED 1.');
+    if (!$('ppEdName').value.trim()) return show(_t('Give the service a name.'));
+    if (!Number.isFinite(price) || price < 100) return show(_t('Set a price of at least AED 1.'));
     const body = {
       title: $('ppEdName').value.trim(), category: $('ppEdCat').value,
       description: $('ppEdDesc').value.trim(), priceCents: price,
       priceType: $('ppEdPriceType').value, duration: $('ppEdDuration').value.trim(),
       setting: $('ppEdSetting').value,
     };
-    const btn = $('ppEdSave'); btn.disabled = true; btn.textContent = 'Saving…';
+    const btn = $('ppEdSave'); btn.disabled = true; btn.textContent = _t('Saving…');
     try {
       if (PP.editing) await api('/api/provider/services/' + PP.editing.id, { method: 'PATCH', body });
       else await api('/api/provider/services', { method: 'POST', body });
-      toast(PP.editing ? 'Service updated' : 'Service added');
+      toast(PP.editing ? _t('Service updated') : _t('Service added'));
       closeEditor();
       await reloadServices(); refresh();
-    } catch (e) { show(e.message || 'Could not save — try again.'); }
-    btn.disabled = false; btn.textContent = 'Save service';
+    } catch (e) { show(e.message || _t('Could not save — try again.')); }
+    btn.disabled = false; btn.textContent = _t('Save service');
   }
   async function toggleLive(id) {
     const s = PP.services.find((x) => x.id === id); if (!s) return;
     try {
       await api('/api/provider/services/' + id, { method: 'PATCH', body: { status: s.status === 'live' ? 'hidden' : 'live' } });
       await reloadServices(); refresh();
-    } catch (e) { toast(e.message || 'Could not update'); }
+    } catch (e) { toast(e.message || _t('Could not update')); }
   }
   async function deleteService(id) {
     const s = PP.services.find((x) => x.id === id);
-    if (!confirm(`Delete "${s ? s.title : 'this service'}"? This can't be undone.`)) return;
+    if (!confirm(_t('Delete “{title}”? This can\'t be undone.', { title: s ? s.title : _t('this service') }))) return;
     try {
       await api('/api/provider/services/' + id, { method: 'DELETE' });
-      toast('Service deleted');
+      toast(_t('Service deleted'));
       await reloadServices(); refresh();
-    } catch (e) { toast(e.message || 'Could not delete'); }
+    } catch (e) { toast(e.message || _t('Could not delete')); }
   }
 
   /* ---------------- bookings ---------------- */
-  const PILL = { requested: 'new request', awaiting_payment: 'awaiting payment', confirmed: 'confirmed', completed: 'done', declined: 'declined', cancelled: 'cancelled' };
+  const PILL = { requested: _t('new request'), awaiting_payment: _t('awaiting payment'), confirmed: _t('confirmed'), completed: _t('done'), declined: _t('declined'), cancelled: _t('cancelled') };
   function todayIso() { return new Date(Date.now() + 4 * 3600 * 1000).toISOString().slice(0, 10); }
-  function fmtDay(d) { const t = new Date(String(d) + 'T00:00:00Z'); return isNaN(t) ? String(d) : t.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); }
+  function fmtDay(d) { const t = new Date(String(d) + 'T00:00:00Z'); return isNaN(t) ? String(d) : troveDate(t, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); }
   // How the booking is paid. 'Paid through Trove' only once the money is in.
   function payLine(b) {
-    if (b.paymentMethod !== 'trove') return 'Settled directly with the customer';
-    const fee = b.amountCents ? `your fee ${money(b.providerNetCents)} after a ${pct()}% platform fee` : `your fee is the price less a ${pct()}% platform fee`;
-    if (b.refunded) return 'Refunded to the customer — no fee is due';
-    if (b.paid) return `<span class="pp-paid">Paid through Trove</span> · ${fee}`;
-    if (b.status === 'awaiting_payment') return `Awaiting the customer’s card payment · ${fee}`;
-    if (b.status === 'requested') return `The customer will pay through Trove by card once you confirm · ${fee}`;
-    return 'Not paid';
+    if (b.paymentMethod !== 'trove') return _t('Settled directly with the customer');
+    const fee = b.amountCents ? _t('your fee {fee} after a {pct}% platform fee', { fee: money(b.providerNetCents), pct: pct() }) : _t('your fee is the price less a {pct}% platform fee', { pct: pct() });
+    if (b.refunded) return _t('Refunded to the customer — no fee is due');
+    if (b.paid) return `<span class="pp-paid">${_t('Paid through Trove')}</span> · ${fee}`;
+    if (b.status === 'awaiting_payment') return `${_t('Awaiting the customer’s card payment')} · ${fee}`;
+    if (b.status === 'requested') return `${_t('The customer will pay through Trove by card once you confirm')} · ${fee}`;
+    return _t('Not paid');
   }
   function confirmForm(b) {
     const trove = b.paymentMethod === 'trove';
     const needPrice = trove && b.priceType !== 'fixed';
-    const priceHint = b.priceType === 'hourly' ? `hours × ${money(b.priceCents)}` : `from ${money(b.priceCents)}`;
+    const priceHint = b.priceType === 'hourly' ? _t('hours × {price}', { price: money(b.priceCents) }) : _t('from {price}', { price: money(b.priceCents) });
+    const optional = ' <span style="text-transform:none;letter-spacing:0;font-weight:600">' + _t('· optional') + '</span>';
     return `<div class="pp-confirm" id="ppCf${num(b.id)}">
       <div class="pp-err" id="ppCfErr${num(b.id)}" role="alert"></div>
       <div class="pp-two">
-        <div class="pp-field"><label for="ppCfDate${num(b.id)}">Service date${trove ? '' : ' <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>'}</label><input type="date" id="ppCfDate${num(b.id)}" min="${todayIso()}"></div>
-        ${needPrice ? `<div class="pp-field"><label for="ppCfPrice${num(b.id)}">Final price (AED) · ${esc(priceHint)}</label><input type="number" min="1" step="0.01" inputmode="decimal" id="ppCfPrice${num(b.id)}"></div>` : ''}
+        <div class="pp-field"><label for="ppCfDate${num(b.id)}">${_t('Service date')}${trove ? '' : optional}</label><input type="date" id="ppCfDate${num(b.id)}" min="${todayIso()}"></div>
+        ${needPrice ? `<div class="pp-field"><label for="ppCfPrice${num(b.id)}">${_t('Final price (AED) · {hint}', { hint: esc(priceHint) })}</label><input type="number" min="1" step="0.01" inputmode="decimal" id="ppCfPrice${num(b.id)}"></div>` : ''}
       </div>
       <div class="pp-hint" style="margin:0 0 10px">${trove
-        ? `The customer pays Trove this ${needPrice ? 'price' : `listed price (${money(b.priceCents)})`} by card through a secure link; you get their mobile once it’s paid. Your fee is the price less the ${pct()}% platform fee.`
-        : 'The customer settles with you directly. You get their mobile as soon as you confirm.'}</div>
+        ? (needPrice
+          ? _t('The customer pays Trove this price by card through a secure link; you get their mobile once it’s paid. Your fee is the price less the {pct}% platform fee.', { pct: pct() })
+          : _t('The customer pays Trove this listed price ({price}) by card through a secure link; you get their mobile once it’s paid. Your fee is the price less the {pct}% platform fee.', { price: money(b.priceCents), pct: pct() }))
+        : _t('The customer settles with you directly. You get their mobile as soon as you confirm.')}</div>
       <div class="pp-bkacts" style="margin-top:0">
-        <button class="pp-btn pp-green" onclick="ProviderPanel.sendConfirm(${num(b.id)})">Confirm booking</button>
-        <button class="pp-btn pp-ghost" onclick="ProviderPanel.openConfirm(null)">Back</button></div>
+        <button class="pp-btn pp-green" onclick="ProviderPanel.sendConfirm(${num(b.id)})">${_t('Confirm booking')}</button>
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.openConfirm(null)">${_t('Back')}</button></div>
     </div>`;
   }
   function bkCard(b) {
     const pay = payLine(b);
-    const when = b.serviceDate ? `<b>Date:</b> ${esc(fmtDay(b.serviceDate))}<br>` : (b.preferredDate ? `<b>When:</b> ${esc(b.preferredDate)}<br>` : '');
+    const when = b.serviceDate ? `<b>${_t('Date:')}</b> ${esc(fmtDay(b.serviceDate))}<br>` : (b.preferredDate ? `<b>${_t('When:')}</b> ${esc(b.preferredDate)}<br>` : '');
     const price = b.amountCents ? money(b.amountCents) : priceLabel(b);
-    const phone = b.phone ? `<b>Mobile:</b> <a href="tel:${esc(String(b.phone).replace(/[^+\d]/g, ''))}" style="text-decoration:underline">${esc(b.phone)}</a><br>` : '';
-    const notes = b.notes ? `<b>Brief:</b> ${esc(b.notes)}<br>` : '';
+    const phone = b.phone ? `<b>${_t('Mobile:')}</b> <a href="tel:${esc(String(b.phone).replace(/[^+\d]/g, ''))}" style="text-decoration:underline" dir="ltr">${esc(b.phone)}</a><br>` : '';
+    const notes = b.notes ? `<b>${_t('Brief:')}</b> ${esc(b.notes)}<br>` : '';
     return `<div class="pp-bk">
       <div class="pp-bkhead"><span class="t">${esc(b.title)}</span><span class="code">${esc(b.code)}</span><span style="flex:1"></span><span class="pp-pill ${esc(b.status)}">${esc(PILL[b.status] || b.status)}</span></div>
       <div class="pp-bkbody">
         <b>${esc(b.customerName)}</b> · ${esc(b.area)} · ${price} · ${pay}<br>
         ${when}${phone}${notes}
-        ${b.declineReason && ['declined', 'cancelled'].includes(b.status) ? `<b>Note:</b> ${esc(b.declineReason)}<br>` : ''}
-        <span style="color:var(--muted,rgba(41,39,39,.72));font-size:12px">Requested ${fmtDate(b.createdAt)}${b.status === 'requested' ? ' · the customer’s mobile appears once the booking is secured' : ''}${b.status === 'awaiting_payment' ? ' · the customer’s mobile appears once they’ve paid' : ''}</span>
+        ${b.declineReason && ['declined', 'cancelled'].includes(b.status) ? `<b>${_t('Note:')}</b> ${esc(b.declineReason)}<br>` : ''}
+        <span style="color:var(--muted,rgba(41,39,39,.72));font-size:12px">${_t('Requested {date}', { date: fmtDate(b.createdAt) })}${b.status === 'requested' ? ' · ' + _t('the customer’s mobile appears once the booking is secured') : ''}${b.status === 'awaiting_payment' ? ' · ' + _t('the customer’s mobile appears once they’ve paid') : ''}</span>
       </div>
       ${b.status === 'requested' && PP.confirming === b.id ? confirmForm(b) : ''}
       ${b.status === 'requested' && PP.confirming !== b.id ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-green" onclick="ProviderPanel.openConfirm(${num(b.id)})">✓ Confirm</button>
-        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">Decline</button></div>` : ''}
+        <button class="pp-btn pp-green" onclick="ProviderPanel.openConfirm(${num(b.id)})">${_t('✓ Confirm')}</button>
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">${_t('Decline')}</button></div>` : ''}
       ${b.status === 'awaiting_payment' ? `<div class="pp-bkacts">
-        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">Withdraw</button></div>` : ''}
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.declineBooking(${num(b.id)})">${_t('Withdraw')}</button></div>` : ''}
       ${b.status === 'confirmed' ? `<div class="pp-bkacts">
         ${!b.serviceDate || b.serviceDate <= todayIso()
-          ? `<button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">Mark as done</button>`
-          : `<span style="color:var(--muted,rgba(41,39,39,.72));font-size:12px;align-self:center">You can mark it done on ${esc(fmtDay(b.serviceDate))}</span>`}
-        <button class="pp-btn pp-ghost" onclick="ProviderPanel.cancelBooking(${num(b.id)})">Cancel booking</button></div>` : ''}
+          ? `<button class="pp-btn pp-dark" onclick="ProviderPanel.actBooking(${num(b.id)},'complete')">${_t('Mark as done')}</button>`
+          : `<span style="color:var(--muted,rgba(41,39,39,.72));font-size:12px;align-self:center">${_t('You can mark it done on {date}', { date: esc(fmtDay(b.serviceDate)) })}</span>`}
+        <button class="pp-btn pp-ghost" onclick="ProviderPanel.cancelBooking(${num(b.id)})">${_t('Cancel booking')}</button></div>` : ''}
     </div>`;
   }
   function renderBookings() {
@@ -596,20 +606,20 @@
     const upcoming = PP.bookings.filter((b) => ['awaiting_payment', 'confirmed'].includes(b.status));
     const rest = PP.bookings.filter((b) => !['requested', 'awaiting_payment', 'confirmed'].includes(b.status));
     el.innerHTML = `<div class="pp">
-      <div class="pp-card"><h3>New requests</h3><div class="pp-hint">Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.</div>
-        ${open.length ? open.map(bkCard).join('') : '<div class="pp-empty">No new requests right now. Requests from the Services Marketplace land here.</div>'}</div>
-      <div class="pp-card"><h3>Confirmed</h3><div class="pp-hint">Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid by bank transfer on the first fortnightly payout day after the service date and a short complaint window (see Payouts on your overview). If you have to cancel, the customer is refunded in full.</div>
-        ${upcoming.length ? upcoming.map(bkCard).join('') : '<div class="pp-empty">Nothing confirmed yet.</div>'}</div>
-      <div class="pp-card"><h3>History</h3>
-        ${rest.length ? rest.map(bkCard).join('') : '<div class="pp-empty">Completed, declined and cancelled bookings end up here.</div>'}</div>
+      <div class="pp-card"><h3>${_t('New requests')}</h3><div class="pp-hint">${_t('Confirm with the date (and the final price, for starting-price or hourly work) — you get the customer’s mobile once the booking is secured. Decline with a short note if it’s not one for you.')}</div>
+        ${open.length ? open.map(bkCard).join('') : `<div class="pp-empty">${_t('No new requests right now. Requests from the Services Marketplace land here.')}</div>`}</div>
+      <div class="pp-card"><h3>${_t('Confirmed')}</h3><div class="pp-hint">${_t('Direct bookings: settle with the customer as you agreed. Bookings paid through Trove: the customer pays Trove by card; your fee is paid by bank transfer on the first fortnightly payout day after the service date and a short complaint window (see Payouts on your overview). If you have to cancel, the customer is refunded in full.')}</div>
+        ${upcoming.length ? upcoming.map(bkCard).join('') : `<div class="pp-empty">${_t('Nothing confirmed yet.')}</div>`}</div>
+      <div class="pp-card"><h3>${_t('History')}</h3>
+        ${rest.length ? rest.map(bkCard).join('') : `<div class="pp-empty">${_t('Completed, declined and cancelled bookings end up here.')}</div>`}</div>
     </div>`;
   }
   async function actBooking(id, action) {
     try {
       await api('/api/provider/bookings/' + id, { method: 'PATCH', body: { action } });
-      toast(action === 'confirm' ? 'Booking confirmed' : 'Marked as done');
+      toast(action === 'confirm' ? _t('Booking confirmed') : _t('Marked as done'));
       await reloadBookings(); refresh();
-    } catch (e) { toast(e.message || 'Could not update'); }
+    } catch (e) { toast(e.message || _t('Could not update')); }
   }
   function openConfirm(id) { PP.confirming = id; renderBookings(); }
   async function sendConfirm(id) {
@@ -619,38 +629,38 @@
     const date = $('ppCfDate' + id).value;
     const body = { action: 'confirm' };
     if (date) body.serviceDate = date;
-    else if (b.paymentMethod === 'trove') return show('Set the date of the service.');
+    else if (b.paymentMethod === 'trove') return show(_t('Set the date of the service.'));
     const priceEl = $('ppCfPrice' + id);
     if (priceEl) {
       const cents = Math.round(Number(priceEl.value) * 100);
-      if (!Number.isFinite(cents) || cents < 100) return show('Set the final price for this booking.');
+      if (!Number.isFinite(cents) || cents < 100) return show(_t('Set the final price for this booking.'));
       body.priceCents = cents;
     }
     try {
       await api('/api/provider/bookings/' + id, { method: 'PATCH', body });
       PP.confirming = null;
-      toast(b.paymentMethod === 'trove' ? 'Confirmed — we’ve sent the customer a link to pay' : 'Booking confirmed');
+      toast(b.paymentMethod === 'trove' ? _t('Confirmed — we’ve sent the customer a link to pay') : _t('Booking confirmed'));
       await reloadBookings(); refresh();
-    } catch (e) { show(e.message || 'Could not confirm — try again.'); }
+    } catch (e) { show(e.message || _t('Could not confirm — try again.')); }
   }
   async function cancelBooking(id) {
     const b = PP.bookings.find((x) => x.id === id); if (!b) return;
-    const reason = prompt(b.paid ? 'Cancel this booking? The customer is refunded in full and no fee is due. A short note for them (optional):' : 'Cancel this booking? A short note for the customer (optional):', '');
+    const reason = prompt(b.paid ? _t('Cancel this booking? The customer is refunded in full and no fee is due. A short note for them (optional):') : _t('Cancel this booking? A short note for the customer (optional):'), '');
     if (reason === null) return;
     try {
       await api('/api/provider/bookings/' + id, { method: 'PATCH', body: { action: 'cancel', reason } });
-      toast(b.paid ? 'Booking cancelled — the customer is refunded' : 'Booking cancelled');
+      toast(b.paid ? _t('Booking cancelled — the customer is refunded') : _t('Booking cancelled'));
       await reloadBookings(); refresh();
-    } catch (e) { toast(e.message || 'Could not cancel'); }
+    } catch (e) { toast(e.message || _t('Could not cancel')); }
   }
   async function declineBooking(id) {
-    const reason = prompt('A short note for the customer (optional):', '');
+    const reason = prompt(_t('A short note for the customer (optional):'), '');
     if (reason === null) return;
     try {
       await api('/api/provider/bookings/' + id, { method: 'PATCH', body: { action: 'decline', reason } });
-      toast('Request declined');
+      toast(_t('Request declined'));
       await reloadBookings(); refresh();
-    } catch (e) { toast(e.message || 'Could not update'); }
+    } catch (e) { toast(e.message || _t('Could not update')); }
   }
 
   /* ---------------- mounting ---------------- */

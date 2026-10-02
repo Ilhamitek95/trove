@@ -16,6 +16,9 @@ const shipments = require('../shipments');
 const identity = require('../identity');
 
 const router = express.Router();
+// Arabic (src/translate.js): a save queues its translation; it never waits for it.
+const tq = (entity, id) => require('../translate').queue(entity, id);
+
 
 /**
  * What a maker still owes Trove before approval puts their pieces on sale:
@@ -95,6 +98,7 @@ router.patch('/reviews/:id', requireAdmin, (req, res) => {
   if (!['published', 'hidden'].includes(status)) return res.status(400).json({ error: 'status must be published or hidden' });
   const r = db.prepare('UPDATE reviews SET status=? WHERE id=?').run(status, req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Not found' });
+  if (status === 'published') tq('review', Number(req.params.id));
   res.json({ ok: true });
 });
 
@@ -138,6 +142,7 @@ router.patch('/products/:id', requireAdmin, (req, res) => {
   else if (b.status !== undefined) db.prepare('UPDATE products SET admin_hidden_at=NULL WHERE id=?').run(p.id);
   if (b.tags !== undefined)
     db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
+  tq('product', p.id);
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });
 
@@ -172,6 +177,7 @@ router.get('/content', requireAdmin, (_req, res) => {
 router.put('/content/:section', requireAdmin, (req, res) => {
   try {
     const clean = content.save(req.params.section, req.body);
+    tq('content', req.params.section);
     console.log(`site content: ${req.user.email} updated ${req.params.section}`);
     res.json({ ok: true, section: req.params.section, value: clean });
   } catch (e) {
@@ -281,6 +287,7 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
   if (req.body.note !== undefined) db.prepare('UPDATE shops SET review_note=? WHERE id=?').run(reviewNote(req.body), shop.id);
   if (status !== shop.status) require('../notify').shopDecided(shop.id, status);
+  if (status === 'approved') { tq('shop', shop.id); for (const x of db.prepare("SELECT id FROM products WHERE shop_id=? AND status='live'").all(shop.id)) tq('product', x.id); }
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
 });
 
@@ -349,6 +356,7 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
   db.prepare('UPDATE service_providers SET status=? WHERE id=?').run(status, p.id);
   if (req.body.note !== undefined) db.prepare('UPDATE service_providers SET review_note=? WHERE id=?').run(reviewNote(req.body), p.id);
   if (status !== p.status) require('../notify').providerDecided(p.id, status);
+  if (status === 'approved') { tq('provider', p.id); for (const x of db.prepare("SELECT id FROM services WHERE provider_id=? AND status='live'").all(p.id)) tq('service', x.id); }
   if (status === 'approved' && !p.sub_started_at) {
     db.prepare("UPDATE service_providers SET sub_started_at=datetime('now') WHERE id=?").run(p.id);
   }
@@ -1000,6 +1008,49 @@ router.post('/payouts/:id/paid', requireAdmin, (req, res) => {
     .run(req.params.id);
   if (!r.changes) return res.status(404).json({ error: 'Payout not found or already paid' });
   res.json({ ok: true });
+});
+
+/* ---------------- Translations (Arabic) ----------------
+ * What people create is translated to Arabic automatically (src/translate.js).
+ * The admin sees every public item's status, can ask for a fresh machine
+ * translation, and can hand-edit an Arabic text — a hand edit is locked, so
+ * the machine never overwrites it.                                          */
+const translations = () => require('../translate');
+const trEntity = (req, res) => {
+  const { entity, id } = req.params;
+  if (!translations().ENTITIES.includes(entity) || !/^[a-z0-9._-]{1,80}$/i.test(id)) { res.status(404).json({ error: 'Not found' }); return null; }
+  return { entity, id: entity === 'content' ? id : Number(id) };
+};
+router.get('/translations', requireAdmin, (_req, res) => res.json(translations().overview()));
+router.get('/translations/:entity/:id', requireAdmin, (req, res) => {
+  const e = trEntity(req, res); if (!e) return;
+  if (translations().sources(e.entity, e.id) == null) return res.status(404).json({ error: 'Not found' });
+  res.json({ entity: e.entity, id: String(e.id), label: translations().label(e.entity, e.id), fields: translations().fieldStatus(e.entity, e.id) });
+});
+router.post('/translations/:entity/:id/retranslate', requireAdmin, (req, res) => {
+  const e = trEntity(req, res); if (!e) return;
+  translations().retranslate(e.entity, e.id);
+  res.json({ ok: true, queued: true, enabled: translations().enabled() });
+});
+router.put('/translations/:entity/:id', requireAdmin, (req, res) => {
+  const e = trEntity(req, res); if (!e) return;
+  const { field, text, locked } = req.body || {};
+  if (typeof field !== 'string' || !field) return res.status(400).json({ error: 'field is required' });
+  try {
+    const out = translations().setManual(e.entity, e.id, field, text, { locked: locked !== false });
+    console.log(`translations: ${req.user.email} edited ${e.entity} ${e.id} ${field}`);
+    res.json({ ok: true, saved: out, fields: translations().fieldStatus(e.entity, e.id) });
+  } catch (err) { res.status(err.status || 500).json({ error: err.message }); }
+});
+router.post('/translations/:entity/:id/lock', requireAdmin, (req, res) => {
+  const e = trEntity(req, res); if (!e) return;
+  const { field, locked } = req.body || {};
+  if (!translations().setLocked(e.entity, e.id, String(field || ''), !!locked)) return res.status(404).json({ error: 'No Arabic saved for that field yet' });
+  res.json({ ok: true, fields: translations().fieldStatus(e.entity, e.id) });
+});
+router.post('/translations/sweep', requireAdmin, (_req, res) => {
+  const queued = translations().sweep();
+  res.json({ ok: true, queued, enabled: translations().enabled() });
 });
 
 module.exports = router;

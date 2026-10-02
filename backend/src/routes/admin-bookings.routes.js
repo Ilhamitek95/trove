@@ -102,7 +102,7 @@ router.post('/service-credits/:providerId/paid', requireAdmin, (req, res) => {
     const email = require('../email');
     const msg = email.providerFeesSent({
       providerName: r.name, ownerName: r.owner.name, amountCents: r.amountCents, reference: r.reference,
-      payer: r.payer, bookings: r.bookings, debitCents: r.debitCents,
+      payer: r.payer, bookings: r.bookings, debitCents: r.debitCents, lang: email.langFor({ email: r.owner.email }),
     });
     email.send({ to: r.owner.email, ...msg }).catch((e) => console.error('provider fees-sent email failed:', e.message));
   }
