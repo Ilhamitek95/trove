@@ -1,7 +1,8 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
-const { requireSeller } = require('../middleware');
+const { requireSeller, notInShopView } = require('../middleware');
+const identity = require('../identity');
 const { requireStripe } = require('../stripe');
 const fees = require('../fees');
 const shipments = require('../shipments');
@@ -20,14 +21,23 @@ function publicShop(shop) {
   // Sellers see whether their ID photos are on file, never the storage paths.
   safe.eidFrontProvided = !!eid_front_file;
   safe.eidBackProvided = !!eid_back_file;
-  safe.needsIdVerification = !shop.connect_queue && !shop.license_verified_at;
+  // A typed licence number proves nothing until an admin verifies it, so the
+  // Emirates ID step applies to every maker without a VERIFIED licence.
+  safe.needsIdVerification = identity.needsEmiratesId(shop);
+  const id = identity.status(shop);
+  safe.identity = { verified: id.verified, method: id.method, reason: id.reason, eidExpiry: id.eidExpiry || null, eidState: id.eidState || null };
+  // What still stands between this shop and approval / its first collection.
+  safe.agreementAccepted = !!shop.agreement_accepted_at;
+  safe.pickupReady = !!(shop.pickup_address && shop.pickup_phone);
   // A maker who accepted an older Seller Agreement is asked, gently, to
   // review the current one (never blocks selling or settlement).
   const current = require('../config').AGREEMENT_VERSION;
   safe.currentAgreementVersion = current;
   safe.agreementUpdateDue = !!(shop.agreement_accepted_at && shop.agreement_version !== current);
   // The Trove Collection is Trove's own line: no agreement, ID checks or payouts.
-  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false });
+  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, agreementAccepted: true });
+  // Internal review bookkeeping stays in the admin panel.
+  delete safe.identity_checked_by;
   return safe;
 }
 
@@ -48,7 +58,7 @@ function notHouse(req, res, next) {
 // area, colour, contact) and — owner's decision — goes live immediately when
 // the shop is already approved, since curation is about the person and
 // their work. A pending shop yields a pending practice, approved together.
-router.post('/enable-services', requireSeller, notHouse, (req, res) => {
+router.post('/enable-services', requireSeller, notHouse, notInShopView, (req, res) => {
   const tax = require('../service-taxonomy');
   const config = require('../config');
   const b = req.body || {};
@@ -141,12 +151,14 @@ router.patch('/me', requireSeller, (req, res) => {
 // here — until now licenses could only enter via the application wizard.
 // Every change resets verification so Trove re-checks the new number, and
 // connect_queue puts the shop in the admin graduation queue for that check.
-router.post('/me/license', requireSeller, notHouse, (req, res) => {
+router.post('/me/license', requireSeller, notHouse, notInShopView, (req, res) => {
   const num = String((req.body || {}).licenseNumber || '').trim().slice(0, 60);
   if (num.length < 4) return res.status(400).json({ error: 'Enter your license number as it appears on the document' });
   if (require('../validate').hasMarkup(num)) return res.status(400).json({ error: "A licence number can't contain < or >" });
   if (num !== req.shop.license_number) {
-    db.prepare('UPDATE shops SET license_number=?, connect_queue=1, license_verified_at=NULL WHERE id=?')
+    // A new number is unverified: the identity method it carried goes too.
+    db.prepare(`UPDATE shops SET license_number=?, connect_queue=1, license_verified_at=NULL,
+        verification_method=CASE WHEN verification_method='trade_licence' THEN NULL ELSE verification_method END WHERE id=?`)
       .run(num, req.shop.id);
   }
   res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
@@ -244,6 +256,37 @@ function applyProductImages(shopId, productId, incoming, existing) {
   return kept;
 }
 
+/**
+ * A 'was' price must be a real reduction: higher than the price the piece
+ * sells at. Anything else would show shoppers a Sale that isn't one.
+ */
+function compareAtError(priceCents, compareAtCents) {
+  if (compareAtCents == null || priceCents == null) return null;
+  if (compareAtCents <= priceCents) {
+    return `The compare-at (was) price must be higher than the price (AED ${(priceCents / 100).toLocaleString('en-GB')}), or left empty`;
+  }
+  return null;
+}
+
+/* Per-shop limits (October 2026 review, F061). Env-overridable; 0 = no cap.
+ * The Trove Collection is the owner's own line and has none. */
+const intEnv = (k, d) => { const n = parseInt(process.env[k], 10); return Number.isFinite(n) && n >= 0 ? n : d; };
+function pieceCap(shop) {
+  if (shop.is_house) return 0;
+  return shop.status === 'approved' ? intEnv('SHOP_MAX_PIECES', 500) : intEnv('PENDING_SHOP_MAX_PIECES', 20);
+}
+// AI tag suggestions cost money per call: a rolling hourly budget per shop.
+const tagCalls = new Map(); // shopId -> [timestamps]
+function tagBudgetLeft(shopId, now = Date.now()) {
+  const limit = intEnv('AI_TAGS_PER_SHOP_HOUR', 30);
+  if (!limit) return true;
+  const recent = (tagCalls.get(shopId) || []).filter((t) => t > now - 3600000);
+  if (recent.length >= limit) { tagCalls.set(shopId, recent); return false; }
+  recent.push(now);
+  tagCalls.set(shopId, recent);
+  return true;
+}
+
 router.get('/products', requireSeller, (req, res) => {
   res.json({ products: db.prepare('SELECT * FROM products WHERE shop_id=? ORDER BY created_at DESC').all(req.shop.id) });
 });
@@ -276,6 +319,16 @@ router.post('/products', requireSeller, (req, res) => {
   const pf = productFields(req.body || {}, false);
   if (pf.error) return res.status(400).json({ error: pf.error });
   const f = pf.fields;
+  const cmpErr = compareAtError(f.price_cents, f.compare_at_cents);
+  if (cmpErr) return res.status(400).json({ error: cmpErr });
+  // A ceiling on pieces per shop (lower while the application is reviewed):
+  // keeps one account from filling the shared disk with uploads.
+  const cap = pieceCap(req.shop);
+  if (cap && db.prepare('SELECT COUNT(*) AS c FROM products WHERE shop_id=?').get(req.shop.id).c >= cap) {
+    return res.status(409).json({ code: 'piece_limit', error: req.shop.status === 'approved'
+      ? `Your shop has reached ${cap} pieces — remove one you no longer sell, or contact us to raise the limit`
+      : `You can prepare up to ${cap} pieces while your application is reviewed — add more once your shop is approved` });
+  }
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
   if (images !== undefined) {
@@ -316,6 +369,9 @@ router.post('/products/suggest-tags', requireSeller, async (req, res) => {
   if (!ai.enabled()) return res.status(503).json({ error: 'AI tag suggestions are not switched on yet' });
   const { name, description = '', category = '' } = req.body || {};
   if (!name || !String(name).trim()) return res.status(400).json({ error: 'Give the product a name first' });
+  if (!req.shop.is_house && !tagBudgetLeft(req.shop.id)) {
+    return res.status(429).json({ code: 'tag_limit', error: 'You have used this hour’s tag suggestions — try again a little later, or type your own tags' });
+  }
   try {
     const tags = await ai.suggestTags({ name: String(name).slice(0, 200), description: String(description).slice(0, 2000), category: String(category).slice(0, 60), shopName: req.shop.name });
     res.json({ tags });
@@ -342,6 +398,10 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   const pf = productFields(b, true);
   if (pf.error) return res.status(400).json({ error: pf.error });
   const f = pf.fields;
+  // Checked against what the piece WILL be: a price raised above an old
+  // 'was' price is caught as well as a new 'was' price below the price.
+  const cmpErr = compareAtError(f.price_cents ?? p.price_cents, f.compare_at_cents === undefined ? p.compare_at_cents : f.compare_at_cents);
+  if (cmpErr) return res.status(400).json({ error: cmpErr });
   const optErr = productOptions.optionsError(b.options);
   if (optErr) return res.status(400).json({ error: optErr });
   const extErr = productExtras.extrasError(b.extras);
@@ -405,8 +465,19 @@ router.post('/products/confirm-lead-times', requireSeller, (req, res) => {
 router.delete('/products/:id', requireSeller, (req, res) => {
   const p = db.prepare('SELECT * FROM products WHERE id=? AND shop_id=?').get(req.params.id, req.shop.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
+  // A piece that has ever sold stays: its order lines, returns and purchase
+  // notes point at it. The maker hides it instead.
+  const HAS_ORDERS = { code: 'has_orders', error: 'This piece has orders, so it can’t be deleted — hide it instead. Hidden pieces stay in your records, but shoppers can’t see them.' };
+  if (db.prepare('SELECT 1 FROM order_items WHERE product_id=? LIMIT 1').get(p.id)) return res.status(409).json(HAS_ORDERS);
+  try {
+    db.prepare('DELETE FROM products WHERE id=?').run(p.id);
+  } catch (e) {
+    if (/FOREIGN KEY/i.test(e.message)) return res.status(409).json(HAS_ORDERS);
+    throw e;
+  }
+  // Only once the row is really gone do its photos go — a refused delete
+  // must never leave a live piece without its photography.
   parseImagesCol(p.images).forEach((u) => uploads.removeByUrl(u));
-  db.prepare('DELETE FROM products WHERE id=?').run(p.id);
   res.json({ ok: true });
 });
 
@@ -464,10 +535,24 @@ function revenueSummary(shopId, days = 30) {
   return { days, grossCents: row.gross, refundedCents: row.refunded, revenueCents: row.gross - row.refunded };
 }
 
-// The buyer's email is deliberately NOT selected here. Trove is the merchant of
-// record, so a shop never needs to contact the customer directly — the packing
-// name and ship-to address are all a maker needs to fulfil. Keeping the address
-// out of the seller payload also keeps the sale on-platform. Admin still sees it.
+// The buyer's email and phone are deliberately NOT selected here. Trove is the
+// merchant of record, so a shop never needs to contact the customer directly.
+// The delivery address goes only where the maker needs it (sellerShip): a
+// parcel with no courier booking, which the maker sends by hand, and only
+// until it is delivered and its return window has closed. Otherwise the
+// payload carries the buyer's first name and area for the packing slip.
+// Admin still sees the full address.
+function sellerShip(r) {
+  const ship = parseShip(r.shipping_json);
+  if (!ship) return null;
+  const firstName = String(ship.name || '').trim().split(/\s+/)[0] || '';
+  const minimal = { name: firstName, city: ship.city || '', emirate: ship.emirate || '' };
+  if (r.delivery_ref) return minimal; // the courier holds the address on its label
+  const closed = r.return_window_ends_at
+    ? Date.parse(String(r.return_window_ends_at).replace(' ', 'T') + 'Z') < Date.now()
+    : r.status === 'cancelled';
+  return closed ? minimal : ship;
+}
 router.get('/orders', requireSeller, (req, res) => {
   const rows = db.prepare(`
     SELECT sh.*, o.public_id, o.created_at AS order_created, o.status AS order_status, o.shipping_json,
@@ -482,7 +567,7 @@ router.get('/orders', requireSeller, (req, res) => {
     const rr = latestReq.get(r.order_id, req.shop.id);
     return {
       ...shipments.shape(r),
-      order: { publicId: r.public_id, createdAt: r.order_created, status: r.order_status, ship: parseShip(r.shipping_json) },
+      order: { publicId: r.public_id, createdAt: r.order_created, status: r.order_status, ship: sellerShip(r) },
       returnRequest: rr ? shopReturnShape(rr, req.shop.id) : null,
     };
   }) });
@@ -622,7 +707,7 @@ router.patch('/payout', requireSeller, (_req, res) => {
   res.status(410).json({ error: 'This endpoint has been replaced by POST /api/seller/payout-setup' });
 });
 
-router.post('/payout-setup', requireSeller, notHouse, (req, res, next) => {
+router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, next) => {
   try {
     const pcrypto = require('../crypto');
     const cfg = require('../config');
@@ -636,9 +721,14 @@ router.post('/payout-setup', requireSeller, notHouse, (req, res, next) => {
     const issue = String(b.emiratesIdIssue || '').trim();
     if (issue && !/^\d{4}-\d{2}-\d{2}$/.test(issue)) return res.status(400).json({ error: 'Emirates ID issue date must be YYYY-MM-DD' });
 
+    // Updating only the ID details (a renewed Emirates ID) keeps the IBAN on
+    // file when the field is left empty — the maker never retypes it.
     const iban = String(b.iban || '').replace(/\s+/g, '').toUpperCase();
-    const ibanErr = require('../validate').ibanError(iban);
-    if (ibanErr) return res.status(400).json({ error: ibanErr });
+    const keepIban = !iban && !!req.shop.iban_encrypted;
+    if (!keepIban) {
+      const ibanErr = require('../validate').ibanError(iban);
+      if (ibanErr) return res.status(400).json({ error: ibanErr });
+    }
     const accountName = String(b.accountName || '').trim().slice(0, 120);
     const bankName = String(b.bankName || '').trim().slice(0, 120);
     if (!accountName || !bankName) return res.status(400).json({ error: 'Bank name and the account holder name are required' });
@@ -646,10 +736,11 @@ router.post('/payout-setup', requireSeller, notHouse, (req, res, next) => {
     if (b.acceptAgreement !== true) return res.status(400).json({ error: 'You need to accept the Seller Agreement' });
     if (!pcrypto.hasKey()) return res.status(503).json({ error: 'Payout setup is temporarily unavailable (encryption key not configured)' });
 
-    // Identity verification — suppliers selling WITHOUT a trade/e-Trader
-    // license must have Emirates ID photos + a home address on file. Photos
-    // are encrypted at rest under PRIVATE_DIR; only admins can view them.
-    const needsId = !req.shop.connect_queue && !req.shop.license_verified_at;
+    // Identity verification — suppliers WITHOUT an admin-verified trade /
+    // e-Trader licence must have Emirates ID photos + a home address on file
+    // (a typed licence number alone no longer skips this). Photos are
+    // encrypted at rest under PRIVATE_DIR; only admins can view them.
+    const needsId = identity.needsEmiratesId(req.shop);
     const address = String(b.address || '').trim().slice(0, 240);
     if (needsId) {
       if (!address && !req.shop.seller_address)
@@ -681,9 +772,19 @@ router.post('/payout-setup', requireSeller, notHouse, (req, res, next) => {
         agreement_version=?, agreement_accepted_at=datetime('now'), agreement_hash=?
       WHERE id=?`)
       .run(last4, issue, expiry, bankName, accountName,
-        pcrypto.encrypt(iban), pcrypto.maskIban(iban),
+        keepIban ? req.shop.iban_encrypted : pcrypto.encrypt(iban), keepIban ? req.shop.iban_masked : pcrypto.maskIban(iban),
         cfg.AGREEMENT_VERSION, agreementHash, req.shop.id);
     if (address) db.prepare('UPDATE shops SET seller_address=? WHERE id=?').run(address, req.shop.id);
+    // New ID details (photos, number, dates or address) need a fresh admin
+    // check, and a new expiry earns a new reminder. Changing only the bank
+    // details keeps the check.
+    const idChanged = !!(front || back) || last4 !== (req.shop.emirates_id_last4 || '')
+      || expiry !== (req.shop.emirates_id_expiry || '') || issue !== (req.shop.emirates_id_issue || '')
+      || (address && address !== (req.shop.seller_address || ''));
+    if (idChanged) {
+      db.prepare(`UPDATE shops SET identity_checked_at=NULL, identity_checked_by=NULL, eid_reminder_for=NULL,
+          verification_method=CASE WHEN license_verified_at IS NOT NULL THEN 'trade_licence' ELSE NULL END WHERE id=?`).run(req.shop.id);
+    }
     if (front) {
       uploads.removeEncryptedPrivate(req.shop.eid_front_file);
       db.prepare('UPDATE shops SET eid_front_file=?, eid_front_mime=? WHERE id=?').run(front.file, front.mime, req.shop.id);
@@ -700,7 +801,7 @@ router.post('/payout-setup', requireSeller, notHouse, (req, res, next) => {
 // Agreement (after a version bump). Records the version, the time and a hash
 // of the exact text accepted — the same three facts payout setup records.
 // Deliberately separate from payout setup: no bank details are re-asked.
-router.post('/agreement', requireSeller, notHouse, (req, res) => {
+router.post('/agreement', requireSeller, notHouse, notInShopView, (req, res) => {
   if ((req.body || {}).accept !== true) return res.status(400).json({ error: 'Tick the box to accept the Seller Agreement' });
   const cfg = require('../config');
   const file = require('path').join(__dirname, '..', '..', 'legal', `seller-agreement-${cfg.AGREEMENT_VERSION}.md`);

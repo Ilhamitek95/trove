@@ -319,8 +319,10 @@ test('checkout and sign-up say what the customer agrees to, with links', () => {
   assert.match(summary, /By placing your order you agree to our <a href="\/terms"[^>]*>Terms of Sale<\/a> and <a href="\/privacy"[^>]*>Privacy Policy<\/a>/);
   assert.match(store, /async function placeOrder\(\)\{/, 'checkout logic untouched');
   const login = read('trove-login.html');
-  assert.match(login, /By creating an account you agree to our <a href="\/terms"[^>]*>Terms of Sale<\/a> and <a href="\/privacy"[^>]*>Privacy Policy<\/a>/);
-  assert.match(login, /\$\('regAgree'\)\.style\.display=registering\?'block':'none'/, 'shown only while signing up');
+  assert.match(login, /<span id="regAgreeLead">By continuing with Google or creating an account<\/span> you agree to our <a href="\/terms"[^>]*>Terms of Sale<\/a> and <a href="\/privacy"[^>]*>Privacy Policy<\/a>/);
+  // F295: a first Google sign-in opens an account, so the line shows in sign-in mode too.
+  assert.match(login, /\$\('regAgree'\)\.style\.display='block'/, 'shown while signing in as well as signing up');
+  assert.match(login, /text:'continue_with'/, 'the Google button says Continue, not Sign in');
 });
 
 test('the default copy never promises Collection pieces; the Collection is never hidden (owner, 2026-09-30)', () => {

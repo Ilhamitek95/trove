@@ -76,7 +76,22 @@ test('the shop sees the address it must post to — and no way to ring the buyer
   assert.ok(!seller.text.includes('501234567'), 'buyer number absent from the whole seller payload');
   assert.ok(!seller.text.includes('phone'), 'not even an empty phone key to fill in later');
   const mine = seller.data.orders.find((o) => o.order.publicId === res.data.orderId);
-  assert.equal(mine.order.ship.line, ADDRESS.line, 'the packing address is still complete');
+  // Courier-booked parcel: the label carries the address, so the maker gets
+  // the buyer's first name and area only (October 2026 review, F454).
+  const sh = db.prepare('SELECT * FROM shipments WHERE id=?').get(mine.id);
+  if (sh.delivery_ref) {
+    assert.equal(mine.order.ship.line, undefined, 'no street address for a courier-booked parcel');
+    assert.equal(mine.order.ship.name, ADDRESS.name.split(' ')[0], 'first name for the packing slip');
+  }
+  // A parcel the maker sends by hand needs the full address, until delivered + the return window.
+  db.prepare('UPDATE shipments SET delivery_ref=NULL WHERE id=?').run(mine.id);
+  let again = (await ctx.api('GET', '/api/seller/orders', { cookie: sellerCookie })).data.orders.find((o) => o.id === mine.id);
+  assert.equal(again.order.ship.line, ADDRESS.line, 'the packing address is complete for a hand-sent parcel');
+  db.prepare("UPDATE shipments SET status='delivered', delivered_at=datetime('now','-20 days'), return_window_ends_at=datetime('now','-5 days') WHERE id=?").run(mine.id);
+  again = (await ctx.api('GET', '/api/seller/orders', { cookie: sellerCookie })).data.orders.find((o) => o.id === mine.id);
+  assert.equal(again.order.ship.line, undefined, 'and gone again once the return window has closed');
+  db.prepare('UPDATE shipments SET delivery_ref=?, status=?, delivered_at=?, return_window_ends_at=? WHERE id=?')
+    .run(sh.delivery_ref, sh.status, sh.delivered_at, sh.return_window_ends_at, sh.id);
 
   const admin = await ctx.api('GET', '/api/admin/orders', { cookie: adminCookie });
   const row = admin.data.orders.find((o) => o.publicId === res.data.orderId);

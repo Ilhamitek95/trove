@@ -83,9 +83,17 @@ test('updating bank details later keeps the ID and address on file', async () =>
   assert.equal(shop.payout_bank_name, 'Another Bank');
 });
 
-test('licensed sellers (connect queue) are not asked for ID photos', async () => {
+test('a typed licence number alone does not skip the ID photos (F006); a verified licence does', async () => {
+  const shop = db.prepare("SELECT * FROM shops WHERE user_id=(SELECT id FROM users WHERE email='licensed@test.local')").get();
+  assert.ok(shop && shop.connect_queue, 'fixture: applied with a licence number');
   const res = await ctx.api('POST', '/api/seller/payout-setup', { cookie: licensedCookie, body: { ...GOOD } });
-  assert.equal(res.status, 200, res.text);
+  assert.equal(res.status, 400, 'unverified licence: Emirates ID still required');
+  assert.match(res.data.error, /home address|Emirates ID/);
+
+  db.prepare("UPDATE shops SET license_verified_at=datetime('now') WHERE id=?").run(shop.id);
+  const ok = await ctx.api('POST', '/api/seller/payout-setup', { cookie: licensedCookie, body: { ...GOOD } });
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(ok.data.shop.identity.verified, true);
 });
 
 test('admin can view decrypted ID images; nobody else can', async () => {

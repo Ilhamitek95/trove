@@ -30,6 +30,8 @@ before(async () => {
   shopId = db.prepare(`INSERT INTO shops (user_id,name,slug,status,payout_bank_name,payout_account_name,iban_encrypted,iban_masked,agreement_version,agreement_accepted_at)
     VALUES (?,?,?, 'approved','Mashreq','Maker LLC',?,?, 'v1', datetime('now'))`)
     .run(uid, 'Worked Example Pots', 'we-pots', pcrypto.encrypt('AE070331234567890123456'), pcrypto.maskIban('AE070331234567890123456')).lastInsertRowid;
+  // Identity established (src/identity.js): settlement pays only verified makers.
+  db.prepare("UPDATE shops SET license_number='TL-TEST-1', license_verified_at=datetime('now') WHERE id=?").run(shopId);
   productId = db.prepare("INSERT INTO products (shop_id,name,category,price_cents,stock,status) VALUES (?,?,?,20000,10,'live')")
     .run(shopId, 'Stoneware Vase', 'Ceramics').lastInsertRowid;
   adminCookie = await ctx.loginAs('admin@test.local', 'testpass123');

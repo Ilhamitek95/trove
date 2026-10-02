@@ -6,8 +6,22 @@ const validate = require('../validate');
 const { normalizeUAEMobile } = require('../phone');
 const accounts = require('../accounts');
 const notify = require('../notify');
+const twofa = require('../admin-2fa');
 
 const router = express.Router();
+
+/**
+ * Sign a user in after the first step (password or Google). An admin on an
+ * untrusted browser gets the emailed code instead (admin-2fa.js) and
+ * `{ needsCode, sentTo }` comes back; everyone else is signed in on a fresh
+ * session. Resolves the JSON body to send.
+ */
+async function signInAfterFirstStep(req, user, extra = {}) {
+  if (twofa.needsCode(req, user)) return { ...(await twofa.startChallenge(req, user, { startSession })), ...extra };
+  const fields = user.role === 'admin' && twofa.enabled() ? twofa.verifiedFields(user) : { userId: user.id };
+  await startSession(req, fields);
+  return { user: publicUser(user), ...extra };
+}
 const randomSecret = () => require('crypto').randomBytes(32).toString('hex');
 const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
@@ -75,6 +89,11 @@ router.post('/register', (req, res, next) => {
       || (password && verifyPassword(password, existing.password_hash));
     if (!ownsAccount) {
       return res.status(409).json({ code: 'exists_wrong_password', error: 'An account with this email already exists' });
+    }
+    // The admin account never signs in through a form that skips its second
+    // step: apply while signed in as the admin, or not at all.
+    if (existing.role === 'admin' && req.session.userId !== existing.id) {
+      return res.status(409).json({ code: 'sign_in_required', error: 'Sign in first, then apply' });
     }
     if (db.prepare('SELECT 1 FROM shops WHERE user_id = ?').get(existing.id)) {
       return res.status(409).json({ code: 'already_has_shop', error: 'This account already has a shop' });
@@ -158,7 +177,26 @@ router.post('/login', (req, res, next) => {
   if (!user || !verifyPassword(password || '', user.password_hash)) {
     return res.status(401).json({ error: wrong });
   }
-  startSession(req, { userId: user.id }).then(() => res.json({ user: publicUser(user) })).catch(next);
+  signInAfterFirstStep(req, user).then((body) => res.json(body)).catch(next);
+});
+
+// POST /api/auth/admin-code { code, trust? } — the admin's second step. On
+// success the admin is signed in on a fresh session; trust=true remembers
+// this browser for 30 days.
+router.post('/admin-code', (req, res, next) => {
+  const r = twofa.check(req, (req.body || {}).code);
+  if (r.error) return res.status(r.status).json({ code: r.code, error: r.error });
+  if ((req.body || {}).trust === true) twofa.trustDevice(res, r.user);
+  startSession(req, twofa.verifiedFields(r.user), { keep: [] })
+    .then(() => res.json({ user: publicUser(r.user) }))
+    .catch(next);
+});
+
+// POST /api/auth/admin-code/resend — a new code for the sign-in in progress.
+router.post('/admin-code/resend', (req, res) => {
+  const r = twofa.resend(req);
+  if (!r) return res.status(400).json({ code: 'no_challenge', error: 'Your sign-in has timed out — please sign in again' });
+  res.json(r);
 });
 
 // POST /api/auth/google  { credential } — a Google Identity Services ID token.
@@ -193,9 +231,10 @@ router.post('/google', async (req, res) => {
       accounts.endOtherSessions(user.id);
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
     }
-    try { await startSession(req, { userId: user.id }); }
+    let body;
+    try { body = await signInAfterFirstStep(req, user, { created }); }
     catch (e) { console.error('google sign-in session failed:', e.message); return res.status(500).json({ error: 'Something went wrong on our side — please try again' }); }
-    res.json({ user: publicUser(user), created });
+    res.json(body);
   } catch (e) {
     console.error('google sign-in failed:', e.message);
     res.status(502).json({ error: 'Google sign-in is unavailable right now — try again in a moment' });
@@ -239,8 +278,13 @@ router.post('/reset', (req, res, next) => {
     .run(hashPassword(password), user.id);
   db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(user.id);
   accounts.endOtherSessions(user.id);
+  twofa.forgetDevices(user.id);
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   notify.passwordChanged(fresh);
+  // The admin still finishes with the emailed code (the link only proved the inbox).
+  if (twofa.needsCode(req, fresh)) {
+    return twofa.startChallenge(req, fresh, { startSession }).then((body) => res.json(body)).catch(next);
+  }
   startSession(req, { userId: user.id }, { keep: [] }).then(() => res.json({ user: publicUser(fresh) })).catch(next);
 });
 
@@ -260,6 +304,7 @@ router.post('/password', requireAuth, (req, res, next) => {
   db.prepare('UPDATE users SET password_hash=?, password_set=1 WHERE id=?').run(hashPassword(password), u.id);
   db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(u.id);
   accounts.endOtherSessions(u.id);
+  twofa.forgetDevices(u.id);
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);
   notify.passwordChanged(fresh);
   startSession(req, { userId: u.id }).then(() => res.json({ ok: true, user: publicUser(fresh) })).catch(next);

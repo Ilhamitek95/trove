@@ -13,8 +13,25 @@ const express = require('express');
 const db = require('../db');
 const { requireAdmin, publicUser, startSession } = require('../middleware');
 const shipments = require('../shipments');
+const identity = require('../identity');
 
 const router = express.Router();
+
+/**
+ * What a maker still owes Trove before approval puts their pieces on sale:
+ * acceptance of the Seller Agreement (the consignment terms every sale rests
+ * on) and the courier pickup address + phone (where the first collection
+ * goes). [] when ready. The Trove Collection is Trove's own line: no
+ * agreement, and its pickup is the owner's to set.
+ */
+function approvalMissing(shop) {
+  if (shop.is_house) return [];
+  const missing = [];
+  if (!shop.agreement_accepted_at) missing.push('agreement');
+  if (!(shop.pickup_address && shop.pickup_phone)) missing.push('pickup');
+  return missing;
+}
+const MISSING_LABEL = { agreement: 'accepted the Seller Agreement', pickup: 'added a courier pickup address and phone' };
 
 /* ---------------- Marketplace overview ---------------- */
 
@@ -199,6 +216,17 @@ router.get('/shops', requireAdmin, (_req, res) => {
     licenseNumber: s.license_number || '', hasLicenseImage: !!s.license_image,
     licenseVerifiedAt: s.license_verified_at || null,
     sellerAddress: s.seller_address || '', eidFront: !!s.eid_front_file, eidBack: !!s.eid_back_file,
+    // The typed Emirates ID details, shown beside the photos so the admin can
+    // compare them, plus the identity status settlement uses.
+    eid: { last4: s.emirates_id_last4 || '', issue: s.emirates_id_issue || '', expiry: s.emirates_id_expiry || '', state: identity.eidExpiryState(s) },
+    identity: (() => { const id = identity.status(s); return { verified: id.verified, method: id.method, reason: id.reason }; })(),
+    identityCheckedAt: s.identity_checked_at || null,
+    // Whose bank account the payouts go to, and whether it looks like the maker.
+    payoutAccountName: s.payout_account_name || '', payoutBankName: s.payout_bank_name || '', ibanMasked: s.iban_masked || '',
+    accountNameMatches: identity.payoutNameMatches(s, s.owner_name),
+    agreementVersion: s.agreement_version || '', agreementAcceptedAt: s.agreement_accepted_at || null,
+    pickupReady: !!(s.pickup_address && s.pickup_phone),
+    approvalMissing: approvalMissing(s),
     graduationFlaggedAt: s.graduation_flagged_at || null, connectQueue: !!s.connect_queue,
     products: s.product_count, liveProducts: s.live_count, salesCents: s.sales_cents,
     createdAt: s.created_at,
@@ -238,10 +266,43 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  // Approval puts the shop's live pieces on sale, so it waits for the
+  // agreement and the pickup details (re-approving an approved shop is a no-op).
+  if (status === 'approved' && shop.status !== 'approved') {
+    const missing = approvalMissing(shop);
+    if (missing.length) {
+      return res.status(409).json({ code: 'not_ready', missing,
+        error: `Not yet: the maker has not ${missing.map((m) => MISSING_LABEL[m]).join(' or ')}. Approve once they have.` });
+    }
+  }
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
   if (req.body.note !== undefined) db.prepare('UPDATE shops SET review_note=? WHERE id=?').run(reviewNote(req.body), shop.id);
   if (status !== shop.status) require('../notify').shopDecided(shop.id, status);
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
+});
+
+// POST /api/admin/shops/:id/identity-check { checked: true|false } — the
+// admin compared the Emirates ID photos with the typed details and the home
+// address (and the account holder name) and ticks 'ID checked'. Records who
+// and when; settlement pays an Emirates-ID maker only once this is ticked
+// and the ID is in date (src/identity.js).
+router.post('/shops/:id/identity-check', requireAdmin, (req, res) => {
+  const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  if (shop.is_house) return res.status(409).json({ error: 'The Trove Collection needs no identity check' });
+  if ((req.body || {}).checked === false) {
+    db.prepare(`UPDATE shops SET identity_checked_at=NULL, identity_checked_by=NULL,
+        verification_method=CASE WHEN verification_method='emirates_id' THEN NULL ELSE verification_method END WHERE id=?`).run(shop.id);
+  } else {
+    if (!identity.eidSubmitted(shop)) return res.status(409).json({ error: 'The maker has not given both Emirates ID photos, the ID details and a home address yet' });
+    if (identity.eidExpiryState(shop) === 'expired') return res.status(409).json({ error: 'This Emirates ID has expired — ask the maker to add their renewed ID' });
+    db.prepare(`UPDATE shops SET identity_checked_at=datetime('now'), identity_checked_by=?,
+        verification_method=CASE WHEN license_verified_at IS NOT NULL THEN 'trade_licence' ELSE 'emirates_id' END WHERE id=?`).run(req.user.id, shop.id);
+    console.log(`identity: ${req.user.email} checked the Emirates ID of shop ${shop.slug}`);
+  }
+  const fresh = db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id);
+  const id = identity.status(fresh);
+  res.json({ ok: true, identity: { verified: id.verified, method: id.method, reason: id.reason }, identityCheckedAt: fresh.identity_checked_at || null });
 });
 
 /* ---------------- Service providers (services marketplace) ---------------- */
@@ -379,7 +440,7 @@ router.post('/graduation/:shopId/verify-license', requireAdmin, (req, res) => {
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.shopId);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
   if (!shop.license_number) return res.status(400).json({ error: 'This shop has no license number on file' });
-  db.prepare("UPDATE shops SET license_verified_at=datetime('now') WHERE id=?").run(shop.id);
+  db.prepare("UPDATE shops SET license_verified_at=datetime('now'), verification_method='trade_licence' WHERE id=?").run(shop.id);
   res.json({ ok: true });
 });
 

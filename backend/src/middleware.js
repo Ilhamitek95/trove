@@ -64,6 +64,20 @@ function requireProvider(req, res, next) {
   });
 }
 
+/**
+ * Steps whose whole point is that the account owner did them personally —
+ * accepting an agreement, giving bank and ID details, writing a review,
+ * asking for a return. An admin in "shop view" is signed in AS the maker, so
+ * without this guard one click there would create a record in the maker's
+ * name that Trove itself made.
+ */
+function notInShopView(req, res, next) {
+  if (req.session && req.session.impersonatorId) {
+    return res.status(403).json({ code: 'shop_view', error: 'Only the account owner can do this — it is not available in shop view' });
+  }
+  next();
+}
+
 // Requires an admin (the trove platform owner) — gates the payout endpoints.
 function requireAdmin(req, res, next) {
   requireAuth(req, res, () => {
@@ -82,14 +96,20 @@ function requireAdmin(req, res, next) {
  */
 function startSession(req, fields, { keep = ['pendingOrderId'] } = {}) {
   const carried = {};
-  for (const k of keep) if (req.session && req.session[k] !== undefined) carried[k] = req.session[k];
+  // The admin's completed second sign-in step always rides along (it names
+  // the admin it belongs to, so it can never vouch for anyone else) — shop
+  // view in and out, and a password change, keep the admin signed in.
+  for (const k of [...keep, ...require('./admin-2fa').SESSION_KEYS]) {
+    if (req.session && req.session[k] !== undefined) carried[k] = req.session[k];
+  }
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
       if (err) return reject(err);
       Object.assign(req.session, carried, fields);
+      require('./admin-2fa').capCookie(req);
       req.session.save((e) => (e ? reject(e) : resolve()));
     });
   });
 }
 
-module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor };
+module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor, notInShopView };
