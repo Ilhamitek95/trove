@@ -63,7 +63,6 @@
   "Tell them about it": "Tell them about it",
   "What you have in mind, how many people, anything they should know.": "What you have in mind, how many people, anything they should know.",
   "Settle directly with the provider": "Settle directly with the provider",
-  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.": "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.",
   "Pay through Trove by card": "Pay through Trove by card",
   "Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.": "Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.",
   "Card payment isn’t available right now — please settle directly for now.": "Card payment isn’t available right now — please settle directly for now.",
@@ -109,7 +108,6 @@
   "Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href=\"/services-terms\" target=\"_blank\" rel=\"noopener\">Services Terms</a>.": "Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href=\"/services-terms\" target=\"_blank\" rel=\"noopener\">Services Terms</a>.",
   "Card payment isn’t available right now — please try again a little later.": "Card payment isn’t available right now — please try again a little later.",
   "Cancel this booking": "Cancel this booking",
-  "The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.": "The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.",
   "Preparing secure payment…": "Preparing secure payment…",
   "Card payments are unavailable on this page right now — please try again later.": "Card payments are unavailable on this page right now — please try again later.",
   "The payment form could not load — please try again.": "The payment form could not load — please try again.",
@@ -162,5 +160,15 @@
   "No — anyone can send a request with just a name, email and UAE mobile. We email you a private link to follow the booking, pay for it if you chose card, and cancel it before the service day. Signed-in customers also see every request on this page under \"Your bookings\".": "No — anyone can send a request with just a name, email and UAE mobile. We email you a private link to follow the booking, pay for it if you chose card, and cancel it before the service day. Signed-in customers also see every request on this page under \"Your bookings\".",
   "Good at something? <span>Offer it on Trove.</span>": "Good at something? <span>Offer it on Trove.</span>",
   "List your services beside the region's best makers — every booking request lands in your own dashboard.": "List your services beside the region's best makers — every booking request lands in your own dashboard.",
-  "Become a provider →": "Become a provider →"
+  "Become a provider →": "Become a provider →",
+  "The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 3 days.": "The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 3 days.",
+  "{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.": "{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.",
+  "The service date passed before this booking was paid, so we closed it. Nothing was charged.": "The service date passed before this booking was paid, so we closed it. Nothing was charged.",
+  "The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.": "The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.",
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.": "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.",
+  "Services matching “{q}”": "Services matching “{q}”",
+  "Search the pieces for “{q}” →": "Search the pieces for “{q}” →",
+  "How would you like to pay?": "How would you like to pay?",
+  "protected": "protected",
+  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment."
 }

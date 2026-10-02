@@ -162,7 +162,7 @@
       <span class="eyebrow" id="bEyebrow">Join Trove</span>
       <h1 id="bTitle" data-i18n>Tell us what you <em>make</em>.</h1>
       <p id="bIntro">Trove is curated — every maker and every provider is reviewed by a real person before going live. The more you tell us, the faster we can say yes. We're open in Dubai &amp; Abu Dhabi.</p>
-      <p id="bIntro2">Pieces come with photography, marketing, delivery, payments and customer care included. Services get their own page, booking requests straight to your dashboard, and one flat fee.</p>
+      <p id="bIntro2">Pieces come with photography, marketing, delivery, payments and customer care included. You keep 60% of every sale, paid every other Tuesday once the buyer’s return window has closed.</p>
       <div class="bsteps">
         <div class="bstep on" id="bs1"><span class="n">1</span><span class="t">About you</span></div>
         <div class="bstep" id="bs2"><span class="n">2</span><span class="t" id="bs2t">Your shop</span></div>
@@ -208,7 +208,7 @@
             <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('fPass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div>
           <div class="help">You can sign in and prepare everything while your application is reviewed. Already on Trove? Use your existing email and password — we'll add this to your account.</div></div>
         <div class="btnrow"><button class="next" onclick="toStep(2)">Continue →</button></div>
-        <div class="signin">Already on Trove? <a href="/login">Sign in</a></div>
+        <div class="signin">Already on Trove? <a href="/login?next=%2Fapply" id="signinLink">Sign in</a></div>
       </div>
 
       <!-- STEP 2: your shop / your practice -->
@@ -308,15 +308,19 @@ const COPY={
   maker:{prop:_t('Keep 60% · we photograph, market and deliver'),eyebrow:_t('Open your shop'),title:_t('Tell us what you <em>make</em>.'),s2:_t('Your shop'),s3:_t("What you'll sell"),
     s2Title:_t('Now, your shop.'),s2Lede:_t('This is what our curation team reads first — tell us who you are and what you make.'),
     name:_t('Shop name'),exp:_t('How long have you been making?'),about:_t('About you &amp; your craft'),
-    s3Title:_t('What will you sell?'),s3Lede:_t('List the pieces you\'re planning to sell — rough ideas are fine.'),roleHelp:_t('A shop on the storefront. Trove buys your pieces from you and resells them — photography, delivery, payments and customer care included.')},
+    s3Title:_t('What will you sell?'),s3Lede:_t('List the pieces you\'re planning to sell — rough ideas are fine.'),roleHelp:_t('A shop on the storefront. Trove buys your pieces from you and resells them — photography, delivery, payments and customer care included.'),
+    intro2:_t('Pieces come with photography, marketing, delivery, payments and customer care included. You keep 60% of every sale, paid every other Tuesday once the buyer’s return window has closed.')},
   provider:{prop:_t('Free during launch · keep 100% of direct bookings'),eyebrow:_t('Become a provider'),title:_t('Tell us what you <em>do</em>.'),s2:_t('Your practice'),s3:_t("What you'll offer"),
     s2Title:_t('Now, your practice.'),s2Lede:_t('Who you are, what you do, and where you do it.'),
     name:_t('Practice or studio name'),exp:_t('How long have you been at it?'),about:_t('About you &amp; your work'),
-    s3Title:_t('What will you offer?'),s3Lede:_t('List the services you\'re planning to offer — rough ideas and rough prices are fine.'),roleHelp:_t('A page on the Services Marketplace, booking requests to your dashboard, free to list during launch and no commission on direct bookings.')},
+    s3Title:_t('What will you offer?'),s3Lede:_t('List the services you\'re planning to offer — rough ideas and rough prices are fine.'),
+    roleHelp:_t('A page on the Services Marketplace and booking requests to your dashboard. Free to list during launch. Customers either pay you directly (you keep 100%) or pay through Trove by card (you keep 90%, sent to you by bank transfer).'),
+    intro2:_t('Your services get their own page on the Services Marketplace, and booking requests come straight to your dashboard. Customers choose how to pay: directly to you, where you keep 100%, or through Trove by card, where Trove keeps a 10% platform fee and sends you the rest by bank transfer. Listing is free during launch. The service itself is always yours to deliver.')},
   both:{prop:_t('Keep 60% on pieces · keep 100% of direct bookings'),eyebrow:_t('Open your shop &amp; practice'),title:_t('Tell us what you <em>make</em> — and do.'),s2:_t('Your shop &amp; practice'),s3:_t("What you'll sell &amp; offer"),
     s2Title:_t('Now, your shop and practice.'),s2Lede:_t('One name, one story — pieces on the storefront and services on the Services Marketplace.'),
     name:_t('Shop &amp; practice name'),exp:_t('How long have you been at it?'),about:_t('About you &amp; your work'),
-    s3Title:_t('What will you sell and offer?'),s3Lede:_t('Pieces and services — rough ideas and rough prices are fine.'),roleHelp:_t('Both, on one account: a shop for your pieces and a page for your services, reviewed together, one dashboard.')},
+    s3Title:_t('What will you sell and offer?'),s3Lede:_t('Pieces and services — rough ideas and rough prices are fine.'),roleHelp:_t('Both, on one account: a shop for your pieces and a page for your services, reviewed together, one dashboard.'),
+    intro2:_t('Pieces: you keep 60% of every sale, with photography, marketing and delivery included. Services: customers pay you directly (you keep 100%) or through Trove by card (you keep 90%). Listing services is free during launch.')},
 };
 // Example lines in the two planning boxes (set here so the line breaks survive translation).
 $('fProducts').placeholder=_t('One per line, e.g.\nHand-thrown stoneware mugs — AED 60–80\nSpeckled serving bowls\nSmall-batch glazed planters');
@@ -330,6 +334,9 @@ function setRole(r){
   $('fNameLabel').innerHTML=c.name;$('fNameHelp').style.display=r==='both'?'block':'none';
   $('fExpLabel').textContent=c.exp;setStepLabel();$('fAboutLabel').innerHTML=c.about+' <span class="count" id="aboutCount"></span>';
   $('s3Title').textContent=c.s3Title;$('s3Lede').textContent=c.s3Lede;$('roleHelp').textContent=c.roleHelp;
+  // The side panel matches the chosen door (a provider never reads maker terms).
+  $('bIntro2').textContent=c.intro2;
+  $('signinLink').href=troveUrl('/login?next='+encodeURIComponent('/apply?for='+(r==='provider'?'services':r)));
   document.querySelectorAll('.r-maker').forEach(el=>el.style.display=(r==='maker'||r==='both')?'':'none');
   document.querySelectorAll('.r-provider').forEach(el=>el.style.display=(r==='provider'||r==='both')?'':'none');
   document.querySelectorAll('.r-provider-only').forEach(el=>el.style.display=r==='provider'?'':'none');
@@ -513,7 +520,7 @@ async function submitApp(){
     const code=e.data&&e.data.code;
     if(e.status===409&&code==='already_has_shop'){toStep(1);showErr(_t('This account already runs a shop on Trove — sign in to manage it.'));}
     else if(e.status===409&&code==='already_provider'){toStep(1);showErr(_t('This account already offers services on Trove — sign in to manage them.'));}
-    else if(e.status===409&&code==='sign_in_required'){toStep(1);showErr(_t('An account with this email already exists. Sign in first, then add your services from your dashboard — or apply with a different email.'));}
+    else if(e.status===409&&code==='sign_in_required'){toStep(1);showErr(_t('An account with this email already exists. Enter its password here, or sign in first (link below) and you’ll come straight back to this form.'));}
     else if(e.status===409){toStep(1);showErr(_t('An account with this email already exists. To add this to it, use that account’s password here — or apply with a different email.'));}
     else showErr(e.message||_t('Something went wrong — please try again.'));
   }

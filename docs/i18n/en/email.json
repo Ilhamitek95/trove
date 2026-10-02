@@ -337,5 +337,16 @@
   "{amount} sent — reference {ref}.": "{amount} sent — reference {ref}.",
   "This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.": "This is your payment for {shop} from the settlement run of {date}: every piece whose 15-day return window had closed.",
   "Your dashboard has the purchase note listing every order in this payment.": "Your dashboard has the purchase note listing every order in this payment.",
-  "Hello {name}, we've sent your payment by bank transfer.": "Hello {name}, we've sent your payment by bank transfer."
+  "Hello {name}, we've sent your payment by bank transfer.": "Hello {name}, we've sent your payment by bank transfer.",
+  "We're sorry — {provider} didn't answer your request within a week, so we have closed it. You're welcome to book another provider.": "We're sorry — {provider} didn't answer your request within a week, so we have closed it. You're welcome to book another provider.",
+  "The service date passed before this booking was paid, so we have closed it. If you would still like the service, send a new request.": "The service date passed before this booking was paid, so we have closed it. If you would still like the service, send a new request.",
+  "This request waited a week with no answer, so we closed it and let the customer know. Please confirm or decline new requests within two days — customers are waiting to hear from you.": "This request waited a week with no answer, so we closed it and let the customer know. Please confirm or decline new requests within two days — customers are waiting to hear from you.",
+  "The customer did not pay before the service date, so the booking has been closed. Please do not go ahead with it.": "The customer did not pay before the service date, so the booking has been closed. Please do not go ahead with it.",
+  "Booking request {code} was closed": "Booking request {code} was closed",
+  "A booking request was closed": "A booking request was closed",
+  "{name}'s request for {title} has been closed.": "{name}'s request for {title} has been closed.",
+  "This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.": "This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.",
+  "Reminder: {name} is waiting for your answer — {title}": "Reminder: {name} is waiting for your answer — {title}",
+  "A customer is waiting for your answer": "A customer is waiting for your answer",
+  "Please confirm or decline this booking request.": "Please confirm or decline this booking request."
 }

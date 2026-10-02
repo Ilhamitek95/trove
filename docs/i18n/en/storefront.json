@@ -74,15 +74,6 @@
   "No testimonials yet — the first makers’ words will appear here once they’ve sold with us.": "No testimonials yet — the first makers’ words will appear here once they’ve sold with us.",
   "Founding makers wanted": "Founding makers wanted",
   "Be one of our first makers.": "Be one of our first makers.",
-  "Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first. The arrangement, plainly:": "Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first. The arrangement, plainly:",
-  "You keep 60%": "You keep 60%",
-  "You set the price. When a piece sells, Trove buys it from you at 60% of that price, paid out fortnightly.": "You set the price. When a piece sells, Trove buys it from you at 60% of that price, paid out fortnightly.",
-  "Trove photographs": "Trove photographs",
-  "Our photographer shoots your pieces so they look their best — or use your own photos if you prefer.": "Our photographer shoots your pieces so they look their best — or use your own photos if you prefer.",
-  "Trove markets": "Trove markets",
-  "The advertising, social media and featured placements are on us. You never pay for promotion.": "The advertising, social media and featured placements are on us. You never pay for promotion.",
-  "Trove delivers": "Trove delivers",
-  "Our courier collects each sold piece from your door. You pack it in your own packaging and hand it over.": "Our courier collects each sold piece from your door. You pack it in your own packaging and hand it over.",
   "Apply as a founding maker": "Apply as a founding maker",
   "Want the full terms? Read the <a href=\"/seller-agreement\" style=\"text-decoration:underline\">Seller Agreement</a>, written in plain English, before you apply.": "Want the full terms? Read the <a href=\"/seller-agreement\" style=\"text-decoration:underline\">Seller Agreement</a>, written in plain English, before you apply.",
   "← Back to basket": "← Back to basket",
@@ -354,5 +345,20 @@
   "Total paid": "Total paid",
   "Delivering to": "Delivering to",
   "Your payment is being confirmed — this usually takes a few seconds. Your receipt email follows.": "Your payment is being confirmed — this usually takes a few seconds. Your receipt email follows.",
-  "We can’t show this order on this device. Your receipt email has every detail, and signed-in buyers find it under Orders in their account.": "We can’t show this order on this device. Your receipt email has every detail, and signed-in buyers find it under Orders in their account."
+  "We can’t show this order on this device. Your receipt email has every detail, and signed-in buyers find it under Orders in their account.": "We can’t show this order on this device. Your receipt email has every detail, and signed-in buyers find it under Orders in their account.",
+  "{n} services match — see them": {
+    "one": "One service matches — see it",
+    "other": "{n} services match — see them"
+  },
+  "Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first.": "Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first.",
+  "Offer a service instead?": "Offer a service instead?",
+  "Workshops, styling, photography, murals…": "Workshops, styling, photography, murals…",
+  "If what you offer is a service at the customer’s home, list it on the <a href=\"/services\" style=\"text-decoration:underline\">Services Marketplace</a>. The customer chooses how to pay:": "If what you offer is a service at the customer’s home, list it on the <a href=\"/services\" style=\"text-decoration:underline\">Services Marketplace</a>. The customer chooses how to pay:",
+  "They pay you directly": "They pay you directly",
+  "By bank transfer or cash, as you agree. You keep 100% — Trove takes nothing.": "By bank transfer or cash, as you agree. You keep 100% — Trove takes nothing.",
+  "They pay through Trove by card": "They pay through Trove by card",
+  "Trove keeps a 10% platform fee and sends you the rest by bank transfer, after the service date.": "Trove keeps a 10% platform fee and sends you the rest by bank transfer, after the service date.",
+  "Free to list during launch": "Free to list during launch",
+  "A monthly listing fee starts later, and we’ll give you 30 days’ notice before it does.": "A monthly listing fee starts later, and we’ll give you 30 days’ notice before it does.",
+  "Apply to offer services": "Apply to offer services"
 }

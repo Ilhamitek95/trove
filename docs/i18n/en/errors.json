@@ -111,5 +111,9 @@
   "The small copy of the image is too large": "The small copy of the image is too large",
   "That email address doesn't look right — check it and try again": "That email address doesn't look right — check it and try again",
   "That piece has not been delivered yet — returns for it open once it arrives": "That piece has not been delivered yet — returns for it open once it arrives",
-  "The return window for that piece has closed": "The return window for that piece has closed"
+  "The return window for that piece has closed": "The return window for that piece has closed",
+  "Your services aren’t approved right now, so you can’t confirm bookings. You can still decline them — contact Trove if you think this is a mistake.": "Your services aren’t approved right now, so you can’t confirm bookings. You can still decline them — contact Trove if you think this is a mistake.",
+  "The service date for this booking has passed, so it can’t be paid now — contact the provider or Trove to arrange a new date": "The service date for this booking has passed, so it can’t be paid now — contact the provider or Trove to arrange a new date",
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged": "This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged",
+  "The Emirates ID on file has expired — enter your renewed ID’s expiry date": "The Emirates ID on file has expired — enter your renewed ID’s expiry date"
 }

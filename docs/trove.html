@@ -396,8 +396,9 @@
   .fterm b{font-family:var(--font-display);font-size:20px;font-weight:600;display:block;line-height:1.15;margin-bottom:6px}
   .fterm p{font-size:13.5px;line-height:1.6;color:var(--ink-80);font-weight:400;margin:0}
   .fcta{text-align:center;margin-top:26px}
-  @media(max-width:960px){.fterms{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.fterms{grid-template-columns:1fr;gap:10px}.fcta .btn{width:100%;justify-content:center}}
+  .fterms.f3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:960px){.fterms,.fterms.f3{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.fterms,.fterms.f3{grid-template-columns:1fr;gap:10px}.fcta .btn{width:100%;justify-content:center}}
   .mq{background:var(--paper);border-radius:18px;padding:24px 22px;margin:0;box-shadow:0 14px 34px -20px rgba(41,39,39,.3)}
   .mqh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
@@ -1427,19 +1428,20 @@
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href=troveUrl('/apply')">Start your application</button>
         <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
       </div>
+      <!-- The deal at a glance (F146): what you keep and when it's paid, right under the buttons. -->
+      <div class="h-terms" id="sellFacts" style="margin:26px 0 0">
+        <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>You keep 60% of every sale</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Paid every other Tuesday, after the 15-day return window</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free to join</span>
+      </div>
     </div>
     <div class="wrap" id="sellSteps" style="max-width:1060px">
       <div class="band-head hd-c"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.offer.heading">You make. Trove does the rest.</h2><p class="ofsub" data-cms="sell.steps.heading">Four steps from craft table to shopfront — with Trove carrying the load at every one.</p></div>
       <div class="handoff">
-        <div class="h-terms" id="sellFacts">
-          <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free to join</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>No trade licence needed</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Courier collects from your door</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>A real person reviews every shop</span>
-        </div>
         <div class="h-lanes"><div class="h-lane hl-you"><b>You</b><span>The craft</span></div><div class="h-mid"></div><div class="h-lane hl-trove"><b>Trove</b><span data-cms="sell.offer.eyebrow">Included with every shop</span></div></div>
         <div class="h-rows" id="handoffRows">
-          <div class="h-row"><div class="h-you"><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div><div class="h-mid"><span class="h-dot">i</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><div><b>No trade licence needed</b><p>Trove buys your pieces and resells them, so you can start selling without a licence of your own.</p></div></div></div></div>
+          <div class="h-row"><div class="h-you"><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div><div class="h-mid"><span class="h-dot">i</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><div><b>No trade licence to start</b><p>Trove buys your pieces and resells them, so most home makers can start without a licence. Before your first payout we check your Emirates ID and home address.</p></div></div></div></div>
           <div class="h-row"><div class="h-you"><h4>Add your pieces</h4><p>Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.</p></div><div class="h-mid"><span class="h-dot">ii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><div><b>Professional photography</b><p>Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.</p></div></div><div class="h-card"><span class="ofic" style="background:#BED3DF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4L7 9H3v6h4l11 5z"/><path d="M21 10a4 4 0 0 1 0 4"/></svg></span><div><b>Marketing, done for you</b><p>Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.</p></div></div></div></div>
           <div class="h-row"><div class="h-you"><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div><div class="h-mid"><span class="h-dot">iii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l1-5h14l1 5"/><path d="M4 10v9h16v-9"/><path d="M9 19v-5h6v5"/></svg></span><div><b>The shopkeeping</b><p>Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.</p></div></div></div></div>
-          <div class="h-row"><div class="h-you"><h4>Sold? We come to you</h4><p>Our courier collects the piece from your door, and your money arrives with the fortnightly payout.</p></div><div class="h-mid"><span class="h-dot">iv</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><div><b>Delivery, arranged and paid</b><p>When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it.</p></div></div><div class="h-card"><span class="ofic" style="background:#F3E7E0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span><div><b>Fortnightly payouts</b><p>Your share lands in your bank account every other Tuesday, and your Payments page shows exactly what's coming and when.</p></div></div></div></div>
+          <div class="h-row"><div class="h-you"><h4>Sold? We come to you</h4><p>We email you the moment a piece sells, with the day to have it packed by. Pack it in your own packaging and mark it packed in your dashboard.</p></div><div class="h-mid"><span class="h-dot">iv</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><div><b>Delivery, arranged and paid</b><p>Our courier collects each sold piece from your door and takes it to the buyer. Trove books and pays for every delivery.</p></div></div><div class="h-card"><span class="ofic" style="background:#F3E7E0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span><div><b>Fortnightly payouts</b><p>A sale is paid in the first payout after the buyer's 15-day return window closes, so returns are settled first. Your Payments page shows the date for each sale.</p></div></div></div></div>
         </div>
       </div>
       <p class="h-kick" data-cms="sell.offer.sub">All of it is part of the arrangement — no joining fee, no listing fee, no hidden costs.</p>
@@ -1455,14 +1457,18 @@
         <div class="mquotes" id="quotesList"><p class="mq-empty">No testimonials yet — the first makers’ words will appear here once they’ve sold with us.</p></div>
       </div>
       <div class="mqband founding" id="foundingBand">
-        <div class="band-head qhead"><span class="eyebrow">Founding makers wanted</span><h2>Be one of our first makers.</h2><p class="qsub">Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first. The arrangement, plainly:</p></div>
-        <div class="fterms">
-          <div class="fterm"><b>You keep 60%</b><p>You set the price. When a piece sells, Trove buys it from you at 60% of that price, paid out fortnightly.</p></div>
-          <div class="fterm"><b>Trove photographs</b><p>Our photographer shoots your pieces so they look their best — or use your own photos if you prefer.</p></div>
-          <div class="fterm"><b>Trove markets</b><p>The advertising, social media and featured placements are on us. You never pay for promotion.</p></div>
-          <div class="fterm"><b>Trove delivers</b><p>Our courier collects each sold piece from your door. You pack it in your own packaging and hand it over.</p></div>
-        </div>
+        <div class="band-head qhead"><span class="eyebrow">Founding makers wanted</span><h2>Be one of our first makers.</h2><p class="qsub">Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first.</p></div>
         <div class="fcta"><button class="btn btn-dark" onclick="location.href=troveUrl('/apply')">Apply as a founding maker</button></div>
+      </div>
+      <!-- Services providers (F104): the deal in brief, so a provider never decides on a form alone. -->
+      <div class="mqband" id="sellServices">
+        <div class="band-head qhead"><span class="eyebrow">Offer a service instead?</span><h2>Workshops, styling, photography, murals…</h2><p class="qsub" data-i18n>If what you offer is a service at the customer’s home, list it on the <a href="/services" style="text-decoration:underline">Services Marketplace</a>. The customer chooses how to pay:</p></div>
+        <div class="fterms f3">
+          <div class="fterm"><b>They pay you directly</b><p>By bank transfer or cash, as you agree. You keep 100% — Trove takes nothing.</p></div>
+          <div class="fterm"><b>They pay through Trove by card</b><p>Trove keeps a 10% platform fee and sends you the rest by bank transfer, after the service date.</p></div>
+          <div class="fterm"><b>Free to list during launch</b><p>A monthly listing fee starts later, and we’ll give you 30 days’ notice before it does.</p></div>
+        </div>
+        <div class="fcta"><button class="btn btn-ghost" onclick="location.href=troveUrl('/apply?for=services')">Apply to offer services</button></div>
       </div>
     </div>
   </section>
@@ -1473,13 +1479,13 @@
         <details class="faq"><summary>I've never sold online before — is that okay?<span class="faq-tg">+</span></summary>
           <div class="faq-a">That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop.</div></details>
         <details class="faq"><summary>Do I need a trade licence?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">No. Trove buys your pieces from you and resells them to shoppers, so you can sell here without any licence. If you do have one, mention it when you apply — it unlocks extra payout options as you grow.</div></details>
+          <div class="faq-a">Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.</div></details>
         <details class="faq"><summary>What does it cost?<span class="faq-tg">+</span></summary>
           <div class="faq-a">Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included — and that's the whole arrangement. If nothing sells, you owe nothing.</div></details>
         <details class="faq"><summary>How does delivery work?<span class="faq-tg">+</span></summary>
           <div class="faq-a">You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard.</div></details>
         <details class="faq"><summary>How and when do I get paid?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid. Your Payments page shows exactly what's coming and when.</div></details>
+          <div class="faq-a">Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when.</div></details>
         <details class="faq"><summary>What if I only make a few pieces a month?<span class="faq-tg">+</span></summary>
           <div class="faq-a">Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed.</div></details>
         <details class="faq"><summary>Can I keep selling on Instagram or at markets?<span class="faq-tg">+</span></summary>
@@ -2513,6 +2519,7 @@ function renderShop(){
   $('browseTitle').textContent=state.q?`“${state.q}”`:(state.cat==='all'?_t('Shop all'):catLabel());
   $('shopCrumb').innerHTML=crumbHTML();
   $('searchChip').innerHTML=state.q?`<span class="schip">${_t('Searching for <b>“{q}”</b>',{q:esc(state.q)})}<button onclick="clearSearch()" aria-label="${_t('Clear search')}">×</button></span>`:'';
+  serviceHits();
   $('shopGrid').innerHTML=list.length?list.map(productCard).join(''):emptyStateHTML();
   $('shopGrid').className='pgrid'+(list.length&&list.length<=3?' few':'')+(list.length===1?' one':'');
   if(!list.length)fillPopularSearches();
@@ -2976,6 +2983,20 @@ function closeSheets(){$('mnav').classList.remove('open');TroveDialog.close($('m
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeSheets();closeCart();closeAcct();}});
 
 /* SEARCH + ACCOUNT MENU */
+/* A search also looks in the Services Marketplace (F116): when services
+   match, a chip beside the search links to them. */
+let SVC_HITS={q:'',n:0};
+function serviceHits(){
+  const q=state.q; if(!q)return;
+  const paint=()=>{
+    const c=$('searchChip');
+    if(state.q!==q||!SVC_HITS.n||!c||c.querySelector('.svchit'))return;
+    c.insertAdjacentHTML('beforeend',` <a class="schip svchit" style="padding:7px 16px;text-decoration:underline" href="${esc(troveUrl('/services?q='+encodeURIComponent(q)))}">${_tn(SVC_HITS.n,'One service matches — see it','{n} services match — see them')}</a>`);
+  };
+  if(SVC_HITS.q===q){paint();return;}
+  SVC_HITS={q,n:0};
+  TroveAPI.api('/api/services?q='+encodeURIComponent(q)).then(r=>{if(SVC_HITS.q!==q)return;SVC_HITS.n=((r&&r.services)||[]).length;paint();}).catch(()=>{});
+}
 function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');jumpTop();
   shelfAddress();
   // Report the search (anonymously — just the words + hit count) so trending

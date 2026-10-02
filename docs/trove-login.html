@@ -430,10 +430,21 @@ function gaAuth(event,method){
   try{ return window.troveTrack?troveTrack(event,{method}):Promise.resolve(); }
   catch(_){ return Promise.resolve(); }
 }
+/* ?next= — come back to where the person was (e.g. the services application
+   at /apply?for=services). Only a few of our own pages, never another site. */
+function nextDest(){
+  const n=new URLSearchParams(location.search).get('next')||'';
+  const p=trovePath(n.split('?')[0]), q=n.includes('?')?n.slice(n.indexOf('?')):'';
+  if(!/^\/(apply|services|account|sell|provider)$/.test(p))return '';
+  if(q&&!/^\?[\w=&%.-]*$/.test(q))return '';
+  return p+q;
+}
 async function postAuthDest(){
   let dest = mode==='sell' ? '/sell' : '/account';
+  const next=nextDest();
   try{
     const me=await TroveAPI.me();
+    if(next&&!(me&&me.user&&me.user.role==='admin')) return troveUrl(next);
     // Platform owner → admin panel, always. Since house mode /api/auth/me also
     // returns the Trove Collection as the admin's shop, so the role is checked
     // first; 'Manage Trove Collection' in the admin opens /sell.

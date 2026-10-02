@@ -1055,10 +1055,14 @@ async function setProviderStatus(id,status,confirmFirst){
   if(status==='rejected'){ note=prompt(`Reject "${p?p.name:'this provider'}"? We email the applicant.
 
 An optional note for them (leave empty for none):`,''); if(note===null)return; }
-  else if(confirmFirst&&!confirm(`Suspend "${p?p.name:'this provider'}"? Their services disappear from the Services Marketplace immediately.`))return;
+  else if(confirmFirst&&!confirm(`Suspend "${p?p.name:'this provider'}"? Their services disappear from the Services Marketplace immediately, they can no longer confirm bookings or be paid through Trove, and any requests or unpaid bookings waiting on them are closed (the customers are emailed).`))return;
   try{
-    await TroveAPI.api('/api/admin/providers/'+id,{method:'PATCH',body:note===undefined?{status}:{status,note}});
-    toast(`${p?p.name:'Provider'} → ${status}`);
+    const r=await TroveAPI.api('/api/admin/providers/'+id,{method:'PATCH',body:note===undefined?{status}:{status,note}});
+    toast(`${p?p.name:'Provider'} → ${status}`+(r.closedUnpaid?` · ${r.closedUnpaid} open request${r.closedUnpaid===1?'':'s'} closed`:''));
+    if(r.confirmedOpen&&confirm(`${p?p.name:'This provider'} still has ${r.confirmedOpen} confirmed booking${r.confirmedOpen===1?'':'s'} to come. Cancel ${r.confirmedOpen===1?'it':'them'} now? Customers who paid through Trove are refunded in full, and every customer is emailed.`)){
+      const c=await TroveAPI.api(`/api/admin/providers/${id}/cancel-bookings`,{method:'POST',body:{}});
+      toast(`${c.cancelled} booking${c.cancelled===1?'':'s'} cancelled`+(c.refunded?` · ${c.refunded} refunded`:'')+(c.refundFailed?` · ${c.refundFailed} refund${c.refundFailed===1?'':'s'} FAILED — see Service bookings`:''));
+    }
     await reload();
   }catch(e){ toast(e.message||'Could not update the provider'); }
 }

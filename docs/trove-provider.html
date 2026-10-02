@@ -162,7 +162,7 @@ async function signOut(){await TroveAPI.logout();window.location.href=troveUrl('
   if(!me||!me.user){window.location.href=troveUrl('/login');return;}
   if(!me.provider){window.location.href=troveUrl('/apply?for=services');return;}
   try{
-    await ProviderPanel.init({toast,onChange:setBadges,onOpenEditor:()=>{if(!$('view-services').classList.contains('active'))go('services');},onProfile:showWho});
+    await ProviderPanel.init({toast,onChange:setBadges,onShowBookings:()=>go('bookings'),onOpenEditor:()=>{if(!$('view-services').classList.contains('active'))go('services');},onProfile:showWho});
   }catch(e){$('gate').textContent=e.message||_t('Could not load your dashboard — refresh to try again.');return;}
   showWho(ProviderPanel.provider);
   // One account, shop + services: point at the other dashboard.

@@ -199,5 +199,9 @@
   "Booking cancelled": "أُلغي الحجز",
   "Could not cancel": "تعذّر الإلغاء",
   "A short note for the customer (optional):": "ملاحظة قصيرة للعميل (اختيارية):",
-  "Request declined": "تم الاعتذار عن الطلب"
+  "Request declined": "تم الاعتذار عن الطلب",
+  "Reply now": "ردّ الآن",
+  "waiting for your reply — open them": "بانتظار ردّك — افتحها",
+  "Needs your reply": "بانتظار ردّك",
+  "{n} booking requests need your reply.": { "zero": "لا طلبات حجز بانتظار ردّك.", "one": "طلب حجز واحد بانتظار ردّك.", "two": "طلبا حجز بانتظار ردّك.", "few": "{n} طلبات حجز بانتظار ردّك.", "many": "{n} طلب حجز بانتظار ردّك.", "other": "{n} طلب حجز بانتظار ردّك." }
 }

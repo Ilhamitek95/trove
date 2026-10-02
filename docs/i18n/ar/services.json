@@ -71,7 +71,6 @@
   "Tell them about it": "أخبرهم بما تريد",
   "What you have in mind, how many people, anything they should know.": "ما يدور في ذهنك، وعدد الأشخاص، وأي شيء ينبغي أن يعرفوه.",
   "Settle directly with the provider": "ادفع مباشرة لمقدّم الخدمة",
-  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.": "تحويل بنكي أو نقداً، بالاتفاق بينكما بعد تأكيده. لا يتدخّل Trove في ذلك.",
   "Pay through Trove by card": "ادفع عبر Trove بالبطاقة",
   "Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.": "لن يُخصم شيء الآن. حين يؤكّد مقدّم الخدمة الموعد والسعر، نرسل إليك بالبريد الإلكتروني رابطاً آمناً للدفع إلى Trove. ويُسترد المبلغ كاملاً إن لم تُقدَّم الخدمة.",
   "Card payment isn’t available right now — please settle directly for now.": "الدفع بالبطاقة غير متاح حالياً — يُرجى الدفع مباشرة في الوقت الحالي.",
@@ -117,7 +116,6 @@
   "Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href=\"/services-terms\" target=\"_blank\" rel=\"noopener\">Services Terms</a>.": "تتم معالجة المدفوعات بأمان عبر Stripe. في هذا الحجز، Trove هو الطرف المتعاقد معك، ومقدّم الخدمة هو من يقدّمها — راجع <a href=\"/services-terms\" target=\"_blank\" rel=\"noopener\">شروط الخدمات</a>.",
   "Card payment isn’t available right now — please try again a little later.": "الدفع بالبطاقة غير متاح حالياً — يُرجى المحاولة بعد قليل.",
   "Cancel this booking": "ألغِ هذا الحجز",
-  "The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.": "حلّ يوم الخدمة، لذا لا يمكن إلغاء هذا الحجز من هنا. إن حدث خطأ ما، تواصل مع Trove واذكر رمز حجزك خلال 7 أيام.",
   "Preparing secure payment…": "جارٍ تجهيز الدفع الآمن…",
   "Card payments are unavailable on this page right now — please try again later.": "الدفع بالبطاقة غير متاح في هذه الصفحة حالياً — يُرجى المحاولة لاحقاً.",
   "The payment form could not load — please try again.": "تعذّر تحميل نموذج الدفع — يُرجى المحاولة مرة أخرى.",
@@ -170,5 +168,15 @@
   "No — anyone can send a request with just a name, email and UAE mobile. We email you a private link to follow the booking, pay for it if you chose card, and cancel it before the service day. Signed-in customers also see every request on this page under \"Your bookings\".": "لا — يمكن لأي شخص إرسال طلب باسمه وبريده الإلكتروني ورقم جوال إماراتي فقط. نرسل إليك بالبريد الإلكتروني رابطاً خاصاً لمتابعة الحجز، ودفعه إن اخترت البطاقة، وإلغائه قبل يوم الخدمة. ويرى العملاء المسجّلون أيضاً كل طلباتهم في هذه الصفحة ضمن «حجوزاتك».",
   "Good at something? <span>Offer it on Trove.</span>": "تتقن شيئاً؟ <span>قدّمه على Trove.</span>",
   "List your services beside the region's best makers — every booking request lands in your own dashboard.": "أدرج خدماتك إلى جانب أفضل صنّاع المنطقة — وكل طلب حجز يصل إلى لوحة التحكم الخاصة بك.",
-  "Become a provider →": "انضم مقدّماً للخدمات ←"
+  "Become a provider →": "انضم مقدّماً للخدمات ←",
+  "The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 3 days.": "حلّ يوم الخدمة، لذا لا يمكن إلغاء هذا الحجز من هنا. إن حدث خطأ ما، تواصل مع Trove واذكر رمز حجزك خلال 3 أيام.",
+  "{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.": "لم يردّ {who} على طلبك خلال أسبوع، لذا أغلقناه. يسعدنا أن تحجز لدى مقدّم خدمة آخر.",
+  "The service date passed before this booking was paid, so we closed it. Nothing was charged.": "مرّ موعد الخدمة قبل دفع قيمة هذا الحجز، لذا أغلقناه. لم يُخصم أي مبلغ.",
+  "The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.": "مرّ موعد الخدمة لهذا الحجز، لذا لا يمكن دفعه الآن. تواصل مع مقدّم الخدمة أو مع Trove لترتيب موعد جديد.",
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.": "لا يستطيع مقدّم الخدمة هذا استقبال حجوزات عبر Trove حاليًا، لذا لا يمكن دفع هذا الحجز. لم يُخصم أي مبلغ.",
+  "Services matching “{q}”": "خدمات تطابق «{q}»",
+  "Search the pieces for “{q}” →": "ابحث في القطع عن «{q}» ←",
+  "How would you like to pay?": "كيف تودّ الدفع؟",
+  "protected": "محميّ",
+  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "تحويل بنكي أو نقدًا، بالاتفاق بينكما بعد التأكيد. لا تتدخّل Trove في ذلك، لذا لا يمكنها ردّ مبلغ دُفع مباشرةً."
 }

@@ -21,6 +21,7 @@ const LABELS = {
   'oto-webhooks': 'Courier status updates (OTO webhooks)',
   'order-sweep': 'Hourly payment and courier checks',
   'pack-by': 'Pack-by reminders',
+  'service-bookings': 'Service booking reminders and closing',
   'nightly-checks': 'Nightly checks (sales cap, ID expiry)',
   privacy: 'Privacy retention sweep',
   unhandled: 'Unexpected server error',

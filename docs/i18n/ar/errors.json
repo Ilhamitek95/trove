@@ -111,5 +111,9 @@
   "The small copy of the image is too large": "النسخة المصغّرة من الصورة كبيرة جدًا",
   "That email address doesn't look right — check it and try again": "لا يبدو عنوان البريد الإلكتروني هذا صحيحاً — تحقّق منه وحاول مرة أخرى",
   "That piece has not been delivered yet — returns for it open once it arrives": "لم تُسلَّم هذه القطعة بعد — يُتاح إرجاعها بمجرد وصولها",
-  "The return window for that piece has closed": "انتهت مهلة إرجاع هذه القطعة"
+  "The return window for that piece has closed": "انتهت مهلة إرجاع هذه القطعة",
+  "Your services aren’t approved right now, so you can’t confirm bookings. You can still decline them — contact Trove if you think this is a mistake.": "خدماتك غير معتمدة حاليًا، لذا لا يمكنك تأكيد الحجوزات. لا يزال بإمكانك الاعتذار عنها — تواصل مع Trove إن كنت تعتقد أن هناك خطأ.",
+  "The service date for this booking has passed, so it can’t be paid now — contact the provider or Trove to arrange a new date": "مرّ موعد الخدمة لهذا الحجز، لذا لا يمكن دفعه الآن — تواصل مع مقدّم الخدمة أو مع Trove لترتيب موعد جديد",
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged": "لا يستطيع مقدّم الخدمة هذا استقبال حجوزات عبر Trove حاليًا، لذا لا يمكن دفع هذا الحجز — لم يُخصم أي مبلغ",
+  "The Emirates ID on file has expired — enter your renewed ID’s expiry date": "انتهت صلاحية الهوية الإماراتية المسجّلة لدينا — أدخل تاريخ انتهاء هويتك المجدّدة"
 }

@@ -259,6 +259,11 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     require('./order-sweep').sweepPackBy()
       .then(({ reminded, escalated }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); jobs.ok('pack-by'); })
       .catch((e) => jobs.fail('pack-by', e));
+    // Service bookings nobody can act on: unpaid past their date, or requests
+    // with no answer (provider reminded at 2 days, closed at 7).
+    require('./service-bookings').sweepStale()
+      .then(({ expired, reminded, closed }) => { if (expired || reminded || closed) console.log(`service bookings: closed ${expired} unpaid past their date, reminded ${reminded} provider(s), closed ${closed} unanswered request(s)`); jobs.ok('service-bookings'); })
+      .catch((e) => jobs.fail('service-bookings', e));
   });
 }
 
