@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager GTM-5F87RHVM. No <noscript> iframe on purpose: it cannot respect consent. -->
   <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>
-  <!-- iubenda: cookie banner + consent log (Privacy Controls and Cookie Solution, site 4702684). After the Consent Mode defaults, before GTM, so a saved choice is applied before any tag can run. -->
+  <!-- iubenda: cookie banner + consent log (Privacy Controls and Cookie Solution, site 4702684). After the Consent Mode defaults, before GTM, so a saved choice is applied before any tag can run. The settings line overrides the dashboard: opt-in for every visitor (no US opt-out model, which granted consent on the second page), no marketing purpose, no floating button. -->
+  <script>var _iub=window._iub=window._iub||[];_iub.csConfiguration={enableGdpr:true,gdprAppliesGlobally:true,gdprApplies:true,enableUspr:false,usprApplies:false,showBannerForUS:false,enableFadp:false,fadpApplies:false,enableLgpd:false,lgpdApplies:false,purposes:"1,2,3,4",floatingPreferencesButtonDisplay:false};</script>
   <script src="https://embeds.iubenda.com/widgets/e5a8f7dc-abe7-4798-a50d-a94138033fad.js"></script>
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-5F87RHVM');</script>
   <!-- gtm:end -->
@@ -500,7 +501,7 @@
   </div>
   <div class="mn-search">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-    <input id="mSearchInput" placeholder="Search Trove" aria-label="Search Trove" onkeydown="if(event.key==='Enter'){const q=this.value;closeSheets();runSearch(q)}">
+    <input id="mSearchInput" placeholder="Search Trove" aria-label="Search Trove" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault();const q=this.value;closeSheets();runSearch(q)}">
   </div>
   <a class="mn-link" href="/shop">Shop all<span>→</span></a>
   <a class="mn-link" href="/shop/trove-collection">Trove Collection<span>→</span></a>

@@ -6,6 +6,7 @@ const validate = require('../validate');
 const { normalizeUAEMobile } = require('../phone');
 const accounts = require('../accounts');
 const notify = require('../notify');
+const guestOrders = require('../guest-orders');
 
 const router = express.Router();
 const randomSecret = () => require('crypto').randomBytes(32).toString('hex');
@@ -158,6 +159,7 @@ router.post('/login', (req, res, next) => {
   if (!user || !verifyPassword(password || '', user.password_hash)) {
     return res.status(401).json({ error: wrong });
   }
+  guestOrders.claimQuietly(user); // only once the email is confirmed
   startSession(req, { userId: user.id }).then(() => res.json({ user: publicUser(user) })).catch(next);
 });
 
@@ -193,6 +195,7 @@ router.post('/google', async (req, res) => {
       accounts.endOtherSessions(user.id);
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
     }
+    guestOrders.claimQuietly(user); // Google has proven the inbox
     try { await startSession(req, { userId: user.id }); }
     catch (e) { console.error('google sign-in session failed:', e.message); return res.status(500).json({ error: 'Something went wrong on our side — please try again' }); }
     res.json({ user: publicUser(user), created });
@@ -240,6 +243,7 @@ router.post('/reset', (req, res, next) => {
   db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(user.id);
   accounts.endOtherSessions(user.id);
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+  guestOrders.claimQuietly(fresh); // the reset link proved the inbox
   notify.passwordChanged(fresh);
   startSession(req, { userId: user.id }, { keep: [] }).then(() => res.json({ user: publicUser(fresh) })).catch(next);
 });
@@ -275,6 +279,7 @@ router.get('/verify-email', (req, res) => {
     return res.redirect(302, u && u.email_verified_at ? '/account?verified=1' : '/login?verify=expired');
   }
   db.prepare("UPDATE users SET email_verified_at=COALESCE(email_verified_at, datetime('now')) WHERE id=?").run(found.user.id);
+  guestOrders.claimQuietly(found.user.id); // orders placed as a guest with this email
   res.redirect(302, req.session.userId === found.user.id ? '/account?verified=1' : '/login?verified=1');
 });
 

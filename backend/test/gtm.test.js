@@ -64,7 +64,7 @@ function assertUntagged(html, where) {
 
 test('every page the site serves carries the tag block once, consent first, in the head', async () => {
   const pages = new Set(seo.sitemapEntries().map((u) => u.loc));       // every public address
-  for (const p of ['/login', '/account', '/sell', '/apply', '/provider', '/404.html']) pages.add(p); // signed-in surfaces + the static 404
+  for (const p of ['/login', '/apply', '/404.html']) pages.add(p); // sign-in, the application form + the static 404
   assert.ok([...pages].some((p) => p.startsWith('/pieces/')), 'a piece page is in the list');
   assert.ok([...pages].some((p) => /^\/services\/[a-z0-9-]+$/.test(p)), 'a provider page is in the list');
   assert.ok(['/about', '/contact', '/faq', '/returns', '/terms', '/privacy'].every((p) => pages.has(p)), 'the server-rendered pages are in the list');
@@ -81,10 +81,11 @@ test('every page the site serves carries the tag block once, consent first, in t
 
 test('every page file in docs/ carries the same block — except the admin panel and the redirect stub', () => {
   const EXCLUDED = {
-    // Every customer's details and the only place a seller IBAN decrypts: a
-    // container change (Custom HTML, session replay) would run with the
-    // owner's session. One user, nothing to measure.
-    'trove-admin.html': true,
+    // The admin panel (every customer's details, the only place a seller
+    // IBAN decrypts) and the signed-in dashboards that show buyers' names,
+    // addresses and phones: a container change (Custom HTML, session replay)
+    // would record them. Owner decision 2026-10-02 for the dashboards.
+    ...Object.fromEntries(gtm.UNTAGGED_FILES.map((f) => [f, true])),
     // Never served by the app (it 301s /index.html); a tag on a redirect stub
     // records a bogus page view and drops the referrer.
     'index.html': true,
@@ -101,6 +102,46 @@ test('/admin is never tagged', async () => {
   const r = await get('/admin');
   assert.equal(r.status, 200);
   assertUntagged(r.text, '/admin');
+});
+
+test('the dashboards that show customers’ personal details are never tagged (seller, provider, account)', async () => {
+  for (const f of ['trove-admin.html', 'trove-seller.html', 'trove-provider.html', 'trove-account.html'])
+    assert.ok(gtm.UNTAGGED_FILES.includes(f), f);
+  for (const p of ['/sell', '/provider', '/account', '/account?verified=1']) {
+    const r = await get(p);
+    assert.equal(r.status, 200, p);
+    assertUntagged(r.text, p);
+    assert.doesNotMatch(r.text, /embeds\.iubenda\.com/, `${p}: no third-party script at all`);
+  }
+  // Belt and braces: a block pasted back into a dashboard file is still stripped on the way out.
+  const res = { set() {} };
+  const tagged = `<head>
+${gtm.SNIPPET}
+</head>`;
+  for (const p of ['/sell', '/provider', '/account', '/admin', '/Account/']) assertUntagged(gtm.forAddress({ path: p, query: {} }, res, tagged), p);
+  for (const p of ['/', '/shop', '/accounts-help', '/seller-stories', '/apply']) assert.ok(gtm.forAddress({ path: p, query: {} }, res, tagged).includes('gtm:begin'), p);
+});
+
+test('cookie banner: opt-in for every visitor, no US opt-out model, no marketing purpose, no floating button', () => {
+  const s = gtm.SNIPPET;
+  const cfgAt = s.indexOf('_iub.csConfiguration='), embedAt = s.indexOf('embeds.iubenda.com/widgets/');
+  assert.ok(cfgAt > -1 && embedAt > -1 && cfgAt < embedAt, 'the settings are declared before the iubenda embed loads');
+  assert.ok(s.indexOf('gtag("consent","default"') < cfgAt, 'Consent Mode defaults still come first');
+  const cfgSrc = s.slice(cfgAt).match(/_iub\.csConfiguration=(\{[^}]*\})/)[1];
+  const cfg = vm.runInNewContext(`(${cfgSrc})`);
+  // The site settings set usprApplies:true for everyone, and the US opt-out
+  // model treats a visitor as consenting until they opt out: the second page
+  // fired GA with analytics + ads granted. GDPR-style opt-in everywhere instead.
+  assert.equal(cfg.enableGdpr, true);
+  assert.equal(cfg.gdprAppliesGlobally, true);
+  assert.equal(cfg.gdprApplies, true);
+  for (const k of ['enableUspr', 'usprApplies', 'showBannerForUS', 'enableFadp', 'fadpApplies', 'enableLgpd', 'lgpdApplies'])
+    assert.equal(cfg[k], false, k);
+  // Purposes: 1 necessary, 2 functionality, 3 experience, 4 measurement — no
+  // 5 (marketing / personalised ads): Trove runs no advertising cookies.
+  assert.deepEqual(String(cfg.purposes).split(',').map(Number), [1, 2, 3, 4]);
+  // The footer's Cookie settings link reopens the panel; no extra tab stops before Skip to content.
+  assert.equal(cfg.floatingPreferencesButtonDisplay, false);
 });
 
 test('private links never meet Tag Manager, and pass on only the origin', async () => {

@@ -3,12 +3,6 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager GTM-5F87RHVM. No <noscript> iframe on purpose: it cannot respect consent. -->
-  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>
-  <!-- iubenda: cookie banner + consent log (Privacy Controls and Cookie Solution, site 4702684). After the Consent Mode defaults, before GTM, so a saved choice is applied before any tag can run. -->
-  <script src="https://embeds.iubenda.com/widgets/e5a8f7dc-abe7-4798-a50d-a94138033fad.js"></script>
-  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','GTM-5F87RHVM');</script>
-  <!-- gtm:end -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Trove · My account</title>
@@ -615,9 +609,15 @@ function orderStatusLabel(o){
   if(sh.some(s=>s.status==='shipped'||s.status==='out_for_delivery')) return ['On the way','shipped'];
   return ['Processing','processing'];
 }
+/* Orders placed as a guest join the account once its email is confirmed
+ * (src/guest-orders.js), so an unconfirmed account says how to bring them in. */
+function guestOrdersHint(){
+  if(!ME||ME.emailVerified)return '';
+  return `<div class="card" style="margin-bottom:14px;font-size:14px;line-height:1.55">Bought something as a guest with ${esc(ME.email||'this email')}? Confirm your email address and those orders appear here, ready to track and return. <button type="button" class="btn btn-ghost" style="margin-top:8px" onclick="resendVerify()">Send the confirm link again</button></div>`;
+}
 function renderOrders(){
-  if(!orders.length){ $('ordersList').innerHTML=`<div class="card empty-state"><div class="es-ic" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg></div><div class="big">No orders yet</div><p>When you buy something it appears here — track each parcel, request a return within 15 days of delivery and review what you loved.</p><a class="btn btn-coral" href="/">Start shopping</a></div>`; return; }
-  $('ordersList').innerHTML=orders.map(o=>{
+  if(!orders.length){ $('ordersList').innerHTML=guestOrdersHint()+`<div class="card empty-state"><div class="es-ic" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 2 4 6v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6l-2-4z"/><path d="M4 6h16M9 10a3 3 0 0 0 6 0"/></svg></div><div class="big">No orders yet</div><p>When you buy something it appears here — track each parcel, request a return within 15 days of delivery and review what you loved.</p><a class="btn btn-coral" href="/">Start shopping</a></div>`; return; }
+  $('ordersList').innerHTML=guestOrdersHint()+orders.map(o=>{
     const [label,cls]=orderStatusLabel(o);
     const sh=o.shipments||[];
     let body;

@@ -44,6 +44,8 @@ router.patch('/me', requireAuth, (req, res) => {
 
 /* ---------------- Orders (buyer) ---------------- */
 router.get('/orders', requireAuth, (req, res) => {
+  // Orders placed as a guest with this (confirmed) email join the account.
+  require('../guest-orders').claimQuietly(req.user);
   const orders = db.prepare("SELECT * FROM orders WHERE buyer_id=? AND status!='pending' ORDER BY created_at DESC").all(req.user.id);
   const itemsStmt = db.prepare(`SELECT oi.*, s.name AS shop_name, s.color, s.is_house FROM order_items oi JOIN shops s ON s.id=oi.shop_id WHERE oi.order_id=?`);
   const shipStmt = db.prepare(`SELECT sh.*, s.name AS shop_name, s.color, s.is_house FROM shipments sh JOIN shops s ON s.id=sh.shop_id WHERE sh.order_id=? ORDER BY sh.id`);

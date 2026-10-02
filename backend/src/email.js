@@ -240,7 +240,12 @@ function orderConfirmation({ order, items, shops, ship, estimate }) {
             : est.leadDays > 2 ? `Made or finished for you by hand, then tracked all the way to your door.` : 'Packed by hand and tracked all the way to your door.'}</td>
       </tr></table>`
     + button('Track your order', `${SITE_LINK}/account`)
-    + note('Something not right? You can request a return from this order in your account.');
+    + (order.buyer_id
+      ? note('Something not right? You can request a return from this order in your account.')
+      // A guest order joins an account only once that account's email is
+      // confirmed (src/guest-orders.js) — say so, rather than promise a
+      // tracking page they cannot reach.
+      : note(`You checked out as a guest. To track this order or request a return, sign in or create a Trove account with ${esc(order.email)} and confirm the address: the order then appears in your account.`));
   return {
     subject: `Your Trove order ${order.public_id} is confirmed`,
     html: layout('Your order is confirmed', inner, {
