@@ -17,7 +17,7 @@ zero-config for development; the schema maps cleanly onto Postgres for productio
 cd trove-backend
 cp .env.example .env          # then fill in your Stripe test key
 npm install
-npm run seed                  # demo users, shops, products
+npm run seed                  # LOCAL ONLY: wipes the DB, then demo users, shops, products
 npm run dev                   # http://localhost:4242
 ```
 

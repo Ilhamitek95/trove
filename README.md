@@ -31,7 +31,7 @@ You only need to run the backend — it serves the website too.
 cd backend
 cp .env.example .env       # then open .env and add your Stripe TEST keys (optional for browsing)
 npm install
-npm run seed               # loads the demo shops + products
+npm run seed               # LOCAL ONLY: empties the database, then loads the demo shops + products
 npm run dev                # then open http://localhost:4242
 ```
 
@@ -117,9 +117,12 @@ git branch -M main && git push -u origin main
    `STRIPE_WEBHOOK_SECRET` env var → save (Render redeploys).
 
 ### 6 · First data
-- To load the demo shops/products: Render → your service → **Shell** → `npm run seed`.
-- For a real launch, skip the seed and create your own shops by registering sellers
-  and adding products in the seller dashboard. (Running `seed` erases existing data.)
+- Never run `npm run seed` on Render: it erases the whole database (orders, makers,
+  customers, payouts). It refuses to run when `NODE_ENV=production` or when the
+  database holds real accounts, and is meant for a local development copy only.
+- Create real shops by approving maker applications and adding pieces in the seller
+  dashboard. To clear demo data from the live site, use `npm run purge-demo` (dry run
+  by default; `--yes` backs up first) — see CLAUDE.md.
 
 ### 7 · Test, then switch to live
 - Visit your URL, sign up, add to cart, and pay with the test card

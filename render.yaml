@@ -28,10 +28,8 @@ services:
       # the disk but NEVER statically served; streamed via authed endpoints.
       - key: PRIVATE_DIR
         value: /var/data/private
-      # Fills an empty database with the demo catalogue on first boot.
-      # Harmless to leave on: it does nothing once any account exists.
-      - key: SEED_DEMO
-        value: "1"
+      # SEED_DEMO (demo catalogue on an empty database) is development-only and
+      # is ignored when NODE_ENV=production — never set it here.
       - key: SESSION_SECRET
         generateValue: true
       # Added later in the dashboard (Environment tab):

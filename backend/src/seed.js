@@ -1,7 +1,14 @@
 'use strict';
-/** Seeds demo data that mirrors the storefront. Run: npm run seed */
+/**
+ * Seeds demo data that mirrors the storefront. Run: npm run seed
+ * LOCAL DEVELOPMENT ONLY — it empties the database first. src/seed-guard.js
+ * refuses on production or on a database with real accounts (unless
+ * --force-wipe) and backs up a non-empty database before the wipe.
+ */
 const db = require('./db');
 const { hashPassword } = require('./middleware');
+
+require('./seed-guard').guard(db);
 
 const c = (aed) => Math.round(aed * 100);
 

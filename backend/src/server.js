@@ -2,11 +2,13 @@
 require('dotenv').config();
 const db = require('./db');
 
-// First-boot demo seed: SEED_DEMO=1 populates an EMPTY database with the demo
-// catalogue. It never touches a database that already has users, so it is safe
-// to leave on — once real accounts exist it does nothing.
+// First-boot demo seed (development only): SEED_DEMO=1 populates an EMPTY
+// database with the demo catalogue. Never on production — an empty or
+// replaced disk on the live, real-money site must stay empty rather than
+// fill with demo shops whose logins are well known (F141).
 if (process.env.SEED_DEMO === '1' && !db.prepare('SELECT 1 FROM users LIMIT 1').get()) {
-  require('./seed');
+  if (process.env.NODE_ENV === 'production') console.warn('SEED_DEMO is ignored in production — remove it from the environment.');
+  else require('./seed');
 }
 
 // Super admin bootstrap: ADMIN_EMAIL (+ ADMIN_PASSWORD for first creation)
@@ -50,12 +52,7 @@ if (process.env.DEMO_PROVIDERS === '1') {
 // Real customer accounts are never touched. Leave unset in local dev.
 if (process.env.DEMO_PASSWORD) {
   const { hashPassword } = require('./middleware');
-  const DEMO_EMAILS = [
-    'layla@email.com', 'hello@trove.com', 'mara@kilnandclay.com',
-    'hello@northboundloom.com', 'hello@embergoods.com',
-    'hello@fernapothecary.com', 'hello@foliopaper.com', 'nadia@sableandstone.com',
-    ...require('./demo-providers').DEMO_PROVIDER_EMAILS,
-  ];
+  const { DEMO_EMAILS } = require('./seed-guard');
   const hash = hashPassword(process.env.DEMO_PASSWORD);
   const rotate = db.prepare('UPDATE users SET password_hash=? WHERE email=?');
   let rotated = 0;
