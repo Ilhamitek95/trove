@@ -298,6 +298,10 @@ function createApp() {
     const p = req.path;
     if (p.startsWith('/uploads/') || /\.[a-z0-9]+$/i.test(p) || /^\/services\/(booking|pay)\//i.test(p)) return next();
     let target = p.length > 1 ? p.replace(/\/+$/, '') || '/' : p;
+    // Never hand out '//host' or '/\host' (a browser reads both as another
+    // website): repeated leading slashes collapse to one, so the redirect
+    // always stays on Trove (F126).
+    target = '/' + target.replace(/^[\/\\]+/, '');
     if (CASE_FOLDED.test(target) && target !== target.toLowerCase()) target = target.toLowerCase();
     if (target === p) return next();
     res.redirect(301, target + keepQuery(req));

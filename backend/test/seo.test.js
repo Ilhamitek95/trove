@@ -268,6 +268,26 @@ test('unknown and unapproved providers are a real 404; /services variants 301 to
   assert.notEqual((await get('/services/booking/SRV-ABC123')).status, 301);
 });
 
+test('the tidy-up redirect never sends a visitor to another website (F126)', async () => {
+  // Raw request, so the path reaches the server exactly as typed (fetch would tidy it).
+  const raw = (p) => new Promise((resolve, reject) => {
+    const u = new URL(ctx.baseUrl);
+    const req = require('node:http').request({ host: u.hostname, port: u.port, path: p, method: 'GET', headers: { accept: 'text/html' } }, (res) => {
+      res.resume();
+      resolve({ status: res.statusCode, location: res.headers.location || '' });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+  for (const p of ['//example.com/', '///example.com/', '//example.com/Shop/', '/\\example.com/', '//example.com/?x=1', '//Services/', '/ar//example.com/']) {
+    const res = await raw(p);
+    assert.ok(!/^(\/\/|\/\\|[a-z]+:)/i.test(res.location), `${p} → ${res.location} must stay on Trove`);
+    if (res.status === 301) assert.match(res.location, /^\/[^/\\]/, `${p} → ${res.location}`);
+  }
+  assert.equal((await raw('//example.com/')).location, '/example.com');
+  assert.equal((await raw('//services/')).location, '/services');
+});
+
 test('the services directory is server-rendered: categories, services and providers as links', async () => {
   const res = await get('/services');
   assert.equal(res.status, 200);
