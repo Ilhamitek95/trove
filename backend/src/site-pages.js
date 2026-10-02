@@ -440,8 +440,25 @@ const TOPICS = [
   ['other', 'Something else'],
 ];
 
+/**
+ * The contact form's messages (English keys of the 'errors' dictionary). A
+ * no-JavaScript post comes back as /contact?error=<code>; the page shows the
+ * message for a known code and ignores anything else, so a crafted
+ * troveathome.com link can never print text of its own (F080).
+ */
+const CONTACT_ERRORS = Object.freeze({
+  name: 'Please tell us your name.',
+  'name-chars': 'Please write your name without < or >, in 80 characters or fewer.',
+  email: 'Please give an email address we can reply to.',
+  topic: 'Please choose what your message is about.',
+  order: 'Order numbers look like TRV-1A2B3C.',
+  short: 'Please write a little more so we can help (at least 10 characters).',
+  long: 'Please keep your message under 4,000 characters.',
+});
+
 function renderContact(base, { sent = false, error = '', lang = 'en' } = {}) {
   const T = (k, v) => i18n.t(lang, k, v);
+  error = Object.prototype.hasOwnProperty.call(CONTACT_ERRORS, error) ? T(CONTACT_ERRORS[error]) : '';
   const c = content.company();
   const ltr = lang === 'ar' ? ' dir="ltr"' : '';
   const direct = [];
@@ -627,5 +644,5 @@ ${faq}
 
 module.exports = {
   LEGAL, legalDoc, chrome, footerHtml, faqSections, organizationLd, hasHousePieces,
-  renderAbout, renderReturns, renderFaq, renderContact, renderLegal, llmsTxt, llmsFullTxt, TOPICS,
+  renderAbout, renderReturns, renderFaq, renderContact, renderLegal, llmsTxt, llmsFullTxt, TOPICS, CONTACT_ERRORS,
 };

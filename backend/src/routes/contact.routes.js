@@ -13,33 +13,36 @@
  * Site content, else ADMIN_EMAIL.
  *
  * The form also works without JavaScript: a urlencoded post is answered with
- * a redirect back to /contact (?sent=1 or ?error=…) instead of JSON.
+ * a redirect back to /contact (?sent=1 or ?error=<code>) instead of JSON.
+ * Only a short code travels in the address; the page looks it up in a fixed
+ * list (site-pages CONTACT_ERRORS), so nobody can make a Trove link print
+ * words of their own.
  */
 const express = require('express');
 const db = require('../db');
 const email = require('../email');
 const content = require('../content');
 const { requireAdmin } = require('../middleware');
-const { TOPICS } = require('../site-pages');
+const { TOPICS, CONTACT_ERRORS } = require('../site-pages');
 
 const router = express.Router();
 const TOPIC_LABEL = Object.fromEntries(TOPICS);
 
 const clean = (v) => String(v == null ? '' : v).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim();
 
-/** The error message for a submission, or null when it is fine. */
+/** The error code for a submission (a key of CONTACT_ERRORS), or null when it is fine. */
 function problem(b) {
   const name = clean(b.name);
   const mail = clean(b.email);
   const message = clean(b.message);
   const orderRef = clean(b.orderRef);
-  if (!name) return 'Please tell us your name.';
-  if (name.length > 80 || /[<>]/.test(name)) return 'Please write your name without < or >, in 80 characters or fewer.';
-  if (!mail || mail.length > 254 || !content.EMAIL_RE.test(mail)) return 'Please give an email address we can reply to.';
-  if (b.topic != null && b.topic !== '' && !TOPIC_LABEL[b.topic]) return 'Please choose what your message is about.';
-  if (orderRef && !/^[A-Za-z0-9-]{1,30}$/.test(orderRef)) return 'Order numbers look like TRV-1A2B3C.';
-  if (message.length < 10) return 'Please write a little more so we can help (at least 10 characters).';
-  if (message.length > 4000) return 'Please keep your message under 4,000 characters.';
+  if (!name) return 'name';
+  if (name.length > 80 || /[<>]/.test(name)) return 'name-chars';
+  if (!mail || mail.length > 254 || !content.EMAIL_RE.test(mail)) return 'email';
+  if (b.topic != null && b.topic !== '' && !TOPIC_LABEL[b.topic]) return 'topic';
+  if (orderRef && !/^[A-Za-z0-9-]{1,30}$/.test(orderRef)) return 'order';
+  if (message.length < 10) return 'short';
+  if (message.length > 4000) return 'long';
   return null;
 }
 
@@ -67,16 +70,16 @@ function notifyOwner(row) {
 router.post('/', express.urlencoded({ extended: false, limit: '32kb' }), (req, res) => {
   const b = req.body || {};
   const isForm = !!req.is('application/x-www-form-urlencoded');
-  const reply = (status, payload) => {
+  const reply = (status, payload, code) => {
     if (!isForm) return res.status(status).json(payload);
-    const q = payload.error ? `?error=${encodeURIComponent(payload.error)}` : '?sent=1';
+    const q = code ? `?error=${encodeURIComponent(code)}` : '?sent=1';
     return res.redirect(303, `/contact${q}`);
   };
   // The hidden "website" field is left empty by people and filled by bots:
   // answer as if it worked, store nothing.
   if (clean(b.website)) return reply(201, { ok: true });
-  const err = problem(b);
-  if (err) return reply(400, { error: err });
+  const code = problem(b);
+  if (code) return reply(400, { error: CONTACT_ERRORS[code] }, code);
   const row = {
     name: clean(b.name),
     email: clean(b.email).toLowerCase(),

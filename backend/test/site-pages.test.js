@@ -298,12 +298,31 @@ test('contact form: works without JavaScript (form post → redirect back)', asy
   assert.ok(visible(page.text).includes('your message is with us'));
   const bad = await contact({ ...GOOD, email: 'x' }, { form: true });
   assert.equal(bad.status, 303);
-  assert.match(bad.headers.get('location'), /^\/contact\?error=/);
+  assert.equal(bad.headers.get('location'), '/contact?error=email', 'only a short code travels in the address');
   const errPage = await get(bad.headers.get('location'));
   assert.ok(visible(errPage.text).includes('Please give an email address'));
   assert.doesNotMatch(errPage.text, /<script>alert/);
   const xss = await get('/contact?error=' + encodeURIComponent('<script>alert(1)</script>'));
   assert.doesNotMatch(xss.text, /<script>alert\(1\)<\/script>/, 'the error text is escaped');
+});
+
+test('contact page: a crafted ?error= link cannot print its own words (F080)', async () => {
+  const scam = 'Your order was flagged. Call us on +971 50 000 0000 to verify your card';
+  const page = await get('/contact?error=' + encodeURIComponent(scam));
+  assert.equal(page.status, 200);
+  assert.ok(!page.text.includes('Call us on +971 50 000 0000'), 'free text in ?error= is ignored');
+  assert.ok(!visible(page.text).includes('flagged'));
+  assert.match(page.text, /<div class="cmsg" id="cMsg" role="status"><\/div>/, 'the message box stays empty');
+  for (const proto of ['__proto__', 'constructor', 'toString']) {
+    const p = await get('/contact?error=' + proto);
+    assert.match(p.text, /<div class="cmsg" id="cMsg" role="status"><\/div>/, `${proto} is not a message`);
+  }
+  // A known code shows its fixed message, in the page's language.
+  const ar = await get('/ar/contact?error=short');
+  assert.ok(ar.text.includes('10 أحرف على الأقل'), 'the Arabic page shows the Arabic message');
+  const json = await contact({ ...GOOD, message: 'hi' });
+  assert.equal(json.status, 400);
+  assert.equal(json.data.error, 'Please write a little more so we can help (at least 10 characters).', 'the JSON API keeps the full sentence');
 });
 
 test('contact form: rate-limited to 5 messages per 10 minutes per visitor', async () => {

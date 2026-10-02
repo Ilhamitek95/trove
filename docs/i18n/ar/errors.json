@@ -100,5 +100,12 @@
   "Add a photo of the front of your Emirates ID": "أضف صورة لوجه هويتك الإماراتية",
   "Add a photo of the back of your Emirates ID": "أضف صورة لظهر هويتك الإماراتية",
   "A WhatsApp number is required to apply": "رقم WhatsApp مطلوب لتقديم الطلب",
-  "A WhatsApp number is required for a shop application": "رقم WhatsApp مطلوب لطلب فتح متجر"
+  "A WhatsApp number is required for a shop application": "رقم WhatsApp مطلوب لطلب فتح متجر",
+  "Please tell us your name.": "يُرجى إخبارنا باسمك.",
+  "Please write your name without < or >, in 80 characters or fewer.": "يُرجى كتابة اسمك من دون الرمزين < أو >، وفي 80 حرفًا أو أقل.",
+  "Please give an email address we can reply to.": "يُرجى إدخال بريد إلكتروني يمكننا الرد عليه.",
+  "Please choose what your message is about.": "يُرجى اختيار موضوع رسالتك.",
+  "Order numbers look like TRV-1A2B3C.": "تبدو أرقام الطلبات هكذا: TRV-1A2B3C.",
+  "Please write a little more so we can help (at least 10 characters).": "يُرجى كتابة المزيد قليلًا حتى نتمكن من المساعدة (10 أحرف على الأقل).",
+  "Please keep your message under 4,000 characters.": "يُرجى ألا تتجاوز رسالتك 4,000 حرف."
 }

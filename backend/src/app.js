@@ -363,7 +363,8 @@ function createApp() {
   app.get('/contact', (req, res) => html(res, sitePages.renderContact(SITE_BASE(), {
     lang: req.lang,
     sent: req.query.sent === '1',
-    error: typeof req.query.error === 'string' ? req.query.error.slice(0, 200) : '',
+    // A short code from the no-JavaScript form; renderContact shows only known codes.
+    error: typeof req.query.error === 'string' ? req.query.error.slice(0, 20) : '',
   })));
   app.get('/faq', (req, res) => html(res, sitePages.renderFaq(SITE_BASE(), req.lang)));
   app.get(['/returns', '/delivery-returns'], (req, res) => html(res, sitePages.renderReturns(SITE_BASE(), req.lang)));
