@@ -74,6 +74,15 @@ function serviceDateError(v, { required }) {
 }
 /** Before the service day (Dubai time)? A booking with no agreed date counts as before. */
 const beforeService = (bk) => !bk.service_date || dubaiToday() < bk.service_date;
+/** The agreed service day has gone (Dubai time) — paying for it now makes no sense. */
+const datePassed = (bk) => !!bk.service_date && bk.service_date < dubaiToday();
+/** Is the provider still allowed to take bookings and money through Trove? */
+const providerApproved = (providerId) => {
+  const p = db.prepare('SELECT status FROM service_providers WHERE id=?').get(providerId);
+  return !!p && p.status === 'approved';
+};
+/** Why a booking waiting for payment can't be paid now: '' (it can), 'date_passed', 'provider_unavailable'. */
+const payBlock = (bk) => (datePassed(bk) ? 'date_passed' : (!providerApproved(bk.provider_id) ? 'provider_unavailable' : ''));
 
 /* ---------------- amounts ---------------- */
 
@@ -128,7 +137,12 @@ function mail(kind, bk, extra = {}) {
       case 'declined':
       case 'cancelled':
         send(row.email, email.bookingCancelled({ ...ctx, kind }));
-        if (kind === 'cancelled' && extra.by !== 'provider') send(row.provider_email, email.bookingCancelledProvider(ctx));
+        if ((kind === 'cancelled' && extra.by !== 'provider') || (kind === 'declined' && extra.by === 'expired')) {
+          send(row.provider_email, email.bookingCancelledProvider(ctx));
+        }
+        break;
+      case 'reminder':
+        send(row.provider_email, email.bookingReminderProvider(ctx));
         break;
       case 'refunded':
         send(row.email, email.bookingRefunded(ctx));
@@ -148,6 +162,11 @@ function mail(kind, bk, extra = {}) {
  */
 async function confirm(bk, { priceCents, serviceDate } = {}) {
   if (bk.status !== 'requested') return { status: 409, error: 'Only a new request can be confirmed' };
+  // A suspended, rejected or pending practice can decline or cancel, but never
+  // take on a booking (and with it the customer's mobile and money).
+  if (!providerApproved(bk.provider_id)) {
+    return { status: 403, error: 'Your services aren’t approved right now, so you can’t confirm bookings. You can still decline them — contact Trove if you think this is a mistake.' };
+  }
   const trove = bk.payment_method === 'trove';
   const dateErr = serviceDateError(serviceDate, { required: trove });
   if (dateErr) return { status: 400, error: dateErr };
@@ -354,6 +373,71 @@ function complete(bk) {
   return { booking: get(bk.id) };
 }
 
+/* ---------------- stale bookings (hourly sweep) ---------------- */
+
+// A request with no answer: the provider is reminded once after this long…
+const REMIND_AFTER_HOURS = 48;
+// …and the request is closed (customer told, admin alerted) after this long.
+const EXPIRE_REQUEST_DAYS = 7;
+
+/**
+ * Close what nobody can act on any more, from the hourly job:
+ *   - a booking still waiting for payment once its service date has passed —
+ *     the pay link stops working and the customer is told nothing was
+ *     charged (a payment already on its way is refunded by the webhook);
+ *   - a request the provider hasn't answered: reminded once after
+ *     REMIND_AFTER_HOURS, closed after EXPIRE_REQUEST_DAYS (customer and
+ *     provider emailed, admin alerted).
+ * `now` ('YYYY-MM-DD HH:MM:SS' UTC) and `today` (Dubai day) are for tests.
+ */
+async function sweepStale({ now = null, today = dubaiToday() } = {}) {
+  const at = now || db.prepare("SELECT datetime('now') AS t").get().t;
+  const out = { expired: 0, reminded: 0, closed: 0 };
+
+  const unpaid = db.prepare(`SELECT * FROM service_bookings WHERE status='awaiting_payment' AND paid_at IS NULL
+    AND service_date IS NOT NULL AND service_date < ?`).all(today);
+  for (const bk of unpaid) {
+    const r = db.prepare(`UPDATE service_bookings SET status='cancelled', cancelled_at=datetime('now'), cancelled_by='expired'
+      WHERE id=? AND status='awaiting_payment' AND paid_at IS NULL`).run(bk.id);
+    if (!r.changes) continue;
+    cancelIntent(bk);
+    mail('cancelled', get(bk.id), { by: 'expired' });
+    out.expired += 1;
+  }
+
+  const remind = db.prepare(`SELECT * FROM service_bookings WHERE status='requested' AND reminded_at IS NULL
+    AND created_at < datetime(?, '-${REMIND_AFTER_HOURS} hours') AND created_at >= datetime(?, '-${EXPIRE_REQUEST_DAYS} days')`).all(at, at);
+  for (const bk of remind) {
+    if (!db.prepare("UPDATE service_bookings SET reminded_at=datetime('now') WHERE id=? AND reminded_at IS NULL").run(bk.id).changes) continue;
+    mail('reminder', bk);
+    out.reminded += 1;
+  }
+
+  const stale = db.prepare(`SELECT bk.*, p.name AS provider_name FROM service_bookings bk JOIN service_providers p ON p.id = bk.provider_id
+    WHERE bk.status='requested' AND bk.created_at < datetime(?, '-${EXPIRE_REQUEST_DAYS} days')`).all(at);
+  const closed = [];
+  for (const bk of stale) {
+    const r = db.prepare(`UPDATE service_bookings SET status='declined', cancelled_by='expired'
+      WHERE id=? AND status='requested'`).run(bk.id);
+    if (!r.changes) continue;
+    mail('declined', get(bk.id), { by: 'expired' });
+    closed.push(bk);
+  }
+  out.closed = closed.length;
+  if (closed.length) {
+    require('./notify').adminAlert({
+      subject: `${closed.length} booking request${closed.length === 1 ? '' : 's'} closed with no answer`,
+      title: 'Booking requests nobody answered',
+      lines: [
+        `These requests waited ${EXPIRE_REQUEST_DAYS} days with no answer from the provider, so they were closed and the customers told:`,
+        ...closed.map((bk) => `${bk.code} · ${bk.title} · ${bk.provider_name}`),
+        'You may want to check in with these providers.',
+      ],
+    });
+  }
+  return out;
+}
+
 /* ---------------- the customer's view (guest link or account) ---------------- */
 
 function forCustomer(bk) {
@@ -369,7 +453,10 @@ function forCustomer(bk) {
     declineReason: row.decline_reason || '', cancelledBy: row.cancelled_by || '',
     paid, paidAt: row.paid_at || null,
     refunded: !!row.refunded_at, refundCents: row.refund_cents || 0,
-    canPay: row.status === 'awaiting_payment' && !paid && paymentsEnabled(),
+    canPay: row.status === 'awaiting_payment' && !paid && paymentsEnabled() && !payBlock(row),
+    // Why it can't be paid now ('' when it can): the date passed, or the
+    // provider can no longer take bookings through Trove.
+    payBlocked: row.status === 'awaiting_payment' && !paid ? payBlock(row) : '',
     canCancel: ['requested', 'awaiting_payment', 'confirmed'].includes(row.status) && beforeService(row),
     createdAt: row.created_at,
   };
@@ -379,6 +466,13 @@ function forCustomer(bk) {
 async function paymentSession(bk) {
   if (bk.status !== 'awaiting_payment' || bk.paid_at || !bk.stripe_payment_intent_id) {
     return { status: 409, error: bk.paid_at ? 'This booking is already paid' : 'This booking isn’t waiting for a payment' };
+  }
+  const block = payBlock(bk);
+  if (block === 'date_passed') {
+    return { status: 409, error: 'The service date for this booking has passed, so it can’t be paid now — contact the provider or Trove to arrange a new date' };
+  }
+  if (block === 'provider_unavailable') {
+    return { status: 409, error: 'This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged' };
   }
   const stripe = require('./stripe').getStripe();
   if (!stripe) return { status: 503, error: 'Card payments are unavailable right now — please try again later' };
@@ -390,6 +484,6 @@ async function paymentSession(bk) {
 
 module.exports = {
   paymentsEnabled, linkToken, tokenOk, viewUrl, payUrl, PAY_REF, byCodeAndToken,
-  dubaiToday, serviceDateError, beforeService, confirmAmount,
+  dubaiToday, serviceDateError, beforeService, datePassed, payBlock, confirmAmount, sweepStale, REMIND_AFTER_HOURS, EXPIRE_REQUEST_DAYS,
   confirm, onPaymentSucceeded, refund, decline, cancel, complete, forCustomer, paymentSession, mail, serviceVat, refundOrphan,
 };

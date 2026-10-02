@@ -100,5 +100,8 @@
   "Add a photo of the front of your Emirates ID": "Add a photo of the front of your Emirates ID",
   "Add a photo of the back of your Emirates ID": "Add a photo of the back of your Emirates ID",
   "A WhatsApp number is required to apply": "A WhatsApp number is required to apply",
-  "A WhatsApp number is required for a shop application": "A WhatsApp number is required for a shop application"
+  "A WhatsApp number is required for a shop application": "A WhatsApp number is required for a shop application",
+  "Your services aren’t approved right now, so you can’t confirm bookings. You can still decline them — contact Trove if you think this is a mistake.": "Your services aren’t approved right now, so you can’t confirm bookings. You can still decline them — contact Trove if you think this is a mistake.",
+  "The service date for this booking has passed, so it can’t be paid now — contact the provider or Trove to arrange a new date": "The service date for this booking has passed, so it can’t be paid now — contact the provider or Trove to arrange a new date",
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged": "This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged"
 }

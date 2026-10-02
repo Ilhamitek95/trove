@@ -347,7 +347,7 @@ router.get('/providers', requireAdmin, (_req, res) => {
 // PATCH /api/admin/providers/:id { status } → the approval workflow. First
 // approval stamps sub_started_at — the anchor for the monthly platform
 // subscription.
-router.patch('/providers/:id', requireAdmin, (req, res) => {
+router.patch('/providers/:id', requireAdmin, async (req, res, next) => { try {
   const { status } = req.body || {};
   if (!['pending', 'approved', 'rejected', 'suspended'].includes(status))
     return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
@@ -360,7 +360,46 @@ router.patch('/providers/:id', requireAdmin, (req, res) => {
   if (status === 'approved' && !p.sub_started_at) {
     db.prepare("UPDATE service_providers SET sub_started_at=datetime('now') WHERE id=?").run(p.id);
   }
-  res.json({ provider: db.prepare('SELECT * FROM service_providers WHERE id=?').get(p.id) });
+  // Suspended or rejected: the provider can no longer confirm or be paid
+  // through Trove (service-bookings.js), so requests and unpaid bookings
+  // waiting on them are closed now and the customers told. Confirmed
+  // bookings still to come are counted for the admin, who can cancel and
+  // refund them with POST /providers/:id/cancel-bookings.
+  let closedUnpaid = 0;
+  if (['suspended', 'rejected'].includes(status)) {
+    const svc = require('../service-bookings');
+    const open = db.prepare("SELECT * FROM service_bookings WHERE provider_id=? AND status IN ('requested','awaiting_payment') AND paid_at IS NULL").all(p.id);
+    for (const bk of open) { const r = await svc.cancel(bk, { by: 'admin' }); if (!r.error) closedUnpaid += 1; }
+  }
+  res.json({
+    provider: db.prepare('SELECT * FROM service_providers WHERE id=?').get(p.id),
+    closedUnpaid,
+    confirmedOpen: ['suspended', 'rejected'].includes(status) ? confirmedOpen(p.id).length : 0,
+  });
+} catch (e) { next(e); } });
+
+// Confirmed bookings with the service still to come (today included).
+const confirmedOpen = (providerId) => db.prepare(`SELECT * FROM service_bookings WHERE provider_id=? AND status='confirmed'
+  AND (service_date IS NULL OR service_date >= ?)`).all(providerId, require('../service-bookings').dubaiToday());
+
+// POST /api/admin/providers/:id/cancel-bookings → cancel a suspended or
+// rejected provider's confirmed bookings still to come; paid ones are
+// refunded in full and every customer is emailed.
+router.post('/providers/:id/cancel-bookings', requireAdmin, async (req, res, next) => {
+  try {
+    const p = db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.params.id);
+    if (!p) return res.status(404).json({ error: 'Provider not found' });
+    if (p.status === 'approved') return res.status(409).json({ error: 'This provider is approved — suspend them first' });
+    const svc = require('../service-bookings');
+    let cancelled = 0; let refunded = 0; let refundFailed = 0;
+    for (const bk of confirmedOpen(p.id)) {
+      const r = await svc.cancel(bk, { by: 'admin' });
+      if (r.error) continue;
+      cancelled += 1;
+      if (r.refunded) refunded += 1; else if (bk.paid_at) refundFailed += 1;
+    }
+    res.json({ cancelled, refunded, refundFailed });
+  } catch (e) { next(e); }
 });
 
 // The Trove Collection, the owner's own shop. The admin runs it from the

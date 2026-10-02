@@ -302,5 +302,16 @@
   "Something else": "سبب آخر",
   "Thank you{first}. {who} preparing {pieces} now, and you can follow every step from your account.": "شكراً لك{first}. يجري الآن تجهيز {pieces} لدى {who}، ويمكنك متابعة كل خطوة من حسابك.",
   "your pieces": "قطعك",
-  "your piece": "قطعتك"
+  "your piece": "قطعتك",
+  "We're sorry — {provider} didn't answer your request within a week, so we have closed it. You're welcome to book another provider.": "نأسف — لم يردّ {provider} على طلبك خلال أسبوع، لذا أغلقناه. يسعدنا أن تحجز لدى مقدّم خدمة آخر.",
+  "The service date passed before this booking was paid, so we have closed it. If you would still like the service, send a new request.": "مرّ موعد الخدمة قبل دفع قيمة هذا الحجز، لذا أغلقناه. إن كنت لا تزال ترغب في الخدمة، فأرسل طلبًا جديدًا.",
+  "This request waited a week with no answer, so we closed it and let the customer know. Please confirm or decline new requests within two days — customers are waiting to hear from you.": "بقي هذا الطلب أسبوعًا دون رد، لذا أغلقناه وأبلغنا العميل. يُرجى تأكيد الطلبات الجديدة أو الاعتذار عنها خلال يومين — فالعملاء ينتظرون ردّك.",
+  "The customer did not pay before the service date, so the booking has been closed. Please do not go ahead with it.": "لم يدفع العميل قبل موعد الخدمة، لذا أُغلق الحجز. يُرجى عدم تنفيذه.",
+  "Booking request {code} was closed": "أُغلق طلب الحجز {code}",
+  "A booking request was closed": "أُغلق طلب حجز",
+  "{name}'s request for {title} has been closed.": "أُغلق طلب {name} لخدمة {title}.",
+  "This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.": "ينتظر هذا الطلب ردّك منذ يومين. يُرجى تأكيده أو الاعتذار عنه — وإن لم يصل ردّ خلال أسبوع من تاريخ الطلب، نغلقه ونبلغ العميل.",
+  "Reminder: {name} is waiting for your answer — {title}": "تذكير: {name} ينتظر ردّك — {title}",
+  "A customer is waiting for your answer": "عميل ينتظر ردّك",
+  "Please confirm or decline this booking request.": "يُرجى تأكيد طلب الحجز هذا أو الاعتذار عنه."
 }

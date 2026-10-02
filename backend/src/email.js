@@ -644,8 +644,12 @@ function bookingCancelled({ booking: bk, kind, refunded, by, lang }) {
   const inner = svcSummary(bk, { pay: false }) + reason + money
     + button(T('Find another service'), `${SITE_LINK}/services`);
   const title = declined ? T('About your booking request') : T('Your booking is cancelled');
-  const intro = declined
+  const expired = by === 'expired' || bk.cancelled_by === 'expired';
+  const intro = declined && expired
+    ? T("We're sorry — {provider} didn't answer your request within a week, so we have closed it. You're welcome to book another provider.", { provider: `<b>${esc(bk.provider_name)}</b>` })
+    : declined
     ? T("We're sorry — {provider} can't take this booking.", { provider: `<b>${esc(bk.provider_name)}</b>` })
+    : expired ? T('The service date passed before this booking was paid, so we have closed it. If you would still like the service, send a new request.')
     : by === 'customer' ? T('As you asked, we have cancelled your booking.')
       : by === 'provider' ? T("We're sorry — this booking has been cancelled by {provider}.", { provider: esc(bk.provider_name) })
         : T("We're sorry — this booking has been cancelled.");
@@ -655,17 +659,39 @@ function bookingCancelled({ booking: bk, kind, refunded, by, lang }) {
   };
 }
 
-function bookingCancelledProvider({ booking: bk, lang }) {
+function bookingCancelledProvider({ booking: bk, by, lang }) {
   const { T, I, p, button, svcSummary, svcLayout, svcKicker } = kit(providerLang(bk, lang));
+  const expired = by === 'expired' || bk.cancelled_by === 'expired';
+  const unanswered = expired && bk.status === 'declined';
+  const why = unanswered
+    ? T('This request waited a week with no answer, so we closed it and let the customer know. Please confirm or decline new requests within two days — customers are waiting to hear from you.')
+    : expired ? T('The customer did not pay before the service date, so the booking has been closed. Please do not go ahead with it.')
+      : (bk.paid_at ? T('The customer has been refunded in full, so no fee is due on this booking.') : T('Nothing further to do.'));
+  const inner = svcSummary(bk, { pay: false }) + p(why) + button(T('Open your bookings'), PROVIDER_LINK);
+  return {
+    subject: unanswered ? T('Booking request {code} was closed', { code: I(bk.code) }) : T('Booking {code} was cancelled', { code: I(bk.code) }),
+    html: svcLayout('provider', unanswered ? T('A booking request was closed') : T('A booking was cancelled'), inner, {
+      kicker: svcKicker(bk), tone: 'clay',
+      intro: unanswered
+        ? T("{name}'s request for {title} has been closed.", { name: `<b>${esc(bk.name)}</b>`, title: esc(bk.title) })
+        : T("{name}'s booking for {title} has been cancelled.", { name: `<b>${esc(bk.name)}</b>`, title: esc(bk.title) }),
+      preheader: T('Booking {code} was cancelled.', { code: I(bk.code) }),
+    }),
+  };
+}
+
+/** To the provider, once: a request has waited two days for their answer. */
+function bookingReminderProvider({ booking: bk, lang }) {
+  const { T, p, button, svcSummary, svcLayout, svcKicker } = kit(providerLang(bk, lang));
   const inner = svcSummary(bk, { pay: false })
-    + p(bk.paid_at ? T('The customer has been refunded in full, so no fee is due on this booking.') : T('Nothing further to do.'))
+    + p(T('This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.'))
     + button(T('Open your bookings'), PROVIDER_LINK);
   return {
-    subject: T('Booking {code} was cancelled', { code: I(bk.code) }),
-    html: svcLayout('provider', T('A booking was cancelled'), inner, {
+    subject: T('Reminder: {name} is waiting for your answer — {title}', { name: bk.name, title: bk.title }),
+    html: svcLayout('provider', T('A customer is waiting for your answer'), inner, {
       kicker: svcKicker(bk), tone: 'clay',
-      intro: T("{name}'s booking for {title} has been cancelled.", { name: `<b>${esc(bk.name)}</b>`, title: esc(bk.title) }),
-      preheader: T('Booking {code} was cancelled.', { code: I(bk.code) }),
+      intro: T('{name} in {area} would like to book you.', { name: `<b>${esc(bk.name)}</b>`, area: esc(bk.area) }),
+      preheader: T('Please confirm or decline this booking request.'),
     }),
   };
 }
@@ -691,6 +717,7 @@ module.exports.bookingConfirmedDirect = bookingConfirmedDirect;
 module.exports.bookingPaid = bookingPaid;
 module.exports.bookingPaidProvider = bookingPaidProvider;
 module.exports.bookingCancelled = bookingCancelled;
+module.exports.bookingReminderProvider = bookingReminderProvider;
 module.exports.bookingCancelledProvider = bookingCancelledProvider;
 module.exports.bookingRefunded = bookingRefunded;
 

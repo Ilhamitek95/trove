@@ -1071,8 +1071,8 @@ function bvHeadline(b){
       ?_t('Thank you — your payment is in, and {who} has your mobile to arrange the details. If the service isn’t delivered, Trove refunds you in full.',{who})
       :_t('{who} has your mobile and will be in touch to arrange the details. You settle with them directly.',{who})];
     case 'completed':return [_t('Done'),_t('This booking is marked as done. We hope it was lovely.')];
-    case 'declined':return [_t('Not this time'),_t('{who} can’t take this booking.',{who})+(b.declineReason?' '+_t('Their note: “{note}”',{note:esc(b.declineReason)}):'')];
-    case 'cancelled':return [_t('Cancelled'),(b.cancelledBy==='customer'?_t('You cancelled this booking.'):b.cancelledBy==='provider'?_t('This booking was cancelled by {who}.',{who}):_t('This booking was cancelled.'))+(b.cancelledBy!=='customer'&&b.declineReason?` “${esc(b.declineReason)}”`:'')];
+    case 'declined':return [_t('Not this time'),b.cancelledBy==='expired'?_t('{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.',{who}):_t('{who} can’t take this booking.',{who})+(b.declineReason?' '+_t('Their note: “{note}”',{note:esc(b.declineReason)}):'')];
+    case 'cancelled':return [_t('Cancelled'),b.cancelledBy==='expired'?_t('The service date passed before this booking was paid, so we closed it. Nothing was charged.'):(b.cancelledBy==='customer'?_t('You cancelled this booking.'):b.cancelledBy==='provider'?_t('This booking was cancelled by {who}.',{who}):_t('This booking was cancelled.'))+(b.cancelledBy!=='customer'&&b.declineReason?` “${esc(b.declineReason)}”`:'')];
     default:return [esc(b.status),''];
   }
 }
@@ -1090,13 +1090,15 @@ function renderBookingView(){
       <div id="bv-payment-element"></div><div class="bv-status" id="bvPayStatus"></div>
       <button class="submit" id="bvPayBtn" onclick="payBooking()">${_t('Pay by card')}</button>
       <div class="bv-note">${_t('Payments are processed securely by Stripe. For this booking Trove is your contracting party, and the provider delivers the service — see the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a>.')}</div></div>`
+      :b.payBlocked==='date_passed'?`<div class="bv-flag warm">${_t('The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.')}</div>`
+      :b.payBlocked==='provider_unavailable'?`<div class="bv-flag warm">${_t('This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.')}</div>`
       :`<div class="bv-flag warm">${_t('Card payment isn’t available right now — please try again a little later.')}</div>`;
   }
   $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')} <bdi>${esc(b.code)}</bdi></div><${BV_H}>${h}</${BV_H}><p class="lede">${lede}</p>
     <div class="bv-rows">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>
     ${refundNote}${pay}
     ${b.canCancel?`<button class="bv-cancel" onclick="cancelFromLink()">${_t('Cancel this booking')}</button>`:''}
-    ${!b.canCancel&&['confirmed','awaiting_payment'].includes(b.status)?`<div class="bv-note">${_t('The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 7 days.')}</div>`:''}`;
+    ${!b.canCancel&&['confirmed','awaiting_payment'].includes(b.status)?`<div class="bv-note">${_t('The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 3 days.')}</div>`:''}`;
 }
 async function mountBookingPay(){
   const st=$('bvPayStatus'),btn=$('bvPayBtn');if(!st)return;
