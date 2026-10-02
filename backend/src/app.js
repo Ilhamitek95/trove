@@ -147,6 +147,10 @@ function createApp() {
   }));
   // Admin sessions need the emailed second step and last 12 hours (admin-2fa.js).
   app.use(require('./admin-2fa').guard);
+  // Every page's own scripts/styles carry ?v=<content hash>, so a deploy
+  // reaches returning browsers at once (traffic.js; before i18n so its
+  // injected stylesheet is stamped too).
+  app.use(traffic.versionAssets(path.join(__dirname, '..', '..', 'docs')));
   // Languages (src/i18n.js): /ar/<anything public> is the Arabic twin of
   // <anything public>; the prefix is stripped here so every route below
   // answers both, req.lang says which, and every HTML response is finished

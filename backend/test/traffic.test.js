@@ -31,6 +31,32 @@ test('storefront HTML is compressed and always revalidated; assets cache for a w
   assert.match(icon.headers.get('cache-control'), /public, max-age=604800/);
 });
 
+test('scripts and styles: pages stamp them with a content hash; only stamped addresses cache long (F130)', async () => {
+  const crypto = require('crypto');
+  const DOCS = path.join(__dirname, '..', '..', 'docs');
+  const hash = (f) => crypto.createHash('sha1').update(fs.readFileSync(path.join(DOCS, f))).digest('hex').slice(0, 10);
+  for (const page of ['/', '/shop', '/services', '/sell', '/provider', '/account', '/login', '/apply', '/about', '/ar']) {
+    const res = await fetch(app.baseUrl + page, { redirect: 'manual' });
+    const html = await res.text();
+    const refs = [...html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)="([^"]+\.(?:js|css)(?:\?[^"]*)?)"/gi)].map((m) => m[1])
+      .filter((u) => !/^(https?:)?\/\//.test(u));
+    assert.ok(refs.length, `${page} loads local scripts`);
+    for (const u of refs) assert.match(u, /\?v=[a-f0-9]{10}$/, `${page}: ${u} carries a version stamp`);
+  }
+  const home = await (await fetch(app.baseUrl + '/')).text();
+  assert.ok(home.includes(`/api.js?v=${hash('api.js')}`), 'the stamp is the file content hash');
+  assert.ok((await (await fetch(app.baseUrl + '/ar')).text()).includes(`/rtl.css?v=${hash('rtl.css')}`), 'the injected Arabic stylesheet is stamped');
+
+  const stamped = await head(`/api.js?v=${hash('api.js')}`);
+  assert.equal(stamped.status, 200);
+  assert.match(stamped.headers.get('cache-control'), /public, max-age=31536000, immutable/);
+  for (const p of ['/api.js', '/site-chrome.js', '/provider-panel.js', '/rtl.css', '/api.js?v=nothex!']) {
+    const r = await head(p);
+    assert.equal(r.status, 200, p);
+    assert.equal(r.headers.get('cache-control'), 'no-cache', `${p}: an unstamped script always revalidates`);
+  }
+});
+
 test('public catalogue JSON carries a short public cache; searches and signed-in paths do not', async () => {
   const list = await app.api('GET', '/api/products');
   assert.equal(list.status, 200);

@@ -82,16 +82,72 @@ function publicCache(seconds, { swr = seconds * 5 } = {}) {
 }
 
 // Files that only change with a deploy and are safe to hold for a week.
-const LONG_LIVED = /\.(woff2?|ttf|otf|png|jpe?g|webp|gif|svg|ico|css|js)$/i;
+const LONG_LIVED = /\.(woff2?|ttf|otf|png|jpe?g|webp|gif|svg|ico)$/i;
+// Scripts and styles ship together with the (no-cache) HTML that calls them,
+// so they may only be held for long under a version stamp (F130).
+const CODE = /\.(css|js)$/i;
 const ASSET_MAX_AGE = 7 * 24 * 60 * 60;
+const CODE_MAX_AGE = 365 * 24 * 60 * 60;
 
-/** express.static setHeaders hook: long cache for assets, revalidate HTML. */
+/**
+ * express.static setHeaders hook: long cache for fonts/images; scripts and
+ * styles cached for a year ONLY when the address carries ?v=<content hash>
+ * (written into every page by versionAssets below — a new deploy changes the
+ * hash, so the browser fetches the new file at once); an unstamped script
+ * revalidates every time (cheap: ETag → 304). HTML always revalidates.
+ */
 function staticHeaders(res, filePath) {
   if (LONG_LIVED.test(filePath)) {
     res.set('Cache-Control', `public, max-age=${ASSET_MAX_AGE}, stale-while-revalidate=86400`);
+  } else if (CODE.test(filePath) && res.req && typeof res.req.query.v === 'string' && /^[a-f0-9]{8,40}$/.test(res.req.query.v)) {
+    res.set('Cache-Control', `public, max-age=${CODE_MAX_AGE}, immutable`);
   } else {
     res.set('Cache-Control', 'no-cache');
   }
 }
 
-module.exports = { rateLimit, publicCache, staticHeaders, clientKey, ASSET_MAX_AGE };
+/**
+ * Stamps local <script src> / <link href> addresses of .js/.css files in
+ * every HTML response with ?v=<first 10 hex of the file's SHA-1>, read from
+ * docsDir (re-hashed only when the file changes). Mount BEFORE the i18n
+ * middleware so the stylesheet it injects is stamped too.
+ */
+function versionAssets(docsDir) {
+  const fs = require('fs');
+  const path = require('path');
+  const crypto = require('crypto');
+  const cache = new Map();
+  const root = path.resolve(docsDir);
+  const hashOf = (rel) => {
+    const file = path.resolve(root, rel);
+    if (!file.startsWith(root + path.sep)) return null;
+    let st;
+    try { st = fs.statSync(file); } catch (_) { return null; }
+    if (!st.isFile()) return null;
+    const c = cache.get(file);
+    if (c && c.mtime === st.mtimeMs && c.size === st.size) return c.v;
+    const v = crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex').slice(0, 10);
+    cache.set(file, { mtime: st.mtimeMs, size: st.size, v });
+    return v;
+  };
+  const stamp = (html) => html.replace(/(<(?:script|link)\b[^>]*?\b(?:src|href)=")((?!\/\/)[^"?#:]+\.(?:js|css))"/gi, (m, pre, url) => {
+    const v = hashOf(url.replace(/^\/+/, ''));
+    return v ? `${pre}${url}?v=${v}"` : m;
+  });
+  const mw = (req, res, next) => {
+    const send = res.send.bind(res);
+    res.send = (body) => {
+      const ct = String(res.get('Content-Type') || '');
+      const isHtml = /html/.test(ct) || (!ct && /^\s*(<!--[\s\S]*?-->\s*)?<(!doctype|html)/i.test(String(body)));
+      if (typeof body === 'string' && isHtml && /<(script|link)\b/i.test(body)) {
+        try { body = stamp(body); } catch (e) { console.error('versionAssets failed:', e.message); }
+      }
+      return send(body);
+    };
+    next();
+  };
+  mw.stamp = stamp;
+  return mw;
+}
+
+module.exports = { rateLimit, publicCache, staticHeaders, versionAssets, clientKey, ASSET_MAX_AGE, CODE_MAX_AGE };
