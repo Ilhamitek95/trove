@@ -63,7 +63,6 @@
   "Tell them about it": "Tell them about it",
   "What you have in mind, how many people, anything they should know.": "What you have in mind, how many people, anything they should know.",
   "Settle directly with the provider": "Settle directly with the provider",
-  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.": "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.",
   "Pay through Trove by card": "Pay through Trove by card",
   "Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.": "Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.",
   "Card payment isn’t available right now — please settle directly for now.": "Card payment isn’t available right now — please settle directly for now.",
@@ -166,5 +165,10 @@
   "{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.": "{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.",
   "The service date passed before this booking was paid, so we closed it. Nothing was charged.": "The service date passed before this booking was paid, so we closed it. Nothing was charged.",
   "The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.": "The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.",
-  "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.": "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged."
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.": "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.",
+  "Services matching “{q}”": "Services matching “{q}”",
+  "Search the pieces for “{q}” →": "Search the pieces for “{q}” →",
+  "How would you like to pay?": "How would you like to pay?",
+  "protected": "protected",
+  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment."
 }

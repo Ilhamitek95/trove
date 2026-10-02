@@ -110,7 +110,9 @@ const DEFAULTS = {
     intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.',
     ctaApply: 'Start your application',
     ctaHow: 'See how it works',
-    facts: ['Free to join', 'No trade licence needed', 'Courier collects from your door', 'A real person reviews every shop'],
+    // The deal at a glance, right under the hero buttons (F146): what a maker
+    // keeps and when it is paid. Each promise is made once on the page (F147).
+    facts: ['You keep 60% of every sale', 'Paid every other Tuesday, after the 15-day return window', 'Free to join'],
   },
   'sell.steps': {
     eyebrow: 'How it works',
@@ -119,7 +121,7 @@ const DEFAULTS = {
       { title: 'Tell us about your craft', text: 'A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.' },
       { title: 'Add your pieces', text: 'Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.' },
       { title: 'Shoppers discover them', text: 'Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.' },
-      { title: 'Sold? We come to you', text: 'Our courier collects the piece from your door, and your money arrives with the fortnightly payout.' },
+      { title: 'Sold? We come to you', text: 'We email you the moment a piece sells, with the day to have it packed by. Pack it in your own packaging and mark it packed in your dashboard.' },
     ],
   },
   'sell.offer': {
@@ -127,12 +129,12 @@ const DEFAULTS = {
     heading: 'You make. Trove does the rest.',
     sub: 'All of it is part of the arrangement — no joining fee, no listing fee, no hidden costs.',
     items: [
-      { title: 'No trade licence needed', text: 'Trove buys your pieces and resells them, so you can start selling without a licence of your own.' },
+      { title: 'No trade licence to start', text: 'Trove buys your pieces and resells them, so most home makers can start without a licence. Before your first payout we check your Emirates ID and home address.' },
       { title: 'Professional photography', text: 'Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.' },
       { title: 'Marketing, done for you', text: 'Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.' },
       { title: 'The shopkeeping', text: 'Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.' },
-      { title: 'Delivery, arranged and paid', text: "When a piece sells, our courier collects it from your door. You pack it in your own packaging and hand it over — that's it." },
-      { title: 'Fortnightly payouts', text: "Your share lands in your bank account every other Tuesday, and your Payments page shows exactly what's coming and when." },
+      { title: 'Delivery, arranged and paid', text: 'Our courier collects each sold piece from your door and takes it to the buyer. Trove books and pays for every delivery.' },
+      { title: 'Fortnightly payouts', text: "A sale is paid in the first payout after the buyer's 15-day return window closes, so returns are settled first. Your Payments page shows the date for each sale." },
     ],
   },
   'sell.quotes': {
@@ -148,10 +150,10 @@ const DEFAULTS = {
     heading: 'Your questions, answered honestly.',
     items: [
       { q: "I've never sold online before — is that okay?", a: "That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop." },
-      { q: 'Do I need a trade licence?', a: 'No. Trove buys your pieces from you and resells them to shoppers, so you can sell here without any licence. If you do have one, mention it when you apply — it unlocks extra payout options as you grow.' },
+      { q: 'Do I need a trade licence?', a: 'Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.' },
       { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included — and that's the whole arrangement. If nothing sells, you owe nothing." },
       { q: 'How does delivery work?', a: "You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard." },
-      { q: 'How and when do I get paid?', a: "Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid. Your Payments page shows exactly what's coming and when." },
+      { q: 'How and when do I get paid?', a: "Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when." },
       { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed." },
       { q: 'Can I keep selling on Instagram or at markets?', a: 'Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.' },
     ],

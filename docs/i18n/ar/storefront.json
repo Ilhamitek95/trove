@@ -41,14 +41,7 @@
   "AED 200+": "AED 200 فأكثر",
   "Show pieces": "اعرض القطع",
   "from": "من",
-  "shops": {
-    "zero": "متجر",
-    "one": "متجر",
-    "two": "متجر",
-    "few": "متاجر",
-    "many": "متجراً",
-    "other": "متجر"
-  },
+  "shops": { "zero": "متجر", "one": "متجر", "two": "متجر", "few": "متاجر", "many": "متجراً", "other": "متجر" },
   "Sort pieces": "رتّب القطع",
   "Curated": "مختارة",
   "Price · low to high": "السعر · من الأقل إلى الأعلى",
@@ -78,15 +71,6 @@
   "No testimonials yet — the first makers’ words will appear here once they’ve sold with us.": "لا توجد شهادات بعد، وستظهر هنا كلمات صنّاعنا الأوائل بعد أن يبيعوا معنا.",
   "Founding makers wanted": "نبحث عن صنّاع مؤسسين",
   "Be one of our first makers.": "كن من أوائل صنّاعنا.",
-  "Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first. The arrangement, plainly:": "تفتح Trove أبوابها للتو، لذا لا توجد قصص صنّاع نرويها بعد، وقد تكون قصتك من أولها. وهذا هو الاتفاق ببساطة:",
-  "You keep 60%": "تحتفظ بـ60%",
-  "You set the price. When a piece sells, Trove buys it from you at 60% of that price, paid out fortnightly.": "أنت تحدّد السعر، وعندما تُباع قطعة تشتريها Trove منك بنسبة 60% من ذلك السعر، وتُصرف المستحقات كل أسبوعين.",
-  "Trove photographs": "Trove تصوّر",
-  "Our photographer shoots your pieces so they look their best — or use your own photos if you prefer.": "يصوّر مصوّرنا قطعك لتظهر بأبهى صورة، ويمكنك استخدام صورك الخاصة إن شئت.",
-  "Trove markets": "Trove تسوّق",
-  "The advertising, social media and featured placements are on us. You never pay for promotion.": "الإعلانات ووسائل التواصل الاجتماعي ومواضع العرض المميزة علينا، ولا تدفع أنت شيئاً مقابل الترويج.",
-  "Trove delivers": "Trove توصل",
-  "Our courier collects each sold piece from your door. You pack it in your own packaging and hand it over.": "يستلم مندوب التوصيل كل قطعة مبيعة من باب بيتك، وكل ما عليك أن تغلّفها بتغليفك الخاص وتسلّمها.",
   "Apply as a founding maker": "قدّم طلبك كصانع مؤسس",
   "Want the full terms? Read the <a href=\"/seller-agreement\" style=\"text-decoration:underline\">Seller Agreement</a>, written in plain English, before you apply.": "تودّ الاطلاع على الشروط كاملة؟ اقرأ <a href=\"/seller-agreement\" style=\"text-decoration:underline\">اتفاقية البائع</a> قبل أن تتقدّم بطلبك، فهي مكتوبة بلغة واضحة وبسيطة.",
   "← Back to basket": "→ العودة إلى السلة",
@@ -268,154 +252,37 @@
   "Every piece on Trove: handmade and designed pieces from independent makers, delivered across Dubai and Abu Dhabi.": "كل القطع على Trove: قطع مصنوعة يدوياً ومصمّمة من صنّاع مستقلين، نوصلها إلى جميع أنحاء دبي وأبوظبي.",
   "{cat} on Trove: pieces handmade by independent makers, delivered across Dubai and Abu Dhabi.": "{cat} على Trove: قطع مصنوعة يدوياً بأيدي صنّاع مستقلين، نوصلها إلى جميع أنحاء دبي وأبوظبي.",
   "The pieces in your app basket are no longer available": "لم تعد القطع الموجودة في سلة التطبيق متاحة",
-  "{range} days": {
-    "zero": "{range} يوم",
-    "one": "{range} يوم",
-    "two": "{range} يوم",
-    "few": "{range} أيام",
-    "many": "{range} يوماً",
-    "other": "{range} يوم"
-  },
-  "{n} days after your order": {
-    "zero": "{n} يوم بعد طلبك",
-    "one": "يوم واحد بعد طلبك",
-    "two": "يومان بعد طلبك",
-    "few": "{n} أيام بعد طلبك",
-    "many": "{n} يوماً بعد طلبك",
-    "other": "{n} يوم بعد طلبك"
-  },
-  "Arrives in {label} · made for you, ready to send in {n} days": {
-    "zero": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} يوم",
-    "one": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال يوم واحد",
-    "two": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال يومين",
-    "few": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} أيام",
-    "many": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} يوماً",
-    "other": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} يوم"
-  },
-  "<b>{n}</b> pieces": {
-    "zero": "<b>{n}</b> قطعة",
-    "one": "<b>{n}</b> قطعة",
-    "two": "<b>{n}</b> قطعتان",
-    "few": "<b>{n}</b> قطع",
-    "many": "<b>{n}</b> قطعة",
-    "other": "<b>{n}</b> قطعة"
-  },
-  "<b>{n}</b> services": {
-    "zero": "<b>{n}</b> خدمة",
-    "one": "<b>{n}</b> خدمة",
-    "two": "<b>{n}</b> خدمتان",
-    "few": "<b>{n}</b> خدمات",
-    "many": "<b>{n}</b> خدمة",
-    "other": "<b>{n}</b> خدمة"
-  },
-  "But {n} pieces do elsewhere on Trove — your category filter is hiding them.": {
-    "one": "لكن هناك قطعة واحدة تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها.",
-    "two": "لكن هناك قطعتين تطابقانه في مكان آخر على Trove، وتصفية الفئة تخفيهما.",
-    "few": "لكن هناك {n} قطع تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها.",
-    "many": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها.",
-    "other": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها."
-  },
-  "But {n} pieces do elsewhere on Trove — your price, seller or sale filter is hiding them.": {
-    "one": "لكن هناك قطعة واحدة تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها.",
-    "two": "لكن هناك قطعتين تطابقانه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيهما.",
-    "few": "لكن هناك {n} قطع تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها.",
-    "many": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها.",
-    "other": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها."
-  },
-  "Show {n} pieces": {
-    "zero": "اعرض {n} قطعة",
-    "one": "اعرض قطعة واحدة",
-    "two": "اعرض قطعتين",
-    "few": "اعرض {n} قطع",
-    "many": "اعرض {n} قطعة",
-    "other": "اعرض {n} قطعة"
-  },
-  "{avg}★ from {n} reviews": {
-    "zero": "{avg}★",
-    "one": "{avg}★ من مراجعة واحدة",
-    "two": "{avg}★ من مراجعتين",
-    "few": "{avg}★ من {n} مراجعات",
-    "many": "{avg}★ من {n} مراجعة",
-    "other": "{avg}★ من {n} مراجعة"
-  },
-  "{n} pieces by {name}.": {
-    "zero": "لا قطع من {name}.",
-    "one": "قطعة واحدة من {name}.",
-    "two": "قطعتان من {name}.",
-    "few": "{n} قطع من {name}.",
-    "many": "{n} قطعة من {name}.",
-    "other": "{n} قطعة من {name}."
-  },
-  "Only {n} left of this one.": {
-    "zero": "نفدت الكمية.",
-    "one": "بقيت قطعة واحدة فقط من هذا الخيار.",
-    "two": "بقيت قطعتان فقط من هذا الخيار.",
-    "few": "بقيت {n} قطع فقط من هذا الخيار.",
-    "many": "بقيت {n} قطعة فقط من هذا الخيار.",
-    "other": "بقيت {n} قطعة فقط من هذا الخيار."
-  },
-  "Only {n} left.": {
-    "zero": "نفدت الكمية.",
-    "one": "بقيت قطعة واحدة فقط.",
-    "two": "بقيت قطعتان فقط.",
-    "few": "بقيت {n} قطع فقط.",
-    "many": "بقيت {n} قطعة فقط.",
-    "other": "بقيت {n} قطعة فقط."
-  },
-  "Only {n} left of this one": {
-    "zero": "نفدت الكمية",
-    "one": "بقيت قطعة واحدة فقط من هذا الخيار",
-    "two": "بقيت قطعتان فقط من هذا الخيار",
-    "few": "بقيت {n} قطع فقط من هذا الخيار",
-    "many": "بقيت {n} قطعة فقط من هذا الخيار",
-    "other": "بقيت {n} قطعة فقط من هذا الخيار"
-  },
-  "Only {n} left — lower the quantity": {
-    "zero": "نفدت الكمية، خفّض العدد",
-    "one": "بقيت قطعة واحدة فقط، خفّض الكمية",
-    "two": "بقيت قطعتان فقط، خفّض الكمية",
-    "few": "بقيت {n} قطع فقط، خفّض الكمية",
-    "many": "بقيت {n} قطعة فقط، خفّض الكمية",
-    "other": "بقيت {n} قطعة فقط، خفّض الكمية"
-  },
-  "{n} pieces from your basket are no longer available": {
-    "zero": "كل القطع في سلتك متاحة",
-    "one": "لم تعد إحدى القطع في سلتك متاحة",
-    "two": "لم تعد قطعتان من سلتك متاحتين",
-    "few": "لم تعد {n} قطع من سلتك متاحة",
-    "many": "لم تعد {n} قطعة من سلتك متاحة",
-    "other": "لم تعد {n} قطعة من سلتك متاحة"
-  },
-  "Your order spans {n} shops — each ships separately, tracked together in one place. Arrives in {label}.": {
-    "one": "يأتي طلبك من متجر واحد، ويصل خلال {label}.",
-    "two": "يأتي طلبك من متجرين، يشحن كلٌّ منهما على حدة وتتابعهما معاً في مكان واحد. يصل خلال {label}.",
-    "few": "يأتي طلبك من {n} متاجر، يشحن كلٌّ منها على حدة وتتابعها معاً في مكان واحد. يصل خلال {label}.",
-    "many": "يأتي طلبك من {n} متجراً، يشحن كلٌّ منها على حدة وتتابعها معاً في مكان واحد. يصل خلال {label}.",
-    "other": "يأتي طلبك من {n} متجر، يشحن كلٌّ منها على حدة وتتابعها معاً في مكان واحد. يصل خلال {label}."
-  },
-  "{n} shipments · tracked together": {
-    "zero": "لا شحنات",
-    "one": "شحنة واحدة · تتابعها في مكان واحد",
-    "two": "شحنتان · تتابعهما معاً",
-    "few": "{n} شحنات · تتابعها معاً",
-    "many": "{n} شحنة · تتابعها معاً",
-    "other": "{n} شحنة · تتابعها معاً"
-  },
-  "{n} items · arrives in {label}": {
-    "one": "قطعة واحدة · تصل خلال {label}",
-    "two": "قطعتان · تصل خلال {label}",
-    "few": "{n} قطع · تصل خلال {label}",
-    "many": "{n} قطعة · تصل خلال {label}",
-    "other": "{n} قطعة · تصل خلال {label}"
-  },
+  "{range} days": { "zero": "{range} يوم", "one": "{range} يوم", "two": "{range} يوم", "few": "{range} أيام", "many": "{range} يوماً", "other": "{range} يوم" },
+  "{n} days after your order": { "zero": "{n} يوم بعد طلبك", "one": "يوم واحد بعد طلبك", "two": "يومان بعد طلبك", "few": "{n} أيام بعد طلبك", "many": "{n} يوماً بعد طلبك", "other": "{n} يوم بعد طلبك" },
+  "Arrives in {label} · made for you, ready to send in {n} days": { "zero": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} يوم", "one": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال يوم واحد", "two": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال يومين", "few": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} أيام", "many": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} يوماً", "other": "تصل خلال {label} · تُصنع لك، وتجهز للإرسال خلال {n} يوم" },
+  "<b>{n}</b> pieces": { "zero": "<b>{n}</b> قطعة", "one": "<b>{n}</b> قطعة", "two": "<b>{n}</b> قطعتان", "few": "<b>{n}</b> قطع", "many": "<b>{n}</b> قطعة", "other": "<b>{n}</b> قطعة" },
+  "<b>{n}</b> services": { "zero": "<b>{n}</b> خدمة", "one": "<b>{n}</b> خدمة", "two": "<b>{n}</b> خدمتان", "few": "<b>{n}</b> خدمات", "many": "<b>{n}</b> خدمة", "other": "<b>{n}</b> خدمة" },
+  "But {n} pieces do elsewhere on Trove — your category filter is hiding them.": { "one": "لكن هناك قطعة واحدة تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها.", "two": "لكن هناك قطعتين تطابقانه في مكان آخر على Trove، وتصفية الفئة تخفيهما.", "few": "لكن هناك {n} قطع تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها.", "many": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها.", "other": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية الفئة تخفيها." },
+  "But {n} pieces do elsewhere on Trove — your price, seller or sale filter is hiding them.": { "one": "لكن هناك قطعة واحدة تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها.", "two": "لكن هناك قطعتين تطابقانه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيهما.", "few": "لكن هناك {n} قطع تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها.", "many": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها.", "other": "لكن هناك {n} قطعة تطابقه في مكان آخر على Trove، وتصفية السعر أو البائع أو التخفيضات تخفيها." },
+  "Show {n} pieces": { "zero": "اعرض {n} قطعة", "one": "اعرض قطعة واحدة", "two": "اعرض قطعتين", "few": "اعرض {n} قطع", "many": "اعرض {n} قطعة", "other": "اعرض {n} قطعة" },
+  "{avg}★ from {n} reviews": { "zero": "{avg}★", "one": "{avg}★ من مراجعة واحدة", "two": "{avg}★ من مراجعتين", "few": "{avg}★ من {n} مراجعات", "many": "{avg}★ من {n} مراجعة", "other": "{avg}★ من {n} مراجعة" },
+  "{n} pieces by {name}.": { "zero": "لا قطع من {name}.", "one": "قطعة واحدة من {name}.", "two": "قطعتان من {name}.", "few": "{n} قطع من {name}.", "many": "{n} قطعة من {name}.", "other": "{n} قطعة من {name}." },
+  "Only {n} left of this one.": { "zero": "نفدت الكمية.", "one": "بقيت قطعة واحدة فقط من هذا الخيار.", "two": "بقيت قطعتان فقط من هذا الخيار.", "few": "بقيت {n} قطع فقط من هذا الخيار.", "many": "بقيت {n} قطعة فقط من هذا الخيار.", "other": "بقيت {n} قطعة فقط من هذا الخيار." },
+  "Only {n} left.": { "zero": "نفدت الكمية.", "one": "بقيت قطعة واحدة فقط.", "two": "بقيت قطعتان فقط.", "few": "بقيت {n} قطع فقط.", "many": "بقيت {n} قطعة فقط.", "other": "بقيت {n} قطعة فقط." },
+  "Only {n} left of this one": { "zero": "نفدت الكمية", "one": "بقيت قطعة واحدة فقط من هذا الخيار", "two": "بقيت قطعتان فقط من هذا الخيار", "few": "بقيت {n} قطع فقط من هذا الخيار", "many": "بقيت {n} قطعة فقط من هذا الخيار", "other": "بقيت {n} قطعة فقط من هذا الخيار" },
+  "Only {n} left — lower the quantity": { "zero": "نفدت الكمية، خفّض العدد", "one": "بقيت قطعة واحدة فقط، خفّض الكمية", "two": "بقيت قطعتان فقط، خفّض الكمية", "few": "بقيت {n} قطع فقط، خفّض الكمية", "many": "بقيت {n} قطعة فقط، خفّض الكمية", "other": "بقيت {n} قطعة فقط، خفّض الكمية" },
+  "{n} pieces from your basket are no longer available": { "zero": "كل القطع في سلتك متاحة", "one": "لم تعد إحدى القطع في سلتك متاحة", "two": "لم تعد قطعتان من سلتك متاحتين", "few": "لم تعد {n} قطع من سلتك متاحة", "many": "لم تعد {n} قطعة من سلتك متاحة", "other": "لم تعد {n} قطعة من سلتك متاحة" },
+  "Your order spans {n} shops — each ships separately, tracked together in one place. Arrives in {label}.": { "one": "يأتي طلبك من متجر واحد، ويصل خلال {label}.", "two": "يأتي طلبك من متجرين، يشحن كلٌّ منهما على حدة وتتابعهما معاً في مكان واحد. يصل خلال {label}.", "few": "يأتي طلبك من {n} متاجر، يشحن كلٌّ منها على حدة وتتابعها معاً في مكان واحد. يصل خلال {label}.", "many": "يأتي طلبك من {n} متجراً، يشحن كلٌّ منها على حدة وتتابعها معاً في مكان واحد. يصل خلال {label}.", "other": "يأتي طلبك من {n} متجر، يشحن كلٌّ منها على حدة وتتابعها معاً في مكان واحد. يصل خلال {label}." },
+  "{n} shipments · tracked together": { "zero": "لا شحنات", "one": "شحنة واحدة · تتابعها في مكان واحد", "two": "شحنتان · تتابعهما معاً", "few": "{n} شحنات · تتابعها معاً", "many": "{n} شحنة · تتابعها معاً", "other": "{n} شحنة · تتابعها معاً" },
+  "{n} items · arrives in {label}": { "one": "قطعة واحدة · تصل خلال {label}", "two": "قطعتان · تصل خلال {label}", "few": "{n} قطع · تصل خلال {label}", "many": "{n} قطعة · تصل خلال {label}", "other": "{n} قطعة · تصل خلال {label}" },
   "Contact details": "بيانات التواصل",
   "Give your craft a <em>shopfront</em>.": "امنح حرفتك <em>واجهة متجر</em>.",
-  "pieces": {
-    "zero": "قطعة",
-    "one": "قطعة",
-    "two": "قطعة",
-    "few": "قطع",
-    "many": "قطعة",
-    "other": "قطعة"
-  }
+  "pieces": { "zero": "قطعة", "one": "قطعة", "two": "قطعة", "few": "قطع", "many": "قطعة", "other": "قطعة" },
+  "{n} services match — see them": { "zero": "لا خدمات مطابقة", "one": "خدمة واحدة مطابقة — اطّلع عليها", "two": "خدمتان مطابقتان — اطّلع عليهما", "few": "{n} خدمات مطابقة — اطّلع عليها", "many": "{n} خدمة مطابقة — اطّلع عليها", "other": "{n} خدمة مطابقة — اطّلع عليها" },
+  "Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first.": "تفتح Trove أبوابها للتو، لذا لا توجد قصص صنّاع نشاركها بعد — وقد تكون قصتك من أولاها.",
+  "Offer a service instead?": "تقدّم خدمة بدلًا من ذلك؟",
+  "Workshops, styling, photography, murals…": "ورش عمل، تنسيق، تصوير، جداريات…",
+  "If what you offer is a service at the customer’s home, list it on the <a href=\"/services\" style=\"text-decoration:underline\">Services Marketplace</a>. The customer chooses how to pay:": "إن كان ما تقدّمه خدمة في منزل العميل، فأدرجها في <a href=\"/services\" style=\"text-decoration:underline\">سوق الخدمات</a>. ويختار العميل طريقة الدفع:",
+  "They pay you directly": "يدفع لك مباشرةً",
+  "By bank transfer or cash, as you agree. You keep 100% — Trove takes nothing.": "بتحويل بنكي أو نقدًا، كما تتفقان. تحتفظ بـ 100% — ولا تأخذ Trove شيئًا.",
+  "They pay through Trove by card": "يدفع عبر Trove بالبطاقة",
+  "Trove keeps a 10% platform fee and sends you the rest by bank transfer, after the service date.": "تحتفظ Trove برسوم منصة قدرها 10% وترسل إليك الباقي بتحويل بنكي بعد موعد الخدمة.",
+  "Free to list during launch": "الإدراج مجاني خلال فترة الإطلاق",
+  "A monthly listing fee starts later, and we’ll give you 30 days’ notice before it does.": "تبدأ رسوم الإدراج الشهرية لاحقًا، وسنُخطرك قبل ذلك بثلاثين يومًا.",
+  "Apply to offer services": "قدّم طلبًا لعرض خدماتك"
 }

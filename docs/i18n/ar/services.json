@@ -21,22 +21,8 @@
   "No providers offer services {audience} yet — the Services Marketplace is just opening. Do one of these beautifully yourself? <a href=\"/apply?for=services\">Become a provider</a> and be the first name here.": "لا يقدّم أيّ مقدّم خدمة خدماتٍ {audience} حتى الآن — فسوق الخدمات يفتح أبوابه للتو. هل تتقن إحدى هذه الخدمات؟ <a href=\"/apply?for=services\">انضم مقدّماً للخدمات</a> وكن أول اسم هنا.",
   "All services": "كل الخدمات",
   "Show everything": "اعرض الكل",
-  "Show all {n} services": {
-    "zero": "اعرض كل الخدمات",
-    "one": "اعرض الخدمة",
-    "two": "اعرض الخدمتين",
-    "few": "اعرض الخدمات الـ{n} كلها",
-    "many": "اعرض الخدمات الـ{n} كلها",
-    "other": "اعرض الخدمات الـ{n} كلها"
-  },
-  "<b>{n}</b> services": {
-    "zero": "<b>0</b> خدمة",
-    "one": "<b>1</b> خدمة",
-    "two": "<b>2</b> خدمتان",
-    "few": "<b>{n}</b> خدمات",
-    "many": "<b>{n}</b> خدمة",
-    "other": "<b>{n}</b> خدمة"
-  },
+  "Show all {n} services": { "zero": "اعرض كل الخدمات", "one": "اعرض الخدمة", "two": "اعرض الخدمتين", "few": "اعرض الخدمات الـ{n} كلها", "many": "اعرض الخدمات الـ{n} كلها", "other": "اعرض الخدمات الـ{n} كلها" },
+  "<b>{n}</b> services": { "zero": "<b>0</b> خدمة", "one": "<b>1</b> خدمة", "two": "<b>2</b> خدمتان", "few": "<b>{n}</b> خدمات", "many": "<b>{n}</b> خدمة", "other": "<b>{n}</b> خدمة" },
   "Waiting for the provider": "بانتظار مقدّم الخدمة",
   "Confirmed · pay to secure": "مؤكَّد · ادفع لتثبيت الحجز",
   "Confirmed": "مؤكَّد",
@@ -71,7 +57,6 @@
   "Tell them about it": "أخبرهم بما تريد",
   "What you have in mind, how many people, anything they should know.": "ما يدور في ذهنك، وعدد الأشخاص، وأي شيء ينبغي أن يعرفوه.",
   "Settle directly with the provider": "ادفع مباشرة لمقدّم الخدمة",
-  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it.": "تحويل بنكي أو نقداً، بالاتفاق بينكما بعد تأكيده. لا يتدخّل Trove في ذلك.",
   "Pay through Trove by card": "ادفع عبر Trove بالبطاقة",
   "Nothing is charged now. Once the provider confirms the date and price, we email you a secure link to pay Trove. Refunded in full if the service isn’t delivered.": "لن يُخصم شيء الآن. حين يؤكّد مقدّم الخدمة الموعد والسعر، نرسل إليك بالبريد الإلكتروني رابطاً آمناً للدفع إلى Trove. ويُسترد المبلغ كاملاً إن لم تُقدَّم الخدمة.",
   "Card payment isn’t available right now — please settle directly for now.": "الدفع بالبطاقة غير متاح حالياً — يُرجى الدفع مباشرة في الوقت الحالي.",
@@ -174,5 +159,10 @@
   "{who} didn’t answer your request within a week, so we closed it. You’re welcome to book another provider.": "لم يردّ {who} على طلبك خلال أسبوع، لذا أغلقناه. يسعدنا أن تحجز لدى مقدّم خدمة آخر.",
   "The service date passed before this booking was paid, so we closed it. Nothing was charged.": "مرّ موعد الخدمة قبل دفع قيمة هذا الحجز، لذا أغلقناه. لم يُخصم أي مبلغ.",
   "The service date for this booking has passed, so it can’t be paid now. Contact the provider or Trove to arrange a new date.": "مرّ موعد الخدمة لهذا الحجز، لذا لا يمكن دفعه الآن. تواصل مع مقدّم الخدمة أو مع Trove لترتيب موعد جديد.",
-  "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.": "لا يستطيع مقدّم الخدمة هذا استقبال حجوزات عبر Trove حاليًا، لذا لا يمكن دفع هذا الحجز. لم يُخصم أي مبلغ."
+  "This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.": "لا يستطيع مقدّم الخدمة هذا استقبال حجوزات عبر Trove حاليًا، لذا لا يمكن دفع هذا الحجز. لم يُخصم أي مبلغ.",
+  "Services matching “{q}”": "خدمات تطابق «{q}»",
+  "Search the pieces for “{q}” →": "ابحث في القطع عن «{q}» ←",
+  "How would you like to pay?": "كيف تودّ الدفع؟",
+  "protected": "محميّ",
+  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "تحويل بنكي أو نقدًا، بالاتفاق بينكما بعد التأكيد. لا تتدخّل Trove في ذلك، لذا لا يمكنها ردّ مبلغ دُفع مباشرةً."
 }

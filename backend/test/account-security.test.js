@@ -49,16 +49,33 @@ test('signing in replaces a planted session id with a fresh one', async () => {
   assert.equal((await ctx.api('GET', '/api/auth/me', { cookie: second })).status, 200);
 });
 
-test('services apply: an existing email that is not signed in gets 409 sign_in_required, whatever the password', async () => {
-  for (const password of ['rightpass123', 'wrongpass123', undefined]) {
+// F102 (2026-10-02): like a shop application (register), an existing account
+// is added to when the applicant gives ITS password; a wrong or missing
+// password signs nobody in and attaches nothing.
+test('services apply: an existing email needs its own password (or a signed-in session)', async () => {
+  for (const [password, code] of [['wrongpass123', 'exists_wrong_password'], [undefined, 'sign_in_required']]) {
     const r = await ctx.api('POST', '/api/services/apply', { body: { ...APPLY, password } });
     assert.equal(r.status, 409, `password ${password}`);
-    assert.equal(r.data.code, 'sign_in_required');
-    assert.match(r.data.error, /sign in first/);
+    assert.equal(r.data.code, code);
     assert.equal(r.headers.get('set-cookie'), null, 'never signs anyone in');
   }
   const uid = db.prepare("SELECT id FROM users WHERE email='existing@test.local'").get().id;
   assert.equal(db.prepare('SELECT COUNT(*) AS c FROM service_providers WHERE user_id=?').get(uid).c, 0, 'no profile attached');
+});
+
+test('services apply: the right password adds the practice to that account and signs in', async () => {
+  const { hashPassword } = require('../src/middleware');
+  db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('existing2@test.local',?,'Existing Two','buyer')").run(hashPassword('rightpass123'));
+  db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('boss2@test.local',?,'Boss','admin')").run(hashPassword('rightpass123'));
+  const admin = await ctx.api('POST', '/api/services/apply', { body: { ...APPLY, email: 'boss2@test.local', password: 'rightpass123', providerName: 'Boss Practice' } });
+  assert.equal(admin.status, 409, 'the admin never signs in through a form that skips its second step');
+  assert.equal(admin.headers.get('set-cookie'), null);
+  const r = await ctx.api('POST', '/api/services/apply', { body: { ...APPLY, email: 'existing2@test.local', password: 'rightpass123', providerName: 'Second Practice' } });
+  assert.equal(r.status, 201, r.text);
+  assert.equal(r.data.created, false, 'no new account');
+  const cookie = cookieOf(r);
+  assert.ok(cookie, 'signed in on a fresh session');
+  assert.equal((await ctx.api('GET', '/api/auth/me', { cookie })).data.provider.name, 'Second Practice');
 });
 
 test('services apply: the signed-in owner of that email can apply on the same session', async () => {

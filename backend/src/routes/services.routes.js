@@ -196,10 +196,22 @@ router.post('/apply', (req, res, next) => {
   }
 
   let userId;
+  // An existing account is added to when the applicant is signed in as it,
+  // or gives its password here — the same rule as a shop application
+  // (auth.routes.js register). The admin never signs in through a form that
+  // skips its second step.
+  let signInNow = false;
   if (existing) {
-    if (req.session.userId !== existing.id) {
-      return res.status(409).json({ code: 'sign_in_required', error: 'An account with this email already exists — sign in first, then add your services' });
+    const signedIn = req.session.userId === existing.id;
+    const ownsAccount = signedIn || (b.password && require('../middleware').verifyPassword(String(b.password), existing.password_hash));
+    if (!ownsAccount) {
+      return res.status(409).json({ code: b.password ? 'exists_wrong_password' : 'sign_in_required',
+        error: b.password ? 'An account with this email already exists, and that isn’t its password' : 'An account with this email already exists — sign in first, then add your services' });
     }
+    if (existing.role === 'admin' && !signedIn) {
+      return res.status(409).json({ code: 'sign_in_required', error: 'Sign in first, then apply' });
+    }
+    signInNow = !signedIn;
     if (db.prepare('SELECT 1 FROM service_providers WHERE user_id = ?').get(existing.id)) {
       return res.status(409).json({ code: 'already_provider', error: 'This account is already registered as a service provider' });
     }
@@ -239,9 +251,10 @@ router.post('/apply', (req, res, next) => {
   if (!existing) notify.welcomeVerify(db.prepare('SELECT * FROM users WHERE id = ?').get(userId));
   // `created` lets the page report a sign-up to analytics only when this opened the account.
   const done = () => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)), created: !existing });
-  // A new account signs in on a fresh session; an applicant already signed
-  // in keeps the session they have (nothing about their privileges changed).
-  if (existing) return done();
+  // A new account — or an existing one that gave its password here — signs
+  // in on a fresh session; an applicant already signed in keeps the session
+  // they have (nothing about their privileges changed).
+  if (existing && !signInNow) return done();
   startSession(req, { userId }).then(done).catch(next);
 });
 
