@@ -1,0 +1,60 @@
+/* ------------------------------------------------------------------ *
+ * Trove — Arabic (right-to-left). Loaded ONLY on Arabic pages (/ar/…),
+ * after each page's own <style>, by backend/src/i18n.js finishPage().
+ *
+ * 1. Arabic faces inside the brand's own families. The extra @font-face
+ *    rules below add Arabic glyphs to 'Quicksand' (IBM Plex Sans Arabic)
+ *    and 'Cormorant' (Noto Naskh Arabic) through unicode-range, so every
+ *    rule that already names a brand family renders Arabic in the paired
+ *    face, Latin keeps its own, and the files download only when Arabic
+ *    text is on screen. Upright only — no italics anywhere.
+ * 2. Arabic typography: no letter-spacing (it breaks the joined script),
+ *    roomier line-height on display headings.
+ * 3. The shared chrome (promo bar, header, account menu, mobile menu,
+ *    footer) mirrored. Page-specific mirroring lives in each page's own
+ *    <style> under [dir="rtl"].
+ * 4. Helpers: .rtl-flip mirrors a directional icon; email/phone/IBAN/code
+ *    inputs stay left-to-right.
+ * ------------------------------------------------------------------ */
+
+/* 1 · Arabic glyphs for the brand families */
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:300 400;font-display:swap;src:url(https://fonts.gstatic.com/s/ibmplexsansarabic/v15/Qw3CZRtWPQCuHme67tEYUIx3Kh0PHR9N6Ys43PWrfQ.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:500;font-display:swap;src:url(https://fonts.gstatic.com/s/ibmplexsansarabic/v15/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YPO_-CRXMR5Kw.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:600;font-display:swap;src:url(https://fonts.gstatic.com/s/ibmplexsansarabic/v15/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YPi-OCRXMR5Kw.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:700 900;font-display:swap;src:url(https://fonts.gstatic.com/s/ibmplexsansarabic/v15/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YOG-eCRXMR5Kw.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Cormorant';font-style:normal;font-weight:300 900;font-display:swap;src:url(https://fonts.gstatic.com/s/notonaskharabic/v44/RrQKbpV-9Dd1b1OAGA6M9PkyDuVBeN2DHV20Lg.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+/* system-ui / inherit fallbacks (inputs, the cookie banner) get the same face */
+@font-face{font-family:'Trove Arabic';font-style:normal;font-weight:300 500;font-display:swap;src:url(https://fonts.gstatic.com/s/ibmplexsansarabic/v15/Qw3CZRtWPQCuHme67tEYUIx3Kh0PHR9N6Ys43PWrfQ.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+@font-face{font-family:'Trove Arabic';font-style:normal;font-weight:600 900;font-display:swap;src:url(https://fonts.gstatic.com/s/ibmplexsansarabic/v15/Qw3NZRtWPQCuHme67tEYUIx3Kh0PHR9N6YPi-OCRXMR5Kw.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+0870-088E,U+0890-0891,U+0897-08E1,U+08E3-08FF,U+200C-200E,U+FB50-FDFF,U+FE70-FE74,U+FE76-FEFC}
+
+/* 2 · Arabic typography */
+html[dir="rtl"] body{font-family:'Quicksand','Trove Arabic',system-ui,sans-serif}
+html[dir="rtl"] input,html[dir="rtl"] select,html[dir="rtl"] textarea,html[dir="rtl"] button{font-family:inherit}
+html[dir="rtl"] *,html[dir="rtl"] *::before,html[dir="rtl"] *::after{letter-spacing:0 !important;font-style:normal}
+html[dir="rtl"] :is(h1,h2,h3,h4){line-height:1.38}
+html[dir="rtl"] :is(h1,h2){word-spacing:.04em}
+html[dir="rtl"] body{line-height:1.75}
+html[dir="rtl"] .eyebrow{font-size:13px}
+/* numbers, codes and contact details read left to right inside Arabic text */
+html[dir="rtl"] :is(input[type="email"],input[type="tel"],input[type="url"],input[type="number"],input[inputmode="numeric"],input[inputmode="decimal"],input[autocomplete="email"],input[autocomplete="tel"],.ltr){direction:ltr;text-align:right}
+html[dir="rtl"] input[type="email"]::placeholder,html[dir="rtl"] input[type="tel"]::placeholder{text-align:right}
+html[dir="rtl"] .rtl-flip,html[dir="rtl"] [data-rtl-flip]{transform:scaleX(-1)}
+html[dir="rtl"] bdi,html[dir="rtl"] .num{unicode-bidi:isolate}
+
+/* 3 · the shared chrome */
+html[dir="rtl"] .skip{left:auto;right:12px}
+html[dir="rtl"] .nav .links{margin-left:0;margin-right:10px}
+html[dir="rtl"] .nav .links a::after{left:auto;right:0}
+html[dir="rtl"] .nav .right{margin-left:0;margin-right:auto}
+html[dir="rtl"] .cart-count{right:auto;left:3px}
+html[dir="rtl"] .acct-menu{right:auto;left:0}
+html[dir="rtl"] .mnav{left:auto;right:0;transform:translateX(103%)}
+html[dir="rtl"] .mnav.open{transform:none}
+html[dir="rtl"] .mn-link span{display:inline-block}
+html[dir="rtl"] .search input{text-align:right}
+html[dir="rtl"] .brand,html[dir="rtl"] .mn-brand,html[dir="rtl"] footer.site .fbrand{direction:ltr}
+html[dir="rtl"] .langsw,html[dir="rtl"] .mn-lang{font-family:'Quicksand',system-ui,sans-serif}
+html[dir="rtl"] .promo .wrap{font-size:13px}
+@media(max-width:1180px){html[dir="rtl"] .nav .links{gap:16px;margin-right:6px}}
+html[dir="rtl"] footer.site .fh{font-size:13.5px}
+html[dir="rtl"] footer.site .blurb{max-width:38ch}

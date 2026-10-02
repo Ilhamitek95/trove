@@ -10,15 +10,134 @@
  *   .me()              → { user, shop } when signed in, else null
  *   .logout()          → ends the session
  * ------------------------------------------------------------------ */
+/* ------------------------------------------------------------------ *
+ * Languages (backend/src/i18n.js). An Arabic page is served under /ar
+ * with lang="ar" dir="rtl" and its dictionary in window.TROVE_I18N
+ * (English text → Arabic). Page code wraps every visible string:
+ *   _t ("Add to basket")                      → the Arabic on /ar
+ *   _t ("Arrives in {label}", {label})        → {name} placeholders
+ *   _tn (n, "{n} piece", "{n} pieces")         → Arabic plural forms
+ *   troveIso('AED 120') / troveMoney(120)     → left-to-right isolate in Arabic
+ *   troveUrl('/shop')                         → '/ar/shop' on Arabic pages
+ *   trovePath(location.pathname)              → the path without /ar
+ *   troveDate(d, opts)                        → a date in the page language
+ * On Arabic pages history.pushState/replaceState keep the /ar prefix and
+ * local <a href>s added later get it too. troveSwitchLang() is the
+ * header's English / العربية switch.
+ * ------------------------------------------------------------------ */
+(function () {
+  var hasDom = typeof document !== 'undefined' && !!document.documentElement;
+  var LANG = window.TROVE_LANG === 'ar' || (hasDom && document.documentElement.lang === 'ar') ? 'ar' : 'en';
+  var D = window.TROVE_I18N || {};
+  // Mirrors LOCALIZED_RE in backend/src/i18n.js (test/i18n.test.js pins them equal).
+  var LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
+  function pathOf(u) { return String(u || '').split(/[?#]/)[0] || '/'; }
+  function localizable(u) { var p = pathOf(u); return LOCALIZED_RE.test(p.length > 1 ? p.replace(/\/+$/, '') : p); }
+  function arUrl(u) {
+    var s = String(u == null ? '' : u);
+    if (s.charAt(0) !== '/' || s.charAt(1) === '/' || /^\/ar(?:[/?#]|$)/.test(s) || !localizable(s)) return s;
+    var p = pathOf(s);
+    return (p === '/' ? '/ar' : '/ar' + p) + s.slice(p.length);
+  }
+  function stripAr(u) {
+    var s = String(u == null ? '' : u);
+    if (!/^\/ar(?=[/?#]|$)/.test(s)) return s;
+    var rest = s.slice(3);
+    return !rest || rest.charAt(0) === '?' || rest.charAt(0) === '#' ? '/' + rest : rest;
+  }
+  function fill(s, vars) {
+    s = String(s);
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] != null ? String(vars[k]) : m; }) : s;
+  }
+  var rules = null;
+  try { rules = new Intl.PluralRules(LANG); } catch (_) { rules = null; }
+  // Prices inside Arabic text sit in a left-to-right isolate ('AED 120' never scrambles).
+  function isoPrices(s) { return String(s).replace(/(^|[^⁦])(AED\s?\d(?:[\d,.]*\d)?)/g, '$1⁦$2⁩'); }
+
+  window.troveLang = LANG;
+  window._t = function (key, vars) {
+    if (LANG !== 'ar') return fill(key, vars);
+    var v = D[key];
+    return isoPrices(fill(typeof v === 'string' && v ? v : key, vars));
+  };
+  window._tn = function (n, one, other, vars) {
+    var v = { n: n };
+    if (vars) for (var k in vars) v[k] = vars[k];
+    if (LANG !== 'ar') return fill(n === 1 ? one : other, v);
+    var e = D[other];
+    if (e && typeof e === 'object') return isoPrices(fill(e[rules ? rules.select(n) : 'other'] || e.other || other, v));
+    return isoPrices(fill(typeof e === 'string' && e ? e : (n === 1 ? one : other), v));
+  };
+  window.troveIso = function (s) { return LANG === 'ar' ? '⁦' + s + '⁩' : String(s); };
+  window.troveMoney = function (n, opts) {
+    n = Number(n) || 0;
+    var s = 'AED ' + (Number.isInteger(n) && !(opts && opts.decimals) ? n.toLocaleString('en-GB') : n.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    return window.troveIso(s);
+  };
+  window.troveDate = function (d, opts) {
+    var x = d instanceof Date ? d : new Date(d);
+    if (isNaN(x.getTime())) return '';
+    return x.toLocaleDateString(LANG === 'ar' ? 'ar-AE-u-nu-latn-ca-gregory' : 'en-GB', opts || { day: 'numeric', month: 'long', year: 'numeric' });
+  };
+  window.troveUrl = function (u) { return LANG === 'ar' ? arUrl(u) : String(u == null ? '' : u); };
+  window.trovePath = function (u) { return stripAr(u == null ? location.pathname : u); };
+  /* The header's language switch: the same page in the other language.
+     English is asked for with ?hl=en, which tells the server to forget a
+     remembered Arabic choice (cookie + account). */
+  window.troveLangHref = function (to) {
+    var p = stripAr(location.pathname), q = location.search, h = location.hash;
+    if (to === 'ar') return (localizable(p) ? arUrl(p) : '/ar') + q + h;
+    q = q.replace(/([?&])hl=[^&]*&?/, '$1').replace(/[?&]$/, '');
+    return (localizable(p) ? p : '/') + (q ? q + '&' : '?') + 'hl=en' + h;
+  };
+  window.troveSwitchLang = function (e) {
+    var to = LANG === 'ar' ? 'en' : 'ar';
+    try { localStorage.setItem('trove.lang', to); } catch (_) {}
+    try { document.cookie = 'trove_lang=' + to + '; path=/; max-age=31536000; samesite=lax'; } catch (_) {}
+    if (e && e.preventDefault) e.preventDefault();
+    location.href = window.troveLangHref(to);
+    return false;
+  };
+  if (LANG !== 'ar' || !hasDom || typeof history === 'undefined') return;
+  ['pushState', 'replaceState'].forEach(function (k) {
+    var orig = history[k];
+    history[k] = function (st, title, url) {
+      return orig.call(history, st, title, typeof url === 'string' ? arUrl(url) : url);
+    };
+  });
+  function fix(a) {
+    if (!a || a.tagName !== 'A' || a.hasAttribute('data-lang-switch')) return;
+    var h = a.getAttribute('href');
+    if (h && h.charAt(0) === '/') { var n = arUrl(h); if (n !== h) a.setAttribute('href', n); }
+  }
+  function scan(node) {
+    if (!node || node.nodeType !== 1) return;
+    if (node.tagName === 'A') fix(node);
+    if (node.querySelectorAll) { var l = node.querySelectorAll('a[href^="/"]'); for (var i = 0; i < l.length; i++) fix(l[i]); }
+  }
+  try {
+    new MutationObserver(function (ms) {
+      ms.forEach(function (m) {
+        if (m.type === 'attributes') fix(m.target);
+        else for (var i = 0; i < m.addedNodes.length; i++) scan(m.addedNodes[i]);
+      });
+    }).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['href'] });
+  } catch (_) { /* old browser: links still work through the server's redirect */ }
+})();
+
 (function () {
   const CFG = window.TROVE_CONFIG || {};
   const API_BASE = (CFG.API_URL || '').replace(/\/+$/, ''); // "" → relative, same-origin
 
   async function api(path, opts = {}) {
     const { headers, body, ...rest } = opts;
-    const res = await fetch(API_BASE + path, {
+    // Arabic pages ask for Arabic content (?lang=ar keeps cached catalogue
+    // answers apart per language; the header covers every other call).
+    let url = API_BASE + path;
+    if (window.troveLang === 'ar' && (!rest.method || rest.method === 'GET') && !/[?&]lang=/.test(url)) url += (url.indexOf('?') === -1 ? '?' : '&') + 'lang=ar';
+    const res = await fetch(url, {
       credentials: 'include',
-      headers: { 'Content-Type': 'application/json', ...(headers || {}) },
+      headers: { 'Content-Type': 'application/json', 'X-Trove-Lang': window.troveLang || 'en', ...(headers || {}) },
       body: body != null && typeof body !== 'string' ? JSON.stringify(body) : body,
       ...rest,
     });

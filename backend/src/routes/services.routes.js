@@ -89,7 +89,7 @@ router.get('/', (req, res) => {
     list = list.filter((s) =>
       `${s.title} ${s.description} ${s.provider.name}`.toLowerCase().includes(needle));
   }
-  res.json({ services: list });
+  res.json({ services: require('../translate').services(list, req.lang) });
 });
 
 /* ---------------- Providers ---------------- */
@@ -117,8 +117,8 @@ const PROVIDER_STATS = `
 // live-service count and lowest price. Never any contact details.
 const approvedProviders = () => db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
     WHERE p.status = 'approved' ORDER BY p.created_at ASC, p.id ASC`).all().map(providerCard);
-router.get('/providers', (_req, res) => {
-  res.json({ providers: approvedProviders() });
+router.get('/providers', (req, res) => {
+  res.json({ providers: require('../translate').providers(approvedProviders(), req.lang) });
 });
 
 // GET /api/services/providers/:slug → one approved provider and their live services.
@@ -136,7 +136,8 @@ function providerPage(slug) {
 router.get('/providers/:slug', (req, res) => {
   const page = providerPage(req.params.slug);
   if (!page) return res.status(404).json({ error: 'Provider not found' });
-  res.json(page);
+  const tr = require('../translate');
+  res.json({ ...page, provider: tr.provider(page.provider, req.lang), services: tr.services(page.services, req.lang) });
 });
 
 /* ---------------- Enrolment ---------------- */

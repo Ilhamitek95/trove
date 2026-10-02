@@ -147,6 +147,12 @@ function createApp() {
   }));
   // Admin sessions need the emailed second step and last 12 hours (admin-2fa.js).
   app.use(require('./admin-2fa').guard);
+  // Languages (src/i18n.js): /ar/<anything public> is the Arabic twin of
+  // <anything public>; the prefix is stripped here so every route below
+  // answers both, req.lang says which, and every HTML response is finished
+  // (Arabic text, rtl, hreflang) on its way out.
+  const i18n = require('./i18n');
+  app.use(i18n.middleware({ base: () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '') }));
 
   /* ---------------- Traffic limits (per client IP) ----------------
    * Safety net for one process on one instance: a scraper, a bot or a
@@ -233,8 +239,8 @@ function createApp() {
   });
   // Storefront copy for the homepage + sell page — defaults with any
   // admin-saved overrides layered on top. Edited in /admin → Site content.
-  app.get('/api/content', (_req, res) => {
-    res.json(require('./content').getPublic());
+  app.get('/api/content', (req, res) => {
+    res.json(require('./translate').siteContent(require('./content').getPublic(), req.lang));
   });
   // Legal documents, served with their hash so acceptance is verifiable.
   // Each version comes from config.js (see src/site-pages.js LEGAL), and the
@@ -334,7 +340,7 @@ function createApp() {
       .send(gtm.forAddress(req, res, seo.withDefaultSocial(docFile(file), { base: SITE_BASE(), url: SITE_BASE() + clean, noindex: !PUBLIC_FILES.has(clean), path: clean })));
   };
   // The Services Marketplace directory, server-rendered (src/seo.js).
-  app.get('/services', (_req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderServicesDirectory(SITE_BASE())));
+  app.get('/services', (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderServicesDirectory(SITE_BASE(), req.lang)));
   for (const [clean, file] of Object.entries(PAGES)) {
     app.get(clean, servePage(clean, file));
     for (const legacy of ['/' + file, '/' + file.replace(/\.html$/, '')]) {
@@ -351,16 +357,17 @@ function createApp() {
    * (src/site-pages.js): real text in the HTML, the shared header + footer,
    * canonical, Open Graph and Organization structured data.              */
   const html = (res, body) => res.type('html').set('Cache-Control', 'no-cache').send(gtm.forAddress(res.req, res, body));
-  app.get('/about', (_req, res) => html(res, sitePages.renderAbout(SITE_BASE())));
+  app.get('/about', (req, res) => html(res, sitePages.renderAbout(SITE_BASE(), req.lang)));
   app.get('/contact', (req, res) => html(res, sitePages.renderContact(SITE_BASE(), {
+    lang: req.lang,
     sent: req.query.sent === '1',
     error: typeof req.query.error === 'string' ? req.query.error.slice(0, 200) : '',
   })));
-  app.get('/faq', (_req, res) => html(res, sitePages.renderFaq(SITE_BASE())));
-  app.get(['/returns', '/delivery-returns'], (_req, res) => html(res, sitePages.renderReturns(SITE_BASE())));
+  app.get('/faq', (req, res) => html(res, sitePages.renderFaq(SITE_BASE(), req.lang)));
+  app.get(['/returns', '/delivery-returns'], (req, res) => html(res, sitePages.renderReturns(SITE_BASE(), req.lang)));
   for (const name of Object.keys(sitePages.LEGAL)) {
     const d = sitePages.LEGAL[name];
-    app.get(d.path, (_req, res) => html(res, sitePages.renderLegal(SITE_BASE(), name)));
+    app.get(d.path, (req, res) => html(res, sitePages.renderLegal(SITE_BASE(), name, req.lang)));
   }
   // Old and obvious addresses land on the right page.
   const REDIRECTS = {
@@ -382,18 +389,18 @@ function createApp() {
   app.get('/', (req, res) => {
     const target = seo.legacyTarget(req.query);
     if (target) return res.redirect(301, target);
-    html(res, seo.renderHome(SITE_BASE()));
+    html(res, seo.renderHome(SITE_BASE(), req.lang));
   });
-  app.get('/shop', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), null, { search: req.query.q })));
-  app.get('/shop/:cat([a-z0-9-]+)', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), req.params.cat, { search: req.query.q })));
-  app.get('/pieces/:ref', (req, res) => page(res, req, seo.renderPiece(SITE_BASE(), req.params.ref)));
-  app.get('/makers/:slug', (req, res) => page(res, req, seo.renderMaker(SITE_BASE(), req.params.slug)));
-  app.get('/sell-on-trove', (_req, res) => html(res, seo.renderSell(SITE_BASE())));
+  app.get('/shop', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), null, { search: req.query.q, lang: req.lang })));
+  app.get('/shop/:cat([a-z0-9-]+)', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), req.params.cat, { search: req.query.q, lang: req.lang })));
+  app.get('/pieces/:ref', (req, res) => page(res, req, seo.renderPiece(SITE_BASE(), req.params.ref, req.lang)));
+  app.get('/makers/:slug', (req, res) => page(res, req, seo.renderMaker(SITE_BASE(), req.params.slug, req.lang)));
+  app.get('/sell-on-trove', (req, res) => html(res, seo.renderSell(SITE_BASE(), req.lang)));
 
   // A provider's public page: /services/<slug>, server-rendered; unknown or
   // unapproved providers are a real 404. Slugs never contain a dot, so asset
   // paths under /services/ fall through to the 404 instead of getting HTML.
-  app.get('/services/:slug([a-z0-9-]+)', (req, res) => page(res, req, seo.renderProvider(SITE_BASE(), req.params.slug)));
+  app.get('/services/:slug([a-z0-9-]+)', (req, res) => page(res, req, seo.renderProvider(SITE_BASE(), req.params.slug, req.lang)));
   // A booking's private pages (the link in the customer's emails): the same
   // services page opens the booking view. Never indexed — the URL is the key,
   // so it is never tagged either (src/gtm.js strips Tag Manager from it).
@@ -427,6 +434,17 @@ function createApp() {
       'Disallow: /services/booking/',
       'Disallow: /services/pay/',
       'Disallow: /reset',
+      // The Arabic twins (/ar/…) follow the same rules.
+      'Disallow: /ar/account',
+      'Disallow: /ar/sell',
+      'Disallow: /ar/provider',
+      'Disallow: /ar/login',
+      'Allow: /ar/seller-agreement',
+      'Allow: /ar/sell-on-trove',
+      'Allow: /ar/provider-agreement',
+      'Disallow: /ar/services/booking/',
+      'Disallow: /ar/services/pay/',
+      'Disallow: /ar/reset',
       '',
       `Sitemap: ${SITE()}/sitemap.xml`,
       '',
@@ -435,10 +453,16 @@ function createApp() {
   app.get('/sitemap.xml', (_req, res) => {
     const base = SITE();
     const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const urls = seo.sitemapEntries().map((u) =>
-      `<url><loc>${esc(base + u.loc)}</loc>${u.lastmod ? `<lastmod>${esc(u.lastmod)}</lastmod>` : ''}<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority></url>`);
+    // Every address in both languages, each naming its twin (hreflang).
+    const urls = seo.sitemapEntries().flatMap((u) => {
+      const en = base + u.loc;
+      const ar = base + i18n.arUrl(u.loc);
+      const alt = `<xhtml:link rel="alternate" hreflang="en" href="${esc(en)}"/><xhtml:link rel="alternate" hreflang="ar" href="${esc(ar)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${esc(en)}"/>`;
+      const tail = `${u.lastmod ? `<lastmod>${esc(u.lastmod)}</lastmod>` : ''}<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority>`;
+      return [`<url><loc>${esc(en)}</loc>${tail}${alt}</url>`, `<url><loc>${esc(ar)}</loc>${tail}${alt}</url>`];
+    });
     res.type('application/xml').set('Cache-Control', 'public, max-age=3600')
-      .send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`);
+      .send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`);
   });
 
   // For AI answer engines: a short, accurate summary and the full help text.

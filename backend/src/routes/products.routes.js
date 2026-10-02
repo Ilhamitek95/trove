@@ -7,6 +7,7 @@ const { stockCover } = require('../stock-images');
 const leadTimes = require('../lead-times');
 
 const router = express.Router();
+const tr = () => require('../translate'); // Arabic overlay for ?lang=ar (src/translate.js)
 
 const parseImages = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) ? v : []; } catch (_) { return []; } };
 
@@ -64,18 +65,23 @@ router.get('/', (req, res) => {
   if (category && category !== 'all') { sql += ' AND p.category = ?'; args.push(category); }
   if (house === '1') { sql += ' AND s.is_house = 1'; }
   if (shop) { sql += ' AND s.slug = ?'; args.push(shop); }
-  if (q) { sql += ' AND (p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ? OR p.tags LIKE ?)'; const like = `%${q}%`; args.push(like, like, like, like); }
+  if (q) {
+    // Arabic readers search the Arabic too (src/translate.js keeps it per piece).
+    const arIds = require('../translate').searchIds('product', q).map(Number).filter(Number.isInteger);
+    sql += ` AND (p.name LIKE ? OR p.category LIKE ? OR s.name LIKE ? OR p.tags LIKE ?${arIds.length ? ` OR p.id IN (${arIds.join(',')})` : ''})`;
+    const like = `%${q}%`; args.push(like, like, like, like);
+  }
   sql += ' ORDER BY p.created_at DESC';
   const rows = db.prepare(sql).all(...args);
   if (q) require('../trends').logSearch(q, rows.length);   // server-side searches count toward trends too
-  res.json({ products: rows.map(shape) });
+  res.json({ products: tr().products(rows.map(shape), req.lang) });
 });
 
 // GET /api/products/:id
 router.get('/:id', (req, res) => {
   const p = db.prepare(BASE + ' AND p.id = ?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
-  res.json({ product: shape(p) });
+  res.json({ product: tr().product(shape(p), req.lang) });
 });
 
 // GET /api/products/:id/reviews → published reviews, newest first.
@@ -83,7 +89,7 @@ router.get('/:id/reviews', (req, res) => {
   const p = db.prepare(BASE + ' AND p.id = ?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'Not found' });
   const reviews = require('../reviews');
-  res.json({ summary: reviews.productSummary(p.id), reviews: reviews.forProduct(p.id) });
+  res.json({ summary: reviews.productSummary(p.id), reviews: tr().reviews(reviews.forProduct(p.id), req.lang) });
 });
 
 // The same public shape for the server-rendered storefront pages (src/seo.js).

@@ -47,8 +47,8 @@ const approvedShops = () => db.prepare(`
     GROUP BY s.id
     ORDER BY s.is_house DESC, s.created_at ASC
   `).all().map(shape);
-router.get('/', (_req, res) => {
-  res.json({ shops: approvedShops() });
+router.get('/', (req, res) => {
+  res.json({ shops: require('../translate').shops(approvedShops(), req.lang) });
 });
 
 // GET /api/shops/:slug → one shop profile
@@ -57,7 +57,7 @@ router.get('/:slug', (req, res) => {
     WHERE s.slug = ? AND s.status = 'approved'`).get(req.params.slug);
   if (!s) return res.status(404).json({ error: 'Shop not found' });
   const { c } = db.prepare("SELECT COUNT(*) AS c FROM products WHERE shop_id = ? AND status = 'live'").get(s.id);
-  res.json({ shop: shape({ ...s, product_count: c }) });
+  res.json({ shop: require('../translate').shop(shape({ ...s, product_count: c }), req.lang) });
 });
 
 // GET /api/shops/:slug/reviews → everything shoppers said about this shop:
@@ -66,7 +66,7 @@ router.get('/:slug/reviews', (req, res) => {
   const s = db.prepare("SELECT id FROM shops WHERE slug = ? AND status = 'approved'").get(req.params.slug);
   if (!s) return res.status(404).json({ error: 'Shop not found' });
   const reviews = require('../reviews');
-  res.json({ summary: reviews.shopSummary(s.id), reviews: reviews.forShop(s.id) });
+  res.json({ summary: reviews.shopSummary(s.id), reviews: require('../translate').reviews(reviews.forShop(s.id), req.lang) });
 });
 
 // The same public shape for the server-rendered storefront pages (src/seo.js).
