@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
-const { requireAuth } = require('../middleware');
+const { requireAuth, notInShopView } = require('../middleware');
 const shipments = require('../shipments');
 const { SERVICE_AREAS, isServiceable } = require('../service-area');
 
@@ -104,7 +104,7 @@ router.get('/orders', requireAuth, (req, res) => {
  * words and at least one photo. The request lands with Trove's admin (who approves/declines) and
  * shows on the shops' order views. Money rules live in src/returns.js.
  */
-router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) => {
+router.post('/orders/:publicId/return-request', requireAuth, notInShopView, (req, res, next) => {
   try {
     const order = db.prepare('SELECT * FROM orders WHERE public_id=? AND buyer_id=?').get(req.params.publicId, req.user.id);
     if (!order) return res.status(404).json({ error: 'Order not found' });
@@ -126,7 +126,7 @@ router.post('/orders/:publicId/return-request', requireAuth, (req, res, next) =>
 });
 
 // Withdraw one of your own requests while it's still waiting on a decision.
-router.delete('/orders/:publicId/return-requests/:requestId', requireAuth, (req, res) => {
+router.delete('/orders/:publicId/return-requests/:requestId', requireAuth, notInShopView, (req, res) => {
   const order = db.prepare('SELECT * FROM orders WHERE public_id=? AND buyer_id=?').get(req.params.publicId, req.user.id);
   if (!order) return res.status(404).json({ error: 'Order not found' });
   if (!returns.cancelOwn(req.user.id, order.id, req.params.requestId)) return res.status(404).json({ error: 'No pending return request to withdraw' });
@@ -177,7 +177,7 @@ router.get('/reviews', requireAuth, (req, res) => {
 
 // POST /api/account/reviews {productId | shopId, rating, body, images[]}
 // Creates the review, or edits yours in place if you've reviewed it before.
-router.post('/reviews', requireAuth, (req, res, next) => {
+router.post('/reviews', requireAuth, notInShopView, (req, res, next) => {
   try {
     const result = reviews.upsert(req.user, req.body || {});
     if (result.error) return res.status(result.status).json({ error: result.error });
@@ -186,7 +186,7 @@ router.post('/reviews', requireAuth, (req, res, next) => {
 });
 
 // DELETE /api/account/reviews/:id → remove your own review (and its photos).
-router.delete('/reviews/:id', requireAuth, (req, res) => {
+router.delete('/reviews/:id', requireAuth, notInShopView, (req, res) => {
   if (!reviews.removeOwn(req.user.id, req.params.id)) return res.status(404).json({ error: 'Not found' });
   res.json({ ok: true });
 });

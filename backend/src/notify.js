@@ -140,7 +140,16 @@ const packOverdueAdmin = (shipmentId) => safely('pack-overdue-admin', () => {
   }));
 });
 
+/** To a maker whose Emirates ID expires soon (or has): update it under Payouts. */
+const idExpiring = (shop, expired) => safely('id-expiring', () =>
+  deliver('id-expiring', shop.owner_email, email().idExpiring({
+    name: shop.owner_name, shopName: shop.name, expired,
+    expiry: require('./lead-times').dubaiDay(`${shop.emirates_id_expiry} 08:00:00`, { year: true }),
+    link: `${accounts.siteUrl()}/sell?view=payments`,
+  })));
+
 module.exports = {
+  idExpiring,
   packReminder, packOverdueAdmin, packByFor,
   welcomeVerify, passwordReset, passwordChanged,
   shopApplied, providerApplied, shopDecided, providerDecided, ordersToPack, packByDays,

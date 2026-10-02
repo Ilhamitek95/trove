@@ -744,7 +744,40 @@ function packOverdueAdmin({ shopName, publicId, items, packBy, link }) {
   };
 }
 
+/** The admin's second sign-in step: a 6-digit code, valid for a few minutes. */
+function adminSignInCode({ name, code, minutes = 10 }) {
+  const inner =
+    p('Here is the code to finish signing in to the Trove admin:')
+    + panel(`<span style="font-family:${SERIF};font-size:34px;font-weight:600;letter-spacing:6px">${esc(code)}</span>`)
+    + note(`It works once and expires in ${esc(minutes)} minutes. If you did not just sign in, someone may know your password — reset it from the sign-in page straight away.`);
+  return {
+    subject: `${code} is your Trove admin sign-in code`,
+    html: layout('Your sign-in code', inner, { tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: ACCOUNT_REASON, preheader: 'Your Trove admin sign-in code.' }),
+  };
+}
+
+/**
+ * To a maker whose Emirates ID is about to expire (or has): Trove can only
+ * pay makers whose ID is current, so they update it under Payouts.
+ */
+function idExpiring({ name, shopName, expiry, expired, link }) {
+  const inner =
+    p(expired
+      ? `The Emirates ID we have on file for <b>${esc(shopName)}</b> expired on <b>${esc(expiry)}</b>. We can only pay makers whose ID is current, so your payments are on hold until you add your renewed ID.`
+      : `The Emirates ID we have on file for <b>${esc(shopName)}</b> expires on <b>${esc(expiry)}</b>. Please add your renewed ID before then, so your fortnightly payments carry on without a pause.`)
+    + p('Open Payouts in your dashboard and update your Emirates ID details and photos. Your bank details stay as they are.')
+    + button('Update my Emirates ID', esc(link));
+  return {
+    subject: expired ? 'Your Emirates ID on Trove has expired' : 'Your Emirates ID on Trove expires soon',
+    html: layout(expired ? 'Your ID has expired' : 'Your ID expires soon', inner, {
+      tone: 'clay', intro: `Hello ${firstNameOr(name)},`, reason: "You're receiving this because you sell on Trove.",
+      preheader: expired ? 'Payments are on hold until you add your renewed Emirates ID.' : `Your Emirates ID expires on ${expiry}.`,
+    }),
+  };
+}
+
 Object.assign(module.exports, {
+  adminSignInCode, idExpiring,
   packReminder, packOverdueAdmin,
   passwordReset, welcomeVerify, passwordChanged,
   applicationReceived, applicationAlert, applicationApproved, applicationRejected, orderToPack,

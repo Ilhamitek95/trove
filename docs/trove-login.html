@@ -172,9 +172,11 @@
           <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('pass',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
       <div class="field" id="pass2Field" style="display:none"><label for="pass2">Type it again</label><input id="pass2" type="password" placeholder="The same new password" autocomplete="new-password"></div>
       <div class="field" id="shopField" style="display:none"><label for="shopName">Shop name</label><input id="shopName" placeholder="e.g. Kiln & Clay"></div>
+      <div class="field" id="codeField" style="display:none"><label for="code">Sign-in code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="7" placeholder="6-digit code"></div>
+      <label id="trustRow" style="display:none;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:0 0 12px;cursor:pointer"><input type="checkbox" id="trust" checked style="margin-top:2px"><span>Trust this browser for 30 days — only on a device you use alone</span></label>
       <div id="authErr" role="alert" style="display:none;color:var(--accent-ink);font-size:13px;font-weight:600;margin:2px 0 6px"></div>
 
-      <p class="agree" id="regAgree" style="display:none">By creating an account you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      <p class="agree" id="regAgree"><span id="regAgreeLead">By continuing with Google or creating an account</span> you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
       <button class="submit" id="submitBtn" onclick="signIn()">Sign in</button>
 
       <div class="or" id="orRow">or</div>
@@ -233,7 +235,9 @@ function updateRegisterUI(){
     ? `Already with us? <a href="#" onclick="toggleRegister();return false">Sign in</a>`
     : (mode==='sell'?`Not selling yet? <a href="/apply">Apply to open a shop</a>`:`New to Trove? <a href="#" onclick="toggleRegister();return false">Create an account</a>`);
   $('nameField').style.display=registering?'block':'none';
-  $('regAgree').style.display=registering?'block':'none';
+  // A first Google sign-in opens an account, so the agreement line shows in both modes.
+  $('regAgree').style.display='block';
+  $('regAgreeLead').textContent=registering?'By creating an account':'By continuing with Google or creating an account';
   $('shopField').style.display=(registering&&mode==='sell')?'block':'none';
   // Phone mode: the mobile number is the identifier. Email stays visible while
   // registering (order updates and receipts go there).
@@ -278,6 +282,8 @@ function setView(v){
   const alt=v!=='signin';
   $('tabs').style.display=alt?'none':'';
   $('orRow').style.display=alt?'none':''; $('socialRow').style.display=alt?'none':'';
+  $('regAgree').style.display=alt?'none':'block';
+  $('codeField').style.display=v==='code'?'block':'none'; $('trustRow').style.display=v==='code'?'flex':'none';
   if(!alt){ $('pass').setAttribute('autocomplete','current-password'); $('pass').placeholder='Your password';
     $('passLabel').textContent='Password'; $('forgotLink').style.display=''; $('pass2Field').style.display='none'; $('passField').style.display='';
     if(location.pathname==='/reset'||/[?&](forgot|token)=/.test(location.search)) history.replaceState(null,'','/login');
@@ -285,7 +291,14 @@ function setView(v){
   registering=false; phoneMode=false; $('phoneBtn').classList.remove('on'); $('phoneBtnLabel').textContent='UAE mobile';
   ['nameField','mobileField','shopField'].forEach(id=>$(id).style.display='none');
   $('forgotLink').style.display='none';
-  if(v==='forgot'){
+  if(v==='code'){
+    $('aTitle').textContent='Check your email';
+    $('aLede').textContent=`We sent a 6-digit code to ${CODE_TO||'your email'}. It expires in 10 minutes.`;
+    $('emailField').style.display='none'; $('passField').style.display='none'; $('pass2Field').style.display='none';
+    $('submitBtn').textContent='Finish signing in';
+    $('swap').innerHTML='No email? <a href="#" onclick="resendCode();return false">Send a new code</a> · <a href="#" onclick="setView(\'signin\');return false">Start again</a>';
+    $('code').value=''; setTimeout(()=>$('code').focus(),0);
+  }else if(v==='forgot'){
     $('aTitle').textContent='Reset your password';
     $('aLede').textContent='Enter the email on your account and we will send you a link to choose a new one.';
     $('emailField').style.display='block'; $('emailLabel').textContent='Email';
@@ -303,6 +316,26 @@ function setView(v){
     $('swap').innerHTML='Link not working? <a href="#" onclick="setView(\'forgot\');return false">Send a new one</a>';
   }
 }
+/* The admin's second sign-in step: the server emailed a 6-digit code. */
+let CODE_TO='';
+function needsCode(r){ if(r&&r.needsCode){ CODE_TO=r.sentTo||''; setView('code'); return true; } return false; }
+async function submitCode(){
+  const code=$('code').value.replace(/\s+/g,'');
+  if(!/^\d{6}$/.test(code)) return showErr('Enter the 6-digit code from the email.');
+  const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
+  try{
+    await TroveAPI.api('/api/auth/admin-code',{method:'POST',body:{code,trust:$('trust').checked}});
+    window.location.href=await postAuthDest();
+  }catch(e){
+    btn.disabled=false; btn.style.opacity='1'; btn.textContent='Finish signing in';
+    showErr(e.message||'That code did not work.');
+    if(e.data&&e.data.code==='no_challenge') setTimeout(()=>setView('signin'),2500);
+  }
+}
+async function resendCode(){
+  try{ const r=await TroveAPI.api('/api/auth/admin-code/resend',{method:'POST'}); CODE_TO=r.sentTo||CODE_TO; note('A new code is on its way.'); }
+  catch(e){ showErr(e.message||'Could not send a new code — start again.'); }
+}
 async function sendForgot(){
   const email=$('email').value.trim();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showErr('Enter the email address on your account.');
@@ -317,7 +350,8 @@ async function saveReset(){
   if(pw!==pw2) return showErr('The two passwords do not match.');
   const btn=$('submitBtn'); btn.disabled=true; btn.style.opacity='.7'; btn.textContent='One moment…';
   try{
-    await TroveAPI.api('/api/auth/reset',{method:'POST',body:{token:RESET_TOKEN,password:pw}});
+    const r=await TroveAPI.api('/api/auth/reset',{method:'POST',body:{token:RESET_TOKEN,password:pw}});
+    if(needsCode(r)){ btn.disabled=false; btn.style.opacity='1'; return; }
     window.location.href=await postAuthDest();
   }catch(e){
     btn.disabled=false; btn.style.opacity='1'; btn.textContent='Save and sign in';
@@ -329,6 +363,7 @@ async function signIn(){
   const btn=$('submitBtn'); $('authErr').style.display='none';
   if(view==='forgot') return sendForgot();
   if(view==='reset') return saveReset();
+  if(view==='code') return submitCode();
 
   // No backend reachable → keep the prototype clickable (demo behaviour).
   if(!(await TroveAPI.health())){ window.location.href = mode==='sell' ? '/sell' : '/account'; return; }
@@ -354,7 +389,8 @@ async function signIn(){
       ga=r&&r.created?['sign_up','email']:['login','email'];
     }else{
       const body=phoneMode?{identifier:mob,password:pass}:{email,password:pass};
-      await TroveAPI.api('/api/auth/login',{method:'POST',body});
+      const r=await TroveAPI.api('/api/auth/login',{method:'POST',body});
+      if(needsCode(r)){ btn.style.opacity='1'; btn.disabled=false; return; }
       ga=['login',phoneMode?'phone':'email'];
     }
     window.location.href=(await Promise.all([postAuthDest(),gaAuth(ga[0],ga[1])]))[0];
@@ -387,6 +423,7 @@ async function onGoogleCredential(resp){
   $('authErr').style.display='none';
   try{
     const r=await TroveAPI.api('/api/auth/google',{method:'POST',body:{credential:resp.credential}});
+    if(needsCode(r)) return;
     window.location.href=(await Promise.all([postAuthDest(),gaAuth(r&&r.created?'sign_up':'login','google')]))[0];
   }catch(e){ showErr(e.message||"Google sign-in didn't work — please try again."); }
 }
@@ -399,7 +436,7 @@ async function onGoogleCredential(resp){
   (function ready(){
     if(!(window.google&&google.accounts&&google.accounts.id)) return setTimeout(ready,150);
     google.accounts.id.initialize({client_id:clientId,callback:onGoogleCredential});
-    google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'signin_with',width:180,locale:'en-GB'});
+    google.accounts.id.renderButton($('gBtn'),{theme:'outline',size:'large',shape:'pill',text:'continue_with',width:180,locale:'en-GB'});
   })();
 })();
 

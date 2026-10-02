@@ -145,6 +145,8 @@ function createApp() {
       maxAge: 1000 * 60 * 60 * 24 * 14,
     },
   }));
+  // Admin sessions need the emailed second step and last 12 hours (admin-2fa.js).
+  app.use(require('./admin-2fa').guard);
 
   /* ---------------- Traffic limits (per client IP) ----------------
    * Safety net for one process on one instance: a scraper, a bot or a

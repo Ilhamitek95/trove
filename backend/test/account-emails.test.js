@@ -50,7 +50,7 @@ before(async () => {
   db = ctx.db;
   const { hashPassword } = require('../src/middleware');
   db.prepare("INSERT INTO users (email,password_hash,name,role) VALUES ('boss@test.local',?,'Boss','admin')").run(hashPassword('adminpass123'));
-  adminCookie = (await call('POST', '/api/auth/login', { body: { email: 'boss@test.local', password: 'adminpass123' } })).cookie;
+  adminCookie = await ctx.loginAs('boss@test.local', 'adminpass123'); // completes the admin's emailed-code step
   sent = [];
   require('../src/email').send = async (msg) => { sent.push(msg); return { id: 'test' }; };
 });
@@ -84,6 +84,9 @@ test('a provider application emails the applicant and alerts the admin', async (
 
 test('approve and reject decisions email the applicant, once per change, quoting the admin note', async () => {
   const shop = db.prepare("SELECT id FROM shops WHERE slug='mira-clay-studio'").get();
+  // Approval needs the Seller Agreement and the courier pickup details.
+  db.prepare("UPDATE shops SET agreement_version=?, agreement_accepted_at=datetime('now'), pickup_address='Villa 12, Street 4, Al Barsha, Dubai', pickup_phone='+971502223344' WHERE id=?")
+    .run(require('../src/config').AGREEMENT_VERSION, shop.id);
   sent.length = 0;
   assert.equal((await call('PATCH', `/api/admin/shops/${shop.id}`, { cookie: adminCookie, body: { status: 'approved' } })).status, 200);
   await tick();

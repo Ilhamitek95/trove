@@ -54,7 +54,16 @@ async function startApp() {
     const res = await api('POST', '/api/auth/login', { body: { email, password } });
     if (res.status !== 200) throw new Error(`loginAs(${email}) failed: ${res.status} ${res.text}`);
     const setCookie = res.headers.get('set-cookie') || '';
-    return setCookie.split(';')[0];
+    const cookie = setCookie.split(';')[0];
+    // The admin's second step (src/admin-2fa.js): finish it with the code
+    // the test build keeps in memory, exactly as the sign-in page would.
+    if (res.data && res.data.needsCode) {
+      const code = require('../src/admin-2fa')._lastCode();
+      const done = await api('POST', '/api/auth/admin-code', { body: { code }, cookie });
+      if (done.status !== 200) throw new Error(`loginAs(${email}) code step failed: ${done.status} ${done.text}`);
+      return (done.headers.get('set-cookie') || '').split(';')[0];
+    }
+    return cookie;
   }
 
   /** POST a fake Stripe event (the mock's constructEvent just parses JSON). */

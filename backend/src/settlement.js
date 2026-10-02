@@ -24,6 +24,7 @@ const db = require('./db');
 const fees = require('./fees');
 const pcrypto = require('./crypto');
 const { UPLOADS_DIR } = require('./uploads');
+const identity = require('./identity');
 
 const PRIVATE_DIR = () => process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
 
@@ -90,8 +91,9 @@ function preview(runStart = nowSql()) {
   const eligible = [];
   const excluded = [];
   for (const [shopId, b] of gather(runStart)) {
-    const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(shopId);
+    const shop = db.prepare('SELECT s.*, u.name AS owner_name FROM shops s JOIN users u ON u.id = s.user_id WHERE s.id=?').get(shopId);
     const net = b.creditCents + b.debitCents;
+    const id = identity.status(shop);
     const row = {
       shopId,
       name: shop.name,
@@ -101,8 +103,17 @@ function preview(runStart = nowSql()) {
       netCents: net,
       itemCount: b.creditIds.length,
       bank: { name: shop.payout_bank_name, accountName: shop.payout_account_name, iban: shop.iban_masked },
+      // Who the money is for, beside whose account it goes to: a mismatch is
+      // flagged for the admin to look at before exporting the bank file.
+      ownerName: shop.owner_name,
+      accountNameMatches: identity.payoutNameMatches(shop, shop.owner_name),
+      identity: { method: id.method, verified: id.verified, eidExpiry: id.eidExpiry || null },
     };
     if (shop.tier !== 'consignment' || !payoutSetupComplete(shop)) excluded.push({ ...row, reason: 'payout_setup_incomplete' });
+    // Trove pays only makers whose identity is established (src/identity.js):
+    // a verified licence, or Emirates ID details an admin checked and that
+    // have not expired. Their credits wait, unswept, for a later run.
+    else if (!id.verified) excluded.push({ ...row, reason: id.reason });
     else if (net <= 0) excluded.push({ ...row, reason: 'netted_negative' });
     else eligible.push(row);
   }

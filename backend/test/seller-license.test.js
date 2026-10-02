@@ -29,11 +29,12 @@ test('too-short license number is rejected', async () => {
   assert.equal(shopRow().license_number, '');
 });
 
-test('recording a license flags the shop for verification and waives EID', async () => {
+test('recording a license flags the shop for verification — but a typed number alone does not waive EID', async () => {
   const r = await ctx.api('POST', '/api/seller/me/license', { cookie: sellerCookie, body: { licenseNumber: '  CN-7654321  ' } });
   assert.equal(r.status, 200);
   assert.equal(r.data.shop.license_number, 'CN-7654321');
-  assert.equal(r.data.shop.needsIdVerification, false);
+  // F006: only an admin-VERIFIED licence skips the Emirates ID step.
+  assert.equal(r.data.shop.needsIdVerification, true);
   const row = shopRow();
   assert.equal(row.license_number, 'CN-7654321');
   assert.equal(row.connect_queue, 1);
@@ -48,6 +49,10 @@ test('the shop appears in the admin graduation queue and can be verified', async
   const v = await ctx.api('POST', `/api/admin/graduation/${shopRow().id}/verify-license`, { cookie: adminCookie });
   assert.equal(v.status, 200);
   assert.ok(shopRow().license_verified_at, 'verification stamped');
+  assert.equal(shopRow().verification_method, 'trade_licence', 'the identity method is recorded');
+  const me = await ctx.api('GET', '/api/seller/me', { cookie: sellerCookie });
+  assert.equal(me.data.shop.needsIdVerification, false, 'a verified licence waives the Emirates ID step');
+  assert.equal(me.data.shop.identity.verified, true);
 });
 
 test('changing the number resets verification; same number keeps it', async () => {
@@ -58,6 +63,7 @@ test('changing the number resets verification; same number keeps it', async () =
   assert.equal(changed.status, 200);
   assert.equal(shopRow().license_verified_at, null);
   assert.equal(shopRow().license_number, 'CN-9999999');
+  assert.equal(shopRow().verification_method, null, 'an unverified number carries no identity method');
 });
 
 test('buyers and signed-out visitors cannot record a license', async () => {

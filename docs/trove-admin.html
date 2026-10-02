@@ -605,22 +605,60 @@ function renderMembers(){
 }
 
 /* ---------------- shops ---------------- */
-function shopActions(s){
-  if(s.status==='pending') return `<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setShopStatus(${s.id},'rejected',true)">Reject</button>`;
-  if(s.status==='approved') return s.isHouse?'':`<button class="btn btn-ghost" onclick="setShopStatus(${s.id},'suspended',true)">Suspend</button>`;
-  return `<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button><button class="btn btn-ghost" onclick="setShopStatus(${s.id},'pending')">Back to review</button>`;
+/* Approval puts a shop's pieces on sale, so it waits for the Seller
+   Agreement and the courier pickup details (the server refuses otherwise). */
+const MISSING_SHORT={agreement:'agreement',pickup:'pickup address'};
+function waitingOnHTML(s){
+  const m=s.approvalMissing||[];
+  return m.length?`<span class="pill pending" title="Approval waits until the maker has done this">waiting on ${m.map(x=>MISSING_SHORT[x]||x).join(' + ')}</span>`:'';
 }
-// Identity column: licensed sellers show their license state; unlicensed
-// (consignment) sellers must have Emirates ID photos + a home address on file.
+function approveBtn(s){
+  const m=s.approvalMissing||[];
+  return m.length?`<button class="btn btn-green" disabled style="opacity:.45;cursor:default" title="Waiting on the maker">✓ Approve</button>`
+    :`<button class="btn btn-green" onclick="setShopStatus(${s.id},'approved')">✓ Approve</button>`;
+}
+function shopActions(s){
+  if(s.status==='pending') return `${waitingOnHTML(s)}${approveBtn(s)}<button class="btn btn-ghost" onclick="setShopStatus(${s.id},'rejected',true)">Reject</button>`;
+  if(s.status==='approved') return s.isHouse?'':`<button class="btn btn-ghost" onclick="setShopStatus(${s.id},'suspended',true)">Suspend</button>`;
+  return `${waitingOnHTML(s)}${approveBtn(s)}<button class="btn btn-ghost" onclick="setShopStatus(${s.id},'pending')">Back to review</button>`;
+}
+// Identity column (src/identity.js): a VERIFIED licence, or Emirates ID
+// photos + typed details + home address that an admin has compared and
+// ticked. A typed licence number alone counts for nothing. Settlement pays
+// only verified makers, and holds an Emirates-ID maker once the ID expires.
+// The payout account holder is shown beside the maker, flagged if it differs.
+function eidDate(d){ return d?fmtDate(d+' 00:00:00'):'—'; }
 function idCellHTML(s){
   if(s.isHouse) return '<span style="color:var(--muted)">—</span>';
-  if(s.connectQueue||s.licenseVerifiedAt)
-    return s.licenseVerifiedAt?'<span class="pill approved">licence ✓</span>':'<span class="pill pending">licence</span>';
-  if(s.eidFront&&s.eidBack)
-    return `<span class="pill approved">EID ✓</span>
-      <div class="sl" style="margin-top:3px"><a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/front" target="_blank" rel="noopener">front</a> · <a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/back" target="_blank" rel="noopener">back</a></div>
-      ${s.sellerAddress?`<div class="sl" style="max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(s.sellerAddress)}">${esc(s.sellerAddress)}</div>`:''}`;
-  return '<span class="pill pending" style="color:var(--accent-ink)">ID missing</span>';
+  const id=s.identity||{}, eid=s.eid||{};
+  let out='';
+  if(s.licenseVerifiedAt) out+='<span class="pill approved">licence ✓</span>';
+  else if(s.licenseNumber) out+='<span class="pill pending" title="Typed by the maker — verify it under Graduation">licence to verify</span> ';
+  if(!s.licenseVerifiedAt){
+    if(s.eidFront&&s.eidBack){
+      const st=eid.state;
+      out+= st==='expired'?'<span class="pill rejected" style="color:var(--accent-ink)">ID expired</span>'
+        : id.verified?'<span class="pill approved">ID checked ✓</span>'
+        : '<span class="pill pending">ID to check</span>';
+      if(st==='expiring') out+=' <span class="pill pending" style="color:var(--accent-ink)">expires soon</span>';
+      out+=`<div class="sl" style="margin-top:3px"><a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/front" target="_blank" rel="noopener">front</a> · <a href="${TroveAPI.base}/api/admin/shops/${s.id}/eid/back" target="_blank" rel="noopener">back</a></div>
+        <div class="sl">ID ····${esc(eid.last4||'????')} · issued ${eidDate(eid.issue)} · expires ${eidDate(eid.expiry)}</div>
+        ${s.sellerAddress?`<div class="sl" style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(s.sellerAddress)}">${esc(s.sellerAddress)}</div>`:''}
+        ${st!=='expired'?(id.verified
+          ?`<button class="btn btn-ghost" style="margin-top:4px;padding:5px 10px;font-size:12px" onclick="markIdChecked(${s.id},false)">Undo ID check</button>`
+          :`<button class="btn btn-ghost" style="margin-top:4px;padding:5px 10px;font-size:12px" onclick="markIdChecked(${s.id},true)" title="You compared the photos with the details, the address and the account holder">Mark ID checked</button>`):''}`;
+    }else out+='<span class="pill pending" style="color:var(--accent-ink)">ID missing</span>';
+  }
+  if(s.payoutAccountName){
+    out+=`<div class="sl" style="margin-top:4px">Paid to: <b>${esc(s.payoutAccountName)}</b>${s.accountNameMatches===false?` <span style="color:var(--accent-ink);font-weight:700" title="The bank account holder does not match the maker (${esc(s.owner.name||'')}) or the shop name — check before paying">≠ maker</span>`:''}</div>`;
+  }
+  return out;
+}
+async function markIdChecked(id,checked){
+  const s=SHOPS.find(x=>x.id===id);
+  if(checked&&!confirm(`Mark the Emirates ID of "${s?s.name:'this shop'}" as checked?\n\nOnly if the photos match the typed details (last 4, dates), the home address and the bank account holder.`))return;
+  try{ await TroveAPI.api(`/api/admin/shops/${id}/identity-check`,{method:'POST',body:{checked}}); toast(checked?'ID marked as checked':'ID check undone'); await reload(); }
+  catch(e){ toast(e.message||'Could not save'); }
 }
 function shopRowHTML(s){
   return `<tr>
@@ -1333,7 +1371,8 @@ async function refundOrder(publicId){
 
 /* ---------------- settlements (supplier purchases) ---------------- */
 const SETTLE_PILL={draft:'pending',exported:'pending',paid:'approved'};
-const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward'};
+const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward',
+  id_missing:'Emirates ID not given yet',id_to_check:'ID waiting for your check (Shops)',id_expired:'Emirates ID expired — waiting for the renewed ID'};
 function renderPayouts(){
   const owed=PREVIEW.eligible||[], held=PREVIEW.excluded||[];
   $('payoutsWrap').innerHTML=`
@@ -1346,7 +1385,7 @@ function renderPayouts(){
       ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th></tr></thead>
         <tbody>${owed.map(s=>`<tr>
           <td style="font-weight:700">${esc(s.name)}</td>
-          <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}`:'<span style="color:var(--accent-ink);font-weight:700">no bank details</span>'}</td>
+          <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}<div class="sl">${esc(s.bank.accountName||'')}${s.accountNameMatches===false?` <span style="color:var(--accent-ink);font-weight:700">≠ maker ${esc(s.ownerName||'')} — check before paying</span>`:''}</div>`:'<span style="color:var(--accent-ink);font-weight:700">no bank details</span>'}</td>
           <td>${money(s.creditCents)}</td>
           <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
           <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.netCents)}</td>

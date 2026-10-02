@@ -179,6 +179,13 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     } catch (e) {
       console.error('graduation scan failed:', e);
     }
+    // Emirates ID expiry: remind makers 30 days ahead and at expiry (identity.js).
+    try {
+      const { reminded, expired } = require('./identity').sweepIdExpiry();
+      if (reminded || expired) console.log(`emirates id: reminded ${reminded}, expired ${expired}`);
+    } catch (e) {
+      console.error('emirates id expiry sweep failed:', e);
+    }
   }, { timezone: 'Asia/Dubai' });
 
   // Nightly database backup (03:30 Dubai, the quietest hour) — see backup.js.

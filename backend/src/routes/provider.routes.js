@@ -12,7 +12,7 @@
  */
 const express = require('express');
 const db = require('../db');
-const { requireProvider } = require('../middleware');
+const { requireProvider, notInShopView } = require('../middleware');
 const tax = require('../service-taxonomy');
 const fees = require('../fees');
 
@@ -194,7 +194,8 @@ function payoutView(p) {
 router.get('/payout', (req, res) => res.json(payoutView(req.provider)));
 
 // PUT /api/provider/payout { accountName, bankName, iban } | { useShop: true }
-router.put('/payout', (req, res) => {
+// Bank details are the provider's own to give — never from shop view.
+router.put('/payout', notInShopView, (req, res) => {
   const r = require('../provider-payouts').saveDetails(req.provider, req.body || {});
   if (r.error) return res.status(r.status).json({ error: r.error });
   res.json(payoutView(req.provider));

@@ -137,7 +137,10 @@ function upsert(buyer, { productId = null, shopId = null, rating, body = '', ima
   if (existing) {
     // millisecond timestamp so an edit is distinguishable from the original
     // even within the same second (created_at has second resolution)
-    db.prepare(`UPDATE reviews SET rating=?, body=?, images=?, order_id=?, status='published',
+    // Moderation is sticky: a review the admin hid stays hidden when its
+    // author edits it (only the admin publishes it again).
+    db.prepare(`UPDATE reviews SET rating=?, body=?, images=?, order_id=?,
+      status=CASE WHEN status='hidden' THEN 'hidden' ELSE 'published' END,
       updated_at=strftime('%Y-%m-%d %H:%M:%f','now') WHERE id=?`).run(rating, body, imagesJson, orderId, existing.id);
     return { id: existing.id, updated: true };
   }
