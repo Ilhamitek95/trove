@@ -37,6 +37,12 @@ services:
       #   PAYOUT_ENC_KEY   64 hex chars — REQUIRED before suppliers can complete
       #                    payout setup or settlement CSVs can be exported.
       #                    Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      #   BACKUP_S3_ENDPOINT, BACKUP_S3_BUCKET, BACKUP_S3_KEY_ID, BACKUP_S3_SECRET,
+      #   BACKUP_ENC_KEY   encrypted nightly off-site copy of the database, photos
+      #                    and private documents (Cloudflare R2 / any S3). Setup
+      #                    and restore steps: RESTORE.md. Keep BACKUP_ENC_KEY in a
+      #                    password manager too. Optional: BACKUP_S3_REGION,
+      #                    BACKUP_S3_PREFIX, BACKUP_REMOTE_KEEP (14), BACKUP_WEEKLY_EMAIL=0
       #   RAIL_B_ENABLED   leave unset/0 until the Stripe Connect rail is cleared
       #   VAT_REGISTERED   set to 1 once Trove is VAT-registered
       #   GRADUATION_THRESHOLD_AED, COMMISSION_PERCENT  (defaults 12000 / 40)

@@ -7,8 +7,10 @@
  * kept, so a bad migration, an accidental admin delete or a corrupted file
  * can be rolled back from the previous night without leaving Render.
  *
- * This protects against data mistakes, not disk loss — Render's own disk
- * snapshots cover the disk itself.
+ * These local copies protect against data mistakes, not disk loss: the
+ * nightly job (offsite-backup.js nightly()) also sends an encrypted copy of
+ * each one, plus the photos and private documents, off-site when BACKUP_S3_*
+ * are set. How to put one back: RESTORE.md / scripts/restore-backup.js.
  */
 const fs = require('fs');
 const path = require('path');

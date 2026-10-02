@@ -205,14 +205,15 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
   // Nightly privacy retention sweep (02:30 Dubai), before the backup.
   cron.schedule('30 2 * * *', privacySweep, { timezone: 'Asia/Dubai' });
 
-  // Nightly database backup (03:30 Dubai, the quietest hour) — see backup.js.
+  // Nightly backup (03:30 Dubai, the quietest hour): the local VACUUM INTO
+  // copy (backup.js), then the encrypted off-site copy of the database,
+  // photos and private documents when BACKUP_S3_* are set; a failure emails
+  // ADMIN_EMAIL, Mondays bring a short 'backups OK' (offsite-backup.js).
+  let backingUp = false;
   cron.schedule('30 3 * * *', () => {
-    try {
-      const { file, kept, removed } = require('./backup').run();
-      console.log(`backup: wrote ${file} (${kept} kept${removed.length ? `, pruned ${removed.length}` : ''})`);
-    } catch (e) {
-      console.error('backup failed:', e);
-    }
+    if (backingUp) return;
+    backingUp = true;
+    require('./offsite-backup').nightly().finally(() => { backingUp = false; });
   }, { timezone: 'Asia/Dubai' });
 
   // Hourly sweeps — expired sessions (otherwise they only leave on a
