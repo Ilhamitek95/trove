@@ -407,6 +407,14 @@ function createApp() {
   app.get('/pieces/:ref', (req, res) => page(res, req, seo.renderPiece(SITE_BASE(), req.params.ref, req.lang)));
   app.get('/makers/:slug', (req, res) => page(res, req, seo.renderMaker(SITE_BASE(), req.params.slug, req.lang)));
   app.get('/sell-on-trove', (req, res) => html(res, seo.renderSell(SITE_BASE(), req.lang)));
+  // The order confirmation's own address (F164): the storefront opens its
+  // thank-you view and asks /api/checkout/receipt for the order, so a refresh
+  // or a killed tab never loses it. Private: noindex, untagged (src/gtm.js),
+  // nothing about the order in the HTML itself.
+  app.get('/order/:ref([A-Za-z0-9-]+)/thanks', (req, res) => {
+    res.set('X-Robots-Tag', 'noindex, nofollow');
+    html(res, seo.renderThanks(SITE_BASE(), req.lang));
+  });
 
   // A provider's public page: /services/<slug>, server-rendered; unknown or
   // unapproved providers are a real 404. Slugs never contain a dot, so asset
@@ -445,6 +453,7 @@ function createApp() {
       'Disallow: /services/booking/',
       'Disallow: /services/pay/',
       'Disallow: /reset',
+      'Disallow: /order/',
       // The Arabic twins (/ar/…) follow the same rules.
       'Disallow: /ar/account',
       'Disallow: /ar/sell',
@@ -456,6 +465,7 @@ function createApp() {
       'Disallow: /ar/services/booking/',
       'Disallow: /ar/services/pay/',
       'Disallow: /ar/reset',
+      'Disallow: /ar/order/',
       '',
       `Sitemap: ${SITE()}/sitemap.xml`,
       '',

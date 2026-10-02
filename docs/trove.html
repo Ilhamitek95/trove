@@ -27,6 +27,7 @@
     /* brand palette — 2026 brand book */
     --rose:#DBC7BD;        /* Clay Beige */
     --coral:#F19A82;       /* Orange — display accents only; never paired with Charcoal, never small text */
+    --coral-text:#B4502F;  /* Orange as heading text: the accent word in a heading (Orange itself is 2:1 on Cream, 1.3:1 on Clay Beige; this is 4.8:1 / 3.1:1 / 3.4:1 on Sage — WCAG 3:1 for large text, F138) */
     --accent-ink:#292727;  /* Charcoal — the accent ink for small text and links (Orange fails contrast there) */
     --cream:#FDF7F5;       /* Cream — default background */
     --sage:#CAD5CC;        /* Sage Green */
@@ -75,7 +76,7 @@
   /* ONE small-label style for the whole storefront: 12px, bold, tracked, 4.5:1 or better on every band */
   .eyebrow{font-family:'Quicksand';font-weight:700;font-size:12px;line-height:1.4;letter-spacing:.12em;color:var(--eyebrow)}
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500;letter-spacing:.002em}
-  h1 em,h2 em,h3 em{font-style:normal;color:var(--coral)}
+  h1 em,h2 em,h3 em{font-style:normal;color:var(--coral-text)}
 
   /* ---------- HEADER ---------- */
   .promo{background:var(--char);color:var(--cream)}
@@ -135,12 +136,22 @@
   /* No wishlist or following yet. The header is one skeleton on every page
      (test/header-sync.test.js), so their links are hidden here, not removed. */
   a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
+  /* iubenda's floating cookie-preferences button sat over the sticky Add to basket, the
+     basket's Checkout and the filter sheet's Show button (F157). It is switched off in
+     _iub.csConfiguration; this keeps it off even if the dashboard turns it back on.
+     Cookie settings stay one tap away in the footer. */
+  .iubenda-tp-btn{display:none!important}
   /* No Trove Collection pieces yet (html.house-soon, set by the server and at
      boot): the Collection stays everywhere, and its band says what is coming. */
   .house .soon-copy,.house .soon-panel{display:none}
   html.house-soon .house .live-copy,html.house-soon .house .gallery{display:none}
   html.house-soon .house .soon-copy{display:block}
   html.house-soon .house .soon-panel{display:flex}
+  /* ...and the hero's main button opens the Marketplace until it has (F154). */
+  .hero .soon-only{display:none}
+  html.house-soon .hero .live-only{display:none}
+  html.house-soon .hero .btn.soon-only{display:inline-flex}
+  html.house-soon .hero .l.soon-only{display:block}
   /* The shop could not be loaded (never a stand-in catalogue on the live site). */
   .outage{padding:96px 0 120px;text-align:center}
   .outage h1,.outage h2{font-size:clamp(34px,4.5vw,50px);font-weight:400;line-height:1.05;margin-bottom:14px}
@@ -154,7 +165,7 @@
   .hero .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:44px;align-items:center}
   .hero .lead .eyebrow{margin-bottom:22px;display:block}
   .hero h1,.hero [data-vh]{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
-  .hero h1 em,.hero [data-vh] em{font-style:normal;color:var(--coral)} /* the hero accent word: Orange, upright like everything else */
+  .hero h1 em,.hero [data-vh] em{font-style:normal;color:var(--coral-text)} /* the hero accent word: Orange, upright like everything else */
   .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
   .hero .ctas{display:flex;align-items:center;gap:24px}
   /* first paint: the copy settles in line by line — short, eased, once */
@@ -357,7 +368,7 @@
   /* sell */
   .sell{background:var(--sage);border-radius:28px;padding:72px 60px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
   .sell h2{font-size:clamp(38px,4vw,54px);line-height:1.0;font-weight:400;margin:16px 0 18px}
-  .sell h2 em{font-style:normal;color:var(--coral)}
+  .sell h2 em{font-style:normal;color:var(--coral-text)}
   .sell p{color:var(--char);opacity:.82;max-width:42ch;margin-bottom:30px;font-weight:400;font-size:16px}
   .steps{display:flex;flex-direction:column}
   .step{display:flex;gap:22px;padding:20px 0;border-bottom:1px solid rgba(41,39,39,.13)}
@@ -420,7 +431,7 @@
   #view-sell .faqs{max-width:1020px;display:grid;grid-template-columns:1fr 1fr;gap:0 46px;align-items:start}
   #view-sell .sellcta{background:var(--rose);border-radius:24px;padding:38px 44px;margin:44px auto 0;max-width:1020px;display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap;text-align:left}
   #view-sell .sellcta h2{font-size:clamp(26px,3vw,34px);margin:12px 0 10px;font-weight:400;line-height:1.1}
-  #view-sell .sellcta h2 em{font-style:normal;color:var(--coral)}
+  #view-sell .sellcta h2 em{font-style:normal;color:var(--coral-text)}
   #view-sell .sellcta p{margin:0;font-size:14.5px;color:var(--ink-80);max-width:52ch;font-weight:400}
   #view-sell .sellcta .btn{flex-shrink:0}
 
@@ -915,7 +926,7 @@
 
   /* checkout */
   .co-wrap{max-width:1080px;margin:0 auto;padding:38px 32px 90px}
-  .co-back{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px;display:inline-flex;gap:8px;cursor:pointer}
+  .co-back{font-family:inherit;background:none;border:0;padding:0;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px;display:inline-flex;gap:8px;cursor:pointer}
   .co-back:hover{color:var(--char)}
   .co-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
   .co-step{margin-bottom:30px}
@@ -945,12 +956,14 @@
   .acct-offer .ao-guest{font-size:12.5px;font-weight:600;color:var(--muted);margin-top:10px}
   .acct-offer .ao-guest a{color:var(--muted);text-decoration:underline;cursor:pointer}
   .acct-offer .ao-err{display:none;background:#FCEBE4;color:var(--accent-ink);font-size:12.5px;font-weight:600;padding:9px 12px;border-radius:10px;margin-top:8px;line-height:1.45}
-  .saved-opt{display:flex;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.14s}
+  .saved-opt{display:flex;width:100%;text-align:start;font-family:inherit;color:inherit;background:none;align-items:center;gap:13px;border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;cursor:pointer;font-size:13.5px;font-weight:500;transition:.14s}
   .saved-opt:hover{border-color:var(--rose)}
   .saved-opt.on{border-color:var(--char);background:var(--rose-tint)}
   .saved-opt .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;transition:.14s}
   .saved-opt.on .radio{border-color:var(--char);background:var(--char);box-shadow:inset 0 0 0 3px var(--paper)}
   .saved-opt b{font-weight:700}
+  .co-ferr{font-size:12.5px;font-weight:700;color:var(--accent-ink);margin-top:6px}
+  .co-field [aria-invalid="true"]{border-color:var(--accent-ink)}
   .co-summary{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:26px;position:sticky;top:100px}
   .co-summary h3{font-size:24px;font-weight:600;margin-bottom:18px}
   .co-sum-group{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--line-soft)}
@@ -976,12 +989,23 @@
   .confirm{max-width:620px;margin:0 auto;padding:70px 32px 90px;text-align:center}
   .confirm .check{width:74px;height:74px;border-radius:50%;background:var(--green-bg);color:var(--green);display:grid;place-items:center;margin:0 auto 24px}
   .confirm h1,.confirm [data-vh]{font-size:clamp(40px,5vw,58px);font-weight:400;line-height:1.0}
-  .confirm h1 em,.confirm [data-vh] em{font-style:normal;color:var(--coral)}
+  .confirm h1 em,.confirm [data-vh] em{font-style:normal;color:var(--coral-text)}
   .confirm .lede{font-size:16px;color:var(--ink-80);font-weight:400;margin:14px 0 6px}
   .confirm .ordid{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--char)}
   .confirm .ship-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:30px 0}
   .confirm .ship-card .sg{display:flex;align-items:center;gap:13px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
   .confirm .ship-card .sg:last-child{border:none}
+  /* the receipt: what was bought, what was paid, where it goes (F164) */
+  .confirm .rcpt{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:-12px 0 30px}
+  .confirm .rcpt h3{font-size:22px;font-weight:600;margin-bottom:6px}
+  .confirm .rcpt .rc-li{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px}
+  .confirm .rcpt .rc-li .nm{font-weight:700}
+  .confirm .rcpt .rc-li .qt{color:var(--muted);font-size:12.5px;font-weight:600}
+  .confirm .rcpt .pr{font-weight:700;white-space:nowrap}
+  .confirm .rcpt .row{display:flex;justify-content:space-between;padding:5px 0;font-size:13.5px}
+  .confirm .rcpt .row.grand{font-weight:700;font-size:15px;border-top:1px solid var(--line);margin-top:6px;padding-top:10px}
+  .confirm .rcpt .rc-addr{display:flex;flex-direction:column;gap:2px;margin-top:14px;font-size:13.5px}
+  .confirm .rcpt .rc-note{font-size:12.5px;color:var(--muted);font-weight:600;margin-top:12px}
   .confirm .ship-card .sg .d{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--cream);font-family:var(--font-display);font-weight:600;flex-shrink:0}
 
   /* mobile rules for the sections above (checkout + confirmation are
@@ -1061,7 +1085,7 @@
   [dir="rtl"] .price s{margin-right:0;margin-left:7px}
   [dir="rtl"] .stars span{margin-left:0;margin-right:3px}
   [dir="rtl"] .fitem .c,[dir="rtl"] .vendor-group .vg-head .ship-note,[dir="rtl"] .rev .rwhen,[dir="rtl"] .co-li .pr{margin-left:0;margin-right:auto}
-  [dir="rtl"] .mq-feat .who,[dir="rtl"] #view-sell .sellcta,[dir="rtl"] .confirm .ship-card{text-align:right}
+  [dir="rtl"] .mq-feat .who,[dir="rtl"] #view-sell .sellcta,[dir="rtl"] .confirm .ship-card,[dir="rtl"] .confirm .rcpt{text-align:right}
   [dir="rtl"] .acct-offer{text-align:right!important}
   [dir="rtl"] .schip{padding:7px 16px 7px 9px}
   [dir="rtl"] .drawer{right:auto;left:0;transform:translateX(-103%)}
@@ -1104,7 +1128,7 @@
 <a class="skip" href="#main">Skip to content</a>
 
 <!-- HEADER -->
-<div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Free delivery on orders over AED 200</div></div>
+<div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Delivery AED 30, free on orders over AED 200</div></div>
 <header class="top">
   <div class="wrap nav">
     <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" aria-controls="mnav" aria-expanded="false" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
@@ -1162,10 +1186,12 @@
         <h1 data-cms-rich="home.hero.h1" data-vh="home" data-i18n>Curated<br>for <em>Living</em>.</h1>
         <p data-cms="home.hero.lead">Discover handcrafted homeware from independent makers across the UAE, each piece chosen by hand for the Trove Marketplace.</p>
         <div class="ctas">
-          <button class="btn btn-dark" id="heroShopBtn" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
-          <a class="txt-link" id="heroMarketLink" data-cms="home.hero.ctaSell" href="/shop">Explore the Marketplace</a>
+          <button class="btn btn-dark live-only" id="heroShopBtn" data-cms="home.hero.ctaShop" onclick="go('shop','House')">Shop the Collection</button>
+          <a class="txt-link live-only" id="heroMarketLink" data-cms="home.hero.ctaSell" href="/shop">Explore the Marketplace</a>
+          <!-- While the Collection has no pieces (html.house-soon) the main button opens the Marketplace (owner 2026-10-02, F154) -->
+          <a class="btn btn-dark soon-only" id="heroMarketBtn" href="/shop">Shop the Marketplace</a>
         </div>
-        <a class="hero-tag" href="/shop/trove-collection" title="Shop the Trove Collection"><span class="d"></span><span><span class="l" data-cms="home.hero.tagLine">Our own line</span><span class="n" data-cms="home.hero.tagName">Trove Collection →</span></span></a>
+        <a class="hero-tag" href="/shop/trove-collection" title="Shop the Trove Collection"><span class="d"></span><span><span class="l live-only" data-cms="home.hero.tagLine">Our own line</span><span class="l soon-only">Our own line · coming soon</span><span class="n" data-cms="home.hero.tagName">Trove Collection →</span></span></a>
       </div>
       <!-- The shelf: featured pieces fanned on a stage. Admin-picked (Site content → Hero)
            or an automatic Collection / Marketplace mix — see renderHeroDeck(). -->
@@ -1373,7 +1399,7 @@
         </div>
         <ul class="ship-list" aria-label="Delivery and returns">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg><span id="pdpShipLine">Arrives in 3–6 days across Dubai &amp; Abu Dhabi</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg><span id="pdpFreeLine">Free delivery on orders over AED 200</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg><span id="pdpFreeLine">Delivery AED 30 · free on orders over AED 200</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg><span>15-day returns, collection free if a piece is faulty</span></li>
         </ul>
         <a class="ship-more" href="/returns">Delivery &amp; returns in full</a>
@@ -1395,7 +1421,7 @@
   <section class="band">
     <div class="wrap" style="text-align:center;max-width:760px">
       <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on Trove</span>
-      <h2 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1" data-vh="sell" data-i18n>You make the pieces.<br>We'll be the <em style="font-style:normal;color:var(--coral)">shop</em>.</h2>
+      <h2 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1" data-vh="sell" data-i18n>You make the pieces.<br>We'll be the <em>shop</em>.</h2>
       <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:18px auto 26px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.</p>
       <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href=troveUrl('/apply')">Start your application</button>
@@ -1475,7 +1501,7 @@
 <!-- CHECKOUT -->
 <div class="view" id="view-checkout">
   <div class="co-wrap">
-    <span class="co-back" onclick="openCart()">← Back to basket</span>
+    <button type="button" class="co-back" onclick="openCart()">← Back to basket</button>
     <h2 style="font-size:clamp(34px,4vw,48px);font-weight:400;margin-bottom:28px" data-vh="checkout">Checkout</h2>
     <div class="co-grid">
       <div>
@@ -1496,7 +1522,7 @@
                 <div class="pw"><input id="coAcctPw" type="password" placeholder="At least 8 characters" autocomplete="new-password">
                   <button type="button" class="pweye" aria-label="Show password" onclick="togglePw('coAcctPw',this)"><svg class="eye-on" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg><svg class="eye-off" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4.5 8.6C3.2 9.9 2.5 12 2.5 12S6 18.2 12 18.2c1.3 0 2.5-.3 3.6-.8M9.9 6.1c.7-.2 1.4-.3 2.1-.3 6 0 9.5 6.2 9.5 6.2s-.8 1.4-2.2 2.8"/><path d="M9.1 9.6a3.5 3.5 0 0 0 4.9 4.9"/><path d="M4 4l16 16"/></svg></button></div></div>
               <div id="coAcctErr" class="ao-err"></div>
-              <div class="ao-guest" id="coAcctGuestLink" style="display:none" data-i18n>No thanks — <a onclick="guestInstead()">check out as a guest</a></div>
+              <div class="ao-guest" id="coAcctGuestLink" style="display:none" data-i18n>No thanks — <a href="#" onclick="guestInstead();return false">check out as a guest</a></div>
             </div>
           </div>
         </div>
@@ -1537,6 +1563,7 @@
     <p class="lede">Your order is in. A receipt is on its way to your email.</p>
     <div class="ordid" id="confOrdId"></div>
     <div class="ship-card" id="confShip"></div>
+    <div class="rcpt" id="confReceipt" hidden></div>
     <div class="acct-offer" id="confAcct" style="display:none;max-width:430px;margin:0 auto 26px;text-align:left">
       <b style="font-size:15.5px">Don’t lose track of this order.</b>
       <p style="font-size:13px;font-weight:500;color:var(--ink-80);margin:6px 0 12px;line-height:1.55">Create your free account now — this order attaches to it automatically, and next time checkout takes seconds.</p>
@@ -1613,7 +1640,7 @@
   </div>
 </footer>
 
-<div class="toast" id="toast"><span id="toastMsg"></span></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><span id="toastMsg"></span></div>
 
 <script src="/config.js"></script>
 <script src="/api.js"></script>
@@ -1761,7 +1788,11 @@ function img(seed){
     `<g fill="#292727" opacity=".28"><circle cx="${(cx+310)%600+20}" cy="${(cy+140)%720+30}" r="4"/><circle cx="${(cx2+90)%600+20}" cy="${(cy2+430)%720+30}" r="4"/></g></svg>`;
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
-function aed(n){return troveIso('AED '+n.toLocaleString('en-GB'));}
+/* Money: one fixed format whatever the device language (Western digits,
+   '1,234', two decimals when there are fils: 'AED 64.50'), the same as the
+   server's i18n.money() on receipts and emails. */
+function aedNum(n){n=Number(n)||0;n=Math.round(n*100)/100;return Number.isInteger(n)?n.toLocaleString('en-GB'):n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function aed(n){return troveIso('AED '+aedNum(n));}
 /* Every API or CMS string that reaches innerHTML goes through esc(). */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 /* A value for an inline handler: a JSON string literal, HTML-escaped, so a
@@ -1789,10 +1820,19 @@ function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'�
 const CFG = window.TROVE_CONFIG || {};
 const paymentsLive = () => LIVE && TroveAPI.paymentsEnabled;
 function feeBreakdown(subAed){
-  // Delivery is charged on orders at or below the threshold, free above it.
+  // Delivery is charged on orders at or below the threshold, free above it —
+  // so 'remaining' is the gap to the threshold, and the buyer must add MORE
+  // than it (the basket copy says so: exactly AED 200 still pays).
   const service=FEES.serviceFeeCents/100, freeThresh=FEES.freeDeliveryThresholdCents/100;
   const delivery=subAed>freeThresh?0:FEES.deliveryFeeCents/100;
   return {service,delivery,freeThresh,remaining:Math.max(0,freeThresh-subAed),total:subAed+service+delivery};
+}
+/* The product page's delivery-cost line: the fee is stated where the buyer
+   decides, not first in the basket (F155). Same wording as seo.js deliveryLine(). */
+function pdpDeliveryLine(p){
+  const th=FEES.freeDeliveryThresholdCents/100;
+  return Number(p.price)>th?_t('Free delivery on orders over {amount}',{amount:aed(th)})
+    :_t('Delivery {fee} · free on orders over {amount}',{fee:aed(FEES.deliveryFeeCents/100),amount:aed(th)});
 }
 let stripeJs=null, stripeElements=null, payElement=null, payIntent=null;
 let lastOrder=null; // {orderId?, clientSecret?, email, name} — for the post-purchase account offer
@@ -1813,7 +1853,8 @@ function checkoutPayload(){
   let address=null;
   if(coNewAddr){
     const g=id=>($(id)?$(id).value.trim():'');
-    const line=g('coNewLine'), emirate=g('coNewEmirate')||'Dubai', area=g('coNewCity');
+    // No default emirate: the buyer chooses it (F192).
+    const line=g('coNewLine'), emirate=g('coNewEmirate'), area=g('coNewCity');
     if(line) address={name:g('coNewName'),line,city:area?`${area}, ${emirate}`:emirate,emirate,country:'United Arab Emirates'};
   }else if(SAVED_ADDR[coAddr]){
     const a=SAVED_ADDR[coAddr]; address={name:a.name,line:a.line,city:a.city};
@@ -1838,7 +1879,7 @@ function intentPayload(){
   const p=checkoutPayload();
   if(!isUAEMobile(p.phone))delete p.phone;
   const a=p.address;
-  if(!a||!a.name||!a.line||!inServiceArea(a.emirate||a.city))delete p.address;
+  if(!a||!a.name||!a.line||!deliverable(a))delete p.address;
   return p;
 }
 
@@ -2632,7 +2673,7 @@ function openPDP(id){
   // Renders the chips and settles the price, the stock line and the button —
   // after the button is wired, so it owns the final label.
   renderPdpOptions();
-  $('pdpFreeLine').textContent=_t('Free delivery on orders over {amount}',{amount:aed(FEES.freeDeliveryThresholdCents/100)});
+  $('pdpFreeLine').textContent=pdpDeliveryLine(p);
   $('pdpShipLine').textContent=shipLine(p);
   $('pdpAcc').innerHTML=pdpAccHTML(p);
   $('pbName').textContent=p.name;
@@ -2731,7 +2772,7 @@ function extrasPrice(p,names){return (names||[]).reduce((s,n)=>{const e=(p.extra
 /* "Gift wrap +AED 15 · Handwritten card" — basket, summary and receipt line. */
 function exLabel(p,names){return (names||[]).map(n=>{const e=(p.extras||[]).find(x=>x.name===n);return (e&&e.price)?`${exName(p,n)} ${plusAed(e.price)}`:exName(p,n);}).join(' · ');}
 /* '+AED 15' as one left-to-right unit, so the plus never drifts in Arabic. */
-function plusAed(n){return troveIso('+AED '+Number(n).toLocaleString('en-GB'));}
+function plusAed(n){return troveIso('+AED '+aedNum(n));}
 /* Option groups, values and extras keep their English names for the basket
    and checkout (the server matches on them); an Arabic page shows the
    translated labels the API sends with the piece (?lang=ar). */
@@ -2915,7 +2956,7 @@ function renderCart(){
   $('cartShip').textContent=fb.delivery===0?_t('Free'):aed(fb.delivery);
   $('cartTotal').textContent=aed(fb.total);
   const fn=$('cartFreeNote'); fn.style.display='block';
-  fn.textContent=fb.delivery===0?_t('You’ve unlocked free delivery.'):(fb.remaining>0?_t('Add {amount} more for free delivery.',{amount:aed(fb.remaining)}):_t('Free delivery kicks in on orders over {amount}.',{amount:aed(fb.freeThresh)}));
+  fn.textContent=fb.delivery===0?_t('You’ve unlocked free delivery.'):(fb.remaining>0?_t('Add more than {amount} for free delivery — it starts on orders over {threshold}.',{amount:aed(fb.remaining),threshold:aed(fb.freeThresh)}):_t('Free delivery kicks in on orders over {amount}.',{amount:aed(fb.freeThresh)}));
   const oe=orderEst(groups);
   $('cartVendorNote').textContent=oe.separately?_t('Pieces arrive separately as each is ready — the last in {label}. Tracked together in one place.',{label:oe.est.label})
     :shopCount>1?_tn(shopCount,'Your order spans {n} shop — each ships separately, tracked together in one place. Arrives in {label}.','Your order spans {n} shops — each ships separately, tracked together in one place. Arrives in {label}.',{label:oe.est.label}):_t('Ships from one shop, tracked in one place. Arrives in {label}.',{label:oe.est.label});
@@ -3026,16 +3067,23 @@ function selAddr(i){coAddr=i;coNewAddr=false;renderCheckout();}
 function newAddr(){coNewAddr=true;coAddr=-1;renderCheckout();}
 function selCard(i){coCard=i;renderCheckout();}
 const inServiceArea=city=>/(dubai|abu dhabi)/i.test(city||'');
+/* The other five emirates (the same list as backend/src/service-area.js —
+   test/storefront-oct2-f1.test.js pins them equal): an address whose area
+   or street names one is outside the service area whatever the Emirate box
+   says. */
+const OTHER_EMIRATES=/(^|[^a-z])(sharjah|shj|ajman|umm\s*al[\s-]*quwain|uaq|ras\s*al[\s-]*khaimah|fujairah|fujeirah)([^a-z]|$)|الشارقة|عجمان|أم\s*القيوين|ام\s*القيوين|رأس\s*الخيمة|راس\s*الخيمة|الفجيرة/i;
+const deliverable=a=>!!a&&inServiceArea(a.emirate||a.city)&&!OTHER_EMIRATES.test([a.line,a.city,a.emirate].map(x=>x||'').join(' '));
 function renderCheckout(){
   const groups=cartGroups();
-  // addresses — saved ones outside Dubai/Abu Dhabi can't be delivered to
+  // addresses — saved ones outside Dubai/Abu Dhabi can't be delivered to.
+  // Real buttons, so a keyboard or switch user can pick another address too.
   $('coAddrSaved').innerHTML=SAVED_ADDR.map((a,i)=>{
-    const ok=inServiceArea(a.city);
-    return `<div class="saved-opt ${(!coNewAddr&&coAddr===i)?'on':''}" style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast(_t('We deliver in Dubai and Abu Dhabi only'))`}"><div class="radio"></div><div><b>${esc(a.label)}</b> · ${esc(a.name)}<br><span style="color:var(--muted)">${esc(a.line)}, ${esc(a.city)}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">'+_t('Outside our delivery area')+'</span>'}</div></div>`;
+    const ok=deliverable(a), on=!coNewAddr&&coAddr===i;
+    return `<button type="button" class="saved-opt ${on?'on':''}" aria-pressed="${on}"${ok?'':' aria-disabled="true"'} style="${ok?'':'opacity:.55;cursor:not-allowed'}" onclick="${ok?`selAddr(${i})`:`toast(_t('We deliver in Dubai and Abu Dhabi only'))`}"><span class="radio"></span><span><b>${esc(a.label)}</b> · ${esc(a.name)}<br><span style="color:var(--muted)">${esc(a.line)}, ${esc(a.city)}</span>${ok?'':'<br><span style="color:var(--accent-ink);font-size:12px;font-weight:700">'+_t('Outside our delivery area')+'</span>'}</span></button>`;
   }).join('')
-    +`<div class="saved-opt ${coNewAddr?'on':''}" onclick="newAddr()"><div class="radio"></div><div><b>${_t('Use a new address')}</b></div></div>`;
+    +`<button type="button" class="saved-opt ${coNewAddr?'on':''}" aria-pressed="${coNewAddr}" onclick="newAddr()"><span class="radio"></span><span><b>${_t('Use a new address')}</b></span></button>`;
   // The emirate's value stays English (the server checks it); the label is the page's language.
-  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label for="coNewName">${_t('Full name')}</label><input id="coNewName" placeholder="${_t('Your name')}" value="${ME?esc(ME.name||''):''}"></div><div class="co-field"><label for="coNewLine">${_t('Address')}</label><input id="coNewLine" placeholder="${_t('Street, building, apt')}"></div><div class="co-two"><div class="co-field"><label for="coNewCity">${_t('Area')}</label><input id="coNewCity" placeholder="${_t('e.g. Dubai Marina, Khalifa City')}"></div><div class="co-field"><label for="coNewEmirate">${_t('Emirate')}</label><select id="coNewEmirate"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div></div></div>`:'';
+  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label for="coNewName">${_t('Full name')}</label><input id="coNewName" placeholder="${_t('Your name')}" autocomplete="name" value="${ME?esc(ME.name||''):''}"></div><div class="co-field"><label for="coNewLine">${_t('Address')}</label><input id="coNewLine" placeholder="${_t('Street, building, apt')}" autocomplete="street-address"></div><div class="co-two"><div class="co-field"><label for="coNewCity">${_t('Area')}</label><input id="coNewCity" placeholder="${_t('e.g. Dubai Marina, Khalifa City')}"></div><div class="co-field"><label for="coNewEmirate">${_t('Emirate')}</label><select id="coNewEmirate" required><option value="" selected disabled>${_t('Choose emirate…')}</option><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div></div><div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:-4px">${_t('We deliver in Dubai and Abu Dhabi only for now.')}</div></div>`:'';
   // delivery grouped by shop
   // Each shop's parcel waits for its slowest piece; the order is the slowest parcel.
   const coEst=orderEst(groups);
@@ -3051,7 +3099,7 @@ function renderCheckout(){
     $('coPaySaved').innerHTML='';
     $('payNote').textContent=_t('Demo mode — card payments launch soon. Nothing is charged; your order is recorded so you can track it in your account.');
   }else{
-    $('coPaySaved').innerHTML=DEMO_CARDS.map((c,i)=>`<div class="saved-opt ${coCard===i?'on':''}" onclick="selCard(${i})"><div class="radio"></div><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></div>`).join('');
+    $('coPaySaved').innerHTML=DEMO_CARDS.map((c,i)=>`<button type="button" class="saved-opt ${coCard===i?'on':''}" aria-pressed="${coCard===i}" onclick="selCard(${i})"><span class="radio"></span><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></button>`).join('');
     $('payNote').textContent=_t('Demo mode — card payments launch soon. No charge is made and no real order is placed.');
   }
   // summary
@@ -3082,21 +3130,81 @@ function showConfirmation(orderId){
   if(LIVE&&!ME){$('confAcctEmail').value=(lastOrder&&lastOrder.email)||'';$('confAcctPw').value='';}
   $('confOrdId').textContent=_t('Order {id}',{id:troveIso(orderId)});
   const cfEst=orderEst(groups);
+  $('confShip').hidden=false;
   $('confShip').innerHTML=`<div style="font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px">${_tn(n,'{n} shipment · tracked together','{n} shipments · tracked together')}${cfEst.separately?' · '+_t('pieces arrive separately as each is ready'):''}</div>`
     +Object.entries(groups).map(([v,items])=>{const V=VENDORS[v];const ct=items.reduce((s,i)=>s+i.qty,0);
       return `<div class="sg"><div class="d" style="${grad(V.color)}">${esc((V.name||'?')[0])}</div><div><div style="font-weight:700;font-size:14px">${esc(V.name)}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${_tn(ct,'{n} item · arrives in {label}','{n} items · arrives in {label}',{label:esc(cfEst.perShop[v].label)})}</div></div></div>`;}).join('');
   cart=[];updateCartCount();renderCart();
-  setAddress(trovePath(location.pathname)+location.search,_t('Thank you · Trove'),null,{v:'confirm',replace:true});
+  // Its own address (F164): a refresh or a killed tab comes back to this order.
+  $('confReceipt').hidden=true;
+  if(LIVE)setAddress('/order/'+encodeURIComponent(orderId)+'/thanks',_t('Thank you · Trove'),null,{v:'confirm',replace:true});
+  else setAddress(trovePath(location.pathname)+location.search,_t('Thank you · Trove'),null,{v:'confirm',replace:true});
   showView('confirm');jumpTop();
+  if(LIVE)loadReceipt(orderId).then(r=>{if(r)drawReceipt(r);});
+}
+/* ---------------- The order's own page: /order/<id>/thanks (F164) ----------------
+ * The receipt key the checkout call returned stays on this device (never in
+ * the address, so it never reaches analytics or a referrer); a signed-in
+ * buyer needs none. The server answers only the order's own buyer. */
+const RCPT_STORE='trove.receipts.v1';
+function saveReceiptKey(id,key){
+  if(!id||!key)return;
+  try{const m=JSON.parse(localStorage.getItem(RCPT_STORE)||'{}')||{};m[id]=key;const ids=Object.keys(m);ids.slice(0,Math.max(0,ids.length-10)).forEach(k=>delete m[k]);localStorage.setItem(RCPT_STORE,JSON.stringify(m));}catch(_){}
+}
+function receiptKeyOf(id){try{return (JSON.parse(localStorage.getItem(RCPT_STORE)||'{}')||{})[id]||'';}catch(_){return '';}}
+async function loadReceipt(id){
+  const k=receiptKeyOf(id);
+  try{const r=await TroveAPI.api('/api/checkout/receipt/'+encodeURIComponent(id),{headers:k?{'X-Receipt-Key':k}:{}});return (r&&r.receipt)||null;}catch(_){return null;}
+}
+function drawReceipt(r){
+  const a=r.address||{};
+  const items=r.items.map(i=>`<div class="rc-li"><div><div class="nm">${esc(i.name)}</div><div class="qt">${_t('Qty {n}',{n:i.qty})} · ${esc(i.shop.name)}${i.options?` · ${esc(i.options)}`:''}${(i.extras&&i.extras.length)?` · ${esc(i.extras.join(', '))}`:''}${i.personalization?` · “${esc(i.personalization)}”`:''}</div></div><div class="pr">${aed(i.lineTotal)}</div></div>`).join('');
+  $('confReceipt').innerHTML=`<h3>${_t('Your order')}</h3>${items}`
+    +`<div style="margin-top:8px"><div class="row"><span>${_t('Subtotal')}</span><span>${aed(r.subtotal)}</span></div>${r.serviceFee?`<div class="row"><span>${_t('Service fee')}</span><span>${aed(r.serviceFee)}</span></div>`:''}<div class="row"><span>${_t('Delivery')}</span><span>${r.delivery?aed(r.delivery):_t('Free')}</span></div><div class="row grand"><span>${r.status==='pending'?_t('Total'):_t('Total paid')}</span><span>${aed(r.total)}</span></div></div>`
+    +`<div class="rc-addr"><b>${_t('Delivering to')}</b><span>${esc(a.name)}</span><span>${esc(a.line)}${a.city?', '+esc(a.city):''}</span>${r.phone?`<span>${_t('Mobile')}: ${troveIso(esc(r.phone))}</span>`:''}</div>`
+    +(r.status==='pending'?`<p class="rc-note">${_t('Your payment is being confirmed — this usually takes a few seconds. Your receipt email follows.')}</p>`:'');
+  $('confReceipt').hidden=false;
+}
+/* Opening /order/<id>/thanks directly (a refresh, a restored tab, Back). */
+async function showOrderPage(id){
+  $('confOrdId').textContent=_t('Order {id}',{id:troveIso(id)});
+  $('confHead').innerHTML=_t('Thank you.');
+  $('confAcct').style.display='none';$('confApp').style.display='none';
+  $('confTrack').style.display=ME?'':'none';
+  $('confShip').innerHTML='';$('confShip').hidden=true;$('confReceipt').hidden=true;
+  showView('confirm');jumpTop();
+  const r=LIVE?await loadReceipt(id):null;
+  if(!r){
+    $('confReceipt').innerHTML=`<p class="rc-note" style="margin:0">${_t('We can’t show this order on this device. Your receipt email has every detail, and signed-in buyers find it under Orders in their account.')}</p>`;
+    $('confReceipt').hidden=false;return;
+  }
+  const by={};r.items.forEach(i=>{const k=i.shop.name;(by[k]=by[k]||{shop:i.shop,ct:0,lead:0});by[k].ct+=i.qty;by[k].lead=Math.max(by[k].lead,Number(i.leadDays)||0);});
+  const g=Object.values(by);
+  $('confShip').innerHTML=`<div style="font-size:12px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:4px">${_tn(g.length,'{n} shipment · tracked together','{n} shipments · tracked together')}</div>`
+    +g.map(s=>`<div class="sg"><div class="d" style="${grad(safeColor(s.shop.color))}">${esc((s.shop.name||'?')[0])}</div><div><div style="font-weight:700;font-size:14px">${esc(s.shop.name)}</div><div style="font-size:12px;color:var(--muted);font-weight:600">${_tn(s.ct,'{n} item · arrives in {label}','{n} items · arrives in {label}',{label:esc(estOf(s.lead).label)})}</div></div></div>`).join('');
+  $('confShip').hidden=false;
+  drawReceipt(r);
 }
 async function placeOrder(){
   // Contact + delivery details must be complete and inside the service area.
+  // Each problem is written under its field and the field takes the focus
+  // (F085); the toast is only a second cue.
   if(LIVE){
-    if(!/^\S+@\S+\.\S+$/.test($('coEmail').value.trim())){toast(_t('Enter your email so we can send your receipt'));window.scrollTo(0,0);return;}
-    if(!isUAEMobile($('coPhone').value)){toast(_t('Add a UAE mobile so the driver can reach you'));$('coPhone').focus();window.scrollTo(0,0);return;}
+    coClearErrs();
+    const g=id=>($(id)?$(id).value.trim():'');
+    if(!/^\S+@\S+\.\S+$/.test(g('coEmail')))return coInvalid('coEmail',_t('Enter your email so we can send your receipt'));
+    if(!isUAEMobile(g('coPhone')))return coInvalid('coPhone',_t('Add a UAE mobile so the driver can reach you'));
+    if(coNewAddr){
+      if(!g('coNewName'))return coInvalid('coNewName',_t('Add the name for the delivery'));
+      if(!g('coNewLine'))return coInvalid('coNewLine',_t('Add your street, building and apartment'));
+      if(!g('coNewEmirate'))return coInvalid('coNewEmirate',_t('Choose Dubai or Abu Dhabi'));
+    }
     const a=checkoutPayload().address;
-    if(!a||!a.name||!a.line){toast(_t('Add your delivery name and address'));return;}
-    if(!inServiceArea(a.emirate||a.city)){toast(_t('We deliver in Dubai and Abu Dhabi only'));return;}
+    if(!a||!a.name||!a.line){toast(_t('Add your delivery name and address'),4500);return;}
+    if(!deliverable(a)){
+      if(coNewAddr)return coInvalid(OTHER_EMIRATES.test(g('coNewLine'))?'coNewLine':'coNewCity',_t('We deliver in Dubai and Abu Dhabi only for now.'));
+      toast(_t('We deliver in Dubai and Abu Dhabi only'),4500);return;
+    }
   }
   if(!(await ensureGuestAccount()))return;
   if(paymentsLive()){
@@ -3130,6 +3238,7 @@ async function placeOrder(){
     btn.disabled=false;btn.style.opacity=1;
     if(error){$('payStatus').textContent=error.message;return;}
     const id=payIntent.orderId;
+    saveReceiptKey(payIntent.orderId,payIntent.receiptKey);
     lastOrder={orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,amountCents:Number(payIntent.amount),email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
     resetPayment();
     showConfirmation(id);
@@ -3143,6 +3252,7 @@ async function placeOrder(){
     try{
       const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
       await TroveAPI.api('/api/checkout/demo-complete',{method:'POST',body:{orderId:data.orderId}});
+      saveReceiptKey(data.orderId,data.receiptKey);
       lastOrder={orderId:data.orderId,demo:true,amountCents:Number(data.amount),email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
       showConfirmation(data.orderId);
     }catch(e){toast(e.message||_t('Could not place the order — please try again'));}
@@ -3181,7 +3291,26 @@ async function confCreateAccount(){
 }
 
 let toastT;
-function toast(m){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
+/* #toast is a polite live region (role=status), so screen readers hear it too. */
+function toast(m,ms){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),ms||2200);}
+/* Checkout field errors: the message sits under the field (aria-invalid +
+   aria-describedby), the field takes the focus, and typing clears it. */
+function coFieldErr(id,msg){
+  const el=$(id); if(!el)return;
+  let e=document.getElementById(id+'Err');
+  if(!msg){el.removeAttribute('aria-invalid');if(el.getAttribute('aria-describedby')===id+'Err')el.removeAttribute('aria-describedby');if(e)e.remove();return;}
+  if(!e){e=document.createElement('div');e.id=id+'Err';e.className='co-ferr';(el.closest('.co-field')||el.parentNode).appendChild(e);}
+  e.textContent=msg;
+  el.setAttribute('aria-invalid','true');el.setAttribute('aria-describedby',id+'Err');
+}
+function coClearErrs(){document.querySelectorAll('.co-ferr').forEach(e=>coFieldErr(e.id.slice(0,-3),''));}
+function coInvalid(id,msg){
+  coFieldErr(id,msg);
+  const el=$(id);
+  if(el){el.scrollIntoView({block:'center',behavior:REDUCED?'auto':'smooth'});el.focus({preventScroll:true});}
+  toast(msg,4500);
+}
+['input','change'].forEach(t=>document.addEventListener(t,e=>{const f=e.target;if(f&&f.id&&f.getAttribute&&f.getAttribute('aria-invalid')==='true')coFieldErr(f.id,'');}));
 
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;syncHeadings(v);
   if(v==='pdp')watchPdpBar(); else document.body.classList.remove('pdp-bar-on');}
@@ -3219,7 +3348,7 @@ function go(v,cat){
  * before; links are real <a href>s and a plain click is handled in the page
  * (a ctrl/cmd/middle click opens a new tab as normal). */
 const HOME_TITLE='Trove · Curated homeware by independent makers in Dubai & Abu Dhabi';
-const HOME_DESC='Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Free delivery on orders over AED 200.';
+const HOME_DESC='Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Delivery AED 30, free on orders over AED 200.';
 function slugify(s){return String(s==null?'':s).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/['\u2019]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80).replace(/-+$/,'');}
 function catSlug(c){return c==='House'?'trove-collection':slugify(c);}
 function catFromSlug(sl){
@@ -3274,6 +3403,7 @@ function routeTo(path,search,hash,st){
     return true;
   }
   if(path==='/sell-on-trove'){go('sell');return true;}
+  if((m=path.match(/^\/order\/([A-Za-z0-9-]+)\/thanks\/?$/))){showOrderPage(m[1]);document.title=_t('Thank you · Trove');return true;}
   if(path==='/'){
     go('home');
     const id=(hash||'').slice(1);

@@ -22,7 +22,7 @@ const { copyViolation } = require('./copy-rules');
 
 const DEFAULTS = {
   'site.promo': {
-    text: 'Delivering across Dubai & Abu Dhabi · Free delivery on orders over AED 200',
+    text: 'Delivering across Dubai & Abu Dhabi · Delivery AED 30, free on orders over AED 200',
   },
   'site.footer': {
     blurb: 'Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.',

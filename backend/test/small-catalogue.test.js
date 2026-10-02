@@ -64,8 +64,8 @@ test('one piece: the server draws the editorial hero and The first piece; the Co
   assert.match(html, /<div class="firsts n1" id="trendingGrid">/);
   assert.match(html, /id="weeklyHeading"[^>]*>The first piece</);
   // the original two-way hero: Shop the Collection + Explore the Marketplace
-  assert.match(html, /<button class="btn btn-dark" id="heroShopBtn"[^>]*>Shop the Collection<\/button>/);
-  assert.match(html, /<a class="txt-link" id="heroMarketLink"[^>]*>Explore the Marketplace<\/a>/);
+  assert.match(html, /<button class="btn btn-dark live-only" id="heroShopBtn"[^>]*>Shop the Collection<\/button>/);
+  assert.match(html, /<a class="txt-link live-only" id="heroMarketLink"[^>]*>Explore the Marketplace<\/a>/);
   // the stock stand-in photo is labelled as such wherever it shows
   assert.equal((noScripts(html).match(/class="illus">Illustrative photo</g) || []).length, 2);
   assert.equal(rawH1(noScripts(html)), 1);

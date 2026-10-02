@@ -144,12 +144,15 @@ function socialTags({ base, url, title, description, image, imageAlt, type = 'we
 /** Swap the title + description and add the head tags (+ JSON-LD). */
 function setHead(html, opts) {
   const { title, description, ld = [] } = opts;
-  let out = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`);
+  // Every replacement below is a FUNCTION: the text carries seller-written
+  // names, and a string replacement would read "$'", "$&" or "$`" in them as
+  // commands that paste chunks of the page in (F074).
+  let out = html.replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(title)}</title>`);
   const meta = `<meta name="description" content="${esc(description)}">`;
-  out = /<meta name="description"[^>]*>/.test(out) ? out.replace(/<meta name="description"[^>]*>/, meta) : out.replace('</title>', `</title>\n${meta}`);
+  out = /<meta name="description"[^>]*>/.test(out) ? out.replace(/<meta name="description"[^>]*>/, () => meta) : out.replace('</title>', () => `</title>\n${meta}`);
   // Trove itself rides along on every page: offers, pages and makers point at it by @id.
   const graph = ldScript({ '@graph': [sitePages.organizationLd(opts.base, content.company()), ...ld] });
-  return out.replace('</head>', `${socialTags(opts)}\n${graph}\n</head>`);
+  return out.replace('</head>', () => `${socialTags(opts)}\n${graph}\n</head>`);
 }
 
 /**
@@ -167,13 +170,13 @@ function withDefaultSocial(html, { base, url, noindex = false, path: pagePath })
   const title = t.replace(/&amp;/g, '&');
   const description = d ? d.replace(/&amp;/g, '&') : fallback;
   let out = html;
-  if (!d) out = out.replace('</title>', `</title>\n<meta name="description" content="${esc(fallback)}">`);
-  return out.replace('</head>', `${socialTags({ base, url: noindex ? null : url, title, description })}\n</head>`);
+  if (!d) out = out.replace('</title>', () => `</title>\n<meta name="description" content="${esc(fallback)}">`);
+  return out.replace('</head>', () => `${socialTags({ base, url: noindex ? null : url, title, description })}\n</head>`);
 }
 
 /* ---------------- storefront views ---------------- */
 const HOME_TITLE = 'Trove · Curated homeware by independent makers in Dubai & Abu Dhabi';
-const DEFAULT_DESCRIPTION = 'Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Free delivery on orders over AED 200.';
+const DEFAULT_DESCRIPTION = 'Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Delivery AED 30, free on orders over AED 200.';
 
 /** Switch the storefront's active view and make its title the page's one <h1>. */
 function activate(html, view) {
@@ -204,8 +207,8 @@ function attr(html, id, name, value) {
   if (!m) throw new Error(`seo: #${id} is missing in the page source`);
   let attrs = m[2];
   const a = new RegExp(`\\s${name}="[^"]*"`);
-  attrs = a.test(attrs) ? attrs.replace(a, ` ${name}="${esc(value)}"`) : `${attrs} ${name}="${esc(value)}"`;
-  return html.replace(m[0], `<${m[1]}${attrs}>`);
+  attrs = a.test(attrs) ? attrs.replace(a, () => ` ${name}="${esc(value)}"`) : `${attrs} ${name}="${esc(value)}"`;
+  return html.replace(m[0], () => `<${m[1]}${attrs}>`);
 }
 
 /** A product card, as the storefront's productCard() draws it (it re-renders over this). */
@@ -237,10 +240,96 @@ const orgRef = (base) => ({ '@id': `${base}/#organization` });
  * html.house-soon, which swaps the Collection band to its coming-soon copy.
  * The Collection is never hidden (owner, 2026-09-30).
  */
-function storefront() {
+function storefront(lang = 'en') {
   let html = readDoc('trove.html', storeCache);
   if (!sitePages.hasHousePieces()) html = html.replace('<html lang="en">', '<html lang="en" class="house-soon">');
+  return withSiteContent(html, lang);
+}
+
+/* ---------------- Site content (Admin → Site content) ---------------- */
+/**
+ * The owner's Site content edits, written into the page on the server — the
+ * same job the page script's applyContent() does after the first paint — so
+ * crawlers, link previews and slow connections see the edited wording, not
+ * the built-in copy (F075). Only fields that differ from the built-in
+ * defaults are touched: the page source already carries the defaults, and on
+ * Arabic pages src/i18n.js translates those with its dictionaries. An edited
+ * field is written in the page's language (src/translate.js; English until
+ * its translation lands).
+ */
+const getPath = (o, p) => (p ? p.split('.').reduce((a, k) => (a == null ? undefined : a[k]), o) : o);
+const defaultAt = (p) => { const [a, b, ...rest] = p.split('.'); return getPath(content.DEFAULTS[`${a}.${b}`], rest.join('.')); };
+const cmsRich = (s) => esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/\|/g, '<br>');
+/** A constant of the page's own script (icons, tints), so the server draws what the script draws. */
+function pageConst(html, name) {
+  const m = html.match(new RegExp(`const ${name}=(\\[[\\s\\S]*?\\n?\\]|'[^']*');`));
+  if (!m) return null;
+  const strs = [...m[1].matchAll(/'([^']*)'/g)].map((x) => x[1]);
+  return m[1].startsWith('[') ? strs : strs[0];
+}
+/** Replace the inner HTML of the element with this id, nested children included. */
+function replaceInner(html, id, inner) {
+  const open = new RegExp(`<([a-z0-9]+)\\b[^>]*\\bid="${id}"[^>]*>`).exec(html);
+  if (!open) return html;
+  const tag = open[1];
+  const re = new RegExp(`<(/?)${tag}\\b[^>]*>`, 'g');
+  re.lastIndex = open.index + open[0].length;
+  let depth = 1; let m;
+  while ((m = re.exec(html))) {
+    depth += m[1] ? -1 : 1;
+    if (!depth) return html.slice(0, open.index + open[0].length) + inner + html.slice(m.index);
+  }
   return html;
+}
+function withSiteContent(html, lang = 'en') {
+  const en = content.getPublic();
+  const local = lang === 'en' ? en : tr.siteContent(en, lang);
+  const changed = (p) => { const v = getPath(en, p); return v !== undefined && JSON.stringify(v) !== JSON.stringify(defaultAt(p)); };
+  const val = (p) => getPath(local, p);
+  let out = html.replace(/<([a-z0-9]+)(\b[^>]*\sdata-cms="([^"]+)"[^>]*)>([^<]*)<\/\1>/g, (m, tag, attrs, key) => {
+    const v = val(key);
+    return typeof v === 'string' && changed(key) ? `<${tag}${attrs}>${esc(v)}</${tag}>` : m;
+  });
+  out = out.replace(/<(h[1-6])(\b[^>]*\sdata-cms-rich="([^"]+)"[^>]*)>([\s\S]*?)<\/\1>/g, (m, tag, attrs, key) => {
+    const v = val(key);
+    return typeof v === 'string' && changed(key) ? `<${tag}${attrs}>${cmsRich(v)}</${tag}>` : m;
+  });
+  if (!out.includes('id="faqList"')) return out; // the Services page carries only the promo bar + footer
+  const roman = (n) => (lang === 'ar' ? String(n) : ['i', 'ii', 'iii', 'iv', 'v', 'vi'][n - 1] || String(n));
+  const facts = val('sell.hero.facts');
+  if (changed('sell.hero.facts') && Array.isArray(facts)) {
+    const tick = pageConst(html, 'TERM_TICK') || '';
+    out = replaceInner(out, 'sellFacts', facts.map((f) => `<span>${tick}${esc(f)}</span>`).join(''));
+  }
+  const steps = val('sell.steps.items');
+  const offer = val('sell.offer.items');
+  if ((changed('sell.steps.items') || changed('sell.offer.items')) && Array.isArray(steps) && Array.isArray(offer)) {
+    const tints = pageConst(html, 'OFFER_TINTS') || [];
+    const icons = pageConst(html, 'OFFER_ICONS') || [];
+    const n = steps.length || 1; const k = offer.length;
+    out = replaceInner(out, 'handoffRows', steps.map((s, i) => {
+      const a = Math.floor(i * k / n); const b = Math.floor((i + 1) * k / n);
+      const cards = offer.slice(a, b).map((o, j) => `<div class="h-card"><span class="ofic" style="background:${tints[(a + j) % tints.length] || ''}">${icons[(a + j) % icons.length] || ''}</span><div><b>${esc(o.title)}</b><p>${esc(o.text)}</p></div></div>`).join('');
+      return `<div class="h-row"><div class="h-you"><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div><div class="h-mid"><span class="h-dot">${roman(i + 1)}</span></div><div class="h-trove">${cards}</div></div>`;
+    }).join(''));
+  }
+  const faq = val('sell.faq.items');
+  if (changed('sell.faq.items') && Array.isArray(faq)) {
+    out = replaceInner(out, 'faqList', faq.map((f) => `<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join(''));
+  }
+  const quotes = (val('sell.quotes.items') || []).filter((q) => q && q.quote && q.name && !content.isSeededQuote(q));
+  if (quotes.length) {
+    const avatars = pageConst(html, 'MAKER_AVATARS') || [''];
+    out = replaceInner(out, 'quotesList', quotes.map((q, i) => {
+      const av = avatars[i % avatars.length];
+      const who = `<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div>`;
+      return i === 0
+        ? `<figure class="mq mq-feat"><blockquote>${esc(q.quote)}</blockquote><figcaption class="mqh">${av}${who}</figcaption></figure>`
+        : `<figure class="mq"><div class="mqh">${av}${who}</div><blockquote>${esc(q.quote)}</blockquote></figure>`;
+    }).join(''));
+    out = out.replace('<div class="mqband founding" id="foundingBand">', '<div class="mqband founding" id="foundingBand" hidden>');
+  }
+  return out;
 }
 const addHtmlClass = (html, cls) => html.replace(/<html lang="en"( class="([^"]*)")?>/, (m, a, c) => `<html lang="en" class="${c ? c + ' ' : ''}${cls}">`);
 
@@ -277,7 +366,7 @@ function renderHome(base, lang = 'en') {
   const [T] = tFor(lang);
   const list = productsIn(lang);
   const byShop = Object.fromEntries(shopsIn(lang).map((s) => [s.slug, s]));
-  let html = activate(storefront(), 'home');
+  let html = activate(storefront(lang), 'home');
   // One piece: the editorial hero, drawn now so the first paint is final.
   const heroPicks = (content.getPublic().home || {}).hero;
   if (list.length === 1 && !(heroPicks && Array.isArray(heroPicks.productIds) && heroPicks.productIds.length > 1)) {
@@ -336,9 +425,9 @@ function renderShop(base, slug, { search, lang = 'en' } = {}) {
   const byShop = Object.fromEntries(shopsIn(lang).map((s) => [s.slug, s]));
   const list = cat === 'all' ? all : cat === 'House' ? all.filter((p) => p.shop.isHouse) : all.filter((p) => p.category === cat);
   const label = cat === 'all' ? T('Shop all') : T(catLabel(cat));
-  let html = activate(storefront(), 'shop');
-  html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, `$1${esc(label)}$2`);
-  html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, `$1<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? `<span>${esc(T('Shop all'))}</span>` : `<a href="/shop">${esc(T('Shop all'))}</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}$2`);
+  let html = activate(storefront(lang), 'shop');
+  html = html.replace(/(<h[12] id="browseTitle"[^>]*>)[^<]*(<\/h[12]>)/, (m, a, b) => `${a}${esc(label)}${b}`);
+  html = html.replace(/(<div class="crumb" id="shopCrumb">)[\s\S]*?(<\/div>)/, (m, a, b) => `${a}<a href="/">Trove</a> &nbsp;/&nbsp; ${cat === 'all' ? `<span>${esc(T('Shop all'))}</span>` : `<a href="/shop">${esc(T('Shop all'))}</a> &nbsp;/&nbsp; <span>${esc(label)}</span>`}${b}`);
   html = fill(html, 'shopGrid', list.length || cat !== 'House' ? list.map((p) => cardHtml(p, byShop[p.shop.slug], lang)).join('')
     : houseSoonShelf(all, byShop, lang));
   if (list.length && list.length <= 3) html = html.replace('<div class="pgrid" id="shopGrid">', `<div class="pgrid few${list.length === 1 ? ' one' : ''}" id="shopGrid">`);
@@ -459,6 +548,16 @@ function shipLine(p, lang = 'en') {
     ? `Arrives in ${est.label} · made for you, ready to send in ${est.leadDays} days`
     : `Arrives in ${est.label} across Dubai & Abu Dhabi`;
 }
+/* The PDP's delivery-cost line, as the storefront's pdpDeliveryLine() says it:
+ * the AED 30 fee is stated where the buyer decides, not first in the basket
+ * (F155). A piece over the threshold makes the order free on its own. */
+function deliveryLine(p, lang = 'en') {
+  const [T] = tFor(lang);
+  const th = fees.FREE_DELIVERY_THRESHOLD_CENTS / 100;
+  return Number(p.price) > th
+    ? T('Free delivery on orders over {amount}', { amount: money(th, lang) })
+    : T('Delivery {fee} · free on orders over {amount}', { fee: money(fees.DELIVERY_FEE_CENTS / 100, lang), amount: money(th, lang) });
+}
 /** The PDP's Details + About the maker, as the storefront's pdpAccHTML() draws them (real fields only). */
 function pdpAccHtml(p, v, lang = 'en') {
   const [T] = tFor(lang);
@@ -493,7 +592,7 @@ function renderPiece(base, ref, lang = 'en') {
   const vendor = shopsIn(lang).find((s) => s.slug === p.shop.slug) || {};
   const cover = coverOf(en);
   const catName = T(catLabel(p.category));
-  let html = activate(storefront(), 'pdp');
+  let html = activate(storefront(lang), 'pdp');
   html = fill(html, 'pdpCrumb', `<a href="${esc(shopUrl(p.category))}">${esc(catName)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`);
   html = attr(html, 'pdpGrad', 'style', `background:${safeColor(p.shop.color)}`);
   if (cover) html = attr(attr(html, 'pdpImg', 'src', cover), 'pdpImg', 'alt', p.name);
@@ -507,6 +606,7 @@ function renderPiece(base, ref, lang = 'en') {
   html = fill(html, 'pdpDesc', esc(p.description || ''));
   html = fill(html, 'pdpAcc', pdpAccHtml(p, vendor, lang));
   html = text(html, 'pdpShipLine', shipLine(p, lang));
+  html = text(html, 'pdpFreeLine', deliveryLine(p, lang));
   const title = T('{name} by {maker} · Trove', { name: p.name, maker: p.shop.name });
   const description = compose(T('{price} from {maker}{where}. ', { price: money(p.price, lang), maker: p.shop.name, where: vendor.location ? `${lang === 'ar' ? '، ' : ', '}${vendor.location}` : '' }),
     p.description || '', T(' Delivered across Dubai and Abu Dhabi.'));
@@ -534,7 +634,7 @@ function renderMaker(base, slug, lang = 'en') {
   const u = makerUrl(s.slug);
   const url = base + u;
   const list = productsIn(lang).filter((p) => p.shop.slug === s.slug);
-  let html = activate(storefront(), 'vendor');
+  let html = activate(storefront(lang), 'vendor');
   html = fill(html, 'vName', esc(s.name));
   const since = sinceLabel(s.joined, lang);
   const rating = s.rating ? TN(s.rating.count, '{avg}★ from {n} review', '{avg}★ from {n} reviews', { avg: s.rating.avg }) : '';
@@ -582,12 +682,27 @@ function renderMaker(base, slug, lang = 'en') {
 function renderSell(base, lang = 'en') {
   const [T] = tFor(lang);
   const f = require('./pages/facts').facts();
-  const html = activate(storefront(), 'sell');
+  const html = activate(storefront(lang), 'sell');
   return setHead(html, {
     base, url: `${base}/sell-on-trove`, title: T('Sell your handmade pieces on Trove'), lang,
     description: T('Open a shop on Trove: nothing up front, you set the price and keep {share}%. Trove handles photography, delivery and customer care in Dubai and Abu Dhabi.', { share: f.makerShare }),
     ld: [{ '@type': 'WebPage', '@id': `${base}/sell-on-trove#page`, url: `${base}/sell-on-trove`, name: T('Sell on Trove'), isPartOf: { '@id': `${base}/#website` }, about: orgRef(base) },
       crumbLd(base, [['Trove', '/'], [T('Sell on Trove'), '/sell-on-trove']])],
+  });
+}
+
+/**
+ * /order/<id>/thanks — the confirmation view of the storefront (F164). The
+ * order itself is fetched by the page from /api/checkout/receipt, so nothing
+ * about it is in this HTML; no canonical, never indexed.
+ */
+function renderThanks(base, lang = 'en') {
+  const [T] = tFor(lang);
+  const html = activate(storefront(lang), 'confirm');
+  return setHead(html, {
+    base, url: null, robots: 'noindex, nofollow', lang,
+    title: T('Thank you · Trove'),
+    description: T('Your Trove order.'),
   });
 }
 
@@ -680,7 +795,7 @@ function provCardHtml(p, lang = 'en') {
     ${p.shop && p.shop.productCount ? `<span class="also">${esc(T('Also sells pieces · {shop}', { shop: p.shop.name }))}</span>` : ''}
   </article>`;
 }
-function servicesPage() { return readDoc('trove-services.html', servicesCache); }
+function servicesPage(lang = 'en') { return withSiteContent(readDoc('trove-services.html', servicesCache), lang); }
 
 /** The directory's first paint, as the page's script draws it for 'At home'. */
 function directoryMarkup(html, lang = 'en') {
@@ -753,7 +868,7 @@ function servicesLd(base, lang = 'en') {
 
 function renderServicesDirectory(base, lang = 'en') {
   const [T] = tFor(lang);
-  const { html, providers } = directoryMarkup(servicesPage(), lang);
+  const { html, providers } = directoryMarkup(servicesPage(lang), lang);
   const itemList = {
     '@type': 'ItemList', name: T('Service providers on Trove'), numberOfItems: providers.length,
     itemListElement: providers.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: base + providerUrl(p.slug), name: p.name })),
@@ -774,7 +889,7 @@ function renderProvider(base, slug, lang = 'en') {
   const services = tr.services(page.services, lang);
   const u = providerUrl(p.slug);
   const url = base + u;
-  let html = servicesPage();
+  let html = servicesPage(lang);
   // The provider view is the page; the directory's hero heading steps down.
   html = html.replace('<body>', '<body class="pv">').replace('<section id="pview" hidden>', '<section id="pview">')
     .replace(/<h1 class="hero-t"([^>]*)>([\s\S]*?)<\/h1>/, '<h2 class="hero-t"$1>$2</h2>')
@@ -907,6 +1022,6 @@ function sitemapEntries() {
 
 module.exports = {
   slugify, catSlug, pieceUrl, makerUrl, shopUrl, providerUrl, HOUSE_SLUG,
-  renderHome, renderShop, renderPiece, renderMaker, renderSell, renderServicesDirectory, renderProvider,
+  renderHome, renderShop, renderPiece, renderMaker, renderSell, renderThanks, renderServicesDirectory, renderProvider,
   legacyTarget, sitemapEntries, socialTags, withDefaultSocial, OG_IMAGE, DEFAULT_DESCRIPTION, HOME_TITLE,
 };

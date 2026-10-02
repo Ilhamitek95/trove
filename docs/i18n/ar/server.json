@@ -1,6 +1,5 @@
 {
   "Trove · Curated homeware by independent makers in Dubai & Abu Dhabi": "Trove · أدوات منزلية منتقاة من صنّاع مستقلين في دبي وأبوظبي",
-  "Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Free delivery on orders over AED 200.": "أدوات منزلية مصنوعة يدوياً من صنّاع مستقلين، كل قطعة مختارة بعناية، نوصلها إلى جميع أنحاء دبي وأبوظبي. توصيل مجاني للطلبات التي تتجاوز AED 200.",
   "trove, curated homeware by independent makers in Dubai and Abu Dhabi": "Trove، أدوات منزلية منتقاة من صنّاع مستقلين في دبي وأبوظبي",
   "The Trove Collection": "مجموعة Trove",
   "Made in {place}": "صُنعت في {place}",
@@ -194,5 +193,10 @@
   "Machine-readable copy:": "نسخة قابلة للقراءة آلياً:",
   "Read the English version": "اقرأ النسخة الإنجليزية",
   "Also see:": "اطّلع أيضاً على:",
-  "I would like to cancel this order before it is sent, please.": "أرغب في إلغاء هذا الطلب قبل إرساله، من فضلكم."
+  "I would like to cancel this order before it is sent, please.": "أرغب في إلغاء هذا الطلب قبل إرساله، من فضلكم.",
+  "Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Delivery AED 30, free on orders over AED 200.": "أدوات منزلية مصنوعة يدوياً من صنّاع مستقلين، كل قطعة مختارة بعناية، نوصلها إلى جميع أنحاء دبي وأبوظبي. التوصيل بـ AED 30، ومجاني للطلبات التي تتجاوز AED 200.",
+  "Delivery {fee} · free on orders over {amount}": "التوصيل بـ {fee} · مجاني للطلبات التي تتجاوز {amount}",
+  "Free delivery on orders over {amount}": "توصيل مجاني للطلبات التي تتجاوز {amount}",
+  "Thank you · Trove": "شكراً لك · Trove",
+  "Your Trove order.": "طلبك من Trove."
 }

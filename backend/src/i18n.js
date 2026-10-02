@@ -41,7 +41,7 @@ const I18N_DIR = path.join(__dirname, '..', '..', 'docs', 'i18n');
 /* ---------------- addresses ---------------- */
 
 /** Paths that have an Arabic twin (mirrored in docs/api.js — test/i18n.test.js pins them equal). */
-const LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
+const LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|services(?:\/[a-z0-9-]+|\/booking\/[A-Za-z0-9-]+|\/pay\/[A-Za-z0-9-]+)?|order\/[A-Za-z0-9-]+\/thanks|sell-on-trove|about|faq|contact|returns|delivery-returns|terms|privacy|seller-agreement|provider-agreement|services-terms|apply|login|reset|account|sell|provider|become-a-provider|help|help-centre|delivery|shipping|terms-of-sale|privacy-policy|our-story|how-curation-works)$/i;
 
 /** The path part of a local URL ('/shop?q=x#y' → '/shop'). */
 const pathOf = (u) => String(u || '').split(/[?#]/)[0] || '/';
@@ -302,8 +302,9 @@ function alternates(html, lang, base) {
     `<link rel="alternate" hreflang="ar" href="${escAttr(ar)}">`,
     `<link rel="alternate" hreflang="x-default" href="${escAttr(en)}">`,
   ].join('\n');
-  let out = html.replace(m[0], tags);
-  out = out.replace(/<meta property="og:url" content="[^"]*">/, `<meta property="og:url" content="${escAttr(own)}">`);
+  // function replacers: a '$' in the address must stay a '$' (F074)
+  let out = html.replace(m[0], () => tags);
+  out = out.replace(/<meta property="og:url" content="[^"]*">/, () => `<meta property="og:url" content="${escAttr(own)}">`);
   return out;
 }
 
@@ -355,7 +356,7 @@ function langSwitch(html, lang, reqPath, query) {
     ? `${p}?${qs ? `${qs}&` : ''}hl=en`
     : arUrl(p) + (qs ? `?${qs}` : '');
   return html.replace(/<a\b([^>]*\bdata-lang-switch\b[^>]*)>([\s\S]*?)<\/a>/g, (m, attrs, inner) => {
-    let a = attrs.replace(/\shref="[^"]*"/, ` href="${escAttr(target)}"`);
+    let a = attrs.replace(/\shref="[^"]*"/, () => ` href="${escAttr(target)}"`);
     if (lang !== 'ar') return `<a${a}>${inner}</a>`;
     a = a.replace(/\shreflang="[^"]*"/, ' hreflang="en"').replace(/\slang="[^"]*"/, ' lang="en"').replace(/\stitle="[^"]*"/, ' title="Read Trove in English"');
     return `<a${a}>${inner.replace('العربية', 'English')}</a>`;
