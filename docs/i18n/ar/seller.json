@@ -137,6 +137,7 @@
   "Discard": "تجاهل",
   "Admin view — this is <b id=\"impShopName\">the shop</b>'s dashboard": "عرض المشرف — هذه لوحة تحكم <b id=\"impShopName\">المتجر</b>",
   "Return to admin": "العودة إلى الإدارة",
+
   "live": "معروض",
   "draft": "مسودة",
   "hidden": "مخفي",
@@ -612,6 +613,7 @@
   "Could not return to the admin panel": "تعذّرت العودة إلى لوحة الإدارة",
   "there": "صديقنا",
   "the shop": "المتجر",
+
   "{n} drafts": { "zero": "لا مسودات", "one": "مسودة واحدة", "two": "مسودتان", "few": "{n} مسودات", "many": "{n} مسودة", "other": "{n} مسودة" },
   "<b>{n}</b> products": { "zero": "<b>0</b> منتجات", "one": "<b>منتج</b> واحد", "two": "<b>منتجان</b>", "few": "<b>{n}</b> منتجات", "many": "<b>{n}</b> منتجاً", "other": "<b>{n}</b> منتج" },
   "ready in {n} days": { "zero": "جاهز خلال {n} يوم", "one": "جاهز خلال يوم واحد", "two": "جاهز خلال يومين", "few": "جاهز خلال {n} أيام", "many": "جاهز خلال {n} يوماً", "other": "جاهز خلال {n} يوم" },
