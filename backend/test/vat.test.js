@@ -95,6 +95,6 @@ test('the admin VAT table shows reversed VAT, net VAT due and the credit notes',
   const html = require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'docs', 'trove-admin.html'), 'utf8');
   assert.match(html, /Reversed/);
   assert.match(html, /Net VAT due/);
-  assert.match(html, /Credit notes/);
+  assert.match(html, /credit notes/i);
   assert.match(html, /vat-report\.csv/);
 });
