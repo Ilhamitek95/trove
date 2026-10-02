@@ -1792,7 +1792,7 @@ function img(seed){
    '1,234', two decimals when there are fils: 'AED 64.50'), the same as the
    server's i18n.money() on receipts and emails. */
 function aedNum(n){n=Number(n)||0;n=Math.round(n*100)/100;return Number.isInteger(n)?n.toLocaleString('en-GB'):n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});}
-function aed(n){return troveMoney(n);} /* shared formatter (api.js): en-GB digits, 0 or 2 decimals, isolated in Arabic */
+function aed(n){return troveIso('AED '+aedNum(n));}
 /* Every API or CMS string that reaches innerHTML goes through esc(). */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 /* A value for an inline handler: a JSON string literal, HTML-escaped, so a
