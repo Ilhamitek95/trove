@@ -9,6 +9,7 @@ const receipt = require('../order-receipt');
 const { normalizeUAEMobile } = require('../phone');
 const options = require('../options');
 const extras = require('../extras');
+const customerBlock = require('../customer-block');
 
 const OUT_OF_AREA = `We currently deliver in ${SERVICE_AREAS.join(' and ')} only`;
 const BAD_PHONE = 'Enter a UAE mobile number so the courier can reach you on the day';
@@ -65,6 +66,11 @@ router.post('/', async (req, res, next) => {
     const buyer = req.session.userId ? db.prepare('SELECT id, email FROM users WHERE id=?').get(req.session.userId) : null;
     const buyerEmail = email || (buyer && buyer.email);
     if (!buyerEmail) return res.status(400).json({ error: 'Email is required' });
+    // A blocked customer (F199): the owner's switch in Admin → Messages →
+    // customer lookup. They keep their account; new orders are refused.
+    if (customerBlock.isBlocked({ email: buyerEmail, userId: buyer && buyer.id })) {
+      return res.status(403).json({ code: 'blocked', error: customerBlock.ORDER_REFUSED });
+    }
     // Like the address, the number can arrive later via /checkout/update when
     // the payment form mounts before the form is filled in.
     const { phone, error: phoneError } = phoneFrom(req.body);

@@ -544,6 +544,28 @@ router.patch('/orders/:publicId/delivery', requireAdmin, (req, res) => {
   res.json({ ...r, order: require('../admin-ops').orderDetail(db.prepare('SELECT * FROM orders WHERE id=?').get(order.id)) });
 });
 
+/* ---------------- Customers: block / unblock (F199) ---------------- */
+// The switch on the customer lookup card (Admin → Messages). A blocked
+// customer keeps their account and history; checkout and bookings refuse
+// with a neutral 'please contact us'. Both directions land in Activity;
+// the log names the account id, never the email.
+const customerBlock = require('../customer-block');
+router.post('/customers/block', requireAdmin, (req, res) => {
+  const b = req.body || {};
+  res.locals.auditBefore = { blocked: customerBlock.isBlocked({ email: b.email }) };
+  const r = customerBlock.block(b.email, { note: b.note, by: req.user.email });
+  if (r.error) return res.status(r.status).json({ error: r.error });
+  res.locals.auditNote = r.userId ? `Buyer #${r.userId}` : 'Guest (no account)';
+  res.json({ ok: true, already: r.already, blocked: customerBlock.describe(r.row) });
+});
+router.post('/customers/unblock', requireAdmin, (req, res) => {
+  const b = req.body || {};
+  res.locals.auditBefore = { blocked: customerBlock.isBlocked({ email: b.email }) };
+  const r = customerBlock.unblock(b.email);
+  res.locals.auditNote = r.userId ? `Buyer #${r.userId}` : 'Guest (no account)';
+  res.json({ ok: true, already: r.already, blocked: null });
+});
+
 /* ---------------- Graduation to the Connect rail (Rail B) ---------------- */
 
 const graduation = require('../graduation');

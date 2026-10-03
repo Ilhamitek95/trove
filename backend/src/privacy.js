@@ -173,6 +173,7 @@ function summary(email) {
       idDocumentsOnFile: hasIdDocuments(shop),
     } : null,
     provider: provider ? { name: provider.name, status: provider.status } : null,
+    blocked: require('./customer-block').describe(require('./customer-block').find({ email: s.email, userId: s.user && s.user.id })),
     found,
     blockers: b,
     canAnonymise: found && !(s.user && s.user.anonymised_at) && !b.length,

@@ -401,7 +401,7 @@
     <div class="view" id="view-messages">
       <div class="card" id="privacyCard" style="padding:20px 22px;margin-bottom:18px">
         <h3>Privacy requests</h3>
-        <div class="hint">For a 'Privacy and my data' request. Reply within 30 days. First make sure the request came from the email address you look up here (for example, ask them to reply from it). <b>Download their data</b> gives you a file to send them. <b>Close and anonymise</b> removes their name, email, mobile and addresses everywhere and keeps only the order and payment records the law requires. It cannot be undone.</div>
+        <div class="hint">For a 'Privacy and my data' request. Reply within 30 days. First make sure the request came from the email address you look up here (for example, ask them to reply from it). <b>Download their data</b> gives you a file to send them. <b>Close and anonymise</b> removes their name, email, mobile and addresses everywhere and keeps only the order and payment records the law requires. It cannot be undone. <b>Block from buying</b> is for a serial returner or an abusive customer: they keep their account and history, but checkout and bookings refuse with a neutral 'please contact us' (your reason stays private here). Reversible, and both directions are kept in Activity.</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px">
           <input id="privEmail" type="email" aria-label="Email address of the person" placeholder="Their email address" style="font:inherit;font-size:13px;padding:9px 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);outline:none;min-width:260px" onkeydown="if(event.key==='Enter')privLookup()">
           <button class="btn btn-coral" onclick="privLookup()">Look up</button>
@@ -1608,14 +1608,27 @@ async function privLookup(){
       `${c.orders} order(s) · ${c.returns} return(s) · ${c.reviews} review(s) · ${c.bookings} booking(s) · ${c.messages} message(s) · ${c.addresses} saved address(es)`,
       r.shop?`Shop: ${esc(r.shop.name)} · ${esc(r.shop.status)}${r.shop.closedAt?` · closed ${fmtDate(r.shop.closedAt)}`:''}${r.shop.idDocumentsOnFile?' · ID documents on file':''}`:'',
       r.provider?`Services practice: ${esc(r.provider.name)} · ${esc(r.provider.status)}`:'',
+      r.blocked?`<b style="color:#B3261E">Blocked from buying</b> since ${fmtDate(r.blocked.at)}${r.blocked.by?` by ${esc(r.blocked.by)}`:''}${r.blocked.note?` · reason: ${esc(r.blocked.note)}`:''}`:'',
     ].filter(Boolean).map(t=>`<div style="font-size:13.5px;margin:3px 0">${t}</div>`).join('');
     const block=r.blockers.length?`<div style="margin-top:10px;font-size:13px"><b>Finish these before closing the account:</b><ul style="margin:6px 0 0 18px">${r.blockers.map(b=>`<li>${esc(b)}</li>`).join('')}</ul></div>`:'';
     out.innerHTML=`${rows}${block}<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
       <a class="btn btn-ghost" href="/api/admin/privacy/export?email=${encodeURIComponent(r.email)}" download>Download their data</a>
+      ${r.account&&r.account.role==='admin'?'':r.blocked?`<button class="btn btn-ghost" data-email="${esc(r.email)}" onclick="privUnblock(this.dataset.email)">Unblock</button>`:`<button class="btn btn-ghost" data-email="${esc(r.email)}" onclick="privBlock(this.dataset.email)">Block from buying</button>`}
       ${r.canAnonymise?`<button class="btn btn-coral" data-email="${esc(r.email)}" onclick="privAnonymise(this.dataset.email)">Close and anonymise</button>`:''}
       ${r.shop&&r.shop.closedAt&&r.shop.idDocumentsOnFile?`<button class="btn btn-ghost" data-email="${esc(r.email)}" onclick="privDeleteId(this.dataset.email)">Delete ID documents now</button>`:''}
     </div>`;
   }catch(e){ out.innerHTML=`<div class="empty">${esc(e.message||'Could not look that up')}</div>`; }
+}
+async function privBlock(email){
+  const note=prompt('Block this customer from buying? They keep their account and can still see past orders; new orders and bookings are refused with a neutral "please contact us". Your reason is kept here only (optional):');
+  if(note==null)return;
+  try{ await TroveAPI.api('/api/admin/customers/block',{method:'POST',body:{email,note}}); toast('Blocked from buying'); privLookup(); }
+  catch(e){ toast(e.message||'Could not block that customer'); }
+}
+async function privUnblock(email){
+  if(!confirm('Unblock this customer? They can order and book again straight away.'))return;
+  try{ await TroveAPI.api('/api/admin/customers/unblock',{method:'POST',body:{email}}); toast('Unblocked'); privLookup(); }
+  catch(e){ toast(e.message||'Could not unblock that customer'); }
 }
 async function privAnonymise(email){
   const typed=prompt('This closes the account and removes the person from every record. It cannot be undone.\n\nType their email address to confirm:');

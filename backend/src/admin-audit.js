@@ -80,6 +80,8 @@ const LABELS = {
   'POST /api/admin/service-bookings/:id/refund': 'Service booking refunded',
   'POST /api/admin/service-credits/:providerId/paid': 'Provider marked paid',
   'POST /api/admin/service-credits/:providerId/release-hold': 'Provider bank hold released',
+  'POST /api/admin/customers/block': 'Customer blocked from buying',
+  'POST /api/admin/customers/unblock': 'Customer unblocked',
   'POST /api/admin/graduation/:shopId/verify-license': 'Licence verified',
   'POST /api/admin/graduation/:shopId/approve': 'Graduation approved',
   'PATCH /api/seller/shipments/:id': 'Parcel updated in shop view',

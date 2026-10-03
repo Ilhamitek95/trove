@@ -302,6 +302,12 @@ router.post('/:id(\\d+)/book', (req, res) => {
   if (!/^\S+@\S+\.\S+$/.test(email)) return res.status(400).json({ error: 'That email doesn’t look right — mind checking it?' });
   const phone = normalizeUAEMobile(b.phone);
   if (!phone) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });
+  // A blocked customer (F199) is refused here, before anything reaches the
+  // provider's inbox.
+  const customerBlock = require('../customer-block');
+  if (customerBlock.isBlocked({ email, userId: req.session.userId })) {
+    return res.status(403).json({ code: 'blocked', error: customerBlock.BOOKING_REFUSED });
+  }
   const { SERVICE_AREAS, isServiceable } = require('../service-area');
   if (!isServiceable(b.area)) {
     return res.status(400).json({ error: `The Services Marketplace is available in ${SERVICE_AREAS.join(' and ')} only` });
