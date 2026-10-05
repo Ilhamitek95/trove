@@ -998,7 +998,10 @@ function openService(id){
       ${s.duration?`<span class="tagchip">${esc(s.duration)}</span>`:''}
       <span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span>
     </div>
-    <div class="formgrid" id="bookForm">
+    ${s.bookable===false?`<div class="formgrid">
+      <h4>${_t('Not taking bookings yet')}</h4>
+      <div class="desc">${_t('This provider is on display only for now, so bookings aren’t open.')}</div>
+    </div>`:`<div class="formgrid" id="bookForm">
       <h4>${_t('Request a booking')}</h4>
       <div class="err" id="bkErr"></div>
       <div class="field" style="margin-bottom:0"><label>${_t('How would you like to pay?')}</label></div>
@@ -1018,8 +1021,8 @@ function openService(id){
       <div class="field"><label for="bkNotes">${_t('Tell them about it')}</label><textarea id="bkNotes" maxlength="1000" placeholder="${esc(_t('What you have in mind, how many people, anything they should know.'))}"></textarea></div>
       <label class="terms"><input type="checkbox" id="bkTerms"><span>${_t('I accept the <a href="/services-terms" target="_blank" rel="noopener">Services Terms</a> — the provider, not Trove, is responsible for the service.')}</span></label>
       <button class="submit" id="bkSubmit" onclick="submitBooking()">${_t('Send booking request')}</button>
-    </div>`;
-  if(ME&&ME.user){
+    </div>`}`;
+  if(s.bookable!==false&&ME&&ME.user){
     $('bkName').value=ME.user.name||'';
     $('bkEmail').value=ME.user.email||'';
     if(ME.user.phone)$('bkPhone').value=ME.user.phone;

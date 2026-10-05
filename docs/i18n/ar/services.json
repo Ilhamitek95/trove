@@ -178,5 +178,7 @@
   "Search the pieces for “{q}” →": "ابحث في القطع عن «{q}» ←",
   "How would you like to pay?": "كيف تودّ الدفع؟",
   "protected": "محميّ",
-  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "تحويل بنكي أو نقدًا، بالاتفاق بينكما بعد التأكيد. لا تتدخّل Trove في ذلك، لذا لا يمكنها ردّ مبلغ دُفع مباشرةً."
+  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "تحويل بنكي أو نقدًا، بالاتفاق بينكما بعد التأكيد. لا تتدخّل Trove في ذلك، لذا لا يمكنها ردّ مبلغ دُفع مباشرةً.",
+  "Not taking bookings yet": "لا يستقبل الحجوزات بعد",
+  "This provider is on display only for now, so bookings aren’t open.": "مقدّم الخدمة هذا للعرض فقط حاليًا، لذا الحجوزات غير متاحة."
 }

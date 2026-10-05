@@ -45,6 +45,9 @@ function shape(p) {
     // minDays, maxDays, label: '3–6 days' }. The app can adopt it as is.
     leadDays: leadTimes.leadOf(p.lead_days),
     estimate: leadTimes.estimate(p.lead_days),
+    // false for a demo shop's piece while the live site keeps demo
+    // listings display-only (src/display-only.js); checkout refuses it.
+    forSale: !require('../display-only').isDemoShop(p.shop_id),
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, image: p.shop_image || null, imageSmall: require('../uploads').smallOf(p.shop_image), isHouse: !!p.is_house },
   };
 }

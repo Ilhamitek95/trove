@@ -154,5 +154,6 @@
   "{n} services": {
     "one": "{n} service",
     "other": "{n} services"
-  }
+  },
+  "On display only": "On display only"
 }

@@ -55,6 +55,9 @@ function shapeService(row) {
     audience: cat ? cat.audience : 'home',
     description: row.description, priceCents: row.price_cents,
     priceType: row.price_type, duration: row.duration, setting: row.setting,
+    // false for a demo provider while the live site keeps demo listings
+    // display-only (src/display-only.js); the booking route refuses it.
+    bookable: !require('../display-only').isDemoProvider(row.provider_id),
     provider: {
       name: row.provider_name, slug: row.provider_slug,
       location: row.provider_location, color: row.provider_color, bio: row.provider_bio,
@@ -290,6 +293,11 @@ router.post('/:id(\\d+)/book', (req, res) => {
     JOIN service_providers p ON p.id = sv.provider_id WHERE sv.id = ?`).get(req.params.id);
   if (!row || row.status !== 'live' || row.provider_status !== 'approved') {
     return res.status(404).json({ error: 'This service is no longer available' });
+  }
+  // A demo provider is on display only on the live site (src/display-only.js).
+  const displayOnly = require('../display-only');
+  if (displayOnly.isDemoProvider(row.provider_id)) {
+    return res.status(409).json({ code: 'display_only', error: displayOnly.BOOKING_REFUSED });
   }
   const b = req.body || {};
   const name = String(b.name || '').trim().slice(0, 80);

@@ -216,13 +216,17 @@ function cardHtml(p, vendor, lang = 'en') {
   const [T] = tFor(lang);
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
+  // A display-only demo piece (src/display-only.js) gets a label, never a button.
+  const add = (cls) => (p.forSale === false
+    ? `<span class="${cls} disp">${esc(T('On display only'))}</span>`
+    : `<button class="${cls}" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button>`);
   return `<article class="card">
     <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
-      <button class="add" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button></div>
+      ${add('add')}</div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
     <div class="foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span></div>
-    <button class="add add-row" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button>
+    ${add('add add-row')}
   </article>`;
 }
 
@@ -512,6 +516,8 @@ function productLd(base, p, url, lang = 'en') {
     },
   };
   if (p.rating && p.rating.count) ld.aggregateRating = { '@type': 'AggregateRating', ratingValue: p.rating.avg, reviewCount: p.rating.count, bestRating: 5, worstRating: 1 };
+  // A display-only demo piece (src/display-only.js) is not offered for sale.
+  if (p.forSale === false) delete ld.offers;
   return JSON.parse(JSON.stringify(ld)); // drops the undefined keys
 }
 

@@ -307,6 +307,8 @@
   .card:focus-within .add{opacity:1;transform:none}
   .card .add.add-row{display:none}
   .card .add.added{background:var(--char);color:var(--cream);opacity:1;transform:none}
+  /* A display-only demo piece: a label where the button would be, never a button. */
+  .card .add.disp,.card .add.disp:hover,.card .add.add-row.disp{background:var(--cream);color:var(--char);cursor:default;box-shadow:inset 0 0 0 1px rgba(41,39,39,.18)}
   .card .vrow{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
   .card .vrow.is-house{color:var(--accent-ink)} /* is-house, not house — .house is the Collection band */
   .card .vrow .gem{width:7px;height:7px;background:currentColor;transform:rotate(45deg);display:inline-block;border-radius:1px}
@@ -1977,7 +1979,7 @@ function productCard(p,eager,crop){
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
       <img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
       ${p.was?`<span class="sale">${_t('Sale')}</span>`:''}${pIsStock(p)?ILLUS:''}
-      <button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>
+      ${p.forSale===false?`<span class="add disp">${_t('On display only')}</span>`:`<button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`}
     </div>
     <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
@@ -1985,7 +1987,7 @@ function productCard(p,eager,crop){
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
       ${p.rating?`<span class="stars">${stars(p.rating)}<span>${esc(p.rating)}</span></span>`:''}
     </div>
-    <button class="add add-row" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>
+    ${p.forSale===false?`<span class="add add-row disp">${_t('On display only')}</span>`:`<button class="add add-row" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`}
   </article>`;
 }
 
@@ -2754,14 +2756,17 @@ function updatePdpAvailability(){
   }
   price+=extrasPrice(p,chosenExtras(p));   // ticked extras ride on whatever the combination costs
   $('pdpPrice').innerHTML=`${(p.was&&!override)?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(price)}`;
-  const show=soldOut?_t('This piece is sold out — the shop may make more.')
+  // A demo shop's piece on the live site is on display only (forSale false).
+  const display=p.forSale===false;
+  const show=display?_t('This piece is on display only — it isn’t for sale.')
+    :soldOut?_t('This piece is sold out — the shop may make more.')
     :(left!=null&&left>0&&left<=3)?(groups.length?_tn(left,'Only {n} left of this one.','Only {n} left of this one.'):_tn(left,'Only {n} left.','Only {n} left.')):'';
   note.textContent=show; note.style.display=show?'':'none';
-  btn.disabled=!!soldOut;
-  btn.textContent=soldOut?_t('Sold out'):_t('Add to basket');
-  $('pbAdd').disabled=!!soldOut; $('pbAdd').textContent=btn.textContent; $('pbPrice').innerHTML=$('pdpPrice').innerHTML;
-  btn.style.opacity=soldOut?.5:1;
-  btn.style.cursor=soldOut?'not-allowed':'';
+  btn.disabled=!!soldOut||display;
+  btn.textContent=display?_t('On display only'):soldOut?_t('Sold out'):_t('Add to basket');
+  $('pbAdd').disabled=btn.disabled; $('pbAdd').textContent=btn.textContent; $('pbPrice').innerHTML=$('pdpPrice').innerHTML;
+  btn.style.opacity=btn.disabled?.5:1;
+  btn.style.cursor=btn.disabled?'not-allowed':'';
 }
 /* Priced extras — optional finishing touches the shop offers (gift wrap, a
    gift box …). Ticked on and off freely; never required, never preselected. */
@@ -2866,7 +2871,7 @@ function saveCart(){
    holding a basket that fails at checkout. */
 function lineStillValid(c){
   const p=PRODUCTS.find(x=>x.id===c.pid);
-  if(!p)return false;
+  if(!p||p.forSale===false)return false;   // gone, or a display-only demo piece
   const groups=p.options||[];
   if(groups.length!==(c.opts||[]).length)return false;
   if(!groups.every(g=>(c.opts||[]).some(o=>o.name===g.name&&g.values.includes(o.value))))return false;
@@ -2895,6 +2900,7 @@ function restoreCart(){
 function persoCount(){const ta=$('pdpPersoText');$('pdpPersoCount').textContent=`${ta.value.length} / ${ta.maxLength}`;}
 function addToCart(id,btn,note,opts,extras){
   const p=PRODUCTS.find(x=>x.id===id);
+  if(p&&p.forSale===false){toast(_t('This piece is on display only — it isn’t for sale.'));return;}
   // A required personalisation or a choice of options can only be made on the
   // product page — send them there rather than guessing on their behalf.
   // Extras are always optional, so a quick add from a card simply skips them.
@@ -3485,7 +3491,7 @@ async function fetchCatalog(){
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
       // On an Arabic page name/description/options arrive translated (?lang=ar);
       // nameEn keeps the address slug and the matched stock photo unchanged.
-      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null};
+      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null,forSale:p.forSale!==false};
     });
     LIVE=true;
   }catch(e){console.warn('trove: catalogue did not load —',e.message);}

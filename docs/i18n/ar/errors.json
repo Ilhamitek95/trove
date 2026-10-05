@@ -117,5 +117,7 @@
   "This provider can’t take bookings through Trove right now, so this booking can’t be paid — nothing has been charged": "لا يستطيع مقدّم الخدمة هذا استقبال حجوزات عبر Trove حاليًا، لذا لا يمكن دفع هذا الحجز — لم يُخصم أي مبلغ",
   "The Emirates ID on file has expired — enter your renewed ID’s expiry date": "انتهت صلاحية الهوية الإماراتية المسجّلة لدينا — أدخل تاريخ انتهاء هويتك المجدّدة",
   "We can’t take this order right now — please contact us and we’ll help": "لا يمكننا قبول هذا الطلب حاليًا — يُرجى التواصل معنا وسنساعدك",
-  "We can’t take this booking right now — please contact us and we’ll help": "لا يمكننا قبول هذا الحجز حاليًا — يُرجى التواصل معنا وسنساعدك"
+  "We can’t take this booking right now — please contact us and we’ll help": "لا يمكننا قبول هذا الحجز حاليًا — يُرجى التواصل معنا وسنساعدك",
+  "A piece in your basket is on display only and can’t be bought — please remove it": "إحدى القطع في سلتك للعرض فقط ولا يمكن شراؤها — يُرجى إزالتها",
+  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد"
 }

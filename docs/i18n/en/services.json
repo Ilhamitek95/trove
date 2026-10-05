@@ -170,5 +170,7 @@
   "Search the pieces for “{q}” →": "Search the pieces for “{q}” →",
   "How would you like to pay?": "How would you like to pay?",
   "protected": "protected",
-  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment."
+  "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.": "Bank transfer or cash, agreed between you once they confirm. Trove takes no part in it, so it can’t refund a direct payment.",
+  "Not taking bookings yet": "Not taking bookings yet",
+  "This provider is on display only for now, so bookings aren’t open.": "This provider is on display only for now, so bookings aren’t open."
 }
