@@ -4,6 +4,7 @@ const db = require('../db');
 const { requireAuth, notInShopView } = require('../middleware');
 const shipments = require('../shipments');
 const { SERVICE_AREAS, isServiceable, namesOtherEmirate } = require('../service-area');
+const phoneLib = require('../phone');
 
 const returns = require('../returns');
 
@@ -190,7 +191,7 @@ const reviews = require('../reviews');
 // plus the shops behind them. Drives the "Review your purchases" prompts.
 router.get('/reviewables', requireAuth, (req, res) => {
   const products = db.prepare(`
-    SELECT DISTINCT p.id, p.name, p.image_seed AS imageSeed, s.id AS shopId, s.name AS shopName, s.color
+    SELECT DISTINCT p.id, p.name, p.image_seed AS imageSeed, p.images, s.id AS shopId, s.name AS shopName, s.color
     FROM order_items oi
     JOIN orders o ON o.id = oi.order_id
     JOIN shipments sh ON sh.order_id = o.id AND sh.shop_id = oi.shop_id
@@ -209,7 +210,9 @@ router.get('/reviewables', requireAuth, (req, res) => {
       AND o.status IN ('paid','fulfilled')
       AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.buyer_id = o.buyer_id AND r.shop_id = s.id AND r.product_id IS NULL)
     ORDER BY s.name`).all(req.user.id);
-  res.json({ products, shops });
+  // The piece's own cover photo when it has one (F480), like the order lines.
+  const cover = (text) => { try { const v = JSON.parse(text || '[]'); return Array.isArray(v) && typeof v[0] === 'string' ? v[0] : null; } catch (_) { return null; } };
+  res.json({ products: products.map(({ images, ...p }) => ({ ...p, image: cover(images) })), shops });
 });
 
 // GET /api/account/reviews → everything I've written (for edit prefills).
@@ -246,13 +249,25 @@ router.get('/addresses', requireAuth, (req, res) => {
   res.json({ addresses: db.prepare('SELECT * FROM addresses WHERE user_id=? ORDER BY is_default DESC, id').all(req.user.id) });
 });
 
+// An address's phone prefills the courier contact at checkout, so it is a UAE
+// mobile like the one checkout asks for (F301): saved as +9715XXXXXXXX, or
+// left empty. Returns { value } or { error }.
+const ADDRESS_PHONE_ERROR = 'Enter a UAE mobile number for this address, like 05x xxx xxxx — or leave it empty';
+function addressPhone(raw) {
+  if (raw == null || !String(raw).trim()) return { value: '' };
+  const m = phoneLib.normalizeUAEMobile(raw);
+  return m ? { value: m } : { error: ADDRESS_PHONE_ERROR };
+}
+
 router.post('/addresses', requireAuth, (req, res) => {
   const { label = 'Home', name, line, city, country = 'United Arab Emirates', phone = '', isDefault } = req.body || {};
   if (!name || !line || !city) return res.status(400).json({ error: 'name, line and city are required' });
   if (!isServiceable(city) || namesOtherEmirate(line, city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
+  const ph = addressPhone(phone);
+  if (ph.error) return res.status(400).json({ error: ph.error });
   if (isDefault) db.prepare('UPDATE addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
   const info = db.prepare('INSERT INTO addresses (user_id,label,name,line,city,country,phone,is_default) VALUES (?,?,?,?,?,?,?,?)')
-    .run(req.user.id, label, name, line, city, country, phone, isDefault ? 1 : 0);
+    .run(req.user.id, label, name, line, city, country, ph.value, isDefault ? 1 : 0);
   res.status(201).json({ address: db.prepare('SELECT * FROM addresses WHERE id=?').get(info.lastInsertRowid) });
 });
 
@@ -261,15 +276,26 @@ router.patch('/addresses/:id', requireAuth, (req, res) => {
   if (!a) return res.status(404).json({ error: 'Not found' });
   const b = req.body || {};
   if ((b.city !== undefined && !isServiceable(b.city)) || namesOtherEmirate(b.line, b.city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
+  const ph = b.phone === undefined ? { value: undefined } : addressPhone(b.phone);
+  if (ph.error) return res.status(400).json({ error: ph.error });
   if (b.isDefault) db.prepare('UPDATE addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
   db.prepare('UPDATE addresses SET label=COALESCE(?,label), name=COALESCE(?,name), line=COALESCE(?,line), city=COALESCE(?,city), country=COALESCE(?,country), phone=COALESCE(?,phone), is_default=COALESCE(?,is_default) WHERE id=?')
-    .run(b.label, b.name, b.line, b.city, b.country, b.phone, b.isDefault === undefined ? a.is_default : (b.isDefault ? 1 : 0), a.id);
+    .run(b.label, b.name, b.line, b.city, b.country, ph.value, b.isDefault === undefined ? a.is_default : (b.isDefault ? 1 : 0), a.id);
   res.json({ address: db.prepare('SELECT * FROM addresses WHERE id=?').get(a.id) });
 });
 
+// Any address can go, the default included (F301): the oldest remaining one
+// becomes the default, so checkout always has one to start from.
 router.delete('/addresses/:id', requireAuth, (req, res) => {
-  const r = db.prepare('DELETE FROM addresses WHERE id=? AND user_id=?').run(req.params.id, req.user.id);
-  if (!r.changes) return res.status(404).json({ error: 'Not found' });
+  const a = db.prepare('SELECT * FROM addresses WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
+  if (!a) return res.status(404).json({ error: 'Not found' });
+  db.transaction(() => {
+    db.prepare('DELETE FROM addresses WHERE id=? AND user_id=?').run(a.id, req.user.id);
+    if (a.is_default) {
+      const next = db.prepare('SELECT id FROM addresses WHERE user_id=? ORDER BY id LIMIT 1').get(req.user.id);
+      if (next) db.prepare('UPDATE addresses SET is_default=1 WHERE id=?').run(next.id);
+    }
+  })();
   res.json({ ok: true });
 });
 

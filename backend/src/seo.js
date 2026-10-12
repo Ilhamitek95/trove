@@ -21,6 +21,7 @@
  *   /makers/<shop-slug>        a maker's shop
  *   /sell-on-trove             the maker pitch
  *   /services, /services/<slug>  the directory, a provider
+ *   /services/<slug>/<id>-<slug>  one service, open over its provider's page
  * The old query addresses (/?p=, /?shop=, /?view=) 301 here (see app.js).
  * Anything unknown, delisted or unapproved is a real 404 (noindex).
  */
@@ -781,7 +782,7 @@ function svCardHtml(s, lang = 'en') {
   return `<div class="svcard" onclick="openService(${Number(s.id)})">
     ${svTile(s, lang)}
     <div class="svbody">
-      <div class="t">${esc(s.title)}</div>
+      <div class="t"><a class="svlink" href="${esc(s.path)}">${esc(s.title)}</a></div>
       <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || T('Dubai'))}</div>
       <div class="meta"><span class="price">${priceLabel(s, lang)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting] ? T(SETTING_LABEL[s.setting]) : '')}</span><button type="button" class="sv-req" aria-label="${esc(T('Request {title}', { title: s.title }))}" onclick="event.stopPropagation();openService(${Number(s.id)})">${esc(T('Request'))}</button></div>
     </div>
@@ -800,6 +801,12 @@ function provCardHtml(p, lang = 'en') {
     <div class="pcats">${catNames(p.categories, lang).map((c) => `<span class="tagchip">${esc(c)}</span>`).join('')}</div>
     ${p.shop && p.shop.productCount ? `<span class="also">${esc(T('Also sells pieces · {shop}', { shop: p.shop.name }))}</span>` : ''}
   </article>`;
+}
+/** A category's examples as short pills — the words before ' — ', three at most, then '+N more' (the page's examplePills). */
+function examplePills(examples, lang = 'en') {
+  const all = (examples || []).map((e) => String(e).split(/\s+[—–]\s+/)[0]);
+  const more = all.length - 3;
+  return `<div class="exs">${all.slice(0, 3).map((e) => `<span>${esc(e)}</span>`).join('')}${more > 0 ? `<span class="more">${esc(i18n.t(lang, '+{n} more', { n: more }))}</span>` : ''}</div>`;
 }
 function servicesPage(lang = 'en') { return withSiteContent(readDoc('trove-services.html', servicesCache), lang); }
 
@@ -825,16 +832,16 @@ function directoryMarkup(html, lang = 'en') {
   const cats = loc.categories.filter((c) => c.audience === audience);
   const live = cats.filter((c) => services.some((s) => s.category === c.slug));
   const empty = cats.filter((c) => !live.includes(c));
+  // Only categories with a live service get a card (the rest fold into the
+  // 'Coming soon' line); examples show as three short pills (F340).
   const dir = live.map((c) => {
     const list = services.filter((s) => s.category === c.slug); const n = list.length;
-    const min = n ? Math.min(...list.map((s) => s.priceCents || 0)) : 0;
-    return `<div class="dcard ${n ? 'live' : ''} ">
-      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n ? '' : 'none'}">${n ? esc(TN(n, '{n} service', '{n} services')) : esc(T('Be the first'))}</span></div>
+    const min = Math.min(...list.map((s) => s.priceCents || 0));
+    return `<div class="dcard live ">
+      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt">${esc(TN(n, '{n} service', '{n} services'))}</span></div>
       <div class="blurb">${esc(c.blurb)}</div>
-      <p class="ex">${c.examples.map(esc).join(' · ')}</p>
-      <div class="foot">${n
-    ? `<span class="from">${min ? esc(T('From {price}', { price: moneyCents(min, lang) })) : ''}</span><span class="go">${esc(T('See services →'))}</span>`
-    : `<span></span><a href="/apply?for=services">${esc(T('Offer this →'))}</a>`}</div>
+      ${examplePills(c.examples, lang)}
+      <div class="foot"><span class="from">${min ? esc(T('From {price}', { price: moneyCents(min, lang) })) : ''}</span><span class="go">${esc(T('See services →'))}</span></div>
     </div>`;
   }).join('') + (empty.length ? `<div class="soon"><div><b>${esc(T('Coming soon'))}</b><p>${empty.map((c) => esc(c.name)).join(' · ')}</p></div><a href="/apply?for=services">${esc(T('Offer a service →'))}</a></div>` : '');
   const all = services.filter((s) => cats.some((c) => c.slug === s.category));
@@ -849,7 +856,7 @@ function directoryMarkup(html, lang = 'en') {
     results = `<section class="results" id="resultsSec">
     <div class="rhead"><h2>${esc(T('All services'))}</h2><span>${esc(TN(all.length, '{n} service', '{n} services'))}</span></div>
     <div class="svgrid">${(capped ? all.slice(0, CAP) : all).map((s) => svCardHtml(s, lang)).join('')}</div>
-    ${capped ? `<button class="showall">${esc(T('Show all {n} services', { n: all.length }))}</button>` : ''}
+    ${capped ? `<button class="showall" onclick="state.showAll=true;renderResults()">${esc(T('Show all {n} services', { n: all.length }))}</button>` : ''}
   </section>`;
   }
   let out = fill(html, 'audSwitch', aud);
@@ -886,20 +893,56 @@ function renderServicesDirectory(base, lang = 'en') {
   });
 }
 
-/** /services/<slug>: one approved provider. Returns { html } | { notFound }. */
-function renderProvider(base, slug, lang = 'en') {
+/** 'Khalifa City, Abu Dhabi, UAE' → 'Abu Dhabi': the last part that isn't the country (F520). */
+function emirateOf(location, fallback) {
+  const parts = String(location || '').split(/[,،]/).map((x) => x.trim()).filter(Boolean)
+    .filter((x) => !/^(uae|u\.a\.e\.?|united arab emirates|الإمارات(\s+العربية\s+المتحدة)?)$/i.test(x));
+  return parts.length ? parts[parts.length - 1] : fallback;
+}
+
+/** The service dialog's top half, as the page's openService() draws it (the form is the script's). */
+function svModalHtml(s, lang = 'en') {
+  const [T] = tFor(lang);
+  const cat = svcCat(s.category, lang);
+  return `
+    <button class="x" onclick="closeModal()" aria-label="${esc(T('Close this service'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    <h1 id="svTitle">${esc(s.title)}</h1>
+    <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || T('Dubai'))}${cat ? ` · ${esc(cat.name)}` : ''}</div>
+    ${s.description ? `<div class="desc">${esc(s.description)}</div>` : ''}
+    <div class="meta"><span class="price">${priceLabel(s, lang)}</span><span style="flex:1"></span>${s.duration ? `<span class="tagchip">${esc(s.duration)}</span>` : ''}<span class="tagchip">${esc(SETTING_LABEL[s.setting] ? T(SETTING_LABEL[s.setting]) : '')}</span></div>`;
+}
+
+/** /services/<provider>/<id>-<slug>: one live service (F339). A wrong provider or slug 301s to its address. */
+function renderService(base, providerSlug, ref, lang = 'en') {
+  const m = /^(\d+)(?:-[a-z0-9-]*)?$/.exec(String(ref || ''));
+  if (!m) return { notFound: true };
+  const s = servicesData().liveServices().find((x) => x.id === Number(m[1]));
+  if (!s) return { notFound: true };
+  if (s.path !== `/services/${providerSlug}/${ref}`) return { redirect: s.path };
+  return renderProvider(base, s.provider.slug, lang, { serviceId: s.id });
+}
+
+/** /services/<slug>: one approved provider (and, with serviceId, one of their services open over it). Returns { html } | { notFound }. */
+function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
   const [T, TN] = tFor(lang);
   const page = servicesData().providerPage(slug);
   if (!page) return { notFound: true };
   const p = tr.provider(page.provider, lang);
   const services = tr.services(page.services, lang);
+  const svc = serviceId ? services.find((x) => x.id === serviceId) : null;
+  if (serviceId && !svc) return { notFound: true };
   const u = providerUrl(p.slug);
   const url = base + u;
   let html = servicesPage(lang);
   // The provider view is the page; the directory's hero heading steps down.
+  // A service's own address: the service's name is the page's one <h1>.
   html = html.replace('<body>', '<body class="pv">').replace('<section id="pview" hidden>', '<section id="pview">')
-    .replace(/<h1 class="hero-t"([^>]*)>([\s\S]*?)<\/h1>/, '<h2 class="hero-t"$1>$2</h2>')
-    .replace(/<h2 id="pvName"([^>]*)><\/h2>/, '<h1 id="pvName"$1></h1>');
+    .replace(/<h1 class="hero-t"([^>]*)>([\s\S]*?)<\/h1>/, '<h2 class="hero-t"$1>$2</h2>');
+  if (!svc) html = html.replace(/<h2 id="pvName"([^>]*)><\/h2>/, '<h1 id="pvName"$1></h1>');
+  else {
+    html = fill(html, 'svModal', svModalHtml(svc, lang));
+    html = html.replace('<div class="scrim" id="svScrim"', '<div class="scrim open" id="svScrim"');
+  }
   html = attr(attr(html, 'pvHero', 'class', 'pv-hero vpanel'), 'pvHero', 'style', `--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}`);
   html = attr(html, 'pvAv', 'style', `background:${safeColor(p.color)}`);
   html = fill(html, 'pvAv', esc((p.name || '?')[0]));
@@ -907,8 +950,8 @@ function renderProvider(base, slug, lang = 'en') {
   html = fill(html, 'pvLoc', esc(p.location || T('Dubai')));
   html = fill(html, 'pvBio', esc(p.bio || ''));
   // the emirate comes from the English location (the Arabic one may use '،')
-  const emirateEn = (page.provider.location || 'Dubai').split(',').pop().trim();
-  const emirate = (p.location || T('Dubai')).split(/[,،]/).pop().trim();
+  const emirateEn = emirateOf(page.provider.location, 'Dubai');
+  const emirate = emirateOf(p.location, T('Dubai'));
   const n = Number(p.serviceCount) || 0;
   html = fill(html, 'pvStats', `<div><b>${n}</b><span>${esc(lang === 'ar' ? noun(lang, n, 'SERVICE', 'SERVICES') : (p.serviceCount === 1 ? 'SERVICE' : 'SERVICES'))}</span></div><div><b>${esc(emirate)}</b><span>${esc(T('BASED IN'))}</span></div>${p.since ? `<div><b>${esc(p.since)}</b><span>${esc(T('ON TROVE SINCE'))}</span></div>` : ''}`);
   html = fill(html, 'pvCats', catNames(p.categories, lang).map((c) => `<span class="tagchip">${esc(c)}</span>`).join(''));
@@ -955,7 +998,7 @@ function renderProvider(base, slug, lang = 'en') {
       name: T('Services by {name}', { name: p.name }),
       itemListElement: services.map((s) => ({
         '@type': 'Offer',
-        url,
+        url: base + s.path,
         priceCurrency: 'AED',
         price: ((s.priceCents || 0) / 100).toFixed(2),
         priceSpecification: {
@@ -972,6 +1015,37 @@ function renderProvider(base, slug, lang = 'en') {
       })),
     },
   };
+  if (svc) {
+    // The service's own page: its title, words, canonical and a Service node.
+    const su = svc.path;
+    const surl = base + su;
+    const price = ((svc.priceCents || 0) / 100).toFixed(2);
+    const serviceLd = {
+      '@type': 'Service', '@id': `${surl}#service`, name: svc.title, url: surl,
+      description: svc.description || undefined,
+      serviceType: (svcCat(svc.category, lang) || {}).name,
+      provider: { '@id': `${url}#provider` },
+      areaServed: svc.setting === 'remote' ? 'AE' : ['Dubai', 'Abu Dhabi'],
+      // a display-only demo listing (src/display-only.js) offers nothing
+      offers: svc.bookable === false ? undefined : {
+        '@type': 'Offer', url: surl, priceCurrency: 'AED', price,
+        priceSpecification: {
+          '@type': 'UnitPriceSpecification', priceCurrency: 'AED', price,
+          ...(svc.priceType === 'from' ? { minPrice: price } : {}),
+          ...(svc.priceType === 'hourly' ? { unitCode: 'HUR', unitText: 'hour' } : {}),
+        },
+      },
+    };
+    return {
+      html: setHead(html, {
+        base, url: surl, lang,
+        title: T('{title} · {name} · Trove Services Marketplace', { title: svc.title, name: p.name }),
+        description: compose(T('{price}, booked in Dubai and Abu Dhabi. ', { price: priceLabel(svc, lang) }), svc.description || p.bio || '', ''),
+        ld: [JSON.parse(JSON.stringify(serviceLd)), JSON.parse(JSON.stringify(business)),
+          crumbLd(base, [['Trove', '/'], [T('Services Marketplace'), '/services'], [p.name, u], [svc.title, su]])],
+      }),
+    };
+  }
   return {
     html: setHead(html, {
       base, url, title, description, type: 'profile', lang,
@@ -1014,10 +1088,17 @@ function sitemapEntries() {
   }
   for (const p of pieces) add(pieceUrl(p), p.mod, '0.6');
   add('/services', null, '0.8', 'daily');
+  // A practice with nothing live is off the directory (F414), so off the sitemap too (a thin page).
   for (const pr of db.prepare(`SELECT pr.slug, COALESCE(pr.updated_at, pr.created_at) AS mod,
       (SELECT MAX(COALESCE(sv.updated_at, sv.created_at)) FROM services sv WHERE sv.provider_id = pr.id AND sv.status = 'live') AS smod
     FROM service_providers pr WHERE pr.status = 'approved' ORDER BY pr.id`).all()) {
-    add(providerUrl(pr.slug), later(pr.mod, pr.smod), '0.7');
+    if (pr.smod) add(providerUrl(pr.slug), later(pr.mod, pr.smod), '0.7');
+  }
+  // Every live service has its own address (F339).
+  for (const sv of db.prepare(`SELECT sv.id, sv.title, pr.slug AS provider_slug, COALESCE(sv.updated_at, sv.created_at) AS mod
+    FROM services sv JOIN service_providers pr ON pr.id = sv.provider_id
+    WHERE sv.status = 'live' AND pr.status = 'approved' ORDER BY sv.id`).all()) {
+    add(servicesData().servicePath(sv), sv.mod, '0.6');
   }
   for (const [p, pr, cf] of [['/about', '0.6', 'monthly'], ['/returns', '0.5', 'monthly'], ['/faq', '0.5', 'monthly'], ['/contact', '0.4', 'yearly'],
     ['/terms', '0.3', 'yearly'], ['/privacy', '0.3', 'yearly'], ['/seller-agreement', '0.2', 'yearly'], ['/provider-agreement', '0.2', 'yearly'], ['/services-terms', '0.2', 'yearly']]) {
@@ -1028,6 +1109,6 @@ function sitemapEntries() {
 
 module.exports = {
   slugify, catSlug, pieceUrl, makerUrl, shopUrl, providerUrl, HOUSE_SLUG,
-  renderHome, renderShop, renderPiece, renderMaker, renderSell, renderThanks, renderServicesDirectory, renderProvider,
+  renderHome, renderShop, renderPiece, renderMaker, renderSell, renderThanks, renderServicesDirectory, renderProvider, renderService,
   legacyTarget, sitemapEntries, socialTags, withDefaultSocial, OG_IMAGE, DEFAULT_DESCRIPTION, HOME_TITLE,
 };

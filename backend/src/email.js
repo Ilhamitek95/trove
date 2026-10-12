@@ -603,9 +603,16 @@ function bookingNewRequest({ booking: bk, commissionPercent, lang }) {
   };
 }
 
+/** The provider's optional note with the confirmation (F416) — plain text. */
+function confirmNotePanel(bk, { T, panel }) {
+  const n = String((bk && bk.confirm_note) || '').trim();
+  return n ? panel(`<span style="color:${MUTED}">${T('A note from {provider}', { provider: esc(bk.provider_name) })}</span><br>${esc(n)}`) : '';
+}
+
 function bookingConfirmedPay({ booking: bk, payUrl, viewUrl, lang }) {
   const { T, A, I, L, p, note, panel, button, svcLayout, svcKicker, sdate, serif } = kit(customerLang(bk, lang));
   const inner = panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(bk.amount_cents)}</span><br>${T('to pay Trove by card for {title} with {provider} on {date}.', { title: esc(bk.title), provider: esc(bk.provider_name), date: `<b>${esc(sdate(bk.service_date))}</b>` })}`)
+    + confirmNotePanel(bk, { T, panel })
     + p(T("Your booking is secured once you pay, and {provider} then gets your mobile to arrange the details. For this booking Trove is your contracting party; if the service isn't delivered, you're refunded in full.", { provider: esc(bk.provider_name) }))
     + button(T('Pay securely'), payUrl)
     + note(T("Changed your mind, or the price isn't right? You can cancel instead — {link}.", { link: `<a href="${L(viewUrl)}" style="color:${INK}">${T('view your booking')}</a>` }));
@@ -620,8 +627,9 @@ function bookingConfirmedPay({ booking: bk, payUrl, viewUrl, lang }) {
 }
 
 function bookingConfirmedDirect({ booking: bk, viewUrl, lang }) {
-  const { T, I, p, button, svcSummary, svcLayout, svcKicker } = kit(customerLang(bk, lang));
+  const { T, I, p, panel, button, svcSummary, svcLayout, svcKicker } = kit(customerLang(bk, lang));
   const inner = svcSummary(bk)
+    + confirmNotePanel(bk, { T, panel })
     + p(T('{provider} now has your mobile and will be in touch to arrange the time, place and final details. You settle with them directly, as you agree — Trove takes no part in that payment.', { provider: esc(bk.provider_name) }))
     + button(T('View your booking'), viewUrl);
   return {
@@ -842,7 +850,7 @@ function applicationReceived({ kind = 'shop', name, businessName, link, lang }) 
   const { T, p, panel, button, layout } = kit(lang);
   const inner =
     panel(`<b>${esc(businessName)}</b><br>${T('Application received · under review')}`)
-    + p(T("Our curation team looks at every application by hand, so it can take a few days. You'll hear from us by email as soon as there is a decision."))
+    + p(T("Our curation team looks at every application by hand, usually within a day or two. You'll hear from us by email as soon as there is a decision."))
     + p(kind === 'shop'
       ? T('Meanwhile you can sign in and get your shop ready — add your pieces, photos and pickup address — so it can go on sale the moment it is approved.')
       : T('Meanwhile you can sign in and prepare your listings, so they can go live the moment your practice is approved.'))

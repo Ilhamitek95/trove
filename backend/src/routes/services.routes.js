@@ -48,10 +48,19 @@ function publicProvider(p) {
   };
 }
 
+// A service's own address (F339): /services/<provider>/<id>-<slug>, the slug
+// from the English title (src/seo.js slugify, so the page and server agree;
+// an Arabic copy keeps it). src/seo.js serves it; a wrong slug 301s.
+const servicePath = (row) => {
+  const s = require('../seo').slugify(row.title);
+  return `/services/${row.provider_slug}/${row.id}${s ? '-' + s : ''}`;
+};
+
 function shapeService(row) {
   const cat = tax.bySlug(row.category);
   return {
     id: row.id, title: row.title, category: row.category,
+    path: servicePath(row),
     audience: cat ? cat.audience : 'home',
     description: row.description, priceCents: row.price_cents,
     priceType: row.price_type, duration: row.duration, setting: row.setting,
@@ -118,10 +127,12 @@ const PROVIDER_STATS = `
   LEFT JOIN (SELECT provider_id, COUNT(*) AS service_count, MIN(price_cents) AS from_cents
              FROM services WHERE status = 'live' GROUP BY provider_id) st ON st.provider_id = p.id`;
 
-// GET /api/services/providers → approved providers, oldest first, with their
-// live-service count and lowest price. Never any contact details.
+// GET /api/services/providers → approved providers with at least one live
+// service, oldest first, with their live-service count and lowest price. A
+// practice with nothing to book stays off the directory (F414) — its own
+// page still answers, saying nothing is listed yet. Never any contact details.
 const approvedProviders = () => db.prepare(`SELECT p.*, st.service_count, st.from_cents FROM service_providers p ${PROVIDER_STATS}
-    WHERE p.status = 'approved' ORDER BY p.created_at ASC, p.id ASC`).all().map(providerCard);
+    WHERE p.status = 'approved' AND COALESCE(st.service_count, 0) > 0 ORDER BY p.created_at ASC, p.id ASC`).all().map(providerCard);
 router.get('/providers', (req, res) => {
   res.json({ providers: require('../translate').providers(approvedProviders(), req.lang) });
 });
@@ -252,7 +263,13 @@ router.post('/apply', (req, res, next) => {
   // Best-effort emails: application received + admin alert, and the welcome
   // (confirm your email) when this application created the account.
   const notify = require('../notify');
-  notify.providerApplied(provInfo.lastInsertRowid);
+  // 'Both' on /apply: the shop application on this same form, a moment ago,
+  // already sent the applicant their 'application received' email, so this
+  // half stays quiet for them (F488). The admin alert still goes — it is a
+  // second approval. The flag only counts when that shop really is new.
+  const withShop = b.withShop === true
+    && !!db.prepare("SELECT 1 FROM shops WHERE user_id = ? AND created_at >= datetime('now', '-30 minutes')").get(userId);
+  notify.providerApplied(provInfo.lastInsertRowid, { applicant: !withShop });
   if (!existing) notify.welcomeVerify(db.prepare('SELECT * FROM users WHERE id = ?').get(userId));
   // `created` lets the page report a sign-up to analytics only when this opened the account.
   const done = () => res.status(201).json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(userId)), created: !existing });
@@ -269,11 +286,12 @@ const svc = require('../service-bookings');
 
 function shapeBookingForBuyer(bk) {
   const view = svc.forCustomer(bk);
+  // Never Trove's platform fee or the provider's share (F261): for a booking
+  // paid through Trove, Trove is the customer's contracting party, and the
+  // split is between Trove and the provider — the same as the guest link view.
   return {
     ...view,
     notes: bk.notes,
-    commissionCents: bk.commission_cents || 0,
-    providerNetCents: bk.provider_net_cents || 0,
     // Their own booking: the private link works for them too (same page).
     viewPath: `/services/booking/${bk.code}?t=${svc.linkToken(bk)}`,
     payPath: view.canPay ? `/services/pay/${bk.code}-${svc.linkToken(bk)}` : null,
@@ -414,6 +432,6 @@ router.post('/booking/:code/pay', async (req, res, next) => {
 
 // The same public shapes, for the server-rendered Services pages (src/seo.js):
 // what a crawler reads is exactly what the page's own script renders.
-router.publicData = { liveServices, approvedProviders, providerPage };
+router.publicData = { liveServices, approvedProviders, providerPage, servicePath };
 
 module.exports = router;

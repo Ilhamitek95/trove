@@ -111,6 +111,8 @@
   "All services": "كل الخدمات",
   "Show all {n} services": "اعرض كل الخدمات ({n})",
   "Trove Services Marketplace": "سوق الخدمات من Trove",
+  "+{n} more": "+{n} أخرى",
+  "Close this service": "أغلق هذه الخدمة",
   "Service providers on Trove": "مقدّمو الخدمات على Trove",
   "Services Marketplace · Trove": "سوق الخدمات · Trove",
   "Creative services at your place in Dubai and Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.": "خدمات إبداعية في منزلك في دبي وأبوظبي — قطع مصنوعة حسب الطلب، وإصلاح، وتنسيق، وورش عمل وتصوير في المنزل، إلى جانب دعم العلامات التجارية والمتاجر للصنّاع.",
@@ -120,6 +122,8 @@
   "ON TROVE SINCE": "على Trove منذ",
   "{name} hasn't listed a service yet — check back soon.": "لم يُدرج {name} أي خدمة بعد — عُد إلينا قريباً.",
   "{name}{where} · Trove Services Marketplace": "{name}{where} · سوق الخدمات من Trove",
+  "{title} · {name} · Trove Services Marketplace": "{title} · {name} · سوق الخدمات من Trove",
+  "{price}, booked in Dubai and Abu Dhabi. ": "{price}، تُحجز في دبي وأبوظبي. ",
   "{n} services, from {price}, booked in Dubai and Abu Dhabi. ": {
     "one": "خدمة واحدة، ابتداءً من {price}، تُحجز في دبي وأبوظبي. ",
     "two": "خدمتان، ابتداءً من {price}، تُحجزان في دبي وأبوظبي. ",

@@ -321,9 +321,13 @@ test('the guest cancels through the link: unpaid closes the intent, paid refunds
   assert.equal(row(b.data.booking.id).cancelled_by, 'customer');
 });
 
-test('the customer cannot cancel on the service day', async () => {
+// A paid, confirmed booking (an unpaid one can always be withdrawn — F260,
+// test/oct12-B.test.js).
+test('the customer cannot cancel a paid booking on the service day', async () => {
   const r = await book(svcIds.fixed);
   await act(r.data.booking.id, { action: 'confirm', serviceDate: dayFromNow(1) });
+  await ctx.postWebhook(paidEvent(row(r.data.booking.id)));
+  assert.equal(row(r.data.booking.id).status, 'confirmed');
   db.prepare('UPDATE service_bookings SET service_date=? WHERE id=?').run(dayFromNow(0), r.data.booking.id);
   const c = await api('POST', `/api/services/booking/${r.data.booking.code}/cancel`, { body: { t: tokenOf(r.data.booking.viewPath) } });
   assert.equal(c.status, 409);
