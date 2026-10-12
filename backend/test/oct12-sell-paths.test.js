@@ -29,7 +29,7 @@ const read = (f) => fs.readFileSync(path.join(DOCS, f), 'utf8').replace(/\r\n/g,
 const store = read('trove.html');
 const applyPage = read('trove-apply.html');
 const sellView = store.slice(store.indexOf('<div class="view" id="view-sell">'), store.indexOf('<!-- CHECKOUT -->'));
-const style = store.slice(store.indexOf('<style>'), store.indexOf('</style>'));
+const style = store.slice(store.indexOf('<style>'), store.indexOf('</style>', store.indexOf('<style>')));
 const sellCss = style.split('\n').filter((l) => /\.sp[\s.\-[{:,>]|\.sp-|#sellPage/.test(l)).join('\n');
 
 let ctx; let content;
