@@ -353,10 +353,11 @@ test('llms.txt and llms-full.txt are plain text with accurate facts', async () =
 
 test('robots.txt no longer blocks the agreements; the sitemap lists the new pages', async () => {
   const robots = (await get('/robots.txt')).text;
-  assert.match(robots, /Allow: \/seller-agreement/);
-  assert.match(robots, /Allow: \/provider-agreement/);
-  assert.match(robots, /Disallow: \/sell\n/);
-  assert.match(robots, /Disallow: \/provider\n/);
+  // F466 (12 Oct): nothing under /sell or /provider is blocked any more (the
+  // dashboards answer X-Robots-Tag noindex instead), so the agreements need no Allow.
+  assert.doesNotMatch(robots, /Disallow: \/sell/);
+  assert.doesNotMatch(robots, /Disallow: \/provider/);
+  assert.doesNotMatch(robots, /Disallow: \/seller-agreement|Disallow: \/provider-agreement/);
   const map = (await get('/sitemap.xml')).text;
   for (const p of ['/about', '/returns', '/faq', '/contact', '/terms', '/privacy', '/seller-agreement', '/provider-agreement', '/services-terms']) {
     assert.match(map, new RegExp(`<loc>https://troveathome\\.com${p}</loc>`), p);

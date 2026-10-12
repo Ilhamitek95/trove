@@ -8,32 +8,48 @@
  *                       the endpoints a bot or a runaway script can hammer:
  *                       sign-in/sign-up, checkout, the anonymous beacons, and
  *                       the API as a whole. Answers 429 JSON once the window
- *                       is spent. Behind Render's proxy req.ip is the real
- *                       client (app.set('trust proxy', 1)).
+ *                       is spent. The client address comes from clientKey().
  *   • publicCache()   — Cache-Control for the read-only public JSON the
  *                       storefront fetches on every visit (catalogue, shops,
  *                       site copy, fees). Nothing in those responses depends
- *                       on who is asking, so a browser (and the CDN in front
- *                       of Render) may hold them briefly instead of hitting
- *                       SQLite for every page view. Never applied to searches
- *                       (they feed the trends log) or anything session-bound.
- *   • staticHeaders() — long browser/CDN cache for fonts, images and icons;
+ *                       on who is asking, so each visitor's browser may hold
+ *                       them briefly instead of asking again on every page
+ *                       view. (Render's edge does NOT cache for the service —
+ *                       live responses say cf-cache-status: DYNAMIC — so every
+ *                       first request still reaches this one process; a
+ *                       Cloudflare zone of Trove's own would be needed for
+ *                       that, F360.) Never applied to searches (they feed the
+ *                       trends log) or anything session-bound.
+ *   • staticHeaders() — long browser cache for fonts, images and icons;
  *                       HTML is always revalidated so a deploy shows at once.
  */
 
 const WINDOW_SWEEP_MS = 60 * 1000;
 
 /**
- * The client's address behind Render's edge. Render (and the Cloudflare layer
- * in front of it) puts the real client first in X-Forwarded-For and, when
- * present, in CF-Connecting-IP; keying on the LAST hop instead would put
- * every shopper in one bucket behind a shared proxy address.
+ * Whether CF-Connecting-IP can be believed (F277). Cloudflare sets it to the
+ * real visitor and refuses one a visitor sends, so it is trustworthy only
+ * where Cloudflare is guaranteed to sit in front: on Render (its edge is
+ * Cloudflare — RENDER / RENDER_SERVICE_ID are set on every Render service)
+ * or when TRUST_CF=1 says so. TRUST_CF=0 switches it off.
+ */
+const onRender = () => !!(process.env.RENDER || process.env.RENDER_SERVICE_ID);
+const trustCf = () => process.env.TRUST_CF === '1' || (process.env.TRUST_CF !== '0' && onRender());
+
+/**
+ * The client's address for the rate limits. Never a value the visitor can
+ * choose: CF-Connecting-IP only where Cloudflare is guaranteed in front
+ * (above); otherwise Express's req.ip, which with app.set('trust proxy', 1)
+ * is the hop the one trusted proxy added — never the first, client-written
+ * X-Forwarded-For entry (rotating that used to reset the bucket). On Render
+ * the last hop would be a shared Cloudflare address, which is why the
+ * Cloudflare header comes first there.
  */
 function clientKey(req) {
-  const cf = req.headers['cf-connecting-ip'];
-  if (cf) return String(cf).trim();
-  const xff = req.headers['x-forwarded-for'];
-  if (xff) return String(xff).split(',')[0].trim() || req.ip || 'unknown';
+  if (trustCf()) {
+    const cf = req.headers['cf-connecting-ip'];
+    if (typeof cf === 'string' && cf.trim()) return cf.trim();
+  }
   return req.ip || 'unknown';
 }
 

@@ -12,6 +12,9 @@ db.exec(`CREATE TABLE IF NOT EXISTS sessions (
   sess   TEXT NOT NULL,
   expire INTEGER NOT NULL
 )`);
+// The boot and hourly sweeps delete by expiry (F275). Backups never carry
+// this table's rows (src/backup.js, F278).
+db.exec('CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire)');
 
 const DAY = 1000 * 60 * 60 * 24;
 const expiryOf = (sess) =>

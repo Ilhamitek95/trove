@@ -139,5 +139,10 @@
   "One of the pieces in your basket is no longer available — remove it to continue": "One of the pieces in your basket is no longer available — remove it to continue",
   "Your basket has too many lines — split it into two orders": "Your basket has too many lines — split it into two orders",
   "We can’t take payments right now — please try again in a few minutes": "We can’t take payments right now — please try again in a few minutes",
-  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them."
+  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.",
+  "That password is one of the most common ones — choose something harder to guess": "That password is one of the most common ones — choose something harder to guess",
+  "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.": "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.",
+  "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.": "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.",
+  "Something changed while we were checking — please try again": "Something changed while we were checking — please try again",
+  "Not allowed": "Not allowed"
 }

@@ -39,6 +39,10 @@ const passwordReset = (user) => safely('password-reset', () => {
 const passwordChanged = (user) => safely('password-changed', () =>
   deliver('password-changed', user.email, email().passwordChanged({ name: user.name, link: `${accounts.siteUrl()}/login?forgot=1`, lang: langOfUser(user) })));
 
+/** Many wrong passwords on this account: sign-in paused for it (F208) — tell the owner, once per pause. */
+const signInAttempts = (user) => safely('sign-in-attempts', () =>
+  deliver('sign-in-attempts', user.email, email().signInAttempts({ name: user.name, link: `${accounts.siteUrl()}/login?forgot=1`, lang: langOfUser(user) })));
+
 /** The payout bank account of a shop or practice changed: tell the account owner. */
 const bankDetailsChanged = (user, { kind, businessName, bankName, iban, held = true }) => safely('bank-details-changed', () =>
   deliver('bank-details-changed', user && user.email, email().bankDetailsChanged({
@@ -71,8 +75,22 @@ function applied(kind, row, { applicant = true } = {}) {
 const shopApplied = (shopId) => safely('shop-application', () => applied('shop', shopRow(shopId)));
 const providerApplied = (providerId, opts) => safely('provider-application', () => applied('provider', providerRow(providerId), opts));
 
-function decided(kind, row, status) {
+/**
+ * A decision on a shop or practice. `prev` is the status before it (when the
+ * caller passes it): a suspension sends 'paused', and approving a suspended
+ * one sends 'back on Trove' — not the application welcome again (F419). The
+ * admin's note (review_note) is quoted when there is one.
+ */
+function decided(kind, row, status, prev) {
   if (!row) return Promise.resolve(null);
+  if (status === 'suspended') {
+    return deliver(`${kind}-paused`, row.owner_email,
+      email().businessPaused({ kind, name: row.owner_name, businessName: row.name, adminNote: row.review_note || '', link: accounts.siteUrl() + '/contact', lang: row.owner_lang }));
+  }
+  if (status === 'approved' && prev === 'suspended') {
+    return deliver(`${kind}-back`, row.owner_email,
+      email().businessBack({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind), lang: row.owner_lang }));
+  }
   if (status === 'approved') {
     return deliver(`${kind}-approved`, row.owner_email,
       email().applicationApproved({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind), lang: row.owner_lang }));
@@ -83,8 +101,8 @@ function decided(kind, row, status) {
   }
   return Promise.resolve(null);
 }
-const shopDecided = (shopId, status) => safely('shop-decision', () => decided('shop', shopRow(shopId), status));
-const providerDecided = (providerId, status) => safely('provider-decision', () => decided('provider', providerRow(providerId), status));
+const shopDecided = (shopId, status, prev) => safely('shop-decision', () => decided('shop', shopRow(shopId), status, prev));
+const providerDecided = (providerId, status, prev) => safely('provider-decision', () => decided('provider', providerRow(providerId), status, prev));
 
 /* ---- orders ---- */
 // Fallback only: a shipment booked before per-piece make/pack times
@@ -372,6 +390,6 @@ module.exports = {
   ownerNewOrder, ownerReturnRequested, ownerSoldOut,
   idExpiring, adminAlert, alertOwner, makerPaid, parcelCancelled,
   packReminder, packOverdueAdmin, packByFor,
-  welcomeVerify, passwordReset, passwordChanged, bankDetailsChanged,
+  welcomeVerify, passwordReset, passwordChanged, bankDetailsChanged, signInAttempts,
   shopApplied, providerApplied, shopDecided, providerDecided, ordersToPack, packByDays,
 };

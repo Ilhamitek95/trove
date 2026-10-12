@@ -60,13 +60,15 @@ function notifyOwner(row) {
   if (!to) { console.log('contact: no CONTACT_EMAIL / company email / ADMIN_EMAIL — message stored only'); return; }
   const topic = TOPIC_LABEL[row.topic] || 'Something else';
   const html = `<div style="font-family:Quicksand,'Segoe UI',Helvetica,Arial,sans-serif;color:#292727;font-size:15px;line-height:1.6;max-width:560px">
-<p style="font-size:13px;color:#7b716d;margin:0 0 6px">New message from the Trove contact form</p>
+<p style="font-size:13px;color:#646161;margin:0 0 6px">New message from the Trove contact form</p>
 <p style="margin:0 0 4px"><b>${escHtml(row.name)}</b> · <a href="mailto:${escHtml(row.email)}" style="color:#292727">${escHtml(row.email)}</a></p>
 <p style="margin:0 0 4px">About: ${escHtml(topic)}${row.order_ref ? ` · Order ${escHtml(row.order_ref)}` : ''}</p>
 <div style="margin:14px 0;padding:14px 16px;background:#FDF7F5;border:1px solid #EFE5E0;border-radius:12px;white-space:pre-wrap">${escHtml(row.message)}</div>
-<p style="font-size:13px;color:#7b716d">Reply by writing to ${escHtml(row.email)}. The message is also saved in the admin panel under Messages (no. ${row.id}).</p>
+<p style="font-size:13px;color:#646161">Press Reply to answer ${escHtml(row.name)} at ${escHtml(row.email)}. The message is also saved in the admin panel under Messages (no. ${row.id}).</p>
 </div>`;
-  email.send({ to, subject: `Contact form: ${topic}${row.order_ref ? ` · ${row.order_ref}` : ''} — ${row.name}`, html })
+  // Reply-To is the customer, so the owner's Reply reaches them (F282) —
+  // not the no-reply sender.
+  email.send({ to, subject: `Contact form: ${topic}${row.order_ref ? ` · ${row.order_ref}` : ''} — ${row.name}`, html, replyTo: row.email })
     .catch((e) => console.error('contact email failed:', e.message));
 }
 

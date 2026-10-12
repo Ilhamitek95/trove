@@ -41,12 +41,8 @@ const OG_IMAGE_ALT = 'trove, curated homeware by independent makers in Dubai and
 
 /* ---------------- addresses ---------------- */
 
-/** URL slug of a name. The storefront and Services scripts carry the same function. */
-function slugify(s) {
-  return String(s == null ? '' : s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-    .replace(/&/g, ' and ').replace(/['\u2019]/g, '').replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '').slice(0, 80).replace(/-+$/, '');
-}
+/** URL slug of a name (src/slug.js \u2014 also the rule for stored shop/provider slugs). The storefront and Services scripts carry the same function. */
+const { slugify } = require('./slug');
 const HOUSE_SLUG = 'trove-collection';
 const catSlug = (name) => (name === 'House' ? HOUSE_SLUG : slugify(name));
 const catLabel = (name) => (name === 'House' ? 'Trove Collection' : name);
@@ -107,10 +103,13 @@ const isStock = (p) => !safeImg((p.images || [])[0]) && !!safeImg(p.stockImage);
 const illus = (lang) => `<span class="illus">${esc(i18n.t(lang, 'Illustrative photo'))}</span>`;
 const ldScript = (obj) => `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', ...obj }).replace(/</g, '\\u003c')}</script>`;
 
+// The page's own copy states the fee figures as shipped; src/figures.js
+// rewrites them to fees.js's current ones (unchanged with the defaults).
+const figures = require('./figures');
 function readDoc(file, cache) {
   const f = path.join(DOCS_DIR, file);
-  const stamp = fs.statSync(f).mtimeMs;
-  if (cache.stamp !== stamp) { cache.stamp = stamp; cache.html = fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n'); }
+  const stamp = `${fs.statSync(f).mtimeMs}|${figures.signature()}`;
+  if (cache.stamp !== stamp) { cache.stamp = stamp; cache.html = figures.refigureHtml(fs.readFileSync(f, 'utf8').replace(/\r\n/g, '\n')); }
   return cache.html;
 }
 const storeCache = { stamp: 0, html: '' };
@@ -165,7 +164,7 @@ const PAGE_DESCRIPTIONS = {
 };
 function withDefaultSocial(html, { base, url, noindex = false, path: pagePath }) {
   if (/property="og:title"/.test(html)) return html;
-  const fallback = PAGE_DESCRIPTIONS[pagePath] || DEFAULT_DESCRIPTION;
+  const fallback = figures.refigure(PAGE_DESCRIPTIONS[pagePath] || DEFAULT_DESCRIPTION);
   const t = (html.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || 'Trove';
   const d = (html.match(/<meta name="description" content="([^"]*)"/) || [])[1];
   const title = t.replace(/&amp;/g, '&');
@@ -473,6 +472,19 @@ function productLd(base, p, url, lang = 'en') {
   if (!images.length && safeImg(p.stockImage)) images.push(p.stockImage);
   const f = require('./pages/facts').facts();
   const est = p.estimate || require('./lead-times').estimate(p.leadDays);
+  // Variants with their own prices (F268): the prices a shopper can actually
+  // pay — the in-stock combinations (all of them when none is in stock),
+  // each at its own price or the base price. Different prices → an
+  // AggregateOffer (lowest–highest); availability follows the variants.
+  const variants = Array.isArray(p.variants) ? p.variants.filter((v) => v && typeof v === 'object') : [];
+  const inStock = variants.filter((v) => Number(v.stock) > 0);
+  const priced = (inStock.length ? inStock : variants).map((v) => Number(v.price != null ? v.price : p.price)).filter((n) => Number.isFinite(n) && n > 0);
+  const low = priced.length ? Math.min(...priced) : Number(p.price);
+  const high = priced.length ? Math.max(...priced) : Number(p.price);
+  const available = Number(p.stock) > 0 && (!variants.length || inStock.length > 0);
+  const priceFields = high > low
+    ? { '@type': 'AggregateOffer', lowPrice: low.toFixed(2), highPrice: high.toFixed(2), offerCount: priced.length }
+    : { '@type': 'Offer', price: low.toFixed(2) };
   const ld = {
     '@type': 'Product',
     '@id': `${url}#product`,
@@ -489,18 +501,17 @@ function productLd(base, p, url, lang = 'en') {
       ? { brand: { '@type': 'Brand', name: 'Trove' }, manufacturer: orgRef(base) }
       : { brand: { '@type': 'Brand', name: p.shop.name }, manufacturer: { '@type': 'Organization', name: p.shop.name, url: base + makerUrl(p.shop.slug) } }),
     offers: {
-      '@type': 'Offer',
+      ...priceFields,
       url,
       priceCurrency: 'AED',
-      price: Number(p.price).toFixed(2),
-      availability: Number(p.stock) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      availability: available ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
       itemCondition: 'https://schema.org/NewCondition',
       seller: { '@type': 'Organization', '@id': `${base}/#organization`, name: 'Trove' },
       areaServed: [{ '@type': 'City', name: 'Dubai' }, { '@type': 'City', name: 'Abu Dhabi' }],
       shippingDetails: {
         '@type': 'OfferShippingDetails',
         shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'AE' },
-        shippingRate: { '@type': 'MonetaryAmount', currency: 'AED', value: Number(p.price) > fees.FREE_DELIVERY_THRESHOLD_CENTS / 100 ? 0 : fees.DELIVERY_FEE_CENTS / 100 },
+        shippingRate: { '@type': 'MonetaryAmount', currency: 'AED', value: low > fees.FREE_DELIVERY_THRESHOLD_CENTS / 100 ? 0 : fees.DELIVERY_FEE_CENTS / 100 },
         // Handling = this piece's make/pack time (the maker sets it);
         // transit = the courier's window. Together: the estimate the page shows.
         deliveryTime: {
@@ -1081,6 +1092,7 @@ function sitemapEntries() {
   if (house && !cats.has('House')) cats.set('House', house.mod);
   for (const [c, mod] of cats) add(shopUrl(c), mod, '0.6');
   add('/sell-on-trove', null, '0.6', 'monthly');
+  add('/apply', null, '0.6', 'monthly'); // the application form itself (F468)
   for (const s of db.prepare(`SELECT s.slug, COALESCE(s.updated_at, s.created_at) AS mod,
       (SELECT MAX(COALESCE(p.updated_at, p.created_at)) FROM products p WHERE p.shop_id = s.id AND p.status = 'live') AS pmod
     FROM shops s WHERE s.status = 'approved' AND s.is_house = 0 ORDER BY s.id`).all()) {

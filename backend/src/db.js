@@ -1,8 +1,9 @@
 'use strict';
 /**
- * SQLite via better-sqlite3 — zero-config, single file (trove.db).
- * Swap to Postgres for production: keep the same column shapes, replace the
- * driver and the few `?`/`lastInsertRowid` idioms with your client's equivalents.
+ * SQLite via better-sqlite3 — zero-config, single file (trove.db). This IS
+ * the production database: one file on the Render persistent disk (DB_PATH),
+ * WAL mode, nightly VACUUM INTO backups (backup.js) and an encrypted off-site
+ * copy (offsite-backup.js). There is no Postgres anywhere.
  *
  * Money is stored as integer minor units (fils for AED). Never store floats.
  */
@@ -434,5 +435,19 @@ for (const t of ['shops', 'products', 'service_providers', 'services']) {
 // Versioned migrations run last, so they always see the full baseline schema
 // (fresh databases included). See src/migrations/index.js.
 require('./migrations').run(db);
+
+// Every new order records the Terms of Sale version it was placed under
+// (F345, migration 026-E-order-terms-version). Re-created at each boot from
+// config.js, so the code's current version is what new orders get —
+// whichever route creates them.
+{
+  const v = require('./config').BUYER_TERMS_VERSION;
+  if (/^v\d+$/.test(v)) {
+    db.exec(`DROP TRIGGER IF EXISTS orders_terms_version;
+      CREATE TRIGGER orders_terms_version AFTER INSERT ON orders FOR EACH ROW
+      WHEN NEW.terms_version = ''
+      BEGIN UPDATE orders SET terms_version = '${v}' WHERE id = NEW.id; END;`);
+  }
+}
 
 module.exports = db;

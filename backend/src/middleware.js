@@ -2,8 +2,30 @@
 const bcrypt = require('bcryptjs');
 const db = require('./db');
 
-const hashPassword = (pw) => bcrypt.hashSync(pw, 10);
-const verifyPassword = (pw, hash) => bcrypt.compareSync(pw, hash);
+// Passwords as text whatever the client sent (F202): a number or null must
+// read as a wrong password, never crash bcrypt into a 500.
+const pwText = (pw) => (pw == null ? '' : String(pw));
+const hashText = (h) => (typeof h === 'string' ? h : '');
+
+// Synchronous forms: boot steps, the seed and tests only.
+const hashPassword = (pw) => bcrypt.hashSync(pwText(pw), 10);
+const verifyPassword = (pw, hash) => { try { return bcrypt.compareSync(pwText(pw), hashText(hash)); } catch (_) { return false; } };
+
+// Request paths use these (F276): bcryptjs then works in small slices and
+// lets other requests (checkout, webhooks) run in between, instead of
+// holding the one Node process for the whole ~50-90 ms of each check. Same
+// algorithm and cost, so every stored hash stays valid.
+const hashPasswordAsync = (pw) => bcrypt.hash(pwText(pw), 10);
+const verifyPasswordAsync = (pw, hash) => bcrypt.compare(pwText(pw), hashText(hash)).catch(() => false);
+// Compared against when there is no account (or no usable hash), so a
+// sign-in takes as long for an unknown email as for a known one (F201).
+let dummyHash = null;
+/** verifyPasswordAsync against the user's hash, or a dummy one when there is no user. */
+function checkPasswordAsync(pw, user) {
+  if (user && user.password_hash) return verifyPasswordAsync(pw, user.password_hash);
+  if (!dummyHash) dummyHash = bcrypt.hashSync('no account has this password', 10);
+  return verifyPasswordAsync(pw, dummyHash).then(() => false);
+}
 
 // Strip sensitive fields before sending a user to the client.
 function publicUser(u) {
@@ -130,4 +152,4 @@ function confirmOwner(req, password) {
   return null;
 }
 
-module.exports = { startSession, hashPassword, verifyPassword, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor, notInShopView, confirmOwner };
+module.exports = { startSession, hashPassword, verifyPassword, hashPasswordAsync, verifyPasswordAsync, checkPasswordAsync, publicUser, requireAuth, requireSeller, requireProvider, requireAdmin, dashboardShopFor, notInShopView, confirmOwner };

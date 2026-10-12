@@ -24,6 +24,7 @@ const LABELS = {
   'service-bookings': 'Service booking reminders and closing',
   'nightly-checks': 'Nightly checks (sales cap, ID expiry)',
   privacy: 'Privacy retention sweep',
+  'disk-space': 'Free space on the data disk',
   unhandled: 'Unexpected server error',
 };
 

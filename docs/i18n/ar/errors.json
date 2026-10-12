@@ -139,5 +139,10 @@
   "One of the pieces in your basket is no longer available — remove it to continue": "إحدى القطع في سلتك لم تعد متاحة — أزلها للمتابعة",
   "Your basket has too many lines — split it into two orders": "سلتك تحتوي على عدد كبير جداً من البنود — قسّمها إلى طلبين",
   "We can’t take payments right now — please try again in a few minutes": "لا يمكننا استلام المدفوعات الآن — يُرجى المحاولة مرة أخرى بعد دقائق",
-  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "رسوم الاستلام البالغة 30 درهماً لإرجاع بسبب تغيير الرأي لا تقل عن ثمن هذه القطع، فلن يعود إليك أي مبلغ. أضف قطعاً أخرى إلى هذا الإرجاع، أو تواصل معنا إن كان فيها عيب."
+  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "رسوم الاستلام البالغة 30 درهماً لإرجاع بسبب تغيير الرأي لا تقل عن ثمن هذه القطع، فلن يعود إليك أي مبلغ. أضف قطعاً أخرى إلى هذا الإرجاع، أو تواصل معنا إن كان فيها عيب.",
+  "That password is one of the most common ones — choose something harder to guess": "كلمة المرور هذه من أكثر كلمات المرور شيوعاً — اختر كلمة يصعب تخمينها",
+  "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.": "أُدخلت كلمة مرور خاطئة لهذا الحساب مرات كثيرة. حاول مجدداً بعد 15 دقيقة، أو أعد تعيين كلمة المرور.",
+  "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.": "يمكنك تسجيل الدخول برقم هاتفك المتحرك بعد تأكيد بريدك الإلكتروني. أما الآن، فسجّل الدخول ببريدك الإلكتروني.",
+  "Something changed while we were checking — please try again": "تغيّر شيء أثناء التحقق — يُرجى المحاولة مرة أخرى",
+  "Not allowed": "غير مسموح"
 }

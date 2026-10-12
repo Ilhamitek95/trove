@@ -71,8 +71,9 @@ test('confirming the email (the welcome link) attaches the guest orders — paid
   order('TRV-OWNED1', 'gina@test.local', { buyerId: otherId }); // already in another account: untouched
   const gina = db.prepare('SELECT * FROM users WHERE email=?').get('gina@test.local');
   const token = require('../src/accounts').issueToken(gina, 'verify');
-  const res = await ctx.api('GET', `/api/auth/verify-email?token=${encodeURIComponent(token)}`);
-  assert.equal(res.status, 302);
+  // F200 (12 Oct): the link opens a confirm page; its button's POST confirms.
+  const res = await ctx.api('POST', '/api/auth/verify-email', { raw: new URLSearchParams({ token }).toString(), headers: { 'content-type': 'application/x-www-form-urlencoded' } });
+  assert.equal(res.status, 303);
   assert.equal(owner('TRV-GUEST1'), gina.id);
   assert.equal(owner('TRV-GUEST2'), gina.id);
   assert.equal(owner('TRV-GUEST3'), null, 'pending order left alone');

@@ -224,23 +224,41 @@ test('register sends a welcome with a confirm link; the link confirms once and s
   const token = linkIn(mail, '/api/auth/verify-email?token=');
   assert.ok(token);
 
-  const hit = await call('GET', `/api/auth/verify-email?token=${token}`, { cookie: reg.cookie });
-  assert.equal(hit.status, 302);
+  // F200 (12 Oct): opening the link only shows a confirm page — a mail
+  // scanner's automatic click confirms nothing; the page's button (a POST) does.
+  const page = await call('GET', `/api/auth/verify-email?token=${token}`, { cookie: reg.cookie });
+  assert.equal(page.status, 200);
+  assert.match(page.text, /<form method="post" action="\/api\/auth\/verify-email">/);
+  assert.equal((await call('GET', '/api/auth/me', { cookie: reg.cookie })).data.user.emailVerified, false, 'opening the link confirms nothing');
+  const postForm = (fields, cookie) => fetch(ctx.baseUrl + '/api/auth/verify-email', {
+    method: 'POST', redirect: 'manual', body: new URLSearchParams(fields).toString(),
+    headers: { 'content-type': 'application/x-www-form-urlencoded', 'x-forwarded-for': `198.51.100.${(++ipN % 250) + 1}`, ...(cookie ? { cookie } : {}) },
+  });
+  const hit = await postForm({ token }, reg.cookie);
+  assert.equal(hit.status, 303);
   assert.equal(hit.headers.get('location'), '/account?verified=1');
   assert.equal((await call('GET', '/api/auth/me', { cookie: reg.cookie })).data.user.emailVerified, true);
-  const twice = await call('GET', `/api/auth/verify-email?token=${token}`);
+  const twice = await postForm({ token });
   assert.equal(twice.headers.get('location'), '/login?verify=expired', 'single use');
+  const reopened = await call('GET', `/api/auth/verify-email?token=${token}`);
+  assert.equal(reopened.headers.get('location'), '/login?verify=expired');
 });
 
 test('My details: name and UAE mobile persist; bad, taken and empty mobiles are handled', async () => {
-  makeUser('ali@test.local');
-  makeUser('taken@test.local', 'oldpass123', { phone: '+971509990000' });
+  const aliId = makeUser('ali@test.local');
+  // A number held by a CONFIRMED account stays taken (F203: an unconfirmed holder would lose it).
+  makeUser('taken@test.local', 'oldpass123', { phone: '+971509990000', email_verified_at: '2026-10-01 10:00:00' });
   const cookie = await signIn('ali@test.local', 'oldpass123');
   const upd = await call('PATCH', '/api/account/me', { cookie, body: { name: '  Ali Hassan ', phone: '050 111 2233' } });
   assert.equal(upd.status, 200, upd.text);
   assert.equal(upd.data.user.name, 'Ali Hassan');
   assert.equal(upd.data.user.phone, '+971501112233', 'normalised');
   assert.equal((await call('GET', '/api/auth/me', { cookie })).data.user.phone, '+971501112233');
+  // F203 (12 Oct): a mobile signs in only once the account's email is confirmed.
+  const early = await call('POST', '/api/auth/login', { body: { identifier: '0501112233', password: 'oldpass123' } });
+  assert.equal(early.status, 403);
+  assert.equal(early.data.code, 'confirm_email_first');
+  db.prepare("UPDATE users SET email_verified_at=datetime('now') WHERE id=?").run(aliId);
   const byPhone = await call('POST', '/api/auth/login', { body: { identifier: '0501112233', password: 'oldpass123' } });
   assert.equal(byPhone.status, 200, 'the new mobile signs in');
 

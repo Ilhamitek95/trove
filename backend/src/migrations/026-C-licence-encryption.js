@@ -12,8 +12,10 @@
  *     encrypt with, and the admin route keeps serving the plain file);
  *   - one shop at a time: a file that is missing, outside the private root
  *     or not a real image is left exactly as it is;
- *   - the plain file is deleted only after every row has been rewritten, so
- *     a failure part-way never leaves a row pointing at a deleted file.
+ *   - the plain files are deleted only after the migration transaction has
+ *     committed (ctx.afterCommit), so neither a failure part-way nor a later
+ *     migration rolling the boot back can leave a row pointing at a deleted
+ *     file.
  *
  * GET /api/admin/shops/:id/license-image reads both forms, never cached.
  */
@@ -22,7 +24,7 @@ const path = require('path');
 
 module.exports = {
   id: '026-C-licence-encryption',
-  up(db) {
+  up(db, ctx) {
     const crypto = require('../crypto');
     if (!crypto.hasKey()) return;
     const uploads = require('../uploads');
@@ -49,7 +51,10 @@ module.exports = {
         console.warn(`licence encryption: shop ${r.id} left as it was (${e.message})`);
       }
     }
-    for (const f of plainFiles) { try { fs.unlinkSync(f); } catch (_) { /* already gone */ } }
-    if (plainFiles.length) console.log(`licence encryption: ${plainFiles.length} licence scan(s) encrypted`);
+    const removePlain = () => {
+      for (const f of plainFiles) { try { fs.unlinkSync(f); } catch (_) { /* already gone */ } }
+      if (plainFiles.length) console.log(`licence encryption: ${plainFiles.length} licence scan(s) encrypted`);
+    };
+    if (ctx && ctx.afterCommit) ctx.afterCommit(removePlain); else removePlain();
   },
 };

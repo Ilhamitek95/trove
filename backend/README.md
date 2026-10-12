@@ -6,17 +6,19 @@ model** — Trove buys each sold piece from its supplier and settles
 fortnightly after the buyer's 15-day return window. (A feature-flagged Stripe Connect rail exists for
 licensed sellers — see the root README's “Payment architecture: two rails”.)
 
-Stack: Node + Express + SQLite (`better-sqlite3`) + Stripe. SQLite keeps it
-zero-config for development; the schema maps cleanly onto Postgres for production.
+Stack: Node + Express + SQLite (`better-sqlite3`) + Stripe. SQLite is the
+production database too: one file on the Render persistent disk, WAL mode,
+nightly backups plus an encrypted off-site copy (see RESTORE.md). There is no
+Postgres. The live site is https://troveathome.com — see the root CLAUDE.md.
 
 ---
 
 ## Run it
 
 ```bash
-cd trove-backend
+cd backend
 cp .env.example .env          # then fill in your Stripe test key
-npm install
+npm ci
 npm run seed                  # LOCAL ONLY: wipes the DB, then demo users, shops, products
 npm run dev                   # http://localhost:4242
 ```
@@ -28,9 +30,10 @@ Serve the storefront HTML from a real origin (not `file://`) so cookies and CORS
 work — e.g. from the folder with `trove.html`: `npx serve -l 3000`. Make sure
 `CLIENT_URL` in `.env` matches.
 
-### Stripe webhooks (for payouts)
+### Stripe webhooks (orders are marked paid by them)
 
-Payouts happen when Stripe confirms payment, so you need the webhook running:
+An order becomes paid (and its makers are credited) when Stripe confirms the
+payment through the webhook, so run it locally too:
 
 ```bash
 stripe login
@@ -137,13 +140,12 @@ const r = await (await fetch(`${API}/api/checkout`, {
 
 ---
 
-## Production checklist
+## Production (already live)
 
-- Swap SQLite → Postgres; move sessions to a real store (Redis/Postgres) and set
-  `cookie.secure = true` behind HTTPS.
-- Serve API and client on the same parent domain (or configure CORS + cookies for
-  cross-site) and use a real domain in the Connect `return_url`.
-- Verify webhooks in the live environment; handle `charge.refunded`,
-  `transfer.failed`, and reversals.
-- Add rate limiting, input validation (zod/Joi), and Helmet.
-- Use idempotency keys on PaymentIntent/Transfer creation.
+The live service runs exactly this code on Render (render.yaml): SQLite on the
+persistent disk, sessions in the same database (never copied into backups),
+secure cookies, one origin for site and API, verified Stripe webhooks (payments,
+refunds, disputes), per-IP and per-account rate limits, server-side input
+validation and security headers (src/security.js). Production refuses to start
+without SESSION_SECRET. Operational rules — deploys, backups, legal versions,
+what never to run on the live database — are in the root CLAUDE.md and RESTORE.md.

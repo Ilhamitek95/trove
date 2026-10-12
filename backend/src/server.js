@@ -1,5 +1,14 @@
 'use strict';
 require('dotenv').config();
+// Boot-time checks (F209): production refuses to start without the session
+// secret — before the database is even opened.
+{
+  const problems = require('./security').productionProblems();
+  if (problems.length) {
+    for (const p of problems) console.error(`FATAL: ${p}`);
+    process.exit(1);
+  }
+}
 // Production refuses to start without its Stripe keys: a live server must
 // never take orders without payment (F211, src/stripe.js).
 require('./stripe').assertPaymentsConfigured();
@@ -22,18 +31,26 @@ if (process.env.SEED_DEMO === '1' && !db.prepare('SELECT 1 FROM users LIMIT 1').
 // Super admin bootstrap: ADMIN_EMAIL (+ ADMIN_PASSWORD for first creation)
 // guarantees the platform owner's account exists with the admin role. If the
 // account already exists it is promoted, never re-passworded — change the
-// password by changing it in the app, not the env.
+// password by changing it in the app, not the env. Only an account whose
+// email has been CONFIRMED is promoted (F206): anyone can sign up with any
+// address, so an unconfirmed account that happens to use ADMIN_EMAIL (say,
+// after the owner changed it to an address with no Trove account yet) must
+// not become the platform admin on the next restart.
 if (process.env.ADMIN_EMAIL) {
   const email = process.env.ADMIN_EMAIL.trim().toLowerCase();
   const existing = db.prepare('SELECT * FROM users WHERE email=?').get(email);
   if (existing) {
-    if (existing.role !== 'admin') {
+    if (existing.role !== 'admin' && existing.email_verified_at) {
       db.prepare("UPDATE users SET role='admin' WHERE id=?").run(existing.id);
       console.log(`admin bootstrap: promoted ${email} to admin`);
+    } else if (existing.role !== 'admin') {
+      console.warn('admin bootstrap: the ADMIN_EMAIL account has not confirmed its email, so it was NOT made admin — confirm it from the welcome email (or a password reset), then restart');
     }
   } else if (process.env.ADMIN_PASSWORD) {
     const { hashPassword } = require('./middleware');
-    db.prepare("INSERT INTO users (email, password_hash, name, role) VALUES (?,?,?, 'admin')")
+    // Created by the server from the owner's own env value, so the address
+    // is the owner's by definition (the emailed admin sign-in code goes there).
+    db.prepare("INSERT INTO users (email, password_hash, name, role, email_verified_at) VALUES (?,?,?, 'admin', datetime('now'))")
       .run(email, hashPassword(process.env.ADMIN_PASSWORD), process.env.ADMIN_NAME || 'Trove Admin');
     console.log(`admin bootstrap: created admin account ${email}`);
   } else {
@@ -242,6 +259,12 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     try {
       const n = db.prepare('DELETE FROM sessions WHERE expire < ?').run(Date.now()).changes;
       if (n) console.log(`sessions: swept ${n} expired`);
+      // Spent or expired emailed links (kept a month for the reset cooldown
+      // and any question about them) and old webhook ids (Stripe retries for
+      // three days; half a year is plenty for de-duplication) — F472.
+      const t = require('./accounts').purgeOldTokens();
+      const w = db.prepare("DELETE FROM webhook_events WHERE received_at < datetime('now', '-180 days')").run().changes;
+      if (t || w) console.log(`housekeeping: removed ${t} old sign-in link(s), ${w} old webhook id(s)`);
     } catch (e) {
       console.error('session sweep failed:', e);
     }
@@ -313,3 +336,26 @@ function otoBoot() {
 // load). Keep ours open longer than the proxy's.
 server.keepAliveTimeout = 65 * 1000;
 server.headersTimeout = 66 * 1000;
+
+// A deploy (or restart) sends SIGTERM. Stop taking new connections, let the
+// requests in flight finish and the emails already handed to Resend go out
+// (a receipt queued just after a payment webhook), then exit — at most
+// ~10 seconds, well inside Render's shutdown grace (F281/F436).
+let stopping = false;
+function shutdown(signal) {
+  if (stopping) return;
+  stopping = true;
+  console.log(`${signal}: finishing in-flight requests and emails, then stopping`);
+  const deadline = setTimeout(() => process.exit(0), 10 * 1000);
+  deadline.unref();
+  new Promise((resolve) => {
+    server.close(() => resolve());
+    // Idle keep-alive sockets would otherwise hold close() open until the deadline.
+    if (typeof server.closeIdleConnections === 'function') server.closeIdleConnections();
+  })
+    .then(() => require('./email').drain(5000))
+    .catch(() => {})
+    .finally(() => process.exit(0));
+}
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

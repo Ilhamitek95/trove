@@ -340,7 +340,8 @@ router.get('/shops/:id/eid/:side', requireAdmin, (req, res, next) => {
 // pending → approved/rejected; approved ↔ suspended; anything can be re-reviewed.
 // An optional { note } is kept on the shop and quoted in the rejection
 // email. The applicant is emailed when a decision changes the status to
-// approved or rejected (best-effort, never blocks the change).
+// approved, rejected or suspended — 'paused', and 'back on Trove' when a
+// suspended shop is approved again (notify.js; best-effort, never blocks).
 const reviewNote = (b) => String((b && b.note) || '').replace(/<[^>]*>/g, '').replace(/[<>]/g, '').trim().slice(0, 600);
 router.patch('/shops/:id', requireAdmin, (req, res) => {
   const { status } = req.body || {};
@@ -366,7 +367,7 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
   if (req.body.note !== undefined) db.prepare('UPDATE shops SET review_note=? WHERE id=?').run(reviewNote(req.body), shop.id);
   // (the owner is never emailed a decision about their own Collection)
-  if (status !== shop.status && !shop.is_house) require('../notify').shopDecided(shop.id, status);
+  if (status !== shop.status && !shop.is_house) require('../notify').shopDecided(shop.id, status, shop.status);
   if (status === 'approved') { tq('shop', shop.id); for (const x of db.prepare("SELECT id FROM products WHERE shop_id=? AND status='live'").all(shop.id)) tq('product', x.id); }
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
 });
@@ -436,7 +437,7 @@ router.patch('/providers/:id', requireAdmin, async (req, res, next) => { try {
   res.locals.auditBefore = { status: p.status, note: p.review_note || '' };
   db.prepare('UPDATE service_providers SET status=? WHERE id=?').run(status, p.id);
   if (req.body.note !== undefined) db.prepare('UPDATE service_providers SET review_note=? WHERE id=?').run(reviewNote(req.body), p.id);
-  if (status !== p.status) require('../notify').providerDecided(p.id, status);
+  if (status !== p.status) require('../notify').providerDecided(p.id, status, p.status);
   if (status === 'approved') { tq('provider', p.id); for (const x of db.prepare("SELECT id FROM services WHERE provider_id=? AND status='live'").all(p.id)) tq('service', x.id); }
   if (status === 'approved' && !p.sub_started_at) {
     db.prepare("UPDATE service_providers SET sub_started_at=datetime('now') WHERE id=?").run(p.id);

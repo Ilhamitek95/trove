@@ -10,8 +10,13 @@ return window closes. See
 ```
 trove/
 ├── docs/        The storefront, account, login and seller pages + api.js + config.js
-└── backend/     Node + Express + SQLite API with Stripe Connect — also serves docs/
+└── backend/     Node + Express + SQLite API with Stripe payments — also serves docs/
 ```
+
+> **Live since late September 2026 at https://troveathome.com, taking real
+> money.** CLAUDE.md is the source of truth for how the live service is set up
+> and the rules for changing it. The "Go live" steps below are the recipe for
+> building it again from scratch, not something to repeat on the live site.
 
 **This is now a working app, not just a prototype.** The pages talk to the
 backend for real: sign-up / sign-in, a real product database, a cart that checks
@@ -82,25 +87,30 @@ git branch -M main && git push -u origin main
 1. Go to **render.com** → **New + → Web Service** → connect your `trove` repo.
 2. Settings:
    - **Root Directory:** `backend`
-   - **Build Command:** `npm install`
+   - **Build Command:** `npm ci` (installs exactly what package-lock.json pins)
    - **Start Command:** `npm start`
-   - **Instance type:** Starter (recommended) so you can attach a disk; Free works
-     but sleeps when idle and **wipes data on each redeploy**.
+   - **Instance type:** Standard (what the live site runs, sized for ~10K
+     visitors a day) — a disk needs a paid instance.
+   (Or create it from `render.yaml` with **New + → Blueprint**, which sets all
+   of this and asks for each secret.)
 3. **Advanced → Add Disk** (for data that survives redeploys):
-   - **Mount Path:** `/var/data` · **Size:** 1 GB
+   - **Mount Path:** `/var/data` · **Size:** 10 GB
 4. **Environment variables** (Add from the Environment tab):
    | Key | Value |
    |---|---|
    | `NODE_ENV` | `production` |
-   | `SESSION_SECRET` | a long random string |
-   | `STRIPE_SECRET_KEY` | your `sk_test_…` (later `sk_live_…`) |
+   | `SESSION_SECRET` | a long random string — the server will not start in production without it |
+   | `STRIPE_SECRET_KEY` | `sk_live_…` (or `sk_test_…` on a test copy) |
    | `STRIPE_WEBHOOK_SECRET` | set in step 5 |
-   | `CLIENT_URL` | your Render URL, e.g. `https://trove.onrender.com` |
-   | `DB_PATH` | `/var/data/trove.db` (only if you added the disk) |
+   | `CLIENT_URL` | the site's address, e.g. `https://troveathome.com` |
+   | `DB_PATH` | `/var/data/trove.db` |
+   | `UPLOADS_DIR` | `/var/data/uploads` |
    | `PRIVATE_DIR` | `/var/data/private` (purchase notes + license images) |
-   | `PAYOUT_ENC_KEY` | 64 hex chars — encrypts supplier IBANs (see `.env.example`) |
-   | `COMMISSION_PERCENT` | `20` |
-   | `CURRENCY` | `aed` |
+   | `PAYOUT_ENC_KEY` | 64 hex chars — encrypts supplier IBANs; irreplaceable, keep a copy |
+   | `ADMIN_EMAIL` | the owner's email — the only admin |
+   | `RESEND_API_KEY`, `EMAIL_FROM` | transactional email |
+   Leave `COMMISSION_PERCENT` unset (40, the figure in the Seller Agreement).
+   The full list, with the courier and backup settings, is in `render.yaml`.
 5. Click **Create Web Service**. When it's live you'll have a URL like
    `https://trove.onrender.com`.
 
@@ -109,28 +119,33 @@ git branch -M main && git push -u origin main
 2. Leave `API_URL: ""` (the backend serves the site, so same address).
 3. Commit & push — Render redeploys automatically.
 
-### 5 · Turn on payouts (Stripe webhook)
+### 5 · Stripe webhook (marks orders paid)
 1. Stripe **Developers → Webhooks → Add endpoint**.
-2. **Endpoint URL:** `https://trove.onrender.com/api/stripe/webhook`
-3. **Events:** `payment_intent.succeeded` and `account.updated`.
+2. **Endpoint URL:** `https://troveathome.com/api/stripe/webhook`
+3. **Events:** `payment_intent.succeeded`, `charge.refunded`,
+   `charge.dispute.created`, `charge.dispute.updated`, `charge.dispute.closed`
+   (add `account.updated` only if the Connect rail is ever switched on).
 4. Reveal the **Signing secret** (`whsec_…`) → paste into Render's
    `STRIPE_WEBHOOK_SECRET` env var → save (Render redeploys).
+Makers are paid by the fortnightly settlement run and a bank transfer file
+(consignment rail) — there is no Stripe payout step for them.
 
 ### 6 · First data
-- Never run `npm run seed` on Render: it erases the whole database (orders, makers,
-  customers, payouts). It refuses to run when `NODE_ENV=production` or when the
-  database holds real accounts, and is meant for a local development copy only.
+- **Never run `npm run seed` on the live service**: it erases the whole database
+  (orders, makers, customers, payouts). It refuses to run when `NODE_ENV=production`
+  or when the database holds real accounts, and is meant for a local copy only.
+  Restoring data on the live site goes through `npm run restore-backup` — see RESTORE.md.
 - Create real shops by approving maker applications and adding pieces in the seller
   dashboard. To clear demo data from the live site, use `npm run purge-demo` (dry run
   by default; `--yes` backs up first) — see CLAUDE.md.
 
 ### 7 · Test, then switch to live
-- Visit your URL, sign up, add to cart, and pay with the test card
-  `4242 4242 4242 4242`. As a seller, connect Stripe from **Payments**.
-- When you're ready for real money: swap the **test** keys for **live** keys in
-  Render (`STRIPE_SECRET_KEY`) and `docs/config.js` (`STRIPE_PUBLISHABLE_KEY`),
-  add a **live** webhook (step 5 with live keys), and complete Stripe's account
-  activation.
+- On a **test copy** of the service (test keys, never the live site): sign up, add
+  to cart and pay with the test card `4242 4242 4242 4242`. Makers do not connect
+  Stripe — they add their bank details under **Payments** in the seller dashboard.
+- The live site already runs on **live** keys (Render `STRIPE_SECRET_KEY` and
+  `docs/config.js` `STRIPE_PUBLISHABLE_KEY`) with a live webhook. Never take a test
+  payment on troveathome.com — every payment there is real money.
 
 ### 8 · (Optional) Your own domain
 Render → your service → **Settings → Custom Domains** → add your domain and follow

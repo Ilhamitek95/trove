@@ -19,12 +19,17 @@ function createApp() {
   const PORT = process.env.PORT || 4242;
   const traffic = require('./traffic');
 
-  // gzip/brotli every text response (the storefront HTML alone is ~210 KB
-  // raw, ~40 KB compressed). Mounted first so it wraps everything below.
+  // gzip/brotli every text response (the storefront HTML alone is ~265 KB
+  // raw, ~75 KB compressed). Mounted first so it wraps everything below.
   app.use(require('compression')());
   // One public address (the old *.onrender.com host 301s there) and the
   // security headers on every response — see security.js.
   const security = require('./security');
+  // Production never starts with a missing or well-known session secret
+  // (F209): every sign-in cookie is signed with it. server.js checks this
+  // before anything else too; this covers any other way the app is built.
+  const problems = security.productionProblems();
+  if (problems.length) throw new Error(`Refusing to start: ${problems.join(' ')}`);
   app.use(security.canonicalHost());
   app.use(security.securityHeaders());
   const isProd = process.env.NODE_ENV === 'production';
@@ -125,18 +130,26 @@ function createApp() {
 
   /* ---------------- Standard middleware ---------------- */
   // CORS only matters in split hosting; for single-origin the browser sends no Origin.
+  // Another website's page may still load Trove's images, fonts and public
+  // pages: it simply gets no CORS headers (its script can't read the reply),
+  // never an error (F272). A write from another website is refused outright
+  // with a 403 (cross-site request forgery). Webhooks are server-to-server
+  // and send no Origin.
+  const ownOrigin = (origin) => !origin || ALLOWED_ORIGINS.includes(origin);
+  app.use((req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS' || ownOrigin(req.headers.origin)) return next();
+    res.status(403).json({ error: 'Not allowed' });
+  });
   app.use(cors({
-    origin(origin, cb) {
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) return cb(null, true); // same-origin, curl, allowed list
-      return cb(new Error(`Origin ${origin} is not allowed`));
-    },
+    origin(origin, cb) { cb(null, ownOrigin(origin)); }, // same-origin, curl, allowed list
     credentials: true,
   }));
   // rawBody is kept for HMAC-signed courier webhooks (routes/delivery.routes.js).
   app.use(express.json({ limit: '6mb', verify: (req, _res, buf) => { req.rawBody = buf; } })); // roomy enough for base64 image uploads
   app.use(session({
     store: new SqliteStore(),
-    secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
+    // Development/tests only — production refused to start above without it.
+    secret: process.env.SESSION_SECRET || security.DEV_SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -190,8 +203,17 @@ function createApp() {
   app.use(['/api/config', '/api/content', '/api/legal', '/api/search/popular'], siteCache);
 
   /* ---------------- Routes ---------------- */
-  // ok:false when payments are required here (production) but not configured (F211).
-  app.get('/api/health', (_req, res) => res.json({ ok: require('./stripe').missingPaymentConfig().length === 0, stripe: !!getStripe(), delivery: require('./delivery').mode() }));
+  // Health (Render's check, and any outside uptime monitor): the database
+  // answers and the data disk takes a write, else 503 so the failure shows
+  // (F436). Free disk space is reported; running low warns the owner by
+  // email (once a day, src/health.js) without failing the check — a full
+  // disk must not take the site off Render's routing on its own. ok:false as
+  // well when payments are required here (production) but not configured (F211).
+  app.get('/api/health', (_req, res) => {
+    const h = require('./health').check();
+    const ok = h.ok && require('./stripe').missingPaymentConfig().length === 0;
+    res.status(ok ? 200 : 503).json({ ...h, ok, stripe: !!getStripe(), delivery: require('./delivery').mode() });
+  });
   // Public money rules, so the storefront shows the same fees the server charges.
   app.get('/api/config', (_req, res) => res.json({
     currency: process.env.CURRENCY || 'aed',
@@ -318,12 +340,13 @@ function createApp() {
   });
   // A miss: the branded 404 page, a real 404 status, never indexed.
   const fileCache = {};
-  /** A docs/ page's source, re-read only when the file changes. */
+  /** A docs/ page's source, re-read only when the file (or a fee figure, src/figures.js) changes. */
+  const figures = require('./figures');
   const docFile = (file) => {
     const f = path.join(DOCS_DIR, file);
-    const stamp = require('fs').statSync(f).mtimeMs;
+    const stamp = `${require('fs').statSync(f).mtimeMs}|${figures.signature()}`;
     const c = fileCache[file];
-    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: require('fs').readFileSync(f, 'utf8') };
+    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: figures.refigureHtml(require('fs').readFileSync(f, 'utf8')) };
     return fileCache[file].html;
   };
   const notFound = (req, res) => {
@@ -342,9 +365,10 @@ function createApp() {
     '/sell': 'trove-seller.html',
     '/apply': 'trove-apply.html',
     '/admin': 'trove-admin.html',
-    '/services': 'trove-services.html',
     '/provider': 'trove-provider.html',
   };
+  // Old filenames of pages served elsewhere: /services is server-rendered below.
+  const LEGACY_ONLY = { '/services': 'trove-services.html' };
   // One application for pieces, services or both: the old provider wizard
   // address lands on the same form with services preselected.
   app.get(['/become-a-provider', '/trove-provider-apply.html', '/trove-provider-apply'], (_req, res) => res.redirect(301, '/apply?for=services'));
@@ -352,13 +376,19 @@ function createApp() {
   // has none of its own (signed-in surfaces get them without a canonical).
   const PUBLIC_FILES = new Set(['/apply']);
   const servePage = (clean, file) => (req, res) => {
+    const noindex = !PUBLIC_FILES.has(clean);
+    // Signed-in surfaces stay out of search results (F466): robots.txt lets
+    // crawlers fetch them so they can read this header.
+    if (noindex) res.set('X-Robots-Tag', 'noindex, nofollow');
     res.type('html').set('Cache-Control', 'no-cache')
-      .send(gtm.forAddress(req, res, seo.withDefaultSocial(docFile(file), { base: SITE_BASE(), url: SITE_BASE() + clean, noindex: !PUBLIC_FILES.has(clean), path: clean })));
+      .send(gtm.forAddress(req, res, seo.withDefaultSocial(docFile(file), { base: SITE_BASE(), url: SITE_BASE() + clean, noindex, path: clean })));
   };
-  // The Services Marketplace directory, server-rendered (src/seo.js).
-  app.get('/services', (req, res) => res.type('html').set('Cache-Control', 'no-cache').send(seo.renderServicesDirectory(SITE_BASE(), req.lang)));
-  for (const [clean, file] of Object.entries(PAGES)) {
-    app.get(clean, servePage(clean, file));
+  // The Services Marketplace directory, server-rendered (src/seo.js) and,
+  // like every page, through html(): a private token in its address strips
+  // the tag manager (F270).
+  app.get('/services', (req, res) => html(res, seo.renderServicesDirectory(SITE_BASE(), req.lang)));
+  for (const [clean, file] of Object.entries({ ...PAGES, ...LEGACY_ONLY })) {
+    if (PAGES[clean]) app.get(clean, servePage(clean, file));
     for (const legacy of ['/' + file, '/' + file.replace(/\.html$/, '')]) {
       if (legacy === clean) continue;
       app.get(legacy, (req, res) => {
@@ -441,7 +471,11 @@ function createApp() {
 
   /* ---------------- Search engines ----------------
    * The public storefront is indexable; the signed-in surfaces (account,
-   * seller/provider dashboards, admin, login) and the API are not. The
+   * seller/provider dashboards, admin, login) answer X-Robots-Tag noindex
+   * (servePage), so robots.txt must let crawlers fetch them to see it — a
+   * blocked page can still be listed as a bare 'no information' result
+   * (F466). robots.txt keeps out the API and the private links (booking,
+   * payment, reset, order thank-you pages, whose address is the key). The
    * sitemap is built from the live catalogue on request.                    */
   const SITE = () => (process.env.PUBLIC_URL || CLIENT_URL.split(',')[0].trim()).replace(/\/+$/, '');
   app.get('/robots.txt', (_req, res) => {
@@ -449,28 +483,11 @@ function createApp() {
       'User-agent: *',
       'Allow: /',
       'Disallow: /api/',
-      'Disallow: /admin',
-      'Disallow: /account',
-      'Disallow: /sell',
-      'Disallow: /provider',
-      'Disallow: /login',
-      // /sell and /provider are prefix rules; the agreements and the maker
-      // pitch are public (the longest matching rule wins).
-      'Allow: /seller-agreement',
-      'Allow: /sell-on-trove',
-      'Allow: /provider-agreement',
       'Disallow: /services/booking/',
       'Disallow: /services/pay/',
       'Disallow: /reset',
       'Disallow: /order/',
       // The Arabic twins (/ar/…) follow the same rules.
-      'Disallow: /ar/account',
-      'Disallow: /ar/sell',
-      'Disallow: /ar/provider',
-      'Disallow: /ar/login',
-      'Allow: /ar/seller-agreement',
-      'Allow: /ar/sell-on-trove',
-      'Allow: /ar/provider-agreement',
       'Disallow: /ar/services/booking/',
       'Disallow: /ar/services/pay/',
       'Disallow: /ar/reset',
@@ -499,6 +516,9 @@ function createApp() {
   app.get('/llms.txt', (_req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(sitePages.llmsTxt(SITE())));
   app.get('/llms-full.txt', (_req, res) => res.type('text/plain').set('Cache-Control', 'public, max-age=3600').send(sitePages.llmsFullTxt(SITE())));
 
+  // Working notes in docs/ (*.md) are never served, and the 404 page asked
+  // for by name is a real 404, not a 200 (F467).
+  app.use((req, res, next) => (/\.md$/i.test(req.path) || /^\/404(\.html)?$/i.test(req.path) ? notFound(req, res) : next()));
   app.use(express.static(DOCS_DIR, { index: 'trove.html', extensions: ['html'], setHeaders: traffic.staticHeaders }));
 
   // Seller-uploaded images (shop photos). Kept on the persistent disk in prod.

@@ -20,7 +20,7 @@
 const db = require('./db');
 const { copyViolation } = require('./copy-rules');
 
-const DEFAULTS = {
+const SHIPPED_DEFAULTS = {
   'site.promo': {
     text: 'Delivering across Dubai & Abu Dhabi · Delivery AED 30, free on orders over AED 200',
   },
@@ -151,7 +151,7 @@ const DEFAULTS = {
     items: [
       { q: "I've never sold online before — is that okay?", a: "That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop." },
       { q: 'Do I need a trade licence?', a: 'Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.' },
-      { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included — and that's the whole arrangement. If nothing sells, you owe nothing." },
+      { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included. If nothing sells, you pay nothing. You do stay responsible for your pieces being your own work, safe and as described (see the Seller Agreement)." },
       { q: 'How does delivery work?', a: "You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard." },
       { q: 'How and when do I get paid?', a: "Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when." },
       { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed." },
@@ -166,7 +166,22 @@ const DEFAULTS = {
   },
 };
 
-const SECTIONS = Object.keys(DEFAULTS);
+/*
+ * The defaults as served: the fee figures in them (60%, 15-day, every other
+ * Tuesday, AED 30 / AED 200 …) follow fees.js (src/figures.js, F319/F502),
+ * so an env change to a fee moves the homepage, sell page and sell FAQ with
+ * checkout. Identical to SHIPPED_DEFAULTS with the default fees. An
+ * admin-saved override is the owner's own wording and is served as written.
+ */
+const figures = require('./figures');
+let refigured = { sig: null, value: SHIPPED_DEFAULTS };
+function defaults() {
+  const sig = figures.signature();
+  if (refigured.sig !== sig) refigured = { sig, value: figures.refigureDeep(SHIPPED_DEFAULTS) };
+  return refigured.value;
+}
+
+const SECTIONS = Object.keys(SHIPPED_DEFAULTS);
 
 /* ---- validation -------------------------------------------------------- */
 
@@ -234,7 +249,7 @@ function checkOptional(section, key, v) {
 /** Validate a full section object against its default's shape; returns a clean copy. */
 function validateSection(section, value) {
   if (!SECTIONS.includes(section)) bad('Unknown content section');
-  const def = DEFAULTS[section];
+  const def = defaults()[section];
   if (!value || typeof value !== 'object' || Array.isArray(value)) bad('Section content must be an object');
   const clean = {};
   for (const key of Object.keys(def)) {
@@ -315,7 +330,8 @@ function getPublic() {
   for (const s of SECTIONS) {
     const [page, key] = s.split('.');
     // defaults underlie every override, so a field added later is never missing from a section saved earlier
-    (out[page] = out[page] || {})[key] = ov[s] ? { ...DEFAULTS[s], ...ov[s] } : DEFAULTS[s];
+    const D = defaults();
+    (out[page] = out[page] || {})[key] = ov[s] ? { ...D[s], ...ov[s] } : D[s];
   }
   const q = out.sell && out.sell.quotes;
   if (q && Array.isArray(q.items)) out.sell.quotes = { ...q, items: q.items.filter((it) => !isSeededQuote(it)) };
@@ -337,8 +353,10 @@ function reset(section) {
 
 /** The company details as saved (blank fields ''), plus whether any are filled. */
 function company() {
-  const c = { ...DEFAULTS['site.company'], ...(overrides()['site.company'] || {}) };
+  const c = { ...SHIPPED_DEFAULTS['site.company'], ...(overrides()['site.company'] || {}) };
   return { ...c, filled: Object.values(c).some((v) => typeof v === 'string' && v.trim()) };
 }
 
-module.exports = { DEFAULTS, SECTIONS, getPublic, overrides, save, reset, ContentError, isSeededQuote, company, COMPANY_PENDING, EMAIL_RE };
+module.exports = { SHIPPED_DEFAULTS, defaults, SECTIONS, getPublic, overrides, save, reset, ContentError, isSeededQuote, company, COMPANY_PENDING, EMAIL_RE };
+// content.DEFAULTS: the defaults as served (fee figures current) — admin editor, seo.js.
+Object.defineProperty(module.exports, 'DEFAULTS', { enumerable: true, get: defaults });

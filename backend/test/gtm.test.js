@@ -64,7 +64,7 @@ function assertUntagged(html, where) {
 
 test('every page the site serves carries the tag block once, consent first, in the head', async () => {
   const pages = new Set(seo.sitemapEntries().map((u) => u.loc));       // every public address
-  for (const p of ['/login', '/apply', '/404.html']) pages.add(p); // sign-in, the application form + the static 404
+  for (const p of ['/login', '/apply']) pages.add(p); // sign-in + the application form (/404.html is a real 404 since F467, below)
   assert.ok([...pages].some((p) => p.startsWith('/pieces/')), 'a piece page is in the list');
   assert.ok([...pages].some((p) => /^\/services\/[a-z0-9-]+$/.test(p)), 'a provider page is in the list');
   assert.ok(['/about', '/contact', '/faq', '/returns', '/terms', '/privacy'].every((p) => pages.has(p)), 'the server-rendered pages are in the list');
@@ -77,6 +77,9 @@ test('every page the site serves carries the tag block once, consent first, in t
   const miss = await get('/definitely-not-a-page');
   assert.equal(miss.status, 404);
   assertTagged(miss.text, 'the 404 page');
+  const named = await get('/404.html');
+  assert.equal(named.status, 404, 'the 404 page asked for by name is a real 404 (F467)');
+  assertTagged(named.text, '/404.html');
 });
 
 test('every page file in docs/ carries the same block — except the admin panel and the redirect stub', () => {

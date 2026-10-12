@@ -70,24 +70,86 @@ function textOf(html) {
     .trim();
 }
 
-async function send({ to, subject, html }) {
+/**
+ * An address for the logs, never the whole of it (F281): 'l***@gmail.com'.
+ * The server log is not a place for customers' personal data.
+ */
+function maskEmail(addr) {
+  const s = String(addr || '');
+  const at = s.lastIndexOf('@');
+  if (at < 1) return s ? '***' : '';
+  return `${s[0]}***${s.slice(at)}`;
+}
+
+/* Sends in progress, so a shutdown can wait for them (drain()). */
+const inFlight = new Set();
+const SEND_TIMEOUT_MS = 10 * 1000;
+const retryDelayMs = () => (process.env.NODE_ENV === 'test' && process.env.EMAIL_RETRY_DELAY_MS != null ? Number(process.env.EMAIL_RETRY_DELAY_MS) : 2 * 1000);
+const retryable = (status) => status === 429 || status >= 500;
+
+/**
+ * One delivery to Resend (F281): a 10-second timeout, and ONE retry two
+ * seconds later when Resend is briefly unavailable (a timeout, a network
+ * error, a 5xx or a 429). Both attempts carry the same Idempotency-Key, so
+ * a first attempt that did get through is never sent twice. Anything else
+ * (a 4xx: a bad address, an unverified sender) fails at once.
+ */
+async function postToResend(payload, key) {
+  let lastErr;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'content-type': 'application/json',
+          'idempotency-key': key,
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      });
+      if (res.ok) return res.json();
+      const err = new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 300)}`);
+      if (!retryable(res.status)) throw Object.assign(err, { final: true });
+      lastErr = err;
+    } catch (e) {
+      if (e.final) throw e;
+      lastErr = e; // timeout or network error
+    }
+    if (attempt === 1) await new Promise((r) => setTimeout(r, retryDelayMs()));
+  }
+  throw lastErr;
+}
+
+async function send({ to, subject, html, replyTo: replyOverride }) {
   if (!to) return { skipped: true };
   if (!enabled()) {
-    console.log(`email skipped (no RESEND_API_KEY): "${subject}" -> ${to}`);
+    console.log(`email skipped (no RESEND_API_KEY): "${subject}" -> ${maskEmail(to)}`);
     return { skipped: true };
   }
-  const reply = replyTo();
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ from: from(), to: [to], subject, html, text: textOf(html), ...(reply ? { reply_to: reply } : {}) }),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${await res.text()}`);
-  console.log(`email sent: "${subject}" -> ${to}`);
-  return res.json();
+  // A contact-form message to the owner replies to the customer (F282);
+  // everything else uses EMAIL_REPLY_TO when it is set.
+  const override = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(String(replyOverride || '').trim()) ? String(replyOverride).trim() : '';
+  const reply = override || replyTo();
+  const payload = { from: from(), to: [to], subject, html, text: textOf(html), ...(reply ? { reply_to: reply } : {}) };
+  const job = postToResend(payload, require('crypto').randomUUID());
+  inFlight.add(job);
+  try {
+    const out = await job;
+    console.log(`email sent: "${subject}" -> ${maskEmail(to)}`);
+    return out;
+  } finally {
+    inFlight.delete(job);
+  }
+}
+
+/** Wait (at most `ms`) for the sends in progress — used on shutdown. */
+function drain(ms = 5000) {
+  if (!inFlight.size) return Promise.resolve();
+  return Promise.race([
+    Promise.allSettled([...inFlight]),
+    new Promise((r) => setTimeout(r, ms).unref()),
+  ]).then(() => {});
 }
 
 /* ---- the recipient's language ---- */
@@ -142,7 +204,10 @@ const SITE_LINK = 'https://troveathome.com';
 // Where uploaded photos are served from (absolute — an inbox has no base URL).
 const SITE = () => (process.env.PUBLIC_URL || String(process.env.CLIENT_URL || '').split(',')[0] || SITE_LINK).trim().replace(/\/+$/, '');
 
-const INK = '#292727', MUTED = '#7b716d', LINE = '#EFE5E0', CREAM = '#FDF7F5';
+// MUTED is the site's own --muted token (#646161, Charcoal at 72% on cream):
+// 5.8:1 on cream, readable on a phone outdoors (F525 — the old #7b716d and
+// the footer's #8b8380 fell under 4.5:1). No new colour.
+const INK = '#292727', MUTED = '#646161', LINE = '#EFE5E0', CREAM = '#FDF7F5';
 const SANS = "Quicksand,'Segoe UI',Helvetica,Arial,sans-serif";
 const SERIF = "Cormorant,Georgia,'Times New Roman',serif";
 const SANS_AR = "'IBM Plex Sans Arabic',Quicksand,Tahoma,'Segoe UI',Arial,sans-serif";
@@ -193,6 +258,20 @@ function localLink(lang, url) {
   const m = /^(https?:\/\/[^/?#]+)(\/[^?#]*)?(.*)$/i.exec(s);
   if (!m) return s.startsWith('/') ? i18n.arUrl(s) : s;
   return m[1] + i18n.arUrl((m[2] || '/') + m[3]);
+}
+
+/**
+ * Who stands behind Trove, for the footer (F282): Trove is the merchant of
+ * record, so every email names the company from Admin → Site content →
+ * Company details. Blank details → no line (never made-up ones).
+ */
+function companyLine(T) {
+  let c;
+  try { c = require('./content').company(); } catch (_) { return ''; }
+  const name = String((c && c.legalName) || '').trim();
+  if (!name) return '';
+  const where = String((c && c.address) || '').trim();
+  return `${esc(where ? T('Trove is a brand of {company}, {address}.', { company: name, address: where }) : T('Trove is a brand of {company}.', { company: name }))}<br>`;
 }
 
 /**
@@ -329,10 +408,12 @@ function kit(lang) {
         <tr><td class="px" style="padding:8px 40px 36px${ar ? ';text-align:right' : ''}">${inner}</td></tr>
       </table>
     </td></tr>
-    <tr><td class="px" align="center" style="padding:24px 8px 0;font-family:${sans};font-size:12px;line-height:1.7;color:#8b8380">
+    <tr><td class="px" align="center" style="padding:24px 8px 0;font-family:${sans};font-size:13px;line-height:1.7;color:${MUTED}">
       <a href="${home}" style="color:${INK};text-decoration:none;font-weight:700">${T('Shop Trove')}</a> &nbsp;·&nbsp;
-      <a href="${SITE_LINK}${ar ? '/ar' : ''}/account" style="color:${INK};text-decoration:none;font-weight:700">${T('Your account')}</a><br>
+      <a href="${SITE_LINK}${ar ? '/ar' : ''}/account" style="color:${INK};text-decoration:none;font-weight:700">${T('Your account')}</a> &nbsp;·&nbsp;
+      <a href="${SITE_LINK}${ar ? '/ar' : ''}/contact" style="color:${INK};text-decoration:none;font-weight:700">${T('Contact us')}</a><br>
       ${T('Trove · Curated for Living · Dubai, UAE')}<br>
+      ${companyLine(T)}
       ${esc(reason)}<br>
       ${replyTo() ? T('Questions? Reply to this email and a real person will read it.') : T("This is an automated email from a no-reply address, so replies aren't read.")}
     </td></tr>
@@ -540,7 +621,7 @@ function orderUnavailable({ order, items, soldOut = true, lang }) {
   };
 }
 
-module.exports = { enabled, send, textOf, replyTo, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined, langFor, kit, dayLabel, localLink, pieceName };
+module.exports = { enabled, send, drain, maskEmail, textOf, replyTo, productImage, orderConfirmation, orderUnavailable, returnRequested, returnApproved, returnDeclined, langFor, kit, dayLabel, localLink, pieceName };
 
 /* ---- return refunded (appended 2026-09-30) ----
  * Sent when the courier has collected a returned item (or Trove refunds it
@@ -820,7 +901,9 @@ function welcomeVerify({ name, link, lang }) {
     p(T('Thank you for joining Trove — a curated home for pieces made by independent makers in Dubai and Abu Dhabi.'))
     + p(T('Please confirm this is your email address, so we can reach you about your orders and help you back into your account if you ever forget your password.'))
     + button(T('Confirm my email'), esc(link))
-    + note(T('You can shop straight away — confirming just keeps your account safe. The link expires in 7 days.'));
+    + note(T('You can shop straight away — confirming just keeps your account safe. The link expires in 7 days.'))
+    // F200: someone else may have signed up with this address.
+    + note(T("Didn't create a Trove account? Ignore this email and don't press the button — the account stays unconfirmed."));
   return {
     subject: T('Welcome to Trove — please confirm your email'),
     html: layout(T('Welcome to Trove'), inner, {
@@ -839,6 +922,19 @@ function passwordChanged({ name, link, lang }) {
   return {
     subject: T('Your Trove password was changed'),
     html: layout(T('Password changed'), inner, { tone: 'clay', intro: T('Hello {name},', { name: firstNameOr(name, T) }), reason: T("You're receiving this because of your Trove account."), preheader: T('Your Trove password was just changed.') }),
+  };
+}
+
+/** Many wrong passwords in a row: sign-in for the account is paused for a while (F208). */
+function signInAttempts({ name, link, lang }) {
+  const { T, p, button, layout } = kit(lang);
+  const inner =
+    p(T('Someone has typed the wrong password for your Trove account several times in a row, so signing in with a password is paused for 15 minutes.'))
+    + p(T('If this was you, wait a little or choose a new password with the button below. If it was not you, choosing a new password now keeps your account safe.'))
+    + button(T('Choose a new password'), esc(link));
+  return {
+    subject: T('Several wrong passwords on your Trove account'),
+    html: layout(T('Several wrong passwords'), inner, { tone: 'clay', intro: T('Hello {name},', { name: firstNameOr(name, T) }), reason: T("You're receiving this because of your Trove account."), preheader: T('Signing in to your Trove account is paused for 15 minutes.') }),
   };
 }
 
@@ -930,6 +1026,36 @@ function applicationRejected({ kind = 'shop', name, businessName, adminNote = ''
   return {
     subject: T('About your Trove application — {business}', { business: String(businessName).slice(0, 80) }),
     html: layout(T('About your application'), inner, { tone: 'clay', intro: T('Hello {name},', { name: firstNameOr(name, T) }), reason: T("You're receiving this because you applied to sell or offer services on Trove."), preheader: T('An update on your application for {business}.', { business: businessName }) }),
+  };
+}
+
+/** A shop or practice suspended by Trove (F419), with the admin's note when there is one. */
+function businessPaused({ kind = 'shop', name, businessName, adminNote = '', link, lang }) {
+  const { T, p, panel, button, layout } = kit(lang);
+  const inner =
+    p(kind === 'shop'
+      ? T('We have paused {business} on Trove, so your pieces are not on sale for now. Orders you have already received carry on as normal — please keep packing them as usual.', { business: `<b>${esc(businessName)}</b>` })
+      : T('We have paused {business} on Trove, so your services are not shown for now. Bookings you have already confirmed carry on as normal.', { business: `<b>${esc(businessName)}</b>` }))
+    + (adminNote ? panel(`${T('A note from our team:')}<br><b>${esc(adminNote)}</b>`) : '')
+    + p(T('If you have questions, or once it is sorted, write to us and we will look at it again.'))
+    + button(T('Contact us'), esc(link));
+  return {
+    subject: T('{business} is paused on Trove', { business: String(businessName).slice(0, 80) }),
+    html: layout(T('Paused on Trove'), inner, { tone: 'clay', intro: T('Hello {name},', { name: firstNameOr(name, T) }), reason: T("You're receiving this because you sell or offer services on Trove."), preheader: T('{business} is paused on Trove for now.', { business: businessName }) }),
+  };
+}
+
+/** A suspended shop or practice approved again (F419) — not the application welcome. */
+function businessBack({ kind = 'shop', name, businessName, link, lang }) {
+  const { T, p, button, layout } = kit(lang);
+  const inner =
+    p(kind === 'shop'
+      ? T('{business} is back on Trove, and any piece you have marked live is on sale again.', { business: `<b>${esc(businessName)}</b>` })
+      : T('{business} is back on Trove, and your live services are shown again.', { business: `<b>${esc(businessName)}</b>` }))
+    + button(kind === 'shop' ? T('Go to your dashboard') : T('Go to your services dashboard'), esc(link));
+  return {
+    subject: T('{business} is back on Trove', { business: String(businessName).slice(0, 80) }),
+    html: layout(T('Welcome back'), inner, { intro: T('Hello {name},', { name: firstNameOr(name, T) }), reason: T("You're receiving this because you sell or offer services on Trove."), preheader: T('{business} is back on Trove.', { business: businessName }) }),
   };
 }
 
@@ -1051,7 +1177,7 @@ function idExpiring({ name, shopName, expiry, expired, link, lang }) {
 Object.assign(module.exports, {
   adminSignInCode, idExpiring,
   packReminder, packOverdueAdmin,
-  passwordReset, welcomeVerify, passwordChanged, bankDetailsChanged,
+  passwordReset, welcomeVerify, passwordChanged, bankDetailsChanged, signInAttempts, businessPaused, businessBack,
   applicationReceived, applicationAlert, applicationApproved, applicationRejected, orderToPack,
 });
 
