@@ -8,8 +8,11 @@
  * the figures Trove launched with: makers keep 60% (Trove's 40%), a 15-day
  * return window, payouts every other Tuesday, delivery AED 30 on orders of
  * AED 200 and below, a 1–4 day courier window (so most pieces arrive in 3–6
- * days) and the AED 30/month provider listing fee. Those are SHIPPED below,
- * equal to the defaults in fees.js.
+ * days), the AED 30/month provider listing fee and Trove's 10% platform fee
+ * on services paid through Trove (the provider keeps 90%). Those are SHIPPED
+ * below, equal to the defaults in fees.js. Every '10%' and '90%' in the copy
+ * is that services split (checked 2026-10-12, sell page round): a new '10%'
+ * that means something else must be worded around it.
  *
  * Every one of them can be changed by an environment setting (fees.js). When
  * one is, refigure() rewrites the shipped figure to the current one in the
@@ -37,7 +40,7 @@ const fees = require('./fees');
 
 const SHIPPED = Object.freeze({
   commission: 40, returnDays: 15, intervalDays: 14, deliveryFeeCents: 3000, freeOverCents: 20000,
-  transitMin: 1, transitMax: 4, leadDefault: 2, providerSubCents: 3000,
+  transitMin: 1, transitMax: 4, leadDefault: 2, providerSubCents: 3000, serviceCommission: 10,
 });
 const KEYS = Object.keys(SHIPPED);
 
@@ -52,6 +55,7 @@ function current() {
     transitMax: fees.COURIER_TRANSIT_MAX_DAYS,
     leadDefault: fees.LEAD_DAYS_DEFAULT,
     providerSubCents: fees.PROVIDER_SUB_FEE_CENTS,
+    serviceCommission: fees.SERVICE_COMMISSION_PERCENT,
   };
 }
 /** A short key for caches: changes whenever any figure does. */
@@ -79,6 +83,9 @@ const FEE_EN = String.raw`AED 30(?!\d|[,.]\d|\/month| a month)`;
 const THIRTY_AR = String.raw`AED\s?30(?!\d|[,.]\d)`;
 const OVER_EN = String.raw`AED 200(?!\d|[,.]\d|\+)`; // never the 'AED 200+' price-filter label
 const OVER_AR = String.raw`AED\s?200(?!\d|[,.]\d|\+)`;
+// Services through Trove: Trove's fee and the provider's share, in ONE pass
+// (two passes would swap them back when the new fee is 90%).
+const SERVICE_SPLIT = String.raw`(?<![\d.])(?:10|90)%`;
 /** 'a–b', 'a to b' and the Arabic 'a إلى b', digit-bounded. */
 const RANGE = (a, b) => String.raw`(?<!\d)${a}(\s*(?:–|-|to|إلى)\s*)${b}(?!\d)`;
 
@@ -109,6 +116,10 @@ function rules(c) {
   }
   if (c.returnDays !== SHIPPED.returnDays) out.push(numeric(RETURN_EN, String(c.returnDays), RETURN_AR, String(c.returnDays)));
   if (c.providerSubCents !== SHIPPED.providerSubCents) out.push(numeric(SUB_EN, aed(c.providerSubCents), THIRTY_AR, aed(c.providerSubCents)));
+  if (c.serviceCommission !== SHIPPED.serviceCommission) {
+    const to = (m) => (m.startsWith('10') ? `${c.serviceCommission}%` : `${100 - c.serviceCommission}%`);
+    out.push({ src: SERVICE_SPLIT, to, swap: sub(SERVICE_SPLIT, to), seen: has(SERVICE_SPLIT) });
+  }
   if (c.deliveryFeeCents !== SHIPPED.deliveryFeeCents) out.push(numeric(FEE_EN, aed(c.deliveryFeeCents), THIRTY_AR, aed(c.deliveryFeeCents)));
   if (c.freeOverCents !== SHIPPED.freeOverCents) out.push(numeric(OVER_EN, aed(c.freeOverCents), OVER_AR, aed(c.freeOverCents)));
   if (c.transitMin !== SHIPPED.transitMin || c.transitMax !== SHIPPED.transitMax || c.leadDefault !== SHIPPED.leadDefault) {

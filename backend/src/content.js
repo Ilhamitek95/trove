@@ -104,38 +104,88 @@ const SHIPPED_DEFAULTS = {
       { title: 'Sold? We come to you', text: 'Our courier collects from your door. Fortnightly payouts, straight to your bank.' },
     ],
   },
+  /*
+   * The Sell-on-Trove page asks one question first — pieces, services or
+   * both? (owner's pick 2026-10-12, 'Choose your path') — and then shows only
+   * that path's copy. A key without a suffix is the pieces wording (the page
+   * before the paths was a maker pitch); ...Services / ...Both are the other
+   * two paths' wording of the same thing.
+   */
   'sell.hero': {
     eyebrow: 'Sell on Trove',
     h1: "You make the pieces.|We'll be the *shop*.",
+    h1Services: "You do the work.|We'll bring the *bookings*.",
+    h1Both: 'Pieces and services,|one *shop*.',
     intro: 'If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.',
+    introServices: 'Workshops, styling, photography — if you offer it in person, Trove gives it a page on the Services Marketplace and sends booking requests straight to your dashboard.',
+    introBoth: 'Sell what you make and offer what you do from one account — a shop for your pieces, a page for your services, reviewed together, one dashboard.',
+    question: 'What are you bringing to Trove?',
+    note: 'The page below changes to show only your arrangement. You can switch at any time.',
     ctaApply: 'Start your application',
-    ctaHow: 'See how it works',
-    // The deal at a glance, right under the hero buttons (F146): what a maker
-    // keeps and when it is paid. Each promise is made once on the page (F147).
-    facts: ['You keep 60% of every sale', 'Paid every other Tuesday, after the 15-day return window', 'Free to join'],
+    // The deal at a glance (F146), in the 'Your arrangement' card beside the
+    // page (a bar on phones). Each promise is made once on the page (F147).
+    facts: ['No joining fee, no listing fee', 'No trade licence to start', 'Photos, marketing and customer care by Trove', 'Courier collects from your door, paid by Trove', 'Paid every other Tuesday, after the 15-day return window'],
+    factsServices: ['Free to list during launch (AED 30/month later)', 'Booking requests straight to your dashboard', 'The customer chooses: pay you directly, or by card through Trove', 'Card bookings paid to you by bank transfer, after the service date'],
+    factsBoth: ['No joining fee, no listing fee for pieces', 'Photos, marketing, courier and customer care for your pieces', 'Services: 100% of direct bookings, 90% through Trove', 'Services free to list during launch (AED 30/month later)', 'Paid every other Tuesday'],
   },
+  'sell.money': {
+    eyebrow: 'The arrangement, in numbers',
+    heading: 'What a sale pays you.',
+    headingServices: 'What a booking pays you.',
+    headingBoth: 'What each sale and booking pays you.',
+    sub: 'No joining fee, no listing fee, no hidden costs. Try an example price.',
+    subServices: 'Free to list during launch. Try an example booking.',
+    subBoth: 'No joining or listing fee for pieces, and services list free during launch. Try an example price.',
+    covers: "Trove's 40% covers the photography, marketing, storefront and checkout, card payments, customer care and returns, and the courier, which Trove arranges and pays for.",
+    bothNote: 'Two separate arrangements on one account: the 60% applies only to pieces, and the 10% only to services paid through Trove.',
+  },
+  // 'Who does what': Your part (steps) against Trove's part (offer).
   'sell.steps': {
     eyebrow: 'How it works',
-    heading: 'Four steps from craft table to shopfront — with Trove carrying the load at every one.',
+    heading: 'Your part is short. Trove carries everything else.',
+    headingServices: 'Who does what, from request to payment.',
     items: [
-      { title: 'Tell us about your craft', text: 'A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.' },
-      { title: 'Add your pieces', text: 'Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.' },
-      { title: 'Shoppers discover them', text: 'Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.' },
-      { title: 'Sold? We come to you', text: 'We email you the moment a piece sells, with the day to have it packed by. Pack it in your own packaging and mark it packed in your dashboard.' },
+      { title: 'Tell us about your craft', text: 'A short form, not paperwork.' },
+      { title: 'Add your pieces', text: 'Three or four is a lovely start.' },
+      { title: 'Pack sold pieces', text: 'In your own packaging, ready for the courier.' },
+    ],
+    // On the Both path the first services line is left out: one application covers both.
+    itemsServices: [
+      { title: 'Tell us what you do', text: 'Rough ideas and rough prices are fine.' },
+      { title: 'Confirm each booking', text: 'Set the date and the final price.' },
+      { title: 'Deliver the service', text: 'In person, then mark the booking done.' },
     ],
   },
   'sell.offer': {
-    eyebrow: 'Included with every shop',
     heading: 'You make. Trove does the rest.',
-    sub: 'All of it is part of the arrangement — no joining fee, no listing fee, no hidden costs.',
+    headingServices: 'You do the work. Trove brings it in.',
+    sub: "That's it. No joining or listing fee, no licence to start, no courier to book.",
+    subServices: "That's it. Free to list during launch, and nothing taken from direct bookings.",
+    reviewTitle: 'Reviews your application',
+    reviewText: 'A real person reads every application, usually within a day or two.',
     items: [
-      { title: 'No trade licence to start', text: 'Trove buys your pieces and resells them, so most home makers can start without a licence. Before your first payout we check your Emirates ID and home address.' },
-      { title: 'Professional photography', text: 'Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.' },
-      { title: 'Marketing, done for you', text: 'Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.' },
-      { title: 'The shopkeeping', text: 'Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.' },
-      { title: 'Delivery, arranged and paid', text: 'Our courier collects each sold piece from your door and takes it to the buyer. Trove books and pays for every delivery.' },
-      { title: 'Fortnightly payouts', text: "A sale is paid in the first payout after the buyer's 15-day return window closes, so returns are settled first. Your Payments page shows the date for each sale." },
+      { title: 'Buys and resells your pieces', text: 'Trove is the merchant of record, so most home makers can start without a licence. Before your first payout we check your Emirates ID and home address.' },
+      { title: 'Photographs them', text: 'Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.' },
+      { title: 'Markets them', text: 'Advertising, social media and featured placements that bring shoppers in. You never pay for promotion.' },
+      { title: 'Runs the shop', text: 'Search, categories and collections, the storefront and checkout, card payments, customer questions and returns.' },
+      { title: 'Arranges and pays the courier', text: 'Our courier collects each sold piece from your door and takes it to the buyer. Trove books and pays for every delivery.' },
+      { title: 'Pays you every other Tuesday', text: "A sale is paid in the first payout after the buyer's 15-day return window closes, so returns are settled first. Your Payments page shows the date for each sale." },
     ],
+    itemsServices: [
+      { title: 'Gives you a page on the Services Marketplace', text: 'Your services go live once a real person has approved your application.' },
+      { title: 'Sends booking requests to your dashboard', text: 'You confirm each one with the date and the final price.' },
+      { title: 'Charges the card when the customer pays through Trove', text: "For card bookings Trove is the customer's contracting party. It keeps a 10% platform fee and pays you the other 90% as your fee, by bank transfer to an account in your own name, after the service date." },
+    ],
+  },
+  'sell.journey': {
+    eyebrow: 'The life of a sale',
+    heading: 'From sold to paid.',
+    payline: "Payouts wait for the buyer's 15-day return window to close, so returns are settled before you're paid. They run every other Tuesday.",
+  },
+  'sell.needs': {
+    eyebrow: 'Before you start',
+    heading: "What you'll need.",
+    sub: 'Missing something? Apply anyway. The second list is done in your dashboard, and you can start it while we review.',
   },
   'sell.quotes': {
     eyebrow: 'From our makers',
@@ -145,24 +195,40 @@ const SHIPPED_DEFAULTS = {
     // The storefront shows a founding-makers panel while this list is empty.
     items: [],
   },
+  // Each question has a topic (the filter chips) and an audience: 'all',
+  // 'pieces' (the Pieces and Both paths) or 'services' (Services and Both).
   'sell.faq': {
     eyebrow: 'Good to know',
     heading: 'Your questions, answered honestly.',
     items: [
-      { q: "I've never sold online before — is that okay?", a: "That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop." },
-      { q: 'Do I need a trade licence?', a: 'Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.' },
-      { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included. If nothing sells, you pay nothing. You do stay responsible for your pieces being your own work, safe and as described (see the Seller Agreement)." },
-      { q: 'How does delivery work?', a: "You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard." },
-      { q: 'How and when do I get paid?', a: "Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when." },
-      { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed." },
-      { q: 'Can I keep selling on Instagram or at markets?', a: 'Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.' },
+      { q: "I've never sold online before — is that okay?", a: "That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop.", topic: 'start', audience: 'pieces' },
+      { q: 'Do I need a trade licence?', a: 'Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.', topic: 'start', audience: 'pieces' },
+      { q: 'How long does applying take, and who reviews it?', a: "About ten minutes. A real person reads every application, usually within a day or two, and you can sign in and prepare everything while it's reviewed.", topic: 'start', audience: 'all' },
+      { q: 'What if I only make a few pieces a month?', a: "Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed.", topic: 'start', audience: 'pieces' },
+      { q: 'Do I need professional photos?', a: 'No. Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.', topic: 'start', audience: 'pieces' },
+      { q: 'Can I keep selling on Instagram or at markets?', a: 'Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.', topic: 'start', audience: 'pieces' },
+      { q: 'Can I sell pieces and offer services?', a: 'Yes. One account holds both: a shop for your pieces and a page for your services, reviewed together and run from one dashboard.', topic: 'start', audience: 'all' },
+      { q: 'What does it cost?', a: "Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included. If nothing sells, you pay nothing. You do stay responsible for your pieces being your own work, safe and as described (see the Seller Agreement).", topic: 'money', audience: 'pieces' },
+      { q: 'How and when do I get paid?', a: "Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when.", topic: 'money', audience: 'pieces' },
+      { q: 'What does listing services cost?', a: "Nothing during launch. A flat listing fee of AED 30 a month will start later; it will not start without at least 30 days' written notice, and you can stop listing before then without paying anything.", topic: 'money', audience: 'services' },
+      { q: 'How do customers pay me?', a: 'The customer chooses. Paid directly, it is settled between you and them, by bank transfer or cash, and Trove takes nothing. Paid through Trove, they pay by card through a secure link; Trove keeps a 10% platform fee and pays you the other 90% by bank transfer to an account in your own name, after the service date.', topic: 'money', audience: 'services' },
+      { q: 'How does delivery work?', a: "You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard.", topic: 'delivery', audience: 'pieces' },
+      { q: 'How long do buyers wait?', a: 'Each piece shows its own estimate: your make time for that piece plus 1–4 courier days. Made-to-order pieces can take up to six weeks to make.', topic: 'delivery', audience: 'pieces' },
+      { q: 'What kind of services can I list?', a: "Services you deliver in person at the customer's home — workshops, styling, photography, murals and the like. Pick one to three categories when you apply; rough ideas and rough prices are fine.", topic: 'services', audience: 'services' },
+      { q: 'Can I keep taking bookings elsewhere?', a: 'Of course. Your Trove page is one more way for customers to find you, not an exclusive deal.', topic: 'services', audience: 'services' },
     ],
   },
+  // The closing band (Clay Beige, no Orange accent on it): while there are no
+  // real maker quotes yet, foundingNote says so plainly (owner, 2026-09-30).
   'sell.closing': {
-    eyebrow: 'Ready when you are',
-    heading: 'Give your craft a *shopfront*.',
-    text: 'The application takes about ten minutes, and you can sign in and prepare your shop while a real person reviews it.',
-    cta: 'Start your application',
+    eyebrow: 'Founding makers wanted',
+    eyebrowServices: 'Founding providers wanted',
+    heading: 'Give your craft a shopfront.',
+    headingServices: 'Give your work a page.',
+    foundingNote: 'Trove is just opening its doors, so there are no stories to share yet — yours could be one of the first.',
+    text: 'About ten minutes to apply, and you can prepare everything while a real person reviews it.',
+    cta: 'Apply as a founding maker',
+    ctaServices: 'Apply as a founding provider',
   },
 };
 
@@ -186,7 +252,9 @@ const SECTIONS = Object.keys(SHIPPED_DEFAULTS);
 /* ---- validation -------------------------------------------------------- */
 
 // Long-form fields get more room than labels and headings.
-const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a', 'blurb', 'quote']);
+const LONG_FIELDS = new Set(['lead', 'intro', 'text', 'a', 'blurb', 'quote',
+  // the sell page's paragraphs (2026-10-12)
+  'introServices', 'introBoth', 'sub', 'subServices', 'subBoth', 'covers', 'bothNote', 'payline', 'foundingNote']);
 const MAX_SHORT = 200;
 const MAX_LONG = 1200;
 
@@ -198,11 +266,28 @@ const EMAIL_RE = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]{2,}$/;
 // Flexible list bounds; anything not listed must keep the default length.
 const LIST_BOUNDS = {
   'sell.hero.facts': [2, 6],
+  'sell.hero.factsServices': [2, 6],
+  'sell.hero.factsBoth': [2, 6],
   'sell.steps.items': [2, 6],
+  'sell.steps.itemsServices': [2, 6],
   'sell.offer.items': [3, 8],
+  'sell.offer.itemsServices': [1, 6],
   'sell.quotes.items': [0, 6],
-  'sell.faq.items': [1, 12],
+  'sell.faq.items': [1, 20],
 };
+
+/* Fields that are a choice from a fixed list, not copy: never translated
+ * (src/translate.js skips them), never empty — a missing choice takes the
+ * first value, which is what an entry saved before the field existed gets. */
+const CHOICES = {
+  topic: ['start', 'money', 'delivery', 'services'],
+  audience: ['all', 'pieces', 'services'],
+};
+function checkChoice(key, v) {
+  if (v == null || v === '') return CHOICES[key][0];
+  if (!CHOICES[key].includes(v)) bad(`"${key}" must be one of: ${CHOICES[key].join(', ')}`);
+  return v;
+}
 
 // Shape of one entry for lists whose default is empty (nothing to copy it from).
 const LIST_ITEM_SHAPES = {
@@ -302,7 +387,7 @@ function validateSection(section, value) {
         if (typeof itemDef === 'string') return checkString(section, key, item);
         if (!item || typeof item !== 'object') bad(`Each "${key}" entry must have its fields filled in`);
         const ci = {};
-        for (const f of Object.keys(itemDef)) ci[f] = checkString(section, f, item[f]);
+        for (const f of Object.keys(itemDef)) ci[f] = CHOICES[f] ? checkChoice(f, item[f]) : checkString(section, f, item[f]);
         return ci;
       });
     } else if (OPTIONAL_SECTIONS.has(section)) {
@@ -357,6 +442,6 @@ function company() {
   return { ...c, filled: Object.values(c).some((v) => typeof v === 'string' && v.trim()) };
 }
 
-module.exports = { SHIPPED_DEFAULTS, defaults, SECTIONS, getPublic, overrides, save, reset, ContentError, isSeededQuote, company, COMPANY_PENDING, EMAIL_RE };
+module.exports = { SHIPPED_DEFAULTS, defaults, SECTIONS, CHOICES, getPublic, overrides, save, reset, ContentError, isSeededQuote, company, COMPANY_PENDING, EMAIL_RE };
 // content.DEFAULTS: the defaults as served (fee figures current) — admin editor, seo.js.
 Object.defineProperty(module.exports, 'DEFAULTS', { enumerable: true, get: defaults });

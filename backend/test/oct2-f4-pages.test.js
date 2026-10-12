@@ -33,18 +33,22 @@ test('F139: llms.txt and /apply say listing is free during launch', async () => 
 test('F101/F146/F147: the sell page states the deal up top, honestly, once', async () => {
   const content = require('../src/content');
   const D = content.DEFAULTS || content.defaults;
-  assert.deepEqual(D['sell.hero'].facts, ['You keep 60% of every sale', 'Paid every other Tuesday, after the 15-day return window', 'Free to join']);
+  // Since 2026-10-12 ('Choose your path') the deal at a glance is the 'Your arrangement' card:
+  // the 60% is its big number, the facts are its terms (pieces path).
+  assert.deepEqual(D['sell.hero'].facts, ['No joining fee, no listing fee', 'No trade licence to start', 'Photos, marketing and customer care by Trove', 'Courier collects from your door, paid by Trove', 'Paid every other Tuesday, after the 15-day return window']);
   const licence = D['sell.faq'].items.find((f) => /trade licence/.test(f.q));
   assert.match(licence.a, /Emirates ID \(front and back\)/);
   assert.match(licence.a, /e-Trader licence/);
   assert.doesNotMatch(licence.a, /^No\./);
-  assert.equal(D['sell.offer'].items[0].title, 'No trade licence to start');
+  // 'no licence' is only ever said with the ID check beside it
+  assert.match(D['sell.offer'].items[0].text, /most home makers can start without a licence\. Before your first payout we check your Emirates ID/);
   const page = doc('trove.html');
   const sell = page.slice(page.indexOf('<div class="view" id="view-sell">'), page.indexOf('<!-- CHECKOUT -->'));
-  // the deal strip sits in the hero, before 'How it works'
-  assert.ok(sell.indexOf('id="sellFacts"') < sell.indexOf('id="sellSteps"'));
-  assert.doesNotMatch(sell, /class="fterm"><b>(You keep 60%|Trove photographs|Trove markets|Trove delivers)</, 'the founding panel no longer repeats the offer cards');
-  assert.equal((sell.match(/own packaging/g) || []).length, 2, 'own packaging: the step and the FAQ only');
+  // the arrangement card sits right after the hero, before 'Who does what'
+  assert.ok(sell.indexOf('id="sellH1"') < sell.indexOf('id="sellFacts"') && sell.indexOf('id="sellFacts"') < sell.indexOf('id="spHow"'));
+  assert.match(sell, /<p class="sp-arr-big" data-show="pieces both"><span class="n">60%<\/span>/);
+  // own packaging: your part, the delivery answer and the 'what you'll need' list (each once)
+  assert.equal((sell.match(/own packaging/g) || []).length, 3);
   assert.doesNotMatch(sell, /No trade licence needed/);
 });
 

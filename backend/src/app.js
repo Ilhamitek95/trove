@@ -453,7 +453,8 @@ function createApp() {
   // The trimmed addresses (F426): /makers is the makers band, /pieces the shop.
   app.get('/makers', (req, res) => res.redirect(301, '/#vendors'));
   app.get('/pieces', (req, res) => res.redirect(301, '/shop'));
-  app.get('/sell-on-trove', (req, res) => html(res, seo.renderSell(SITE_BASE(), req.lang)));
+  // ?for=pieces|services|both opens that path (the canonical stays /sell-on-trove)
+  app.get('/sell-on-trove', (req, res) => html(res, seo.renderSell(SITE_BASE(), req.lang, req.query.for)));
   // The order confirmation's own address (F164): the storefront opens its
   // thank-you view and asks /api/checkout/receipt for the order, so a refresh
   // or a killed tab never loses it. Private: noindex, untagged (src/gtm.js),

@@ -93,7 +93,8 @@ test('F283: the storefront is served in standards mode, with the inline-box fixe
   assert.match(store, /\.marquee \.mk \.tx span\{display:block;/);
   assert.match(store, /\.perso-in\{display:block;/);
   assert.match(store, /\.co-back\{[^}]*display:flex;width:fit-content;/);
-  assert.match(store, /\.h-lane span\{display:block;/);
+  // (the old sell page's .h-lane went with its hand-off timeline on 2026-10-12; the new page's small spans are blocks too)
+  assert.match(store, /\.sp-seg \.sub\{display:block;/);
   assert.match(store, /\.acc-body \.link-more\{display:block;width:fit-content;line-height:1\.4\}/);
   assert.match(store, /#vRevHead,#pdpRevHead\{display:flex;flex-wrap:wrap;align-items:baseline;/);
   assert.match(read('404.html'), /^<!doctype html>/);

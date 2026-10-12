@@ -557,12 +557,14 @@ test('F319/F378/F502: change the fee settings and every page, the Arabic, Site c
   try {
     const html = (p) => call('GET', p, { headers: { accept: 'text/html' } }).then((r) => r.text);
     const sell = await html('/sell-on-trove');
-    assert.match(sell, /You keep 65% of every sale/);
+    // (the sell page since 2026-10-12: the arrangement card and the pieces panel carry the share)
+    assert.match(sell, /you keep 65% of the price you set/);
+    assert.match(sell, /<span class="n">65%<\/span>/);
     assert.match(sell, /at 65% of that price/);
     assert.match(sell, /20-day return window/);
     assert.match(sell, /Delivery AED 35, free on orders over AED 250/);
     assert.match(sell, /<b>1–5 days<\/b>/);
-    assert.doesNotMatch(sell, /You keep 60%|\b15-day\b|Delivery AED 30\b|1–4 days/);
+    assert.doesNotMatch(sell, /You keep 60%|you keep 60%|\b15-day\b|Delivery AED 30\b|1–4 days/);
     assert.match(sell, /AED 200\+/, 'the price-filter label is not a fee');
     const apply = await html('/apply');
     assert.match(apply, /Keep 65% · we photograph, market and deliver/);
@@ -574,13 +576,15 @@ test('F319/F378/F502: change the fee settings and every page, the Arabic, Site c
     assert.match(home, /most 3–7 days/);
     // Arabic: the same figures, still translated.
     const arSell = await html('/ar/sell-on-trove');
-    assert.match(arSell, /تحتفظ بـ 65% من كل عملية بيع/);
+    assert.match(arSell, /تحتفظ بـ 65% من السعر الذي تحدّده/);
     assert.doesNotMatch(arSell, /تحتفظ بـ 60%/);
     // Site content API, both languages.
     const api = await call('GET', '/api/content');
-    assert.equal(api.data.sell.hero.facts[0], 'You keep 65% of every sale');
+    assert.equal(api.data.sell.hero.facts[4], 'Paid every other Tuesday, after the 20-day return window');
+    assert.match(api.data.sell.money.covers, /^Trove's 35% covers/);
     const apiAr = await call('GET', '/api/content', { headers: { 'x-trove-lang': 'ar' } });
-    assert.match(apiAr.data.sell.hero.facts[0], /65%/);
+    assert.match(apiAr.data.sell.hero.facts[4], /20/);
+    assert.match(apiAr.data.sell.money.covers, /35%/);
     // Server strings (emails, help text) through i18n.t.
     const i18n = require('../src/i18n');
     assert.match(i18n.t('en', ' (a {fee} collection fee applies when you change your mind on an order of AED 200 and below, and is already deducted from that figure)', { fee: 'AED 35' }), /AED 250 and below/);
@@ -591,5 +595,5 @@ test('F319/F378/F502: change the fee settings and every page, the Arabic, Site c
     Object.assign(fees, saved);
   }
   assert.equal(figures.changed(), false);
-  assert.match(await call('GET', '/sell-on-trove', { headers: { accept: 'text/html' } }).then((r) => r.text), /You keep 60% of every sale/, 'back to the shipped copy');
+  assert.match(await call('GET', '/sell-on-trove', { headers: { accept: 'text/html' } }).then((r) => r.text), /you keep 60% of the price you set/, 'back to the shipped copy');
 });

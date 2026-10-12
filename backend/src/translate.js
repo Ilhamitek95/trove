@@ -89,7 +89,8 @@ function sources(entity, id) {
 /** Site content: the admin's overrides only, and only fields that differ from the shipped
  *  default (the defaults have hand-written Arabic in docs/i18n/ar/content.json + common.json). */
 const CONTENT_SKIP = new Set(['site.company']);
-const CONTENT_KEYS_SKIP = new Set(['productIds', 'shopSlugs', 'crops']);
+// (topic / audience: the sell FAQ's fixed choices, content.CHOICES — values, not copy)
+const CONTENT_KEYS_SKIP = new Set(['productIds', 'shopSlugs', 'crops', 'topic', 'audience']);
 function contentLeaves(value, prefix = '', out = {}) {
   if (typeof value === 'string') { out[prefix] = value; return out; }
   if (Array.isArray(value)) { value.forEach((v, i) => contentLeaves(v, prefix ? `${prefix}.${i}` : String(i), out)); return out; }
