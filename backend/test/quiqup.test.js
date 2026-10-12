@@ -200,9 +200,12 @@ test('shop pickup address + phone: validated, saved, courier-only', async () => 
   r = await ctx.api('PATCH', '/api/seller/me', { cookie, body: { pickupAddress: 'short' } });
   assert.equal(r.status, 400);
 
-  r = await ctx.api('PATCH', '/api/seller/me', { cookie, body: { pickupAddress: 'Unit 9, Alserkal Avenue, Al Quoz 1', pickupPhone: '050 999 8877' } });
+  // The courier collects in Dubai and Abu Dhabi only (oct12 F247): the address names its emirate.
+  r = await ctx.api('PATCH', '/api/seller/me', { cookie, body: { pickupAddress: 'Unit 9, Alserkal Avenue, Al Quoz 1' } });
+  assert.equal(r.status, 400);
+  r = await ctx.api('PATCH', '/api/seller/me', { cookie, body: { pickupAddress: 'Unit 9, Alserkal Avenue, Al Quoz 1, Dubai', pickupPhone: '050 999 8877' } });
   assert.equal(r.status, 200, r.text);
-  assert.equal(r.data.shop.pickup_address, 'Unit 9, Alserkal Avenue, Al Quoz 1');
+  assert.equal(r.data.shop.pickup_address, 'Unit 9, Alserkal Avenue, Al Quoz 1, Dubai');
   assert.equal(r.data.shop.pickup_phone, '+971509998877');
 
   const pub = await ctx.api('GET', '/api/shops/quiq-pots');

@@ -40,6 +40,16 @@ function saveDataUrl(dataUrl, folder, baseName, opts = {}) {
   return url;
 }
 
+/**
+ * Check a data-URL image (and its optional small copy) exactly as
+ * saveDataUrl would, without writing anything — so a save can refuse a bad
+ * photo before it changes a single field (F244). Throws {status,message}.
+ */
+function checkDataUrl(dataUrl, opts = {}) {
+  decodeImage(dataUrl, MAX_BYTES, 'Image must be under 4MB');
+  if (opts.small) decodeImage(opts.small, SMALL_MAX_BYTES, 'The small copy of the image is too large');
+}
+
 function decodeImage(dataUrl, max, tooBig) {
   const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(dataUrl || ''));
   if (!m) { const e = new Error('Upload a JPG, PNG or WebP image'); e.status = 400; throw e; }
@@ -148,5 +158,11 @@ function removeEncryptedPrivate(relPath) {
   try { fs.unlinkSync(path.join(privateRoot, String(relPath).replace(/\.\./g, ''))); } catch (_) { /* already gone */ }
 }
 
-module.exports = { UPLOADS_DIR, saveDataUrl, removeByUrl, smallOf, SMALL_WIDTH, savePrivateDataUrl,
-  saveEncryptedPrivate, readEncryptedPrivate, removeEncryptedPrivate };
+/** The image type of a decoded file from its first bytes (e.g. a decrypted licence scan), or null. */
+function sniffImageType(buf) {
+  for (const [mime, t] of Object.entries(TYPES)) if (buf && buf.length > 12 && t.magic(buf)) return mime;
+  return null;
+}
+
+module.exports = { UPLOADS_DIR, saveDataUrl, checkDataUrl, removeByUrl, smallOf, SMALL_WIDTH, savePrivateDataUrl,
+  saveEncryptedPrivate, readEncryptedPrivate, removeEncryptedPrivate, sniffImageType };

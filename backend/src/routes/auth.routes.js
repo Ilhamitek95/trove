@@ -147,7 +147,12 @@ router.post('/register', (req, res, next) => {
     // leaves an orphan file; a bad image must not sink the application either.
     if (licenseNumber && req.body.licenseImage) {
       try {
-        const file = require('../uploads').savePrivateDataUrl(req.body.licenseImage, 'licenses', `license-${info.lastInsertRowid}`);
+        // Encrypted at rest like Emirates ID photos (F259); plain only where
+        // no PAYOUT_ENC_KEY is configured (local development).
+        const up = require('../uploads');
+        const file = require('../crypto').hasKey()
+          ? up.saveEncryptedPrivate(req.body.licenseImage, 'licenses', `license-${info.lastInsertRowid}`).file
+          : up.savePrivateDataUrl(req.body.licenseImage, 'licenses', `license-${info.lastInsertRowid}`);
         db.prepare('UPDATE shops SET license_image=? WHERE id=?').run(file, info.lastInsertRowid);
       } catch (e) { console.warn('license image rejected:', e.message); }
     }

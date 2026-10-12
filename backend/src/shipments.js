@@ -51,7 +51,9 @@ function shape(s) {
     statusLabel: statusLabel(s),
     carrier: s.carrier || '',
     trackingNumber: s.tracking_number || '',
-    trackingUrl: s.tracking_url || '',
+    // Shown as a 'Track parcel' link inside the buyer's account: only ever a
+    // real https:// address, whatever an older row holds (F242).
+    trackingUrl: /^https:\/\/[^\s"'<>]+$/i.test(String(s.tracking_url || '')) ? s.tracking_url : '',
     // Courier booking: the reference the maker sees on the label + whether the
     // parcel has been handed over (ready_at) — drives the dashboard's
     // "Ready for collection" step and the label button.

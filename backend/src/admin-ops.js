@@ -94,6 +94,14 @@ function needsYou() {
       AND license_verified_at IS NULL AND identity_checked_at IS NULL`).all()
     .filter((s) => identity.eidSubmitted(s) && identity.eidExpiryState(s) !== 'expired').length;
   add('ids', toCheck, 'Emirates IDs to check', 'shops', { hint: 'Makers are paid only once you tick ID checked' });
+  // A typed licence number counts for nothing until you check it (it then
+  // replaces the Emirates ID step) — the Shops tab has the button (oct12 F386).
+  add('licences', n(`SELECT COUNT(*) AS n FROM shops WHERE is_house = 0 AND status <> 'rejected'
+      AND COALESCE(license_number, '') <> '' AND license_verified_at IS NULL`),
+    'Trade licences to check', 'shops', { hint: 'Check the number against the licensing authority, then mark it verified' });
+  add('photo_sessions', n(`SELECT COUNT(*) AS n FROM shops WHERE is_house = 0 AND status <> 'rejected'
+      AND photo_session_requested_at IS NOT NULL AND photo_session_arranged_at IS NULL`),
+    'Makers asking for a photo session', 'shops', { hint: 'Arrange a visit or a collection, then mark it arranged' });
 
   // Paying makers and providers.
   const settlement = require('./settlement');
@@ -110,10 +118,11 @@ function needsYou() {
   add('makers_cant_be_paid', pv.excluded.filter((r) => ['payout_setup_incomplete', 'id_missing', 'id_to_check', 'id_expired'].includes(r.reason)).length,
     'Makers with money waiting who can’t be paid yet', 'payouts', { hint: 'Bank details, agreement or ID missing' });
   let svc = { eligible: [], excluded: [] };
-  try { svc = require('./service-credits').preview(); } catch (_) { /* shown on the Providers tab */ }
-  add('providers_payable', svc.eligible.length, 'Providers to pay by bank transfer', 'providers');
+  // Makers and providers are both paid from the one Payments tab (oct12 F324).
+  try { svc = require('./service-credits').preview(); } catch (_) { /* shown on the Payments tab */ }
+  add('providers_payable', svc.eligible.length, 'Providers to pay by bank transfer', 'payouts');
   add('provider_bank_changed', svc.excluded.filter((r) => r.reason === 'bank_details_changed').length,
-    'Providers who changed bank details — check by phone, then release', 'providers');
+    'Providers who changed bank details — check by phone, then release', 'payouts');
 
   // Messages, the courier wallet, background jobs.
   add('messages', n('SELECT COUNT(*) AS n FROM contact_messages WHERE handled_at IS NULL'), 'New contact form messages', 'messages');

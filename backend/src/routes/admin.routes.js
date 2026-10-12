@@ -59,12 +59,23 @@ router.get('/stats', requireAdmin, (_req, res) => {
   const provRows = db.prepare('SELECT status, COUNT(*) AS c FROM service_providers GROUP BY status').all();
   const providers = { total: 0, pending: 0, approved: 0, rejected: 0, suspended: 0 };
   for (const r of provRows) { providers[r.status] = r.c; providers.total += r.c; }
+  // Trove's share of the last 30 days' orders (F386): what buyers paid and
+  // kept (pieces + delivery, after every refund) less what is owed to makers
+  // for those orders on the settlement ledger (credits net of refund debits;
+  // a fully refunded order owes nothing). The Collection's sales are Trove's
+  // in full. Courier and card fees are not taken off.
+  const { refundedCentsSql } = require('../admin-ops');
+  const share = db.prepare(`SELECT
+      COALESCE(SUM(o.total_cents - ${refundedCentsSql('o')}), 0) AS kept,
+      COALESCE(SUM(CASE WHEN o.refunded_at IS NOT NULL THEN 0 ELSE (SELECT COALESCE(SUM(b.amount_cents), 0) FROM seller_balances b
+        WHERE b.order_id = o.id AND b.type IN ('credit_sale','debit_refund')) END), 0) AS makers
+    FROM orders o
+    WHERE o.status IN ('paid','fulfilled') AND COALESCE(o.rail, '') <> 'connect' AND o.created_at >= datetime('now','-30 days')`).get();
   res.json({ shops, orders, gmvCents: gmv, grossCents: sales.grossCents, refundedCents: sales.refundedCents, buyers, liveProducts: products, providers,
+    troveShare30Cents: share.kept - share.makers, railBEnabled: cfg.railBEnabled(),
     licensed: { total: lic.total, verified: lic.verified, awaiting: lic.total - lic.verified } });
 });
 
-// GET /api/admin/search-trends → what shoppers typed in the last 30 days.
-// avgResults near 0 flags demand the catalogue isn't meeting yet.
 // GET /api/admin/maintenance/qa-cleanup → the one-time QA data cleanup's
 // last run: marker time, what was removed (ids + counts), the backup file
 // and anything it skipped on purpose. See src/qa-cleanup.js.
@@ -87,6 +98,8 @@ router.get('/activity', requireAdmin, (req, res) => {
   res.json({ actions: require('../admin-audit').latest(Number(req.query.limit) || 100) });
 });
 
+// GET /api/admin/search-trends → what shoppers typed in the last 30 days.
+// avgResults near 0 flags demand the catalogue isn't meeting yet.
 router.get('/search-trends', requireAdmin, (req, res) => {
   const days = Math.min(90, Math.max(1, parseInt(req.query.days) || 30));
   res.json({ days, terms: require('../trends').topSearchTerms(days, 40) });
@@ -149,6 +162,11 @@ router.patch('/products/:id', requireAdmin, (req, res) => {
   const b = req.body || {};
   if (b.status !== undefined && !['live', 'draft', 'hidden'].includes(b.status))
     return res.status(400).json({ error: 'status must be live, draft or hidden' });
+  // Trove puts back on sale only what Trove hid (F327): a maker's own draft
+  // or hidden piece may be unfinished (no photos, a placeholder price), so
+  // going live stays the maker's call.
+  if (b.status === 'live' && p.status !== 'live' && !p.admin_hidden_at)
+    return res.status(409).json({ code: 'maker_choice', error: 'This is the maker’s own draft or hidden piece — only they can put it on sale' });
   if (b.category != null) {
     const shop = db.prepare('SELECT is_house FROM shops WHERE id=?').get(p.shop_id);
     const catErr = require('../categories').categoryError(b.category, { house: !!(shop && shop.is_house) });
@@ -264,15 +282,44 @@ router.get('/shops', requireAdmin, (_req, res) => {
     approvalMissing: approvalMissing(s),
     graduationFlaggedAt: s.graduation_flagged_at || null, connectQueue: !!s.connect_queue,
     products: s.product_count, liveProducts: s.live_count, salesCents: s.sales_cents,
+    // A photo session the maker asked for (F318): open until marked arranged.
+    photoSessionRequestedAt: s.photo_session_requested_at || null,
+    photoSessionArrangedAt: s.photo_session_arranged_at || null,
     createdAt: s.created_at,
   })) });
 });
 
-// GET /api/admin/shops/:id/license-image → stream a privately stored license.
-router.get('/shops/:id/license-image', requireAdmin, (req, res) => {
-  const shop = db.prepare('SELECT license_image FROM shops WHERE id=?').get(req.params.id);
-  if (!shop || !shop.license_image) return res.status(404).json({ error: 'No license image' });
-  res.sendFile(require('path').resolve(shop.license_image));
+// POST /api/admin/shops/:id/photo-session { arranged: true } → the owner has
+// arranged the photo session the maker asked for (F318); it leaves Needs you.
+router.post('/shops/:id/photo-session', requireAdmin, (req, res) => {
+  const shop = db.prepare('SELECT id, photo_session_requested_at, photo_session_arranged_at FROM shops WHERE id=?').get(req.params.id);
+  if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  if (!shop.photo_session_requested_at || shop.photo_session_arranged_at) return res.status(409).json({ error: 'There is no open photo session request for this shop' });
+  res.locals.auditBefore = { photoSession: 'requested' };
+  db.prepare("UPDATE shops SET photo_session_arranged_at=datetime('now') WHERE id=?").run(shop.id);
+  res.json({ ok: true });
+});
+
+// GET /api/admin/shops/:id/license-image → stream a privately stored licence.
+// Admin-only and never cached, like the Emirates ID photos (F259): a scan
+// saved since 12 Oct is AES-256-GCM encrypted (a relative .enc path) and is
+// decrypted here; an older plain file (an absolute path, until migration
+// 026-C-licence-encryption converted it) is sent as it is.
+router.get('/shops/:id/license-image', requireAdmin, (req, res, next) => {
+  try {
+    const shop = db.prepare('SELECT license_image FROM shops WHERE id=?').get(req.params.id);
+    if (!shop || !shop.license_image) return res.status(404).json({ error: 'No license image' });
+    res.set('Cache-Control', 'no-store, private');
+    const path = require('path');
+    const file = String(shop.license_image);
+    if (!path.isAbsolute(file) && file.endsWith('.enc')) {
+      const uploads = require('../uploads');
+      const buf = uploads.readEncryptedPrivate(file);
+      res.type(uploads.sniffImageType(buf) || 'application/octet-stream');
+      return res.send(buf);
+    }
+    res.sendFile(path.resolve(file));
+  } catch (e) { next(e); }
 });
 
 // GET /api/admin/shops/:id/eid/front|back → decrypt and stream an Emirates ID
@@ -301,6 +348,11 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'status must be pending, approved, rejected or suspended' });
   const shop = db.prepare('SELECT * FROM shops WHERE id=?').get(req.params.id);
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
+  // The Trove Collection is never hidden (F251): no request — a stray call, a
+  // script or a future bulk action — can reject, suspend or un-approve it.
+  if (shop.is_house && status !== 'approved') {
+    return res.status(409).json({ code: 'house_shop', error: 'The Trove Collection is Trove’s own line and always stays on the storefront' });
+  }
   res.locals.auditBefore = { status: shop.status, note: shop.review_note || '' };
   // Approval puts the shop's live pieces on sale, so it waits for the
   // agreement and the pickup details (re-approving an approved shop is a no-op).
@@ -313,7 +365,8 @@ router.patch('/shops/:id', requireAdmin, (req, res) => {
   }
   db.prepare('UPDATE shops SET status=? WHERE id=?').run(status, shop.id);
   if (req.body.note !== undefined) db.prepare('UPDATE shops SET review_note=? WHERE id=?').run(reviewNote(req.body), shop.id);
-  if (status !== shop.status) require('../notify').shopDecided(shop.id, status);
+  // (the owner is never emailed a decision about their own Collection)
+  if (status !== shop.status && !shop.is_house) require('../notify').shopDecided(shop.id, status);
   if (status === 'approved') { tq('shop', shop.id); for (const x of db.prepare("SELECT id FROM products WHERE shop_id=? AND status='live'").all(shop.id)) tq('product', x.id); }
   res.json({ shop: db.prepare('SELECT * FROM shops WHERE id=?').get(shop.id) });
 });
@@ -490,7 +543,13 @@ router.get('/orders', requireAdmin, (req, res) => {
   const cancellations = require('../cancellations');
   const live = require('../delivery').isLive();
   const cancelledStmt = db.prepare("SELECT COUNT(*) AS n, COALESCE(SUM(refund_cents),0) AS cents FROM order_cancellations WHERE order_id=? AND status='refunded'");
+  // Why the whole-order Refund button would be refused (F329) — the same two
+  // checks POST /orders/:publicId/refund makes — so the list offers 'See the
+  // return' instead of a button that only errors after the confirm box.
+  const inFlightStmt = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status IN ('approved','collected')");
+  const refundBlocked = (o) => (!o.stripe_payment_intent_id ? 'no_card_payment' : inFlightStmt.get(o.id).c ? 'return_in_progress' : null);
   res.json({ orders: rows.map((o) => ({
+    refundBlocked: !o.refunded_at && ['paid', 'fulfilled'].includes(o.status) ? refundBlocked(o) : null,
     parcels: shipStmt.all(o.id).map((sh) => ({
       id: sh.id, shop: sh.shop_name, shopPhone: sh.pickup_phone || sh.pitch_phone || '',
       status: sh.status, statusLabel: shipments.statusLabel(sh), packBy: sh.pack_by_at || null,
@@ -591,7 +650,7 @@ router.post('/graduation/:shopId/verify-license', requireAdmin, (req, res) => {
 // Stripe enables payouts — never before.
 router.post('/graduation/:shopId/approve', requireAdmin, async (req, res, next) => {
   try {
-    if (!cfg.railBEnabled()) return res.status(409).json({ error: 'Rail B is not enabled (RAIL_B_ENABLED)' });
+    if (!cfg.railBEnabled()) return res.status(409).json({ error: 'Direct payouts for licensed makers are switched off' });
     const shop = db.prepare('SELECT s.*, u.email AS owner_email FROM shops s JOIN users u ON u.id=s.user_id WHERE s.id=?').get(req.params.shopId);
     if (!shop) return res.status(404).json({ error: 'Shop not found' });
     if (!shop.license_verified_at) return res.status(409).json({ error: 'Verify the license first' });
