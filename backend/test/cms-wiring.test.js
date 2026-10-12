@@ -28,7 +28,8 @@ const storeHtml = fs.readFileSync(path.join(DOCS, 'trove.html'), 'utf8');
 const adminHtml = fs.readFileSync(path.join(DOCS, 'trove-admin.html'), 'utf8');
 
 // Lists the storefront re-renders from JS (flexible length — no static wiring).
-const JS_RENDERED = new Set(['sell.hero.facts', 'sell.steps.items', 'sell.offer.items', 'sell.quotes.items', 'sell.faq.items']);
+// (the sell page's per-path lists: 'Choose your path', 2026-10-12)
+const JS_RENDERED = new Set(['sell.hero.facts', 'sell.hero.factsServices', 'sell.hero.factsBoth', 'sell.steps.items', 'sell.steps.itemsServices', 'sell.offer.items', 'sell.offer.itemsServices', 'sell.quotes.items', 'sell.faq.items']);
 // Sections the storefront never shows: the server renders them into other
 // pages (company details → About, Contact, Terms, Privacy; test/site-pages.test.js).
 const SERVER_RENDERED = new Set(['site.company']);

@@ -222,9 +222,10 @@
   .cmscard .chead .actions{margin-left:auto;display:flex;gap:8px}
   .cmsf{margin-bottom:12px}
   .cmsf .flab{font-size:10.5px;letter-spacing:.04em;color:var(--muted);font-weight:700;display:block;margin-bottom:5px}
-  .cmsf input,.cmsf textarea{width:100%;font:inherit;font-size:13px;font-weight:500;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream);color:var(--char);outline:none;box-sizing:border-box}
+  .cmsf input,.cmsf textarea,.cmsf select{width:100%;font:inherit;font-size:13px;font-weight:500;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--cream);color:var(--char);outline:none;box-sizing:border-box}
   .cmsf textarea{min-height:64px;resize:vertical;line-height:1.5}
-  .cmsf input:focus,.cmsf textarea:focus{border-color:var(--taupe)}
+  .cmsf input:focus,.cmsf textarea:focus,.cmsf select:focus{border-color:var(--taupe)}
+  .cmslist-h{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted);margin:16px 0 8px}
   .cmsitem{border:1px solid var(--line-soft);border-radius:12px;padding:12px 14px;margin-bottom:10px;background:var(--cream)}
   .cmsitem .ihead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
   .cmsitem .ihead b{font-size:11px;letter-spacing:.05em;color:var(--muted)}
@@ -1451,12 +1452,15 @@ const CMS_SPEC=[
   {key:'home.collection',label:'Homepage — Trove Collection band',fields:[['eyebrow','Eyebrow'],['h2','Heading','rich'],['intro','Intro paragraph','area'],['cta','Button label']],list:{field:'points',fixed:true,label:'Point',item:[['title','Title'],['text','Text','area']]},picker:{note:'Gallery pieces — up to 4 Collection pieces, shown in this order. Leave empty for the automatic pick (the first 4 Collection pieces).',auto:'Automatic — the first 4 Collection pieces',house:true,max:4,crop:'16 / 10'}},
   {key:'home.makers',label:'Homepage — Meet the makers',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['intro','Intro paragraph','area']],shopPicker:{note:'Featured makers — up to 8, shown in this order on the carousel. Leave empty to show every approved maker.',auto:'Automatic — every approved maker'}},
   {key:'home.sellBand',label:'Homepage — Sell on Trove band',fields:[['eyebrow','Eyebrow'],['h2','Heading','rich'],['intro','Intro paragraph','area'],['cta','Button label']],list:{field:'steps',fixed:true,label:'Step',item:[['title','Step title'],['text','Step text','area']]}},
-  {key:'sell.hero',label:'Sell page — Hero + hand-off terms',fields:[['eyebrow','Eyebrow'],['h1','Big heading','rich'],['intro','Intro paragraph','area'],['ctaApply','Main button label'],['ctaHow','Second button label']],list:{field:'facts',label:'Term',min:2,max:6}},
-  {key:'sell.steps',label:'Sell page — The hand-off: your four steps (You lane)',fields:[['eyebrow','Eyebrow'],['heading','Supporting line under the big heading']],list:{field:'items',label:'Step',min:2,max:6,item:[['title','Step title'],['text','Step text','area']]}},
-  {key:'sell.offer',label:'Sell page — The hand-off: what Trove takes care of (Trove lane)',fields:[['eyebrow','Trove lane caption'],['heading','Big heading'],['sub','Closing line under the timeline']],list:{field:'items',label:'Offer',min:3,max:8,item:[['title','Title'],['text','Text','area']]}},
-  {key:'sell.quotes',label:'Sell page — Maker testimonials (real, consented quotes only; none = the founding-makers panel shows)',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['sub','Supporting line']],list:{field:'items',label:'Testimonial',min:0,max:6,item:[['quote','Quote','area'],['name','Maker name'],['shop','Shop, city']]}},
-  {key:'sell.faq',label:'Sell page — Questions',fields:[['eyebrow','Eyebrow'],['heading','Heading']],list:{field:'items',label:'Question',min:1,max:12,item:[['q','Question'],['a','Answer','area']]}},
-  {key:'sell.closing',label:'Sell page — Closing card',fields:[['eyebrow','Eyebrow'],['heading','Heading','rich'],['text','Text','area'],['cta','Button label']]},
+  {key:'sell.hero',label:'Sell page — Hero, the pieces / services / both question, and the arrangement card',fields:[['eyebrow','Eyebrow'],['h1','Big heading — pieces','rich'],['h1Services','Big heading — services','rich'],['h1Both','Big heading — both','rich'],['intro','Intro paragraph — pieces','area'],['introServices','Intro paragraph — services','area'],['introBoth','Intro paragraph — both','area'],['question','The question above the three choices'],['note','Small line under the choices'],['ctaApply','Arrangement card button']],lists:[{field:'facts',label:'Arrangement line — pieces',min:2,max:6},{field:'factsServices',label:'Arrangement line — services',min:2,max:6},{field:'factsBoth',label:'Arrangement line — both',min:2,max:6}]},
+  {key:'sell.money',label:'Sell page — What a sale / booking pays you',fields:[['eyebrow','Eyebrow'],['heading','Heading — pieces'],['headingServices','Heading — services'],['headingBoth','Heading — both'],['sub','Line under the heading — pieces','area'],['subServices','Line under the heading — services','area'],['subBoth','Line under the heading — both','area'],['covers','What Trove\'s share pays for','area'],['bothNote','Both: the line under the two columns','area']]},
+  {key:'sell.steps',label:'Sell page — Who does what: your part',fields:[['eyebrow','Eyebrow'],['heading','Line under the heading — pieces and both'],['headingServices','Line under the heading — services']],lists:[{field:'items',label:'Your part — pieces',min:2,max:6,item:[['title','Line'],['text','Small line','area']]},{field:'itemsServices',label:'Your part — services (on Both, the first line is left out: one application covers both)',min:2,max:6,item:[['title','Line'],['text','Small line','area']]}]},
+  {key:'sell.offer',label:'Sell page — Who does what: Trove\'s part (each line opens to its detail)',fields:[['heading','Big heading — pieces and both'],['headingServices','Big heading — services'],['sub','Closing line under your part — pieces','area'],['subServices','Closing line under your part — services','area'],['reviewTitle','First line, on every path'],['reviewText','Its detail','area']],lists:[{field:'items',label:'Trove\'s part — pieces',min:3,max:8,item:[['title','Line'],['text','Detail','area']]},{field:'itemsServices',label:'Trove\'s part — services',min:1,max:6,item:[['title','Line'],['text','Detail','area']]}]},
+  {key:'sell.journey',label:'Sell page — From sold to paid (pieces and both)',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['payline','The payout line','area']]},
+  {key:'sell.needs',label:'Sell page — What you\'ll need',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['sub','Line under the heading','area']]},
+  {key:'sell.quotes',label:'Sell page — Maker testimonials (real, consented quotes only; none = no testimonials band, and the closing band says there are no stories yet)',fields:[['eyebrow','Eyebrow'],['heading','Heading'],['sub','Supporting line']],list:{field:'items',label:'Testimonial',min:0,max:6,item:[['quote','Quote','area'],['name','Maker name'],['shop','Shop, city']]}},
+  {key:'sell.faq',label:'Sell page — Questions (each one has a topic and says who sees it)',fields:[['eyebrow','Eyebrow'],['heading','Heading']],list:{field:'items',label:'Question',min:1,max:20,item:[['q','Question'],['a','Answer','area'],['topic','Topic',[['start','Getting started'],['money','Money'],['delivery','Delivery'],['services','Services']]],['audience','Shown to',[['all','Everyone'],['pieces','Makers (the Pieces and Both choices)'],['services','Service providers (the Services and Both choices)']]]]}},
+  {key:'sell.closing',label:'Sell page — Closing band',fields:[['eyebrow','Eyebrow — pieces and both'],['eyebrowServices','Eyebrow — services'],['heading','Heading — pieces and both','rich'],['headingServices','Heading — services','rich'],['foundingNote','Founding line (hidden once a real testimonial exists)','area'],['text','Text','area'],['cta','Button label — pieces and both'],['ctaServices','Button label — services']]},
   {key:'site.footer',label:'Storefront — Footer',fields:[['blurb','About blurb','area'],['legal','Bottom line']]},
 ];
 const cmsClone=v=>JSON.parse(JSON.stringify(v));
@@ -1477,14 +1481,18 @@ function cmsDirty(key){
 function cmsField(key,path,label,kind,val){
   const hint=kind==='rich'?' <i style="font-weight:500;font-style:normal;text-transform:none;letter-spacing:0">— *word* = Orange accent, | = line break</i>':'';
   const on=`oninput="cmsSet('${key}','${path}',this.value);cmsDirty('${key}')${kind==='rich'?`;cmsPrevUpdate(this)`:''}"`;
-  const inp=kind==='area'
+  const inp=Array.isArray(kind)
+    ?`<select onchange="cmsSet('${key}','${path}',this.value);cmsDirty('${key}')">${kind.map(([v,l])=>`<option value="${v}"${v===(val||kind[0][0])?' selected':''}>${l}</option>`).join('')}</select>`
+    :kind==='area'
     ?`<textarea ${on}>${esc(val)}</textarea>`
     :`<input value="${esc(val)}" ${on}>`;
   const prev=kind==='rich'?`<div class="rprev">${cmsRichPrev(val)}</div>`:'';
   return `<div class="cmsf"><label class="flab">${label}${hint}</label>${inp}${prev}</div>`;
 }
-function cmsListHTML(spec){
-  const key=spec.key,L=spec.list,arr=CMS_EDIT[key][L.field];
+/* a section's lists: spec.list, or several in spec.lists (each under its own small heading) */
+const cmsLists=spec=>spec.lists||(spec.list?[spec.list]:[]);
+function cmsListHTML(spec,L){
+  const key=spec.key,arr=CMS_EDIT[key][L.field]||(CMS_EDIT[key][L.field]=[]);
   const rows=arr.map((item,i)=>{
     const fields=L.item
       ?L.item.map(([f,lab,kind])=>cmsField(key,`${L.field}.${i}.${f}`,lab,kind,item[f])).join('')
@@ -1497,13 +1505,13 @@ function cmsListHTML(spec){
     return `<div class="cmsitem"><div class="ihead"><b>${L.label} ${i+1}</b>${btns}</div>${fields}</div>`;
   }).join('');
   const add=!L.fixed&&arr.length<L.max?`<button class="btn btn-ghost" onclick="cmsAdd('${key}','${L.field}')">+ Add ${L.label.toLowerCase()}</button>`:'';
-  return rows+add;
+  return (spec.lists?`<div class="cmslist-h">${L.label}</div>`:'')+rows+add;
 }
 function cmsMove(key,field,i,d){const a=CMS_EDIT[key][field];const [x]=a.splice(i,1);a.splice(i+d,0,x);cmsDirty(key);renderCms();}
 function cmsRemove(key,field,i){CMS_EDIT[key][field].splice(i,1);cmsDirty(key);renderCms();}
 function cmsAdd(key,field){
-  const L=CMS_SPEC.find(s=>s.key===key).list;
-  CMS_EDIT[key][field].push(L.item?Object.fromEntries(L.item.map(([f])=>[f,''])):'');
+  const L=cmsLists(CMS_SPEC.find(s=>s.key===key)).find(l=>l.field===field);
+  CMS_EDIT[key][field].push(L.item?Object.fromEntries(L.item.map(([f,,kind])=>[f,Array.isArray(kind)?kind[0][0]:''])):'');
   cmsDirty(key);renderCms();
 }
 /* product picker — any section with `picker` and a productIds list (hero pieces,
@@ -1626,7 +1634,7 @@ function renderCms(){
           <button class="btn btn-coral" onclick="cmsSave('${spec.key}')">Save</button>
         </div></div>
       ${CMS_ERR[spec.key]?`<div class="cmserr" role="alert"><span>Not saved: ${esc(CMS_ERR[spec.key])}</span><button type="button" onclick="cmsErrClear('${spec.key}')">Dismiss</button></div>`:''}
-      ${fields}${spec.list?cmsListHTML(spec):''}${spec.picker?cmsPickerHTML(spec):''}${spec.shopPicker?cmsShopPickerHTML(spec):''}
+      ${fields}${cmsLists(spec).map(L=>cmsListHTML(spec,L)).join('')}${spec.picker?cmsPickerHTML(spec):''}${spec.shopPicker?cmsShopPickerHTML(spec):''}
     </div>`;
   }).join('');
 }

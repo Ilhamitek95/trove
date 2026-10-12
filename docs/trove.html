@@ -390,7 +390,7 @@
   .step .nm{font-family:var(--font-display);font-size:30px;font-weight:500;color:var(--cream);line-height:1;width:42px;flex-shrink:0}
   .step h4{font-size:21px;font-weight:600;margin-bottom:2px}
   .step p{font-size:14px;margin:0;opacity:.7}
-  /* sell-on-trove page (the hero facts now open the hand-off timeline — see .h-terms) */
+  /* questions (the sell page's FAQ; the maker quotes below) */
   .faqs{max-width:660px;margin:0 auto}
   .faq{border-bottom:1px solid var(--line)}
   .faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:18px;padding:21px 2px;font-size:16.5px;font-weight:600}
@@ -398,21 +398,7 @@
   .faq summary .faq-tg{width:26px;height:26px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;flex-shrink:0;font-size:16px;color:var(--accent-ink);transition:transform .25s}
   .faq[open] summary .faq-tg{transform:rotate(45deg)}
   .faq .faq-a{padding:0 40px 22px 2px;font-size:14.5px;color:var(--ink-80);font-weight:400;line-height:1.7}
-  /* maker testimonials on the sell page — sage feature band */
-  .mqband{background:radial-gradient(620px 360px at 8% 0%,rgba(253,247,245,.55),transparent 70%),radial-gradient(660px 400px at 94% 100%,rgba(207,219,190,.6),transparent 72%),var(--sage);border-radius:28px;padding:52px 44px 46px}
-  .qhead{margin:0 auto 28px;text-align:center}
-  .qsub{margin:14px auto 0;max-width:52ch;font-size:15px;line-height:1.55;color:var(--ink-80)}
   .mquotes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
-  .mq-empty{grid-column:1/-1;margin:0;padding:26px 24px;border:1.5px dashed rgba(38,36,36,.18);border-radius:18px;text-align:center;color:var(--muted);font-size:15px;font-weight:600}
-  .mqband[hidden]{display:none}
-  .fterms{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-  .fterm{background:var(--paper);border-radius:16px;padding:20px 20px 18px;box-shadow:0 14px 34px -22px rgba(41,39,39,.3)}
-  .fterm b{font-family:var(--font-display);font-size:20px;font-weight:600;display:block;line-height:1.15;margin-bottom:6px}
-  .fterm p{font-size:13.5px;line-height:1.6;color:var(--ink-80);font-weight:400;margin:0}
-  .fcta{text-align:center;margin-top:26px}
-  .fterms.f3{grid-template-columns:repeat(3,1fr)}
-  @media(max-width:960px){.fterms,.fterms.f3{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.fterms,.fterms.f3{grid-template-columns:1fr;gap:10px}.fcta .btn{width:100%;justify-content:center}}
   .mq{background:var(--paper);border-radius:18px;padding:24px 22px;margin:0;box-shadow:0 14px 34px -20px rgba(41,39,39,.3)}
   .mqh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
   .mqh svg{width:46px;height:46px;border-radius:50%;flex-shrink:0}
@@ -432,23 +418,223 @@
   .mq-feat .mqh svg{width:58px;height:58px}
   .mq-feat .who{text-align:left}
   @media(hover:hover){.mq:not(.mq-feat){transition:transform .25s ease,box-shadow .25s ease}.mq:not(.mq-feat):hover{transform:translateY(-3px);box-shadow:0 20px 42px -20px rgba(41,39,39,.38)}}
-  /* sell page — compact: hero+steps share a band, 4-col steps, 2-col FAQ, closing folded into a CTA card */
-  #view-sell section.band{padding:64px 0}
-  #view-sell .band-head{margin:0 auto 30px}
-  #view-sell .band-head h2{font-size:clamp(28px,3.6vw,40px)}
-  #view-sell .stephead{margin:56px auto 26px}
-  #view-sell .stepsband{background:var(--rose);border-radius:24px;padding:36px 40px}
-  #view-sell .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 30px}
-  #view-sell .step{display:block;padding:0;border-bottom:0}
-  #view-sell .step .nm{width:auto;display:block;margin-bottom:10px}
-  #view-sell .step h4{font-size:17px;margin-bottom:5px}
-  #view-sell .step p{font-size:13.5px;line-height:1.62}
-  #view-sell .faqs{max-width:1020px;display:grid;grid-template-columns:1fr 1fr;gap:0 46px;align-items:start}
-  #view-sell .sellcta{background:var(--rose);border-radius:24px;padding:38px 44px;margin:44px auto 0;max-width:1020px;display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap;text-align:left}
-  #view-sell .sellcta h2{font-size:clamp(26px,3vw,34px);margin:12px 0 10px;font-weight:400;line-height:1.1}
-  #view-sell .sellcta h2 em{font-style:normal;color:var(--coral)}
-  #view-sell .sellcta p{margin:0;font-size:14.5px;color:var(--ink-80);max-width:52ch;font-weight:400}
-  #view-sell .sellcta .btn{flex-shrink:0}
+
+  /* ---------- SELL ON TROVE: 'Choose your path' (owner's pick, 2026-10-12) ----------
+     #sellPage[data-sellpath] is the chosen path; [data-show] names the paths an
+     element belongs to. Brand tokens only (no new colours): the mockup's light
+     sage tint is Sage, its white is Paper, its #3D3A3A text is --ink-80. */
+  .sp[data-sellpath=pieces] [data-show]:not([data-show~=pieces]),
+  .sp[data-sellpath=services] [data-show]:not([data-show~=services]),
+  .sp[data-sellpath=both] [data-show]:not([data-show~=both]){display:none!important}
+  .sp-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;column-gap:56px;align-items:start}
+  .sp-grid>*{grid-column:1}
+  .sp-sec,.sp-quotes{padding-top:72px;scroll-margin-top:100px}
+  .sp-head{max-width:640px;margin-bottom:26px}
+  .sp-head.wide{max-width:760px}
+  .sp-head h2,.sp-close h2{font-size:clamp(32px,3.5vw,46px);font-weight:400;line-height:1.08;margin-top:10px;text-wrap:balance}
+  .sp-head p{margin-top:12px;color:var(--ink-80);font-size:16px;font-weight:400;line-height:1.6}
+  .sp-dot{flex:none;width:10px;height:10px;border-radius:50%;background:var(--sage);box-shadow:inset 0 0 0 1px var(--line)}
+  .sp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  /* hero + the path chooser */
+  .sp-hero{padding:56px 0 8px}
+  .sp-h1{font-size:clamp(44px,5.2vw,72px);font-weight:400;line-height:1.02;margin:14px 0 0;letter-spacing:-.005em}
+  .sp-lede{font-size:17.5px;color:var(--ink-80);max-width:56ch;margin-top:20px;font-weight:400;line-height:1.6}
+  .sp-choose{margin-top:34px}
+  .sp-q{font-family:var(--font-display);font-size:26px;font-weight:600;line-height:1.2;margin-bottom:14px}
+  .sp-seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:6px;background:var(--rose-tint);border-radius:22px;max-width:640px}
+  .sp-seg button{border-radius:17px;padding:14px 16px;min-height:48px;text-align:start;transition:background .2s,box-shadow .2s}
+  .sp-seg button b{display:block;font-size:15.5px;font-weight:700;line-height:1.3}
+  .sp-seg .short{display:none}
+  .sp-seg .sub{display:block;font-size:13px;font-weight:500;color:var(--muted);line-height:1.35;margin-top:2px}
+  .sp-seg button[aria-checked=true]{background:var(--paper);box-shadow:0 6px 18px -10px rgba(41,39,39,.35)}
+  .sp-seg button[aria-checked=true] b::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--char);margin-inline-end:8px;vertical-align:1px}
+  @media(hover:hover){.sp-seg button[aria-checked=false]:hover{background:rgba(253,247,245,.7)}}
+  .sp-note{font-size:14px;color:var(--muted);margin-top:12px}
+  .sp-shelf{margin-top:34px;height:120px;border-bottom:2px solid var(--rose);position:relative}
+  .sp-shelf svg{position:absolute;bottom:0;inset-inline-start:0;width:100%;height:120px}
+  /* Your arrangement: sticky beside the page, ending with 'From sold to paid' */
+  .sp-aside{grid-column:2;grid-row:1/span 4;align-self:stretch;padding-top:56px}
+  .sp-arr{position:sticky;top:108px;max-height:calc(100vh - 124px);overflow-x:hidden;overflow-y:auto;background:var(--paper);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+  .sp-arr-head{background:var(--sage);padding:20px 24px 16px}
+  .sp-arr-title{font-family:var(--font-display);font-size:28px;font-weight:500;line-height:1.1;margin-top:4px}
+  .sp-arr-big{display:flex;align-items:baseline;gap:12px;padding:20px 24px 4px}
+  .sp-arr-big .n{font-family:var(--font-display);font-size:60px;font-weight:600;line-height:.9;font-variant-numeric:lining-nums}
+  .sp-arr-big .t{font-size:14px;line-height:1.4;color:var(--muted)}
+  .sp-terms{list-style:none;margin:0;padding:6px 24px}
+  .sp-terms li{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line-soft);font-size:14.5px;line-height:1.45}
+  .sp-terms li:first-child{border-top:0}
+  .sp-terms .sp-dot{margin-top:6px}
+  .sp-jump{display:flex;flex-wrap:wrap;gap:2px 16px;padding:14px 24px 0;border-top:1px solid var(--line-soft);font-size:13.5px}
+  .sp-jump .eyebrow{flex-basis:100%;margin-bottom:2px}
+  .sp-jump a{font-weight:600;color:var(--eyebrow);padding:4px 0}
+  .sp-jump a:hover{text-decoration:underline;text-underline-offset:3px}
+  .sp-arr-foot{display:grid;gap:10px;padding:16px 24px 22px}
+  .sp-arr-foot .btn{justify-content:center}
+  .sp-arr-foot small{font-size:12.5px;color:var(--muted);text-align:center;line-height:1.45}
+  /* short laptop screens: the card tightens (and drops the jump list) so its button stays in view */
+  @media(min-width:961px) and (max-height:860px){.sp-arr-head{padding:14px 24px 12px}.sp-arr-title{font-size:24px}.sp-arr-big{padding-top:12px}.sp-arr-big .n{font-size:46px}.sp-terms li{padding:6px 0;font-size:13.5px}.sp-jump{padding-top:10px;font-size:13px}.sp-arr-foot{padding:12px 24px 14px}}
+  @media(min-width:961px) and (max-height:680px){.sp-jump{display:none}.sp-arr-foot small{display:none}}
+  /* what a sale / booking pays you */
+  .sp-money{display:grid;gap:16px}
+  .sp[data-sellpath=both] .sp-money{grid-template-columns:1fr 1fr;align-items:stretch}
+  .sp-panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:28px}
+  .sp-panel h3{font-size:25px;font-weight:600;line-height:1.15}
+  .sp-kind{display:none;font-family:var(--font-display);font-size:21px;font-weight:600;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .sp[data-sellpath=both] .sp-kind{display:block}
+  .sp[data-sellpath=both] .sp-svc{background:var(--rose-tint);border-color:transparent}
+  .sp[data-sellpath=both] .sp-panel h3{font-size:20px}
+  .sp-calc{display:flex;flex-wrap:wrap;align-items:flex-end;gap:18px 32px;margin-top:18px}
+  .sp-field label{display:block;font-size:12.5px;font-weight:700;letter-spacing:.02em;color:var(--eyebrow);margin-bottom:6px}
+  .sp-aed{display:flex;align-items:center;width:200px;border:1.5px solid var(--char);border-radius:14px;background:var(--paper);overflow:hidden}
+  .sp-aed span{padding-inline-start:14px;font-size:14px;font-weight:700}
+  .sp-aed input{width:100%;min-width:0;border:0;outline:0;background:transparent;padding:10px 12px;font:inherit;font-size:22px;font-weight:600;color:var(--char);font-variant-numeric:lining-nums tabular-nums}
+  .sp-aed:focus-within{outline:2px solid var(--char);outline-offset:2px}
+  .sp-result .n{display:block;font-family:var(--font-display);font-size:50px;font-weight:600;line-height:1;font-variant-numeric:lining-nums}
+  .sp-result .t{display:block;font-size:13.5px;color:var(--muted);margin-top:4px}
+  .sp-split{display:flex;height:54px;margin-top:22px;border-radius:14px;overflow:hidden;font-size:14px;font-weight:600}
+  .sp-split>div{display:flex;align-items:center;padding:0 16px;white-space:nowrap;overflow:hidden;transition:flex-basis .4s}
+  .sp-split .you{background:var(--sage);flex:0 0 60%}
+  .sp-split .trove{background:var(--rose);flex:1 1 auto}
+  .sp-covers{margin-top:16px;font-size:15px;line-height:1.6}
+  .sp-fine{margin-top:12px;font-size:13.5px;color:var(--muted)}
+  .sp-lanes{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}
+  .sp[data-sellpath=both] .sp-lanes{grid-template-columns:1fr}
+  .sp-lane{border-radius:16px;padding:18px 20px}
+  .sp-lane.direct{background:var(--moss)}
+  .sp-lane.via{background:var(--sky)}
+  .sp-lane .lbl{display:block;font-size:12.5px;font-weight:700;letter-spacing:.02em;color:var(--eyebrow)}
+  .sp-lane .n{display:block;font-family:var(--font-display);font-size:42px;font-weight:600;line-height:1.05;margin:6px 0 4px;font-variant-numeric:lining-nums}
+  .sp-lane p{font-size:14px;line-height:1.5;font-weight:500}
+  .sp-lane p.fee{margin-top:8px;font-weight:700}
+  .sp-feeline{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;margin-top:16px;padding:14px 18px;border-radius:14px;background:var(--rose-tint);font-size:14.5px}
+  .sp[data-sellpath=both] .sp-feeline{background:var(--paper)}
+  .sp-feeline s,.sp-feeline b{font-family:var(--font-display);font-size:23px;font-weight:600;font-variant-numeric:lining-nums}
+  .sp-feeline s{color:var(--muted)}
+  .sp-feeline small{flex-basis:100%;font-size:13px;color:var(--muted);line-height:1.5}
+  .sp-bothnote{margin-top:14px;font-size:14px;color:var(--muted)}
+  /* who does what */
+  .sp-ledger{display:grid;grid-template-columns:5fr 7fr;gap:14px;align-items:start}
+  .sp-side{border-radius:var(--r);padding:22px 24px}
+  .sp-you{background:var(--sage)}
+  .sp-trove{background:var(--paper);border:1px solid var(--line)}
+  .sp-side h3{font-size:25px;font-weight:600;line-height:1.15}
+  .sp-tap{font-size:13px;font-weight:600;color:var(--muted);margin:2px 0 8px}
+  .sp-mine{list-style:none;margin:10px 0 0;padding:0;counter-reset:spm}
+  .sp-mine li{counter-increment:spm;display:grid;grid-template-columns:30px 1fr;column-gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+  .sp-mine li::before{content:counter(spm);grid-row:span 2;width:28px;height:28px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-family:var(--font-display);font-size:16px;font-weight:600;font-variant-numeric:lining-nums}
+  .sp-mine b{font-size:15px;line-height:1.35}
+  .sp-mine span{font-size:13.5px;color:var(--eyebrow);line-height:1.45}
+  .sp-that{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-family:var(--font-display);font-size:21px;font-weight:500;line-height:1.3}
+  .sp-job{border-top:1px solid var(--line-soft)}
+  .sp-job summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:44px;padding:10px 0;font-size:15px;font-weight:600}
+  .sp-job summary::-webkit-details-marker{display:none}
+  .sp-job .jt{flex:1}
+  .sp-job .pm{flex:none;width:24px;height:24px;border-radius:50%;background:var(--rose-tint);display:grid;place-items:center;font-size:15px;transition:transform .2s}
+  .sp-job[open] .pm{transform:rotate(45deg)}
+  .sp-job p{padding:0 36px 12px;padding-inline-start:22px;font-size:14px;font-weight:400;line-height:1.55;color:var(--ink-80)}
+  /* from sold to paid */
+  .sp-journey{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:28px}
+  .sp-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr)}
+  .sp-steps li{position:relative;padding-inline-end:10px}
+  .sp-steps li::before{content:"";position:absolute;inset-inline-start:34px;inset-inline-end:0;top:17px;height:1.5px;background:var(--rose)}
+  .sp-steps li:last-child::before{display:none}
+  .sp-steps .dot{position:relative;z-index:1;width:34px;height:34px;border-radius:50%;background:var(--cream);border:1.5px solid var(--char);display:grid;place-items:center;font-family:var(--font-display);font-size:17px;font-weight:600;font-variant-numeric:lining-nums}
+  .sp-steps .pay .dot{background:var(--sage);border-color:var(--sage)}
+  .sp-steps b{display:block;margin-top:12px;font-size:15px;line-height:1.3}
+  .sp-steps .s{display:block;margin-top:4px;font-size:13px;line-height:1.45;color:var(--muted)}
+  .sp-slider{display:grid;grid-template-columns:1.2fr 1fr;gap:28px;align-items:center;margin-top:26px;padding-top:24px;border-top:1px solid var(--line-soft)}
+  .sp-slider label{display:block;margin-bottom:8px;font-size:13px;font-weight:700;color:var(--eyebrow)}
+  .sp-slider output{color:var(--char)}
+  .sp-slider input[type=range]{width:100%;min-height:32px;accent-color:var(--char)}
+  .sp-help{margin-top:6px;font-size:13px;color:var(--muted)}
+  .sp-est{background:var(--sage);border-radius:14px;padding:16px 18px}
+  .sp-est .n{display:block;font-family:var(--font-display);font-size:38px;font-weight:600;line-height:1.05;font-variant-numeric:lining-nums}
+  .sp-est .t{display:block;font-size:13.5px;color:var(--eyebrow)}
+  .sp-payline{margin-top:22px;padding-top:18px;border-top:1px solid var(--line-soft);font-size:14.5px}
+  /* what you'll need */
+  .sp-after>.sp-sec:first-child{padding-top:88px}
+  .sp-ready{display:grid;grid-template-columns:1fr 1fr;gap:0 56px;background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:32px 36px}
+  .sp-group{position:relative;padding-inline-start:52px}
+  .sp-group .gnum{position:absolute;inset-inline-start:0;top:-8px;font-family:var(--font-display);font-size:46px;font-weight:500;line-height:1;color:var(--taupe);font-variant-numeric:lining-nums}
+  .sp-gh{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-bottom:8px}
+  .sp-gh h3{font-size:22px;font-weight:600}
+  .sp-gh span{font-size:13px;font-weight:600;color:var(--muted)}
+  .sp-needs{list-style:none;margin:0;padding:0}
+  .sp-needs li{position:relative;padding:12px 0;padding-inline-start:22px;border-top:1px solid var(--line-soft)}
+  .sp-needs li::before{content:"";position:absolute;inset-inline-start:2px;top:20px;width:9px;height:9px;border-radius:50%;background:var(--sage);box-shadow:inset 0 0 0 1px var(--line)}
+  .sp-needs b{display:block;font-size:15px;font-weight:600}
+  .sp-needs .s{display:block;margin-top:2px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+  .sp-needs .opt{margin-inline-start:6px;padding:2px 8px;border-radius:999px;background:var(--rose-tint);font-size:11.5px;font-weight:700;vertical-align:1px}
+  /* questions */
+  .sp-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+  .sp-chips button{min-height:40px;padding:8px 16px;border:1px solid var(--line);border-radius:999px;background:var(--paper);font-size:13.5px;font-weight:600}
+  .sp-chips button[aria-pressed=true]{background:var(--char);color:var(--cream);border-color:var(--char)}
+  .sp .sp-faqs{max-width:none;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:0 56px;align-items:start}
+  .sp-fg{padding-top:18px}
+  .sp-fg>h3{font-size:22px;font-weight:600;margin-bottom:2px}
+  .sp .faq.cap{display:none}
+  .sp-more{margin-top:24px}
+  .sp-empty{margin-top:16px;padding:18px 20px;border-radius:14px;background:var(--rose-tint);font-size:15px}
+  .sp-terms-link{margin-top:22px;font-size:14px}
+  /* closing band on Clay Beige: no Orange accent on it */
+  .sp-close{padding:88px 0 80px}
+  .sp-close-in{display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;background:var(--rose);border-radius:24px;padding:36px 40px}
+  .sp-mark{width:64px;height:64px;border-radius:50%;background:var(--cream);display:grid;place-items:center;color:var(--char)}
+  .sp-close h2 em{color:inherit}
+  .sp-close p{max-width:62ch;margin-top:10px;font-size:15.5px;font-weight:400;color:var(--char)}
+  .sp-bar{display:none}
+  @media(max-width:1180px){.sp-grid{grid-template-columns:minmax(0,1fr) 316px;column-gap:40px}}
+  @media(max-width:960px){
+    .sp-grid{grid-template-columns:minmax(0,1fr)}
+    .sp-aside{display:none;grid-column:1;grid-row:auto;padding:0}
+    .sp-shelf{display:none}
+    .sp-hero{padding-top:34px}
+    .sp-sec,.sp-quotes{padding-top:56px;scroll-margin-top:80px}
+    .sp-after>.sp-sec:first-child{padding-top:64px}
+    .sp-lanes,.sp[data-sellpath=both] .sp-money,.sp-ledger,.sp .sp-faqs{grid-template-columns:minmax(0,1fr)}
+    .sp-ready{grid-template-columns:minmax(0,1fr);gap:24px}
+    .sp-close{padding:56px 0 64px}
+    .sp-close-in{grid-template-columns:minmax(0,1fr);gap:18px;padding:26px 22px}
+    .sp-mark{display:none}
+    .sp-close .btn{justify-content:center}
+    /* phones: the arrangement in one line along the bottom; the chevron opens the card above it */
+    .sp-bar{display:block;position:fixed;left:0;right:0;bottom:var(--cmp-h,0px);z-index:80;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(253,247,245,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(110%);visibility:hidden;transition:transform .3s cubic-bezier(.22,.61,.36,1),visibility .3s}
+    .sp.bar-on .sp-bar{transform:none;visibility:visible}
+    .sp-bar-row{display:flex;align-items:center;gap:10px}
+    .sp-sum{flex:1;min-width:0;display:flex;align-items:center;gap:8px;min-height:48px;padding:10px 14px;border-radius:14px;background:var(--sage);text-align:start}
+    .sp-sum b{font-size:15px;font-weight:700;line-height:1.25}
+    .sp-sum .chev{flex:none;margin-inline-start:auto;transition:transform .2s}
+    .sp.bar-open .sp-sum .chev{transform:rotate(180deg)}
+    .sp-bar .btn{flex-shrink:0;min-height:48px;padding:13px 22px}
+    .sp.bar-on.bar-open .sp-aside{display:block;position:fixed;left:0;right:0;bottom:calc(var(--sp-bar-h,70px) + var(--cmp-h,0px));z-index:79;max-height:calc(100vh - var(--sp-bar-h,70px) - var(--cmp-h,0px) - 76px);overflow:auto;padding:0 12px 8px;overscroll-behavior:contain}
+    .sp.bar-open .sp-arr{position:static;box-shadow:0 -18px 50px -24px rgba(41,39,39,.4)}
+  }
+  @media(max-width:560px){
+    .sp-h1{font-size:clamp(38px,10.5vw,44px)}
+    .sp-lede{font-size:16px;margin-top:16px}
+    .sp-choose{margin-top:26px}
+    .sp-q{font-size:23px}
+    .sp-seg{gap:4px;padding:5px;border-radius:18px}
+    .sp-seg button{padding:12px 6px;text-align:center}
+    .sp-seg .sub,.sp-seg .full{display:none}
+    .sp-seg .short{display:inline}
+    .sp-seg button[aria-checked=true] b::before{width:7px;height:7px;margin-inline-end:6px}
+    .sp-head h2,.sp-close h2{font-size:clamp(28px,8vw,34px)}
+    .sp-panel,.sp-journey,.sp-ready{padding:20px}
+    .sp-side{padding:18px}
+    .sp-aed{width:170px}
+    .sp-result .n{font-size:42px}
+    .sp-lane .n{font-size:36px}
+    .sp-steps{grid-template-columns:1fr}
+    .sp-steps li{display:grid;grid-template-columns:34px 1fr;column-gap:14px;padding:0 0 16px}
+    .sp-steps li::before{inset-inline-start:16px;inset-inline-end:auto;top:34px;bottom:0;width:1.5px;height:auto}
+    .sp-steps b{margin-top:6px}
+    .sp-steps .s{grid-column:2;margin-top:0}
+    .sp-slider{grid-template-columns:1fr;gap:16px}
+    .sp-group{padding-inline-start:40px}
+    .sp-group .gnum{font-size:38px}
+    .sp-chips button{padding:8px 13px}
+  }
 
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;font-size:13.5px;letter-spacing:.05em;transition:.2s}
@@ -814,10 +1000,6 @@
     .fitem{padding:9px 0}
     .pdp{gap:40px;padding:28px 0 70px}
     .mquotes{gap:12px}
-    #view-sell .steps{grid-template-columns:1fr 1fr;gap:18px 24px}
-    #view-sell .faqs{grid-template-columns:1fr;max-width:660px}
-    #view-sell .sellcta{display:block;text-align:center}
-    #view-sell .sellcta p{margin:0 auto 22px}
   }
   @media(max-width:560px){
     .wrap{padding:0 26px}
@@ -898,28 +1080,8 @@
     .citem .cp{position:absolute;right:0;top:0}
     .citem .ci .qrow{gap:8px}
     .sortbar select,.fshop,#pdpPersoText{font-size:16px}
-    /* sell-on-trove: compact phone rhythm (!important only where inline styles exist) */
-    #view-sell .band{padding:38px 0}
-    #view-sell h1,#view-sell [data-vh]{font-size:clamp(36px,10.5vw,42px)!important;margin:12px 0 0!important}
-    #view-sell section:first-of-type .wrap>p{font-size:15px!important;margin:16px auto 22px!important}
-    #view-sell .band-head{margin-bottom:20px}
-    #view-sell .band-head h2{font-size:clamp(26px,7.5vw,32px)}
-    #view-sell .stephead{margin:34px auto 18px}
-    #view-sell .stepsband{padding:24px 20px}
-    #view-sell .steps{grid-template-columns:1fr;gap:0}
-    #view-sell .step{display:flex;padding:12px 0;gap:12px;border-bottom:1px solid rgba(41,39,39,.13)}
-    #view-sell .step:last-child{border-bottom:0}
-    #view-sell .step .nm{width:26px;font-size:22px;margin:0;flex-shrink:0}
-    #view-sell .step h4{font-size:16.5px}
-    #view-sell .step p{font-size:13px}
     .faq summary{padding:14px 2px;font-size:15px}
     .faq .faq-a{padding:0 14px 16px 2px;font-size:13.5px;line-height:1.6}
-    #view-sell .sellcta{padding:28px 22px;margin-top:30px}
-    #view-sell .sellcta h2{font-size:24px}
-    #view-sell .sellcta .btn{width:100%}
-    .mqband{padding:36px 20px 32px}
-    .qhead{margin:0 auto 22px}
-    .qsub{font-size:14px}
     .mq{padding:18px 16px}
     .mq blockquote{font-size:15.5px}
     .mq-feat{padding:0 2px 18px}
@@ -1071,50 +1233,6 @@
     /* 16px inputs so iOS Safari doesn't zoom on focus */
     .co-field input,.co-field select{font-size:16px}
   }
-  /* ---- sell page: the hand-off (steps + offer merged into a two-lane timeline) ---- */
-  .hd-c{text-align:center;margin:0 auto}
-  .ofsub{margin:12px auto 0;max-width:58ch;font-size:15px;line-height:1.55;color:rgba(41,39,39,.72)}
-  .ofic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--char);flex:none}
-  #view-sell #sellSteps{margin-top:58px}
-  .handoff{margin-top:34px}
-  /* the hero's reassurance chips, re-cast as the terms the whole hand-off runs on:
-     outline pills in the timeline's dashed language, feeding into the spine */
-  .h-terms{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:0 0 30px}
-  .h-terms span{display:inline-flex;align-items:center;gap:8px;background:var(--cream);border:1.5px dashed rgba(41,39,39,.26);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;line-height:1.2;color:var(--char)}
-  .h-terms svg{flex:none;opacity:.45}
-  .h-lanes{display:grid;grid-template-columns:1fr 64px 1fr;margin-bottom:4px}
-  .h-lanes .h-mid{position:relative}
-  .h-lanes .h-mid::before{content:'';position:absolute;left:50%;top:-18px;bottom:-12px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
-  .h-lane b{font-family:var(--font-display);font-size:21px;font-weight:600;display:block}
-  .h-lane span{display:block;font-size:12.5px;color:var(--muted)}
-  .hl-you{text-align:right}
-  .h-rows{position:relative;display:flex;flex-direction:column}
-  .h-rows::before{content:'';position:absolute;left:50%;top:8px;bottom:8px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
-  .h-row{display:grid;grid-template-columns:1fr 64px 1fr;padding:24px 0;position:relative}
-  .h-dot{position:absolute;left:50%;top:28px;transform:translateX(-50%);width:32px;height:32px;border-radius:50%;background:var(--cream);border:1.5px solid var(--char);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;z-index:1}
-  .h-row::after{content:'';position:absolute;left:calc(50% + 18px);top:43px;width:22px;border-top:1.5px dashed rgba(41,39,39,.22)}
-  .h-you{text-align:right}
-  .h-you h4{font-family:var(--font-display);font-size:18.5px;font-weight:600;margin:12px 0 6px}
-  .h-you p{font-size:13.5px;line-height:1.62;color:var(--ink-80);max-width:36ch;margin:0 0 0 auto;font-weight:400}
-  .h-trove{display:flex;flex-direction:column;gap:10px;justify-content:center}
-  .h-card{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.72);border:1px solid rgba(41,39,39,.08);border-radius:14px;padding:14px 16px}
-  .h-card b{font-size:15px;display:block;font-family:var(--font-display);font-weight:600}
-  .h-card p{font-size:13px;line-height:1.55;color:var(--ink-80);margin:2px 0 0;font-weight:400}
-  .h-kick{text-align:center;font-size:14px;color:var(--ink-80);margin-top:30px}
-  @media(max-width:860px){
-    .h-lanes{display:none}
-    /* flush left, so the terms share an edge with the left-rail timeline below */
-    .h-terms{justify-content:flex-start}
-    .h-rows::before{left:13px;transform:none}
-    .h-row{display:block;padding:18px 0 18px 36px}
-    .h-dot{left:13px;transform:translateX(-50%);top:0;width:27px;height:27px;font-size:12.5px}
-    .h-row::after{display:none}
-    .h-you{text-align:left}
-    .h-you h4{margin:1px 0 6px}
-    .h-you p{margin:0;max-width:none}
-    .h-trove{margin-top:12px;gap:8px}
-    .h-trove::before{content:'Trove takes care of';font-size:12px;color:var(--muted)}
-  }
   /* ---------- Arabic (right-to-left): the storefront mirrored. The shared
      chrome (header, menus, footer) and the Arabic faces live in /rtl.css. ---------- */
   [dir="rtl"] .hc .sale,[dir="rtl"] .card .ph .sale,[dir="rtl"] .hsolo .sale,[dir="rtl"] .fc-img .sale{left:auto;right:14px}
@@ -1134,7 +1252,7 @@
   [dir="rtl"] .price s{margin-right:0;margin-left:7px}
   [dir="rtl"] .stars span{margin-left:0;margin-right:3px}
   [dir="rtl"] .fitem .c,[dir="rtl"] .vendor-group .vg-head .ship-note,[dir="rtl"] .rev .rwhen,[dir="rtl"] .co-li .pr{margin-left:0;margin-right:auto}
-  [dir="rtl"] .mq-feat .who,[dir="rtl"] #view-sell .sellcta,[dir="rtl"] .confirm .ship-card,[dir="rtl"] .confirm .rcpt{text-align:right}
+  [dir="rtl"] .mq-feat .who,[dir="rtl"] .confirm .ship-card,[dir="rtl"] .confirm .rcpt{text-align:right}
   [dir="rtl"] .acct-offer{text-align:right!important}
   [dir="rtl"] .schip{padding:7px 16px 7px 9px}
   [dir="rtl"] .drawer{right:auto;left:0;transform:translateX(-103%)}
@@ -1143,20 +1261,11 @@
   [dir="rtl"] .pweye{right:auto;left:7px}
   [dir="rtl"] #pdpPersoCount{text-align:left!important}
   [dir="rtl"] .pdp .info s{margin-right:0!important;margin-left:8px}
-  [dir="rtl"] .hl-you,[dir="rtl"] .h-you{text-align:left}
-  [dir="rtl"] .h-row::after{left:auto;right:calc(50% + 18px)}
-  [dir="rtl"] .h-you p{margin:0 auto 0 0}
   /* the makers marquee drifts in screen space; each card reads right to left */
   [dir="rtl"] .vcarousel{direction:ltr}
   [dir="rtl"] .vcard{direction:rtl}
   [dir="rtl"] .co-back{display:block}
   .rev .rtr{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:6px}
-  @media(max-width:860px){
-    [dir="rtl"] .h-rows::before{left:auto;right:13px}
-    [dir="rtl"] .h-row{padding:18px 36px 18px 0}
-    [dir="rtl"] .h-dot{left:auto;right:13px;transform:translateX(50%)}
-    [dir="rtl"] .h-you{text-align:right}
-  }
   @media(max-width:768px){
     [dir="rtl"] .citem .ci .n{padding-right:0;padding-left:74px}
     [dir="rtl"] .citem .cp{right:auto;left:0}
@@ -1164,12 +1273,6 @@
   @media(max-width:560px){
     [dir="rtl"] .card .illus{left:auto;right:8px}
     [dir="rtl"] .house .gallery .gname{left:auto;right:8px}
-  }
-  @media(max-width:560px){
-    .h-card{padding:12px 14px}.h-kick{font-size:13px;margin-top:22px}
-    #view-sell #sellSteps{margin-top:34px}
-    .h-terms{gap:7px;margin-bottom:22px}
-    .h-terms span{padding:7px 12px;font-size:12px;gap:6px}
   }
 </style>
 </head>
@@ -1469,91 +1572,234 @@
 <!-- phones: the buy button follows the shopper once the main one scrolls away -->
 <div class="pdp-bar" id="pdpBar" aria-hidden="true"><div class="pb-t"><span class="pb-n" id="pbName"></span><span class="pb-p" id="pbPrice"></span></div><button class="btn btn-dark" id="pbAdd" tabindex="-1" onclick="$('pdpAdd').click()">Add to basket</button></div>
 
-<!-- SELL -->
+<!-- SELL — 'Choose your path' (the owner's pick, 2026-10-12). One question first —
+     pieces, services or both? — then only that path's money, jobs, steps and
+     checklist (#sellPage[data-sellpath] + [data-show]). The choice is kept in
+     ?for= and localStorage and carried into /apply. Every path's copy is in the
+     markup so the server renders it (the default path visible); the fee figures
+     follow fees.js (src/figures.js) and the example sums are filled by the
+     server (seo.js renderSell) and the page script. -->
 <div class="view" id="view-sell">
-  <section class="band">
-    <div class="wrap" style="text-align:center;max-width:760px">
+<div class="sp" id="sellPage" data-sellpath="pieces" data-commission="40" data-svc="10" data-lead-default="2">
+<script>/* the remembered path before the first paint (no jump for a returning provider) */(function(){try{var m=/[?&]for=(pieces|services|both)(?:&|$)/.exec(location.search),p=m?m[1]:localStorage.getItem('trove.sellPath.v1');if(p==='pieces'||p==='services'||p==='both')document.getElementById('sellPage').setAttribute('data-sellpath',p);}catch(e){}})();</script>
+  <div class="wrap sp-grid">
+    <section class="sp-hero" aria-labelledby="sellH1">
       <span class="eyebrow" data-cms="sell.hero.eyebrow">Sell on Trove</span>
-      <h2 style="font-size:clamp(40px,5vw,62px);font-weight:400;line-height:1.0;margin:14px 0 0" data-cms-rich="sell.hero.h1" data-vh="sell" data-i18n>You make the pieces.<br>We'll be the <em>shop</em>.</h2>
-      <p style="font-size:17px;color:var(--ink-80);max-width:50ch;margin:18px auto 26px;font-weight:400" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.</p>
-      <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-coral" data-cms="sell.hero.ctaApply" onclick="location.href=troveUrl('/apply')">Start your application</button>
-        <button class="btn btn-ghost" data-cms="sell.hero.ctaHow" onclick="document.getElementById('sellSteps').scrollIntoView({behavior:'smooth'})">See how it works</button>
+      <h2 class="sp-h1" id="sellH1" data-vh="sell"><span data-show="pieces" data-cms-rich="sell.hero.h1" data-i18n>You make the pieces.<br>We'll be the <em>shop</em>.</span><span data-show="services" data-cms-rich="sell.hero.h1Services" data-i18n>You do the work.<br>We'll bring the <em>bookings</em>.</span><span data-show="both" data-cms-rich="sell.hero.h1Both" data-i18n>Pieces and services,<br>one <em>shop</em>.</span></h2>
+      <p class="sp-lede" data-show="pieces" data-cms="sell.hero.intro">If you make things at home — ceramics, candles, knits, art, anything crafted with care — Trove gives them a proper shopfront. No shop experience needed, nothing to pay up front, and every price is yours to set.</p>
+      <p class="sp-lede" data-show="services" data-cms="sell.hero.introServices">Workshops, styling, photography — if you offer it in person, Trove gives it a page on the Services Marketplace and sends booking requests straight to your dashboard.</p>
+      <p class="sp-lede" data-show="both" data-cms="sell.hero.introBoth">Sell what you make and offer what you do from one account — a shop for your pieces, a page for your services, reviewed together, one dashboard.</p>
+      <div class="sp-choose" id="sellChoose">
+        <p class="sp-q" id="sellQ" data-cms="sell.hero.question">What are you bringing to Trove?</p>
+        <div class="sp-seg" id="sellSeg" role="radiogroup" aria-labelledby="sellQ">
+          <button type="button" role="radio" aria-checked="true" tabindex="0" data-path="pieces"><b><span class="full">I make pieces</span><span class="short">Pieces</span></b><span class="sub">Ceramics, candles, knits, art</span></button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-path="services"><b><span class="full">I offer services</span><span class="short">Services</span></b><span class="sub">Workshops, styling, photography</span></button>
+          <button type="button" role="radio" aria-checked="false" tabindex="-1" data-path="both"><b>Both</b><span class="sub">Pieces and services, one account</span></button>
+        </div>
+        <p class="sp-note" data-cms="sell.hero.note">The page below changes to show only your arrangement. You can switch at any time.</p>
       </div>
-      <!-- The deal at a glance (F146): what you keep and when it's paid, right under the buttons. -->
-      <div class="h-terms" id="sellFacts" style="margin:26px 0 0">
-        <span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>You keep 60% of every sale</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Paid every other Tuesday, after the 15-day return window</span><span><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Free to join</span>
+      <!-- the shelf: decoration on wide screens only (pink never touches sage; no Charcoal beside Orange) -->
+      <div class="sp-shelf" aria-hidden="true">
+        <svg viewBox="0 0 760 150" preserveAspectRatio="xMinYMax meet" focusable="false">
+          <path d="M70 150C40 150 34 110 52 84 62 70 60 52 56 40H92C88 52 86 70 96 84 114 110 108 150 78 150Z" fill="#DBC7BD"/>
+          <path d="M56 40H92" stroke="#BD9C8C" stroke-width="3"/>
+          <circle cx="74" cy="104" r="7" fill="#F19A82"/>
+          <rect x="150" y="96" width="62" height="54" rx="10" fill="#CAD5CC"/>
+          <rect x="150" y="110" width="62" height="16" fill="#FDF7F5" opacity=".7"/>
+          <path d="M181 96V84" stroke="#BD9C8C" stroke-width="2"/>
+          <path d="M181 84c-6-8 0-16 0-20 0 4 6 12 0 20Z" fill="#F19A82"/>
+          <rect x="262" y="124" width="118" height="26" rx="6" fill="#BD9C8C"/>
+          <rect x="270" y="100" width="104" height="26" rx="6" fill="#DBC7BD"/>
+          <rect x="278" y="78" width="90" height="24" rx="6" fill="#F8D7E4"/>
+          <path d="M278 90h90" stroke="#FDF7F5" stroke-width="2" stroke-dasharray="4 5"/>
+          <path d="M426 112h128c-4 26-30 38-64 38s-60-12-64-38Z" fill="#CAD5CC"/>
+          <path d="M440 120c30 8 70 8 100 0" stroke="#FDF7F5" stroke-width="2" fill="none"/>
+          <rect x="602" y="34" width="96" height="116" rx="4" fill="#FFFCFA" stroke="#BD9C8C" stroke-width="5"/>
+          <circle cx="650" cy="80" r="20" fill="#DBC7BD"/>
+          <path d="M614 138l26-30 18 18 14-12 18 24Z" fill="#CFDBBE"/>
+        </svg>
       </div>
-    </div>
-    <div class="wrap" id="sellSteps" style="max-width:1060px">
-      <div class="band-head hd-c"><span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span><h2 data-cms="sell.offer.heading">You make. Trove does the rest.</h2><p class="ofsub" data-cms="sell.steps.heading">Four steps from craft table to shopfront — with Trove carrying the load at every one.</p></div>
-      <div class="handoff">
-        <div class="h-lanes"><div class="h-lane hl-you"><b>You</b><span>The craft</span></div><div class="h-mid"></div><div class="h-lane hl-trove"><b>Trove</b><span data-cms="sell.offer.eyebrow">Included with every shop</span></div></div>
-        <div class="h-rows" id="handoffRows">
-          <div class="h-row"><div class="h-you"><h4>Tell us about your craft</h4><p>A short form about you and what you make — written like a chat, not paperwork. A real person reads every application, usually within a day or two.</p></div><div class="h-mid"><span class="h-dot">i</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CAD5CC"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg></span><div><b>No trade licence to start</b><p>Trove buys your pieces and resells them, so most home makers can start without a licence. Before your first payout we check your Emirates ID and home address.</p></div></div></div></div>
-          <div class="h-row"><div class="h-you"><h4>Add your pieces</h4><p>Give each piece a name, a price and a few honest words. The form guides you step by step — three or four pieces is a lovely start.</p></div><div class="h-mid"><span class="h-dot">ii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#F8D7E4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span><div><b>Professional photography</b><p>Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.</p></div></div><div class="h-card"><span class="ofic" style="background:#BED3DF"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4L7 9H3v6h4l11 5z"/><path d="M21 10a4 4 0 0 1 0 4"/></svg></span><div><b>Marketing, done for you</b><p>Trove runs the advertising, social media and featured placements that bring shoppers in — you never pay for promotion.</p></div></div></div></div>
-          <div class="h-row"><div class="h-you"><h4>Shoppers discover them</h4><p>Your work appears in search, categories and collections, beside the other makers — in front of people who came looking for something handmade.</p></div><div class="h-mid"><span class="h-dot">iii</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#DBC7BD"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l1-5h14l1 5"/><path d="M4 10v9h16v-9"/><path d="M9 19v-5h6v5"/></svg></span><div><b>The shopkeeping</b><p>Storefront, checkout, card payments, customer questions and returns — Trove runs the shop so you can stay at the craft table.</p></div></div></div></div>
-          <div class="h-row"><div class="h-you"><h4>Sold? We come to you</h4><p>We email you the moment a piece sells, with the day to have it packed by. Pack it in your own packaging and mark it packed in your dashboard.</p></div><div class="h-mid"><span class="h-dot">iv</span></div><div class="h-trove"><div class="h-card"><span class="ofic" style="background:#CFDBBE"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg></span><div><b>Delivery, arranged and paid</b><p>Our courier collects each sold piece from your door and takes it to the buyer. Trove books and pays for every delivery.</p></div></div><div class="h-card"><span class="ofic" style="background:#F3E7E0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg></span><div><b>Fortnightly payouts</b><p>A sale is paid in the first payout after the buyer's 15-day return window closes, so returns are settled first. Your Payments page shows the date for each sale.</p></div></div></div></div>
+    </section>
+
+    <!-- Your arrangement: sticky beside the page on wide screens, it ends after 'From sold to paid';
+         on phones it opens from the bar at the bottom of the screen (#spBar). -->
+    <aside class="sp-aside" aria-label="Your arrangement">
+      <div class="sp-arr" id="spArr">
+        <div class="sp-arr-head"><span class="eyebrow">Your arrangement</span><p class="sp-arr-title"><span data-show="pieces">Selling your pieces</span><span data-show="services">Offering your services</span><span data-show="both">Pieces and services</span></p></div>
+        <p class="sp-arr-big" data-show="pieces both"><span class="n">60%</span><span class="t">of the price you set is yours on every piece sold</span></p>
+        <p class="sp-arr-big" data-show="services"><span class="n">100%</span><span class="t">of a direct booking is yours; 90% when the customer pays through Trove</span></p>
+        <ul class="sp-terms" id="sellFacts" data-show="pieces"><li><span class="sp-dot" aria-hidden="true"></span><span>No joining fee, no listing fee</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>No trade licence to start</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Photos, marketing and customer care by Trove</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Courier collects from your door, paid by Trove</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Paid every other Tuesday, after the 15-day return window</span></li></ul>
+        <ul class="sp-terms" id="sellFactsServices" data-show="services"><li><span class="sp-dot" aria-hidden="true"></span><span>Free to list during launch (AED 30/month later)</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Booking requests straight to your dashboard</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>The customer chooses: pay you directly, or by card through Trove</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Card bookings paid to you by bank transfer, after the service date</span></li></ul>
+        <ul class="sp-terms" id="sellFactsBoth" data-show="both"><li><span class="sp-dot" aria-hidden="true"></span><span>No joining fee, no listing fee for pieces</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Photos, marketing, courier and customer care for your pieces</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Services: 100% of direct bookings, 90% through Trove</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Services free to list during launch (AED 30/month later)</span></li><li><span class="sp-dot" aria-hidden="true"></span><span>Paid every other Tuesday</span></li></ul>
+        <nav class="sp-jump" aria-label="On this page"><span class="eyebrow">On this page</span><a href="#spMoney">The money</a><a href="#spHow">Who does what</a><a href="#spJourney" data-show="pieces both">From sold to paid</a><a href="#spReady">What you'll need</a><a href="#spFaq">Questions</a></nav>
+        <div class="sp-arr-foot"><a class="btn btn-dark sp-apply" href="/apply?for=pieces" data-cms="sell.hero.ctaApply">Start your application</a><small>About ten minutes. A real person reviews every application.</small></div>
+      </div>
+    </aside>
+
+    <section class="sp-sec" id="spMoney" aria-labelledby="spMoneyH">
+      <div class="sp-head">
+        <span class="eyebrow" data-cms="sell.money.eyebrow">The arrangement, in numbers</span>
+        <h2 id="spMoneyH"><span data-show="pieces" data-cms="sell.money.heading">What a sale pays you.</span><span data-show="services" data-cms="sell.money.headingServices">What a booking pays you.</span><span data-show="both" data-cms="sell.money.headingBoth">What each sale and booking pays you.</span></h2>
+        <p><span data-show="pieces" data-cms="sell.money.sub">No joining fee, no listing fee, no hidden costs. Try an example price.</span><span data-show="services" data-cms="sell.money.subServices">Free to list during launch. Try an example booking.</span><span data-show="both" data-cms="sell.money.subBoth">No joining or listing fee for pieces, and services list free during launch. Try an example price.</span></p>
+      </div>
+      <div class="sp-money">
+        <div class="sp-panel" data-show="pieces both">
+          <p class="sp-kind">For your pieces</p>
+          <h3>Pieces: you keep 60% of the price you set</h3>
+          <div class="sp-calc">
+            <div class="sp-field"><label for="spPrice">An example price for a piece</label>
+              <div class="sp-aed"><span aria-hidden="true">AED</span><input id="spPrice" type="number" inputmode="numeric" min="0" max="100000" step="5" value="250" aria-describedby="spExampleNote"></div></div>
+            <div class="sp-result" aria-live="polite"><span class="n" id="spYou">AED 150</span><span class="t">yours, paid every other Tuesday</span></div>
+          </div>
+          <div class="sp-split" id="spSplit" role="img" aria-label="60% to you, 40% to Trove"><div class="you" id="spSplitYou">You · 60%</div><div class="trove" id="spSplitTrove">Trove · 40%</div></div>
+          <p class="sp-covers" data-cms="sell.money.covers">Trove's 40% covers the photography, marketing, storefront and checkout, card payments, customer care and returns, and the courier, which Trove arranges and pays for.</p>
+          <p class="sp-fine" id="spExampleNote">If nothing sells, you pay nothing. The prices here are examples — you set every price.</p>
+        </div>
+        <div class="sp-panel sp-svc" id="sellServices" data-show="services both">
+          <p class="sp-kind">For your services</p>
+          <h3>Services: the customer chooses how to pay</h3>
+          <div class="sp-calc">
+            <div class="sp-field"><label for="spBook">An example booking worth</label>
+              <div class="sp-aed"><span aria-hidden="true">AED</span><input id="spBook" type="number" inputmode="numeric" min="0" max="100000" step="10" value="400"></div></div>
+          </div>
+          <div class="sp-lanes" aria-live="polite">
+            <div class="sp-lane direct"><span class="lbl">Paid to you directly</span><span class="n" id="spDirect">AED 400</span><p>You keep 100% — Trove takes nothing. The payment is settled between you and the customer, by bank transfer or cash, as you agree.</p></div>
+            <div class="sp-lane via"><span class="lbl">Paid through Trove by card</span><span class="n" id="spVia">AED 360</span><p>Trove keeps a 10% platform fee and pays you the other 90% by bank transfer, after the service date.</p><p class="fee">Platform fee on this booking: <span id="spFee">AED 40</span></p></div>
+          </div>
+          <div class="sp-feeline"><span>Listing fee</span><s>AED 30/month</s><b>Free during launch</b><small>It will not start without at least 30 days' written notice, and you can stop listing before then without paying anything.</small></div>
         </div>
       </div>
-      <p class="h-kick" data-cms="sell.offer.sub">All of it is part of the arrangement — no joining fee, no listing fee, no hidden costs.</p>
-    </div>
-  </section>
-    <section class="band" style="padding-top:0">
-    <div class="wrap">
-      <!-- Maker quotes: real, consented words only (Site content → Maker testimonials).
-           The section always shows; until a real quote exists it says so plainly
-           (owner, 2026-09-30), and the founding-makers panel sits below it. -->
-      <div class="mqband" id="quotesBand">
-        <div class="band-head qhead"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 data-cms="sell.quotes.heading">In their words.</h2><p class="qsub" data-cms="sell.quotes.sub">Independent makers run their own shops on Trove. Here's how it feels from the studio side.</p></div>
-        <div class="mquotes" id="quotesList"><p class="mq-empty">No testimonials yet — the first makers’ words will appear here once they’ve sold with us.</p></div>
+      <p class="sp-bothnote" data-show="both" data-cms="sell.money.bothNote">Two separate arrangements on one account: the 60% applies only to pieces, and the 10% only to services paid through Trove.</p>
+    </section>
+
+    <section class="sp-sec" id="spHow" aria-labelledby="spHowH">
+      <div class="sp-head">
+        <span class="eyebrow" data-cms="sell.steps.eyebrow">How it works</span>
+        <h2 id="spHowH"><span data-show="pieces both" data-cms="sell.offer.heading">You make. Trove does the rest.</span><span data-show="services" data-cms="sell.offer.headingServices">You do the work. Trove brings it in.</span></h2>
+        <p><span data-show="pieces both" data-cms="sell.steps.heading">Your part is short. Trove carries everything else.</span><span data-show="services" data-cms="sell.steps.headingServices">Who does what, from request to payment.</span></p>
       </div>
-      <div class="mqband founding" id="foundingBand">
-        <div class="band-head qhead"><span class="eyebrow">Founding makers wanted</span><h2>Be one of our first makers.</h2><p class="qsub">Trove is just opening its doors, so there are no maker stories to share yet — yours could be one of the first.</p></div>
-        <div class="fcta"><button class="btn btn-dark" onclick="location.href=troveUrl('/apply')">Apply as a founding maker</button></div>
-      </div>
-      <!-- Services providers (F104): the deal in brief, so a provider never decides on a form alone. -->
-      <div class="mqband" id="sellServices">
-        <div class="band-head qhead"><span class="eyebrow">Offer a service instead?</span><h2>Workshops, styling, photography, murals…</h2><p class="qsub" data-i18n>If what you offer is a service at the customer’s home, list it on the <a href="/services" style="text-decoration:underline">Services Marketplace</a>. The customer chooses how to pay:</p></div>
-        <div class="fterms f3">
-          <div class="fterm"><b>They pay you directly</b><p>By bank transfer or cash, as you agree. You keep 100% — Trove takes nothing.</p></div>
-          <div class="fterm"><b>They pay through Trove by card</b><p>Trove keeps a 10% platform fee and sends you the rest by bank transfer, after the service date.</p></div>
-          <div class="fterm"><b>Free to list during launch</b><p>A monthly listing fee starts later, and we’ll give you 30 days’ notice before it does.</p></div>
+      <div class="sp-ledger">
+        <div class="sp-side sp-you">
+          <h3>Your part</h3>
+          <ol class="sp-mine" id="sellMine"><li data-show="pieces both"><b>Tell us about your craft</b><span>A short form, not paperwork.</span></li><li data-show="pieces both"><b>Add your pieces</b><span>Three or four is a lovely start.</span></li><li data-show="pieces both"><b>Pack sold pieces</b><span>In your own packaging, ready for the courier.</span></li><li data-show="services"><b>Tell us what you do</b><span>Rough ideas and rough prices are fine.</span></li><li data-show="services both"><b>Confirm each booking</b><span>Set the date and the final price.</span></li><li data-show="services both"><b>Deliver the service</b><span>In person, then mark the booking done.</span></li></ol>
+          <p class="sp-that" data-show="pieces" data-cms="sell.offer.sub">That's it. No joining or listing fee, no licence to start, no courier to book.</p>
+          <p class="sp-that" data-show="services" data-cms="sell.offer.subServices">That's it. Free to list during launch, and nothing taken from direct bookings.</p>
         </div>
-        <div class="fcta"><button class="btn btn-ghost" onclick="location.href=troveUrl('/apply?for=services')">Apply to offer services</button></div>
-      </div>
-    </div>
-  </section>
-  <section class="band" style="padding-top:0">
-    <div class="wrap">
-      <div class="band-head"><span class="eyebrow" data-cms="sell.faq.eyebrow">Good to know</span><h2 data-cms="sell.faq.heading">Your questions, answered honestly.</h2></div>
-      <div class="faqs" id="faqList">
-        <details class="faq"><summary>I've never sold online before — is that okay?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop.</div></details>
-        <details class="faq"><summary>Do I need a trade licence?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.</div></details>
-        <details class="faq"><summary>What does it cost?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included. If nothing sells, you pay nothing. You do stay responsible for your pieces being your own work, safe and as described (see the Seller Agreement).</div></details>
-        <details class="faq"><summary>How does delivery work?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard.</div></details>
-        <details class="faq"><summary>How and when do I get paid?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when.</div></details>
-        <details class="faq"><summary>What if I only make a few pieces a month?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed.</div></details>
-        <details class="faq"><summary>Can I keep selling on Instagram or at markets?<span class="faq-tg">+</span></summary>
-          <div class="faq-a">Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.</div></details>
-      </div>
-      <p class="faq-more" data-i18n style="max-width:660px;margin:22px auto 0;text-align:center;font-size:14px">Want the full terms? Read the <a href="/seller-agreement" style="text-decoration:underline">Seller Agreement</a>, written in plain English, before you apply.</p>
-      <div class="sellcta">
-        <div>
-          <span class="eyebrow" data-cms="sell.closing.eyebrow">Ready when you are</span>
-          <h2 data-cms-rich="sell.closing.heading" data-i18n>Give your craft a <em>shopfront</em>.</h2>
-          <p data-cms="sell.closing.text">The application takes about ten minutes, and you can sign in and prepare your shop while a real person reviews it.</p>
+        <div class="sp-side sp-trove">
+          <h3>Trove's part</h3><p class="sp-tap">Tap any line for the detail</p>
+          <details class="sp-job"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt" data-cms="sell.offer.reviewTitle">Reviews your application</span><span class="pm" aria-hidden="true">+</span></summary><p data-cms="sell.offer.reviewText">A real person reads every application, usually within a day or two.</p></details>
+          <div id="sellJobs"><details class="sp-job" data-show="pieces both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Buys and resells your pieces</span><span class="pm" aria-hidden="true">+</span></summary><p>Trove is the merchant of record, so most home makers can start without a licence. Before your first payout we check your Emirates ID and home address.</p></details><details class="sp-job" data-show="pieces both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Photographs them</span><span class="pm" aria-hidden="true">+</span></summary><p>Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.</p></details><details class="sp-job" data-show="pieces both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Markets them</span><span class="pm" aria-hidden="true">+</span></summary><p>Advertising, social media and featured placements that bring shoppers in. You never pay for promotion.</p></details><details class="sp-job" data-show="pieces both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Runs the shop</span><span class="pm" aria-hidden="true">+</span></summary><p>Search, categories and collections, the storefront and checkout, card payments, customer questions and returns.</p></details><details class="sp-job" data-show="pieces both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Arranges and pays the courier</span><span class="pm" aria-hidden="true">+</span></summary><p>Our courier collects each sold piece from your door and takes it to the buyer. Trove books and pays for every delivery.</p></details><details class="sp-job" data-show="pieces both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Pays you every other Tuesday</span><span class="pm" aria-hidden="true">+</span></summary><p>A sale is paid in the first payout after the buyer's 15-day return window closes, so returns are settled first. Your Payments page shows the date for each sale.</p></details><details class="sp-job" data-show="services both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Gives you a page on the Services Marketplace</span><span class="pm" aria-hidden="true">+</span></summary><p>Your services go live once a real person has approved your application.</p></details><details class="sp-job" data-show="services both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Sends booking requests to your dashboard</span><span class="pm" aria-hidden="true">+</span></summary><p>You confirm each one with the date and the final price.</p></details><details class="sp-job" data-show="services both"><summary><span class="sp-dot" aria-hidden="true"></span><span class="jt">Charges the card when the customer pays through Trove</span><span class="pm" aria-hidden="true">+</span></summary><p>For card bookings Trove is the customer's contracting party. It keeps a 10% platform fee and pays you the other 90% as your fee, by bank transfer to an account in your own name, after the service date.</p></details></div>
         </div>
-        <button class="btn btn-dark" data-cms="sell.closing.cta" onclick="location.href=troveUrl('/apply')">Start your application</button>
       </div>
-    </div>
+    </section>
+
+    <section class="sp-sec" id="spJourney" aria-labelledby="spJourneyH" data-show="pieces both">
+      <div class="sp-head">
+        <span class="eyebrow" data-cms="sell.journey.eyebrow">The life of a sale</span>
+        <h2 id="spJourneyH" data-cms="sell.journey.heading">From sold to paid.</h2>
+      </div>
+      <div class="sp-journey">
+        <ol class="sp-steps">
+          <li><span class="dot" aria-hidden="true">1</span><b>A piece sells</b><span class="s">We email you the day to have it packed by.</span></li>
+          <li><span class="dot" aria-hidden="true">2</span><b>You make or pack it</b><span class="s">Within the make time you set.</span></li>
+          <li><span class="dot" aria-hidden="true">3</span><b>Courier collects</b><span class="s">From your door, booked by Trove.</span></li>
+          <li><span class="dot" aria-hidden="true">4</span><b>Delivered</b><span class="s">The 15-day return window starts.</span></li>
+          <li class="pay"><span class="dot" aria-hidden="true">5</span><b>You're paid</b><span class="s">On the next payout Tuesday after it closes.</span></li>
+        </ol>
+        <div class="sp-slider">
+          <div>
+            <label for="spLead">Your make time for a piece: <output id="spLeadOut" for="spLead">2 days</output></label>
+            <input id="spLead" type="range" min="1" max="42" step="1" value="2" aria-describedby="spLeadHelp">
+            <p class="sp-help" id="spLeadHelp">Each piece carries its own make time, up to six weeks if made to order.</p>
+          </div>
+          <div class="sp-est" aria-live="polite"><span class="t">Buyers see a delivery estimate of</span><span class="n" id="spEst">3–6 days</span><span class="t">your make time + 1–4 courier days</span></div>
+        </div>
+        <p class="sp-payline" data-cms="sell.journey.payline">Payouts wait for the buyer's 15-day return window to close, so returns are settled before you're paid. They run every other Tuesday.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="wrap sp-after">
+    <section class="sp-sec" id="spReady" aria-labelledby="spReadyH">
+      <div class="sp-head wide">
+        <span class="eyebrow" data-cms="sell.needs.eyebrow">Before you start</span>
+        <h2 id="spReadyH" data-cms="sell.needs.heading">What you'll need.</h2>
+        <p data-cms="sell.needs.sub">Missing something? Apply anyway. The second list is done in your dashboard, and you can start it while we review.</p>
+      </div>
+      <div class="sp-ready">
+        <div class="sp-group"><span class="gnum" aria-hidden="true">1</span>
+          <div class="sp-gh"><h3>For the application</h3><span>about ten minutes</span></div>
+          <ul class="sp-needs">
+            <li><b><span data-show="pieces">A name for your shop</span><span data-show="services">A name for your practice or studio</span><span data-show="both">One name for your shop and practice</span></b></li>
+            <li><b>A few words about you and your work</b></li>
+            <li data-show="pieces both"><b>Rough ideas of what you'll sell</b></li>
+            <li data-show="services both"><b>One to three service categories, with rough prices</b></li>
+            <li><b>Your Instagram or a portfolio link, and WhatsApp</b></li>
+            <li data-show="pieces both"><b>A UAE trade licence <span class="opt">optional</span></b><span class="s">Not needed to start. If you have one, add it — it unlocks direct per-sale payouts later.</span></li>
+            <li data-show="services both"><b>The Provider Agreement, to read and accept</b></li>
+          </ul>
+        </div>
+        <div class="sp-group"><span class="gnum" aria-hidden="true">2</span>
+          <div class="sp-gh"><h3>In your dashboard</h3><span>you can start while we review</span></div>
+          <ul class="sp-needs">
+            <li data-show="pieces both"><b>The Seller Agreement, to read and accept</b><span class="s">Needed before your shop is approved.</span></li>
+            <li data-show="pieces both"><b>A pickup address and phone number</b><span class="s">Where the courier collects sold pieces. Also needed before approval.</span></li>
+            <li data-show="pieces both"><b>Three or four pieces to list</b><span class="s">Photos optional — our photographer can shoot them.</span></li>
+            <li data-show="pieces both"><b>Your own packaging</b><span class="s">For handing sold pieces to the courier.</span></li>
+            <li data-show="services both"><b>Your services and prices</b><span class="s">They go live once you're approved.</span></li>
+            <li data-show="pieces both"><b>Your Emirates ID and a bank account in your own name</b><span class="s">Checked before your first payout.</span></li>
+            <li data-show="services"><b>A bank account in your own name</b><span class="s">For bookings paid through Trove by card.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="sp-sec" id="spFaq" aria-labelledby="spFaqH">
+      <div class="sp-head wide">
+        <span class="eyebrow" data-cms="sell.faq.eyebrow">Good to know</span>
+        <h2 id="spFaqH" data-cms="sell.faq.heading">Your questions, answered honestly.</h2>
+      </div>
+      <div class="sp-chips" id="sellChips" role="group" aria-label="Filter the questions by topic">
+        <button type="button" aria-pressed="true" data-topic="all">All</button>
+        <button type="button" aria-pressed="false" data-topic="start">Getting started</button>
+        <button type="button" aria-pressed="false" data-topic="money">Money</button>
+        <button type="button" aria-pressed="false" data-topic="delivery" data-show="pieces both">Delivery</button>
+        <button type="button" aria-pressed="false" data-topic="services" data-show="services both">Services</button>
+      </div>
+      <div class="faqs sp-faqs" id="faqList"><div class="sp-fg" data-topic="start"><h3>Getting started</h3><details class="faq" data-show="pieces both"><summary>I've never sold online before — is that okay?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">That's exactly who Trove is built for. Your shop dashboard is a simple checklist — add a piece, see your orders, mark them ready — with no jargon anywhere. If you can post a photo to Instagram, you can run a Trove shop.</div></details><details class="faq" data-show="pieces both"><summary>Do I need a trade licence?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Most home makers can start without one: Trove buys your pieces from you and resells them to shoppers. Before your first payout we ask for your Emirates ID (front and back) and your home address to verify who you are, and if your sales grow a lot we may ask you to get an e-Trader licence. If you already have a licence, mention it when you apply — it unlocks extra payout options as you grow.</div></details><details class="faq" data-show="pieces services both"><summary>How long does applying take, and who reviews it?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">About ten minutes. A real person reads every application, usually within a day or two, and you can sign in and prepare everything while it's reviewed.</div></details><details class="faq" data-show="pieces both"><summary>What if I only make a few pieces a month?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Small-batch is the point of Trove. A shop with four lovely pieces is very welcome — and the application asks how many orders a month you're comfortable with, so you're never overwhelmed.</div></details><details class="faq" data-show="pieces both"><summary>Do I need professional photos?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">No. Our photographer shoots your pieces so they look their best online — or use your own photos if you prefer.</div></details><details class="faq" data-show="pieces both"><summary>Can I keep selling on Instagram or at markets?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Of course. Your Trove shop is another shelf for your work, not an exclusive deal — keep selling wherever your customers already find you.</div></details><details class="faq" data-show="pieces services both"><summary>Can I sell pieces and offer services?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Yes. One account holds both: a shop for your pieces and a page for your services, reviewed together and run from one dashboard.</div></details></div><div class="sp-fg" data-topic="money"><h3>Money</h3><details class="faq" data-show="pieces both"><summary>What does it cost?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Nothing to join — no monthly fee, no listing fee, no hidden costs. You decide each piece's price. When one sells, Trove buys it from you at 60% of that price — photography, marketing, delivery and customer care all included. If nothing sells, you pay nothing. You do stay responsible for your pieces being your own work, safe and as described (see the Seller Agreement).</div></details><details class="faq" data-show="pieces both"><summary>How and when do I get paid?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Every other Tuesday, to the bank account you add in your dashboard. A sale becomes payable once the piece is delivered and the buyer's 15-day return window has closed, so returns are settled before you are paid — in practice 16 to 29 days after delivery, depending on where the fortnight falls. Your Payments page shows exactly what's coming and when.</div></details><details class="faq" data-show="services both"><summary>What does listing services cost?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Nothing during launch. A flat listing fee of AED 30 a month will start later; it will not start without at least 30 days' written notice, and you can stop listing before then without paying anything.</div></details><details class="faq" data-show="services both"><summary>How do customers pay me?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">The customer chooses. Paid directly, it is settled between you and them, by bank transfer or cash, and Trove takes nothing. Paid through Trove, they pay by card through a secure link; Trove keeps a 10% platform fee and pays you the other 90% by bank transfer to an account in your own name, after the service date.</div></details></div><div class="sp-fg" data-topic="delivery" data-show="pieces both"><h3>Delivery</h3><details class="faq" data-show="pieces both"><summary>How does delivery work?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">You don't deliver anything. When a piece sells, our courier collects it from your door and takes it to the buyer — you just have it packed in your own packaging, ready to hand over. You can follow each order's journey in your dashboard.</div></details><details class="faq" data-show="pieces both"><summary>How long do buyers wait?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Each piece shows its own estimate: your make time for that piece plus 1–4 courier days. Made-to-order pieces can take up to six weeks to make.</div></details></div><div class="sp-fg" data-topic="services" data-show="services both"><h3>Services</h3><details class="faq" data-show="services both"><summary>What kind of services can I list?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Services you deliver in person at the customer's home — workshops, styling, photography, murals and the like. Pick one to three categories when you apply; rough ideas and rough prices are fine.</div></details><details class="faq" data-show="services both"><summary>Can I keep taking bookings elsewhere?<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">Of course. Your Trove page is one more way for customers to find you, not an exclusive deal.</div></details></div></div>
+      <button type="button" class="btn btn-ghost sp-more" id="sellFaqMore" hidden>Show all questions</button>
+      <p class="sp-empty" id="sellFaqEmpty" hidden data-i18n>No questions on this topic yet. <a href="/contact" style="text-decoration:underline">Contact us</a> and a real person will answer.</p>
+      <p class="sp-terms-link" data-show="pieces both" data-i18n>Want the full terms? Read the <a href="/seller-agreement" style="text-decoration:underline">Seller Agreement</a>, written in plain English, before you apply.</p>
+      <p class="sp-terms-link" data-show="services" data-i18n>Want the full terms? Read the <a href="/provider-agreement" style="text-decoration:underline">Provider Agreement</a>, written in plain English, before you apply.</p>
+    </section>
+
+    <!-- Real, consented maker quotes only (Site content → Maker testimonials); hidden until one exists. -->
+    <section class="sp-quotes" aria-labelledby="spQuotesH" id="quotesBand" hidden>
+      <div class="sp-head wide"><span class="eyebrow" data-cms="sell.quotes.eyebrow">From our makers</span><h2 id="spQuotesH" data-cms="sell.quotes.heading">In their words.</h2><p data-cms="sell.quotes.sub">Independent makers run their own shops on Trove. Here's how it feels from the studio side.</p></div>
+      <div class="mquotes" id="quotesList"></div>
+    </section>
+  </div>
+
+  <section class="sp-close" aria-labelledby="spCloseH">
+    <div class="wrap"><div class="sp-close-in">
+      <span class="sp-mark" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M7 21c0-4 2-6 5-6s5 2 5 6"/><path d="M12 15V9"/><path d="M12 9c-3 0-5-2-5-5 3 0 5 2 5 5zM12 11c2.5 0 4.5-1.6 4.5-4.5-2.5 0-4.5 1.6-4.5 4.5z"/></svg></span>
+      <div>
+        <span class="eyebrow"><span data-show="pieces both" data-cms="sell.closing.eyebrow">Founding makers wanted</span><span data-show="services" data-cms="sell.closing.eyebrowServices">Founding providers wanted</span></span>
+        <h2 id="spCloseH"><span data-show="pieces both" data-cms-rich="sell.closing.heading">Give your craft a shopfront.</span><span data-show="services" data-cms-rich="sell.closing.headingServices">Give your work a page.</span></h2>
+        <p><span class="sp-found" data-cms="sell.closing.foundingNote" id="foundingBand">Trove is just opening its doors, so there are no stories to share yet — yours could be one of the first.</span> <span data-cms="sell.closing.text">About ten minutes to apply, and you can prepare everything while a real person reviews it.</span></p>
+      </div>
+      <a class="btn btn-dark sp-apply" href="/apply?for=pieces"><span data-show="pieces both" data-cms="sell.closing.cta">Apply as a founding maker</span><span data-show="services" data-cms="sell.closing.ctaServices">Apply as a founding provider</span></a>
+    </div></div>
   </section>
+
+  <!-- phones: the arrangement in one line; the chevron opens the card above it -->
+  <div class="sp-bar" id="spBar">
+    <div class="sp-bar-row">
+      <button type="button" class="sp-sum" id="spBarToggle" aria-expanded="false" aria-controls="spArr"><b><span data-show="pieces">Keep 60% · free to join</span><span data-show="services">Free to list · keep 100% of direct bookings</span><span data-show="both">60% on pieces · free to list services</span></b><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" focusable="false"><path d="m6 15 6-6 6 6"/></svg><span class="sp-sr" id="spBarLbl">Show your arrangement</span></button>
+      <a class="btn btn-dark sp-apply" href="/apply?for=pieces">Apply</a>
+    </div>
+  </div>
+</div>
 </div>
 
 <!-- CHECKOUT -->
@@ -3672,7 +3918,7 @@ function routeTo(path,search,hash,st){
     else go('shop',cat);
     return true;
   }
-  if(path==='/sell-on-trove'){go('sell');return true;}
+  if(path==='/sell-on-trove'){go('sell');sellRoute(search);return true;}
   if((m=path.match(/^\/order\/([A-Za-z0-9-]+)\/thanks\/?$/))){showOrderPage(m[1]);document.title=_t('Thank you · Trove');return true;}
   if(path==='/'){
     go('home');
@@ -3776,6 +4022,7 @@ async function loadAuth(){
 async function signOut(){await TroveAPI.logout();location.href=troveUrl('/');}
 async function loadFees(){
   try{ const c=await TroveAPI.config(); if(c)FEES=c; }catch(_){}
+  sellCalc(); // the sell page's example sums, now from the server's own figures
 }
 /* ---------------- SITE CONTENT (admin-editable copy) ----------------
  * /api/content serves the storefront copy: built-in defaults with any admin
@@ -3791,55 +4038,193 @@ async function loadContent(){
 }
 const cmsGet=p=>p.split('.').reduce((o,k)=>(o==null?undefined:o[k]),CONTENT);
 const cmsRich=s=>esc(s).replace(/\*([^*]+)\*/g,'<em>$1</em>').replace(/\|/g,'<br>');
-const romanNum=n=>RTL?String(n):['i','ii','iii','iv','v','vi'][n-1]||String(n);
-/* sell.offer cards: icon + tint cycled by index, in DEFAULTS item order:
- * licence, photography, marketing, shopkeeping, delivery, payouts */
-const TERM_TICK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
-const OFFER_TINTS=['#CAD5CC','#F8D7E4','#BED3DF','#DBC7BD','#CFDBBE','#F3E7E0'];
-const OFFER_ICONS=[
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M10 14l2 2 4-4"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4L7 9H3v6h4l11 5z"/><path d="M21 10a4 4 0 0 1 0 4"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10l1-5h14l1 5"/><path d="M4 10v9h16v-9"/><path d="M9 19v-5h6v5"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg>',
-  '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.6"/></svg>',
-];
+/* ---------------- SELL ON TROVE: choose your path (owner's pick, 2026-10-12) ----------------
+ * One question first (pieces, services or both) and then only that path:
+ * #sellPage[data-sellpath], with [data-show] naming the paths an element
+ * belongs to. The choice is kept in ?for= and localStorage (trove.sellPath.v1)
+ * and every Apply link carries it to /apply. The lists below come from Site
+ * content and are drawn exactly as backend/src/seo.js draws them for an
+ * edited section, so nothing moves when the script takes over. */
+const SELL_PATHS=['pieces','services','both'];
+const SELL_KEY='trove.sellPath.v1';
+const SELL_SHOW={all:'pieces services both',pieces:'pieces both',services:'services both'};
+const SELL_TOPICS=['start','money','delivery','services'];
+const TERM_DOT='<span class="sp-dot" aria-hidden="true"></span>';
+const sellTopicLabel=k=>({start:_t('Getting started'),money:_t('Money'),delivery:_t('Delivery'),services:_t('Services')})[k];
+const sellFactsHTML=list=>list.map(f=>`<li>${TERM_DOT}<span>${esc(f)}</span></li>`).join('');
+/* Your part: the pieces lines, then the services lines (the first services
+ * line, applying, is the pieces' first line on the Both path). */
+const sellMineHTML=(items,svc)=>(items||[]).map(i=>`<li data-show="pieces both"><b>${esc(i.title)}</b><span>${esc(i.text)}</span></li>`).join('')
+  +(svc||[]).map((i,k)=>`<li data-show="${k?'services both':'services'}"><b>${esc(i.title)}</b><span>${esc(i.text)}</span></li>`).join('');
+const sellJob=(i,show)=>`<details class="sp-job" data-show="${show}"><summary>${TERM_DOT}<span class="jt">${esc(i.title)}</span><span class="pm" aria-hidden="true">+</span></summary><p>${esc(i.text)}</p></details>`;
+function sellFaqHTML(items){
+  return SELL_TOPICS.map(k=>{
+    const list=items.filter(i=>(SELL_TOPICS.includes(i.topic)?i.topic:'start')===k);
+    if(!list.length)return '';
+    const gs=k==='delivery'?' data-show="pieces both"':k==='services'?' data-show="services both"':'';
+    return `<div class="sp-fg" data-topic="${k}"${gs}><h3>${esc(sellTopicLabel(k))}</h3>${list.map(i=>`<details class="faq" data-show="${SELL_SHOW[i.audience]||SELL_SHOW.all}"><summary>${esc(i.q)}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">${esc(i.a)}</div></details>`).join('')}</div>`;
+  }).join('');
+}
 function applyContent(){
   if(!CONTENT)return;
   document.querySelectorAll('[data-cms]').forEach(el=>{const v=cmsGet(el.dataset.cms);if(typeof v==='string')el.textContent=v;});
   document.querySelectorAll('[data-cms-rich]').forEach(el=>{const v=cmsGet(el.dataset.cmsRich);if(typeof v==='string')el.innerHTML=cmsRich(v);});
-  const facts=cmsGet('sell.hero.facts');
-  if(Array.isArray(facts))$('sellFacts').innerHTML=facts.map(f=>`<span>${TERM_TICK}${esc(f)}</span>`).join('');
-  /* the hand-off: steps (You lane) + offer (Trove lane) merged into one timeline.
-   * Offer cards attach to steps by even distribution, so admin edits to either
-   * list reflow gracefully instead of breaking a hard pairing. */
-  const steps=cmsGet('sell.steps.items');
-  const offerItems=cmsGet('sell.offer.items');
-  if(Array.isArray(steps)&&Array.isArray(offerItems)&&$('handoffRows')){
-    const n=steps.length||1,m=offerItems.length;
-    $('handoffRows').innerHTML=steps.map((s,k)=>{
-      const a=Math.floor(k*m/n),b=Math.floor((k+1)*m/n);
-      const cards=offerItems.slice(a,b).map((o,j)=>`<div class="h-card"><span class="ofic" style="background:${OFFER_TINTS[(a+j)%OFFER_TINTS.length]}">${OFFER_ICONS[(a+j)%OFFER_ICONS.length]}</span><div><b>${esc(o.title)}</b><p>${esc(o.text)}</p></div></div>`).join('');
-      return `<div class="h-row"><div class="h-you"><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div><div class="h-mid"><span class="h-dot">${romanNum(k+1)}</span></div><div class="h-trove">${cards}</div></div>`;
-    }).join('');
-  }
+  const hero=cmsGet('sell.hero')||{}, steps=cmsGet('sell.steps')||{}, offer=cmsGet('sell.offer')||{};
+  [['facts','sellFacts'],['factsServices','sellFactsServices'],['factsBoth','sellFactsBoth']].forEach(([k,id])=>{if(Array.isArray(hero[k])&&$(id))$(id).innerHTML=sellFactsHTML(hero[k]);});
+  if(Array.isArray(steps.items)&&$('sellMine'))$('sellMine').innerHTML=sellMineHTML(steps.items,steps.itemsServices);
+  if(Array.isArray(offer.items)&&$('sellJobs'))$('sellJobs').innerHTML=offer.items.map(i=>sellJob(i,'pieces both')).join('')+(offer.itemsServices||[]).map(i=>sellJob(i,'services both')).join('');
   const faq=cmsGet('sell.faq.items');
-  if(Array.isArray(faq))$('faqList').innerHTML=faq.map(f=>`<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('');
+  if(Array.isArray(faq)&&$('faqList'))$('faqList').innerHTML=sellFaqHTML(faq);
   // Only real makers' words: the five invented quotes that once shipped as
   // defaults are dropped even if a saved override still carries them (the
-  // server filters them too). No quotes → the section says so and the
-  // founding-makers panel stays.
+  // server filters them too). No quotes → no quotes band, and the closing
+  // band says plainly that there are no stories yet.
   const mq=(cmsGet('sell.quotes.items')||[]).filter(q=>q&&q.quote&&q.name&&!isSeededQuote(q));
   $('foundingBand').hidden=!!mq.length;
-  if(!mq.length)$('quotesList').innerHTML='<p class="mq-empty">'+_t('No testimonials yet — the first makers’ words will appear here once they’ve sold with us.')+'</p>';
-  else $('quotesList').innerHTML=mq.map((q,i)=>{
+  $('quotesBand').hidden=!mq.length;
+  $('quotesList').innerHTML=mq.map((q,i)=>{
     const av=MAKER_AVATARS[i%MAKER_AVATARS.length];
     const who=`<div class="who"><b>${esc(q.name)}</b><span>${esc(q.shop)}</span></div>`;
     return i===0
       ?`<figure class="mq mq-feat"><blockquote>${esc(q.quote)}</blockquote><figcaption class="mqh">${av}${who}</figcaption></figure>`
       :`<figure class="mq"><div class="mqh">${av}${who}</div><blockquote>${esc(q.quote)}</blockquote></figure>`;
   }).join('');
+  sellSetPath(SELL_PATH);
 }
+let SELL_PATH='pieces', SELL_TOPIC='all', SELL_FAQ_ALL=false;
+function sellSaved(){try{const p=localStorage.getItem(SELL_KEY);return SELL_PATHS.includes(p)?p:null;}catch(_){return null;}}
+/* opts.save: remember it on this device; opts.url: write ?for= into the address. */
+function sellSetPath(p,opts){
+  opts=opts||{};
+  if(!SELL_PATHS.includes(p))p='pieces';
+  SELL_PATH=p;
+  const page=$('sellPage'); if(!page)return;
+  page.setAttribute('data-sellpath',p);
+  document.querySelectorAll('#sellSeg [role="radio"]').forEach(b=>{const on=b.dataset.path===p;b.setAttribute('aria-checked',String(on));b.tabIndex=on?0:-1;});
+  document.querySelectorAll('#sellPage .sp-apply').forEach(a=>a.setAttribute('href',troveUrl('/apply?for='+p)));
+  if(opts.save){try{localStorage.setItem(SELL_KEY,p);}catch(_){}}
+  if(opts.url&&state.view==='sell'){
+    try{const q=new URLSearchParams(location.search);q.set('for',p);history.replaceState(history.state,'',trovePath(location.pathname)+'?'+q.toString()+location.hash);}catch(_){}
+  }
+  // a topic that this path doesn't have (Delivery for services, Services for pieces) falls back to All
+  const chip=document.querySelector('#sellChips [data-topic="'+SELL_TOPIC+'"]');
+  if(chip&&chip.dataset.show&&!chip.dataset.show.split(' ').includes(p))SELL_TOPIC='all';
+  sellFaqFilter();
+  sellCalc();
+}
+/* an example amount: a number from 0 to the field's max (a long figure would not fit the sum) */
+const sellAmount=id=>{const el=$(id);return Math.min(Number(el.max)||1e5,Math.max(0,Number(el.value)||0));};
+/* The example sums, from the server's figures (/api/config): Trove's margin
+ * on a piece and its platform fee on a booking paid through Trove, rounded
+ * to the fils as backend/src/fees.js splits them. */
+function sellCalc(){
+  if(!$('spPrice'))return;
+  // (/api/config once loaded; until then the figures the server wrote on #sellPage)
+  const cfg=$('sellPage').dataset, num=(v,b)=>(v!=null&&v!==''&&Number.isFinite(Number(v))?Number(v):Number(b));
+  const commission=num(FEES.commissionPercent,cfg.commission), svc=num(FEES.serviceCommissionPercent,cfg.svc);
+  if(commission>=0&&commission<=100){
+    const share=100-commission, g=Math.round(sellAmount('spPrice')*100), fee=Math.round(g*commission/100);
+    $('spYou').textContent=troveMoney((g-fee)/100);
+    $('spSplitYou').style.flexBasis=share+'%';
+    $('spSplitYou').textContent=_t('You · {pct}',{pct:share+'%'});
+    $('spSplitTrove').textContent=_t('Trove · {pct}',{pct:commission+'%'});
+    $('spSplit').setAttribute('aria-label',_t('{share} to you ({you}), {commission} to Trove ({trove})',{share:share+'%',you:troveMoney((g-fee)/100),commission:commission+'%',trove:troveMoney(fee/100)}));
+  }
+  if(svc>=0&&svc<=100){
+    const g=Math.round(sellAmount('spBook')*100), fee=Math.round(g*svc/100);
+    $('spDirect').textContent=troveMoney(g/100);
+    $('spVia').textContent=troveMoney((g-fee)/100);
+    $('spFee').textContent=troveMoney(fee/100);
+  }
+  const lead=$('spLead');
+  if(FEES.leadDaysMin)lead.min=FEES.leadDaysMin; if(FEES.leadDaysMax)lead.max=FEES.leadDaysMax;
+  const d=Math.min(Number(lead.max),Math.max(Number(lead.min),parseInt(lead.value,10)||Number(cfg.leadDefault)||LEAD_DEFAULT()));
+  const days=_tn(d,'{n} day','{n} days');
+  $('spLeadOut').textContent=days; lead.setAttribute('aria-valuetext',days);
+  $('spEst').textContent=estOf(d).label;
+}
+/* Questions: the chosen topic (or All, two per topic until 'Show N more'). */
+function sellFaqFilter(){
+  const list=$('faqList'); if(!list||!$('sellChips'))return;
+  const onPath=el=>!el.dataset.show||el.dataset.show.split(' ').includes(SELL_PATH);
+  const cap=SELL_TOPIC==='all'&&!SELL_FAQ_ALL;
+  let any=false, more=0;
+  list.querySelectorAll('.sp-fg').forEach(g=>{
+    const topicOk=(SELL_TOPIC==='all'||g.dataset.topic===SELL_TOPIC)&&onPath(g);
+    let shown=0;
+    g.querySelectorAll('details.faq').forEach(d=>{
+      d.classList.remove('cap');
+      if(!topicOk||!onPath(d))return;
+      shown++;
+      if(cap&&shown>2){d.classList.add('cap');more++;}
+    });
+    g.hidden=!(topicOk&&shown);
+    if(topicOk&&shown)any=true;
+  });
+  document.querySelectorAll('#sellChips button').forEach(c=>c.setAttribute('aria-pressed',String(c.dataset.topic===SELL_TOPIC)));
+  $('sellFaqMore').hidden=!more;
+  if(more)$('sellFaqMore').textContent=_tn(more,'Show {n} more question','Show {n} more questions');
+  $('sellFaqEmpty').hidden=any;
+}
+/* Phones: the one-line bar shows once the chooser has scrolled away and steps
+ * aside for the closing band (which has its own Apply button), so it never
+ * sits over the footer. The chevron opens the arrangement card above it. */
+function sellBarOpen(open){
+  const page=$('sellPage'); if(!page)return;
+  if(open)page.style.setProperty('--sp-bar-h',$('spBar').offsetHeight+'px');
+  page.classList.toggle('bar-open',!!open);
+  $('spBarToggle').setAttribute('aria-expanded',String(!!open));
+  $('spBarLbl').textContent=open?_t('Hide your arrangement'):_t('Show your arrangement');
+}
+function sellInit(){
+  const page=$('sellPage'); if(!page)return;
+  document.querySelectorAll('#sellSeg [role="radio"]').forEach((b,i,all)=>{
+    b.addEventListener('click',()=>sellSetPath(b.dataset.path,{save:true,url:true}));
+    b.addEventListener('keydown',e=>{
+      const next=RTL?'ArrowLeft':'ArrowRight', prev=RTL?'ArrowRight':'ArrowLeft';
+      const d=e.key===next||e.key==='ArrowDown'?1:e.key===prev||e.key==='ArrowUp'?-1:0;
+      if(!d)return;
+      e.preventDefault();
+      const n=all[(i+d+all.length)%all.length];
+      n.focus();sellSetPath(n.dataset.path,{save:true,url:true});
+    });
+  });
+  ['spPrice','spBook','spLead'].forEach(id=>$(id).addEventListener('input',sellCalc));
+  document.querySelectorAll('#sellChips button').forEach(c=>c.addEventListener('click',()=>{SELL_TOPIC=c.dataset.topic;sellFaqFilter();}));
+  $('sellFaqMore').addEventListener('click',()=>{
+    const first=$('faqList').querySelector('details.faq.cap');
+    SELL_FAQ_ALL=true;sellFaqFilter();
+    if(first)first.querySelector('summary').focus();
+  });
+  // 'On this page': in-page jumps (the storefront's link router leaves them alone once handled here)
+  document.querySelectorAll('#spArr .sp-jump a').forEach(a=>a.addEventListener('click',e=>{
+    const t=document.getElementById(a.getAttribute('href').slice(1)); if(!t)return;
+    e.preventDefault();sellBarOpen(false);
+    t.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'});
+    const h=t.querySelector('h2'); if(h){h.tabIndex=-1;h.focus({preventScroll:true});}
+  }));
+  $('spBarToggle').addEventListener('click',()=>sellBarOpen(!page.classList.contains('bar-open')));
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&page.classList.contains('bar-open')){sellBarOpen(false);$('spBarToggle').focus();}});
+  if('IntersectionObserver' in window){
+    let past=false, atClose=false; const HEAD=84;
+    const sync=()=>{const on=past&&!atClose;page.classList.toggle('bar-on',on);if(!on&&page.classList.contains('bar-open'))sellBarOpen(false);};
+    const io=new IntersectionObserver(es=>{es.forEach(e=>{
+      if(e.target.id==='sellChoose')past=!e.isIntersecting&&e.boundingClientRect.bottom<HEAD;
+      else atClose=e.isIntersecting||e.boundingClientRect.top<0;
+    });sync();},{rootMargin:'-'+HEAD+'px 0px 0px 0px'}); // (under the sticky header counts as scrolled away)
+    io.observe($('sellChoose'));io.observe(document.querySelector('.sp-close'));
+  }else page.classList.add('bar-on');
+  const q=new URLSearchParams(location.search).get('for');
+  sellSetPath(SELL_PATHS.includes(q)?q:(sellSaved()||page.getAttribute('data-sellpath')));
+}
+/* Opening /sell-on-trove (a link, Back/Forward, the first load): ?for= wins,
+ * then the remembered choice; either is written back into the address. */
+function sellRoute(search){
+  const f=new URLSearchParams(search||'').get('for');
+  const p=SELL_PATHS.includes(f)?f:sellSaved();
+  if(p)sellSetPath(p,{save:true,url:true});
+}
+sellInit();
 function isSeededQuote(q){
   const n=String(q.name||'').trim().toLowerCase(), s=String(q.shop||'').trim().toLowerCase();
   return [['mara','kiln & clay'],['nadia','sable & stone'],['yasmin','fern apothecary'],['saeed','ember goods'],['lena','northbound loom']].some(([a,b])=>n===a&&s.startsWith(b));

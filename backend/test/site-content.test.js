@@ -24,7 +24,7 @@ test('public content serves the built-in defaults', async () => {
   const r = await ctx.api('GET', '/api/content');
   assert.equal(r.status, 200);
   assert.equal(r.data.home.hero.h1, 'Curated|for *Living*.');
-  assert.equal(r.data.sell.faq.items.length, 7);
+  assert.equal(r.data.sell.faq.items.length, 15); // 15 since the sell page's services path (2026-10-12)
   assert.deepEqual(r.data.home.weekly.productIds, []);
   assert.match(r.data.site.promo.text, /Delivery AED 30, free on orders over AED 200/);
   assert.match(r.data.site.footer.legal, /© 2026 Trove/);
@@ -77,7 +77,7 @@ test('banned money-transmission phrasing is rejected and not saved', async () =>
   assert.equal(r.status, 422);
   assert.match(r.data.error, /can't be used/);
   const pub = await ctx.api('GET', '/api/content');
-  assert.equal(pub.data.sell.faq.items.length, 7, 'default kept');
+  assert.equal(pub.data.sell.faq.items.length, 15, 'default kept');
 });
 
 test('shape and length validation', async () => {

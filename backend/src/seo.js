@@ -299,32 +299,40 @@ function withSiteContent(html, lang = 'en') {
     const v = val(key);
     return typeof v === 'string' && changed(key) ? `<${tag}${attrs}>${esc(v)}</${tag}>` : m;
   });
-  out = out.replace(/<(h[1-6])(\b[^>]*\sdata-cms-rich="([^"]+)"[^>]*)>([\s\S]*?)<\/\1>/g, (m, tag, attrs, key) => {
+  // (the sell page's per-path headings are spans inside one heading)
+  out = out.replace(/<(h[1-6]|span)(\b[^>]*\sdata-cms-rich="([^"]+)"[^>]*)>([\s\S]*?)<\/\1>/g, (m, tag, attrs, key) => {
     const v = val(key);
     return typeof v === 'string' && changed(key) ? `<${tag}${attrs}>${cmsRich(v)}</${tag}>` : m;
   });
   if (!out.includes('id="faqList"')) return out; // the Services page carries only the promo bar + footer
-  const roman = (n) => (lang === 'ar' ? String(n) : ['i', 'ii', 'iii', 'iv', 'v', 'vi'][n - 1] || String(n));
-  const facts = val('sell.hero.facts');
-  if (changed('sell.hero.facts') && Array.isArray(facts)) {
-    const tick = pageConst(html, 'TERM_TICK') || '';
-    out = replaceInner(out, 'sellFacts', facts.map((f) => `<span>${tick}${esc(f)}</span>`).join(''));
+  // The sell page's lists, drawn as the page script draws them (sellFactsHTML, sellMineHTML, sellJob, sellFaqHTML).
+  const T = (k) => i18n.t(lang, k, null, ['storefront']);
+  const dot = pageConst(html, 'TERM_DOT') || '';
+  for (const [key, id] of [['facts', 'sellFacts'], ['factsServices', 'sellFactsServices'], ['factsBoth', 'sellFactsBoth']]) {
+    const list = val(`sell.hero.${key}`);
+    if (changed(`sell.hero.${key}`) && Array.isArray(list)) out = replaceInner(out, id, list.map((f) => `<li>${dot}<span>${esc(f)}</span></li>`).join(''));
   }
-  const steps = val('sell.steps.items');
-  const offer = val('sell.offer.items');
-  if ((changed('sell.steps.items') || changed('sell.offer.items')) && Array.isArray(steps) && Array.isArray(offer)) {
-    const tints = pageConst(html, 'OFFER_TINTS') || [];
-    const icons = pageConst(html, 'OFFER_ICONS') || [];
-    const n = steps.length || 1; const k = offer.length;
-    out = replaceInner(out, 'handoffRows', steps.map((s, i) => {
-      const a = Math.floor(i * k / n); const b = Math.floor((i + 1) * k / n);
-      const cards = offer.slice(a, b).map((o, j) => `<div class="h-card"><span class="ofic" style="background:${tints[(a + j) % tints.length] || ''}">${icons[(a + j) % icons.length] || ''}</span><div><b>${esc(o.title)}</b><p>${esc(o.text)}</p></div></div>`).join('');
-      return `<div class="h-row"><div class="h-you"><h4>${esc(s.title)}</h4><p>${esc(s.text)}</p></div><div class="h-mid"><span class="h-dot">${roman(i + 1)}</span></div><div class="h-trove">${cards}</div></div>`;
-    }).join(''));
+  const steps = val('sell.steps');
+  if ((changed('sell.steps.items') || changed('sell.steps.itemsServices')) && steps && Array.isArray(steps.items)) {
+    out = replaceInner(out, 'sellMine', steps.items.map((s) => `<li data-show="pieces both"><b>${esc(s.title)}</b><span>${esc(s.text)}</span></li>`).join('')
+      + (steps.itemsServices || []).map((s, k) => `<li data-show="${k ? 'services both' : 'services'}"><b>${esc(s.title)}</b><span>${esc(s.text)}</span></li>`).join(''));
+  }
+  const offer = val('sell.offer');
+  if ((changed('sell.offer.items') || changed('sell.offer.itemsServices')) && offer && Array.isArray(offer.items)) {
+    const job = (o, show) => `<details class="sp-job" data-show="${show}"><summary>${dot}<span class="jt">${esc(o.title)}</span><span class="pm" aria-hidden="true">+</span></summary><p>${esc(o.text)}</p></details>`;
+    out = replaceInner(out, 'sellJobs', offer.items.map((o) => job(o, 'pieces both')).join('') + (offer.itemsServices || []).map((o) => job(o, 'services both')).join(''));
   }
   const faq = val('sell.faq.items');
   if (changed('sell.faq.items') && Array.isArray(faq)) {
-    out = replaceInner(out, 'faqList', faq.map((f) => `<details class="faq"><summary>${esc(f.q)}<span class="faq-tg">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join(''));
+    const SHOW = { all: 'pieces services both', pieces: 'pieces both', services: 'services both' };
+    const topics = content.CHOICES.topic;
+    const label = { start: T('Getting started'), money: T('Money'), delivery: T('Delivery'), services: T('Services') };
+    out = replaceInner(out, 'faqList', topics.map((k) => {
+      const list = faq.filter((f) => (topics.includes(f.topic) ? f.topic : 'start') === k);
+      if (!list.length) return '';
+      const gs = k === 'delivery' ? ' data-show="pieces both"' : k === 'services' ? ' data-show="services both"' : '';
+      return `<div class="sp-fg" data-topic="${k}"${gs}><h3>${esc(label[k])}</h3>${list.map((f) => `<details class="faq" data-show="${SHOW[f.audience] || SHOW.all}"><summary>${esc(f.q)}<span class="faq-tg" aria-hidden="true">+</span></summary><div class="faq-a">${esc(f.a)}</div></details>`).join('')}</div>`;
+    }).join(''));
   }
   const quotes = (val('sell.quotes.items') || []).filter((q) => q && q.quote && q.name && !content.isSeededQuote(q));
   if (quotes.length) {
@@ -336,7 +344,8 @@ function withSiteContent(html, lang = 'en') {
         ? `<figure class="mq mq-feat"><blockquote>${esc(q.quote)}</blockquote><figcaption class="mqh">${av}${who}</figcaption></figure>`
         : `<figure class="mq"><div class="mqh">${av}${who}</div><blockquote>${esc(q.quote)}</blockquote></figure>`;
     }).join(''));
-    out = out.replace('<div class="mqband founding" id="foundingBand">', '<div class="mqband founding" id="foundingBand" hidden>');
+    // a real quote: the quotes band shows, and the 'no stories to share yet' line steps aside
+    out = out.replace('id="quotesBand" hidden>', 'id="quotesBand">').replace('id="foundingBand">', 'id="foundingBand" hidden>');
   }
   return out;
 }
@@ -702,10 +711,44 @@ function renderMaker(base, slug, lang = 'en') {
   };
 }
 
-function renderSell(base, lang = 'en') {
+/**
+ * The sell page's numbers that are worked out rather than written (the
+ * example sums, the make-time slider), from fees.js, and the path asked for
+ * with ?for= (pieces | services | both; pieces when none). The page script
+ * then keeps them live; a remembered choice is applied before the first paint.
+ */
+const SELL_PATHS = ['pieces', 'services', 'both'];
+function sellFigures(html, lang, path) {
+  const share = (cents) => fees.split(cents).net;
+  const svcNet = (cents) => fees.serviceSplit(cents).net;
+  const ex = (id) => Number((html.match(new RegExp(`id="${id}"[^>]*\\bvalue="(\\d+)"`)) || [])[1]) || 0;
+  const price = ex('spPrice') * 100; const book = ex('spBook') * 100;
+  const est = require('./lead-times').estimate(fees.LEAD_DAYS_DEFAULT);
+  let out = attr(html, 'sellPage', 'data-commission', String(fees.COMMISSION_PERCENT));
+  out = attr(out, 'sellPage', 'data-svc', String(fees.SERVICE_COMMISSION_PERCENT));
+  out = attr(out, 'sellPage', 'data-lead-default', String(fees.LEAD_DAYS_DEFAULT));
+  out = text(out, 'spYou', i18n.money(lang, share(price) / 100));
+  out = text(out, 'spDirect', i18n.money(lang, book / 100));
+  out = text(out, 'spVia', i18n.money(lang, svcNet(book) / 100));
+  out = text(out, 'spFee', i18n.money(lang, (book - svcNet(book)) / 100));
+  out = attr(out, 'spLead', 'min', String(fees.LEAD_DAYS_MIN));
+  out = attr(out, 'spLead', 'max', String(fees.LEAD_DAYS_MAX));
+  out = attr(out, 'spLead', 'value', String(fees.LEAD_DAYS_DEFAULT));
+  out = text(out, 'spLeadOut', i18n.tn(lang, fees.LEAD_DAYS_DEFAULT, '{n} day', '{n} days', null, ['common']));
+  out = text(out, 'spEst', rangeLabel(est, lang));
+  if (SELL_PATHS.includes(path) && path !== 'pieces') {
+    out = attr(out, 'sellPage', 'data-sellpath', path);
+    out = out.replace(/<button type="button" role="radio" aria-checked="(true|false)" tabindex="(0|-1)" data-path="([a-z]+)">/g,
+      (m, c, t, p) => `<button type="button" role="radio" aria-checked="${p === path}" tabindex="${p === path ? 0 : -1}" data-path="${p}">`);
+    out = out.split('class="btn btn-dark sp-apply" href="/apply?for=pieces"').join(`class="btn btn-dark sp-apply" href="/apply?for=${path}"`);
+  }
+  return out;
+}
+
+function renderSell(base, lang = 'en', path = '') {
   const [T] = tFor(lang);
   const f = require('./pages/facts').facts();
-  const html = activate(storefront(lang), 'sell');
+  const html = sellFigures(activate(storefront(lang), 'sell'), lang, Array.isArray(path) ? path[0] : path);
   return setHead(html, {
     base, url: `${base}/sell-on-trove`, title: T('Sell your handmade pieces on Trove'), lang,
     description: T('Open a shop on Trove: nothing up front, you set the price and keep {share}%. Trove handles photography, delivery and customer care in Dubai and Abu Dhabi.', { share: f.makerShare }),

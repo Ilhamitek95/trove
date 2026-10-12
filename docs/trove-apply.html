@@ -129,6 +129,13 @@
   .role.off{opacity:.45;cursor:not-allowed}
   @media(hover:hover){.role:not(.off):hover{border-color:var(--char)}}
   @media(max-width:480px){.roles{grid-template-columns:1fr}.role{flex-direction:row;align-items:center}}
+  /* the path carried from /sell-on-trove: one line and a Change link instead of the question */
+  .carried{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:14px;background:var(--sage);font-size:14px;font-weight:600;line-height:1.45;color:var(--char)}
+  .carried[hidden],.roles[hidden],#rolesLabel[hidden]{display:none}
+  .carried .cdot{flex:none;width:9px;height:9px;border-radius:50%;background:var(--char)}
+  .carried b{font-weight:700}
+  .clink{margin-inline-start:auto;flex:none;min-height:44px;padding:0 10px;font-size:13.5px;font-weight:700;text-decoration:underline;text-underline-offset:4px;color:var(--char)}
+  [dir="rtl"] .carried{padding:8px 16px 8px 8px}
   .audlbl{font-size:11px;letter-spacing:.06em;color:var(--muted);font-weight:700;margin:10px 0 7px}
   .catbox{display:flex;gap:7px;flex-wrap:wrap}
   .catopt{padding:9px 15px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;font-weight:600;background:var(--paper);transition:.15s;cursor:pointer;font-family:inherit;color:inherit}
@@ -194,16 +201,18 @@
         <p class="lede">One account for everything you do on Trove — pieces, services, or both. Have ready: an Instagram or a website where we can see your work, a WhatsApp number and rough prices.</p>
         <div class="note" id="signedNote" data-i18n>You're signed in as <b id="signedWho"></b> — this will be added to your account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
         <div class="field"><label id="rolesLabel">What are you bringing to Trove?</label>
+          <!-- the choice made on /sell-on-trove (?for= or remembered), shown instead of asking again; Change opens the three doors -->
+          <div class="carried" id="carried" hidden><span class="cdot" aria-hidden="true"></span><span id="carriedText"></span><button type="button" class="clink" id="changeRole" aria-expanded="false" aria-controls="roles" onclick="openRoles()">Change</button></div>
           <div class="roles" id="roles" role="group" aria-labelledby="rolesLabel">
-            <button type="button" class="role on" aria-pressed="true" data-role="maker" onclick="setRole('maker')">
+            <button type="button" class="role on" aria-pressed="true" data-role="maker" onclick="pickRole('maker')">
               <span class="ric" style="background:#DBC7BD"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8 12 3l9 5v8l-9 5-9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg></span>
               <span><b>Pieces</b><small>I make things to sell</small></span>
             </button>
-            <button type="button" class="role" aria-pressed="false" data-role="provider" onclick="setRole('provider')">
+            <button type="button" class="role" aria-pressed="false" data-role="provider" onclick="pickRole('provider')">
               <span class="ric" style="background:#F8D7E4"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-8.5 8.5a3 3 0 0 1-4.2 0l-1.8-1.8a3 3 0 0 1 0-4.2z"/><path d="M4 20c1.4-.3 2.4-1 3-2"/></svg></span>
               <span><b>Services</b><small>Workshops, styling, photography…</small></span>
             </button>
-            <button type="button" class="role" aria-pressed="false" data-role="both" onclick="setRole('both')">
+            <button type="button" class="role" aria-pressed="false" data-role="both" onclick="pickRole('both')">
               <span class="ric" style="background:#CAD5CC"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 14.9 8.6l6.6.9-4.8 4.6 1.2 6.6L12 17.6l-5.9 3.1 1.2-6.6L2.5 9.5l6.6-.9z"/></svg></span>
               <span><b>Both</b><small>Pieces and services, one account</small></span>
             </button>
@@ -375,10 +384,41 @@ function toggleCat(slug){
   hideErr();renderCatPicker();
 }
 
+/* ---------------- the path chosen on /sell-on-trove ----------------
+ * ?for=pieces|services|both, or the choice remembered on this device
+ * (localStorage trove.sellPath.v1, written by the sell page): step 1 says
+ * what the visitor is applying with and offers Change, instead of asking
+ * again. A door picked here is remembered the same way. */
+const PATH_KEY='trove.sellPath.v1';
+const ROLE_OF={pieces:'maker',services:'provider',both:'both'};
+const PATH_OF={maker:'pieces',provider:'services',both:'both'};
+function carriedPath(){
+  const f=new URLSearchParams(location.search).get('for');
+  if(ROLE_OF[f])return f;
+  try{const p=localStorage.getItem(PATH_KEY);return ROLE_OF[p]?p:null;}catch(_){return null;}
+}
+function pickRole(r){
+  setRole(r);
+  try{localStorage.setItem(PATH_KEY,PATH_OF[r]);}catch(_){}
+}
+function showCarried(r){
+  $('carriedText').innerHTML=r==='provider'?_t('Applying with <b>services</b>, as chosen on the last page.')
+    :r==='both'?_t('Applying with <b>pieces and services</b>, as chosen on the last page.')
+    :_t('Applying with <b>pieces</b>, as chosen on the last page.');
+  $('carried').hidden=false;$('rolesLabel').hidden=true;$('roles').hidden=true;
+}
+function openRoles(focus){
+  $('carried').hidden=true;$('rolesLabel').hidden=false;$('roles').hidden=false;
+  $('changeRole').setAttribute('aria-expanded','true');
+  const on=document.querySelector('.role.on');if(on&&focus!==false)on.focus();
+}
+
 /* ---------------- signed-in visitors ---------------- */
 (async()=>{
-  const q=new URLSearchParams(location.search);
-  const want=q.get('for')==='services'?'provider':q.get('for')==='both'?'both':'maker';
+  const carried=carriedPath();
+  const want=carried?ROLE_OF[carried]:'maker';
+  // the carried door straight away (no flash of the maker copy while the session loads)
+  if(carried){setRole(want);showCarried(want);}
   try{
     const me=await TroveAPI.me();
     if(me&&me.user){
@@ -393,11 +433,13 @@ function toggleCat(slug){
       $('signedNote').style.display='block';
       if(me.provider){                                        // already a provider: only a shop can be added
         document.querySelectorAll('.role[data-role=provider],.role[data-role=both]').forEach(b=>{b.disabled=true;b.classList.add('off');b.title=_t('This account already offers services');});
-        setRole('maker');return;
+        setRole('maker');
+        if(carried&&carried!=='pieces')openRoles(false);           // a carried services choice: the three doors say why not
+        return;
       }
     }
   }catch(_){}
-  setRole(want);
+  if(!carried)setRole(want);
 })();
 async function signOutApply(){ await TroveAPI.logout(); location.href=troveUrl('/apply'); }
 
