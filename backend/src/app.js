@@ -78,7 +78,8 @@ function createApp() {
         // idempotency guard inside it: a redelivered event changes nothing,
         // and if anything throws the event id rolls back with the rest, so
         // Stripe's retry gets a clean second attempt.
-        require('./paid-effects').completePaid(orderId, event.id, event.type, stripe);
+        // The intent itself rides along: its amount + currency must be the order's (F440).
+        require('./paid-effects').completePaid(orderId, event.id, event.type, stripe, pi);
       } else if (order && order.status === 'cancelled' && !order.refunded_at && !order.attention) {
         // Paid after the unpaid-checkout sweep cancelled it (the PaymentIntent
         // cancel lost the race): nothing was reserved for it, so refund it.
@@ -189,7 +190,8 @@ function createApp() {
   app.use(['/api/config', '/api/content', '/api/legal', '/api/search/popular'], siteCache);
 
   /* ---------------- Routes ---------------- */
-  app.get('/api/health', (_req, res) => res.json({ ok: true, stripe: !!getStripe(), delivery: require('./delivery').mode() }));
+  // ok:false when payments are required here (production) but not configured (F211).
+  app.get('/api/health', (_req, res) => res.json({ ok: require('./stripe').missingPaymentConfig().length === 0, stripe: !!getStripe(), delivery: require('./delivery').mode() }));
   // Public money rules, so the storefront shows the same fees the server charges.
   app.get('/api/config', (_req, res) => res.json({
     currency: process.env.CURRENCY || 'aed',
@@ -271,6 +273,7 @@ function createApp() {
   app.use('/api/checkout', require('./routes/checkout.routes'));
   app.use('/api/account', require('./routes/account.routes'));
   app.use('/api/delivery', require('./routes/delivery.routes'));
+  app.use('/api/return-photos', require('./routes/return-photos.routes'));
   app.use('/api/services', require('./routes/services.routes'));
   app.use('/api/provider', require('./routes/provider.routes'));
   app.use('/api/contact', require('./routes/contact.routes'));
