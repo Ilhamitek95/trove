@@ -160,7 +160,8 @@ test('a maker on v1–v3 cannot sell on terms they never accepted until they acc
   assert.equal((await ctx.api('GET', `/api/products/${pid}`)).status, 404, 'no piece page either');
   const blocked = await checkout();
   assert.equal(blocked.status, 400);
-  assert.match(blocked.data.error, /unavailable/);
+  assert.match(blocked.data.error, /no longer available/); // named, never numbered (F422)
+  assert.equal(blocked.data.code, 'unavailable');
   const settle = await ctx.api('GET', '/api/seller/settlements', { cookie: sellerCookie });
   assert.equal(settle.data.payoutSetupComplete, true, 'money already owed is not held back');
   for (const v of ['v1', 'v2', '', null]) {

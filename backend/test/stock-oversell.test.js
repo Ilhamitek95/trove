@@ -86,7 +86,7 @@ test('a failed automatic refund leaves a louder flag for a manual refund', async
   assert.equal(lost.refunded_at, null);
 });
 
-test('variants: the stock of the exact combination is what counts, and a partial order takes nothing', async () => {
+test('variants: the stock of the exact combination is what counts; a short line is cancelled and the rest goes ahead (F212)', async () => {
   const options = JSON.stringify([{ name: 'Glaze', values: ['Ash', 'Clay'] }]);
   const variants = JSON.stringify([
     { key: 'Glaze:Ash', options: [{ name: 'Glaze', value: 'Ash' }], stock: 1, priceCents: null },
@@ -96,17 +96,24 @@ test('variants: the stock of the exact combination is what counts, and a partial
     .run(shopId, 'Glazed mug', 'Ceramics', options, variants).lastInsertRowid;
   const ash = JSON.stringify([{ name: 'Glaze', value: 'Ash' }]);
   const clay = JSON.stringify([{ name: 'Glaze', value: 'Clay' }]);
-  // 2 clay (fine) + 2 ash (only 1 left) → the whole order fails and the clay
-  // stock is left untouched.
+  // 2 clay (fine) + 2 ash (only 1 left) → the clay goes ahead and takes its
+  // stock; the ash line is cancelled and refunded, its stock untouched.
+  // (Until 12 Oct the whole order was cancelled — F212.)
   const id = pendingOrder('TRV-OS004', 'pi_os_d', mug, { qty: 2, options: clay, price: 5000 });
-  db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,options) VALUES (?,?,?,?,?,?,?)')
-    .run(id, mug, shopId, 'Glazed mug', 5000, 2, ash);
+  db.prepare('UPDATE orders SET subtotal_cents=20000, total_cents=20000 WHERE id=?').run(id);
+  const ashLine = db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty,options) VALUES (?,?,?,?,?,?,?)')
+    .run(id, mug, shopId, 'Glazed mug', 5000, 2, ash).lastInsertRowid;
+  stripe.reset();
   await pay('evt_os_d', 'pi_os_d', id);
-  await sleep(40);
-  assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(id).status, 'cancelled');
+  await sleep(60);
+  assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(id).status, 'paid');
   const p = db.prepare('SELECT stock, variants FROM products WHERE id=?').get(mug);
-  assert.equal(p.stock, 6, 'nothing taken');
-  assert.deepEqual(JSON.parse(p.variants).map((v) => v.stock), [1, 5]);
+  assert.equal(p.stock, 4, 'only the clay taken');
+  assert.deepEqual(JSON.parse(p.variants).map((v) => v.stock), [1, 3]);
+  assert.equal(db.prepare('SELECT cancelled_qty FROM order_items WHERE id=?').get(ashLine).cancelled_qty, 2);
+  const part = stripe.calls.filter((c) => c.method === 'refunds.create');
+  assert.equal(part.length, 1);
+  assert.equal(part[0].params.amount, 10000, 'just the two ash mugs');
 
   // One ash alone goes through and takes exactly that combination.
   const ok = pendingOrder('TRV-OS005', 'pi_os_e', mug, { qty: 1, options: ash, price: 5000 });
@@ -114,8 +121,8 @@ test('variants: the stock of the exact combination is what counts, and a partial
   await sleep(40);
   assert.equal(db.prepare('SELECT status FROM orders WHERE id=?').get(ok).status, 'paid');
   const after = db.prepare('SELECT stock, variants FROM products WHERE id=?').get(mug);
-  assert.deepEqual(JSON.parse(after.variants).map((v) => v.stock), [0, 5]);
-  assert.equal(after.stock, 5);
+  assert.deepEqual(JSON.parse(after.variants).map((v) => v.stock), [0, 3]);
+  assert.equal(after.stock, 3);
 });
 
 test('the refund email names the order and the amount', () => {

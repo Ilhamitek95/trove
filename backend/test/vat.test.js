@@ -28,14 +28,15 @@ test('quarterly VAT report splits by rail with correct 5/105 amounts', async () 
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)').run(o1, productId, shopId, 'Vase');
   await ctx.postWebhook({ id: 'evt_vat_a', type: 'payment_intent.succeeded', data: { object: { id: 'pi_vat_1', metadata: { order_id: String(o1) } } } });
 
-  // Connect-rail order: VAT = 5/105 × margin (8000) = 381.
+  // Connect-rail order: VAT = 5/105 × what Trove keeps — the margin (8000)
+  // plus the AED 30 delivery (F443) = 5/105 × 11000 = 524.
   const o2 = db.prepare(`INSERT INTO orders (public_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
     VALUES ('TRV-VAT02','b@test.local',20000,3000,0,23000,'pending','connect','pi_vat_2')`).run().lastInsertRowid;
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)').run(o2, productId, shopId, 'Vase');
   await ctx.postWebhook({ id: 'evt_vat_b', type: 'payment_intent.succeeded', data: { object: { id: 'pi_vat_2', metadata: { order_id: String(o2) } } } });
 
   assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o1).vat_amount_cents, 1095);
-  assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o2).vat_amount_cents, 381);
+  assert.equal(db.prepare('SELECT vat_amount_cents FROM orders WHERE id=?').get(o2).vat_amount_cents, 524);
 
   const rep = await ctx.api('GET', '/api/admin/vat-report', { cookie: adminCookie });
   assert.equal(rep.status, 200);
@@ -43,7 +44,7 @@ test('quarterly VAT report splits by rail with correct 5/105 amounts', async () 
   const consign = rep.data.rows.find((r) => r.rail === 'consignment');
   const connect = rep.data.rows.find((r) => r.rail === 'connect');
   assert.equal(consign.vatCents, 1095);
-  assert.equal(connect.vatCents, 381);
+  assert.equal(connect.vatCents, 524);
   assert.match(consign.quarter, /^\d{4}-Q[1-4]$/);
 });
 

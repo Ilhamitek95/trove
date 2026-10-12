@@ -234,7 +234,9 @@ test('the refund emails say the delivery came back', () => {
 });
 
 test('A: the collection fee is per return request, and the buyer form says to send pieces together', async () => {
-  const o = mkOrder({ lines: [{ name: 'Bowl', cents: 6000 }, { name: 'Plate', cents: 3000 }] });
+  // (the Plate costs more than the AED 30 fee: a change of mind worth the
+  // fee or less is refused at request time since F445)
+  const o = mkOrder({ lines: [{ name: 'Bowl', cents: 6000 }, { name: 'Plate', cents: 4000 }] });
   const r = (await buyerOrder(o.pid)).returns;
   assert.equal(r.fee, 30, 'the amount the form shows comes from the server (fees.js)');
   // Two separate change-of-mind requests pay the fee twice …

@@ -108,7 +108,8 @@ test('a valid request locks its items; the same item cannot ride twice', async (
   assert.equal(o.returns.requests[0].status, 'requested');
   assert.equal(o.returns.requests[0].reasonLabel, 'Faulty or damaged');
   assert.equal(o.returns.requests[0].itemsTotal, 64);
-  assert.match(o.returns.requests[0].images[0], /^\/uploads\/returns\//);
+  // Private since F227: served only through the authenticated photo route.
+  assert.match(o.returns.requests[0].images[0], /^\/api\/return-photos\/\d+\/0$/);
 });
 
 test('the shop sees the request on its order view and in its returns feed', async () => {
