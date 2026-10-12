@@ -374,13 +374,14 @@ test('the sitemap lists clean addresses only, with real last-modified dates', as
   // the maker's lastmod follows its newest piece
   assert.equal(entry(`${BASE}/makers/${p.slug}`).lastmod >= stamped.slice(0, 10), true);
 
-  for (const u of ['/', '/shop', '/sell-on-trove', '/services', '/about', '/faq', '/returns', '/terms', '/privacy']) assert.ok(entry(BASE + u), `lists ${u}`);
+  // /apply (the indexable application form) is announced too since 12 Oct (F468).
+  for (const u of ['/', '/shop', '/sell-on-trove', '/apply', '/services', '/about', '/faq', '/returns', '/terms', '/privacy']) assert.ok(entry(BASE + u), `lists ${u}`);
   for (const pr of db.prepare("SELECT slug FROM service_providers WHERE status = 'approved'").all()) assert.ok(entry(`${BASE}/services/${pr.slug}`), pr.slug);
   const locs = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
   assert.equal(new Set(locs).size, locs.length, 'no duplicates');
   for (const l of locs) {
     assert.doesNotMatch(l, /\?/, `${l}: no query strings`);
-    assert.doesNotMatch(l, /\/apply|\/delivery-returns|\/login|\/account|\/sell$|\/admin/, `${l}: nothing thin, duplicate or private`);
+    assert.doesNotMatch(l, /\/delivery-returns|\/login|\/account|\/sell$|\/admin/, `${l}: nothing duplicate or private`);
   }
   // every submitted address answers 200 (no redirects, no 404s)
   for (const l of locs) assert.equal((await get(l.replace(BASE, ''))).status, 200, l);

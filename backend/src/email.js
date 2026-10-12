@@ -84,7 +84,7 @@ function maskEmail(addr) {
 /* Sends in progress, so a shutdown can wait for them (drain()). */
 const inFlight = new Set();
 const SEND_TIMEOUT_MS = 10 * 1000;
-const RETRY_DELAY_MS = 2 * 1000;
+const retryDelayMs = () => (process.env.NODE_ENV === 'test' && process.env.EMAIL_RETRY_DELAY_MS != null ? Number(process.env.EMAIL_RETRY_DELAY_MS) : 2 * 1000);
 const retryable = (status) => status === 429 || status >= 500;
 
 /**
@@ -116,7 +116,7 @@ async function postToResend(payload, key) {
       if (e.final) throw e;
       lastErr = e; // timeout or network error
     }
-    if (attempt === 1) await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    if (attempt === 1) await new Promise((r) => setTimeout(r, retryDelayMs()));
   }
   throw lastErr;
 }

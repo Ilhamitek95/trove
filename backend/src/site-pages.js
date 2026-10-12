@@ -89,9 +89,10 @@ let _chrome = null;
 let _chromeStamp = 0;
 function chrome() {
   const file = path.join(DOCS_DIR, 'trove-services.html');
-  const stamp = fs.statSync(file).mtimeMs;
+  const figures = require('./figures'); // fee figures in the copy follow fees.js
+  const stamp = `${fs.statSync(file).mtimeMs}|${figures.signature()}`;
   if (_chrome && stamp === _chromeStamp) return _chrome;
-  const html = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const html = figures.refigureHtml(fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n'));
   const cssStart = html.indexOf('  em,i,cite{');
   const cssEnd = html.indexOf('  /* buttons (the provider CTA band) */');
   const hStart = html.indexOf('<div class="promo">');

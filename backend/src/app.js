@@ -336,12 +336,13 @@ function createApp() {
   });
   // A miss: the branded 404 page, a real 404 status, never indexed.
   const fileCache = {};
-  /** A docs/ page's source, re-read only when the file changes. */
+  /** A docs/ page's source, re-read only when the file (or a fee figure, src/figures.js) changes. */
+  const figures = require('./figures');
   const docFile = (file) => {
     const f = path.join(DOCS_DIR, file);
-    const stamp = require('fs').statSync(f).mtimeMs;
+    const stamp = `${require('fs').statSync(f).mtimeMs}|${figures.signature()}`;
     const c = fileCache[file];
-    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: require('fs').readFileSync(f, 'utf8') };
+    if (!c || c.stamp !== stamp) fileCache[file] = { stamp, html: figures.refigureHtml(require('fs').readFileSync(f, 'utf8')) };
     return fileCache[file].html;
   };
   const notFound = (req, res) => {

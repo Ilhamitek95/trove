@@ -27,7 +27,11 @@ const AGREEMENT_MIN_SELLING_VERSION = 'v4';
 // v3 (2026-10-02): names Serein Consultancy LLC as the contracting company
 // and the payer of provider fees; liability cap no longer zero while listing
 // is free, and never limits paying over fees Trove collected.
-const PROVIDER_AGREEMENT_VERSION = 'v3';
+// v4 (2026-10-12, F343): the customer's mobile is released once the booking
+// is SECURED — on confirm for a direct booking, on payment for a card booking
+// — as the Services Terms and the code already said (v3 said 'on confirm').
+// Nothing else changed; v3 acceptances stand (no re-acceptance gate).
+const PROVIDER_AGREEMENT_VERSION = 'v4';
 // v2 (2026-09-30): card payment for bookings, private booking links, full
 // refund on cancelling a paid booking before the service date.
 // v3 (2026-10-02): names the contracting company. Nothing else changed.

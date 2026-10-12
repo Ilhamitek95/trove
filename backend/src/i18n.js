@@ -79,15 +79,20 @@ const localUrl = (lang, p) => (lang === 'ar' ? arUrl(p) : p);
 
 /* ---------------- dictionaries ---------------- */
 const cache = new Map();
+// Fee figures in the copy follow fees.js (src/figures.js): a dictionary is
+// refigured — keys and Arabic — exactly as the page templates are, so a
+// changed figure still finds its translation. Identity with the defaults.
+const figures = require('./figures');
 function bundle(lang, name) {
   const f = path.join(I18N_DIR, lang, `${name}.json`);
   let stamp = 0;
-  try { stamp = fs.statSync(f).mtimeMs; } catch (_) { return {}; }
+  try { stamp = `${fs.statSync(f).mtimeMs}|${figures.signature()}`; } catch (_) { return {}; }
   const key = `${lang}/${name}`;
   const c = cache.get(key);
   if (c && c.stamp === stamp) return c.data;
   let data = {};
   try { data = JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { console.error(`i18n: ${key}.json is not valid JSON: ${e.message}`); }
+  data = figures.refigureDict(data);
   cache.set(key, { stamp, data });
   return data;
 }
@@ -113,6 +118,7 @@ const fillVars = (s, vars) => (vars ? String(s).replace(/\{(\w+)\}/g, (m, k) => 
  * entry) gives the key back, with {vars} filled in.
  */
 function t(lang, key, vars, names = ['server']) {
+  key = figures.refigure(key); // the key as the (refigured) dictionaries hold it
   if (lang !== 'ar') return fillVars(key, vars);
   const v = dict('ar', names)[key];
   return isoPrices(fillVars(typeof v === 'string' && v ? v : key, vars));
@@ -120,6 +126,8 @@ function t(lang, key, vars, names = ['server']) {
 const RULES = { ar: new Intl.PluralRules('ar'), en: new Intl.PluralRules('en') };
 /** Plural: tn(lang, n, '{n} piece', '{n} pieces'). The Arabic entry sits under the English plural (other) key. */
 function tn(lang, n, one, other, vars, names = ['server']) {
+  one = figures.refigure(one);
+  other = figures.refigure(other);
   const v = { n, ...(vars || {}) };
   if (lang !== 'ar') return fillVars(n === 1 ? one : other, v);
   const e = dict('ar', names)[other];

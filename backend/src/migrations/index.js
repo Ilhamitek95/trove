@@ -22,24 +22,25 @@
 const fs = require('fs');
 const path = require('path');
 
-function pending(db) {
+function pending(db, dir = __dirname) {
   const applied = new Set(db.prepare('SELECT id FROM schema_migrations').all().map((r) => r.id));
-  const files = fs.readdirSync(__dirname).filter((f) => /^\d{3}-.*\.js$/.test(f)).sort();
+  const files = fs.readdirSync(dir).filter((f) => /^\d{3}-.*\.js$/.test(f)).sort();
   const out = [];
   for (const file of files) {
-    const mig = require(path.join(__dirname, file));
+    const mig = require(path.join(dir, file));
     if (!mig.id || typeof mig.up !== 'function') throw new Error(`migration ${file} must export { id, up }`);
     if (!applied.has(mig.id)) out.push({ file, mig });
   }
   return { applied, todo: out };
 }
 
-function run(db, { backup = true } = {}) {
+// opts.dir: another folder of migration files (tests only).
+function run(db, { backup = true, dir = __dirname } = {}) {
   db.exec(`CREATE TABLE IF NOT EXISTS schema_migrations (
     id         TEXT PRIMARY KEY,
     applied_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`);
-  const { applied, todo } = pending(db);
+  const { applied, todo } = pending(db, dir);
   if (!todo.length) return [];
 
   // A brand-new database (nothing applied yet) has nothing worth copying.

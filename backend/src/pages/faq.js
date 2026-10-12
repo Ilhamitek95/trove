@@ -107,15 +107,18 @@ it from your door.
 
 ### What happens when a buyer returns a piece?
 
-Trove handles the buyer and the refund. The piece comes back to you by
-courier and the purchase is reversed on a following payout, as the
+Trove handles the buyer and the refund, and the piece comes back to you by
+courier. Because you are paid only after the buyer's ${f.returnDays}-day return
+window, a returned piece normally just drops out of your pending total. Only
+if a sale was already paid is it taken off a later payout, as the
 [Seller Agreement](/seller-agreement) explains.
 
 ### What can I not sell?
 
 Anything you did not make, anything counterfeit or unsafe, and anything
 ingestible or applied to the skin: no food, drinks, cosmetics, skincare,
-soap, perfume or supplements.
+soap, perfume or supplements. Candles are welcome: list them under Home &
+Living, as long as they are not made or sold for use on the skin.
 
 ### Do I need a trade licence?
 
@@ -174,8 +177,10 @@ them.
 
 ### I forgot my password. What do I do?
 
-[Contact us](/contact) with the email address on your account and we will
-help you back in.
+Choose **Forgot your password?** on the [sign-in page](/login?forgot=1) and we
+email you a link to choose a new one. The link works once, for an hour.
+Signed up with Google? The same link lets you set a password too. If the
+email does not arrive, [contact us](/contact) from the address on your account.
 
 ### How do I see or delete my personal data?
 

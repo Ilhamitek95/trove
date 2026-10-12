@@ -41,8 +41,8 @@ received it, with its packaging where possible.
 
 ## How to return a piece
 
-1. Go to **Your account → Orders** and open the order.
-2. Choose **Request a return**, pick the pieces going back, tell us why and
+1. Go to **Your account → Orders** and find the order.
+2. Choose **Request a return** under it, pick the pieces going back, tell us why and
    **add at least one photo** of what you are sending back. A request cannot
    be sent without a photo.
 3. We review the request and email you our decision.
