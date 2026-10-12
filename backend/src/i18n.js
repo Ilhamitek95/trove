@@ -45,14 +45,9 @@ const LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|s
 
 /** The path part of a local URL ('/shop?q=x#y' → '/shop'). */
 const pathOf = (u) => String(u || '').split(/[?#]/)[0] || '/';
-/* The cookie banner on Arabic pages (owner 2026-10-02: iubenda offers no
-   Arabic). Same promise as the English banner: opt-in, no marketing. */
-const AR_COOKIE_BANNER = {
-  content: 'نستخدم نحن (troveathome.com) وأطراف ثالثة مختارة ملفات تعريف الارتباط أو تقنيات مشابهة لأغراض تقنية، وبموافقتك لأغراض الوظائف وتحسين التجربة والقياس كما هو موضّح في <a href="/ar/privacy" class="iubenda-cs-cookie-policy-lnk">سياسة الخصوصية</a>. يمكنك منح موافقتك أو رفضها أو سحبها في أي وقت من «إعدادات ملفات تعريف الارتباط» أسفل كل صفحة. استخدم زر «قبول» للموافقة، أو زر «رفض» للمتابعة دون قبول.',
-  acceptButtonCaption: 'قبول',
-  rejectButtonCaption: 'رفض',
-  customizeButtonCaption: 'اعرف المزيد وخصّص',
-};
+/* The cookie banner's settings line, English as the pages carry it and its Arabic twin. */
+const IUB_EN = require('./gtm').iubSettingsLine('en').trim();
+const IUB_AR = require('./gtm').iubSettingsLine('ar').trim();
 
 function isLocalizable(p) {
   const x = pathOf(p);
@@ -336,10 +331,10 @@ function finishPage(html, { lang = 'en', base = '', path: reqPath = '/', query =
   });
   out = out.replace('<meta property="og:locale" content="en_GB">', '<meta property="og:locale" content="ar_AE">\n<meta property="og:locale:alternate" content="en_GB">');
   out = out.replace(/"inLanguage":"en"/g, '"inLanguage":"ar"');
-  // The cookie banner (iubenda) in Arabic too.
-  // iubenda has no Arabic among its languages, so the banner's text and
-  // buttons are given here (the dashboard's design and settings still apply).
-  out = out.replace('_iub.csConfiguration={', `_iub.csConfiguration={lang:"ar",banner:${JSON.stringify(AR_COOKIE_BANNER)},`);
+  // The cookie banner (iubenda) in Arabic too: iubenda has no Arabic among
+  // its languages, so the page's settings line is swapped for the Arabic one
+  // (same consent settings and look, Arabic text and buttons — src/gtm.js).
+  out = out.replace(IUB_EN, IUB_AR);
   const data = `<script>window.TROVE_LANG="ar";window.TROVE_I18N=${JSON.stringify(d).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')};</script>`;
   if (/<meta charset="utf-8">/i.test(out)) out = out.replace(/<meta charset="utf-8">/i, (m) => `${m}\n${data}`);
   else out = out.replace(/<head>/i, (m) => `${m}\n${data}`);

@@ -233,14 +233,16 @@ test('what people wrote shows in Arabic only while its translation is current', 
 });
 
 test('Arabic pages give the cookie banner Arabic text (iubenda has no Arabic)', async () => {
-  const html = (await get('/ar/about')).text;
-  const cfg = html.match(/_iub\.csConfiguration=\{lang:"ar",banner:(\{.*?\}),/);
-  assert.ok(cfg, 'banner config present');
-  const banner = JSON.parse(cfg[1]);
-  assert.equal(banner.acceptButtonCaption, 'قبول');
-  assert.equal(banner.rejectButtonCaption, 'رفض');
-  assert.match(banner.content, /\/ar\/privacy/);
-  assert.doesNotMatch(banner.content, /تسويق|إعلانات مخصصة/, 'no marketing purpose');
-  const en = (await get('/about')).text;
-  assert.doesNotMatch(en, /banner:\{/, 'English pages keep the dashboard text');
+  const settings = (html) => JSON.parse(html.match(/_iub\.csConfiguration=(\{.*?\});<\/script>/)[1]);
+  const ar = settings((await get('/ar/about')).text);
+  assert.equal(ar.lang, 'ar');
+  assert.equal(ar.banner.acceptButtonCaption, 'قبول');
+  assert.equal(ar.banner.rejectButtonCaption, 'رفض');
+  assert.match(ar.banner.content, /\/ar\/privacy/);
+  assert.doesNotMatch(ar.banner.content, /تسويق|إعلانات مخصصة/, 'no marketing purpose');
+  const en = settings((await get('/about')).text);
+  assert.equal(en.lang, undefined, 'English pages keep the dashboard language');
+  assert.equal(en.banner.acceptButtonCaption, 'Accept');
+  for (const k of ['purposes', 'gdprAppliesGlobally', 'enableUspr']) assert.deepEqual(ar[k], en[k], `${k}: same consent settings in both languages`);
+  for (const k of ['position', 'backgroundColor', 'acceptButtonColor', 'rejectButtonColor']) assert.equal(ar.banner[k], en.banner[k], `${k}: same look in both languages`);
 });

@@ -130,7 +130,7 @@ test('cookie banner: opt-in for every visitor, no US opt-out model, no marketing
   const cfgAt = s.indexOf('_iub.csConfiguration='), embedAt = s.indexOf('embeds.iubenda.com/widgets/');
   assert.ok(cfgAt > -1 && embedAt > -1 && cfgAt < embedAt, 'the settings are declared before the iubenda embed loads');
   assert.ok(s.indexOf('gtag("consent","default"') < cfgAt, 'Consent Mode defaults still come first');
-  const cfgSrc = s.slice(cfgAt).match(/_iub\.csConfiguration=(\{[^}]*\})/)[1];
+  const cfgSrc = s.slice(cfgAt).match(/_iub\.csConfiguration=(\{.*?\});<\/script>/)[1];
   const cfg = vm.runInNewContext(`(${cfgSrc})`);
   // The site settings set usprApplies:true for everyone, and the US opt-out
   // model treats a visitor as consenting until they opt out: the second page
@@ -338,4 +338,25 @@ test('the sign-up endpoints say whether they opened a new account', async (t) =>
   assert.equal(r.data.created, true);
   r = await ctx.api('POST', '/api/auth/google', { body: { credential: 'good-token' } });
   assert.equal(r.data.created, false);
+});
+
+test('cookie banner: Trove’s own look and words, Reject as easy as Accept, brand colours only', () => {
+  const s = gtm.SNIPPET;
+  const cfg = JSON.parse(s.match(/_iub\.csConfiguration=(\{.*?\});<\/script>/)[1]);
+  const b = cfg.banner;
+  assert.equal(b.position, 'float-bottom-left');
+  assert.equal(b.acceptButtonDisplay, true);
+  assert.equal(b.rejectButtonDisplay, true, 'a Reject button on the first screen');
+  assert.equal(b.rejectButtonColor, b.acceptButtonColor, 'Reject looks exactly like Accept');
+  assert.equal(b.rejectButtonCaptionColor, b.acceptButtonCaptionColor);
+  assert.match(b.content, /class="iubenda-cs-cookie-policy-lnk"/, 'the cookie policy link iubenda requires');
+  assert.match(b.content, /consent/i);
+  assert.doesNotMatch(b.content, /marketing|advertis/i, 'no marketing purpose');
+  // Owner rule 2026-10-12: no new colours — only Trove's palette, never Orange on Charcoal.
+  const BRAND = new Set(['#292727', '#FDF7F5', '#FFFCFA', '#DBC7BD']);
+  const style = s.match(/<style id="trove-cmp">([\s\S]*?)<\/style>/)[1];
+  const used = [...JSON.stringify(b).matchAll(/#[0-9A-Fa-f]{6}/g), ...style.matchAll(/#[0-9A-Fa-f]{6}/g)].map((m) => m[0].toUpperCase());
+  for (const c of used) assert.ok(BRAND.has(c), `${c} is a brand colour`);
+  assert.doesNotMatch(style, /F19A82/i, 'no Orange in the banner');
+  assert.doesNotMatch(s, /<\/script>[^]*?_iub\.csConfiguration=[^;]*<\//, 'no raw < inside the settings line');
 });

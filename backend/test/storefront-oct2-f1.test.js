@@ -191,7 +191,7 @@ test('F154: the hero button follows the Collection: Marketplace while it is empt
 /* ---------------- F157 cookie button ---------------- */
 test('F157: the floating cookie button never covers the sticky buy buttons', () => {
   for (const html of [store, services]) assert.match(html, /\.iubenda-tp-btn\{display:none!important\}/);
-  assert.match(require('../src/gtm').SNIPPET, /floatingPreferencesButtonDisplay:false/);
+  assert.match(require('../src/gtm').SNIPPET, /"floatingPreferencesButtonDisplay":false/);
   assert.match(store, /Cookie settings/, 'the footer link stays');
 });
 
