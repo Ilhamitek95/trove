@@ -736,5 +736,7 @@
   "and {n} more orders": {
     "one": "and one more order",
     "other": "and {n} more orders"
-  }
+  },
+  "In this run — being transferred": "In this run — being transferred",
+  "From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out.": "From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out."
 }

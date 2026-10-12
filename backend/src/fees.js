@@ -74,6 +74,25 @@ const fees = {
 // Deprecated alias — old readers still get the same number.
 fees.PLATFORM_FEE_PERCENT = fees.COMMISSION_PERCENT;
 
+/*
+ * The settlement calendar must land on Tuesdays (F449): the cron fires only
+ * on Tuesdays, so an anchor on another weekday, or an interval that is not a
+ * whole number of weeks, would silently stop every run while the dashboard
+ * still says 'Every other Tuesday'. A bad setting is reported loudly at boot
+ * and the default calendar used instead.
+ */
+const DEFAULT_ANCHOR = '2026-10-06'; // a Tuesday
+const DEFAULT_INTERVAL = 14;
+const anchorDay = new Date(`${fees.SETTLEMENT_ANCHOR_DATE}T00:00:00Z`);
+if (Number.isNaN(anchorDay.getTime()) || anchorDay.getUTCDay() !== 2) {
+  console.error(`SETTLEMENT_ANCHOR_DATE ${fees.SETTLEMENT_ANCHOR_DATE} is not a Tuesday — settlement runs only happen on Tuesdays, so the default calendar (${DEFAULT_ANCHOR}) is used instead. Fix the setting on Render.`);
+  fees.SETTLEMENT_ANCHOR_DATE = DEFAULT_ANCHOR;
+}
+if (!(Number.isInteger(fees.SETTLEMENT_INTERVAL_DAYS) && fees.SETTLEMENT_INTERVAL_DAYS > 0 && fees.SETTLEMENT_INTERVAL_DAYS % 7 === 0)) {
+  console.error(`SETTLEMENT_INTERVAL_DAYS ${fees.SETTLEMENT_INTERVAL_DAYS} is not a whole number of weeks — settlement runs only happen on Tuesdays, so the default (${DEFAULT_INTERVAL} days) is used instead. Fix the setting on Render.`);
+  fees.SETTLEMENT_INTERVAL_DAYS = DEFAULT_INTERVAL;
+}
+
 // Delivery is charged on orders at or below the threshold, free above it.
 fees.deliveryFor = (subtotalCents) =>
   subtotalCents > fees.FREE_DELIVERY_THRESHOLD_CENTS ? 0 : fees.DELIVERY_FEE_CENTS;

@@ -684,5 +684,7 @@
   "{n} orders to pack": { "zero": "لا طلبات للتغليف", "one": "طلب واحد للتغليف", "two": "طلبان للتغليف", "few": "{n} طلبات للتغليف", "many": "{n} طلبًا للتغليف", "other": "{n} طلب للتغليف" },
   "{n} booking requests need your answer": { "zero": "لا طلبات حجز بانتظار ردّك", "one": "طلب حجز واحد بانتظار ردّك", "two": "طلبا حجز بانتظار ردّك", "few": "{n} طلبات حجز بانتظار ردّك", "many": "{n} طلب حجز بانتظار ردّك", "other": "{n} طلب حجز بانتظار ردّك" },
   "Confirm the make times of {n} pieces": { "zero": "لا قطع تحتاج تأكيد مدة الصنع", "one": "أكّد مدة صنع قطعة واحدة", "two": "أكّد مدة صنع قطعتين", "few": "أكّد مدة صنع {n} قطع", "many": "أكّد مدة صنع {n} قطعة", "other": "أكّد مدة صنع {n} قطعة" },
-  "and {n} more orders": { "zero": "ولا طلبات أخرى", "one": "وطلب آخر", "two": "وطلبان آخران", "few": "و{n} طلبات أخرى", "many": "و{n} طلبًا آخر", "other": "و{n} طلب آخر" }
+  "and {n} more orders": { "zero": "ولا طلبات أخرى", "one": "وطلب آخر", "two": "وطلبان آخران", "few": "و{n} طلبات أخرى", "many": "و{n} طلبًا آخر", "other": "و{n} طلب آخر" },
+  "In this run — being transferred": "ضمن دفعة التسوية — قيد التحويل",
+  "From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out.": "من دفعة التسوية بتاريخ {day}. ويُنقل إلى «المُسوّى حتى الآن» بمجرد أن يؤكد Trove إرسال التحويل."
 }

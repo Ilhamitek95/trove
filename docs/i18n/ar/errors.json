@@ -119,5 +119,11 @@
   "We can’t take this order right now — please contact us and we’ll help": "لا يمكننا قبول هذا الطلب حاليًا — يُرجى التواصل معنا وسنساعدك",
   "We can’t take this booking right now — please contact us and we’ll help": "لا يمكننا قبول هذا الحجز حاليًا — يُرجى التواصل معنا وسنساعدك",
   "A piece in your basket is on display only and can’t be bought — please remove it": "إحدى القطع في سلتك للعرض فقط ولا يمكن شراؤها — يُرجى إزالتها",
-  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد"
+  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد",
+  "Part of the delivery address is too long — please shorten it": "جزء من عنوان التوصيل طويل جداً — يُرجى اختصاره",
+  "Check the delivery address and try again": "تحقّق من عنوان التوصيل وحاول مرة أخرى",
+  "One of the pieces in your basket is no longer available — remove it to continue": "إحدى القطع في سلتك لم تعد متاحة — أزلها للمتابعة",
+  "Your basket has too many lines — split it into two orders": "سلتك تحتوي على عدد كبير جداً من البنود — قسّمها إلى طلبين",
+  "We can’t take payments right now — please try again in a few minutes": "لا يمكننا استلام المدفوعات الآن — يُرجى المحاولة مرة أخرى بعد دقائق",
+  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "رسوم الاستلام البالغة 30 درهماً لإرجاع بسبب تغيير الرأي لا تقل عن ثمن هذه القطع، فلن يعود إليك أي مبلغ. أضف قطعاً أخرى إلى هذا الإرجاع، أو تواصل معنا إن كان فيها عيب."
 }

@@ -119,5 +119,11 @@
   "We can’t take this order right now — please contact us and we’ll help": "We can’t take this order right now — please contact us and we’ll help",
   "We can’t take this booking right now — please contact us and we’ll help": "We can’t take this booking right now — please contact us and we’ll help",
   "A piece in your basket is on display only and can’t be bought — please remove it": "A piece in your basket is on display only and can’t be bought — please remove it",
-  "This provider isn’t taking bookings yet": "This provider isn’t taking bookings yet"
+  "This provider isn’t taking bookings yet": "This provider isn’t taking bookings yet",
+  "Part of the delivery address is too long — please shorten it": "Part of the delivery address is too long — please shorten it",
+  "Check the delivery address and try again": "Check the delivery address and try again",
+  "One of the pieces in your basket is no longer available — remove it to continue": "One of the pieces in your basket is no longer available — remove it to continue",
+  "Your basket has too many lines — split it into two orders": "Your basket has too many lines — split it into two orders",
+  "We can’t take payments right now — please try again in a few minutes": "We can’t take payments right now — please try again in a few minutes",
+  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them."
 }
