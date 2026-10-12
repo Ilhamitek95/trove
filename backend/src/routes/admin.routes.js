@@ -735,18 +735,30 @@ router.post('/orders/:publicId/refund', requireAdmin, async (req, res, next) => 
     const inFlight = db.prepare("SELECT COUNT(*) AS c FROM return_requests WHERE order_id=? AND status IN ('approved','collected')").get(order.id).c;
     if (inFlight) return res.status(409).json({ error: 'Items from this order are on their way back in an approved return — let that finish, or use Refund now on the return, before refunding the rest' });
 
-    const stripe = require('../stripe').requireStripe();
-    const refund = await stripe.refunds.create({
+    const stripeMod = require('../stripe');
+    const stripe = stripeMod.requireStripe();
+    // One refund per order however often this is pressed (F460): the
+    // idempotency key covers a double click or a retry within a day, and an
+    // earlier refund of this order found on the PaymentIntent covers a retry
+    // after that (a local save that failed after Stripe said yes).
+    const tag = { trove_kind: 'order_refund', order_id: String(order.id) };
+    const refund = await stripeMod.findRefund(stripe, order.stripe_payment_intent_id, tag) || await stripe.refunds.create({
       payment_intent: order.stripe_payment_intent_id,
       ...(order.rail === 'connect' ? { reverse_transfer: true, refund_application_fee: true } : {}),
       // Tagged so the charge.refunded webhook knows Trove made this refund
       // (an untagged one is an external refund made in the Stripe dashboard).
-      metadata: { trove_kind: 'order_refund', order_id: String(order.id) },
+      metadata: tag,
     }, { idempotencyKey: `trove-order-refund-${order.id}` });
 
     // Parcels the courier hasn't collected are stopped (courier booking
-    // cancelled, maker told); delivered ones get a return collection.
+    // cancelled, maker told); delivered ones get a return collection. A
+    // second request racing this one finds the order already stamped and
+    // applies nothing (null): no second set of debits, emails or pickups.
     const parcels = await returns.applyRefundEffects(order, { refundRef: (refund && refund.id) || null });
+    if (parcels === null) {
+      const done = db.prepare('SELECT * FROM orders WHERE id=?').get(order.id);
+      return res.json({ ok: true, order: { publicId: done.public_id, refundedAt: done.refunded_at }, parcels: [], alreadyRefunded: true });
+    }
     // The buyer hears about the refund (and any collection) by email; makers
     // were told inside applyRefundEffects (parcel stopped / coming back).
     require('../notify').orderRefunded(order.id, parcels);
@@ -946,12 +958,15 @@ router.post('/returns/:id/approve', requireAdmin, async (req, res, next) => {
 
     const fresh = await returns.approve(rr, order, { feeOverride, deliveryOverride });
     const m = { gross: returns.grossCents(returns.requestItems(rr.id)), fee: fresh.fee_cents, delivery: fresh.delivery_refund_cents || 0, refund: fresh.refund_cents };
-    const msg = email.returnApproved({ order, items: emailItems(rr.id), money: m });
+    // A courier booking that failed at approval (F220): the buyer is not told
+    // a courier is booked, and the admin sees it straight away.
+    const collectionFailed = !!db.prepare("SELECT 1 FROM return_collections WHERE request_id=? AND status='failed' LIMIT 1").get(rr.id);
+    const msg = email.returnApproved({ order, items: emailItems(rr.id), money: m, collectionPending: collectionFailed });
     email.send({ to: order.email, ...msg }).catch((e) => console.error('return-approved email failed:', e.message));
     // Each maker whose pieces are coming back is told too.
     require('../notify').returnApprovedMakers(rr.id);
 
-    res.json({ ok: true, request: returns.shape(fresh) });
+    res.json({ ok: true, request: returns.shape(fresh), collectionFailed });
   } catch (e) { next(e); }
 });
 
@@ -967,17 +982,22 @@ router.post('/returns/:id/book-collection', requireAdmin, async (req, res, next)
   } catch (e) { next(e); }
 });
 
-// POST /api/admin/returns/:id/refund-now { note? } → the exception path: refund
-// before the courier confirms collection (a lost webhook, a buyer who drops
-// the piece at the maker's door, a goodwill call).
+// POST /api/admin/returns/:id/refund-now { note?, buyerKeeps? } → the
+// exception path: refund before the courier confirms collection (a lost
+// webhook, a buyer who drops the piece at the maker's door, a goodwill
+// call). buyerKeeps:true = the buyer keeps the piece and Trove absorbs the
+// refund: the maker keeps their payment (F222), and a collection still
+// booked must be cancelled with the courier (collectionsToCancel).
 router.post('/returns/:id/refund-now', requireAdmin, async (req, res, next) => {
   try {
     const rr = db.prepare('SELECT * FROM return_requests WHERE id=?').get(req.params.id);
     if (!rr) return res.status(404).json({ error: 'Return request not found' });
     if (!['approved', 'collected'].includes(rr.status)) return res.status(409).json({ error: 'Only an approved return can be refunded' });
     const note = String((req.body || {}).note || '').trim().slice(0, 300);
-    await returns.refund(rr.id, { by: 'admin', note: note || undefined });
-    res.json({ ok: true, request: shapeReturn(rr.id) });
+    const buyerKeeps = (req.body || {}).buyerKeeps === true;
+    const booked = buyerKeeps ? db.prepare("SELECT COUNT(*) AS c FROM return_collections WHERE request_id=? AND status IN ('booking','booked') AND ref IS NOT NULL").get(rr.id).c : 0;
+    await returns.refund(rr.id, { by: 'admin', note: note || undefined, makerKeepsCredit: buyerKeeps });
+    res.json({ ok: true, request: shapeReturn(rr.id), collectionsToCancel: booked });
   } catch (e) { next(e); }
 });
 
@@ -1071,9 +1091,14 @@ router.get('/settlements', requireAdmin, (_req, res) => {
 
 // GET /api/admin/settlements/:id/export.csv → the bank-upload file. IBANs are
 // decrypted here and only here, straight into the response.
+// Never kept in a browser cache, and every download is recorded in Admin →
+// Activity (who, which run, when) — the file holds every maker's full IBAN (F232).
 router.get('/settlements/:id/export.csv', requireAdmin, (req, res, next) => {
   try {
     const csv = settlement.exportCsv(Number(req.params.id));
+    require('../admin-audit').record({ adminId: req.user.id, adminEmail: req.user.email || '', method: 'GET', path: req.originalUrl.split('?')[0],
+      action: 'Maker bank file downloaded', targetType: 'settlements', targetId: String(Number(req.params.id)), status: 200 });
+    res.set('Cache-Control', 'no-store, private');
     res.type('text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="trove-settlement-${req.params.id}.csv"`);
     res.send(csv);
