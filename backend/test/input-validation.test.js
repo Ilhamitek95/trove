@@ -187,7 +187,11 @@ test('sign-up needs a password of at least 8 characters and a markup-free name',
   assert.equal(r.status, 400);
   r = await ctx.api('POST', '/api/auth/register', { body: { email: 'mark@test.local', name: '<img src=x onerror=1>', password: 'longenough1' } });
   assert.equal(r.status, 400);
+  // F208 (12 Oct): eight characters, but one of the first guesses every script tries.
   r = await ctx.api('POST', '/api/auth/register', { body: { email: 'short@test.local', name: 'Short', password: '12345678' } });
+  assert.equal(r.status, 400);
+  assert.match(r.data.error, /most common/);
+  r = await ctx.api('POST', '/api/auth/register', { body: { email: 'short@test.local', name: 'Short', password: 'k7pq2mxz' } });
   assert.equal(r.status, 201, r.text);
 });
 

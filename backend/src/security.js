@@ -21,6 +21,12 @@
  *                       strict one that breaks checkout; CSP_REPORT_ONLY=1
  *                       switches it to report-only if something ever breaks.
  *
+ *                       Also: form-action (forms may only post to this site
+ *                       and Stripe), and a Permissions-Policy that switches
+ *                       off the camera, microphone and location, which no
+ *                       page uses (payment is left alone: Stripe's wallets
+ *                       need it inside their frames).
+ *
  *   canonicalHost()     301s a GET/HEAD on any other host name (the
  *                       *.onrender.com address, an IP) to the one public
  *                       address, keeping the path and query. CANONICAL_HOST
@@ -41,7 +47,11 @@ const CSP = [
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",
+  "form-action 'self' https://hooks.stripe.com",
 ].join('; ');
+
+// Browser features no Trove page uses (F471/F506).
+const PERMISSIONS = 'camera=(), microphone=(), geolocation=()';
 
 function securityHeaders() {
   return (req, res, next) => {
@@ -51,6 +61,7 @@ function securityHeaders() {
     res.set('X-Content-Type-Options', 'nosniff');
     res.set('X-Frame-Options', 'DENY');
     res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.set('Permissions-Policy', PERMISSIONS);
     res.set(process.env.CSP_REPORT_ONLY === '1' ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy', CSP);
     next();
   };
@@ -73,4 +84,22 @@ function canonicalHost() {
   };
 }
 
-module.exports = { securityHeaders, canonicalHost, CSP };
+/**
+ * What a production boot must refuse to start without (F209). The session
+ * secret signs every sign-in cookie: without it the code would fall back to
+ * a value anyone can read in this repository. Render generates it
+ * (render.yaml generateValue), so this only bites a service rebuilt by hand.
+ * Returns the problems as plain sentences (empty = fine to start).
+ */
+const DEV_SESSION_SECRET = 'dev-secret-change-me';
+function productionProblems(env = process.env) {
+  if (env.NODE_ENV !== 'production') return [];
+  const problems = [];
+  const secret = String(env.SESSION_SECRET || '');
+  if (!secret.trim() || secret === DEV_SESSION_SECRET) {
+    problems.push('SESSION_SECRET is not set (or is the development default) — set it in Render → Environment before starting in production.');
+  }
+  return problems;
+}
+
+module.exports = { securityHeaders, canonicalHost, CSP, PERMISSIONS, productionProblems, DEV_SESSION_SECRET };

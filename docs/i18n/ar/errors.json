@@ -119,5 +119,10 @@
   "We can’t take this order right now — please contact us and we’ll help": "لا يمكننا قبول هذا الطلب حاليًا — يُرجى التواصل معنا وسنساعدك",
   "We can’t take this booking right now — please contact us and we’ll help": "لا يمكننا قبول هذا الحجز حاليًا — يُرجى التواصل معنا وسنساعدك",
   "A piece in your basket is on display only and can’t be bought — please remove it": "إحدى القطع في سلتك للعرض فقط ولا يمكن شراؤها — يُرجى إزالتها",
-  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد"
+  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد",
+  "That password is one of the most common ones — choose something harder to guess": "كلمة المرور هذه من أكثر كلمات المرور شيوعاً — اختر كلمة يصعب تخمينها",
+  "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.": "أُدخلت كلمة مرور خاطئة لهذا الحساب مرات كثيرة. حاول مجدداً بعد 15 دقيقة، أو أعد تعيين كلمة المرور.",
+  "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.": "يمكنك تسجيل الدخول برقم هاتفك المتحرك بعد تأكيد بريدك الإلكتروني. أما الآن، فسجّل الدخول ببريدك الإلكتروني.",
+  "Something changed while we were checking — please try again": "تغيّر شيء أثناء التحقق — يُرجى المحاولة مرة أخرى",
+  "Not allowed": "غير مسموح"
 }

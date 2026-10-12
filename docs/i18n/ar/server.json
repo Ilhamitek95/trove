@@ -198,5 +198,9 @@
   "Delivery {fee} · free on orders over {amount}": "التوصيل بـ {fee} · مجاني للطلبات التي تتجاوز {amount}",
   "Free delivery on orders over {amount}": "توصيل مجاني للطلبات التي تتجاوز {amount}",
   "Thank you · Trove": "شكراً لك · Trove",
-  "Your Trove order.": "طلبك من Trove."
+  "Your Trove order.": "طلبك من Trove.",
+  "Confirm your email": "أكّد بريدك الإلكتروني",
+  "Press the button to confirm {email} for your Trove account.": "اضغط الزر لتأكيد {email} لحسابك على Trove.",
+  "Confirm my email": "تأكيد بريدي الإلكتروني",
+  "Didn't create a Trove account? Close this page — nothing changes.": "لم تُنشئ حساباً على Trove؟ أغلق هذه الصفحة — ولن يتغيّر شيء."
 }

@@ -78,7 +78,9 @@ test('public catalogue JSON carries a short public cache; searches and signed-in
 test('sign-in attempts are rate limited per IP with a 429 and Retry-After', async () => {
   let last;
   for (let i = 0; i < 31; i++) {
-    last = await app.api('POST', '/api/auth/login', { body: { email: 'nobody@example.com', password: 'wrong' } });
+    // A different address each time, so the per-account brake (F208, 10
+    // wrong passwords per identity) never answers before the per-IP limit.
+    last = await app.api('POST', '/api/auth/login', { body: { email: `nobody${i}@example.com`, password: 'wrong' } });
     if (last.status === 429) break;
   }
   assert.equal(last.status, 429);
@@ -98,19 +100,40 @@ test('sign-in attempts are rate limited per IP with a 429 and Retry-After', asyn
   assert.equal(other.headers.get('ratelimit-remaining'), '29');
 });
 
-test('rate-limit key is the first forwarded address, or CF-Connecting-IP when present', () => {
+// F277 (12 Oct): the key is never the client-written first X-Forwarded-For
+// entry; CF-Connecting-IP only where Cloudflare is guaranteed in front.
+test('rate-limit key is the trusted proxy hop (req.ip), or CF-Connecting-IP on Render / TRUST_CF=1', () => {
   const { clientKey } = require('../src/traffic');
-  assert.equal(clientKey({ headers: { 'x-forwarded-for': '198.51.100.7, 172.16.0.2' }, ip: '172.16.0.2' }), '198.51.100.7');
-  assert.equal(clientKey({ headers: { 'cf-connecting-ip': '198.51.100.8', 'x-forwarded-for': '10.1.1.1' }, ip: '10.1.1.1' }), '198.51.100.8');
-  assert.equal(clientKey({ headers: {}, ip: '127.0.0.1' }), '127.0.0.1');
+  const saved = { RENDER: process.env.RENDER, TRUST_CF: process.env.TRUST_CF };
+  try {
+    delete process.env.RENDER; delete process.env.TRUST_CF;
+    assert.equal(clientKey({ headers: { 'x-forwarded-for': '198.51.100.7, 172.16.0.2' }, ip: '172.16.0.2' }), '172.16.0.2');
+    assert.equal(clientKey({ headers: { 'cf-connecting-ip': '198.51.100.8', 'x-forwarded-for': '10.1.1.1' }, ip: '10.1.1.1' }), '10.1.1.1', 'a visitor-sent Cloudflare header is ignored off Render');
+    process.env.RENDER = 'true';
+    assert.equal(clientKey({ headers: { 'cf-connecting-ip': '198.51.100.8', 'x-forwarded-for': '10.1.1.1' }, ip: '10.1.1.1' }), '198.51.100.8');
+    process.env.TRUST_CF = '0';
+    assert.equal(clientKey({ headers: { 'cf-connecting-ip': '198.51.100.8' }, ip: '10.1.1.1' }), '10.1.1.1');
+    delete process.env.RENDER; process.env.TRUST_CF = '1';
+    assert.equal(clientKey({ headers: { 'cf-connecting-ip': '198.51.100.8' }, ip: '10.1.1.1' }), '198.51.100.8');
+    assert.equal(clientKey({ headers: {}, ip: '127.0.0.1' }), '127.0.0.1');
+  } finally {
+    for (const [k, v] of Object.entries(saved)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+  }
 });
 
-test('robots.txt allows the storefront, blocks private surfaces, points at the sitemap', async () => {
+// F466 (12 Oct): the signed-in surfaces are no longer blocked here — they
+// answer X-Robots-Tag noindex, which crawlers can only read if they may fetch.
+test('robots.txt allows the storefront, blocks the API and private links, points at the sitemap', async () => {
   const res = await app.api('GET', '/robots.txt');
   assert.equal(res.status, 200);
   assert.match(res.headers.get('content-type'), /text\/plain/);
   assert.match(res.text, /^User-agent: \*\nAllow: \/\n/);
-  for (const p of ['/api/', '/admin', '/account', '/sell', '/provider', '/login']) assert.match(res.text, new RegExp(`Disallow: ${p.replace('/', '\\/')}`));
+  for (const p of ['/api/', '/services/booking/', '/reset', '/order/']) assert.match(res.text, new RegExp(`Disallow: ${p.replace(/\//g, '\\/')}`));
+  for (const p of ['/admin', '/account', '/sell', '/provider', '/login']) {
+    assert.doesNotMatch(res.text, new RegExp(`Disallow: ${p.replace('/', '\\/')}\\n`));
+    const page = await app.api('GET', p);
+    assert.match(page.headers.get('x-robots-tag') || '', /noindex/, `${p} answers noindex`);
+  }
   assert.match(res.text, /Sitemap: https:\/\/troveathome\.com\/sitemap\.xml/);
   assert.doesNotMatch(res.text, /noindex/i);
 });
@@ -135,12 +158,14 @@ test('sitemap.xml lists the public pages, approved shops, live pieces and approv
 });
 
 test('public pages carry no noindex; admin and 404 keep theirs', async () => {
-  for (const p of ['/', '/services', '/apply', '/login']) {
+  for (const p of ['/', '/services', '/apply']) {
     const res = await app.api('GET', p);
     assert.equal(res.status, 200, p);
     assert.equal(res.headers.get('x-robots-tag'), null, p);
     assert.doesNotMatch(res.text, /<meta name="robots" content="noindex">/, p);
   }
+  // F466 (12 Oct): the sign-in page is a signed-in surface — noindex by header.
+  assert.match((await app.api('GET', '/login')).headers.get('x-robots-tag') || '', /noindex/);
   const admin = await app.api('GET', '/admin');
   assert.match(admin.text, /<meta name="robots" content="noindex">/);
   const missing = await app.api('GET', '/definitely-not-a-page');

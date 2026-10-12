@@ -171,5 +171,9 @@
   "Delivery {fee} · free on orders over {amount}": "Delivery {fee} · free on orders over {amount}",
   "Free delivery on orders over {amount}": "Free delivery on orders over {amount}",
   "Thank you · Trove": "Thank you · Trove",
-  "Your Trove order.": "Your Trove order."
+  "Your Trove order.": "Your Trove order.",
+  "Confirm your email": "Confirm your email",
+  "Press the button to confirm {email} for your Trove account.": "Press the button to confirm {email} for your Trove account.",
+  "Confirm my email": "Confirm my email",
+  "Didn't create a Trove account? Close this page — nothing changes.": "Didn't create a Trove account? Close this page — nothing changes."
 }

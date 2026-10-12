@@ -86,7 +86,7 @@ router.post('/enable-services', requireSeller, notHouse, notInShopView, (req, re
   }
   const shop = req.shop;
   const approved = shop.status === 'approved';
-  const slugify = (s) => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const { slugify } = require('../slug'); // the URL rule, for stored slugs too (F375)
   const base = slugify(shop.slug || shop.name) || 'provider';
   let slug = base, n = 1;
   while (db.prepare('SELECT 1 FROM service_providers WHERE slug = ?').get(slug)) slug = `${base}-${++n}`;

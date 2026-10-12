@@ -109,12 +109,18 @@ test('any other host 301s to the canonical address, keeping path and query', asy
 });
 
 test('a 5xx answers generically; a deliberate 4xx keeps its message', async () => {
-  // An unknown Origin makes the CORS layer throw a plain Error → 500.
-  const res = await fetch(ctx.baseUrl + '/api/config', { headers: { origin: 'https://evil.example' } });
-  const body = await res.json();
+  // A route that throws (a plain Error, as a broken query would) → 500, generic.
+  const trends = require('../src/trends');
+  const real = trends.popularSearches;
+  trends.popularSearches = () => { throw new Error('SQLITE_ERROR: no such column secret_internal'); };
+  let res, body;
+  try {
+    res = await fetch(ctx.baseUrl + '/api/search/popular');
+    body = await res.json();
+  } finally { trends.popularSearches = real; }
   assert.equal(res.status, 500);
   assert.match(body.error, /Something went wrong on our side/);
-  assert.doesNotMatch(body.error, /evil|Origin/);
+  assert.doesNotMatch(body.error, /SQLITE|secret_internal/);
 
   const bad = await ctx.api('POST', '/api/auth/login', { raw: '{not json' });
   assert.equal(bad.status, 400);

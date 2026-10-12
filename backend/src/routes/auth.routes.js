@@ -1,7 +1,7 @@
 'use strict';
 const express = require('express');
 const db = require('../db');
-const { hashPassword, verifyPassword, publicUser, requireAuth, startSession } = require('../middleware');
+const { hashPasswordAsync, verifyPasswordAsync, checkPasswordAsync, publicUser, requireAuth, startSession } = require('../middleware');
 const validate = require('../validate');
 const { normalizeUAEMobile } = require('../phone');
 const accounts = require('../accounts');
@@ -24,7 +24,7 @@ async function signInAfterFirstStep(req, user, extra = {}) {
   return { user: publicUser(user), ...extra };
 }
 const randomSecret = () => require('crypto').randomBytes(32).toString('hex');
-const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const { slugify } = require('../slug'); // the URL rule, for stored slugs too (F375)
 
 // POST /api/auth/register
 // { email, password, name, role?, shopName?,
@@ -36,7 +36,7 @@ const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-
 // bootstrapped from ADMIN_EMAIL in server.js.
 const SIGNUP_ROLES = ['buyer', 'seller', 'both'];
 
-router.post('/register', (req, res, next) => {
+router.post('/register', async (req, res, next) => { try {
   const { password, name, shopName } = req.body || {};
   const role = req.body?.role == null ? 'buyer' : req.body.role;
   if (!SIGNUP_ROLES.includes(role)) return res.status(400).json({ error: 'Choose a buyer or seller account' });
@@ -46,7 +46,20 @@ router.post('/register', (req, res, next) => {
   const nameCheck = validate.shortText(name, { label: 'Your name', max: validate.LIMITS.personName });
   if (nameCheck.error) return res.status(400).json({ error: nameCheck.error });
   const wantsShop = role === 'seller' || role === 'both';
+  // The slow password work (async bcrypt, F276) happens HERE, before the
+  // checks and writes below, which then run in one go: no other request
+  // (a double-click on Apply) can slip in between a check and its write.
+  const before = db.prepare('SELECT id, password_hash FROM users WHERE email = ?').get(email);
+  let passwordMatches = false;
+  let newHash = null;
+  if (before) {
+    if (wantsShop && password && req.session.userId !== before.id) passwordMatches = await verifyPasswordAsync(password, before.password_hash);
+  } else if (!validate.emailError(email) && !validate.passwordError(password)) {
+    newHash = await hashPasswordAsync(password);
+  }
   const existing = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+  // An account that appeared or vanished during the pause: start again.
+  if (!!existing !== !!before || (existing && existing.id !== before.id)) return res.status(409).json({ error: 'Something changed while we were checking — please try again' });
   // A NEW account's address must look like one (an existing account keeps
   // working with whatever it was created with).
   if (!existing && validate.emailError(email)) return res.status(400).json({ error: validate.EMAIL_ERROR });
@@ -64,9 +77,9 @@ router.post('/register', (req, res, next) => {
   if (String(req.body?.mobile || '').trim()) {
     mobile = normalizeUAEMobile(req.body.mobile);
     if (!mobile) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });
-    const taken = db.prepare('SELECT id FROM users WHERE phone = ?').get(mobile);
-    if (taken && (!existing || taken.id !== existing.id))
-      return res.status(409).json({ error: 'An account with this mobile number already exists' });
+    // A new account is unconfirmed, so it only ever gets a free number (F203,
+    // accounts.mobileClaim); an existing account's number is not changed here.
+    if (!accounts.mobileClaim(mobile, existing || null).ok) return res.status(409).json({ error: 'An account with this mobile number already exists' });
   }
   // Instagram and WhatsApp are required to apply — validated up front so a
   // failed application never leaves behind an account without a shop.
@@ -89,8 +102,7 @@ router.post('/register', (req, res, next) => {
   let userId, created = false, shopId = null;
   if (existing) {
     if (!wantsShop) return res.status(409).json({ error: 'An account with this email already exists' });
-    const ownsAccount = req.session.userId === existing.id
-      || (password && verifyPassword(password, existing.password_hash));
+    const ownsAccount = req.session.userId === existing.id || passwordMatches;
     if (!ownsAccount) {
       return res.status(409).json({ code: 'exists_wrong_password', error: 'An account with this email already exists' });
     }
@@ -106,8 +118,9 @@ router.post('/register', (req, res, next) => {
     // Buyers become sellers; an admin keeps admin (requireAdmin depends on it).
     if (existing.role === 'buyer') db.prepare("UPDATE users SET role = 'seller' WHERE id = ?").run(userId);
   } else {
+    if (!newHash) return res.status(400).json({ error: validate.passwordError(password) || 'email, password and name are required' });
     const info = db.prepare('INSERT INTO users (email, password_hash, name, role, phone) VALUES (?,?,?,?,?)')
-      .run(email, hashPassword(password), nameCheck.value, role, mobile);
+      .run(email, newHash, nameCheck.value, role, mobile);
     userId = info.lastInsertRowid;
     created = true;
   }
@@ -160,30 +173,51 @@ router.post('/register', (req, res, next) => {
   if (created) notify.welcomeVerify(fresh);
   if (shopId) notify.shopApplied(shopId);
 
-  startSession(req, { userId })
-    .then(() => res.status(201).json({ user: publicUser(fresh), created }))
-    .catch(next);
-});
+  await startSession(req, { userId });
+  res.status(201).json({ user: publicUser(fresh), created });
+} catch (e) { next(e); } });
 
 // POST /api/auth/login  { email | identifier, password }
 // The identifier may be an email address or a UAE mobile number.
-router.post('/login', (req, res, next) => {
+//   - the password check is async bcrypt (F276) and takes as long for an
+//     unknown identifier as for a real one (a dummy hash, F201);
+//   - each identity has its own budget of wrong passwords (F208, accounts.js);
+//   - a mobile number signs in only for an account whose email is confirmed
+//     (numbers are not SMS-checked yet, F203).
+const PAUSED = 'Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.';
+router.post('/login', async (req, res, next) => { try {
   const { password } = req.body || {};
   const rawId = String(req.body?.identifier ?? req.body?.email ?? '').trim();
   let user, wrong = 'Wrong email or password';
-  if (rawId.includes('@')) {
+  const viaMobile = !rawId.includes('@');
+  if (!viaMobile) {
     user = db.prepare('SELECT * FROM users WHERE email = ?').get(rawId.toLowerCase());
   } else {
     wrong = 'Wrong mobile number or password';
     const mobile = normalizeUAEMobile(rawId);
     user = mobile ? db.prepare('SELECT * FROM users WHERE phone = ?').get(mobile) : undefined;
   }
-  if (!user || !verifyPassword(password || '', user.password_hash)) {
+  const key = accounts.loginKey(user, rawId);
+  const wait = accounts.loginPausedFor(key);
+  if (wait) {
+    res.set('Retry-After', String(wait));
+    return res.status(429).json({ code: 'account_paused', error: PAUSED });
+  }
+  const ok = await checkPasswordAsync(password, user);
+  if (!ok) {
+    // The failure that starts a pause tells the account owner (once per pause).
+    if (accounts.recordLoginFailure(key) && user) notify.signInAttempts(user);
     return res.status(401).json({ error: wrong });
   }
+  user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
+  if (!user) return res.status(401).json({ error: wrong });
+  if (viaMobile && !user.email_verified_at) {
+    return res.status(403).json({ code: 'confirm_email_first', error: 'Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.' });
+  }
+  accounts.clearLoginFailures(user);
   guestOrders.claimQuietly(user); // only once the email is confirmed
-  signInAfterFirstStep(req, user).then((body) => res.json(body)).catch(next);
-});
+  res.json(await signInAfterFirstStep(req, user));
+} catch (e) { next(e); } });
 
 // POST /api/auth/admin-code { code, trust? } — the admin's second step. On
 // success the admin is signed in on a fresh session; trust=true remembers
@@ -214,13 +248,16 @@ router.post('/google', async (req, res) => {
   try {
     const g = await google.verifyIdToken(req.body?.credential);
     if (!g) return res.status(401).json({ error: 'Google could not confirm that sign-in — please try again' });
+    // An unusable random password, hashed before the account is looked up
+    // (async bcrypt, F276) so the lookup and its write run in one go.
+    const placeholder = await hashPasswordAsync(randomSecret());
     let user = db.prepare('SELECT * FROM users WHERE email = ?').get(g.email);
     // Whether this sign-in opened the account: the page reports a sign-up or
     // a log-in to analytics (no personal data — just which of the two).
     const created = !user;
     if (!user) {
       const info = db.prepare("INSERT INTO users (email, password_hash, name, role, password_set, email_verified_at) VALUES (?,?,?,?,0,datetime('now'))")
-        .run(g.email, hashPassword(randomSecret()),
+        .run(g.email, placeholder,
           String(g.name || '').replace(/[<>]/g, '').trim().slice(0, validate.LIMITS.personName) || g.email.split('@')[0], 'buyer');
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
     } else if (!user.email_verified_at) {
@@ -232,7 +269,7 @@ router.post('/google', async (req, res) => {
       // stops working (a reset link to the inbox sets a new one), and every
       // session opened with it is signed out.
       db.prepare("UPDATE users SET email_verified_at=datetime('now'), password_hash=?, password_set=0 WHERE id=?")
-        .run(hashPassword(randomSecret()), user.id);
+        .run(placeholder, user.id);
       accounts.endOtherSessions(user.id);
       user = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
     }
@@ -250,14 +287,16 @@ router.post('/google', async (req, res) => {
 /* ---------------- Password reset ----------------
  * POST /api/auth/forgot { email } — always the same neutral 200, whether or
  * not the address has an account (no account discovery). When it does, a
- * one-hour, single-use link goes to that inbox. Rate-limited with sign-in.
+ * one-hour, single-use link goes to that inbox. Rate-limited with sign-in,
+ * and per account (F207): one email every two minutes at most — the link
+ * already sent stays valid meanwhile — and five a day.
  * Works for Google-only accounts too: the reset simply sets a password.  */
 const FORGOT_REPLY = 'If that email has a Trove account, a link to reset the password is on its way. It expires in an hour.';
 router.post('/forgot', (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   if (email && email.length <= 254 && email.includes('@')) {
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
-    if (user) notify.passwordReset(user);
+    if (user && accounts.resetAllowed(user.id)) notify.passwordReset(user);
   }
   res.json({ ok: true, message: FORGOT_REPLY });
 });
@@ -272,63 +311,93 @@ router.get('/reset', (req, res) => {
 // POST /api/auth/reset { token, password } — set the new password, spend the
 // token, sign out every session of the account, then sign this browser in.
 const BAD_LINK = 'This reset link has expired or was already used — ask for a new one.';
-router.post('/reset', (req, res, next) => {
+router.post('/reset', async (req, res, next) => { try {
   const { token, password } = req.body || {};
   const pwErr = validate.passwordError(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
+  if (!accounts.findToken(token, 'reset')) return res.status(400).json({ code: 'bad_token', error: BAD_LINK });
+  // Hash first (async, F276); the token is spent and the password saved after, in one go.
+  const hash = await hashPasswordAsync(password);
   const found = accounts.findToken(token, 'reset');
   if (!found || !accounts.spendToken(found.row)) return res.status(400).json({ code: 'bad_token', error: BAD_LINK });
   const { user } = found;
   // The link reached the inbox, so the email is proven as well.
   db.prepare("UPDATE users SET password_hash=?, password_set=1, email_verified_at=COALESCE(email_verified_at, datetime('now')) WHERE id=?")
-    .run(hashPassword(password), user.id);
+    .run(hash, user.id);
   db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(user.id);
   accounts.endOtherSessions(user.id);
+  accounts.clearLoginFailures(user); // a paused sign-in (F208) is lifted by the reset
   twofa.forgetDevices(user.id);
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(user.id);
   guestOrders.claimQuietly(fresh); // the reset link proved the inbox
   notify.passwordChanged(fresh);
   // The admin still finishes with the emailed code (the link only proved the inbox).
-  if (twofa.needsCode(req, fresh)) {
-    return twofa.startChallenge(req, fresh, { startSession }).then((body) => res.json(body)).catch(next);
-  }
-  startSession(req, { userId: user.id }, { keep: [] }).then(() => res.json({ user: publicUser(fresh) })).catch(next);
-});
+  if (twofa.needsCode(req, fresh)) return res.json(await twofa.startChallenge(req, fresh, { startSession }));
+  await startSession(req, { userId: user.id }, { keep: [] });
+  res.json({ user: publicUser(fresh) });
+} catch (e) { next(e); } });
 
 // POST /api/auth/password { current, password } — change it while signed in.
 // A Google-only account has no password to confirm, so it may set one. Every
 // other session of the account is signed out; this one carries on (on a
 // fresh session id).
-router.post('/password', requireAuth, (req, res, next) => {
+router.post('/password', requireAuth, async (req, res, next) => { try {
   if (req.session.impersonatorId) return res.status(403).json({ error: 'Only the shop owner can change their password' });
   const { current, password } = req.body || {};
   const u = req.user;
-  if (u.password_set !== 0 && !verifyPassword(String(current || ''), u.password_hash)) {
+  if (u.password_set !== 0 && !(await verifyPasswordAsync(current, u.password_hash))) {
     return res.status(400).json({ code: 'wrong_password', error: 'Your current password is not right' });
   }
   const pwErr = validate.passwordError(password);
   if (pwErr) return res.status(400).json({ error: pwErr });
-  db.prepare('UPDATE users SET password_hash=?, password_set=1 WHERE id=?').run(hashPassword(password), u.id);
+  const hash = await hashPasswordAsync(password);
+  db.prepare('UPDATE users SET password_hash=?, password_set=1 WHERE id=?').run(hash, u.id);
   db.prepare("UPDATE auth_tokens SET used_at=datetime('now') WHERE user_id=? AND kind='reset' AND used_at IS NULL").run(u.id);
   accounts.endOtherSessions(u.id);
+  accounts.clearLoginFailures(u);
   twofa.forgetDevices(u.id);
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);
   notify.passwordChanged(fresh);
-  startSession(req, { userId: u.id }).then(() => res.json({ ok: true, user: publicUser(fresh) })).catch(next);
+  await startSession(req, { userId: u.id });
+  res.json({ ok: true, user: publicUser(fresh) });
+} catch (e) { next(e); } });
+
+// POST /api/auth/sessions/end-others — 'Sign out of all other devices'
+// (F439): ends every other session of this account, keeps this one. Not in
+// shop view (the admin would sign the maker out everywhere).
+router.post('/sessions/end-others', requireAuth, (req, res) => {
+  if (req.session.impersonatorId) return res.status(403).json({ error: 'Only the account owner can do this — it is not available in shop view' });
+  const ended = accounts.endOtherSessions(req.user.id, req.sessionID);
+  res.json({ ok: true, ended });
 });
 
-/* ---------------- Email confirmation ---------------- */
-// GET /api/auth/verify-email?token= — the welcome email's button. Confirms
-// the address and lands on the account (or sign-in) page with a notice.
+/* ---------------- Email confirmation ----------------
+ * GET /api/auth/verify-email?token= — the welcome email's button. It does NOT
+ * confirm anything by itself (F200): mail scanners and link previews open
+ * every link in an email, which used to confirm an account someone else had
+ * opened in the inbox owner's name. It shows a small page with a 'Confirm my
+ * email' button instead; the button's POST confirms and lands on the account
+ * (or sign-in) page with a notice, as the link used to.                   */
+const verifyLanding = (req, userId) => {
+  const u = req.session.userId && db.prepare('SELECT email_verified_at FROM users WHERE id=?').get(req.session.userId);
+  if (userId) return req.session.userId === userId ? '/account?verified=1' : '/login?verified=1';
+  return u && u.email_verified_at ? '/account?verified=1' : '/login?verify=expired';
+};
 router.get('/verify-email', (req, res) => {
-  const found = accounts.findToken(String(req.query.token || ''), 'verify');
-  if (!found || !accounts.spendToken(found.row)) {
-    const u = req.session.userId && db.prepare('SELECT email_verified_at FROM users WHERE id=?').get(req.session.userId);
-    return res.redirect(302, u && u.email_verified_at ? '/account?verified=1' : '/login?verify=expired');
-  }
+  const token = String(req.query.token || '');
+  const found = accounts.findToken(token, 'verify');
+  if (!found) return res.redirect(302, verifyLanding(req));
+  if (found.user.email_verified_at) { accounts.spendToken(found.row); return res.redirect(302, verifyLanding(req, found.user.id)); }
+  const lang = found.user.lang === 'ar' ? 'ar' : 'en';
+  res.set('Cache-Control', 'no-store').set('X-Robots-Tag', 'noindex, nofollow').set('Referrer-Policy', 'no-referrer');
+  res.type('html').send(require('../verify-page').render({ lang, token, email: found.user.email }));
+});
+router.post('/verify-email', express.urlencoded({ extended: false, limit: '4kb' }), (req, res) => {
+  const found = accounts.findToken(String((req.body && req.body.token) || ''), 'verify');
+  if (!found || !accounts.spendToken(found.row)) return res.redirect(303, verifyLanding(req));
   db.prepare("UPDATE users SET email_verified_at=COALESCE(email_verified_at, datetime('now')) WHERE id=?").run(found.user.id);
   guestOrders.claimQuietly(found.user.id); // orders placed as a guest with this email
-  res.redirect(302, req.session.userId === found.user.id ? '/account?verified=1' : '/login?verified=1');
+  res.redirect(303, verifyLanding(req, found.user.id));
 });
 
 // POST /api/auth/verify-email/resend — send the confirm link again.

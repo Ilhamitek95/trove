@@ -37,7 +37,7 @@ const tax = require('../service-taxonomy');
 const fees = require('../fees');
 
 const router = express.Router();
-const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const { slugify } = require('../slug'); // the URL rule, for stored slugs too (F375)
 const parseJson = (s, fb) => { try { const v = JSON.parse(s); return v == null ? fb : v; } catch (_) { return fb; } };
 
 // The provider as the public storefront sees them — no contact details.

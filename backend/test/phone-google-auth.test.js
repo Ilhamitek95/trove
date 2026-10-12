@@ -35,6 +35,12 @@ test('register with a UAE mobile, then sign in with any spelling of it', async (
   });
   assert.equal(reg.status, 201);
   assert.equal(db.prepare("SELECT phone FROM users WHERE email='amina@example.com'").get().phone, '+971507654321');
+  // F203 (12 Oct): the mobile signs in once the email is confirmed (numbers
+  // are not SMS-checked yet) — before that, the right password gets a clear 403.
+  const early = await ctx.api('POST', '/api/auth/login', { body: { identifier: '0507654321', password: 'testpass123' } });
+  assert.equal(early.status, 403);
+  assert.equal(early.data.code, 'confirm_email_first');
+  db.prepare("UPDATE users SET email_verified_at=datetime('now') WHERE email='amina@example.com'").run();
 
   for (const identifier of ['0507654321', '+971 50 765 4321', '971507654321', '50 765 4321']) {
     const login = await ctx.api('POST', '/api/auth/login', { body: { identifier, password: 'testpass123' } });

@@ -92,7 +92,9 @@ const SIG_HEADERS = ['x-quiqup-signature', 'x-signature', 'x-webhook-signature',
 function verified(req) {
   const secret = process.env.QUIQUP_WEBHOOK_SECRET;
   if (!secret) return !isProd(); // unset = open locally / in tests, closed in production
-  if (req.headers['x-webhook-secret'] === secret) return true; // shared-secret header (custom header on the subscription)
+  // shared-secret header (custom header on the subscription), compared in constant time
+  const digest = (x) => crypto.createHash('sha256').update(String(x)).digest();
+  if (typeof req.headers['x-webhook-secret'] === 'string' && crypto.timingSafeEqual(digest(req.headers['x-webhook-secret']), digest(secret))) return true;
   const header = SIG_HEADERS.map((h) => req.headers[h]).find(Boolean);
   if (!header) return false;
   const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));

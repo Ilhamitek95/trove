@@ -133,7 +133,35 @@ function markupField(obj, keys) {
 
 const MIN_PASSWORD = 8;
 const PASSWORD_ERROR = `Choose a password of at least ${MIN_PASSWORD} characters`;
-const passwordError = (pw) => (typeof pw !== 'string' || pw.length < MIN_PASSWORD ? PASSWORD_ERROR : null);
+/*
+ * New passwords may not be one of the first guesses every password-guessing
+ * script tries (F208): the most common 8+ character passwords from public
+ * breach lists, plus one character repeated or a straight run of keys.
+ * Existing passwords keep working; this applies when one is chosen.
+ */
+const COMMON_PASSWORD_ERROR = 'That password is one of the most common ones — choose something harder to guess';
+const COMMON_PASSWORDS = new Set(`
+12345678 123456789 1234567890 12345678910 123123123 1234512345 11223344 12341234 87654321 98765432 0123456789
+password password1 password12 password123 password1234 passw0rd p@ssword p@ssw0rd pa55word password! password01
+qwertyui qwertyuiop qwerty12 qwerty123 qwerty1234 1qaz2wsx 1q2w3e4r 1q2w3e4r5t zaq12wsx asdfghjk asdfasdf
+iloveyou iloveyou1 sunshine sunshine1 princess princess1 football football1 baseball welcome1 welcome123
+trustno1 superman letmein1 letmein123 whatever starwars dragon123 monkey123 master123 shadow123 michael1
+computer internet abcdefgh abcd1234 abc12345 abc123456 aa123456 a1234567 a12345678 changeme changeme1
+admin123 admin1234 administrator 11111111 00000000 88888888 66666666 12121212 password2 qwerty11 test1234
+trove123 trove1234 troveathome dubai123 dubai2026 uae12345 emirates abudhabi sharjah1 marhaba123
+`.trim().split(/\s+/));
+function weakPassword(pw) {
+  const p = pw.toLowerCase();
+  if (COMMON_PASSWORDS.has(p)) return true;
+  if (/^(.)\1+$/.test(p)) return true; // aaaaaaaa
+  const runs = ['0123456789', '9876543210', 'abcdefghijklmnopqrstuvwxyz', 'qwertyuiop', 'asdfghjkl'];
+  return runs.some((r) => r.includes(p));
+}
+const passwordError = (pw) => {
+  if (typeof pw !== 'string' || pw.length < MIN_PASSWORD) return PASSWORD_ERROR;
+  if (weakPassword(pw)) return COMMON_PASSWORD_ERROR;
+  return null;
+};
 
 /**
  * UAE IBAN: AE + 2 check digits + 3-digit bank code + 16-digit account
@@ -182,7 +210,7 @@ function emailError(email) {
 module.exports = {
   emailError, EMAIL_ERROR,
   payoutNamesError,
-  LIMITS, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MAX_STOCK, PRODUCT_STATUSES, MIN_PASSWORD, PASSWORD_ERROR,
+  LIMITS, MIN_PRICE_CENTS, MAX_PRICE_CENTS, MAX_STOCK, PRODUCT_STATUSES, MIN_PASSWORD, PASSWORD_ERROR, COMMON_PASSWORD_ERROR,
   hasMarkup, shortText, longText, isHexColour, priceCents, stockError, variantsError,
   optionsMarkupError, extrasMarkupError, markupField, passwordError, ibanError,
 };

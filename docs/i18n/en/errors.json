@@ -119,5 +119,10 @@
   "We can’t take this order right now — please contact us and we’ll help": "We can’t take this order right now — please contact us and we’ll help",
   "We can’t take this booking right now — please contact us and we’ll help": "We can’t take this booking right now — please contact us and we’ll help",
   "A piece in your basket is on display only and can’t be bought — please remove it": "A piece in your basket is on display only and can’t be bought — please remove it",
-  "This provider isn’t taking bookings yet": "This provider isn’t taking bookings yet"
+  "This provider isn’t taking bookings yet": "This provider isn’t taking bookings yet",
+  "That password is one of the most common ones — choose something harder to guess": "That password is one of the most common ones — choose something harder to guess",
+  "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.": "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.",
+  "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.": "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.",
+  "Something changed while we were checking — please try again": "Something changed while we were checking — please try again",
+  "Not allowed": "Not allowed"
 }

@@ -12,14 +12,18 @@ const router = express.Router();
 /* ---------------- Profile ----------------
  * PATCH /api/account/me { name?, phone? } — the My details form. The phone
  * is the optional UAE sign-in mobile (normalised to +9715XXXXXXXX, unique
- * across accounts); an empty value removes it. Email changes are not
- * self-served (the address is the identity the reset flow relies on).     */
+ * across accounts); an empty value removes it. Numbers are not SMS-checked
+ * yet (F203): a number held by an account that never confirmed its email
+ * does not block a confirmed account (accounts.mobileClaim), and it signs
+ * in only once the email is confirmed. Email changes are not self-served
+ * (the address is the identity the reset flow relies on).                 */
 router.patch('/me', requireAuth, (req, res) => {
   const v = require('../validate');
   const { publicUser } = require('../middleware');
   const { normalizeUAEMobile } = require('../phone');
   const b = req.body || {};
   const sets = {};
+  let mobileFrom = null;
   if (b.name !== undefined) {
     const r = v.shortText(b.name, { label: 'Your name', max: v.LIMITS.personName });
     if (r.error) return res.status(400).json({ error: r.error });
@@ -31,14 +35,19 @@ router.patch('/me', requireAuth, (req, res) => {
     else {
       const mobile = normalizeUAEMobile(raw);
       if (!mobile) return res.status(400).json({ error: 'Enter a UAE mobile number, like 05x xxx xxxx' });
-      const taken = db.prepare('SELECT id FROM users WHERE phone = ? AND id != ?').get(mobile, req.user.id);
-      if (taken) return res.status(409).json({ error: 'Another account already uses this mobile number' });
+      const accounts = require('../accounts');
+      const claim = accounts.mobileClaim(mobile, req.user);
+      if (!claim.ok) return res.status(409).json({ error: 'Another account already uses this mobile number' });
+      mobileFrom = claim.takeFrom;
       sets.phone = mobile;
     }
   }
   const cols = Object.keys(sets);
   if (!cols.length) return res.status(400).json({ error: 'Nothing to update' });
-  db.prepare(`UPDATE users SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`).run(...cols.map((c) => sets[c]), req.user.id);
+  db.transaction(() => {
+    require('../accounts').releaseMobile(mobileFrom); // an unconfirmed account loses the number first
+    db.prepare(`UPDATE users SET ${cols.map((c) => `${c} = ?`).join(', ')} WHERE id = ?`).run(...cols.map((c) => sets[c]), req.user.id);
+  })();
   res.json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id)) });
 });
 

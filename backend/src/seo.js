@@ -40,12 +40,8 @@ const OG_IMAGE_ALT = 'trove, curated homeware by independent makers in Dubai and
 
 /* ---------------- addresses ---------------- */
 
-/** URL slug of a name. The storefront and Services scripts carry the same function. */
-function slugify(s) {
-  return String(s == null ? '' : s).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-    .replace(/&/g, ' and ').replace(/['\u2019]/g, '').replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '').slice(0, 80).replace(/-+$/, '');
-}
+/** URL slug of a name (src/slug.js \u2014 also the rule for stored shop/provider slugs). The storefront and Services scripts carry the same function. */
+const { slugify } = require('./slug');
 const HOUSE_SLUG = 'trove-collection';
 const catSlug = (name) => (name === 'House' ? HOUSE_SLUG : slugify(name));
 const catLabel = (name) => (name === 'House' ? 'Trove Collection' : name);

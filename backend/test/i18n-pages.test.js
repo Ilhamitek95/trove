@@ -176,7 +176,8 @@ test('the sitemap lists both languages with their alternates; robots covers the 
   const ar = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).filter((l) => l.startsWith(`${BASE}/ar`));
   assert.equal(en.length, ar.length, 'one Arabic address per English one');
   const robots = (await ctx.api('GET', '/robots.txt')).text;
-  for (const line of ['Disallow: /ar/account', 'Disallow: /ar/sell', 'Allow: /ar/sell-on-trove', 'Disallow: /ar/services/booking/']) assert.ok(robots.includes(line), line);
+  // F466: signed-in twins are crawlable (they answer noindex); private links stay blocked.
+  for (const line of ['Disallow: /ar/services/booking/', 'Disallow: /ar/reset', 'Disallow: /ar/order/']) assert.ok(robots.includes(line), line);
 });
 
 const LEGAL = [['/terms', 'buyer-terms', 'buyer-terms'], ['/privacy', 'privacy', 'privacy'], ['/seller-agreement', 'seller-agreement', 'seller-agreement'],
