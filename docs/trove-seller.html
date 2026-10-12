@@ -26,7 +26,9 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);
-       -webkit-font-smoothing:antialiased;font-weight:500;line-height:1.5}
+       -webkit-font-smoothing:antialiased;font-weight:500;line-height:1.5;
+       font-variant-numeric:lining-nums} /* Cormorant's default old-style figures print 0 like a letter o: this is a working screen of prices and order numbers */
+  .big,.bal,.v,.tot,.an-step .k b,.an-src .n,.sc-earn .val,.price-edit,.sr-id,.sc-id{font-variant-numeric:lining-nums tabular-nums}
   ::selection{background:var(--rose);color:var(--char)}
   a{color:inherit;text-decoration:none}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
@@ -140,8 +142,12 @@
   /* the end tooltips would otherwise be clipped by the card's overflow */
   .an-bar:first-child .an-tip{left:0;transform:none}
   .an-bar:last-child .an-tip{left:auto;right:0;transform:none}
-  .an-axis{display:flex;gap:3px;margin-top:9px}
-  .an-axis span{flex:1;min-width:0;text-align:center;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;white-space:nowrap;overflow:hidden}
+  /* Day labels: five at most (first, quarters, last), each placed under its own
+     bar and free to be wider than one bar, so a date is never cut to '2 S'. */
+  .an-axis{position:relative;height:15px;margin-top:9px}
+  .an-axis span{position:absolute;top:0;width:64px;margin-inline-start:-32px;text-align:center;font-size:9.5px;color:var(--muted);font-weight:600;letter-spacing:.04em;white-space:nowrap}
+  .an-axis span.first{margin-inline-start:0;text-align:start}
+  .an-axis span.last{margin-inline-start:-64px;text-align:end}
   .payout-card .row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:600}
   .payout-card .row:last-of-type{border:none}
   .payout-card .row .v{font-family:var(--font-display);font-size:20px;font-weight:600}
@@ -171,6 +177,10 @@
   .pill-st.draft{background:var(--rose-tint);color:var(--char)}
   .pill-st.hidden{background:#EDE7E2;color:var(--muted)}
   .pill-st.soldout{background:#F6E7C9;color:#5C430F;cursor:help}
+  select.st-pick{border:1px solid transparent;font-family:inherit;padding:5px 8px 5px 10px;max-width:100%}
+  select.st-pick:hover{border-color:var(--line)}
+  .photo-line{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin:-8px 0 16px;font-size:13px;font-weight:600;color:var(--ink-80)}
+  .photo-line:empty{display:none}
   .rowact{display:flex;gap:6px;justify-content:flex-end}
   .iact{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:var(--muted);transition:.15s}
   .iact:hover{background:var(--rose-tint);color:var(--char)}
@@ -738,6 +748,7 @@
       <div class="view" id="view-products">
         <div class="sec-head"><span class="n"><span id="prodCountLine"><b>0</b> products</span> · <span>click any price or stock to edit</span><span class="maker-only"> · <span data-i18n>you keep <span class="keepPct">60</span>% of each price</span></span></span></div>
         <div id="leadBanner"></div>
+        <div class="photo-line maker-only" id="photoLine"></div>
         <div class="card" style="padding:6px 0">
           <table class="tbl" id="prodTable"></table>
         </div>
@@ -814,7 +825,7 @@
             <div class="field"><label>Shop name</label><input id="sfName"></div>
             <div class="field"><label>Area</label><input id="sfLoc" placeholder="e.g. Alserkal Avenue, Al Quoz"></div>
             <div class="field"><label>Emirate</label><select id="sfEmirate"><option value="Dubai">Dubai</option><option value="Abu Dhabi">Abu Dhabi</option></select></div>
-            <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area — where the courier collects your parcels">
+            <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area, emirate — where the courier collects your parcels">
               <button type="button" class="btn btn-ghost btn-sm" id="sfPickupSame" style="display:none;margin-top:6px" onclick="$('sfPickup').value=SHOP.sellerAddress;this.style.display='none'">Same as my home address</button></div>
             <div class="field"><label>Pickup phone (courier only)</label><input id="sfPickupTel" placeholder="05X XXX XXXX — the number the driver calls" inputmode="tel"></div>
             <div class="field"><label>About</label><textarea id="sfBio"></textarea></div>
@@ -992,7 +1003,11 @@ let SETTLE={tier:'consignment',commissionPercent:40,payoutSetupComplete:false,pe
 const retDays=()=>Number(SETTLE.returnWindowDays)||15;
 /* Dates read in the page's language (Western digits, Gregorian) — docs/api.js. */
 const LOC=window.troveLang==='ar'?'ar-AE-u-nu-latn-ca-gregory':'en-GB';
-function runDayLabel(d){ const t=new Date(String(d)+'T00:00:00Z'); return isNaN(t)?String(d):t.toLocaleDateString(LOC,{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}); }
+/* English dates spell every month the same way ('Sep', never en-GB's 'Sept'):
+   'Tue 6 Oct', '14 Sep 2026'. Arabic pages keep the browser's own words. */
+const AR_PAGE=window.troveLang==='ar';
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function runDayLabel(d){ const t=new Date(String(d)+'T00:00:00Z'); if(isNaN(t))return String(d); return AR_PAGE?t.toLocaleDateString(LOC,{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'}):`${DOW[t.getUTCDay()]} ${t.getUTCDate()} ${MON[t.getUTCMonth()]}`; }
 const feePct=()=>SETTLE.commissionPercent||40;
 let editingId=null, drawerStatus='live', drawerDirty=false;
 
@@ -1084,8 +1099,7 @@ let toastT;
 function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2200);}
 
 /* ---------------- API GLUE ---------------- */
-function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); return isNaN(d)?s:d.toLocaleDateString(LOC,{day:'numeric',month:'short',year:'numeric'}); }
-function pillClass(s){ return s==='fulfilled'?'fulfilled':s==='paid'?'new':'shipped'; }
+function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')+'Z'); if(isNaN(d))return s; return AR_PAGE?d.toLocaleDateString(LOC,{day:'numeric',month:'short',year:'numeric'}):`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`; }
 function parseTagsCol(s){ try{const v=JSON.parse(s||'[]');return Array.isArray(v)?v:[];}catch(_){return[];} }
 /* "Glaze: Ash grey · Size: Large" — what the buyer chose, on order lines. */
 const optLabel=o=>(o||[]).map(x=>`${x.name}: ${x.value}`).join(' · ');
@@ -1106,6 +1120,8 @@ function applyShop(s){
     agreementVersion:s.agreement_version||'',
     agreementUpdateDue:!!s.agreementUpdateDue,currentAgreementVersion:s.currentAgreementVersion||'',
     sellingPaused:!!s.sellingPaused,agreementChangeNote:s.agreementChangeNote||'',
+    graduationThresholdCents:Number(s.graduationThresholdCents)||0,
+    photoRequestedAt:s.photo_session_requested_at||null,photoArrangedAt:s.photo_session_arranged_at||null,
     tier:s.tier||'consignment',graduationFlagged:s.graduation_flagged_at||null,connectQueue:!!s.connect_queue,licenseVerified:s.license_verified_at||null,licenseNumber:s.license_number||'',
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
@@ -1153,11 +1169,12 @@ async function reloadProducts(){
   try{ const {products:ps}=await TroveAPI.api('/api/seller/products'); products=(ps||[]).map(mapProduct); }catch(_){ products=[]; }
   renderProducts(); renderOverview();
 }
-var ORDER_SUMMARY=null;
+var ORDER_SUMMARY=null, ORDERS_OLDER=null;
 async function reloadOrders(){
   // Each row is one shipment (this shop's items within an order), with an `order` summary attached.
-  try{ const {orders:o,summary}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; ORDER_SUMMARY=summary||null; }
-  catch(_){ orders=[]; ORDER_SUMMARY=null; }
+  // The server sends every open parcel plus the last 90 days; `older` pages back further (loadOlderOrders).
+  try{ const {orders:o,summary,older}=await TroveAPI.api('/api/seller/orders'); orders=o||[]; ORDER_SUMMARY=summary||null; ORDERS_OLDER=older||null; }
+  catch(_){ orders=[]; ORDER_SUMMARY=null; ORDERS_OLDER=null; }
   // The sidebar count belongs to the orders load, not to opening Products —
   // it used to sit in renderProducts() and read 0 until you happened to go there.
   const openOrders=orders.filter(o=>!['delivered','cancelled'].includes(o.status)).length;
@@ -1182,7 +1199,9 @@ function renderOverview(){
   const managed=SETTLE.tier!=='connect';
   const net=managed ? (SETTLE.payableCents/100) : revenue*(1-feePct()/100);
   $('stRev').textContent=aed(revenue);
-  $('stOrders').textContent=new Set(orders.map(o=>o.order&&o.order.publicId)).size;
+  // Orders · 30d comes from the server too, over the same 30 days as Revenue:
+  // refunded and cancelled orders don't count.
+  $('stOrders').textContent=ORDER_SUMMARY&&ORDER_SUMMARY.ordersCount!=null?ORDER_SUMMARY.ordersCount:'—';
   $('stProducts').textContent=live;
   $('stProducts').previousElementSibling.textContent=SHOP.status==='approved'?_t('Live products'):_t('Ready for launch');
   // The money tile counts everything a maker is owed — what goes out in the
@@ -1196,13 +1215,13 @@ function renderOverview(){
     : (sc.chargesEnabled?_t('after the {pct}% margin',{pct:feePct()}):_t('connect Stripe'));
   // A maker with no sales yet sees a 'get your shop ready' checklist, not a
   // wall of zeros: the number tiles and the payout card wait for the first sale.
-  const firstSale=!SHOP.house&&!orders.length;
+  const firstSale=!SHOP.house&&!orders.length&&!ORDERS_OLDER;
   const g4=document.querySelector('#view-overview .grid-4'); if(g4)g4.style.display=firstSale?'none':'';
   const pc=document.querySelector('#view-overview .payout-card.maker-only'); if(pc)pc.style.display=firstSale?'none':'';
   const orow=document.querySelector('#view-overview .ov-row'); if(orow)orow.style.gridTemplateColumns=firstSale?'1fr':'';
   const deltas=document.querySelectorAll('#view-overview .grid-4 .delta');
   if(deltas[0]){deltas[0].textContent=ORDER_SUMMARY&&ORDER_SUMMARY.refundedCents?_t('after {amount} refunded',{amount:aed(ORDER_SUMMARY.refundedCents/100)}):_t('paid, less refunds');deltas[0].className='delta';deltas[0].style.color='var(--muted)';}
-  if(deltas[1]){deltas[1].textContent=_t('all time');deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
+  if(deltas[1]){deltas[1].textContent=_t('refunded orders not counted');deltas[1].className='delta';deltas[1].style.color='var(--muted)';}
   if(deltas[2]){deltas[2].textContent=_tn(drafts,'{n} draft','{n} drafts');deltas[2].className='delta';deltas[2].style.color='var(--muted)';}
   // One 'To do' card, most urgent first, instead of a stack of banners.
   $('ovBanner').innerHTML = SHOP.house ? houseBannerHTML() : todoCardHTML(managed, sc, firstSale);
@@ -1246,6 +1265,7 @@ function renderProducts(){
   // is ready, and goes on sale the moment the shop is approved.
   const waiting=SHOP.status!=='approved';
   $('leadBanner').innerHTML=leadBannerHTML();
+  $('photoLine').innerHTML=photoLineHTML();
   if(!products.length){ $('prodTable').innerHTML=`<tbody><tr><td style="padding:30px 16px;color:var(--muted);font-weight:600">${_t('No products yet — add your first piece with the button above.')}</td></tr></tbody>`; return; }
   $('prodTable').innerHTML=`
     <thead><tr><th>${_t('Product')}</th><th>${_t('Category')}</th><th>${_t('Price')}</th><th>${_t('Stock')}</th><th>${_t('Status')}</th><th></th></tr></thead>
@@ -1259,7 +1279,7 @@ function renderProducts(){
         : `<input class="stock-input" type="number" aria-label="${esc(_t('Stock for {name}',{name:p.name}))}" value="${Number(p.stock)||0}" onchange="setStock(${p.id},this.value)">`}${p.stock===0?` <span style="color:var(--accent-ink);font-size:11px;font-weight:700">${_t('Out')}</span>`:''}</td>
       <td>${p.adminHidden
         ? `<span class="pill-st hidden" style="cursor:help" title="${_t('Trove has taken this piece off sale. Contact us to put it back.')}" onclick="toast(_t('Hidden by Trove — contact us to put it back on sale'))">${_t('Hidden by Trove — contact us')}</span>`
-        : `<span class="pill-st ${esc(p.status)}" role="button" tabindex="0" aria-label="${esc(_t('Status {status} — change',{status:ST(p.status)}))}" onkeydown="if(event.key==='Enter'){event.preventDefault();cycleStatus(${p.id})}" onclick="cycleStatus(${p.id})"${waiting&&p.status==='live'?` title="${_t('Goes on sale once your shop is approved')}"`:''}>${waiting&&p.status==='live'?ST('ready'):esc(ST(p.status))}</span>${p.status==='live'&&!(Number(p.stock)>0)?` <span class="pill-st soldout" title="${_t('Shoppers see this piece as sold out until you add stock')}">${_t('Sold out')}</span>`:''}`}</td>
+        : `<select class="pill-st st-pick ${esc(p.status)}" aria-label="${esc(_t('Who can see {name}',{name:p.name}))}" onchange="setStatus(${p.id},this.value)"${waiting&&p.status==='live'?` title="${_t('Goes on sale once your shop is approved')}"`:''}>${['live','draft','hidden'].map(s=>`<option value="${s}"${p.status===s?' selected':''}>${esc(statusChoice(s,waiting))}</option>`).join('')}</select>${p.status==='live'&&!(Number(p.stock)>0)?` <span class="pill-st soldout" title="${_t('Shoppers see this piece as sold out until you add stock')}">${_t('Sold out')}</span>`:''}`}</td>
       <td><div class="rowact">
         <button class="iact" title="${_t('Preview')}" aria-label="${esc(_t('Preview {name} as shoppers see it',{name:p.name}))}" onclick="openPreview('piece',${p.id})"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.7"/></svg></button>
         <button class="iact" title="${_t('Edit')}" aria-label="${esc(_t('Edit {name}',{name:p.name}))}" onclick="openEdit(${p.id})"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
@@ -1281,7 +1301,13 @@ async function setStock(id,val){const stock=Math.max(0,parseInt(val)||0);
   try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{stock}}); }catch(e){ toast(e.message); }
   await reloadProducts();
 }
-async function cycleStatus(id){const p=products.find(x=>x.id===id);if(p.adminHidden){toast(_t('Hidden by Trove — contact us to put it back on sale'));return;}const order=['live','draft','hidden'];const status=order[(order.indexOf(p.status)+1)%3];
+/* Who can see a piece, as a menu rather than a pill that cycled on every tap
+   (F309): choosing takes a deliberate pick, and each choice says what it means. */
+function statusChoice(s,waiting){
+  if(s==='live')return waiting?_t('Ready — on sale once approved'):_t('On sale');
+  return s==='draft'?_t('Draft — not finished'):_t('Hidden — paused');
+}
+async function setStatus(id,status){const p=products.find(x=>x.id===id);if(!p||p.status===status)return;if(p.adminHidden){toast(_t('Hidden by Trove — contact us to put it back on sale'));return;}
   try{ await TroveAPI.api('/api/seller/products/'+id,{method:'PATCH',body:{status}}); toast(status==='live'&&SHOP.status!=='approved'?_t('{name} is ready — it goes on sale once your shop is approved',{name:p.name}):_t('{name} is now {status}',{name:p.name,status:ST(status)})); }catch(e){ toast(e.message); }
   await reloadProducts();
 }
@@ -1673,10 +1699,13 @@ function shipTimeline(tl){
   if(!tl||!tl.length) return '';
   return `<ul class="sc-tl">`+tl.slice().reverse().map(e=>`<li><span class="dot"></span><span>${esc(_t(e.label))}${e.note&&e.note!==e.label?` <span class="no">— ${esc(_t(e.note))}</span>`:''}</span><span class="tt">${fmtDateTime(e.at)}</span></li>`).join('')+`</ul>`;
 }
+/* No phone here, ever: the buyer's mobile lives on orders.phone and only Trove
+   and the courier see it — never put it back into the address a shop gets
+   (backend/test/checkout-contact.test.js pins that). */
 function shipAddress(o){
   const a=o.order&&o.order.ship;
   if(!a) return `<div class="v" style="color:var(--muted)">${_t('No delivery address on file.')}</div>`;
-  return `<div class="v">${a.name?`<div class="nm">${esc(a.name)}</div>`:''}${a.line?esc(a.line)+'<br>':''}${esc(a.city||'')}${a.country?'<br>'+esc(a.country):''}${a.phone?`<br><span style="color:var(--muted)">${esc(a.phone)}</span>`:''}${a.line?'':`<br><span style="color:var(--muted)">${_t('The courier label carries the full address.')}</span>`}</div>`;
+  return `<div class="v">${a.name?`<div class="nm">${esc(a.name)}</div>`:''}${a.line?esc(a.line)+'<br>':''}${esc(a.city||'')}${a.country?'<br>'+esc(a.country):''}${a.line?'':`<br><span style="color:var(--muted)">${_t('The courier label carries the full address.')}</span>`}</div>`;
 }
 /* Orders list — filter chips + collapsible cards keep a busy week scannable. */
 let orderFilter='all';
@@ -1737,7 +1766,7 @@ function shipCardHTML(o){
     ${SHOP.house?`<div class="sc-earn"><div class="e net"><span class="k">${_t('Sale · kept by Trove in full')}</span><span class="val">${aed(gross)}</span></div></div>`:`<div class="sc-earn">
       <div class="e"><span class="k">${_t('List price total')}</span><span class="val">${aed(gross)}</span></div>
       <div class="e"><span class="k">${_t('Trove margin ({pct}%)',{pct:feePct()})}</span><span class="val">−${aed(fee)}</span></div>
-      <div class="e net"><span class="k">${_t('Your purchase price')}</span><span class="val">${aed(net)}</span></div>
+      <div class="e net"><span class="k">${_t('You keep ({pct}%)',{pct:100-feePct()})}</span><span class="val">${aed(net)}</span></div>
     </div>`}
     ${returnStripHTML(o)}
     <div class="sc-divider"></div>
@@ -1757,7 +1786,7 @@ function returnStripHTML(o){
   const rr=o.returnRequest; if(!rr)return'';
   const photos=(rr.images||[]).map(safeImg).filter(Boolean).map(u=>`<a href="${TroveAPI.base}${esc(u)}" target="_blank" rel="noopener"><img src="${TroveAPI.base}${esc(u)}"></a>`).join('');
   const amt=aed(rr.creditImpact||0), many=(rr.items||[]).length>1;
-  const note=rr.status==='requested'?_t('Trove is reviewing it — nothing for you to do yet. If it’s approved, {amount} of this sale’s credit reverses.',{amount:amt})
+  const note=rr.status==='requested'?_t('Trove is reviewing it — nothing for you to do yet. If it’s approved, {amount} is taken off this sale before it’s paid.',{amount:amt})
     :RR_OPEN(rr.status)?(many?_t('{step} — the courier brings the items back to you. Once the buyer is refunded, {amount} of this sale no longer counts toward your payouts; until then the sale is held, not paid out.',{step:RR_STEP[rr.status],amount:amt}):_t('{step} — the courier brings the item back to you. Once the buyer is refunded, {amount} of this sale no longer counts toward your payouts; until then the sale is held, not paid out.',{step:RR_STEP[rr.status],amount:amt}))
     :rr.status==='refunded'?_t('Returned and refunded — {amount} of this sale no longer counts toward your payouts. The piece is yours again — adjust your stock when it arrives.',{amount:amt})
     :_t('Trove declined the request — nothing changes for you.');
@@ -1799,23 +1828,27 @@ function setAnRange(d){ if(d===anDays)return; anDays=d; ANALYTICS=null; renderAn
 // Rates arrive as fractions; null means there was nothing to divide by, which
 // is not the same as 0% and must never be drawn as it.
 function anPct(x){ if(x==null)return '—'; const p=Math.min(x,9.99)*100; return (p<10?p.toFixed(1):Math.round(p))+'%'; }
-function anDayLabel(iso){ const d=new Date(iso+'T00:00:00Z'); return isNaN(d)?iso:d.toLocaleDateString(LOC,{day:'numeric',month:'short'}); }
+/* '12 Sep' — the same month spelling as every other date here (see MON). */
+function anDayLabel(iso){ const d=new Date(iso+'T00:00:00Z'); if(isNaN(d))return iso; return AR_PAGE?d.toLocaleDateString(LOC,{day:'numeric',month:'short',timeZone:'UTC'}):`${d.getUTCDate()} ${MON[d.getUTCMonth()]}`; }
 const anViews=n=>_tn(n,'{n} view','{n} views'), anVisitors=n=>_tn(n,'{n} visitor','{n} visitors'), anOrders=n=>_tn(n,'{n} order','{n} orders');
 
 /** The daily-views chart, shared by the overview and this view. One series,
- *  one hue: the height is the whole message. Every Nth day is labelled so the
- *  axis can't collide with itself, and each bar carries its day in a tooltip
- *  and in an aria-label for anyone not using a mouse. */
+ *  one hue: the height is the whole message. Five days are labelled (first,
+ *  the quarters, last), each centred under its bar, so labels never collide
+ *  or get cut off; each bar carries its day in a tooltip and in an
+ *  aria-label for anyone not using a mouse. */
 function anChartHTML(daily){
   const max=Math.max(1,...daily.map(d=>d.views));
-  const every=Math.max(1,Math.ceil(daily.length/7));
+  const n=daily.length, picks=[...new Set([0,Math.round((n-1)/4),Math.round((n-1)/2),Math.round(3*(n-1)/4),n-1])];
   const bars=daily.map(d=>{
     const label=`${anDayLabel(d.date)}: ${anViews(d.views)}، ${anVisitors(d.visitors)}، ${anOrders(d.orders)}`;
     const tip=`${anDayLabel(d.date)}<br>${anViews(d.views)} · ${anVisitors(d.visitors)}${d.orders?' · '+anOrders(d.orders):''}`;
     const h=d.views?Math.max(6,Math.round(d.views/max*100))+'%':'2px';
     return `<div class="an-bar${d.views?'':' zero'}" role="img" aria-label="${esc(label)}"><span class="an-tip">${tip}</span><i style="height:${h}"></i></div>`;
   }).join('');
-  const axis=daily.map((d,i)=>`<span>${i%every===0?anDayLabel(d.date):''}</span>`).join('');
+  const axis=picks.map(i=>i===0?`<span class="first" style="inset-inline-start:0">${anDayLabel(daily[i].date)}</span>`
+    :i===n-1?`<span class="last" style="inset-inline-start:100%">${anDayLabel(daily[i].date)}</span>`
+    :`<span style="inset-inline-start:${((i+.5)/n*100).toFixed(2)}%">${anDayLabel(daily[i].date)}</span>`).join('');
   return { bars, axis };
 }
 
@@ -1895,9 +1928,10 @@ let returnRequests=[];
 async function reloadReturns(){
   try{ const {returns:r}=await TroveAPI.api('/api/seller/returns'); returnRequests=r||[]; }
   catch(_){ returnRequests=[]; }
-  // Waiting on Trove, or approved and on its way back to the maker: both need
-  // the maker's eye, so the badge stays until the return is refunded/closed.
-  setPill('returnPill',returnRequests.filter(r=>['requested','approved','collected'].includes(r.status)).length);
+  // The badge counts only returns the maker has something to do about — a
+  // piece the courier is bringing back to them. A request still with Trove
+  // ('awaiting Trove') needs nothing from them, so it isn't a badge (F481).
+  setPill('returnPill',returnRequests.filter(r=>['approved','collected'].includes(r.status)).length);
   if($('view-returns').classList.contains('active'))renderReturnsView();
 }
 function returnPill(s){ return s==='requested'?'new':['approved','collected','refunded'].includes(s)?'fulfilled':'shipped'; }
@@ -1918,7 +1952,7 @@ function renderReturnsView(){
       </div>`).join('');
     const amt=`<b>${aed(r.creditImpact||0)}</b>`, on=d=>d?' '+_t('on {date}',{date:fmtDate(d)}):'';
     const state=r.status==='requested'
-      ? _t('Trove is reviewing this request — nothing for you to do yet. If it’s approved, {amount} of the sale’s credit reverses on your next settlement.',{amount:amt})
+      ? _t('Trove is reviewing this request — nothing for you to do yet. If it’s approved, {amount} is taken off this sale before it’s paid.',{amount:amt})
       : RR_OPEN(r.status)
       ? `${_t('Approved by Trove')}${on(r.decidedAt)} · ${RR_STEP[r.status].toLowerCase()}${on(r.collectedAt)} — ${(r.items||[]).length>1?_t('the courier brings the items back to you. When the buyer is refunded, {amount} of this sale no longer counts toward your payouts; the sale is held until then.',{amount:amt}):_t('the courier brings the item back to you. When the buyer is refunded, {amount} of this sale no longer counts toward your payouts; the sale is held until then.',{amount:amt})}`
       : r.status==='refunded'
@@ -1939,7 +1973,7 @@ function renderReturnsView(){
 }
 function renderOrders(){
   const wrap=$('orderList');
-  if(!orders.length){ wrap.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">${_t('No orders yet. When a shopper buys one of your pieces, it’ll appear here ready to fulfil.')}</div>`; return; }
+  if(!orders.length&&!ORDERS_OLDER){ wrap.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">${_t('No orders yet. When a shopper buys one of your pieces, it’ll appear here ready to fulfil.')}</div>`; return; }
   // First sight of a parcel: open it if it needs action (or if the list is tiny). Collapse choices then stick for the session.
   orders.forEach(o=>{ if(!seenShips.has(o.id)){ seenShips.add(o.id); if(shipFilterKey(o)==='action'||orders.length<=2) expandedShips.add(o.id); } });
   const counts={all:orders.length,action:0,transit:0,done:0};
@@ -1947,7 +1981,21 @@ function renderOrders(){
   const chips=`<div class="ofilters">`+ORDER_FILTER_LABELS.map(([k,l])=>`<button class="ochip ${orderFilter===k?'on':''}" onclick="setOrderFilter('${k}')">${l}<b>${counts[k]}</b></button>`).join('')+`</div>`;
   const list=orders.filter(o=>orderFilter==='all'||shipFilterKey(o)===orderFilter);
   const EMPTY={action:_t('Nothing waiting on you — every parcel is on its way or delivered.'),transit:_t('No parcels in transit right now.'),done:_t('No delivered orders yet.')};
-  wrap.innerHTML=chips+(list.length?list.map(o=>expandedShips.has(o.id)?shipCardHTML(o):shipRowHTML(o)).join(''):`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">${EMPTY[orderFilter]||''}</div>`);
+  // Delivered and cancelled parcels older than 90 days load on request.
+  const more=ORDERS_OLDER&&(orderFilter==='all'||orderFilter==='done')?`<button class="btn btn-ghost btn-sm" style="margin-top:4px" onclick="loadOlderOrders(this)">${_t('Show older orders')}</button>`:'';
+  wrap.innerHTML=chips+(list.length?list.map(o=>expandedShips.has(o.id)?shipCardHTML(o):shipRowHTML(o)).join(''):`<div class="card" style="color:var(--muted);font-weight:600;padding:26px 22px">${EMPTY[orderFilter]||''}</div>`)+more;
+}
+async function loadOlderOrders(btn){
+  if(!ORDERS_OLDER)return;
+  if(btn){btn.disabled=true;btn.textContent=_t('Loading…');}
+  try{
+    const r=await TroveAPI.api('/api/seller/orders?before='+encodeURIComponent(ORDERS_OLDER));
+    const have=new Set(orders.map(o=>o.id));
+    // Older parcels arrive collapsed: they are history, not work.
+    (r.orders||[]).forEach(o=>{ if(!have.has(o.id)){ seenShips.add(o.id); orders.push(o); } });
+    ORDERS_OLDER=r.older||null;
+    renderOrders();
+  }catch(e){ toast(e.message||_t('Could not load older orders')); if(btn){btn.disabled=false;btn.textContent=_t('Show older orders');} }
 }
 // One step back from each status — so a mis-click is never final.
 const SHIP_PREV={shipped:'processing',out_for_delivery:'shipped',delivered:'out_for_delivery'};
@@ -1964,7 +2012,9 @@ function shipActions(s){
   // maker only marks it packed. 'Shipped' then means packed + collection
   // booked until the courier reports collecting it (collectedAt).
   const courier=!!s.deliveryRef||!!s.courierManaged;
-  if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">${_t('✓ Delivered {date}',{date:fmtDate(s.updatedAt)})}</span>${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${courier?'':undoBtn(s)}</div>`
+  // The day it was delivered — not the row's last change — and when the
+  // buyer's return window closes, which is when the sale can be paid (F411).
+  if(s.status==='delivered') return `<div class="sc-act"><span class="sc-done">${_t('✓ Delivered {date}',{date:fmtDate(s.deliveredAt||s.updatedAt)})}</span>${s.returnWindowEndsAt&&!s.waitingForOtherParcels?`<span class="sc-tn">${_t('Return window closes {date}',{date:fmtDate(s.returnWindowEndsAt)})}</span>`:''}${s.trackingNumber?`<span class="sc-tn">${esc(s.carrier)} · ${esc(s.trackingNumber)}</span>`:''}${courier?'':undoBtn(s)}</div>`
     +(s.waitingForOtherParcels?`<div class="sc-act" style="color:var(--muted);font-size:13px">${_t('Payment waits for the rest of this order: the buyer’s other parcel hasn’t arrived yet, and their return window starts when it does.')}</div>`:'');
   let [ns,label]=SHIP_NEXT[s.status]||[];
   if(courier&&s.status==='processing') label=s.courierPending?_t('Try booking the courier again'):_t('Packed · ready for collection');
@@ -1977,10 +2027,13 @@ function shipActions(s){
   const msg=s.courierPending?_t('Packed — Trove is booking the courier collection. Nothing more for you to do; we’ll email if anything changes.')
     :waiting?_t('Packed — waiting for the courier to collect it. Keep it ready with the label on.')
     :_t('With the courier — updates arrive automatically.');
+  // Once the collection is booked, stepping back would not call the driver off
+  // (F308): say so, instead of an Undo that looks like it cancels the pickup.
+  const booked=waiting&&!!s.readyAt;
   if(courier) return courierRow+`<div class="sc-act">
       ${s.courierPending?`<span style="color:var(--muted);font-size:13px">${msg}</span>`:''}
       ${ns?`<button class="btn ${s.courierPending?'btn-ghost':'btn-coral'} btn-sm" onclick="advanceShip(${Number(s.id)},${jsq(ns)})">${label}</button>`:`<span style="color:var(--muted);font-size:13px">${msg}</span>`}
-      ${waiting?undoBtn(s):''}
+      ${booked?`<span style="color:var(--muted);font-size:13px">${_t('Not ready after all? The courier is already booked — <a href="/contact" target="_blank" rel="noopener" style="text-decoration:underline">contact Trove</a> to move the collection.')}</span>`:waiting?undoBtn(s):''}
     </div>`;
   const track=courierRow+`<div class="sc-track">
       <div class="field" style="margin:0"><label>${_t('Courier')}</label><input id="ship-carrier-${s.id}" value="${esc(s.carrier)}" placeholder="${_t('Courier name')}"></div>
@@ -2020,8 +2073,24 @@ function graduationBannerHTML(){
   return `<div class="banner"><div class="bi" style="background:var(--sage,#CAD5CC)">↑</div>
     <div><h4>${flagged?_t('Your shop has outgrown the starter tier'):_t('Direct payouts are on the way')}</h4>
     <p>${flagged
-      ?_t('Your sales the last month passed AED 12,000 — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It’s optional, and nothing changes until you’re ready.')+' <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">'+_t('Apply for an e-Trader licence ↗')+'</a>'
+      ?_t('Your payouts over the last 30 days passed {amount} — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It’s optional, and nothing changes until you’re ready.',{amount:money(SHOP.graduationThresholdCents||1200000)})+' <a href="https://invest.dubai.ae" target="_blank" rel="noopener" style="color:var(--accent-ink)">'+_t('Apply for an e-Trader licence ↗')+'</a>'
       :_t('You applied with a trade licence. Once the Trove team verifies it, we’ll set up direct per-sale payouts for you — no action needed.')}</p></div></div>`;
+}
+/* Photo sessions (F318): the maker asks, the owner is emailed and arranges a
+   visit or a collection, then marks it arranged in the admin. */
+const photoSessionOpen=()=>!!(SHOP.photoRequestedAt&&!SHOP.photoArrangedAt);
+function photoLineHTML(){
+  if(SHOP.house||SHOP.status==='rejected'||SHOP.status==='suspended')return '';
+  if(photoSessionOpen())return `<span>${_t('Photo session requested {date} — Trove will be in touch to arrange it.',{date:fmtDate(SHOP.photoRequestedAt)})}</span>`;
+  return `<span>${_t('Photography is part of what Trove does for you.')}</span><button class="btn btn-ghost btn-sm owner-only" onclick="requestPhotoSession(this)">${_t('Ask for a photo session')}</button>`;
+}
+async function requestPhotoSession(btn){
+  if(btn){btn.disabled=true;btn.textContent=_t('Sending…');}
+  try{
+    const {shop}=await TroveAPI.api('/api/seller/photo-session',{method:'POST',body:{}});
+    applyShop(shop); toast(_t('Thanks — Trove will be in touch to arrange your photo session'));
+    renderProducts(); renderOverview();
+  }catch(e){ toast(e.message||_t('Could not send that — try again')); if(btn){btn.disabled=false;btn.textContent=_t('Ask for a photo session');} }
 }
 /* Per-piece make times (2026-09-30): pieces listed before the field existed
    sit at the standard 2 days until their maker confirms or changes them —
@@ -2034,6 +2103,11 @@ function leadBannerHTML(){
     <button class="btn btn-coral" onclick="confirmLeadTimes(this)">${_t('They’re all ready in 2 days')}</button></div>`;
 }
 async function confirmLeadTimes(btn){
+  // Name the pieces first (F310): one tap must never promise 3–6 days for a
+  // made-to-order piece that really takes weeks.
+  const todo=products.filter(p=>!p.leadConfirmed), shown=todo.slice(0,12).map(p=>'• '+p.name).join('\n');
+  const rest=todo.length>12?'\n'+_tn(todo.length-12,'and one more piece','and {n} more pieces'):'';
+  if(!confirm(_tn(todo.length,'Confirm that this piece is ready to send within 2 days of an order?','Confirm that these {n} pieces are ready to send within 2 days of an order?')+'\n\n'+shown+rest+'\n\n'+_t('Anything that takes longer: cancel, open it and set Ready to send in.')))return;
   if(btn){btn.disabled=true;btn.textContent=_t('Saving…');}
   try{ await TroveAPI.api('/api/seller/products/confirm-lead-times',{method:'POST',body:{ids:products.filter(p=>!p.leadConfirmed).map(p=>p.id)}}); toast(_t('Thanks — make times confirmed')); await reloadProducts(); renderOverview(); }
   catch(e){ toast(e.message||_t('Could not save')); if(btn){btn.disabled=false;btn.textContent=_t('They’re all ready in 2 days');} }
@@ -2103,7 +2177,10 @@ function todoCardHTML(managed, sc, firstSale){
   }else add({done:true,step:true,title:_t('Courier pickup address and phone')});
   // Getting paid
   if(managed){
-    if(!(SETTLE.payoutSetupComplete||(SHOP.bank&&SHOP.bank.iban))){
+    // The server's own rule decides (F519): bank details on file AND the
+    // agreement accepted — exactly what the settlement run checks. A shop
+    // with bank details but no agreement sees the agreement line above.
+    if(!SETTLE.payoutSetupComplete&&!(SHOP.bank&&SHOP.bank.iban&&!SHOP.agreementAccepted)){
       add({urgent:true,step:true,title:_t('Finish your payout setup'),detail:_t('Add your bank details so Trove can pay for the pieces it buys from you — until then you’re left out of the fortnightly settlement run.'),action:btn(_t('Set up payouts'),"go('payments')",true)});
     }else add({done:true,step:true,title:_t('Payout details')});
     if(SHOP.needsId){
@@ -2126,6 +2203,9 @@ function todoCardHTML(managed, sc, firstSale){
   if(firstSale){
     if(!(SHOP.image&&SHOP.bio))add({step:true,title:_t('Add a shop photo and your story'),detail:_t('Shoppers buy from people: a photo and a few lines about how you make.'),action:btn(_t('Edit storefront'),"go('storefront')")});
     else add({done:true,step:true,title:_t('Shop photo and story')});
+    // Photography is part of what Trove does for makers (F318): an optional
+    // line until asked for; Products keeps the request (and its status) after.
+    if(!photoSessionOpen())add({title:_t('Ask Trove to photograph your pieces'),detail:_t('Photography is part of what Trove does for you. Ask, and Trove gets in touch to arrange a visit or a collection.'),action:btn(_t('Ask for a photo session'),'requestPhotoSession(this)',true)});
   }
   const lead=products.filter(p=>!p.leadConfirmed).length;
   if(lead)add({title:_tn(lead,'Confirm the make time of one piece','Confirm the make times of {n} pieces'),detail:_t('Buyers see each piece’s delivery time: your make time plus 1–4 days with our courier.'),action:btn(_t('Review on Products'),"go('products')")});
@@ -2168,7 +2248,7 @@ function renderPayments(){
 
 const SETTLE_STATUS_PILL=(st)=>st==='paid'?'fulfilled':'new';
 function consignmentPayoutUI(){
-  const s=SETTLE, b=SHOP.bank||{}, hasBank=!!(b.iban)||s.payoutSetupComplete, hist=s.history||[];
+  const s=SETTLE, hasBank=!!s.payoutSetupComplete, hist=s.history||[]; // the settlement run's own rule (F519)
   return `
     <div class="pay-grid2">
       <div class="card">
@@ -2224,7 +2304,7 @@ function renderConnectUI(sc){
       <div class="fee-row"><span class="muted">${_t('Payouts')}</span><span>${sc.payoutsEnabled?_t('Enabled'):_t('Pending')}</span></div>
       <div class="fee-row"><span>${_t('Trove margin')}</span><span>${_t('{pct}% per sale',{pct:feePct()})}</span></div>
     </div>
-    <p style="color:var(--muted);font-size:13px;font-weight:600;margin-top:14px">${_t('You’re paid per sale, minus Trove’s margin and the buyer fees, straight to your bank via Stripe.')}</p>`;
+    <p style="color:var(--muted);font-size:13px;font-weight:600;margin-top:14px">${_t('You’re paid per sale, minus Trove’s {pct}% margin, straight to your bank via Stripe.',{pct:feePct()})}</p>`;
 }
 
 async function reloadPayouts(){
@@ -2414,7 +2494,7 @@ async function renderAdminPayouts(){
       ${runs.length?runs.map(st=>`
         <div style="padding:14px 22px;border-bottom:1px solid var(--line)">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <strong>${_t('Run {date}',{date:esc(st.runDate)})}</strong>
+            <strong>${_t('Run {date}',{date:esc(runDayLabel(st.runDate))})}</strong>
             <span class="order-pill ${st.status==='paid'?'fulfilled':'new'}">${esc(_t(st.status))}</span>
             <span style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(st.totalCents)}</span>
             <span style="flex:1"></span>
@@ -2554,6 +2634,8 @@ async function applyCrop(){
   btn.textContent=label;btn.disabled=false;
 }
 async function removeShopPhoto(){
+  // The file is deleted for good (F484): ask first, like deleting a piece.
+  if(!confirm(_t('Remove your shop photo? It is deleted, and your accent colour shows instead. To change how it sits, use Adjust framing.')))return;
   try{ const {shop}=await TroveAPI.api('/api/seller/me/image',{method:'POST',body:{image:null}}); applyShop(shop);updatePreview();toast(_t('Back to your accent colour')); }
   catch(e){ toast(e.message||_t('Could not remove the photo')); }
 }
