@@ -67,7 +67,7 @@ for (const file of PAGES) {
   test(`${file}: the same five links, in the same order, on desktop and in the mobile menu`, () => {
     const desktop = labels(block(html, /<nav class="links">[\s\S]*?<\/nav>/, 'desktop links', file));
     const mobile = labels(block(html, MNAV, 'mobile menu', file)).filter((l) => !/^(My account|Orders|Saved items)$/.test(l));
-    const expected = ['Shop all', 'Trove Collection', 'Marketplace', 'Services Marketplace', 'Sell on Trove'];
+    const expected = ['Shop all', 'Trove Collection', 'Makers', 'Services Marketplace', 'Sell on Trove'];
     assert.deepEqual(desktop, expected);
     assert.deepEqual(mobile.map((l) => l.replace(/→$/, '').trim()), expected);
     assert.deepEqual(labels(block(store, /<nav class="links">[\s\S]*?<\/nav>/, 'desktop links', 'trove.html')), expected);
@@ -120,7 +120,7 @@ for (const p of RENDERED) {
       assert.equal(skeleton(block(html, re, what, p)), skeleton(block(store, re, what, 'trove.html')), `${p}: ${what} differs from the storefront`);
     }
     assert.doesNotMatch(block(html, HEADER, 'header', p), / class="on"/);
-    assert.deepEqual(labels(block(html, /<nav class="links">[\s\S]*?<\/nav>/, 'desktop links', p)), ['Shop all', 'Trove Collection', 'Marketplace', 'Services Marketplace', 'Sell on Trove']);
+    assert.deepEqual(labels(block(html, /<nav class="links">[\s\S]*?<\/nav>/, 'desktop links', p)), ['Shop all', 'Trove Collection', 'Makers', 'Services Marketplace', 'Sell on Trove']);
     for (const [tag] of block(html, MNAV, 'mobile menu', p).matchAll(/<a\b[^>]*class="mn-link"[^>]*>/g)) {
       assert.ok(!/onclick/.test(tag), `${p}: a mobile menu link still has an in-page handler: ${tag}`);
     }
