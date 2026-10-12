@@ -123,5 +123,15 @@
   "We can’t take this order right now — please contact us and we’ll help": "We can’t take this order right now — please contact us and we’ll help",
   "We can’t take this booking right now — please contact us and we’ll help": "We can’t take this booking right now — please contact us and we’ll help",
   "A piece in your basket is on display only and can’t be bought — please remove it": "A piece in your basket is on display only and can’t be bought — please remove it",
-  "This provider isn’t taking bookings yet": "This provider isn’t taking bookings yet"
+  "This provider isn’t taking bookings yet": "This provider isn’t taking bookings yet",
+  "Shop names can’t include the word Trove — it is reserved for Trove’s own line": "Shop names can’t include the word Trove — it is reserved for Trove’s own line",
+  "The courier collects in Dubai and Abu Dhabi only — end the pickup address with the emirate, e.g. Al Quoz, Dubai": "The courier collects in Dubai and Abu Dhabi only — end the pickup address with the emirate, e.g. Al Quoz, Dubai",
+  "The courier name must be 80 characters or fewer": "The courier name must be 80 characters or fewer",
+  "The tracking number must be 60 characters or fewer": "The tracking number must be 60 characters or fewer",
+  "The note must be 300 characters or fewer": "The note must be 300 characters or fewer",
+  "The courier name can’t contain < or >": "The courier name can’t contain < or >",
+  "The tracking number can’t contain < or >": "The tracking number can’t contain < or >",
+  "The note can’t contain < or >": "The note can’t contain < or >",
+  "The tracking link must be a web address starting with https://": "The tracking link must be a web address starting with https://",
+  "Confirm up to 1000 pieces at a time": "Confirm up to 1000 pieces at a time"
 }

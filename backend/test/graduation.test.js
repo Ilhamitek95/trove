@@ -56,7 +56,8 @@ test('direct entry with Rail B OFF: queued, approval refused with 409', async ()
 
   const approve = await ctx.api('POST', `/api/admin/graduation/${shop.id}/approve`, { cookie: adminCookie });
   assert.equal(approve.status, 409);
-  assert.match(approve.data.error, /Rail B/);
+  // Plain words for the owner, no setting names (oct12 F387).
+  assert.match(approve.data.error, /Direct payouts for licensed makers are switched off/);
 });
 
 test('Rail B ON: approve creates a CUSTOM account; payouts-enabled webhook flips the tier', async () => {

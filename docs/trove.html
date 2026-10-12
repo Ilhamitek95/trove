@@ -2825,7 +2825,7 @@ function revDate(s){if(!s)return'';const d=new Date(String(s).replace(' ','T')+'
 function reviewCardHTML(r){
   return `<div class="rev">
     ${r.productName?`<div class="rprod">${esc(r.productName)}</div>`:''}
-    <div class="rhead"><span class="rstars">${stars(Number(r.rating)||0)}</span><span class="rwho">${esc(r.buyer==='A trove buyer'?_t('A Trove buyer'):r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · '+_t('edited'):''}</span></div>
+    <div class="rhead"><span class="rstars">${stars(Number(r.rating)||0)}</span><span class="rwho">${esc(/^A trove buyer$/i.test(r.buyer)?_t('A Trove buyer'):r.buyer)}</span><span class="rwhen">${revDate(r.createdAt)}${r.edited?' · '+_t('edited'):''}</span></div>
     ${r.body?`<p>${esc(r.body)}</p>`:''}
     ${r.translated?`<div class="rtr">${_t('Translated automatically')}</div>`:''}
     ${r.images&&r.images.length?`<div class="rimgs">${r.images.map(safeImg).filter(Boolean).map(u=>`<img src="${esc(u)}" alt="${_t('Buyer photo')}" loading="lazy" onclick="window.open(this.src,'_blank','noopener')">`).join('')}</div>`:''}

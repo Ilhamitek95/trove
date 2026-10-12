@@ -368,9 +368,11 @@ function hasIdDocuments(shop) {
 function privateRoot() {
   return path.resolve(process.env.PRIVATE_DIR || path.join(uploads.UPLOADS_DIR, '..', 'private'));
 }
-/** Licence images are stored as an absolute path; delete only inside the private root. */
+/** Licence images: an encrypted .enc path relative to the private root (since
+ *  12 Oct, F259) or an older absolute path; delete only inside the private root. */
 function removeLicenceFile(file) {
   if (!file) return;
+  if (!path.isAbsolute(String(file))) { uploads.removeEncryptedPrivate(String(file)); return; }
   const abs = path.resolve(String(file));
   if (!abs.startsWith(privateRoot() + path.sep)) return;
   try { fs.unlinkSync(abs); } catch (_) { /* already gone */ }

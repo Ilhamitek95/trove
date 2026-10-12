@@ -54,6 +54,7 @@ const LABELS = {
   'PATCH /api/admin/shops/:id': 'Shop status changed',
   'POST /api/admin/shops/:id/identity-check': 'Emirates ID check',
   'POST /api/admin/shops/:id/payout-hold': 'Shop payouts hold',
+  'POST /api/admin/shops/:id/photo-session': 'Photo session marked arranged',
   'PATCH /api/admin/providers/:id': 'Provider status changed',
   'PATCH /api/admin/reviews/:id': 'Review moderated',
   'PATCH /api/admin/products/:id': 'Product moderated',

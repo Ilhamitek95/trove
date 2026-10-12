@@ -59,7 +59,7 @@
   "e.g. Alserkal Avenue, Al Quoz": "e.g. Alserkal Avenue, Al Quoz",
   "Emirate": "Emirate",
   "Pickup address (courier only)": "Pickup address (courier only)",
-  "Building, street, area — where the courier collects your parcels": "Building, street, area — where the courier collects your parcels",
+  "Building, street, area, emirate — where the courier collects your parcels": "Building, street, area, emirate — where the courier collects your parcels",
   "Same as my home address": "Same as my home address",
   "Pickup phone (courier only)": "Pickup phone (courier only)",
   "05X XXX XXXX — the number the driver calls": "05X XXX XXXX — the number the driver calls",
@@ -736,5 +736,38 @@
   "and {n} more orders": {
     "one": "and one more order",
     "other": "and {n} more orders"
-  }
+  },
+  "refunded orders not counted": "refunded orders not counted",
+  "Show older orders": "Show older orders",
+  "Could not load older orders": "Could not load older orders",
+  "Who can see {name}": "Who can see {name}",
+  "Ready — on sale once approved": "Ready — on sale once approved",
+  "On sale": "On sale",
+  "Draft — not finished": "Draft — not finished",
+  "Hidden — paused": "Hidden — paused",
+  "Confirm that these {n} pieces are ready to send within 2 days of an order?": {
+    "one": "Confirm that this piece is ready to send within 2 days of an order?",
+    "other": "Confirm that these {n} pieces are ready to send within 2 days of an order?"
+  },
+  "and {n} more pieces": {
+    "one": "and one more piece",
+    "other": "and {n} more pieces"
+  },
+  "Anything that takes longer: cancel, open it and set Ready to send in.": "Anything that takes longer: cancel, open it and set Ready to send in.",
+  "You’re paid per sale, minus Trove’s {pct}% margin, straight to your bank via Stripe.": "You’re paid per sale, minus Trove’s {pct}% margin, straight to your bank via Stripe.",
+  "Return window closes {date}": "Return window closes {date}",
+  "Not ready after all? The courier is already booked — <a href=\"/contact\" target=\"_blank\" rel=\"noopener\" style=\"text-decoration:underline\">contact Trove</a> to move the collection.": "Not ready after all? The courier is already booked — <a href=\"/contact\" target=\"_blank\" rel=\"noopener\" style=\"text-decoration:underline\">contact Trove</a> to move the collection.",
+  "Trove is reviewing this request — nothing for you to do yet. If it’s approved, {amount} is taken off this sale before it’s paid.": "Trove is reviewing this request — nothing for you to do yet. If it’s approved, {amount} is taken off this sale before it’s paid.",
+  "Trove is reviewing it — nothing for you to do yet. If it’s approved, {amount} is taken off this sale before it’s paid.": "Trove is reviewing it — nothing for you to do yet. If it’s approved, {amount} is taken off this sale before it’s paid.",
+  "You keep ({pct}%)": "You keep ({pct}%)",
+  "Your payouts over the last 30 days passed {amount} — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It’s optional, and nothing changes until you’re ready.": "Your payouts over the last 30 days passed {amount} — with a UAE e-Trader licence you can move to direct per-sale payouts to your own Stripe account. It’s optional, and nothing changes until you’re ready.",
+  "Remove your shop photo? It is deleted, and your accent colour shows instead. To change how it sits, use Adjust framing.": "Remove your shop photo? It is deleted, and your accent colour shows instead. To change how it sits, use Adjust framing.",
+  "Ask Trove to photograph your pieces": "Ask Trove to photograph your pieces",
+  "Photography is part of what Trove does for you. Ask, and Trove gets in touch to arrange a visit or a collection.": "Photography is part of what Trove does for you. Ask, and Trove gets in touch to arrange a visit or a collection.",
+  "Ask for a photo session": "Ask for a photo session",
+  "Photo session requested {date} — Trove will be in touch to arrange it.": "Photo session requested {date} — Trove will be in touch to arrange it.",
+  "Photography is part of what Trove does for you.": "Photography is part of what Trove does for you.",
+  "Sending…": "Sending…",
+  "Thanks — Trove will be in touch to arrange your photo session": "Thanks — Trove will be in touch to arrange your photo session",
+  "Could not send that — try again": "Could not send that — try again"
 }

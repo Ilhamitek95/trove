@@ -123,5 +123,15 @@
   "We can’t take this order right now — please contact us and we’ll help": "لا يمكننا قبول هذا الطلب حاليًا — يُرجى التواصل معنا وسنساعدك",
   "We can’t take this booking right now — please contact us and we’ll help": "لا يمكننا قبول هذا الحجز حاليًا — يُرجى التواصل معنا وسنساعدك",
   "A piece in your basket is on display only and can’t be bought — please remove it": "إحدى القطع في سلتك للعرض فقط ولا يمكن شراؤها — يُرجى إزالتها",
-  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد"
+  "This provider isn’t taking bookings yet": "مقدّم الخدمة هذا لا يستقبل الحجوزات بعد",
+  "Shop names can’t include the word Trove — it is reserved for Trove’s own line": "لا يمكن أن يتضمّن اسم المتجر كلمة Trove — فهي مخصّصة لتشكيلة Trove الخاصة",
+  "The courier collects in Dubai and Abu Dhabi only — end the pickup address with the emirate, e.g. Al Quoz, Dubai": "يستلم المندوب في دبي وأبوظبي فقط — اختم عنوان الاستلام باسم الإمارة، مثل: القوز، دبي",
+  "The courier name must be 80 characters or fewer": "يجب ألا يتجاوز اسم شركة الشحن 80 حرفاً",
+  "The tracking number must be 60 characters or fewer": "يجب ألا يتجاوز رقم التتبّع 60 حرفاً",
+  "The note must be 300 characters or fewer": "يجب ألا تتجاوز الملاحظة 300 حرف",
+  "The courier name can’t contain < or >": "لا يمكن أن يحتوي اسم شركة الشحن على < أو >",
+  "The tracking number can’t contain < or >": "لا يمكن أن يحتوي رقم التتبّع على < أو >",
+  "The note can’t contain < or >": "لا يمكن أن تحتوي الملاحظة على < أو >",
+  "The tracking link must be a web address starting with https://": "يجب أن يكون رابط التتبّع عنوان ويب يبدأ بـ https://",
+  "Confirm up to 1000 pieces at a time": "أكّد حتى 1000 قطعة في كل مرة"
 }

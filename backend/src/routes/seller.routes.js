@@ -17,13 +17,28 @@ const CLIENT = () => process.env.CLIENT_URL || 'http://localhost:3000';
 // The buyer's delivery address is snapshotted as JSON on the order at checkout.
 function parseShip(json) { try { return json ? JSON.parse(json) : null; } catch (_) { return null; } }
 
-// Never let encrypted blobs or plaintext bank numbers leave the API — the UI
-// only ever needs the masked IBAN.
+// The shop's own record, as the dashboard needs it — an explicit allow-list
+// (F246), so a new column never reaches the browser by accident. Never sent:
+// encrypted blobs and plaintext bank numbers (the UI only needs the masked
+// IBAN), the storage paths of ID and licence files, the agreement hash, the
+// Stripe account id, internal review bookkeeping, and the owner's review note
+// (shown only on a rejected application, where it explains the decision).
+const SHOP_FIELDS = ['id', 'name', 'slug', 'status', 'bio', 'location', 'color', 'image', 'category', 'is_house', 'tier',
+  'payout_type', 'created_at', 'updated_at', 'pickup_address', 'pickup_phone', 'pitch_phone', 'seller_address',
+  'payout_bank_name', 'payout_account_name', 'iban_masked', 'license_number', 'license_verified_at', 'connect_queue',
+  'graduation_flagged_at', 'agreement_version', 'agreement_accepted_at', 'emirates_id_last4', 'emirates_id_issue',
+  'emirates_id_expiry', 'photo_session_requested_at', 'photo_session_arranged_at'];
 function publicShop(shop) {
-  const { iban_encrypted, payout_iban, eid_front_file, eid_front_mime, eid_back_file, eid_back_mime, ...safe } = shop;
+  const safe = {};
+  for (const k of SHOP_FIELDS) if (shop[k] !== undefined) safe[k] = shop[k];
+  // Why payouts are held, only for the hold the maker caused and can act on
+  // (a bank change Trove checks); a hold Trove placed stays in the admin panel.
+  safe.payout_hold_reason = shop.payout_hold_reason === 'bank_details_changed' ? shop.payout_hold_reason : '';
+  safe.review_note = shop.status === 'rejected' ? (shop.review_note || '') : '';
+  safe.licenseImageProvided = !!shop.license_image;
   // Sellers see whether their ID photos are on file, never the storage paths.
-  safe.eidFrontProvided = !!eid_front_file;
-  safe.eidBackProvided = !!eid_back_file;
+  safe.eidFrontProvided = !!shop.eid_front_file;
+  safe.eidBackProvided = !!shop.eid_back_file;
   // A typed licence number proves nothing until an admin verifies it, so the
   // Emirates ID step applies to every maker without a VERIFIED licence.
   safe.needsIdVerification = identity.needsEmiratesId(shop);
@@ -45,10 +60,15 @@ function publicShop(shop) {
   safe.agreementChangeNote = safe.agreementUpdateDue ? agreements.changeNote(current) : '';
   // The Trove Collection is Trove's own line: no agreement, ID checks or payouts.
   if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, agreementAccepted: true, sellingPaused: false, agreementChangeNote: '' });
-  // Internal review bookkeeping stays in the admin panel.
-  delete safe.identity_checked_by;
+  // The graduation banner quotes the real threshold, never a number in the page (F483).
+  safe.graduationThresholdCents = require('../config').graduationThresholdCents();
   return safe;
 }
+
+// 'Trove' is the house line's name: a maker's shop can't carry it, however it
+// is spaced or cased ('Trove Official', 'TroveCraft'), so shoppers never take
+// a maker's pieces for Trove's own (F248).
+const reservedShopName = (name) => /trove/i.test(String(name || '').replace(/[^a-z]/gi, ''));
 
 // Maker-only steps (Seller Agreement, payout and ID setup, licence, services
 // practice) do not apply to the Trove Collection: Trove keeps its sales.
@@ -118,6 +138,10 @@ router.patch('/me', requireSeller, (req, res) => {
     const r = v.shortText(name, { label: 'Shop name', max: v.LIMITS.shopName });
     if (r.error) return res.status(400).json({ error: r.error });
     cleanName = r.value;
+    // 'Trove' belongs to Trove's own line: no maker's shop may carry it (F248).
+    if (!req.shop.is_house && reservedShopName(cleanName) && cleanName !== req.shop.name) {
+      return res.status(400).json({ code: 'reserved_name', error: 'Shop names can’t include the word Trove — it is reserved for Trove’s own line' });
+    }
   }
   if (bio != null) {
     const r = v.longText(bio, { label: 'Your story', max: v.LIMITS.bio });
@@ -143,6 +167,13 @@ router.patch('/me', requireSeller, (req, res) => {
     if (pickup.length > v.LIMITS.pickupAddress) return res.status(400).json({ error: `The pickup address must be ${v.LIMITS.pickupAddress} characters or fewer` });
     if (v.hasMarkup(pickup)) return res.status(400).json({ error: "The pickup address can't contain < or >" });
     if (pickup && pickup.length < 10) return res.status(400).json({ error: 'Enter the full pickup address — building, street and area' });
+    // The courier collects only inside the service area (F247): the same
+    // check, and the same words, as the shop's location.
+    const { SERVICE_AREAS, isServiceable, namesOtherEmirate } = require('../service-area');
+    const inArea = isServiceable(pickup) || /دبي|أبو ?ظبي|ابو ?ظبي/.test(pickup); // typed in Arabic on /ar/sell
+    if (pickup && pickup !== (req.shop.pickup_address || '') && (!inArea || namesOtherEmirate(pickup))) {
+      return res.status(400).json({ code: 'pickup_area', error: `The courier collects in ${SERVICE_AREAS.join(' and ')} only — end the pickup address with the emirate, e.g. Al Quoz, Dubai` });
+    }
   }
   if (pickupPhone != null) {
     const raw = String(pickupPhone).trim();
@@ -155,6 +186,19 @@ router.patch('/me', requireSeller, (req, res) => {
       pickup_address=COALESCE(?,pickup_address), pickup_phone=COALESCE(?,pickup_phone) WHERE id=?`)
     .run(cleanName, cleanBio, cleanLocation, color == null ? null : color, pickup, pickupTel, req.shop.id);
   tq('shop', req.shop.id);
+  // Curation approved the shop under its old name: a live shop that renames
+  // itself is flagged to the owner (email + Activity), who can suspend it if
+  // the new name misleads shoppers (F248). A change the admin makes in shop
+  // view is already in Activity (src/admin-audit.js) and needs no alert.
+  if (cleanName && cleanName !== req.shop.name && req.shop.status === 'approved' && !req.shop.is_house && !req.session.impersonatorId) {
+    const lines = [`“${req.shop.name}” is now called “${cleanName}” on the storefront.`,
+      'Check the new name still fits the shop you approved. If it misleads shoppers, suspend the shop in Admin → Shops and ask the maker to change it back.'];
+    require('../notify').adminAlert({ subject: `Trove: a live shop renamed itself — ${cleanName}`, title: 'A live shop changed its name', kicker: 'Shop name', lines, cta: 'Open the admin' });
+    try {
+      require('../admin-audit').record({ action: 'Live shop renamed by the maker', targetType: 'shops', targetId: String(req.shop.id),
+        before: { name: req.shop.name }, after: { name: cleanName }, note: 'Changed by the maker' });
+    } catch (e) { console.error('rename record failed:', e.message); }
+  }
   res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
 });
 
@@ -187,6 +231,30 @@ router.post('/me/image', requireSeller, (req, res, next) => {
     db.prepare('UPDATE shops SET image=? WHERE id=?').run(url, req.shop.id);
     res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
   } catch (e) { next(e); }
+});
+
+// POST /api/seller/photo-session { note? } — 'Ask Trove to photograph my
+// pieces' (F318). Photography is part of what Trove's margin pays for; this
+// is the maker's way to ask for it. The owner is emailed, the request shows
+// in Admin → Needs you and Shops until marked arranged, and the dashboard
+// shows it as requested. Asking again while one is open changes nothing.
+router.post('/photo-session', requireSeller, notHouse, notInShopView, (req, res) => {
+  const note = String((req.body || {}).note || '').trim().slice(0, 300);
+  if (require('../validate').hasMarkup(note)) return res.status(400).json({ error: 'The note can’t contain < or >' });
+  const s = req.shop;
+  const open = s.photo_session_requested_at && !s.photo_session_arranged_at;
+  if (!open) {
+    db.prepare("UPDATE shops SET photo_session_requested_at=datetime('now'), photo_session_arranged_at=NULL WHERE id=?").run(s.id);
+    const live = db.prepare("SELECT COUNT(*) AS n FROM products WHERE shop_id=? AND status='live'").get(s.id).n;
+    require('../notify').adminAlert({
+      subject: `Trove: ${s.name} would like a photo session`, title: 'A maker asked for a photo session', kicker: s.name,
+      lines: [`${s.name} (${s.location || 'no area given'}) asked Trove to photograph their pieces. They have ${live} live ${live === 1 ? 'piece' : 'pieces'}.`,
+        ...(note ? [`Their note: ${note}`] : []),
+        'Get in touch with them to arrange a visit or a collection, then mark it arranged in Admin → Shops.'],
+      cta: 'Open the admin',
+    });
+  }
+  res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(s.id)), already: !!open });
 });
 
 /* ---------------- Products ---------------- */
@@ -257,22 +325,41 @@ function imagesError(list, smalls) {
   if (smalls !== undefined && smalls !== null && (!Array.isArray(smalls) || smalls.length > MAX_PRODUCT_IMAGES)) return 'imagesSmall must be a list';
   return null;
 }
+const smallAt = (smalls, i) => (Array.isArray(smalls) && typeof smalls[i] === 'string' && smalls[i] ? smalls[i] : null);
+/** Every NEW photo (data URL) decoded and checked before anything is written (F244). */
+function newImagesError(incoming, smalls) {
+  for (let i = 0; i < incoming.length; i += 1) {
+    const im = incoming[i];
+    if (typeof im !== 'string' || !im || im.startsWith('/uploads/')) continue;
+    try { uploads.checkDataUrl(im, { small: smallAt(smalls, i) }); } catch (e) { return e.message; }
+  }
+  return null;
+}
 /**
- * `smalls` (optional, body.imagesSmall) runs parallel to `incoming`: for a
- * new photo (data URL) its 480 px copy made by the browser, kept beside the
- * full file for cards and the basket (uploads.smallOf, F131).
+ * Writes the new photo files and the images column. `smalls` (optional,
+ * body.imagesSmall) runs parallel to `incoming`: for a new photo (data URL)
+ * its 480 px copy made by the browser, kept beside the full file for cards
+ * and the basket (uploads.smallOf, F131). If a file can't be written, the
+ * ones written in this call are removed again and the error is thrown (the
+ * caller's transaction rolls the row back). Returns the photos the save
+ * dropped: the caller deletes them only once the save has committed.
  */
 function applyProductImages(shopId, productId, incoming, existing, smalls) {
-  const kept = [];
-  incoming.forEach((im, i) => {
-    if (typeof im !== 'string' || !im) return;
-    if (im.startsWith('/uploads/products/')) { if (existing.includes(im) && !kept.includes(im)) kept.push(im); return; }
-    const small = Array.isArray(smalls) && typeof smalls[i] === 'string' && smalls[i] ? smalls[i] : null;
-    kept.push(uploads.saveDataUrl(im, 'products', `prod-${shopId}-${productId}-${i}`, { small }));
-  });
-  existing.forEach((old) => { if (!kept.includes(old)) uploads.removeByUrl(old); });
-  db.prepare('UPDATE products SET images=? WHERE id=?').run(JSON.stringify(kept), productId);
-  return kept;
+  const kept = [], saved = [];
+  try {
+    incoming.forEach((im, i) => {
+      if (typeof im !== 'string' || !im) return;
+      if (im.startsWith('/uploads/products/')) { if (existing.includes(im) && !kept.includes(im)) kept.push(im); return; }
+      const url = uploads.saveDataUrl(im, 'products', `prod-${shopId}-${productId}-${i}`, { small: smallAt(smalls, i) });
+      saved.push(url);
+      kept.push(url);
+    });
+    db.prepare('UPDATE products SET images=? WHERE id=?').run(JSON.stringify(kept), productId);
+  } catch (e) {
+    saved.forEach((u) => uploads.removeByUrl(u));
+    throw e;
+  }
+  return existing.filter((old) => !kept.includes(old));
 }
 
 /**
@@ -351,7 +438,7 @@ router.post('/products', requireSeller, (req, res) => {
   const catErr = require('../categories').categoryError(category, { house: !!req.shop.is_house });
   if (catErr) return res.status(422).json({ error: catErr.message });
   if (images !== undefined) {
-    const imgErr = imagesError(images, (req.body || {}).imagesSmall);
+    const imgErr = imagesError(images, (req.body || {}).imagesSmall) || newImagesError(images, (req.body || {}).imagesSmall);
     if (imgErr) return res.status(400).json({ error: imgErr });
   }
   const optErr = productOptions.optionsError(options);
@@ -364,21 +451,19 @@ router.post('/products', requireSeller, (req, res) => {
   if (leadErr) return res.status(400).json({ error: leadErr });
   const opt = optionCols(options, variants, f.stock);
   const lead = (req.body || {}).leadDays === undefined ? null : Number(req.body.leadDays);
-  const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,extras,
-      personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit,lead_days,lead_days_confirmed)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, f.name, f.description, category, f.price_cents, f.compare_at_cents ?? null, opt.stock, f.status, f.image_seed,
-      JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization),
-      lead ?? fees.LEAD_DAYS_DEFAULT, lead == null ? 0 : 1);
-  tq('product', info.lastInsertRowid);
-  if (images !== undefined && images.length) {
-    try { applyProductImages(req.shop.id, info.lastInsertRowid, images, [], (req.body || {}).imagesSmall); }
-    catch (e) {
-      // A bad photo must not leave a half-created product behind.
-      db.prepare('DELETE FROM products WHERE id=?').run(info.lastInsertRowid);
-      throw e;
-    }
-  }
-  res.status(201).json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(info.lastInsertRowid) });
+  // One transaction: a photo that can't be written leaves neither a
+  // half-created product nor any of the photos written before it (F244).
+  const id = db.transaction(() => {
+    const info = db.prepare(`INSERT INTO products (shop_id,name,description,category,price_cents,compare_at_cents,stock,status,image_seed,tags,options,variants,extras,
+        personalization_enabled,personalization_required,personalization_prompt,personalization_char_limit,lead_days,lead_days_confirmed)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(req.shop.id, f.name, f.description, category, f.price_cents, f.compare_at_cents ?? null, opt.stock, f.status, f.image_seed,
+        JSON.stringify(normalizeTags(tags)), opt.options, opt.variants, JSON.stringify(productExtras.normalize(extras)), ...persoCols(personalization),
+        lead ?? fees.LEAD_DAYS_DEFAULT, lead == null ? 0 : 1);
+    if (images !== undefined && images.length) applyProductImages(req.shop.id, info.lastInsertRowid, images, [], (req.body || {}).imagesSmall);
+    return info.lastInsertRowid;
+  })();
+  tq('product', id);
+  res.status(201).json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(id) });
 });
 
 // Claude writes shopper search tags from the product's name and story.
@@ -429,45 +514,53 @@ router.patch('/products/:id', requireSeller, (req, res) => {
   const leadErr = leadTimes.leadDaysError(b.leadDays);
   if (leadErr) return res.status(400).json({ error: leadErr });
   if (b.images !== undefined) {
-    const imgErr = imagesError(b.images, b.imagesSmall);
+    // New photos are decoded and checked here too, so a corrupt one refuses
+    // the whole save instead of failing after the name and price changed (F244).
+    const imgErr = imagesError(b.images, b.imagesSmall) || newImagesError(b.images, b.imagesSmall);
     if (imgErr) return res.status(400).json({ error: imgErr });
   }
-  db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
-    price_cents=COALESCE(?,price_cents), compare_at_cents=?, stock=COALESCE(?,stock), status=COALESCE(?,status) WHERE id=?`)
-    .run(f.name ?? null, f.description ?? null, b.category ?? null, f.price_cents ?? null,
-         f.compare_at_cents === undefined ? p.compare_at_cents : f.compare_at_cents,
-         f.stock ?? null, f.status ?? null, p.id);
-  if (b.personalization !== undefined) {
-    db.prepare(`UPDATE products SET personalization_enabled=?, personalization_required=?, personalization_prompt=?, personalization_char_limit=? WHERE id=?`)
-      .run(...persoCols(b.personalization), p.id);
-  }
-  if (b.tags !== undefined) {
-    db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
-  }
-  // Saving a time (even the same one) counts as the maker confirming it.
-  if (b.leadDays !== undefined) {
-    db.prepare('UPDATE products SET lead_days=?, lead_days_confirmed=1 WHERE id=?').run(Number(b.leadDays), p.id);
-  }
-  if (b.extras !== undefined) {
-    db.prepare('UPDATE products SET extras=? WHERE id=?').run(JSON.stringify(productExtras.normalize(b.extras)), p.id);
-  }
-  if (b.options !== undefined || b.variants !== undefined) {
-    // Either half arriving rebuilds the whole grid, carrying over the stock of
-    // combinations that survive the edit.
-    const groups = b.options !== undefined ? b.options : productOptions.parse(p.options);
-    const carry = b.variants !== undefined ? b.variants : productOptions.parse(p.variants);
-    // Dropping the variations falls back to what the grid added up to, so a
-    // shop that simplifies a listing doesn't find it silently sold out.
-    const hadVariants = productOptions.parse(p.options).length;
-    const plainStock = f.stock == null ? (hadVariants ? productOptions.totalStock(p.variants) : p.stock) : f.stock;
-    const opt = optionCols(groups, carry, plainStock);
-    db.prepare('UPDATE products SET options=?, variants=?, stock=? WHERE id=?').run(opt.options, opt.variants, opt.stock, p.id);
-  } else if (b.stock !== undefined && productOptions.parse(p.options).length) {
-    // A piece with variations has no stock of its own to set — the quick
-    // stock box in the products table doesn't apply, so hold the derived sum.
-    db.prepare('UPDATE products SET stock=? WHERE id=?').run(productOptions.totalStock(p.variants), p.id);
-  }
-  if (b.images !== undefined) applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images), b.imagesSmall);
+  // Every write below lands together or not at all; photos the save dropped
+  // are deleted only once it has committed.
+  const dropped = db.transaction(() => {
+    db.prepare(`UPDATE products SET name=COALESCE(?,name), description=COALESCE(?,description), category=COALESCE(?,category),
+      price_cents=COALESCE(?,price_cents), compare_at_cents=?, stock=COALESCE(?,stock), status=COALESCE(?,status),
+      image_seed=COALESCE(?,image_seed) WHERE id=?`)
+      .run(f.name ?? null, f.description ?? null, b.category ?? null, f.price_cents ?? null,
+           f.compare_at_cents === undefined ? p.compare_at_cents : f.compare_at_cents,
+           f.stock ?? null, f.status ?? null, f.image_seed ?? null, p.id);
+    if (b.personalization !== undefined) {
+      db.prepare(`UPDATE products SET personalization_enabled=?, personalization_required=?, personalization_prompt=?, personalization_char_limit=? WHERE id=?`)
+        .run(...persoCols(b.personalization), p.id);
+    }
+    if (b.tags !== undefined) {
+      db.prepare('UPDATE products SET tags=? WHERE id=?').run(JSON.stringify(normalizeTags(b.tags)), p.id);
+    }
+    // Saving a time (even the same one) counts as the maker confirming it.
+    if (b.leadDays !== undefined) {
+      db.prepare('UPDATE products SET lead_days=?, lead_days_confirmed=1 WHERE id=?').run(Number(b.leadDays), p.id);
+    }
+    if (b.extras !== undefined) {
+      db.prepare('UPDATE products SET extras=? WHERE id=?').run(JSON.stringify(productExtras.normalize(b.extras)), p.id);
+    }
+    if (b.options !== undefined || b.variants !== undefined) {
+      // Either half arriving rebuilds the whole grid, carrying over the stock of
+      // combinations that survive the edit.
+      const groups = b.options !== undefined ? b.options : productOptions.parse(p.options);
+      const carry = b.variants !== undefined ? b.variants : productOptions.parse(p.variants);
+      // Dropping the variations falls back to what the grid added up to, so a
+      // shop that simplifies a listing doesn't find it silently sold out.
+      const hadVariants = productOptions.parse(p.options).length;
+      const plainStock = f.stock == null ? (hadVariants ? productOptions.totalStock(p.variants) : p.stock) : f.stock;
+      const opt = optionCols(groups, carry, plainStock);
+      db.prepare('UPDATE products SET options=?, variants=?, stock=? WHERE id=?').run(opt.options, opt.variants, opt.stock, p.id);
+    } else if (b.stock !== undefined && productOptions.parse(p.options).length) {
+      // A piece with variations has no stock of its own to set — the quick
+      // stock box in the products table doesn't apply, so hold the derived sum.
+      db.prepare('UPDATE products SET stock=? WHERE id=?').run(productOptions.totalStock(p.variants), p.id);
+    }
+    return b.images !== undefined ? applyProductImages(req.shop.id, p.id, b.images, parseImagesCol(p.images), b.imagesSmall) : [];
+  })();
+  dropped.forEach((old) => uploads.removeByUrl(old));
   tq('product', p.id);
   res.json({ product: db.prepare('SELECT * FROM products WHERE id=?').get(p.id) });
 });
@@ -475,8 +568,12 @@ router.patch('/products/:id', requireSeller, (req, res) => {
 // POST /api/seller/products/confirm-lead-times { ids?: number[] } — the
 // dashboard banner's one tap: 'these pieces really are ready in the time
 // shown'. Confirms the listed pieces (or every unconfirmed one) as they are.
+const MAX_CONFIRM_IDS = 1000;
 router.post('/products/confirm-lead-times', requireSeller, (req, res) => {
-  const ids = Array.isArray((req.body || {}).ids) ? req.body.ids.map(Number).filter(Number.isInteger) : null;
+  const ids = Array.isArray((req.body || {}).ids) ? [...new Set(req.body.ids.map(Number).filter(Number.isInteger))] : null;
+  // One SQL placeholder per id: a list past SQLite's variable limit would be a
+  // 500, so a runaway client gets a plain 400 (F455). A shop has ≤ 500 pieces.
+  if (ids && ids.length > MAX_CONFIRM_IDS) return res.status(400).json({ error: `Confirm up to ${MAX_CONFIRM_IDS} pieces at a time` });
   const r = ids
     ? db.prepare(`UPDATE products SET lead_days_confirmed=1 WHERE shop_id=? AND lead_days_confirmed=0 AND id IN (${ids.map(() => '?').join(',') || 'NULL'})`).run(req.shop.id, ...ids)
     : db.prepare('UPDATE products SET lead_days_confirmed=1 WHERE shop_id=? AND lead_days_confirmed=0').run(req.shop.id);
@@ -529,32 +626,28 @@ function shopReturnShape(rr, shopId) {
     refundedAt: rr.refunded_at || null,
   };
 }
-// Latest request that touches this shop's items in an order (for the order card strip).
-const latestShopReturnStmt = () => db.prepare(`
-  SELECT rr.* FROM return_requests rr
-  WHERE rr.order_id = ? AND EXISTS (
-    SELECT 1 FROM return_request_items ri JOIN order_items oi ON oi.id = ri.order_item_id
-    WHERE ri.request_id = rr.id AND oi.shop_id = ?)
-  ORDER BY rr.created_at DESC, rr.id DESC LIMIT 1`);
-
 /**
  * 'Revenue · 30d' on the seller overview: the list value of this shop's
  * pieces on paid orders placed in the last 30 days, NET of refunds — a
  * whole-order refund drops the order, a refunded return drops just the
  * units that went back, and units Trove cancelled before dispatch drop too.
- * Gross list prices (the buyer-facing number), in fils.
+ * Gross list prices (the buyer-facing number), in fils. `ordersCount` is the
+ * 'Orders · 30d' tile: orders in the same window where this shop still has
+ * a piece sold — refunded and cancelled ones don't count (F302).
  */
 function revenueSummary(shopId, days = 30) {
   const row = db.prepare(`
-    SELECT COALESCE(SUM(oi.price_cents * oi.qty), 0) AS gross,
-           COALESCE(SUM(CASE WHEN o.refunded_at IS NOT NULL THEN oi.price_cents * oi.qty
+    SELECT COALESCE(SUM(gross), 0) AS gross, COALESCE(SUM(refunded), 0) AS refunded,
+           COUNT(DISTINCT CASE WHEN gross > refunded THEN order_id END) AS orders
+    FROM (SELECT oi.order_id, oi.price_cents * oi.qty AS gross,
+           CASE WHEN o.refunded_at IS NOT NULL THEN oi.price_cents * oi.qty
              ELSE oi.price_cents * MIN(oi.qty, oi.cancelled_qty + COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
                JOIN return_requests rr ON rr.id = ri.request_id
-               WHERE ri.order_item_id = oi.id AND rr.status = 'refunded'), 0)) END), 0) AS refunded
-    FROM order_items oi JOIN orders o ON o.id = oi.order_id
-    WHERE oi.shop_id = ? AND o.status IN ('paid','fulfilled')
-      AND o.created_at >= datetime('now', ?)`).get(shopId, `-${days} days`);
-  return { days, grossCents: row.gross, refundedCents: row.refunded, revenueCents: row.gross - row.refunded };
+               WHERE ri.order_item_id = oi.id AND rr.status = 'refunded'), 0)) END AS refunded
+      FROM order_items oi JOIN orders o ON o.id = oi.order_id
+      WHERE oi.shop_id = ? AND o.status IN ('paid','fulfilled')
+        AND o.created_at >= datetime('now', ?))`).get(shopId, `-${days} days`);
+  return { days, grossCents: row.gross, refundedCents: row.refunded, revenueCents: row.gross - row.refunded, ordersCount: row.orders };
 }
 
 // The buyer's email and phone are deliberately NOT selected here. Trove is the
@@ -575,25 +668,60 @@ function sellerShip(r) {
     : r.status === 'cancelled';
   return closed ? minimal : ship;
 }
+/*
+ * GET /api/seller/orders[?before=<cursor>] — one shipment per row (this
+ * shop's items within an order). The dashboard's first load carries every
+ * parcel still on the move, whatever its age, plus everything from the last
+ * ORDERS_RECENT_DAYS; older delivered and cancelled parcels come a page at a
+ * time with ?before= (F362), so the payload stops growing with a maker's
+ * whole history. `older` is the cursor for the next page (null when there is
+ * none). The latest return touching this shop's items and the 'other parcels
+ * still open' count ride along in the same query — no lookup per row.
+ */
+const ORDERS_RECENT_DAYS = 90;
+const ORDERS_PAGE = 100;
+const OPEN_PARCEL = "sh.status NOT IN ('delivered','cancelled')";
+const cursorOf = (r) => `${r.order_created}|${r.id}`;
 router.get('/orders', requireSeller, (req, res) => {
-  const rows = db.prepare(`
+  const SELECT = `
     SELECT sh.*, o.public_id, o.created_at AS order_created, o.status AS order_status, o.shipping_json, o.return_days AS order_return_days,
-           s.name AS shop_name, s.color, s.is_house
+           s.name AS shop_name, s.color, s.is_house,
+           (SELECT rr.id FROM return_requests rr
+             WHERE rr.order_id = o.id AND EXISTS (SELECT 1 FROM return_request_items ri JOIN order_items oi ON oi.id = ri.order_item_id
+               WHERE ri.request_id = rr.id AND oi.shop_id = sh.shop_id)
+             ORDER BY rr.created_at DESC, rr.id DESC LIMIT 1) AS latest_return_id,
+           -- On an order shared with other makers the buyer's return window
+           -- starts at the LAST delivery, so a delivered parcel's payment waits.
+           (SELECT COUNT(*) FROM shipments o2 WHERE o2.order_id = sh.order_id AND o2.id <> sh.id
+             AND o2.status NOT IN ('delivered','cancelled')) AS others_open
     FROM shipments sh
     JOIN orders o ON o.id = sh.order_id
     JOIN shops  s ON s.id = sh.shop_id
-    WHERE sh.shop_id = ?
-    ORDER BY o.created_at DESC, sh.id DESC`).all(req.shop.id);
-  const latestReq = latestShopReturnStmt();
-  // On an order shared with other makers the buyer's return window starts at
-  // the LAST delivery, so a delivered parcel's payment waits for the others.
-  const othersOpen = db.prepare(`SELECT COUNT(*) AS n FROM shipments WHERE order_id=? AND id<>?
-    AND status NOT IN ('delivered','cancelled')`);
-  res.json({ summary: revenueSummary(req.shop.id), orders: rows.map((r) => {
-    const rr = latestReq.get(r.order_id, req.shop.id);
+    WHERE sh.shop_id = ?`;
+  const ORDER = 'ORDER BY o.created_at DESC, sh.id DESC';
+  const older = (where, args) => db.prepare(`SELECT o.created_at AS order_created, sh.id FROM shipments sh JOIN orders o ON o.id = sh.order_id
+    WHERE sh.shop_id = ? AND NOT (${OPEN_PARCEL}) AND ${where} ${ORDER} LIMIT 1`).get(req.shop.id, ...args);
+  let rows, next = null;
+  const before = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\|(\d+)$/.exec(String(req.query.before || ''));
+  if (before) {
+    // An older page: delivered and cancelled parcels before the cursor.
+    const page = db.prepare(`${SELECT} AND NOT (${OPEN_PARCEL}) AND (o.created_at < ? OR (o.created_at = ? AND sh.id < ?)) ${ORDER} LIMIT ?`)
+      .all(req.shop.id, before[1], before[1], Number(before[2]), ORDERS_PAGE + 1);
+    rows = page.slice(0, ORDERS_PAGE);
+    if (page.length > ORDERS_PAGE) next = cursorOf(rows[rows.length - 1]);
+  } else {
+    const since = `-${ORDERS_RECENT_DAYS} days`;
+    rows = db.prepare(`${SELECT} AND (${OPEN_PARCEL} OR o.created_at >= datetime('now', ?)) ${ORDER}`).all(req.shop.id, since);
+    // Is there anything older? The cursor starts where this window ends.
+    const first = older("o.created_at < datetime('now', ?)", [since]);
+    if (first) next = `${db.prepare("SELECT datetime('now', ?) AS t").get(since).t}|0`;
+  }
+  const rrStmt = db.prepare('SELECT * FROM return_requests WHERE id=?');
+  res.json({ summary: revenueSummary(req.shop.id), older: next, orders: rows.map((r) => {
+    const rr = r.latest_return_id ? rrStmt.get(r.latest_return_id) : null;
     return {
       ...shipments.shape(r),
-      waitingForOtherParcels: r.status === 'delivered' && r.order_return_days == null && othersOpen.get(r.order_id, r.id).n > 0,
+      waitingForOtherParcels: r.status === 'delivered' && r.order_return_days == null && r.others_open > 0,
       order: { publicId: r.public_id, createdAt: r.order_created, status: r.order_status, ship: sellerShip(r) },
       returnRequest: rr ? shopReturnShape(rr, req.shop.id) : null,
     };
@@ -674,6 +802,21 @@ router.patch('/shipments/:id', requireSeller, async (req, res, next) => {
     if (!sh) return res.status(404).json({ error: 'Shipment not found' });
     const { status, carrier, trackingNumber, trackingUrl, note } = req.body || {};
     if (status && !shipments.LABELS[status]) return res.status(400).json({ error: 'Invalid status' });
+    // The buyer sees these inside their Trove account (F242): short plain
+    // text, and a tracking link only to a real https:// page — never a
+    // script, a data: page or a look-alike sign-in on plain http.
+    const hasMarkup = require('../validate').hasMarkup;
+    for (const [v, label, max] of [[carrier, 'The courier name', 80], [trackingNumber, 'The tracking number', 60], [note, 'The note', 300]]) {
+      if (v == null || v === '') continue;
+      if (typeof v !== 'string' || v.length > max) return res.status(400).json({ error: `${label} must be ${max} characters or fewer` });
+      if (hasMarkup(v)) return res.status(400).json({ error: `${label} can’t contain < or >` });
+    }
+    if (trackingUrl != null && trackingUrl !== '') {
+      const u = String(trackingUrl).trim();
+      let ok = u.length <= 300 && /^https:\/\/[^\s"'<>]+$/i.test(u);
+      try { ok = ok && new URL(u).protocol === 'https:'; } catch (_) { ok = false; }
+      if (!ok) return res.status(400).json({ error: 'The tracking link must be a web address starting with https://' });
+    }
     const asAdmin = !!req.session.impersonatorId;
     // Admin → Activity records a shop-view change with what it was before
     // (a parcel marked delivered starts the return window and payout clock).
@@ -739,7 +882,7 @@ router.patch('/shipments/:id', requireSeller, async (req, res, next) => {
     db.transaction(() => {
       db.prepare(`UPDATE shipments SET status=COALESCE(?,status), carrier=COALESCE(?,carrier),
           tracking_number=COALESCE(?,tracking_number), tracking_url=COALESCE(?,tracking_url), updated_at=datetime('now')
-        WHERE id=?`).run(status === 'delivered' ? null : (status || null), carrier ?? null, trackingNumber ?? null, trackingUrl ?? null, sh.id);
+        WHERE id=?`).run(status === 'delivered' ? null : (status || null), carrier ?? null, trackingNumber ?? null, trackingUrl == null ? null : String(trackingUrl).trim(), sh.id);
       if (undoingDelivery) {
         db.prepare('UPDATE shipments SET delivered_at=NULL, return_window_ends_at=NULL WHERE id=?').run(sh.id);
       }
@@ -753,7 +896,7 @@ router.patch('/shipments/:id', requireSeller, async (req, res, next) => {
       if (status && status !== sh.status && status !== 'delivered') {
         const auto = managed && status === 'shipped' ? 'Packed — waiting for the courier to collect it'
           : shipments.noteFor(status, carrier ?? sh.carrier, trackingNumber ?? sh.tracking_number);
-        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, status, note || auto);
+        db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, status, (note && String(note).trim()) || auto);
         shipments.deriveOrderStatus(sh.order_id);
       }
     })();

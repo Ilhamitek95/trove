@@ -40,7 +40,7 @@ function deliveredOrderFor(buyerId, { productId, shopId }) {
 // "Layla Hassan" → "Layla H." — enough to feel human, no full names published.
 function displayName(name) {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return 'A trove buyer';
+  if (!parts.length) return 'A Trove buyer';
   return parts[0] + (parts[1] ? ` ${parts[1][0].toUpperCase()}.` : '');
 }
 function parseImages(text) {
