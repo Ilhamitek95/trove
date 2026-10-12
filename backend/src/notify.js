@@ -106,11 +106,13 @@ function packByFor(order, shopId) {
 const ordersToPack = (order) => safely('order-to-pack', () => {
   const options = require('./options');
   const extras = require('./extras');
+  // Only what is left to pack: a line that sold out as the payment landed
+  // was cancelled first (paid-effects), and a shop left with nothing hears nothing.
   const shops = db.prepare(`SELECT DISTINCT s.id, s.name, u.email AS owner_email, u.name AS owner_name, u.lang AS owner_lang
     FROM order_items oi JOIN shops s ON s.id = oi.shop_id JOIN users u ON u.id = s.user_id
-    WHERE oi.order_id = ?`).all(order.id);
-  const itemsStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty, oi.price_cents, oi.personalization, oi.options, oi.extras, p.images
-    FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ? AND oi.shop_id = ? ORDER BY oi.id`);
+    WHERE oi.order_id = ? AND oi.qty > oi.cancelled_qty`).all(order.id);
+  const itemsStmt = db.prepare(`SELECT oi.name_snapshot, oi.qty - oi.cancelled_qty AS qty, oi.price_cents, oi.personalization, oi.options, oi.extras, p.images
+    FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id = ? AND oi.shop_id = ? AND oi.qty > oi.cancelled_qty ORDER BY oi.id`);
   const meta = (i) => [options.label(i.options), extras.label(i.extras), i.personalization ? `“${i.personalization}”` : ''].filter(Boolean).join(' · ');
   return Promise.all(shops.map((s) => {
     const items = itemsStmt.all(order.id, s.id).map((i) => ({
@@ -334,9 +336,24 @@ const ownerReturnRequested = (requestId) => safely('owner-return-requested', () 
     ],
   });
 });
-const ownerSoldOut = (orderId, { refunded, soldOut = true } = {}) => safely('owner-sold-out', () => {
+const ownerSoldOut = (orderId, { refunded, soldOut = true, partial = null } = {}) => safely('owner-sold-out', () => {
   const o = orderRow(orderId);
   if (!o) return null;
+  // Part of the basket could not be sold (F212): those lines were cancelled
+  // and refunded, the rest of the order goes ahead.
+  if (partial) {
+    const what = (partial.names || []).join(', ') || 'A piece';
+    return adminAlert({
+      subject: refunded ? `Order ${o.public_id}: a piece sold out at payment — refunded automatically` : `ACTION: order ${o.public_id} — a sold-out piece could not be cancelled automatically`,
+      title: refunded ? 'Part of an order was refunded automatically' : 'A sold-out piece needs cancelling by hand',
+      kicker: `Order ${o.public_id}`,
+      lines: refunded
+        ? [`${what} sold out (or was taken off sale) between checkout and payment, so ${buyerFirstName(o)} was refunded ${aedText(partial.refundCents || 0)} for it and emailed.`,
+          'The rest of the order goes ahead as normal. Nothing else to do.']
+        : [`${what} sold out (or was taken off sale) between checkout and payment, and the automatic refund for it did not go through.`,
+          'Open the order in Admin → Orders and use Cancel items for that piece, so the buyer is refunded and the maker is not asked to send it.'],
+    });
+  }
   return adminAlert({
     subject: refunded ? `Order ${o.public_id} could not go ahead — refunded automatically` : `ACTION: order ${o.public_id} could not go ahead and the automatic refund FAILED`,
     title: refunded ? 'An order was refunded automatically' : 'An automatic refund failed',

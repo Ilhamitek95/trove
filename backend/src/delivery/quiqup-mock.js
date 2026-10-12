@@ -22,7 +22,9 @@ function failIf(kind) {
 }
 
 module.exports = {
-  name: 'Quiqup',
+  // Not a real courier: demos and local runs must not show a courier that
+  // isn't involved (F453).
+  name: 'Test courier',
 
   async bookPickup(shipment /* row */, _shop) {
     failIf('bookPickup');

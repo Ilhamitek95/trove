@@ -349,5 +349,13 @@
   "This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.": "ينتظر هذا الطلب ردّك منذ يومين. يُرجى تأكيده أو الاعتذار عنه — وإن لم يصل ردّ خلال أسبوع من تاريخ الطلب، نغلقه ونبلغ العميل.",
   "Reminder: {name} is waiting for your answer — {title}": "تذكير: {name} ينتظر ردّك — {title}",
   "A customer is waiting for your answer": "عميل ينتظر ردّك",
-  "Please confirm or decline this booking request.": "يُرجى تأكيد طلب الحجز هذا أو الاعتذار عنه."
+  "Please confirm or decline this booking request.": "يُرجى تأكيد طلب الحجز هذا أو الاعتذار عنه.",
+  "We're arranging the courier collection now and will be in touch about the pickup — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.": "نرتّب الآن موعد استلام القطعة مع شركة التوصيل وسنتواصل معك بشأنه — يُرجى إبقاء القطعة مغلّفة وجاهزة مع تغليفها الأصلي إن وُجد. الخطوات التالية: الموافقة ← حجز الاستلام ← الاستلام ← استرداد المبلغ.",
+  "Your return is approved — we're arranging the collection for order {id}": "تمت الموافقة على الإرجاع — نرتّب موعد الاستلام للطلب {id}",
+  "Good news — your return for order {id} is approved. We're arranging the courier collection.": "خبر سار — تمت الموافقة على إرجاع الطلب {id}. ونرتّب الآن موعد الاستلام مع شركة التوصيل.",
+  "Return approved — {amount} comes back to you once the courier has the item.": "تمت الموافقة على الإرجاع — يعود إليك {amount} بمجرد استلام شركة التوصيل للقطعة.",
+  "There is no need to send anything back — please keep the piece. This refund stays with the order in your account.": "لا داعي لإرجاع أي شيء — احتفظ بالقطعة. ويبقى هذا الاسترداد مع الطلب في حسابك.",
+  "We have refunded you for order {id}.": "رددنا إليك المبلغ عن الطلب {id}.",
+  "Sorry — some pieces sold out moments before your payment went through, so we've taken them off order {id} and refunded them.": "نعتذر — نفدت بعض القطع قبل لحظات من إتمام دفعتك، لذا أزلناها من الطلب {id} ورددنا إليك ثمنها.",
+  "Sorry — a piece sold out moments before your payment went through, so we've taken it off order {id} and refunded it.": "نعتذر — نفدت إحدى القطع قبل لحظات من إتمام دفعتك، لذا أزلناها من الطلب {id} ورددنا إليك ثمنها."
 }

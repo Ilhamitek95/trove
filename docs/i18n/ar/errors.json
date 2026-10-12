@@ -133,5 +133,11 @@
   "The tracking number can’t contain < or >": "لا يمكن أن يحتوي رقم التتبّع على < أو >",
   "The note can’t contain < or >": "لا يمكن أن تحتوي الملاحظة على < أو >",
   "The tracking link must be a web address starting with https://": "يجب أن يكون رابط التتبّع عنوان ويب يبدأ بـ https://",
-  "Confirm up to 1000 pieces at a time": "أكّد حتى 1000 قطعة في كل مرة"
+  "Confirm up to 1000 pieces at a time": "أكّد حتى 1000 قطعة في كل مرة",
+  "Part of the delivery address is too long — please shorten it": "جزء من عنوان التوصيل طويل جداً — يُرجى اختصاره",
+  "Check the delivery address and try again": "تحقّق من عنوان التوصيل وحاول مرة أخرى",
+  "One of the pieces in your basket is no longer available — remove it to continue": "إحدى القطع في سلتك لم تعد متاحة — أزلها للمتابعة",
+  "Your basket has too many lines — split it into two orders": "سلتك تحتوي على عدد كبير جداً من البنود — قسّمها إلى طلبين",
+  "We can’t take payments right now — please try again in a few minutes": "لا يمكننا استلام المدفوعات الآن — يُرجى المحاولة مرة أخرى بعد دقائق",
+  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "رسوم الاستلام البالغة 30 درهماً لإرجاع بسبب تغيير الرأي لا تقل عن ثمن هذه القطع، فلن يعود إليك أي مبلغ. أضف قطعاً أخرى إلى هذا الإرجاع، أو تواصل معنا إن كان فيها عيب."
 }

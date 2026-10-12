@@ -401,13 +401,17 @@ test('return refund waits for OTO: approval books createReturnShipment, reverseP
   assert.equal(col.ref, `${sh.delivery_ref}-R1`);
   assert.equal(refunds(), before, 'nothing refunded at approval');
 
-  // An earlier return status only lands on the timeline.
+  // An earlier return status only lands on the timeline. (These carry the
+  // authorization key OTO is registered with: the signature alone covers
+  // only orderId:status:timestamp, so a separate returnStatus moves money
+  // only when the key proves the whole message — F236, oct12-D.test.js.)
+  const AUTH = { Authorization: 'oto-secret' };
   let ts = String(++tsN);
-  await hook({ orderId: sh.delivery_ref, returnOrderId: col.ref, status: 'delivered', returnStatus: 'reverseGoingToPickup', timestamp: ts, signature: sign(sh.delivery_ref, 'delivered', ts) });
+  await hook({ orderId: sh.delivery_ref, returnOrderId: col.ref, status: 'delivered', returnStatus: 'reverseGoingToPickup', timestamp: ts, signature: sign(sh.delivery_ref, 'delivered', ts) }, 'status', AUTH);
   assert.equal(db.prepare('SELECT status FROM return_requests WHERE id=?').get(rid).status, 'approved');
 
   ts = String(++tsN);
-  const r = await hook({ orderId: sh.delivery_ref, returnOrderId: col.ref, status: 'delivered', returnStatus: 'reversePickedUp', timestamp: ts, signature: sign(sh.delivery_ref, 'delivered', ts) });
+  const r = await hook({ orderId: sh.delivery_ref, returnOrderId: col.ref, status: 'delivered', returnStatus: 'reversePickedUp', timestamp: ts, signature: sign(sh.delivery_ref, 'delivered', ts) }, 'status', AUTH);
   assert.equal(r.status, 200);
   const done = db.prepare('SELECT * FROM return_requests WHERE id=?').get(rid);
   assert.equal(done.status, 'refunded');

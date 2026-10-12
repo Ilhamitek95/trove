@@ -1405,8 +1405,8 @@ async function approveReturn(id){
   const {amount,body}=retChoice(id);
   if(!confirm(`Approve this return? The courier collection is booked now; ${aedx(amount)} goes back to the buyer's card once the courier has collected the item.`))return;
   try{
-    await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST',body});
-    toast('Return approved — collection booked');
+    const res=await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST',body});
+    toast(res&&res.collectionFailed?'Approved, but the courier booking failed — press Book the collection again':'Return approved — collection booked');
     await reload();
   }catch(e){ toast(e.message||'Could not approve the return'); }
 }
@@ -1417,9 +1417,13 @@ async function rebookReturn(id){
 async function refundReturnNow(id,amount){
   const note=prompt(`Refund ${aedx(amount)} now, before the courier confirms collection? Add a short note for the record (optional).`);
   if(note===null)return;
+  // Who carries the refund: a piece coming back takes the maker's payment
+  // for it back as usual; a goodwill refund where the buyer keeps the piece
+  // leaves the maker paid and Trove absorbs it.
+  const comingBack=confirm('Is the piece coming back to the maker?\n\nOK = yes, it is being returned: the maker is not paid for it (as usual).\nCancel = no, the buyer keeps it: Trove covers this refund and the maker keeps their payment.');
   try{
-    await TroveAPI.api(`/api/admin/returns/${id}/refund-now`,{method:'POST',body:{note:note.trim()}});
-    toast('Refund sent');
+    const res=await TroveAPI.api(`/api/admin/returns/${id}/refund-now`,{method:'POST',body:{note:note.trim(),buyerKeeps:!comingBack}});
+    toast(!comingBack&&res&&res.collectionsToCancel?'Refund sent — the maker keeps their payment. Cancel the return collection in the OTO dashboard':!comingBack?'Refund sent — the maker keeps their payment':'Refund sent');
     await reload();
   }catch(e){ toast(e.message||'Could not refund'); }
 }
@@ -1749,7 +1753,8 @@ function packByCell(o){
   return open.map(p=>`<div style="font-size:12px;font-weight:700;margin-top:3px;color:${p.packOverdue?'#B3261E':'var(--muted)'}">${p.packOverdue?'Overdue · ':''}Pack by ${esc(day(p.packBy))}${many?' · '+esc(p.shop):''}</div>`).join('');
 }
 const ORDER_ATTN={oversold:'Sold out after payment — refunded automatically',oversold_refund_failed:'Sold out after payment — REFUND BY HAND',paid_after_cancel:'Paid after it was cancelled — refunded automatically',refund_failed:'Automatic refund failed — REFUND BY HAND',
-  dispute:'Card dispute open — answer it in Stripe',dispute_lost:'Card dispute lost — booked as refunded',external_refund:'Part refund made in Stripe — reconcile, then release the hold'};
+  dispute:'Card dispute open — answer it in Stripe',dispute_lost:'Card dispute lost — booked as refunded',external_refund:'Part refund made in Stripe — reconcile, then release the hold',
+  amount_mismatch:'Payment did not match the order — nothing sent; check it in Stripe and refund'};
 const red=s=>`<div style="font-size:12px;font-weight:700;color:#B3261E;margin-top:4px">${s}</div>`;
 const small=s=>`<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:3px">${s}</div>`;
 /* One maker's parcel: where it is with the courier, and its buttons. */

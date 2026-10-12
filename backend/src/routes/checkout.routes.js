@@ -25,16 +25,55 @@ function phoneFrom(body) {
   const norm = normalizeUAEMobile(raw);
   return norm ? { phone: norm } : { error: BAD_PHONE };
 }
-/* Belt and braces: a phone must never end up inside shipping_json. */
-/* The delivery address reaches the shop's order view: no markup in it. */
-const ADDRESS_FIELDS = ['name', 'line', 'line2', 'city', 'emirate', 'area', 'country', 'notes'];
+/* The delivery address reaches the shop's order view, the admin lists and
+ * the courier's payload: only these fields are kept (never a phone — that
+ * lives on orders.phone), each a trimmed string within its limit (F215), and
+ * no markup. */
+const ADDRESS_LIMITS = { name: 100, line: 200, line2: 200, city: 120, emirate: 40, area: 80, country: 60, notes: 300 };
+const ADDRESS_FIELDS = Object.keys(ADDRESS_LIMITS);
 const BAD_ADDRESS = "The delivery address can't contain < or >";
-const addressHasMarkup = (address) => !!require('../validate').markupField(address, ADDRESS_FIELDS);
-const shipSnapshot = (address) => {
-  if (!address) return null;
-  const { phone, ...rest } = address;
-  return rest;
-};
+const LONG_ADDRESS = 'Part of the delivery address is too long — please shorten it';
+const ODD_ADDRESS = 'Check the delivery address and try again';
+/** { address } (null when none was sent) or { error }. */
+function cleanAddress(address) {
+  if (address == null || address === '') return { address: null };
+  if (typeof address !== 'object' || Array.isArray(address)) return { error: ODD_ADDRESS };
+  const out = {};
+  for (const k of ADDRESS_FIELDS) {
+    const v = address[k];
+    if (v == null || v === '') continue;
+    if (typeof v !== 'string' && typeof v !== 'number') return { error: ODD_ADDRESS };
+    const text = String(v).trim();
+    if (text.length > ADDRESS_LIMITS[k]) return { error: LONG_ADDRESS };
+    if (text) out[k] = text;
+  }
+  if (require('../validate').markupField(out, ADDRESS_FIELDS)) return { error: BAD_ADDRESS };
+  return { address: out };
+}
+
+/* The buyer's email carries the receipt, the return emails and a guest's
+ * only link to the order: the same shape check as sign-up (F214). */
+const { emailError, EMAIL_ERROR } = require('../validate');
+/** A trimmed, valid email from the body, '' when none was sent, or null when it is not valid. */
+function emailFrom(raw) {
+  if (raw == null || raw === '') return '';
+  if (typeof raw !== 'string') return null;
+  const e = raw.trim();
+  return emailError(e) ? null : e;
+}
+/* A piece that is gone (unlisted, shop paused, deleted) is named, never
+ * numbered (F422): the buyer must know which line to take out. `code` and
+ * `productId` let a client drop that line from the basket. */
+function unavailable(res, productId) {
+  const pid = Number.isInteger(Number(productId)) && Number(productId) > 0 ? Number(productId) : null;
+  const p = pid ? db.prepare('SELECT name FROM products WHERE id=?').get(pid) : null;
+  return res.status(400).json({
+    code: 'unavailable', productId: pid,
+    error: p ? `“${p.name}” is no longer available — remove it from your basket to continue` : 'One of the pieces in your basket is no longer available — remove it to continue',
+  });
+}
+const MAX_LINES = 50;
+const PAYMENTS_DOWN = 'We can’t take payments right now — please try again in a few minutes';
 const CURRENCY = () => process.env.CURRENCY || 'aed';
 const defaultPublicId = () => 'TRV-' + crypto.randomBytes(2).toString('hex').toUpperCase() + Math.floor(Math.random() * 90 + 10);
 let publicId = defaultPublicId;
@@ -53,13 +92,20 @@ const isPublicIdClash = (e) => e && /UNIQUE constraint failed: orders\.public_id
  */
 router.post('/', async (req, res, next) => {
   try {
-    const { items, email, address } = req.body || {};
+    const { items } = req.body || {};
     if (!Array.isArray(items) || !items.length) return res.status(400).json({ error: 'Cart is empty' });
+    if (items.length > MAX_LINES) return res.status(400).json({ error: 'Your basket has too many lines — split it into two orders' });
+    // Production never falls back to the free demo-payments mode (F211): no
+    // Stripe there means no orders, never unpaid ones.
+    if (!require('../stripe').getStripe() && require('../stripe').paymentsRequired()) return res.status(503).json({ error: PAYMENTS_DOWN });
     // The address can arrive later via /checkout/update (the payment form
     // mounts before the form is filled) — but if one is given, it must be
     // inside the service area.
-    if (address && addressHasMarkup(address)) return res.status(400).json({ error: BAD_ADDRESS });
+    const { address, error: addressError } = cleanAddress((req.body || {}).address);
+    if (addressError) return res.status(400).json({ error: addressError });
     if (address && !isDeliverable(address)) return res.status(400).json({ error: OUT_OF_AREA });
+    const email = emailFrom((req.body || {}).email);
+    if (email === null) return res.status(400).json({ error: EMAIL_ERROR });
     // Resolve the signed-in buyer ONCE, and only if they still exist: a
     // session outliving its user (deleted account, reseeded dev database)
     // would otherwise write a dangling buyer_id and fail the whole order on
@@ -86,9 +132,10 @@ router.post('/', async (req, res, next) => {
     const claimed = new Map();
     const claim = (id, qty) => { const n = (claimed.get(id) || 0) + qty; claimed.set(id, n); return n; };
     for (const it of items) {
-      const p = get.get(it.productId);
-      const qty = Math.max(1, parseInt(it.qty) || 1);
-      if (!p) return res.status(400).json({ error: `Product ${it.productId} is unavailable` });
+      if (!it || typeof it !== 'object' || !Number.isInteger(Number(it.productId))) return unavailable(res, null);
+      const p = get.get(Number(it.productId));
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      if (!p) return unavailable(res, it.productId);
       // A demo shop's piece is on display only on the live site (src/display-only.js).
       if (displayOnly.isDemoShop(p.shop_id)) return res.status(409).json({ code: 'display_only', error: displayOnly.ORDER_REFUSED });
       // Personalisation: only kept when the product allows it; required means the
@@ -175,7 +222,7 @@ router.post('/', async (req, res, next) => {
       try {
         orderId = db.transaction(() => {
           const info = db.prepare(`INSERT INTO orders (public_id,buyer_id,email,phone,subtotal_cents,shipping_cents,service_fee_cents,total_cents,currency,shipping_json,status,rail,lang)
-            VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?, ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(shipSnapshot(address)), rail,
+            VALUES (?,?,?,?,?,?,?,?,?,?, 'pending', ?, ?)`).run(pid, buyer ? buyer.id : null, buyerEmail, phone, subtotal, delivery, serviceFee, total, CURRENCY(), JSON.stringify(address), rail,
               req.lang === 'ar' ? 'ar' : 'en'); // the checkout page's language: a guest's order emails follow it
           const oid = info.lastInsertRowid;
           // lead_days is snapshotted so a later edit never moves this order's promise.
@@ -214,7 +261,8 @@ router.post('/', async (req, res, next) => {
         transfer_data: { destination: destShop.stripe_account_id },
         application_fee_amount: split(subtotal).fee + serviceFee + delivery,
       } : {}),
-    });
+    // One PaymentIntent per order, whatever the network does (F444).
+    }, { idempotencyKey: `trove-order-pi-${orderId}` });
     db.prepare('UPDATE orders SET stripe_payment_intent_id=? WHERE id=?').run(intent.id, orderId);
 
     res.json({
@@ -234,25 +282,39 @@ router.post('/', async (req, res, next) => {
  * address — this writes the final contact + delivery details onto the still-
  * pending order. The client secret proves the order belongs to the caller.
  */
-router.post('/update', (req, res) => {
-  const { orderId, clientSecret, email, address } = req.body || {};
-  const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String(orderId || ''));
-  if (!order || order.status !== 'pending') return res.status(404).json({ error: 'Order not found' });
-  if (!order.stripe_payment_intent_id
-    || !String(clientSecret || '').startsWith(order.stripe_payment_intent_id + '_secret'))
-    return res.status(403).json({ error: 'Not your order' });
-  if (!address || !String(address.name || '').trim() || !String(address.line || '').trim())
-    return res.status(400).json({ error: 'A delivery name and address are required' });
-  if (addressHasMarkup(address)) return res.status(400).json({ error: BAD_ADDRESS });
-  if (!isDeliverable(address)) return res.status(400).json({ error: OUT_OF_AREA });
-  // This is the last stop before the card is charged, so the courier number
-  // has to be here — whether it arrived with the original call or not.
-  const { phone, error: phoneError } = phoneFrom(req.body);
-  if (phoneError) return res.status(400).json({ error: phoneError });
-  if (!phone && !order.phone) return res.status(400).json({ error: BAD_PHONE });
-  db.prepare('UPDATE orders SET email=COALESCE(?,email), phone=COALESCE(NULLIF(?,\'\'),phone), shipping_json=? WHERE id=?')
-    .run(email || null, phone, JSON.stringify(shipSnapshot(address)), order.id);
-  res.json({ ok: true });
+router.post('/update', async (req, res, next) => {
+  try {
+    const { orderId, clientSecret } = req.body || {};
+    const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String(orderId || ''));
+    if (!order || order.status !== 'pending') return res.status(404).json({ error: 'Order not found' });
+    if (!order.stripe_payment_intent_id
+      || !String(clientSecret || '').startsWith(order.stripe_payment_intent_id + '_secret'))
+      return res.status(403).json({ error: 'Not your order' });
+    const { address, error: addressError } = cleanAddress((req.body || {}).address);
+    if (addressError) return res.status(400).json({ error: addressError });
+    if (!address || !address.name || !address.line)
+      return res.status(400).json({ error: 'A delivery name and address are required' });
+    if (!isDeliverable(address)) return res.status(400).json({ error: OUT_OF_AREA });
+    const email = emailFrom((req.body || {}).email);
+    if (email === null) return res.status(400).json({ error: EMAIL_ERROR });
+    // This is the last stop before the card is charged, so the courier number
+    // has to be here — whether it arrived with the original call or not.
+    const { phone, error: phoneError } = phoneFrom(req.body);
+    if (phoneError) return res.status(400).json({ error: phoneError });
+    if (!phone && !order.phone) return res.status(400).json({ error: BAD_PHONE });
+    db.prepare('UPDATE orders SET email=COALESCE(?,email), phone=COALESCE(NULLIF(?,\'\'),phone), shipping_json=? WHERE id=?')
+      .run(email || null, phone, JSON.stringify(address), order.id);
+    // A corrected email: Stripe's own receipt follows it (F444). Best-effort —
+    // Trove's receipt reads the order row, which is already right.
+    if (email && email !== order.email) {
+      const stripe = require('../stripe').getStripe();
+      if (stripe && stripe.paymentIntents && typeof stripe.paymentIntents.update === 'function') {
+        try { await stripe.paymentIntents.update(order.stripe_payment_intent_id, { receipt_email: email }); }
+        catch (e) { console.warn(`order ${order.public_id}: receipt email not updated at Stripe:`, e.message); }
+      }
+    }
+    res.json({ ok: true });
+  } catch (e) { next(e); }
 });
 
 /**
@@ -297,8 +359,10 @@ router.get('/receipt/:publicId', (req, res) => {
  * shipments, courier pickups, supplier ledger credits. Only the session
  * that opened the order (or its signed-in owner) can complete it.
  */
-router.post('/demo-complete', (req, res, next) => {
+router.post('/demo-complete', async (req, res, next) => {
   try {
+    // Never on the live site, whatever the Stripe configuration (F211).
+    if (require('../stripe').paymentsRequired()) return res.status(404).json({ error: 'Not found' });
     if (require('../stripe').getStripe())
       return res.status(409).json({ error: 'Card payments are live — orders complete through the payment form' });
     const order = db.prepare('SELECT * FROM orders WHERE public_id=?').get(String((req.body || {}).orderId || ''));
@@ -317,11 +381,13 @@ router.post('/demo-complete', (req, res, next) => {
       const names = [...new Set(result.shortfall.map((i) => i.name_snapshot))].join(', ');
       return res.status(409).json({ code: 'sold_out', error: `Sorry — ${names} sold out a moment ago, so this order couldn't go ahead. Nothing has been charged.` });
     }
-    pe.paidPostEffects(order, groups, null);
+    // Lines that sold out meanwhile are cancelled; the rest goes ahead (F212).
+    await pe.afterPaid(order, groups, result, null);
     // The session stamp survives completion: the confirmation page's
     // create-an-account offer still needs it to /claim the order.
 
-    res.json({ ok: true, orderId: order.public_id, demo: true });
+    const soldOut = [...new Set(result.shortfall.map((i) => i.name_snapshot))];
+    res.json({ ok: true, orderId: order.public_id, demo: true, ...(soldOut.length ? { soldOut } : {}) });
   } catch (e) { next(e); }
 });
 

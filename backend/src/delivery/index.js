@@ -30,10 +30,16 @@ const loadItems = (sh) => db.prepare('SELECT * FROM order_items WHERE order_id=?
   .map((i) => ({ ...i, qty: i.qty - (i.cancelled_qty || 0) }))
   .filter((i) => i.qty > 0);
 
-/** Book the buyer-bound pickup for a shipment. No-op if already booked. */
+/** Book the buyer-bound pickup for a shipment. No-op if already booked.
+ *  Refused (code 'missing_address') while the order has no delivery name +
+ *  line or no buyer mobile — a courier order nobody can deliver (F213);
+ *  courier-ops flags the parcel and books it once the details are added. */
 async function bookPickup(shipmentId) {
   const sh = loadShipment(shipmentId);
   if (!sh || sh.delivery_ref) return null;
+  if (require('../paid-effects').deliveryDetailsMissing({ shipping_json: sh.shipping_json, phone: sh.buyer_phone })) {
+    throw Object.assign(new Error('The order has no delivery address or mobile number yet'), { code: 'missing_address' });
+  }
   const shop = loadShop(sh.shop_id);
   const p = provider();
   const res = await p.bookPickup(sh, shop, loadItems(sh));
@@ -51,7 +57,22 @@ async function bookReversePickup(shipmentId, returnItems) {
   const sh = loadShipment(shipmentId);
   if (!sh) return null;
   const shop = loadShop(sh.shop_id);
-  return provider().bookReversePickup(sh, shop, loadItems(sh), returnItems);
+  return adapterFor(sh).bookReversePickup(sh, shop, loadItems(sh), returnItems);
+}
+
+/* A parcel's later calls go to the courier that BOOKED it (F239), never
+ * just the one configured now: an OTO order id means nothing to Quiqup or
+ * the mock. When that courier is no longer connected the call fails loudly
+ * (the caller records it and the admin is told) instead of, say, the mock
+ * answering 'ready' for a real OTO parcel. */
+const ADAPTERS = { oto: './oto-live', quiqup: './quiqup-live', mock: './quiqup-mock' };
+const CONNECTED = { oto: isOto, quiqup: isQuiqup, mock: () => !isLive() };
+const LABEL = { oto: 'OTO', quiqup: 'Quiqup', mock: 'the test courier' };
+function adapterFor(sh) {
+  const which = providerOf(sh);
+  if (!which || !ADAPTERS[which]) return provider();
+  if (!CONNECTED[which]()) throw new Error(`This parcel was booked with ${LABEL[which]}, which is not connected on the server right now — reconnect it, or cancel this courier order and book again`);
+  return require(ADAPTERS[which]);
 }
 
 /**
@@ -62,7 +83,7 @@ async function bookReversePickup(shipmentId, returnItems) {
 async function markReady(shipmentId) {
   const sh = loadShipment(shipmentId);
   if (!sh || !sh.delivery_ref || sh.ready_at) return null;
-  const p = provider();
+  const p = adapterFor(sh);
   const res = await p.markReady(sh.delivery_ref, sh, loadShop(sh.shop_id));
   // OTO picks the actual courier here (Aramex, iMile…) — show its name from now on.
   db.prepare("UPDATE shipments SET ready_at=datetime('now'), tracking_url=COALESCE(NULLIF(?,''), tracking_url), carrier=COALESCE(NULLIF(?,''), carrier) WHERE id=?")
@@ -81,7 +102,7 @@ async function markReady(shipmentId) {
 async function cancelPickup(shipmentId) {
   const sh = loadShipment(shipmentId);
   if (!sh || !sh.delivery_ref) return { cancelled: false };
-  const p = provider();
+  const p = adapterFor(sh);
   if (typeof p.cancelPickup !== 'function') throw new Error(`${p.name} bookings can't be cancelled automatically`);
   return p.cancelPickup(sh.delivery_ref, sh);
 }
@@ -104,9 +125,11 @@ function providerOf(sh) {
 async function getLabel(shipmentId) {
   const sh = loadShipment(shipmentId);
   if (!sh || !sh.delivery_ref) return null;
-  return provider().getLabel(sh.delivery_ref);
+  let p;
+  try { p = adapterFor(sh); } catch (e) { console.error(`label for shipment ${sh.id}:`, e.message); return null; }
+  return p.getLabel(sh.delivery_ref);
 }
 
 const getStatus = (ref) => provider().getStatus(ref);
 
-module.exports = { bookPickup, bookReversePickup, markReady, cancelPickup, getLabel, getStatus, provider, providerOf, isLive, isOto, mode };
+module.exports = { bookPickup, bookReversePickup, markReady, cancelPickup, getLabel, getStatus, provider, providerOf, adapterFor, isLive, isOto, mode };

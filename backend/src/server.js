@@ -1,5 +1,8 @@
 'use strict';
 require('dotenv').config();
+// Production refuses to start without its Stripe keys: a live server must
+// never take orders without payment (F211, src/stripe.js).
+require('./stripe').assertPaymentsConfigured();
 const db = require('./db');
 // When each scheduled job last worked; a failure emails the owner once a day
 // and shows on the admin Overview (src/job-runs.js).
@@ -257,7 +260,7 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       .finally(() => { sweepingOrders = false; });
     // Pack-by reminders: maker once when the day passes, admin once two days on.
     require('./order-sweep').sweepPackBy()
-      .then(({ reminded, escalated }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); jobs.ok('pack-by'); })
+      .then(({ reminded, escalated, failed }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); if (!failed) jobs.ok('pack-by'); })
       .catch((e) => jobs.fail('pack-by', e));
     // Service bookings nobody can act on: unpaid past their date, or requests
     // with no answer (provider reminded at 2 days, closed at 7).

@@ -613,7 +613,7 @@ function shopReturnShape(rr, shopId) {
     status: rr.status,
     reason: returns.reasonLabel(rr.reason),
     details: rr.details,
-    images: (() => { try { return JSON.parse(rr.images || '[]'); } catch (_) { return []; } })(),
+    images: returns.photoUrls(rr), // private photos go through /api/return-photos (F227)
     items: items.map((i) => ({ name: i.name_snapshot, qty: i.qty, lineQty: i.line_qty, price: i.price_cents / 100, options: productOptions.parse(i.options), extras: productExtras.parse(i.extras).map((e) => ({ name: e.name, price: (e.priceCents || 0) / 100 })) })),
     itemsTotal: gross / 100,
     // (the Trove Collection has no maker credit to reverse)
@@ -1083,6 +1083,9 @@ router.get('/settlements', requireSeller, (req, res) => {
     pendingCents: bal.pendingCents,
     payableCents: bal.payableCents,
     settledCents: bal.settledCents + legacyPaid,
+    // In a settlement run not yet marked paid — the transfer is on its way (F231).
+    inRunCents: bal.inRunCents,
+    inRunDate: bal.inRunDate,
     // The fortnightly calendar + the hold, so the dashboard never hard-codes them.
     schedule: settlement.scheduleLabel(),
     nextRunDate: settlement.nextRunDate(),

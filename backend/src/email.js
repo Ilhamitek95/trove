@@ -371,7 +371,7 @@ function kit(lang) {
  * { order, items[{ name, qty, price_cents, meta, image, shop }], shops[], ship }
  * with money in fils on the order row.
  */
-function orderConfirmation({ order, items, shops, ship, estimate, lang }) {
+function orderConfirmation({ order, items, shops, ship, estimate, refundedCents = 0, lang }) {
   const { T, A, I, L, date, ar, p, note, label, heading, button, itemsByShop, totalRow, totals, tracker, layout, sans, orderKicker } = kit(lang || langFor({ order }));
   // The order's delivery estimate (src/lead-times.js orderEstimate): the
   // slowest piece's make time + the courier's window. Older callers without
@@ -394,6 +394,9 @@ function orderConfirmation({ order, items, shops, ship, estimate, lang }) {
       ...(order.service_fee_cents ? [totalRow(T('Service fee'), A(order.service_fee_cents))] : []),
       totalRow(T('Delivery'), order.shipping_cents ? A(order.shipping_cents) : T('Free')),
       totalRow(T('Total'), A(order.total_cents), true),
+      // A piece that sold out as the payment landed was cancelled and
+      // refunded just before this receipt (its own email names it).
+      ...(refundedCents > 0 ? [totalRow(T('Refunded'), `−${A(refundedCents)}`)] : []),
       // Once Trove is VAT-registered: the VAT inside the total and the tax
       // invoice number (the invoice itself is in the buyer's account).
       ...(order.vat_amount_cents > 0 ? [totalRow(T('Includes VAT at 5%'), A(order.vat_amount_cents))] : []),
@@ -464,20 +467,32 @@ function returnRequested({ order, items, money, reasonLabel, lang }) {
   };
 }
 
-function returnApproved({ order, items, money, lang }) {
+/* `collectionPending`: the courier booking did not go through at approval
+ * (an empty courier wallet, a refusal) — the email must not promise a
+ * courier that is not booked yet (F220). Trove books it again. */
+function returnApproved({ order, items, money, collectionPending = false, lang }) {
   const k = kit(lang || langFor({ order }));
   const { T, A, I, p, heading, panel, itemsBlock, layout, orderKicker, serif } = k;
+  const id = `<b>${esc(I(order.public_id))}</b>`;
   const inner =
     panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(money.refund)}</span><br>${T("will go back to your original payment method as soon as our courier has collected the item{note}. We'll email you the moment it's on its way.", { note: deliveryNote(money, k) })}`)
     + heading(T('Coming back'))
     + itemsBlock(items)
-    + p(T('Our courier collection is booked and the courier will be in touch to arrange it — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.'));
+    + p(collectionPending
+      ? T("We're arranging the courier collection now and will be in touch about the pickup — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.")
+      : T('Our courier collection is booked and the courier will be in touch to arrange it — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.'));
   return {
-    subject: T('Your return is approved — collection booked for order {id}', { id: I(order.public_id) }),
+    subject: collectionPending
+      ? T("Your return is approved — we're arranging the collection for order {id}", { id: I(order.public_id) })
+      : T('Your return is approved — collection booked for order {id}', { id: I(order.public_id) }),
     html: layout(T('Return approved'), inner, {
       kicker: orderKicker(order.public_id),
-      intro: T('Good news — your return for order {id} is approved and the collection is booked.', { id: `<b>${esc(I(order.public_id))}</b>` }),
-      preheader: T('Collection booked — {amount} comes back to you once the courier has the item.', { amount: A(money.refund) }),
+      intro: collectionPending
+        ? T("Good news — your return for order {id} is approved. We're arranging the courier collection.", { id })
+        : T('Good news — your return for order {id} is approved and the collection is booked.', { id }),
+      preheader: collectionPending
+        ? T('Return approved — {amount} comes back to you once the courier has the item.', { amount: A(money.refund) })
+        : T('Collection booked — {amount} comes back to you once the courier has the item.', { amount: A(money.refund) }),
     }),
   };
 }
@@ -532,19 +547,24 @@ module.exports = { enabled, send, textOf, replyTo, productImage, orderConfirmati
  * early) and the card refund has gone out. Same { order, items, money }
  * shape as the other return templates.
  */
-function returnRefunded({ order, items, money, lang }) {
+// `kept`: refunded as a goodwill gesture and the buyer keeps the piece (F222).
+function returnRefunded({ order, items, money, kept = false, lang }) {
   const k = kit(lang || langFor({ order }));
   const { T, A, I, p, heading, panel, itemsBlock, layout, orderKicker, serif } = k;
   const inner =
     panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(money.refund)}</span><br>${T('is on its way back to your original payment method{note}. Depending on your bank it can take 5–10 business days to appear.', { note: deliveryNote(money, k) })}`)
-    + heading(T('Returned'))
+    + heading(kept ? T('Refunded') : T('Returned'))
     + itemsBlock(items)
-    + p(T('Thank you for sending it back. The return and this refund stay with the order in your account.'));
+    + p(kept
+      ? T('There is no need to send anything back — please keep the piece. This refund stays with the order in your account.')
+      : T('Thank you for sending it back. The return and this refund stay with the order in your account.'));
   return {
     subject: T('Your refund is on its way — {amount} for order {id}', { amount: A(money.refund), id: I(order.public_id) }),
     html: layout(T('Refund on its way'), inner, {
       kicker: orderKicker(order.public_id),
-      intro: T('We have your returned item from order {id}, so your refund has gone out.', { id: `<b>${esc(I(order.public_id))}</b>` }),
+      intro: kept
+        ? T('We have refunded you for order {id}.', { id: `<b>${esc(I(order.public_id))}</b>` })
+        : T('We have your returned item from order {id}, so your refund has gone out.', { id: `<b>${esc(I(order.public_id))}</b>` }),
       preheader: T('{amount} is on its way back to you.', { amount: A(money.refund) }),
     }),
   };
@@ -1115,7 +1135,8 @@ function adminAlert({ subject, title, lines = [], link, cta = 'Open the admin', 
  * Part (or all) of an order cancelled before dispatch — to the buyer.
  * { order, items[{ name, qty, price_cents, image }], money: { items, delivery, refund }, whole }
  */
-function itemsCancelled({ order, items, money, whole = false, lang }) {
+// `soldOut`: the lines sold out as the payment landed (paid-effects, F212).
+function itemsCancelled({ order, items, money, whole = false, soldOut = false, lang }) {
   const { T, A, I, p, heading, panel, itemsBlock, layout, orderKicker, serif } = kit(lang || langFor({ order }));
   const many = items.reduce((t, i) => t + i.qty, 0) > 1;
   const inner =
@@ -1135,7 +1156,11 @@ function itemsCancelled({ order, items, money, whole = false, lang }) {
     html: layout(whole ? T('Your order is cancelled') : T('Part of your order is cancelled'), inner, {
       tone: 'clay',
       kicker: orderKicker(order.public_id),
-      intro: whole
+      intro: soldOut && !whole
+        ? many
+          ? T("Sorry — some pieces sold out moments before your payment went through, so we've taken them off order {id} and refunded them.", { id })
+          : T("Sorry — a piece sold out moments before your payment went through, so we've taken it off order {id} and refunded it.", { id })
+        : whole
         ? T("We've cancelled order {id} before it was sent and refunded you in full.", { id })
         : many
           ? T("We've cancelled some pieces from order {id} before they were sent, and refunded them.", { id })

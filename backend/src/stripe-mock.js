@@ -13,8 +13,9 @@ const calls = [];
 const intentStatus = new Map();
 const refundsMade = [];
 
-function record(method, params, result) {
-  calls.push({ method, params });
+// `opts` is the request options (second argument) — the idempotency key.
+function record(method, params, result, opts) {
+  calls.push({ method, params, ...(opts ? { opts } : {}) });
   return result;
 }
 
@@ -24,11 +25,12 @@ module.exports = {
   setIntentStatus(id, status) { intentStatus.set(id, status); },
 
   paymentIntents: {
-    create: async (params) => record('paymentIntents.create', params, {
+    create: async (params, opts) => record('paymentIntents.create', params, {
       id: `pi_mock_${++n}`,
       client_secret: `pi_mock_${n}_secret_test`,
       ...params,
-    }),
+    }, opts),
+    update: async (id, params) => record('paymentIntents.update', { id, ...params }, { id, ...params }),
     // States are only tracked for intents a test marks via `setIntentStatus`;
     // anything else is an unpaid intent that can be cancelled.
     cancel: async (id, params) => {
@@ -47,14 +49,14 @@ module.exports = {
   },
   refunds: {
     // `failNext` makes the next create throw (a declined/failed refund).
-    create: async (params) => {
+    create: async (params, opts) => {
       if (module.exports.refunds.failNext) {
         const msg = module.exports.refunds.failNext;
         module.exports.refunds.failNext = null;
-        record('refunds.create.failed', params, null);
+        record('refunds.create.failed', params, null, opts);
         throw new Error(msg);
       }
-      const r = record('refunds.create', params, { id: `re_mock_${++n}`, status: 'succeeded', metadata: {}, ...params });
+      const r = record('refunds.create', params, { id: `re_mock_${++n}`, status: 'succeeded', metadata: {}, ...params }, opts);
       refundsMade.push(r);
       return r;
     },
@@ -71,7 +73,7 @@ module.exports = {
     return r;
   },
   transfers: {
-    create: async (params) => record('transfers.create', params, { id: `tr_mock_${++n}`, ...params }),
+    create: async (params, opts) => record('transfers.create', params, { id: `tr_mock_${++n}`, ...params }, opts),
   },
   accounts: {
     create: async (params) => record('accounts.create', params, { id: `acct_mock_${++n}`, type: params.type }),

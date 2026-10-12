@@ -33,11 +33,12 @@ async function sweepUnpaid({ olderThanHours = 24, stripe = require('./stripe').g
       } catch (e) {
         // Already cancelled → fine; paid or mid-payment → leave it to the webhook.
         let status = '';
-        try { status = (await stripe.paymentIntents.retrieve(o.stripe_payment_intent_id)).status; } catch (_) { /* try again next hour */ }
+        let pi = null;
+        try { pi = await stripe.paymentIntents.retrieve(o.stripe_payment_intent_id); status = pi.status; } catch (_) { /* try again next hour */ }
         if (status === 'succeeded') {
           // Paid, but the payment webhook never landed (wrong webhook secret,
           // endpoint moved, Stripe gave up retrying): complete it now.
-          if (recoverPaid(o, stripe)) recovered++;
+          if (recoverPaid(o, stripe, pi)) recovered++;
           else skipped++;
           continue;
         }
@@ -61,10 +62,11 @@ async function sweepUnpaid({ olderThanHours = 24, stripe = require('./stripe').g
  * no-op) and tell the admin, because a missed webhook usually means the
  * webhook secret or endpoint is wrong and every payment is affected.
  */
-function recoverPaid(o, stripe) {
+function recoverPaid(o, stripe, pi = null) {
   const pe = require('./paid-effects');
-  const result = pe.completePaid(o.id, `sweep-${o.stripe_payment_intent_id}`, 'sweep.payment_intent.succeeded', stripe);
-  if (!result) return false;
+  // The retrieved intent is checked against the order like the webhook's (F440).
+  const result = pe.completePaid(o.id, `sweep-${o.stripe_payment_intent_id}`, 'sweep.payment_intent.succeeded', stripe, pi);
+  if (!result || result.mismatch) return false;
   console.warn(`order ${o.public_id}: paid but never confirmed by the webhook — completed by the sweep`);
   require('./notify').adminAlert({
     subject: `Payment webhook missed — order ${o.public_id} completed by the hourly check`,
@@ -91,9 +93,9 @@ async function sweepPaidMissing({ stripe = require('./stripe').getStripe(), minM
     ORDER BY id LIMIT 200`).all(`-${Number(minMinutes)} minutes`);
   let recovered = 0;
   for (const o of rows) {
-    let status = '';
-    try { status = (await stripe.paymentIntents.retrieve(o.stripe_payment_intent_id)).status; } catch (_) { continue; }
-    if (status === 'succeeded' && recoverPaid(o, stripe)) recovered++;
+    let pi = null;
+    try { pi = await stripe.paymentIntents.retrieve(o.stripe_payment_intent_id); } catch (_) { continue; }
+    if (pi && pi.status === 'succeeded' && recoverPaid(o, stripe, pi)) recovered++;
   }
   return { checked: rows.length, recovered };
 }
@@ -107,6 +109,9 @@ async function sweepPaidMissing({ stripe = require('./stripe').getStripe(), minM
  *   - two days after it, the admin is emailed once (stamp pack_escalated_at).
  * The stamp is written BEFORE the email goes, so a slow or failed send can
  * never make it fire twice. Orders refunded or no longer paid are skipped.
+ * The counts are the reminders actually stamped by THIS run, and a send that
+ * did not go out is recorded as a pack-by job failure (Admin → Overview →
+ * Background jobs; the owner is emailed once a day) instead of vanishing (F451).
  */
 const ESCALATE_AFTER_DAYS = 2;
 async function sweepPackBy({ now = null } = {}) {
@@ -119,14 +124,29 @@ async function sweepPackBy({ now = null } = {}) {
   const late = db.prepare(`SELECT sh.id ${base} AND sh.pack_escalated_at IS NULL
     AND datetime(sh.pack_by_at, '+${ESCALATE_AFTER_DAYS} days') < ?`).all(at);
   const jobs = [];
+  let reminded = 0, escalated = 0;
+  const failed = [];
+  // notify resolves null when nothing went out (the send failed, no address).
+  const watch = (p, what) => Promise.resolve(p).then((r) => { if (r == null) failed.push(what); });
   for (const { id } of due) {
-    if (db.prepare("UPDATE shipments SET pack_reminder_at=datetime('now') WHERE id=? AND pack_reminder_at IS NULL").run(id).changes) jobs.push(notify.packReminder(id));
+    if (db.prepare("UPDATE shipments SET pack_reminder_at=datetime('now') WHERE id=? AND pack_reminder_at IS NULL").run(id).changes) {
+      reminded++;
+      jobs.push(watch(notify.packReminder(id), `maker reminder for parcel ${id}`));
+    }
   }
   for (const { id } of late) {
-    if (db.prepare("UPDATE shipments SET pack_escalated_at=datetime('now') WHERE id=? AND pack_escalated_at IS NULL").run(id).changes) jobs.push(notify.packOverdueAdmin(id));
+    if (db.prepare("UPDATE shipments SET pack_escalated_at=datetime('now') WHERE id=? AND pack_escalated_at IS NULL").run(id).changes) {
+      escalated++;
+      jobs.push(watch(notify.packOverdueAdmin(id), `overdue alert for parcel ${id}`));
+    }
   }
   await Promise.all(jobs);
-  return { reminded: due.length, escalated: late.length };
+  if (failed.length) {
+    require('./job-runs').fail('pack-by', new Error(`${failed.length} pack-by email(s) did not go out: ${failed.join(', ')}`), {
+      lines: ['These reminders are not sent again. Check Admin → Orders for parcels past their pack-by day and contact the makers.'],
+    });
+  }
+  return { reminded, escalated, failed: failed.length };
 }
 
 /**

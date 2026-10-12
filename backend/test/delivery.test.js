@@ -9,9 +9,11 @@ let ctx, db;
 let shopId, productId;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// (with the delivery address + mobile a real checkout always has — the
+// courier is not booked without them since F213)
 function mkPaidWebhookOrder(pid, pi) {
-  const orderId = db.prepare(`INSERT INTO orders (public_id,email,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
-    VALUES (?,?,20000,3000,0,23000,'pending','consignment',?)`).run(pid, 'buyer@test.local', pi).lastInsertRowid;
+  const orderId = db.prepare(`INSERT INTO orders (public_id,email,phone,shipping_json,subtotal_cents,shipping_cents,service_fee_cents,total_cents,status,rail,stripe_payment_intent_id)
+    VALUES (?,?,'+971501112233',?,20000,3000,0,23000,'pending','consignment',?)`).run(pid, 'buyer@test.local', JSON.stringify({ name: 'Buyer B', line: 'Villa 4', city: 'Jumeirah, Dubai', emirate: 'Dubai' }), pi).lastInsertRowid;
   db.prepare('INSERT INTO order_items (order_id,product_id,shop_id,name_snapshot,price_cents,qty) VALUES (?,?,?,?,20000,1)')
     .run(orderId, productId, shopId, 'Vase');
   return orderId;
@@ -37,7 +39,7 @@ test('payment books a mock pickup: shipment gets delivery_ref + carrier', async 
   const sh = db.prepare('SELECT * FROM shipments WHERE order_id=?').get(oid);
   assert.ok(sh, 'shipment created');
   assert.match(sh.delivery_ref, /^QMOCK-/);
-  assert.equal(sh.carrier, 'Quiqup');
+  assert.equal(sh.carrier, 'Test courier');
 });
 
 test('mock deliver endpoint stamps delivered + 7-day return window, idempotently', async () => {

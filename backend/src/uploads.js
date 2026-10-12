@@ -93,8 +93,41 @@ function smallOf(url) {
   return v;
 }
 
-/** Delete a previously saved upload (and its small copy) by its public URL path (best-effort). */
+/** Throws {status, message} unless `dataUrl` is a real, reasonably sized image — checks only, writes nothing. */
+function validateImage(dataUrl) {
+  decodeImage(dataUrl, MAX_BYTES, 'Image must be under 4MB');
+}
+
+/*
+ * Private images streamed through an authenticated route (return photos,
+ * F227): saved under PRIVATE_DIR/<folder>/ and referred to by a marker
+ * 'private:<folder>/<file>' instead of a public /uploads address.
+ */
+const privateRoot = () => process.env.PRIVATE_DIR || path.join(UPLOADS_DIR, '..', 'private');
+function savePrivateImage(dataUrl, folder, baseName) {
+  const { buf, type } = decodeImage(dataUrl, MAX_BYTES, 'Image must be under 4MB');
+  const dir = path.join(privateRoot(), folder);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = `${baseName}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${type.ext}`;
+  fs.writeFileSync(path.join(dir, file), buf);
+  return `private:${folder}/${file}`;
+}
+/** The file behind a 'private:<folder>/<file>' marker, or null (never outside the private root). */
+function privateImagePath(marker) {
+  const m = /^private:([a-z0-9-]+)\/([A-Za-z0-9._-]+)$/.exec(String(marker || ''));
+  if (!m || m[2].includes('..')) return null;
+  const file = path.resolve(privateRoot(), m[1], m[2]);
+  return fs.existsSync(file) ? file : null;
+}
+
+/** Delete a previously saved upload (and its small copy) by its public URL
+ *  path — or a private image by its marker (best-effort). */
 function removeByUrl(url) {
+  if (String(url || '').startsWith('private:')) {
+    const file = privateImagePath(url);
+    if (file) { try { fs.unlinkSync(file); } catch (_) { /* already gone */ } }
+    return;
+  }
   if (!url || !String(url).startsWith('/uploads/')) return;
   const small = smallPath(url);
   smallCache.delete(url);
@@ -165,4 +198,4 @@ function sniffImageType(buf) {
 }
 
 module.exports = { UPLOADS_DIR, saveDataUrl, checkDataUrl, removeByUrl, smallOf, SMALL_WIDTH, savePrivateDataUrl,
-  saveEncryptedPrivate, readEncryptedPrivate, removeEncryptedPrivate, sniffImageType };
+  saveEncryptedPrivate, readEncryptedPrivate, removeEncryptedPrivate, sniffImageType, validateImage, savePrivateImage, privateImagePath };

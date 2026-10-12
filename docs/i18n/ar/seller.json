@@ -711,5 +711,8 @@
   "Photography is part of what Trove does for you.": "التصوير جزء مما تقدّمه لك Trove.",
   "Sending…": "جارٍ الإرسال…",
   "Thanks — Trove will be in touch to arrange your photo session": "شكراً — ستتواصل معك Trove لترتيب جلسة التصوير",
-  "Could not send that — try again": "تعذّر الإرسال — حاول مرة أخرى"
+  "Could not send that — try again": "تعذّر الإرسال — حاول مرة أخرى",
+  "Building, street, area — where the courier collects your parcels": "المبنى، الشارع، المنطقة — حيث يستلم المندوب طرودك",
+  "In this run — being transferred": "ضمن دفعة التسوية — قيد التحويل",
+  "From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out.": "من دفعة التسوية بتاريخ {day}. ويُنقل إلى «المُسوّى حتى الآن» بمجرد أن يؤكد Trove إرسال التحويل."
 }

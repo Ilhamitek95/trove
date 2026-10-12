@@ -131,7 +131,11 @@ function preview(runStart = nowSql()) {
       identity: { method: id.method, verified: id.verified, eidExpiry: id.eidExpiry || null },
     };
     const hold = holdReason(shop);
-    if (shop.tier !== 'consignment' || !payoutSetupComplete(shop)) excluded.push({ ...row, reason: 'payout_setup_incomplete' });
+    // Whatever the shop's tier today: a credit on this ledger was written
+    // under consignment, so a maker who has since graduated to the Connect
+    // rail is still paid what was owed from before (F230). (Connect-rail
+    // sales never write ledger credits, so they can't land here.)
+    if (!payoutSetupComplete(shop)) excluded.push({ ...row, reason: 'payout_setup_incomplete' });
     // Trove pays only makers whose identity is established (src/identity.js):
     // a verified licence, or Emirates ID details an admin checked and that
     // have not expired. Their credits wait, unswept, for a later run.
@@ -358,11 +362,13 @@ function setHold(shopId, on) {
  * Trove actually bought — units refunded through a return before the run are
  * listed apart as returned, never as purchased (returns.refundedUnitsSql).
  */
-// Units Trove cancelled before dispatch were never bought from the maker.
+// Units Trove cancelled before dispatch were never bought from the maker. A
+// goodwill refund where the buyer kept the piece (maker_credit_kept) is not a
+// return: the maker was paid for it, so it stays on the note as purchased.
 const NOTE_LINES = `SELECT oi.name_snapshot, oi.qty - oi.cancelled_qty AS qty, oi.price_cents,
     COALESCE((SELECT SUM(ri.qty) FROM return_request_items ri
       JOIN return_requests r2 ON r2.id = ri.request_id
-      WHERE ri.order_item_id = oi.id AND r2.status = 'refunded'), 0) AS returned
+      WHERE ri.order_item_id = oi.id AND r2.status = 'refunded' AND COALESCE(r2.maker_credit_kept, 0) = 0), 0) AS returned
   FROM order_items oi JOIN orders o ON o.id = oi.order_id WHERE o.public_id=? AND oi.shop_id=? AND oi.qty > oi.cancelled_qty ORDER BY oi.id`;
 function noteLines(publicId, shopId) {
   const kept = [], returned = [];
@@ -387,7 +393,7 @@ function generatePurchaseNote(item, settlement) {
     const { kept, returned, grossCents: gross } = noteLines(o.public_id, item.shop_id);
     const back = returned.length
       ? `<br><span class="muted">Returned — not purchased: ${returned.map((l) => `${l.qty} × ${h(l.name)}`).join(', ')}</span>` : '';
-    return `<tr><td>${o.public_id}</td><td>${o.created_at.slice(0, 10)}</td>
+    return `<tr><td>${h(o.public_id)}</td><td>${h(String(o.created_at).slice(0, 10))}</td>
       <td>${kept.map((l) => `${l.qty} × ${h(l.name)}`).join('<br>')}${back}</td>
       <td style="text-align:right">${aed(gross)}</td>
       <td style="text-align:right">${aed(gross - o.amount_cents)}</td>
@@ -395,22 +401,24 @@ function generatePurchaseNote(item, settlement) {
   }).join('');
   const debitRow = item.debit_cents
     ? `<tr><td colspan="5">Refund adjustments carried into this run</td><td style="text-align:right">${aed(item.debit_cents)}</td></tr>` : '';
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Purchase note — ${item.bank_reference}</title>
+  // Every value is escaped (F450): names are validated at entry today, but a
+  // future import or field must never put markup on an admin page.
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Purchase note — ${h(item.bank_reference)}</title>
 <style>body{font-family:Georgia,serif;color:#262321;max-width:720px;margin:40px auto;padding:0 20px}
 h1{font-size:22px;font-weight:600}table{width:100%;border-collapse:collapse;margin:16px 0}
 td,th{padding:8px 6px;border-bottom:1px solid #e6ddd6;font-size:14px;text-align:left;vertical-align:top}
 .tot{font-size:16px}.muted{color:#6b625b;font-size:13px}</style></head><body>
 <h1>trove — self-billed purchase note</h1>
-<p class="muted">${item.bank_reference} · Settlement run ${settlement.run_date}</p>
+<p class="muted">${h(item.bank_reference)} · Settlement run ${h(settlement.run_date)}</p>
 <p><strong>Supplier:</strong> ${h(shop.name)} (${h(shop.owner_name)})<br>
-<strong>Emirates ID:</strong> ····${shop.emirates_id_last4 || '????'} ·
-<strong>Seller Agreement:</strong> ${shop.agreement_version || '—'}</p>
+<strong>Emirates ID:</strong> ····${h(shop.emirates_id_last4 || '????')} ·
+<strong>Seller Agreement:</strong> ${h(shop.agreement_version || '—')}</p>
 <table><thead><tr><th>Order</th><th>Sale date</th><th>Goods</th><th style="text-align:right">List price</th><th style="text-align:right">Trove margin</th><th style="text-align:right">Purchase price</th></tr></thead>
 <tbody>${orderBlocks}${debitRow}</tbody>
 <tfoot><tr class="tot"><td colspan="5"><strong>Total paid to supplier</strong></td><td style="text-align:right"><strong>${aed(item.amount_cents)}</strong></td></tr></tfoot></table>
 <p>This document records Trove's purchase of the goods listed above from the supplier
 named above under the Trove Seller Agreement (consignment purchase). Title transferred
-to Trove at order confirmation. Bank transfer reference: “${item.bank_reference}”.</p>
+to Trove at order confirmation. Bank transfer reference: “${h(item.bank_reference)}”.</p>
 </body></html>`;
   const dir = path.join(PRIVATE_DIR(), 'purchase-notes');
   fs.mkdirSync(dir, { recursive: true });
@@ -481,10 +489,18 @@ function balances(shopId) {
   const settled = db.prepare(`SELECT COALESCE(SUM(si.amount_cents),0) AS c
     FROM settlement_items si JOIN settlements st ON st.id=si.settlement_id
     WHERE si.shop_id=? AND st.status='paid'`).get(shopId).c;
+  // Swept into a run the owner has not marked paid yet (Tuesday's draft, or
+  // the bank file sent): neither payable nor settled, so without this the
+  // maker's money seemed to vanish until 'Mark paid' (F231).
+  const inRun = db.prepare(`SELECT COALESCE(SUM(si.amount_cents),0) AS c, MAX(st.run_date) AS d
+    FROM settlement_items si JOIN settlements st ON st.id=si.settlement_id
+    WHERE si.shop_id=? AND st.status IN ('draft','exported')`).get(shopId);
   return {
     pendingCents: allUnsweptCredits - eligible, // in the return window / not delivered yet
     payableCents: eligible + openDebits,        // next run (may be negative = carry-forward)
     settledCents: settled,
+    inRunCents: inRun.c,                        // in a run, transfer on its way
+    inRunDate: inRun.c ? inRun.d : null,
   };
 }
 

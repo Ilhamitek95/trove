@@ -211,6 +211,9 @@ module.exports = {
 
   /** Maker has packed: book the cheapest suitable courier to collect from their door. */
   async markReady(ref, shipment, shop) {
+    // A pickup address the maker changed after the order reaches OTO before
+    // the courier is booked (F240); free when nothing changed (synced cache).
+    if (shop) await ensureLocation(shop);
     const origin = town(shop && (shop.pickup_address || shop.location));
     const dest = customer(shipment || {}).city;
     const opt = await pickOption(origin, dest, false);
@@ -225,7 +228,9 @@ module.exports = {
     const body = { orderId: orderRef(shipment), pickupLocationCode: locationCode(shop), deliveryOptionId: opt.deliveryOptionId, pickingType: 'PICKUP_BY_DC' };
     if (returnItems && returnItems.length) body.items = returnItems.map((i) => ({ sku: sku(i.order_item_id), quantity: String(i.qty) }));
     const j = await call('POST', '/createReturnShipment', body);
-    return { ref: j.returnOrderId || `${body.orderId}-R`, trackingUrl: '' };
+    // OTO's own return id (<orderId>-R1, -R2…) or nothing: a made-up shared
+    // '<orderId>-R' would match every return on the parcel (F219).
+    return { ref: j.returnOrderId || null, trackingUrl: '' };
   },
 
   /** Trove refunded or cancelled the parcel before the courier collected it

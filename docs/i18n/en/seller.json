@@ -769,5 +769,8 @@
   "Photography is part of what Trove does for you.": "Photography is part of what Trove does for you.",
   "Sending…": "Sending…",
   "Thanks — Trove will be in touch to arrange your photo session": "Thanks — Trove will be in touch to arrange your photo session",
-  "Could not send that — try again": "Could not send that — try again"
+  "Could not send that — try again": "Could not send that — try again",
+  "Building, street, area — where the courier collects your parcels": "Building, street, area — where the courier collects your parcels",
+  "In this run — being transferred": "In this run — being transferred",
+  "From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out.": "From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out."
 }

@@ -2257,6 +2257,8 @@ function consignmentPayoutUI(){
         <div class="bal-sub">${s.payableCents<0?_t('refunds carried forward — nets against your next purchases'):_t('ready for the next settlement run')}</div>
         <div class="fee-row"><span class="muted">${_t('Waiting to be paid')}</span><span>${money(s.pendingCents)}</span></div>
         ${s.pendingCents?`<div style="font-size:12.5px;color:var(--muted);font-weight:600;margin:2px 0 4px">${_t('A sale is paid in the first run after the buyer’s {days}-day return window closes. On an order with pieces from several makers, that window starts when the last parcel arrives.',{days:retDays()})}</div>${pendingListHTML()}`:''}
+        ${s.inRunCents?`<div class="fee-row"><span class="muted">${_t('In this run — being transferred')}</span><span>${money(s.inRunCents)}</span></div>
+        <div style="font-size:12.5px;color:var(--muted);font-weight:600;margin:2px 0 4px">${_t('From the settlement run of {day}. It moves to Settled to date once Trove confirms the transfer has gone out.',{day:runDayLabel(s.inRunDate)})}</div>`:''}
         <div class="fee-row"><span class="muted">${_t('Settled to date')}</span><span>${money(s.settledCents)}</span></div>
         <div class="fee-row"><span class="muted">${_t('Settlement runs')}</span><span>${esc(_t('{day} · by Trove',{day:_t(s.schedule||'Every other Tuesday')}))}</span></div>
         ${s.nextRunDate?`<div class="fee-row"><span class="muted">${_t('Next run')}</span><span>${runDayLabel(s.nextRunDate)}</span></div>`:''}

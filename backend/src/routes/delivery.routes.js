@@ -12,7 +12,9 @@
  *                                    { orderId, status, timestamp, signature … } where
  *                                    signature = base64 HMAC-SHA256("orderId:status:timestamp",
  *                                    OTO_WEBHOOK_SECRET); the same secret also rides as the
- *                                    authorization key.
+ *                                    authorization key. The signature proves only those
+ *                                    three values (see otoVerify), and every event is
+ *                                    recorded and applied in one transaction (applyOnce).
  *   POST /api/delivery/mock/deliver  dev/admin hand-crank for the mock
  *                                    provider: confirms delivery of a shipment
  *                                    as if the courier had.
@@ -50,7 +52,10 @@ function stepShipment(sh, status, note) {
   sh.status = status;
 }
 const timeline = (sh, note) => db.prepare('INSERT INTO shipment_events (shipment_id, status, note) VALUES (?,?,?)').run(sh.id, sh.status, note);
-const safeEq = (a, b) => a.length === b.length && crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+const safeEq = (a, b) => {
+  const x = Buffer.from(String(a)), y = Buffer.from(String(b));
+  return x.length === y.length && crypto.timingSafeEqual(x, y);
+};
 // Webhooks fail CLOSED in production: an unset secret there means nobody can
 // prove they are the courier, so every call is refused. Locally and in tests
 // an unset secret stays open, for the mock courier and hand testing.
@@ -60,6 +65,40 @@ const { providerOf } = require('../delivery');
 function shipmentFor(ref, providers) {
   const sh = db.prepare('SELECT * FROM shipments WHERE delivery_ref=?').get(ref);
   return sh && providers.includes(providerOf(sh)) ? sh : null;
+}
+
+const RETRY_LATER = { error: 'Could not apply the event — please retry' };
+/**
+ * Record a courier event and apply it in ONE transaction (F237): when the
+ * work throws, the 'seen' row rolls back with it, so the courier's retry is
+ * applied instead of being answered as a duplicate. `work()` is synchronous
+ * and returns { matched, collect } — `collect` names a return collection the
+ * courier now has (returns.markCollected target), applied after the commit
+ * because it sends the buyer's refund; if THAT fails, the event is released
+ * for the retry too (markCollected and the refund are idempotent). `key`
+ * null = no dedupe (a courier call without an idempotency key).
+ */
+async function applyOnce(res, key, type, work) {
+  let out;
+  try {
+    out = db.transaction(() => {
+      if (key && !db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(key, type).changes) return { duplicate: true };
+      return work() || {};
+    })();
+  } catch (e) {
+    console.error(`${type} webhook failed — left for the courier's retry:`, e.message);
+    return res.status(500).json(RETRY_LATER);
+  }
+  if (out.duplicate) return res.json({ received: true, duplicate: true });
+  if (out.collect) {
+    try { await require('../returns').markCollected(out.collect); }
+    catch (e) {
+      if (key) db.prepare('DELETE FROM webhook_events WHERE event_id=?').run(key);
+      console.error(`${type} return collection failed — left for the courier's retry:`, e.message);
+      return res.status(500).json(RETRY_LATER);
+    }
+  }
+  return res.json({ received: true, matched: out.matched !== false });
 }
 
 /* A return job (buyer → maker) in these states means the courier has the
@@ -92,7 +131,8 @@ const SIG_HEADERS = ['x-quiqup-signature', 'x-signature', 'x-webhook-signature',
 function verified(req) {
   const secret = process.env.QUIQUP_WEBHOOK_SECRET;
   if (!secret) return !isProd(); // unset = open locally / in tests, closed in production
-  if (req.headers['x-webhook-secret'] === secret) return true; // shared-secret header (custom header on the subscription)
+  // Shared-secret header (custom header on the subscription), compared in constant time (F452).
+  if (safeEq(String(req.headers['x-webhook-secret'] || ''), secret)) return true;
   const header = SIG_HEADERS.map((h) => req.headers[h]).find(Boolean);
   if (!header) return false;
   const raw = req.rawBody || Buffer.from(JSON.stringify(req.body || {}));
@@ -111,13 +151,6 @@ function verified(req) {
 
 router.post('/webhook', (req, res) => {
   if (!verified(req)) return res.status(401).json({ error: 'Bad webhook signature' });
-  // Quiqup retries on non-2xx and stamps every delivery with an idempotency
-  // key — a repeat is acknowledged without being applied twice.
-  const idem = String(req.headers['x-quiqup-idempotency-key'] || '');
-  if (idem) {
-    const seen = db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run('quiqup:' + idem, 'quiqup.order');
-    if (!seen.changes) return res.json({ received: true, duplicate: true });
-  }
   const b = req.body || {};
   // Classic shape: { type:'order', payload:{ id, state } }. Quiqdash V3 names
   // events "order.collected" and may nest the order under data/order/payload.
@@ -128,7 +161,15 @@ router.post('/webhook', (req, res) => {
   const named = String(b.event || b.event_type || b.type || '').toLowerCase().replace(/^order[._]/, '');
   const event = String(p.state || p.status || (named !== 'order' ? named : '') || p.event || '').toLowerCase().replace(/^order[._]/, '');
   if (!ref) return res.status(400).json({ error: 'Missing job reference' });
+  // Quiqup retries on non-2xx and stamps every delivery with an idempotency
+  // key — a repeat is acknowledged without being applied twice, and a failed
+  // attempt is released for the retry (applyOnce).
+  const idem = String(req.headers['x-quiqup-idempotency-key'] || '');
+  return applyOnce(res, idem ? 'quiqup:' + idem : null, 'quiqup.order', () => quiqupEvent(ref, event, p));
+});
 
+/** Apply one Quiqup event (inside applyOnce's transaction). */
+function quiqupEvent(ref, event, p) {
   // Quiqup (and the mock courier, which speaks the same shape) only ever
   // moves shipments it booked — never an OTO parcel.
   const sh = shipmentFor(ref, ['quiqup', 'mock']);
@@ -138,13 +179,8 @@ router.post('/webhook', (req, res) => {
     const col = db.prepare("SELECT id, shipment_id FROM return_collections WHERE ref=?").get(ref);
     const shipOf = col && db.prepare('SELECT * FROM shipments WHERE id=?').get(col.shipment_id);
     // Never an OTO return (those arrive signed on /oto-webhook).
-    if (!col || providerOf(shipOf) === 'oto' || /^TRV-/.test(ref)) return res.json({ received: true, matched: false });
-    if (RETURN_COLLECTED.has(event)) {
-      return require('../returns').markCollected({ ref })
-        .then(() => res.json({ received: true, matched: true }))
-        .catch((e) => { console.error('return collection webhook failed:', e.message); res.json({ received: true, matched: true }); });
-    }
-    return res.json({ received: true, matched: true });
+    if (!col || providerOf(shipOf) === 'oto' || /^TRV-/.test(ref)) return { matched: false };
+    return { matched: true, collect: RETURN_COLLECTED.has(event) ? { ref } : null };
   }
 
   if (p.tracking_url && !sh.tracking_url) db.prepare('UPDATE shipments SET tracking_url=? WHERE id=?').run(p.tracking_url, sh.id);
@@ -173,8 +209,8 @@ router.post('/webhook', (req, res) => {
         'Decide whether to re-send it or cancel and refund it (Admin → Orders → Cancel items).']);
     }
   }
-  res.json({ received: true, matched: true });
-});
+  return { matched: true };
+}
 
 /* ---------------- OTO (tryoto.com) ---------------- */
 // OTO status names (docs "List Of Statuses") → Trove shipment steps.
@@ -218,32 +254,62 @@ const OTO_RETURN_NOTES = {
 // Return states that mean the courier has collected the piece from the buyer.
 const OTO_RETURN_COLLECTED = new Set(['reversePickedUp', 'reverseOutForDelivery', 'reverseReturned', 'reverseConfirmReturn', 'confirmedReturn']);
 
-function otoVerified(req) {
+/**
+ * How an OTO call proved it came from OTO (F236):
+ *   { mode: 'auth' }  the registered authorization key (= OTO_WEBHOOK_SECRET)
+ *                     rode along — only OTO holds it, so the body is trusted
+ *                     as it always was;
+ *   { mode: 'sig', signed }  the body's signature, base64 HMAC-SHA256 of
+ *                     `orderId:<status>:timestamp` — it proves ONLY those
+ *                     three values. A status hook's signed value is its
+ *                     `status`, never another field (a signature over
+ *                     'pickedUp' moved into errorCode no longer passes for
+ *                     status 'delivered', and an empty status proves nothing);
+ *                     an error hook's is its errorCode (or the status / an
+ *                     empty one, for error payloads without a code);
+ *   { mode: 'open' }  no secret set, outside production (mock + tests).
+ * null = refused.
+ */
+function otoVerify(req, kind) {
   const secret = process.env.OTO_WEBHOOK_SECRET;
-  if (!secret) return !isProd(); // unset = open locally / in tests, closed in production
+  if (!secret) return isProd() ? null : { mode: 'open' }; // unset = open locally / in tests, closed in production
   const auth = String(req.headers.authorization || req.headers['x-authorization'] || '').replace(/^Bearer\s+/i, '');
-  if (auth && safeEq(auth, secret)) return true;
+  if (auth && safeEq(auth, secret)) return { mode: 'auth' };
   const b = req.body || {};
   const sig = String(b.signature || '');
-  if (!sig) return false;
+  if (!sig) return null;
   const ts = String(b.timestamp ?? '');
-  const statuses = [b.status, b.errorCode, b.transactionStatus, ''].filter((v) => v !== undefined && v !== null);
-  return statuses.some((st) => safeEq(sig, crypto.createHmac('sha256', secret).update(`${b.orderId}:${st}:${ts}`).digest('base64')));
+  const present = (v) => v !== undefined && v !== null && v !== '';
+  const candidates = kind === 'error'
+    ? [b.errorCode, b.status].filter(present).map(String).concat([''])
+    : (present(b.status) ? [String(b.status)] : []);
+  const signed = candidates.find((st) => safeEq(sig, crypto.createHmac('sha256', secret).update(`${b.orderId}:${st}:${ts}`).digest('base64')));
+  return signed === undefined ? null : { mode: 'sig', signed };
 }
 
 router.post('/oto-webhook', (req, res) => {
-  if (!otoVerified(req)) return res.status(401).json({ error: 'Bad webhook signature' });
-  const b = req.body || {};
   const kind = req.query.t === 'error' ? 'error' : 'status';
+  const v = otoVerify(req, kind);
+  if (!v) return res.status(401).json({ error: 'Bad webhook signature' });
+  const b = req.body || {};
   const ref = String(b.orderId || '');
   if (!ref) return res.status(400).json({ error: 'Missing orderId' });
-  // OTO may redeliver: the same event is acknowledged every time, applied once.
-  const key = ['oto', kind, ref, b.returnOrderId || '', b.status || b.errorCode || '', b.returnStatus || '', b.timestamp || ''].join(':');
-  if (!db.prepare('INSERT OR IGNORE INTO webhook_events (event_id, type) VALUES (?,?)').run(key, 'oto.' + kind).changes) {
-    return res.json({ received: true, duplicate: true });
-  }
+  // OTO may redeliver: the same event is acknowledged every time, applied
+  // once. A SIGNED event is keyed only on what its signature covers — the
+  // orderId, the signed value and the timestamp, not the hook or any other
+  // field — so one genuine signature is applied once, however the rest of
+  // the body is changed or wherever it is posted again (F236). An event
+  // proved by the authorization key keeps the key it always had.
+  const key = v.mode === 'sig'
+    ? ['oto', 'sig', ref, v.signed, String(b.timestamp ?? '')].join(':')
+    : ['oto', kind, ref, b.returnOrderId || '', b.status || b.errorCode || '', b.returnStatus || '', b.timestamp || ''].join(':');
+  return applyOnce(res, key, 'oto.' + kind, () => otoEvent(b, kind, ref, v));
+});
+
+/** Apply one OTO event (inside applyOnce's transaction). */
+function otoEvent(b, kind, ref, v) {
   const sh = shipmentFor(ref, ['oto']);
-  if (!sh) return res.json({ received: true, matched: false });
+  if (!sh) return { matched: false };
 
   if (kind === 'error') {
     // The courier refused the booking after the fact: no driver is coming.
@@ -258,7 +324,7 @@ router.post('/oto-webhook', (req, res) => {
     const why = [b.errorCode, b.errorMessage, b.deliveryCompany ? `(${b.deliveryCompany})` : ''].filter(Boolean).join(' ') || 'shipment error';
     courier.bookingFailed(sh.id, 'collection', Object.assign(new Error(`OTO: ${why}`), { otoCode: b.errorCode || '' }));
     timeline(sh, 'The courier booking did not go through — we are booking another collection');
-    return res.json({ received: true, matched: true });
+    return { matched: true };
   }
 
   // Courier details as they become known: its name, its tracking number, OTO's branded tracking page.
@@ -277,17 +343,32 @@ router.post('/oto-webhook', (req, res) => {
   if (returnStatus) {
     if (OTO_RETURN_NOTES[returnStatus]) timeline(sh, OTO_RETURN_NOTES[returnStatus] + (b.returnOrderId ? ' · ' + b.returnOrderId : ''));
     if (OTO_RETURN_COLLECTED.has(returnStatus)) {
+      // A signature covers the status, not a separate returnStatus field: an
+      // unproven 'collected' never sends money (F236) — the owner checks with
+      // OTO and presses Refund now.
+      if (v.mode === 'sig' && returnStatus !== v.signed) {
+        const o = db.prepare('SELECT public_id FROM orders WHERE id=?').get(sh.order_id) || {};
+        console.warn(`OTO return collection on ${ref} not proven by its signature — refund left for the admin`);
+        require('../notify').adminAlert({
+          subject: `Check a return collection: order ${o.public_id || ref}`,
+          title: 'A courier return update needs checking',
+          kicker: `Order ${o.public_id || ref}`,
+          lines: [
+            `OTO reported a return on this order as collected (${returnStatus}), but the update could not be fully verified, so the buyer's refund did not go out automatically.`,
+            'Check the return in the OTO dashboard. If the courier has the piece, press Refund now on the return in Admin → Returns.',
+          ],
+        });
+        return { matched: true };
+      }
       // The courier has the returned piece: the buyer's refund goes out now
-      // (src/returns.js). Matched by the return orderId OTO gave us at
-      // booking, else by the latest booked collection on this parcel.
-      const returns = require('../returns');
+      // (src/returns.js), after this transaction. Matched by the return
+      // orderId OTO gave us at booking, else by the parcel — only when
+      // exactly one collection on it is waiting (F219).
       const ret = String(b.returnOrderId || '');
       const known = ret && db.prepare('SELECT 1 FROM return_collections WHERE ref=?').get(ret);
-      return returns.markCollected(known ? { ref: ret, quiet: true } : { shipmentId: sh.id, quiet: true })
-        .then(() => res.json({ received: true, matched: true }))
-        .catch((e) => { console.error('OTO return collection failed:', e.message); res.json({ received: true, matched: true }); });
+      return { matched: true, collect: known ? { ref: ret, quiet: true } : { shipmentId: sh.id, quiet: true, returnRef: ret || null } };
     }
-    return res.json({ received: true, matched: true });
+    return { matched: true };
   }
   const by = sh.carrier && sh.carrier !== 'OTO' ? sh.carrier : 'the courier';
   if (status === 'delivered') {
@@ -312,8 +393,8 @@ router.post('/oto-webhook', (req, res) => {
         "Worth calling the buyer to check the address and when they're in. The buyer's phone is on the order in Admin → Orders."]);
     }
   }
-  res.json({ received: true, matched: true });
-});
+  return { matched: true };
+}
 
 router.post('/mock/deliver', (req, res) => {
   // Hand-crank for the mock provider: allowed for admins anywhere, and for
@@ -340,7 +421,7 @@ router.post('/mock/collect-return', async (req, res, next) => {
     const cols = db.prepare("SELECT * FROM return_collections WHERE request_id=? AND status IN ('booking','booked')").all(requestId);
     if (!cols.length) return res.status(404).json({ error: 'No collection waiting on that return' });
     const returns = require('../returns');
-    for (const c of cols) await returns.markCollected(c.ref ? { ref: c.ref } : { shipmentId: c.shipment_id });
+    for (const c of cols) await returns.markCollected(c.ref ? { ref: c.ref } : { shipmentId: c.shipment_id, requestId });
     res.json({ ok: true, request: returns.shape(db.prepare('SELECT * FROM return_requests WHERE id=?').get(requestId)) });
   } catch (e) { next(e); }
 });

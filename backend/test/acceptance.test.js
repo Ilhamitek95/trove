@@ -46,6 +46,7 @@ test('worked example: pay 230 → credit 120 → deliver → window → run → 
     body: {
       items: [{ productId, qty: 1 }],
       email: 'layla@test.local',
+      phone: '050 123 4567', // the courier needs it (F213)
       address: { name: 'Layla', line: 'Apt 1, Marina Gate', city: 'Dubai Marina, Dubai', emirate: 'Dubai' },
     },
   });

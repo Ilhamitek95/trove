@@ -349,5 +349,13 @@
   "This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.": "This request has been waiting two days for your answer. Please confirm or decline it — if there is no answer within a week of the request, we close it and let the customer know.",
   "Reminder: {name} is waiting for your answer — {title}": "Reminder: {name} is waiting for your answer — {title}",
   "A customer is waiting for your answer": "A customer is waiting for your answer",
-  "Please confirm or decline this booking request.": "Please confirm or decline this booking request."
+  "Please confirm or decline this booking request.": "Please confirm or decline this booking request.",
+  "We're arranging the courier collection now and will be in touch about the pickup — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.": "We're arranging the courier collection now and will be in touch about the pickup — please keep the item packed and ready with any original packaging. What happens next: approved → collection booked → collected → refunded.",
+  "Your return is approved — we're arranging the collection for order {id}": "Your return is approved — we're arranging the collection for order {id}",
+  "Good news — your return for order {id} is approved. We're arranging the courier collection.": "Good news — your return for order {id} is approved. We're arranging the courier collection.",
+  "Return approved — {amount} comes back to you once the courier has the item.": "Return approved — {amount} comes back to you once the courier has the item.",
+  "There is no need to send anything back — please keep the piece. This refund stays with the order in your account.": "There is no need to send anything back — please keep the piece. This refund stays with the order in your account.",
+  "We have refunded you for order {id}.": "We have refunded you for order {id}.",
+  "Sorry — some pieces sold out moments before your payment went through, so we've taken them off order {id} and refunded them.": "Sorry — some pieces sold out moments before your payment went through, so we've taken them off order {id} and refunded them.",
+  "Sorry — a piece sold out moments before your payment went through, so we've taken it off order {id} and refunded it.": "Sorry — a piece sold out moments before your payment went through, so we've taken it off order {id} and refunded it."
 }

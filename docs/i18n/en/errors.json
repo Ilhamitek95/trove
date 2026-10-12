@@ -133,5 +133,11 @@
   "The tracking number can’t contain < or >": "The tracking number can’t contain < or >",
   "The note can’t contain < or >": "The note can’t contain < or >",
   "The tracking link must be a web address starting with https://": "The tracking link must be a web address starting with https://",
-  "Confirm up to 1000 pieces at a time": "Confirm up to 1000 pieces at a time"
+  "Confirm up to 1000 pieces at a time": "Confirm up to 1000 pieces at a time",
+  "Part of the delivery address is too long — please shorten it": "Part of the delivery address is too long — please shorten it",
+  "Check the delivery address and try again": "Check the delivery address and try again",
+  "One of the pieces in your basket is no longer available — remove it to continue": "One of the pieces in your basket is no longer available — remove it to continue",
+  "Your basket has too many lines — split it into two orders": "Your basket has too many lines — split it into two orders",
+  "We can’t take payments right now — please try again in a few minutes": "We can’t take payments right now — please try again in a few minutes",
+  "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them.": "The AED 30 collection fee for a change-of-mind return is at least what these pieces cost, so nothing would come back to you. Add more pieces to this return, or contact us if something is wrong with them."
 }

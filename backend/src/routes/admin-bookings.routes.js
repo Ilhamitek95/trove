@@ -85,9 +85,12 @@ router.get('/service-credits', requireAdmin, (_req, res) => {
 // The provider bank transfer file: one line per provider payable now WITH
 // bank details (the rest wait for them). IBANs decrypt straight into the
 // response, like the shop settlement CSV — never logged, never stored.
-router.get('/provider-payouts/export.csv', requireAdmin, (_req, res, next) => {
+router.get('/provider-payouts/export.csv', requireAdmin, (req, res, next) => {
   try {
     const { csv } = require('../provider-payouts').exportCsv();
+    // Every download of an IBAN file is recorded in Admin → Activity (F232).
+    require('../admin-audit').record({ adminId: req.user.id, adminEmail: req.user.email || '', method: 'GET', path: req.originalUrl.split('?')[0],
+      action: 'Provider bank file downloaded', targetType: 'provider-payouts', targetId: credits.dubaiToday(), status: 200 });
     res.set('Cache-Control', 'no-store');
     res.type('text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="trove-provider-transfers-${credits.dubaiToday()}.csv"`);
