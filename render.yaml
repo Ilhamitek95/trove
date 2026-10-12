@@ -9,7 +9,9 @@ services:
     runtime: node
     plan: standard
     rootDir: backend
-    buildCommand: npm install
+    # npm ci installs exactly what package-lock.json pins (F280) — the same
+    # versions the test suite ran against, never a newer patch picked at build.
+    buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /api/health
     disk:
@@ -29,9 +31,49 @@ services:
       - key: PRIVATE_DIR
         value: /var/data/private
       # SEED_DEMO (demo catalogue on an empty database) is development-only and
-      # is ignored when NODE_ENV=production — never set it here.
+      # is ignored when NODE_ENV=production — never set it here (it can be
+      # deleted from the live Environment tab too).
       - key: SESSION_SECRET
         generateValue: true
+      # The server refuses to start in production without SESSION_SECRET.
+      #
+      # Secrets and settings the live service needs, declared so that a
+      # service rebuilt from this Blueprint asks for each one (F280). sync:false
+      # never sends or changes a value: the live values stay as set in the
+      # dashboard (Environment tab). Values: the owner's password manager.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: CLIENT_URL           # https://troveathome.com (Stripe return links, allowed origin)
+        sync: false
+      - key: ADMIN_EMAIL          # the owner's sign-in; the only admin
+        sync: false
+      - key: PAYOUT_ENC_KEY       # IRREPLACEABLE — encrypts stored IBANs; never rotate
+        sync: false
+      - key: RESEND_API_KEY       # transactional email
+        sync: false
+      - key: EMAIL_FROM           # e.g. Trove <noreply@troveathome.com>
+        sync: false
+      - key: OTO_REFRESH_TOKEN    # courier gateway; mock delivery without it
+        sync: false
+      - key: OTO_WEBHOOK_SECRET
+        sync: false
+      - key: BACKUP_S3_ENDPOINT   # off-site backups (Cloudflare R2), see RESTORE.md
+        sync: false
+      - key: BACKUP_S3_BUCKET
+        sync: false
+      - key: BACKUP_S3_KEY_ID
+        sync: false
+      - key: BACKUP_S3_SECRET
+        sync: false
+      - key: BACKUP_ENC_KEY       # keep a copy in the password manager
+        sync: false
+      - key: VAT_REGISTERED
+        sync: false
+      # Also set on the live service when used (not declared here, so a
+      # Blueprint sync never touches them): ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID,
+      # DEMO_PASSWORD, CONTACT_EMAIL, PUBLIC_URL.
       # Added later in the dashboard (Environment tab):
       #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET  (pk_ key goes in docs/config.js)
       #   PAYOUT_ENC_KEY   64 hex chars — REQUIRED before suppliers can complete
