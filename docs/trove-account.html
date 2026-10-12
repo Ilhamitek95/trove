@@ -253,7 +253,8 @@
   .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;z-index:130;opacity:0;transition:.32s;box-shadow:var(--shadow);pointer-events:none}
 
   /* ratings & reviews */
-  .rev-nudge{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-bottom:20px}
+  /* after the orders, not above them (F480) */
+  .rev-nudge{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin:20px 0}
   .rev-nudge h3{font-family:var(--font-display);font-size:22px;font-weight:600;margin-bottom:2px}
   .rev-nudge .sub{font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:14px}
   .rev-row{display:flex;align-items:center;gap:13px;padding:10px 0;border-top:1px solid var(--line-soft,rgba(41,39,39,.06))}
@@ -294,6 +295,13 @@
   .rtfield{width:100%;font-family:inherit;font-size:14px;font-weight:500;border:1px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--paper);color:var(--char);margin-bottom:10px}
   .rtmoney{margin-top:14px;font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.55;background:var(--cream-2,#F8F0EA);border-radius:10px;padding:11px 13px}
   .rtmoney b{color:var(--char)}
+  /* the refund as a small receipt (F381): only the lines that apply */
+  .rtrec{margin-bottom:8px}
+  .rtr{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+  .rtr b{white-space:nowrap}
+  .rtr.tot{border-top:1px solid var(--line);margin-top:4px;padding-top:7px;color:var(--char);font-size:13.5px}
+  .rt-rule{display:block}
+  .rt-rule a{color:var(--char);text-decoration:underline}
   .rtitems{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:12px}
   .rti{display:flex;align-items:center;gap:11px;padding:11px 13px;font-size:13.5px;font-weight:600;cursor:pointer;border-bottom:1px solid var(--line-soft,#F0E6E0)}
   .rti:last-child{border-bottom:none}
@@ -439,7 +447,7 @@
       </div>
 
       <!-- ORDERS -->
-      <div class="view" id="view-orders"><div id="reviewNudge"></div><div id="ordersList"></div><div id="myReviews"></div></div>
+      <div class="view" id="view-orders"><div id="ordersList"></div><div id="reviewNudge"></div><div id="myReviews"></div></div>
 
       <!-- SERVICE BOOKINGS (the Services Marketplace) -->
       <div class="view" id="view-bookings"><div id="bookingsList"></div></div>
@@ -570,6 +578,8 @@ function img(seed){
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 function aed(n){return troveMoney(n);} /* shared formatter (api.js): en-GB digits, fils shown — never rounded */
+/* A UAE mobile as the server reads it (backend/src/phone.js): 05x…, +971 5x…, 00971 5x…, +971 (0)5x… */
+function validUAEMobile(v){let d=String(v||'').trim().replace(/[\s().-]/g,'');if(d.startsWith('00971'))d=d.slice(2);if(d.startsWith('+971'))d=d.slice(4);else if(d.startsWith('971'))d=d.slice(3);if(d.startsWith('0'))d=d.slice(1);return /^5\d{8}$/.test(d);}
 
 /* ---------- ACCESSIBILITY HELPERS ----------
  * Modal: the address drawer, the review and return dialogs and the phone
@@ -625,7 +635,8 @@ function fmtDate(s){ if(!s)return''; const d=new Date(String(s).replace(' ','T')
  * the courier's 1–4 days (server-fed as s.expected = { from, to }). */
 function expectedLine(s){
   if(!s||!s.expected||['delivered','cancelled'].includes(s.status))return '';
-  if(new Date(s.expected.to).getTime()<Date.now())return ''; // running late: the timeline speaks, not a date gone by
+  // Running late: no date gone by, but never silence either (F293).
+  if(new Date(s.expected.to).getTime()<Date.now())return `<div class="ship-note ship-eta">${_t('This parcel is running later than we hoped — we’re on it.')}</div>`;
   const f=d=>troveDate(d,{day:'numeric',month:'short',timeZone:'Asia/Dubai'});
   const a=f(s.expected.from), b=f(s.expected.to);
   return `<div class="ship-note ship-eta">${_t('Expected {when}',{when:a===b?esc(a):esc(a)+' – '+esc(b)})}</div>`;
@@ -816,11 +827,12 @@ function renderAddr(){
     ${a.def?`<span class="badge">${_t('Default')}</span>`:''}
     <h4>${esc(a.label)}</h4>
     <p>${esc(a.name)}<br>${esc(a.line)}<br>${esc(a.city)}<br>${esc(_t(a.country||''))}${a.phone?'<br>'+esc(a.phone):''}</p>
-    <div class="acts"><a href="#" role="button" onclick="openAddr(${Number(a.id)});return false">${_t('Edit')}</a>${!a.def?`<a href="#" role="button" onclick="setDefAddr(${Number(a.id)});return false">${_t('Set default')}</a><a href="#" role="button" class="danger" onclick="delAddr(${Number(a.id)});return false">${_t('Delete')}</a>`:''}</div>
+    <div class="acts"><a href="#" role="button" onclick="openAddr(${Number(a.id)});return false">${_t('Edit')}</a>${!a.def?`<a href="#" role="button" onclick="setDefAddr(${Number(a.id)});return false">${_t('Set default')}</a>`:''}<a href="#" role="button" class="danger" onclick="delAddr(${Number(a.id)},${a.def?1:0});return false">${_t('Delete')}</a></div>
   </div>`).join('')+`<button type="button" class="add-tile" onclick="openAddr()"><div class="inner"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg><div>${_t('Add a new address')}</div></div></button>`;
 }
 async function setDefAddr(id){ try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'PATCH',body:{isDefault:true}}); await reloadAddresses(); toast(_t('Default address updated')); }catch(e){ toast(e.message||_t('Could not update')); } }
-async function delAddr(id){ if(!confirm(_t('Delete this address?')))return; try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'DELETE'}); await reloadAddresses(); toast(_t('Address deleted')); }catch(e){ toast(e.message||_t('Could not delete')); } }
+/* Any address can go, the default too (F301): the server makes the next one the default. */
+async function delAddr(id,isDef){ if(!confirm(isDef&&addresses.length>1?_t('Delete this address? Your next saved address becomes the default.'):_t('Delete this address?')))return; try{ await TroveAPI.api('/api/account/addresses/'+id,{method:'DELETE'}); await reloadAddresses(); toast(_t('Address deleted')); }catch(e){ toast(e.message||_t('Could not delete')); } }
 let editAddrId=null;
 function openAddr(id){
   editAddrId=id||null; const a=id?addresses.find(x=>x.id===id):{};
@@ -835,7 +847,8 @@ function openAddr(id){
     <div class="field"><label for="aCity">${_t('Area')}</label><input id="aCity" value="${esc(area)}" placeholder="${esc(_t('e.g. Dubai Marina, Khalifa City'))}"></div>
     <div class="field"><label for="aEmirate">${_t('Emirate')}</label><select id="aEmirate"><option value="Dubai"${emirate==='Dubai'?' selected':''}>${_t('Dubai')}</option><option value="Abu Dhabi"${emirate==='Abu Dhabi'?' selected':''}>${_t('Abu Dhabi')}</option></select>
       <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">${_t('We currently deliver in Dubai & Abu Dhabi only.')}</div></div>
-    <div class="field"><label for="aPhone">${_t('Phone')}</label><input id="aPhone" type="tel" autocomplete="tel" value="${esc(a.phone||'')}"></div>`;
+    <div class="field"><label for="aPhone">${_t('UAE mobile for the courier')}</label><input id="aPhone" type="tel" autocomplete="tel" placeholder="05x xxx xxxx" value="${esc(a.phone||'')}">
+      <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">${_t('Optional. It fills in the courier contact at checkout.')}</div></div>`;
   $('drawerSave').onclick=saveAddr; openDrawer();
 }
 async function saveAddr(){
@@ -843,6 +856,7 @@ async function saveAddr(){
   const data={label:$('aLabel').value||_t('Address'),name:$('aName').value.trim(),line:$('aLine').value.trim(),city:areaV?`${areaV}, ${emirate}`:emirate,country:'United Arab Emirates',phone:$('aPhone').value.trim()};
   if(!data.name){toast(_t('Add a name'));return;}
   if(!data.line){toast(_t('Add a street address'));return;}
+  if(data.phone&&!validUAEMobile(data.phone)){toast(_t('Enter a UAE mobile number, like 05x xxx xxxx — or leave it empty'));$('aPhone').focus();return;}
   try{
     if(editAddrId) await TroveAPI.api('/api/account/addresses/'+editAddrId,{method:'PATCH',body:data});
     else await TroveAPI.api('/api/account/addresses',{method:'POST',body:{...data,isDefault:addresses.length===0}});
@@ -873,7 +887,7 @@ function renderReviewNudge(){
     <h3>${_t('Share what you thought')}</h3>
     <div class="sub">${_t('Reviews are from verified buyers only — yours helps the next shopper and the maker alike.')}</div>
     ${reviewables.products.map((p,i)=>`<div class="rev-row">
-      <div class="im"><div style="position:absolute;inset:0;${grad(safeColor(p.color))}"></div><img src="${esc(img(p.imageSeed))}" style="position:absolute;inset:0;z-index:1" onerror="this.style.display='none'"></div>
+      <div class="im"><div style="position:absolute;inset:0;${grad(safeColor(p.color))}"></div><img src="${esc(p.image||img(p.imageSeed))}" alt="" loading="lazy" style="position:absolute;inset:0;z-index:1" onerror="this.style.display='none'"></div>
       <div><div class="nm">${esc(p.name)}</div><div class="sl">${esc(p.shopName)}</div></div>
       <button class="btn btn-ghost btn-sm" onclick="reviewAt('products',${i})">☆ ${_t('Rate & review')}</button>
     </div>`).join('')}
@@ -1001,7 +1015,9 @@ function returnsFootHTML(o){
   let out=reqs.map(rq=>{
     if(rq.status==='requested')return `<span class="ship-note" style="margin:0">${_t("Return requested for <b>{items}</b> on {date} — we're reviewing it",{items:what(rq),date:fmtDate(rq.createdAt)})}</span>
       <button class="btn btn-ghost btn-sm" onclick="withdrawReturn(${jsq(o.id)},${Number(rq.id)})">${_t('Withdraw')}</button>`;
-    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">${_t('Return approved for <b>{items}</b> — {state}. Once the courier has the item, {amount} goes back to your card{fee}.',{items:what(rq),state:rq.collectionBookedAt?_t('our courier collection is booked and the courier will be in touch'):_t('we are booking the courier collection'),amount:aed(rq.refund),fee:fee(rq)})}</span>${rtStepper(rq)}`;
+    // A courier booking that failed is being retried by Trove: say so (F293).
+    const rebooking=!rq.collectionBookedAt&&(rq.collections||[]).some(c=>c.status==='failed');
+    if(rq.status==='approved')return `<span class="ship-note" style="margin:0">${_t('Return approved for <b>{items}</b> — {state}. Once the courier has the item, {amount} goes back to your card{fee}.',{items:what(rq),state:rq.collectionBookedAt?_t('our courier collection is booked and the courier will be in touch'):rebooking?_t('we’re rebooking your courier collection and will be in touch'):_t('we are booking the courier collection'),amount:aed(rq.refund),fee:fee(rq)})}</span>${rtStepper(rq)}`;
     if(rq.status==='collected')return `<span class="ship-note" style="margin:0">${_t('The courier has collected <b>{items}</b> — your refund of {amount} is being sent to your card{fee}.',{items:what(rq),amount:aed(rq.refund),fee:fee(rq)})}</span>${rtStepper(rq)}`;
     if(rq.status==='refunded')return `<span class="ship-note" style="margin:0">${_t('Returned <b>{items}</b> — {amount} refunded to your card{when}{fee}. Depending on your bank it can take 5–10 business days to appear.',{items:what(rq),amount:aed(rq.refund),when:rq.refundedAt?_t(' on {date}',{date:fmtDate(rq.refundedAt)}):'',fee:fee(rq)})}</span>${rtStepper(rq)}`;
     return `<span class="ship-note" style="margin:0;color:var(--accent-ink)">${_t('Return declined for <b>{items}</b> — {reason}',{items:what(rq),reason:esc(rq.declineReason||_t('we emailed you the details'))})}</span>`;
@@ -1018,7 +1034,7 @@ function returnsFootHTML(o){
     // Say why the button isn't there.
     const help=`<a href="${troveUrl('/contact?topic=returns&order='+encodeURIComponent(o.id))}" style="color:var(--accent-ink)">${_t('contact us')}</a>`;
     if(live.length&&!live.some(s=>s.status==='delivered'))out+=`<span class="ship-note" style="margin:0">${_t('Returns open once your parcel has been delivered. Something wrong already? Please {contact}.',{contact:help})}</span>`;
-    else if(r.blocked&&/closed/.test(r.blocked))out+=`<span class="ship-note" style="margin:0">${_t('The {n}-day return window for this order has closed.',{n:days})}</span>`;
+    else if(r.blocked&&/closed/.test(r.blocked))out+=`<span class="ship-note" style="margin:0">${r.deadline?_t('Returns for this order closed on {date} ({n} days from delivery).',{date:fmtDate(r.deadline),n:days}):_t('The {n}-day return window for this order has closed.',{n:days})}</span>`;
   }
   return out;
 }
@@ -1046,15 +1062,18 @@ function renderRtItems(){
     const on=rtPicked.has(i.id), n=rtPicked.get(i.id)||i.available;
     // More than one unit left on the line → pick how many go back.
     const qty=i.available>1?`<select onclick="event.stopPropagation()" onchange="setRtQty(${Number(i.id)},this.value)" aria-label="${_t('How many {name} go back',{name:esc(i.name)})}">${Array.from({length:i.available},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===n?'selected':''}>${_t('{k} of {n}',{k,n:i.available})}</option>`).join('')}</select>`:'';
-    return `<label class="rti"><input type="checkbox" ${on?'checked':''} onchange="toggleRtItem(${Number(i.id)},this.checked)"><span class="nm">${nm}</span>${qty}<span class="pr">${aed(i.price*(on?n:i.available))}</span></label>`;
+    return `<label class="rti" data-rt="${Number(i.id)}"><input type="checkbox" ${on?'checked':''} onchange="toggleRtItem(${Number(i.id)},this.checked)"><span class="nm">${nm}</span>${qty}<span class="pr">${aed(i.price*(on?n:i.available))}</span></label>`;
   }).join('');
 }
+/* The list is redrawn on every tick: focus goes back to the same control,
+   so keyboard and screen-reader users keep their place (F298). */
+function refocusRt(id,sel){const el=$('rtItems').querySelector(`[data-rt="${Number(id)}"] ${sel}`);if(el)el.focus({preventScroll:true});}
 function toggleRtItem(id,on){
   const it=(rtOrder.returns.items||[]).find(i=>i.id===id);
   if(on)rtPicked.set(id,it&&it.available>1?it.available:1); else rtPicked.delete(id);
-  renderRtItems(); updateRtMoney();
+  renderRtItems(); updateRtMoney(); refocusRt(id,'input[type=checkbox]');
 }
-function setRtQty(id,v){ rtPicked.set(id,Math.max(1,Number(v)||1)); renderRtItems(); updateRtMoney(); }
+function setRtQty(id,v){ rtPicked.set(id,Math.max(1,Number(v)||1)); renderRtItems(); updateRtMoney(); refocusRt(id,'select'); }
 function updateRtMoney(){
   if(!rtOrder)return;
   const r=rtOrder.returns, reason=$('rtReason').value;
@@ -1077,11 +1096,20 @@ function updateRtMoney(){
   const all=(r.items||[]).every(i=>!['not_delivered','closed'].includes(i.locked)&&(!(i.available>0)||(rtPicked.get(i.id)||0)>=i.available));
   const delivery=fault&&all&&r.wholeOrderFaultDelivery>0?Number(r.wholeOrderFaultDelivery):0;
   const refund=Math.max(0,gross-(feeApplies?r.fee:0))+delivery;
-  $('rtMoney').innerHTML=_t("You'll get <b>{amount}</b> back to your card once our courier has collected the item.",{amount:aed(refund)})+' '
-    +(feeApplies?_t("Changing your mind on an order of AED 200 and below costs {amount} for the collection — it's already deducted from that figure.",{amount:aed(r.fee)})+' '
-      :reason?_t('Collection is free for this return.')+' ':(r.fee?_t('Collection is free if the item is faulty or damaged, the wrong item or not as described; changing your mind on this order costs {amount}.',{amount:aed(r.fee)})+' ':_t('Collection is free for this order.')+' '))
-    +(delivery?_t('That includes your {amount} delivery, because the whole order is coming back with a fault.',{amount:aed(delivery)})
-      :_t('The original delivery fee is refunded only when the whole order comes back faulty or damaged, wrong or not as described.'))
+  // A small receipt (F381): the lines that apply, then what comes back.
+  const line=(k,v,cls)=>`<div class="rtr${cls?' '+cls:''}"><span>${k}</span><b>${v}</b></div>`;
+  const rows=[line(_t('Pieces going back'),aed(gross))];
+  if(feeApplies)rows.push(line(_t('Collection fee (change of mind, order of AED 200 and below)'),'−'+aed(r.fee)));
+  if(delivery)rows.push(line(_t('Original delivery (the whole order is coming back with a fault)'),'+'+aed(delivery)));
+  rows.push(line(_t('Back to your card'),aed(refund),'tot'));
+  // Under it, only the rule that applies.
+  const rule=feeApplies?_t('Changing your mind on an order of AED 200 and below costs {amount} for the collection.',{amount:aed(r.fee)})
+    :reason?_t('Collection is free for this return.')
+    :(r.fee?_t('Collection is free if the item is faulty or damaged, the wrong item or not as described; changing your mind on this order costs {amount}.',{amount:aed(r.fee)}):_t('Collection is free for this order.'));
+  // The delivery-fee rule only where it could still apply: delivery was paid
+  // and isn't coming back yet, and the reason is a fault (or not chosen) — F478.
+  const deliveryRule=!delivery&&r.wholeOrderFaultDelivery>0&&(!reason||fault)?' '+_t('The original delivery fee is refunded only when the whole order comes back faulty or damaged, wrong or not as described.'):'';
+  $('rtMoney').innerHTML=`<div class="rtrec">${rows.join('')}</div><span class="rt-rule">${rule}${deliveryRule} ${_t('The refund goes out once our courier has collected the item.')} <a href="${esc(troveUrl('/returns'))}" target="_blank" rel="noopener">${_t('How refunds work')}</a></span>`
     +together;
 }
 function renderRtPhotos(){
@@ -1143,8 +1171,14 @@ function closeMenu(){
   if(!$('drawer').classList.contains('open'))document.body.style.overflow='';
 }
 window.addEventListener('resize',()=>{if(window.innerWidth>920)closeMenu();});
-function go(v){
+/* nav: undefined = a click (a new history entry), 'replace', or false (Back /
+   Forward already moved the address). The section lives in the address
+   (F300), so a refresh, the Back button and emailed #orders links land on it. */
+function go(v,nav){
   if(!TITLES[v])v='overview';
+  if(nav!==false&&location.hash!=='#'+v){
+    if(nav==='replace')history.replaceState(null,'','#'+v); else history.pushState(null,'','#'+v);
+  }
   closeMenu();
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -1154,6 +1188,7 @@ function go(v){
   if(v==='orders')renderOrders(); if(v==='addresses')renderAddr(); if(v==='bookings')renderBookings();
   window.scrollTo(0,0);
 }
+window.addEventListener('popstate',()=>{if(!ME)return;const s=(location.hash||'').replace('#','');go(TITLES[s]?s:'overview',false);});
 
 /* ---------- DATA LOADING + BOOT ---------- */
 async function reloadOrders(){
@@ -1273,10 +1308,12 @@ async function boot(){
   if(!session||!session.user){ location.href=troveUrl('/login'); return; }
   ME=session.user; initUser();
   await Promise.all([reloadOrders(), reloadAddresses(), reloadReviews(), reloadBookings()]);
+  // A brand-new account isn't 'back' yet (F401).
+  if(!ordersErr&&!orders.length&&!bookings.length)TITLES.overview[1]=_t('Welcome');
   renderOverview();
   // Old links to #wishlist, #payments or #following land on the overview.
   const _sec=(location.hash||'').replace('#','');
-  go(TITLES[_sec]?_sec:'overview');
+  go(TITLES[_sec]?_sec:'overview',TITLES[_sec]||!_sec?false:'replace');
   if(new URLSearchParams(location.search).get('verified')){ toast(_t('Thank you — your email is confirmed')); history.replaceState(null,'',troveUrl('/account')+location.hash); }
 }
 boot();

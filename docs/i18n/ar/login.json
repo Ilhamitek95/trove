@@ -42,6 +42,8 @@
   "New to Trove? <a href=\"#\" onclick=\"toggleRegister();return false\">Create an account</a>": "جديد على Trove؟ <a href=\"#\" onclick=\"toggleRegister();return false\">أنشئ حساباً</a>",
   "Email (for order updates)": "البريد الإلكتروني (لتحديثات الطلبات)",
   "Use email instead": "استخدم البريد الإلكتروني",
+  "Use mobile number instead": "استخدم رقم الجوال بدلاً من ذلك",
+  "Create your account to follow your orders, save your addresses and check out faster.": "أنشئ حسابك لتتابع طلباتك وتحفظ عناوينك وتُتمّ الشراء بسرعة أكبر.",
   "Check your email": "تحقّق من بريدك الإلكتروني",
   "We sent a 6-digit code to {to}. It expires in 10 minutes.": "أرسلنا رمزاً من 6 أرقام إلى {to}. تنتهي صلاحيته خلال 10 دقائق.",
   "your email": "بريدك الإلكتروني",
