@@ -81,20 +81,29 @@ function buyerPoint(shipment) {
   };
 }
 
-function order(kindOf, shipment, shop) {
+function order(kindOf, shipment, shop, returnItems = null) {
   const reverse = kindOf === 'reverse';
   const ref = `${shipment.public_id || 'TRV'}-${shipment.id}${reverse ? '-R' : ''}`;
   const [origin, destination] = reverse ? [buyerPoint(shipment), shopPoint(shop)] : [shopPoint(shop), buyerPoint(shipment)];
+  // A return of SOME units names exactly those (F446) — the courier must not
+  // collect the whole parcel when one mug of three comes back.
+  const units = reverse && Array.isArray(returnItems) && returnItems.length ? returnItems : null;
+  const count = units ? units.reduce((t, i) => t + (Number(i.qty) || 0), 0) : 0;
   return {
     kind: reverse ? 'partner_return' : kind(),
     payment_mode: 'pre_paid',   // the card was charged on Trove — nothing to collect on the doorstep
     payment_amount: 0,
     partner_order_id: ref,
-    notes: reverse ? `Trove return ${shipment.public_id || ''}`.trim() : `Trove order ${shipment.public_id || ''} · ${shop.name}`.trim(),
+    notes: reverse
+      ? `Trove return ${shipment.public_id || ''}${units ? ` · collect ONLY ${count} item${count === 1 ? '' : 's'}: ${units.map((i) => `${i.qty} × ${i.name_snapshot || i.name || 'item'}`).join(', ')}` : ''}`.trim()
+      : `Trove order ${shipment.public_id || ''} · ${shop.name}`.trim(),
     origin: { ...origin, partner_order_id: ref },
     destination: { ...destination, partner_order_id: ref },
-    // One parcel per shipment (a shipment = one shop's part of the order).
-    items: [{ name: `${reverse ? 'Return' : 'Parcel'} · ${shipment.public_id || ref} · ${shop.name}`, quantity: 1 }],
+    // One parcel per shipment (a shipment = one shop's part of the order);
+    // a partial return lists the units going back instead.
+    items: units
+      ? units.map((i) => ({ name: `Return · ${i.name_snapshot || i.name || 'item'} · ${shipment.public_id || ref}`, quantity: Number(i.qty) || 1 }))
+      : [{ name: `${reverse ? 'Return' : 'Parcel'} · ${shipment.public_id || ref} · ${shop.name}`, quantity: 1 }],
   };
 }
 
@@ -113,8 +122,8 @@ module.exports = {
   },
 
   /** Return leg buyer → shop, submitted straight away (the buyer is waiting). */
-  async bookReversePickup(shipment, shop) {
-    const r = shapeRes(await call('POST', '/orders', order('reverse', shipment, shop)));
+  async bookReversePickup(shipment, shop, _items, returnItems) {
+    const r = shapeRes(await call('POST', '/orders', order('reverse', shipment, shop, returnItems)));
     if (r.ref) await call('PUT', `/orders/${encodeURIComponent(r.ref)}/ready_for_collection`);
     return r;
   },

@@ -191,11 +191,11 @@ mkCredit.run(wallet.shop_id, demoOrder, fees.split(wallet.price_cents).net);
 // buyer's window on the whole order closes.
 const mkShip = db.prepare("INSERT INTO shipments (order_id,shop_id,status,carrier,tracking_number,delivered_at,return_window_ends_at) VALUES (?,?,?,?,?,?,?)");
 const mkEv = db.prepare("INSERT INTO shipment_events (shipment_id,status,note,created_at) VALUES (?,?,?,datetime('now',?))");
-const kilnShip = mkShip.run(demoOrder, mug.shop_id, 'delivered', 'Quiqup', 'TRVX-4471902',
+const kilnShip = mkShip.run(demoOrder, mug.shop_id, 'delivered', 'Test courier', 'TRVX-4471902',
   db.prepare("SELECT datetime('now','-17 days') AS t").get().t,
   db.prepare("SELECT datetime('now','-2 days') AS t").get().t).lastInsertRowid;
 mkEv.run(kilnShip, 'processing', 'Order received — preparing your items', '-20 days');
-mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Quiqup) · TRVX-4471902', '-18 days');
+mkEv.run(kilnShip, 'shipped', 'Handed to the courier (Test courier) · TRVX-4471902', '-18 days');
 mkEv.run(kilnShip, 'delivered', 'Delivered (confirmed by courier)', '-17 days');
 const emberShip = mkShip.run(demoOrder, wallet.shop_id, 'processing', '', '', null, null).lastInsertRowid;
 mkEv.run(emberShip, 'processing', 'Order received — preparing your items', '-12 days');
