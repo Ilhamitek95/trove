@@ -63,7 +63,25 @@ const BASE = `
     AND ${require('../agreements').sellableSql('s')}
 `;
 
-// GET /api/products?q=&category=&house=1&shop=slug
+/* ?view=list (F357): the storefront's lighter catalogue. Each piece comes
+ * without its full description (a 'summary' of about 240 characters instead,
+ * cut at a word) and without the two fields the page builds for itself
+ * (stockImage, estimate); the page fetches the full piece from
+ * /api/products/:id when it opens. Opt-in: without the parameter the answer
+ * is exactly as before (the native app reads it). */
+const SUMMARY_LEN = 240;
+function summaryOf(text) {
+  const t = String(text || '').replace(/\s+/g, ' ').trim();
+  if (t.length <= SUMMARY_LEN) return t;
+  const cut = t.slice(0, SUMMARY_LEN - 1);
+  return cut.slice(0, Math.max(cut.lastIndexOf(' '), SUMMARY_LEN - 40)).replace(/[\s,;:.–—-]+$/, '') + '…';
+}
+function listShape(p) {
+  const { description, stockImage, estimate, ...rest } = p;
+  return { ...rest, summary: summaryOf(description) };
+}
+
+// GET /api/products?q=&category=&house=1&shop=slug[&view=list]
 router.get('/', (req, res) => {
   const { q, category, house, shop } = req.query;
   let sql = BASE, args = [];
@@ -79,7 +97,9 @@ router.get('/', (req, res) => {
   sql += ' ORDER BY p.created_at DESC';
   const rows = db.prepare(sql).all(...args);
   if (q) require('../trends').logSearch(q, rows.length);   // server-side searches count toward trends too
-  res.json({ products: tr().products(rows.map(shape), req.lang) });
+  // (the Arabic overlay first, so a summary is cut from the page's own language)
+  const products = tr().products(rows.map(shape), req.lang);
+  res.json({ products: req.query.view === 'list' ? products.map(listShape) : products });
 });
 
 // GET /api/products/:id

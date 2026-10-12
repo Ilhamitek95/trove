@@ -216,12 +216,17 @@ function cardHtml(p, vendor, lang = 'en') {
   const [T] = tFor(lang);
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
-  // A display-only demo piece (src/display-only.js) gets a label, never a button.
+  // A display-only demo piece (src/display-only.js) gets a label, never a button;
+  // so does a sold-out one, which also says so on the photo (F423, as the
+  // storefront's productCard() draws it). The tap waits for the page's script
+  // (window.addToCart) rather than erroring before it has loaded (F424).
+  const gone = p.forSale !== false && ((p.options || []).length ? !(p.variants || []).some((v) => v.stock > 0) : Number(p.stock) === 0);
   const add = (cls) => (p.forSale === false
     ? `<span class="${cls} disp">${esc(T('On display only'))}</span>`
-    : `<button class="${cls}" onclick="event.stopPropagation();addToCart(${Number(p.id)},this)">${esc(T('Add to basket'))}</button>`);
+    : gone ? `<span class="${cls} disp">${esc(T('Sold out'))}</span>`
+      : `<button class="${cls}" onclick="event.stopPropagation();window.addToCart?addToCart(${Number(p.id)},this):0">${esc(T('Add to basket'))}</button>`);
   return `<article class="card">
-    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
+    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${gone ? `<span class="sale">${esc(T('Sold out'))}</span>` : p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
       ${add('add')}</div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>

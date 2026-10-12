@@ -176,10 +176,19 @@
 
   // The marketplace fee rules (service fee, delivery, free-delivery threshold).
   // Cached; falls back to sensible defaults if the backend isn't reachable.
+  // A Stripe publishable key the server hands over (STRIPE_PUBLISHABLE_KEY)
+  // takes over from config.js's, which stays the fallback (F430).
   let _config = null;
   async function config() {
     if (_config) return _config;
-    try { _config = await api('/api/config'); }
+    try {
+      _config = await api('/api/config');
+      const key = _config && _config.stripePublishableKey;
+      if (typeof key === 'string' && /^pk_(live|test)_/.test(key)) {
+        window.TroveAPI.stripeKey = key;
+        window.TroveAPI.paymentsEnabled = true;
+      }
+    }
     catch (_) { _config = { currency: 'aed', serviceFeeCents: 0, deliveryFeeCents: 3000, freeDeliveryThresholdCents: 20000, commissionPercent: 40, platformFeePercent: 40, aiTagsEnabled: false }; }
     return _config;
   }

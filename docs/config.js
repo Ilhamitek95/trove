@@ -10,9 +10,13 @@
  *              the storefront separately from the API (no trailing slash).
  *
  *   STRIPE_PUBLISHABLE_KEY — your Stripe publishable key (starts with "pk_").
- *              This switches on the real card form at checkout. It is SAFE to be
- *              public. NEVER put the secret key (sk_...) here — that belongs only
- *              in the backend's .env file.
+ *              It is SAFE to be public. NEVER put the secret key (sk_...) here —
+ *              that belongs only in the backend's environment.
+ *              The card form shows only when the SERVER can take payments too
+ *              (/api/config cardPayments: a Stripe secret key is set). A
+ *              STRIPE_PUBLISHABLE_KEY set in the server's environment takes
+ *              over from this one (served by /api/config); this value stays
+ *              the fallback, so leave it in place.
  *
  * Data is live whenever the backend is reachable. If it isn't, the storefront
  * gracefully falls back to a demo catalogue so the page still renders.

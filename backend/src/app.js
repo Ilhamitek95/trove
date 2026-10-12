@@ -214,6 +214,13 @@ function createApp() {
     // Whether bookings can be paid through Trove by card — the server's own
     // answer (a Stripe secret key is configured), not the page's publishable key.
     serviceCardPayments: !!getStripe(),
+    // The storefront's card checkout follows the same server answer (F430),
+    // with the publishable key when the environment sets one (the page keeps
+    // docs/config.js's key as the fallback). Orders recorded with no charge
+    // (demo payments) are offered to the page only away from production.
+    cardPayments: !!getStripe(),
+    demoPayments: !getStripe() && process.env.NODE_ENV !== 'production',
+    stripePublishableKey: /^pk_(live|test)_[A-Za-z0-9]+$/.test(process.env.STRIPE_PUBLISHABLE_KEY || '') ? process.env.STRIPE_PUBLISHABLE_KEY : null,
     providerAgreementVersion: require('./config').PROVIDER_AGREEMENT_VERSION,
     servicesTermsVersion: require('./config').SERVICES_TERMS_VERSION,
   }));
@@ -325,7 +332,8 @@ function createApp() {
   };
   const notFound = (req, res) => {
     res.set('X-Robots-Tag', 'noindex');
-    if (req.accepts('html')) return res.status(404).type('html').set('Cache-Control', 'no-cache').send(gtm.forAddress(req, res, docFile('404.html')));
+    // with the site header, search and basket (src/not-found.js, F426)
+    if (req.accepts('html')) return res.status(404).type('html').set('Cache-Control', 'no-cache').send(gtm.forAddress(req, res, require('./not-found').page(docFile('404.html'), req.lang)));
     res.status(404).json({ error: 'Not found' });
   };
 
@@ -409,6 +417,9 @@ function createApp() {
   app.get('/shop/:cat([a-z0-9-]+)', (req, res) => page(res, req, seo.renderShop(SITE_BASE(), req.params.cat, { search: req.query.q, lang: req.lang })));
   app.get('/pieces/:ref', (req, res) => page(res, req, seo.renderPiece(SITE_BASE(), req.params.ref, req.lang)));
   app.get('/makers/:slug', (req, res) => page(res, req, seo.renderMaker(SITE_BASE(), req.params.slug, req.lang)));
+  // The trimmed addresses (F426): /makers is the makers band, /pieces the shop.
+  app.get('/makers', (req, res) => res.redirect(301, '/#vendors'));
+  app.get('/pieces', (req, res) => res.redirect(301, '/shop'));
   app.get('/sell-on-trove', (req, res) => html(res, seo.renderSell(SITE_BASE(), req.lang)));
   // The order confirmation's own address (F164): the storefront opens its
   // thank-you view and asks /api/checkout/receipt for the order, so a refresh

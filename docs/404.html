@@ -18,6 +18,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- site-chrome:css -->
 <style>
   em,i,cite{font-style:normal} /* brand: no italics anywhere, not even the browser default */
   :root{
@@ -27,26 +28,28 @@
     --muted:rgba(41,39,39,.62); --ink-80:rgba(41,39,39,.78);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{min-height:100vh;background:var(--cream);color:var(--char);font-family:'Quicksand',system-ui,sans-serif;
-       font-weight:500;line-height:1.6;display:grid;place-items:center;padding:32px;-webkit-font-smoothing:antialiased}
+  body{background:var(--cream);color:var(--char);font-family:'Quicksand',system-ui,sans-serif;
+       font-weight:500;line-height:1.6;-webkit-font-smoothing:antialiased}
   ::selection{background:var(--coral);color:var(--char)}
-  .card{max-width:520px;text-align:center}
+  /* the site header, search, basket and footer come in around this (src/not-found.js, F426) */
+  .card{max-width:680px;margin:0 auto;padding:64px 26px 88px;text-align:center}
   .art{width:200px;height:150px;margin:0 auto 30px;display:block}
-  .eyebrow{font-size:12px;letter-spacing:.12em;color:var(--ink-80);font-weight:700}
-  h1{font-family:var(--font-display);font-weight:400;font-size:clamp(38px,6vw,56px);line-height:1.05;margin:16px 0 14px}
-  h1 em{font-style:normal;color:var(--coral)}
-  p{color:var(--ink-80);max-width:42ch;margin:0 auto 30px}
+  .card .eyebrow{display:block;font-size:12px;letter-spacing:.12em;color:var(--ink-80);font-weight:700}
+  .card h1{font-family:var(--font-display);font-weight:400;font-size:clamp(38px,6vw,56px);line-height:1.05;margin:16px 0 14px}
+  .card h1 em{font-style:normal;color:var(--coral)}
+  .card p{color:var(--ink-80);max-width:42ch;margin:0 auto 30px}
   .ctas{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;align-items:center}
   .btn{display:inline-flex;align-items:center;gap:10px;padding:15px 30px;border-radius:999px;font-weight:600;
        font-size:13.5px;letter-spacing:.05em;text-decoration:none;transition:.2s}
   .btn-coral{background:var(--char);color:var(--cream)}
-  .btn-coral:hover{background:var(--coral-hover);transform:translateY(-2px)}
+  .btn-coral:hover{background:#3B3737;transform:translateY(-2px)}
   .quiet{font-size:13.5px;font-weight:600;color:var(--muted);text-decoration:none;border-bottom:1px solid var(--rose);padding-bottom:2px}
   .quiet:hover{color:var(--char)}
 </style>
 </head>
 <body>
-<main class="card">
+<!-- site-chrome:header -->
+<main class="card" id="main">
   <svg class="art" viewBox="0 0 200 150" aria-hidden="true">
     <ellipse cx="128" cy="70" rx="58" ry="52" fill="#DBC7BD"/>
     <ellipse cx="62" cy="98" rx="44" ry="40" fill="#CAD5CC"/>
@@ -70,5 +73,7 @@
     <a class="quiet" href="/#vendors">Meet our makers</a>
   </div>
 </main>
+<!-- site-chrome:footer -->
+<!-- site-chrome:scripts -->
 </body>
 </html>
