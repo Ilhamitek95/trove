@@ -432,6 +432,9 @@ function createApp() {
   };
   app.get('/services/booking/:code([A-Za-z0-9-]+)', bookingPage);
   app.get('/services/pay/:ref([A-Za-z0-9-]+)', bookingPage);
+  // One service's own address (F339): /services/<provider>/<id>-<slug>, the
+  // provider's page with that service open; a wrong slug 301s, a gone one 404s.
+  app.get('/services/:slug([a-z0-9-]+)/:ref([0-9][a-z0-9-]*)', (req, res) => page(res, req, seo.renderService(SITE_BASE(), req.params.slug, req.params.ref, req.lang)));
 
   /* ---------------- Search engines ----------------
    * The public storefront is indexable; the signed-in surfaces (account,

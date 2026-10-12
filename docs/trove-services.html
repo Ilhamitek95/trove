@@ -12,7 +12,7 @@
   <!-- gtm:end -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<title>Trove · Services Marketplace</title>
+<title>Services Marketplace · Trove</title>
 <meta name="trove-i18n" content="services">
 <meta name="description" content="Creative services at your place in Dubai &amp; Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -200,12 +200,15 @@
   .dcard .cnt{flex:none;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--sage-tint);color:var(--accent-ink);white-space:nowrap;margin-top:2px}
   .dcard .cnt.none{background:transparent;border:1px dashed rgba(41,39,39,.3);color:var(--muted)}
   .dcard .blurb{font-size:13px;color:var(--muted);font-weight:500;line-height:1.45;margin-top:-3px}
-  .dcard .ex{font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.6}
+  /* what people book, as short pills (F340): three, then '+N more' */
+  .dcard .exs{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+  .dcard .exs span{font-size:11.5px;font-weight:600;line-height:1.3;padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--cream);color:var(--ink-80)}
+  .dcard .exs .more{border-style:dashed;color:var(--muted)}
   .dcard .foot{margin-top:auto;padding-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12.5px;font-weight:700}
   .dcard .foot .from{font-family:var(--font-display);font-size:16px;font-weight:600}
   .dcard .foot a,.dcard .foot .go{color:var(--accent-ink);text-decoration:underline}
   @media(max-width:1000px){.dir{grid-template-columns:1fr 1fr}}
-  @media(max-width:620px){.dir{grid-template-columns:1fr;gap:10px;margin-top:22px}.dcard{padding:15px 16px 13px;gap:7px}.dcard h3{font-size:19px}.dcard .ex{font-size:12px;line-height:1.55}}
+  @media(max-width:620px){.dir{grid-template-columns:1fr;gap:10px;margin-top:22px}.dcard{padding:15px 16px 13px;gap:7px}.dcard h3{font-size:19px}.dcard .exs span{font-size:11px;padding:3px 9px}}
 
   /* meet the providers — the storefront's maker cards, in the services palette */
   .provs{display:grid;grid-template-columns:repeat(3,1fr);gap:26px 20px;max-width:1080px;margin:0 auto}
@@ -277,7 +280,6 @@
   .svbody .meta .sv-req:hover{background:#3B3737}
   /* categories nobody offers yet fold into one strip */
   .dir.one .dcard{grid-column:1/-1}
-  .dir.one .dcard .ex{max-width:110ch}
   .soon{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:12px 22px;flex-wrap:wrap;padding:18px 22px;border:1.5px dashed rgba(41,39,39,.26);border-radius:18px;background:var(--cream)}
   .soon b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;line-height:1.15}
   .soon p{font-size:13px;color:var(--muted);font-weight:500;line-height:1.55;margin-top:4px;max-width:70ch}
@@ -292,6 +294,7 @@
   @media(max-width:620px){.hrow{grid-template-columns:38px 1fr;gap:4px 14px}.hrow span.t{grid-column:2}.soon{padding:16px 18px}.soon a{width:100%;justify-content:center}}
   .svbody{padding:15px 17px 17px;display:flex;flex-direction:column;gap:6px;flex:1}
   .svbody .t{font-family:var(--font-display);font-size:19px;font-weight:600;line-height:1.15}
+  .svbody .t a.svlink:hover{text-decoration:underline;text-underline-offset:3px}
   .svbody .who{font-size:12.5px;color:var(--muted);font-weight:600}
   .svbody .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:8px}
   .tagchip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--sage-tint);color:var(--accent-ink)}
@@ -350,6 +353,16 @@
   .bv-cancel:hover{color:var(--char)}
   .bv-flag{background:var(--sage-tint);border-radius:14px;padding:13px 16px;font-size:13.5px;font-weight:600;line-height:1.55;margin-top:16px}
   .bv-flag.warm{background:#FCEBE4}
+  /* where the booking is: requested → confirmed → (paid →) done (F497) */
+  .bv-steps{display:flex;gap:6px;margin:18px 0 2px;padding:0;list-style:none}
+  .bv-steps li{flex:1;min-width:0;font-size:11.5px;font-weight:700;line-height:1.3;color:var(--muted);padding-top:9px;border-top:3px solid var(--rose-tint)}
+  .bv-steps li.done{color:var(--char);border-top-color:var(--sage)}
+  .bv-steps li.now{color:var(--char);border-top-color:var(--char)}
+  /* the way to Trove from every booking page (F413) */
+  .bv-help{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted);font-weight:600;line-height:1.6}
+  .bv-help a,.bv-note a{color:var(--char)}
+  .bv-card .lede a{color:var(--char);text-decoration:underline;font-weight:700}
+  .bv-help a{text-decoration:underline;font-weight:700;display:inline-block;padding:5px 0;margin:-5px 0}
   @media(max-width:560px){.bv-wrap{padding:22px 16px 20px}.bv-card{padding:22px 18px 20px;border-radius:18px}.bv-rows div{font-size:13.5px}}
 
   /* modal */
@@ -359,10 +372,10 @@
   @media(max-width:560px){
     .scrim{padding:0;align-items:flex-end}
     .modal{border-radius:22px 22px 0 0;max-height:94vh;overflow-y:auto;padding:22px 20px 30px;-webkit-overflow-scrolling:touch}
-    .modal h3{font-size:24px}
+    .modal h3,.modal h1{font-size:24px}
   }
   .modal .x{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--rose-tint)}
-  .modal h3{font-size:28px;line-height:1.1;padding-right:40px}
+  .modal h3,.modal h1{font-size:28px;line-height:1.1;padding-right:40px}
   .modal .who{font-size:13px;color:var(--muted);font-weight:600;margin-top:6px}
   .modal .desc{font-size:14px;font-weight:400;color:var(--ink-80);line-height:1.65;margin:14px 0 4px;white-space:pre-line}
   .modal .meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -465,7 +478,7 @@
   [dir="rtl"] .svbody .meta .sv-req{margin-left:0;margin-right:8px}
   [dir="rtl"] .bv-rows b{text-align:left}
   [dir="rtl"] .modal .x{right:auto;left:16px}
-  [dir="rtl"] .modal h3{padding-right:0;padding-left:40px}
+  [dir="rtl"] .modal h3,[dir="rtl"] .modal h1{padding-right:0;padding-left:40px}
   [dir="rtl"] .hiw::before{left:auto;right:50%;border-left:0;border-right:1.5px dashed rgba(41,39,39,.18)}
   [dir="rtl"] .steps::before{left:auto;right:15px;border-left:0;border-right:1.5px dashed rgba(41,39,39,.22)}
   @media(max-width:620px){[dir="rtl"] .steps::before{right:13px}}
@@ -560,7 +573,7 @@
     <div class="pv-shop" id="pvShop" hidden>
       <div class="results"><div class="rhead"><h2>Also in their shop</h2><span id="pvShopCount"></span><a id="pvShopLink" href="/">Visit the shop →</a></div><div class="pcgrid" id="pvPieces"></div></div>
     </div>
-    <p class="pv-note">Every price here is the provider's own — Trove adds nothing on top. Send a request and they'll confirm and reach you on your mobile. The provider delivers the service. Pay through Trove and Trove is your contracting party, refunding you in full if it isn't delivered; settle directly and the arrangement is between you and the provider.</p>
+    <p class="pv-note">Every price here is the provider's own — Trove adds nothing on top. Send a request and they'll confirm, then reach you on your mobile once it's secured. The provider delivers the service. Pay through Trove and Trove is your contracting party, refunding you in full if it isn't delivered; settle directly and the arrangement is between you and the provider.</p>
   </div>
 </section>
 
@@ -608,7 +621,7 @@
     <div class="hiw4">
       <div class="hrow"><span class="ofic" style="background:#CAD5CC"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4a7 7 0 1 1 0 14 7 7 0 0 1 0-14z"/><path d="m21 21-4.3-4.3"/></svg></span><b>Find a service</b><span class="t">Every provider is reviewed by a real person before they appear here.</span></div>
       <div class="hrow"><span class="ofic" style="background:#F8D7E4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12 20 4l-4 16-4-7z"/><path d="m12 13 8-9"/></svg></span><b>Send a request</b><span class="t">A date, a few lines and how you'd like to pay. No account needed.</span></div>
-      <div class="hrow"><span class="ofic" style="background:#BED3DF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"/></svg></span><b>They confirm</b><span class="t">The provider accepts and calls you on your mobile. Your email stays with Trove.</span></div>
+      <div class="hrow"><span class="ofic" style="background:#BED3DF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 9.5 17 19 7"/></svg></span><b>They confirm</b><span class="t">The provider confirms, and reaches you on your mobile once the booking is secured. Your email stays with Trove.</span></div>
       <div class="hrow"><span class="ofic" style="background:#CFDBBE"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span><b>Settle your way</b><span class="t">Pay the provider directly, or pay Trove by card once they confirm the date and price.</span></div>
     </div>
   </section>
@@ -627,7 +640,7 @@
       <details class="faq"><summary>Who is responsible for the service?<span class="faq-tg">+</span></summary>
         <div class="faq-a" data-i18n>The provider performs it, always: Trove doesn't perform or supervise the work. Who you contract with depends on how you pay. Pay through Trove by card and Trove is your contracting party for that booking and refunds you in full if the service isn't delivered. Settle directly and the arrangement, and any refund, is between you and the provider. The <a href="/provider-agreement" style="text-decoration:underline">Provider Agreement</a> and the <a href="/services-terms" style="text-decoration:underline">Services Terms</a> both say so plainly — read them before you apply or book.</div></details>
       <details class="faq"><summary>Why can't I see the customer's number straight away?<span class="faq-tg">+</span></summary>
-        <div class="faq-a">The same privacy stance as the rest of Trove: contact details change hands only when there's a confirmed arrangement to use them for. The mobile is released the moment you confirm; the email address stays with Trove.</div></details>
+        <div class="faq-a">The same privacy stance as the rest of Trove: contact details change hands only when there's a confirmed arrangement to use them for. The mobile is released once the booking is secured: the moment you confirm a direct booking, or when the customer's card payment lands for one paid through Trove. The email address stays with Trove.</div></details>
       <details class="faq"><summary>What can I offer?<span class="faq-tg">+</span></summary>
         <div class="faq-a">Anything in the twelve categories above — creative work at people's homes, and brand, content or shop support for makers. Regulated trades are out of scope: no food or catering, no beauty or skin treatments, and advice-only where a profession is licensed.</div></details>
       <details class="faq"><summary>Where does it work?<span class="faq-tg">+</span></summary>
@@ -791,9 +804,15 @@ function setCat(slug){SEARCH=null;
 }
 function audCats(){return TAX.categories.filter(c=>c.audience===state.audience);}
 
-/* One card per category: what it covers, what people book, and whether anyone
-   offers it yet. The services themselves render once, below, so the page
+/* One card per category with something to book: what it covers and what
+   people book. The services themselves render once, below, so the page
    never repeats an empty state six times. */
+/* A category's examples as short pills: the words before ' — ', three at
+   most, then '+N more' (F340; backend/src/seo.js draws the same). */
+function examplePills(examples){
+  const all=(examples||[]).map(e=>String(e).split(/\s+[—–]\s+/)[0]), more=all.length-3;
+  return `<div class="exs">${all.slice(0,3).map(e=>`<span>${esc(e)}</span>`).join('')}${more>0?`<span class="more">${_t('+{n} more',{n:more})}</span>`:''}</div>`;
+}
 function renderDir(){
   // Categories nobody offers yet fold into one 'Coming soon' strip instead of
   // a card each; they only get their own card once a service lands in them.
@@ -801,15 +820,13 @@ function renderDir(){
   $('dir').className='dir'+(live.length===1?' one':'');
   $('dir').innerHTML=live.map(c=>{
     const list=SERVICES.filter(s=>s.category===c.slug), n=list.length;
-    const min=n?Math.min(...list.map(s=>s.priceCents||0)):0;
+    const min=Math.min(...list.map(s=>s.priceCents||0));
     const on=state.cat===c.slug;
-    return `<div class="dcard ${n?'live':''} ${on?'on':''}" ${n?`onclick="setCat(${jsq(c.slug)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setCat(${jsq(c.slug)})}" role="button" tabindex="0" aria-pressed="${on}"`:''}>
-      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt ${n?'':'none'}">${n?_tn(n,'{n} service','{n} services'):_t('Be the first')}</span></div>
+    return `<div class="dcard live ${on?'on':''}" onclick="setCat(${jsq(c.slug)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();setCat(${jsq(c.slug)})}" role="button" tabindex="0" aria-pressed="${on}">
+      <div class="top"><h3>${esc(c.name)}</h3><span class="cnt">${_tn(n,'{n} service','{n} services')}</span></div>
       <div class="blurb">${esc(c.blurb)}</div>
-      <p class="ex">${c.examples.map(esc).join(' · ')}</p>
-      <div class="foot">${n
-        ?`<span class="from">${min?_t('From {price}',{price:money(min)}):''}</span><span class="go">${on?_t('Showing below ↓'):_t('See services →')}</span>`
-        :`<span></span><a href="/apply?for=services" onclick="event.stopPropagation()">${_t('Offer this →')}</a>`}</div>
+      ${examplePills(c.examples)}
+      <div class="foot"><span class="from">${min?_t('From {price}',{price:money(min)}):''}</span><span class="go">${on?_t('Showing below ↓'):_t('See services →')}</span></div>
     </div>`;
   }).join('')+(empty.length?soonStrip(empty):'');
 }
@@ -818,10 +835,12 @@ function soonStrip(empty){
 }
 
 function svCardHTML(s){
+  // The title is the service's own address (F339): a plain click opens it here,
+  // a new-tab click (or a copied link) lands on its own page.
   return `<div class="svcard" onclick="openService(${Number(s.id)})">
     ${svTile(s)}
     <div class="svbody">
-      <div class="t">${esc(s.title)}</div>
+      <div class="t">${s.path?`<a class="svlink" href="${esc(s.path)}" onclick="event.stopPropagation();if(event.metaKey||event.ctrlKey||event.shiftKey||event.button)return true;openService(${Number(s.id)});return false">${esc(s.title)}</a>`:esc(s.title)}</div>
       <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}</div>
       <div class="meta"><span class="price">${priceLabel(s)}</span><span style="flex:1"></span><span class="tagchip">${esc(SETTING_LABEL[s.setting]||'')}</span><button type="button" class="sv-req" aria-label="${esc(_t('Request {title}',{title:s.title}))}" onclick="event.stopPropagation();openService(${Number(s.id)})">${_t('Request')}</button></div>
     </div>
@@ -913,18 +932,28 @@ function renderProviders(){
 
 /* ---------------- a provider's page: /services/<slug> ---------------- */
 const PV_RE=/^\/services\/([a-z0-9-]+)\/?$/;
+/* One service's own address: /services/<provider>/<id>-<slug> (F339). */
+const SV_RE=/^\/services\/([a-z0-9-]+)\/(\d+)(?:-[a-z0-9-]*)?\/?$/;
+let PV_SLUG=null, PV_TITLE=''; // the provider whose page is showing, and its title
+/* 'Khalifa City, Abu Dhabi, UAE' → 'Abu Dhabi': never just the country (F520; seo.js emirateOf). */
+function emirateOf(loc){
+  const parts=String(loc||'').split(/[,،]/).map(x=>x.trim()).filter(Boolean).filter(x=>!/^(uae|u\.a\.e\.?|united arab emirates|الإمارات(\s+العربية\s+المتحدة)?)$/i.test(x));
+  return parts.length?parts[parts.length-1]:_t('Dubai');
+}
 async function openProvider(slug,push=true){
   let data;
   try{data=await TroveAPI.api('/api/services/providers/'+encodeURIComponent(slug));}
   catch(_){toast(_t('That provider isn’t listed'));if(!push)closeProvider(false);return;}
-  const p=data.provider;
+  // The visitor may have gone back to the directory while this loaded (F495).
+  if(!push){const now=trovePath(location.pathname);const m=now.match(PV_RE)||now.match(SV_RE);if(!m||m[1]!==slug)return;}
+  const p=data.provider;PV_SLUG=slug;
   for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
   $('pvHero').className='pv-hero vpanel'; $('pvHero').style.cssText=`--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}`;
   $('pvAv').style.background=safeColor(p.color);$('pvAv').textContent=(p.name||'?')[0];
   pageH1('pv');
   $('pvName').textContent=p.name;
   $('pvLoc').textContent=p.location||_t('Dubai');$('pvBio').textContent=p.bio||'';
-  const emirate=(p.location||_t('Dubai')).split(/[,،]/).pop().trim();
+  const emirate=emirateOf(p.location);
   $('pvStats').innerHTML=`<div><b>${Number(p.serviceCount)||0}</b><span>${p.serviceCount===1?_t('SERVICE'):_t('SERVICES')}</span></div><div><b>${esc(emirate)}</b><span>${_t('BASED IN')}</span></div>${p.since?`<div><b>${esc(p.since)}</b><span>${_t('ON TROVE SINCE')}</span></div>`:''}`;
   $('pvCats').innerHTML=catNames(p.categories).map(n=>`<span class="tagchip">${esc(n)}</span>`).join('');
   $('pvCount').textContent=_tn(data.services.length,'{n} service','{n} services');
@@ -932,7 +961,7 @@ async function openProvider(slug,push=true){
     :`<div class="empty" style="grid-column:1/-1">${_t("{name} hasn't listed a service yet — check back soon.",{name:esc(p.name)})}</div>`;
   loadProviderPieces(p);
   document.body.classList.add('pv');$('pview').hidden=false;
-  document.title=_t('{name} · Trove Services Marketplace',{name:`${p.name}${p.location?(troveLang==='ar'?'، ':', ')+p.location:''}`});
+  document.title=PV_TITLE=_t('{name} · Trove Services Marketplace',{name:`${p.name}${p.location?(troveLang==='ar'?'، ':', ')+p.location:''}`});
   if(push)history.pushState({provider:slug},'','/services/'+encodeURIComponent(slug));
   window.scrollTo({top:0,behavior:'instant'});
 }
@@ -957,12 +986,26 @@ async function loadProviderPieces(p){
   }catch(_){box.hidden=true;}
 }
 function closeProvider(push=true){
-  document.body.classList.remove('pv');$('pview').hidden=true;
+  document.body.classList.remove('pv');$('pview').hidden=true;PV_SLUG=null;
   pageH1('dir');
   document.title=_t('Services Marketplace · Trove');
   if(push&&PV_RE.test(trovePath(location.pathname)))history.pushState({},'','/services');
 }
-window.addEventListener('popstate',()=>{const m=trovePath(location.pathname).match(PV_RE);if(m)openProvider(m[1],false);else closeProvider(false);});
+/* Back and Forward: a service address opens its dialog over the page that is
+   showing; anything else closes the dialog first (F337), then shows the
+   provider or the directory — without reloading a provider already open. */
+window.addEventListener('popstate',()=>{
+  const path=trovePath(location.pathname);
+  const sv=path.match(SV_RE);
+  if(sv){openService(Number(sv[2]),false);return;}
+  closeModal(false);
+  const m=path.match(PV_RE);
+  if(m){if(!(document.body.classList.contains('pv')&&PV_SLUG===m[1]))openProvider(m[1],false);else restoreTitle();}
+  else if(document.body.classList.contains('pv'))closeProvider(false);
+  else restoreTitle();
+});
+/* The page's own title again once a service dialog closes. */
+function restoreTitle(){document.title=document.body.classList.contains('pv')&&PV_TITLE?PV_TITLE:_t('Services Marketplace · Trove');}
 /* Mobile menu → 'Services Marketplace': stay put only on the directory itself;
    from a provider page go back to the directory, from a booking page load it. */
 function menuToDirectory(){
@@ -972,15 +1015,20 @@ function menuToDirectory(){
   window.scrollTo(0,0);
   return false;
 }
-function jumpTo(id){if(document.body.classList.contains('pv'))closeProvider();const el=$(id);if(el&&!el.hidden)el.scrollIntoView({behavior:'smooth'});}
 
 function renderAll(){renderAudSwitch();renderDir();renderResults();renderProviders();renderMyBookings();}
 
 /* ---------------- detail + booking ---------------- */
 let CURRENT=null;
-function openService(id){
+function openService(id,push=true){
   const s=SERVICES.find(x=>x.id===id);if(!s)return;
   CURRENT=s;
+  // Its own address (F339): Back closes the dialog again (F337).
+  if(push&&s.path&&trovePath(location.pathname)!==s.path)history.pushState({service:id,pushed:true},'',s.path);
+  document.title=_t('{title} · {name} · Trove Services Marketplace',{title:s.title,name:s.provider.name});
+  // 'Where' is the customer's emirate: chosen by them, never pre-filled (F336).
+  // Remote work still needs it — the Services Marketplace serves Dubai and Abu Dhabi.
+  const whereLabel=s.setting==='home'?_t('Where you are'):_t('Your emirate');
   const cat=TAX.categories.find(c=>c.slug===s.category);
   // Card payment is offered only when the SERVER says it can take one (and
   // the page can show the card form) — the server refuses it otherwise.
@@ -991,7 +1039,7 @@ function openService(id){
   $('svModal').innerHTML=`
     <button class="x" onclick="closeModal()" aria-label="${esc(_t('Close this service'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
     <h3 id="svTitle">${esc(s.title)}</h3>
-    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}${cat?` · ${esc(cat.name)}`:''}</div>
+    <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal(false);openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}${cat?` · ${esc(cat.name)}`:''}</div>
     ${s.description?`<div class="desc">${esc(s.description)}</div>`:''}
     <div class="meta">
       <span class="price">${priceLabel(s)}</span><span style="flex:1"></span>
@@ -1015,7 +1063,7 @@ function openService(id){
       </div>
       <div class="ftwo">
         <div class="field"><label for="bkPhone">${_t('UAE mobile')}</label><input id="bkPhone" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
-        <div class="field"><label for="bkArea">${_t('Where')}</label><select id="bkArea"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
+        <div class="field"><label for="bkArea">${esc(whereLabel)}</label><select id="bkArea" required><option value="">${_t('Choose…')}</option><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
       </div>
       <div class="field"><label for="bkDate">${_t('When suits you?')} <span style="text-transform:none;letter-spacing:0;color:var(--muted)">${_t('· optional')}</span></label><input id="bkDate" placeholder="${esc(_t('e.g. a Friday afternoon, or 14 September'))}"></div>
       <div class="field"><label for="bkNotes">${_t('Tell them about it')}</label><textarea id="bkNotes" maxlength="1000" placeholder="${esc(_t('What you have in mind, how many people, anything they should know.'))}"></textarea></div>
@@ -1029,11 +1077,34 @@ function openService(id){
   }
   $('svScrim').classList.add('open');
   document.body.style.overflow='hidden';
+  cookiePad();
   TroveDialog.open($('svModal'),{onClose:closeModal,opener:MODAL_OPENER||document.activeElement,focus:$('svModal')});
   MODAL_OPENER=null;
 }
 let MODAL_OPENER=null;
-function closeModal(){if(!$('svScrim').classList.contains('open'))return;$('svScrim').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('svModal'));}
+/* The cookie banner sits above the dialog on a first visit: leave room under
+   the form so its terms box and send button scroll clear of it (F496). */
+function cookiePad(){
+  const b=document.getElementById('iubenda-cs-banner');
+  const h=b&&b.getClientRects().length&&getComputedStyle(b).display!=='none'?Math.ceil(b.getBoundingClientRect().height):0;
+  $('svModal').style.paddingBottom=h?(h+30)+'px':'';
+}
+/* pop=false: Back already moved the address (popstate). Otherwise the
+   service's address goes too — back to where the visitor came from, or on a
+   link opened straight to a service, to its provider's page. */
+function closeModal(pop){
+  if(!$('svScrim').classList.contains('open'))return;
+  $('svScrim').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('svModal'));
+  if(pop===false)return;
+  const sv=trovePath(location.pathname).match(SV_RE);
+  if(!sv)return;
+  if(history.state&&history.state.pushed)history.back();
+  else{
+    history.replaceState({provider:sv[1]},'','/services/'+sv[1]);
+    if(!(document.body.classList.contains('pv')&&PV_SLUG===sv[1]))openProvider(sv[1],false);
+    else restoreTitle();
+  }
+}
 
 async function submitBooking(){
   const err=$('bkErr');err.style.display='none';
@@ -1041,6 +1112,7 @@ async function submitBooking(){
   if(!$('bkName').value.trim())return show(_t('Please tell us your name.'));
   if(!/^\S+@\S+\.\S+$/.test($('bkEmail').value.trim()))return show(_t('That email doesn’t look right — mind checking it?'));
   if(!$('bkPhone').value.trim())return show(_t('Add a UAE mobile so the provider can reach you once they confirm.'));
+  if(!$('bkArea').value){show(_t('Choose the emirate you’re in — Dubai or Abu Dhabi.'));$('bkArea').focus();return;}
   if(!$('bkTerms').checked)return show(_t('Please accept the Services Terms — they say plainly that the provider, not Trove, is responsible for the service.'));
   const btn=$('bkSubmit');btn.disabled=true;btn.textContent=_t('Sending…');
   const trove=((document.querySelector('input[name=bkPay]:checked')||{}).value)==='trove';
@@ -1055,6 +1127,9 @@ async function submitBooking(){
       paymentMethod:(document.querySelector('input[name=bkPay]:checked')||{}).value||'direct',
       agreeTerms:true,
     }});
+    // GA4 (via Tag Manager, consent permitting): a request was sent — the
+    // category, listed price and way of paying, never who (F499).
+    try{if(window.troveTrack)troveTrack('generate_lead',{item_category:CURRENT.category,value:Math.round(CURRENT.priceCents||0)/100,currency:'AED',method:trove?'trove':'direct'});}catch(_){}
     $('bookForm').innerHTML=`<div class="booked">
       <div class="mark">✓</div>
       <h4>${_t('Request sent.')}</h4>
@@ -1094,14 +1169,25 @@ async function openBookingView(code,t,wantPay){
   BV={code,t,b:null};
   try{await fetchBooking();}
   catch(_){
-    $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')}</div><${BV_H}>${_t('We couldn’t find that booking.')}</${BV_H}><p class="lede">${_t('Check you opened the whole link from your email — it’s private to your booking. Still stuck? Contact Trove with your booking code.')}</p>`;
+    $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')}</div><${BV_H}>${_t('We couldn’t find that booking.')}</${BV_H}><p class="lede">${_t('Check you opened the whole link from your email — it’s private to your booking. Still stuck? <a href="{url}">Contact Trove</a> with your booking code.',{url:esc(troveUrl('/contact?topic=services&order='+encodeURIComponent(code)))})}</p>`;
     return;
   }
   // Back from a card check (3-D Secure): Stripe adds these to the return address.
-  const qs=new URLSearchParams(location.search);
-  if(qs.get('redirect_status')==='succeeded'&&!BV.b.paid){renderBookingView();return waitForPaid();}
+  const qs=new URLSearchParams(location.search), rs=qs.get('redirect_status');
+  if(rs==='succeeded'&&!BV.b.paid){renderBookingView();return waitForPaid();}
   renderBookingView();
-  if(BV.b.canPay&&wantPay)mountBookingPay();
+  // The bank's check failed or was cancelled (F338): say so, and put the card form back.
+  const failed=(rs==='failed'||rs==='requires_payment_method')&&BV.b.canPay;
+  if(BV.b.canPay&&(wantPay||failed))await mountBookingPay();
+  if(failed&&$('bvPayStatus'))$('bvPayStatus').textContent=_t('Your card wasn’t charged — the payment didn’t go through. Please try again.');
+}
+/* An address under /services/booking/ or /services/pay/ that isn't a whole
+   booking link (cut short or wrapped by an email app): say so, rather than
+   quietly showing the directory (F427). */
+function badBookingLink(){
+  document.body.classList.add('bv');$('bkview').hidden=false;pageH1('bv');
+  document.title=_t('Your booking · Trove');
+  $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')}</div><${BV_H}>${_t('We couldn’t open that link.')}</${BV_H}><p class="lede">${_t('It looks cut short — please use the whole link from your email. Still stuck? <a href="{url}">Contact Trove</a> with your booking code.',{url:esc(troveUrl('/contact?topic=services'))})}</p>`;
 }
 function bvHeadline(b){
   const who=esc(b.providerName);
@@ -1137,11 +1223,36 @@ function renderBookingView(){
       :b.payBlocked==='provider_unavailable'?`<div class="bv-flag warm">${_t('This provider can’t take bookings through Trove right now, so this booking can’t be paid. Nothing has been charged.')}</div>`
       :`<div class="bv-flag warm">${_t('Card payment isn’t available right now — please try again a little later.')}</div>`;
   }
+  // The provider's note with the confirmation (F416).
+  const cnote=b.confirmNote?`<div class="bv-flag">${_t('A note from {provider}:',{provider:esc(b.providerName)})} “${esc(b.confirmNote)}”</div>`:'';
+  // The way to Trove (F413, F335): a direct booking is settled with the
+  // provider, so Trove helps reach them; one paid through Trove can be put right.
+  const days=Number(b.complaintDays)||3;
+  const contact=esc(troveUrl('/contact?topic=services&order='+encodeURIComponent(b.code)));
+  const trove=b.paymentMethod==='trove';
+  const dayNote=!b.canCancel&&b.status==='confirmed'
+    ?`<div class="bv-note">${trove
+      ?_t('The service day has arrived, so this booking can’t be cancelled here. If something went wrong, <a href="{url}">contact Trove</a> with your booking code within {n} days.',{url:contact,n:days})
+      :_t('The service day has arrived, so this booking can’t be cancelled here. Settle any issue with the provider directly; <a href="{url}">contact Trove</a> if you need help reaching them.',{url:contact})}</div>`:'';
+  const help=b.status==='completed'&&trove&&b.paid&&!b.refunded
+    ?_t('Didn’t happen, or not as agreed? <a href="{url}">Tell us</a> within {n} days of the service date.',{url:contact,n:days})
+    :_t('Something not right? <a href="{url}">Tell us</a>.',{url:contact});
   $('bvCard').innerHTML=`<div class="kick">${_t('BOOKING')} <bdi>${esc(b.code)}</bdi></div><${BV_H}>${h}</${BV_H}><p class="lede">${lede}</p>
+    ${bvSteps(b)}
     <div class="bv-rows">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>
-    ${refundNote}${pay}
+    ${cnote}${refundNote}${pay}
     ${b.canCancel?`<button class="bv-cancel" onclick="cancelFromLink()">${_t('Cancel this booking')}</button>`:''}
-    ${!b.canCancel&&['confirmed','awaiting_payment'].includes(b.status)?`<div class="bv-note">${_t('The service day has arrived, so this booking can’t be cancelled here. If something went wrong, contact Trove with your booking code within 3 days.')}</div>`:''}`;
+    ${dayNote}
+    <div class="bv-help">${help}</div>`;
+}
+/* Where the booking is (F497): requested → confirmed → paid → done for a
+   booking paid through Trove; no 'paid' step when it's settled directly. */
+function bvSteps(b){
+  if(['declined','cancelled'].includes(b.status))return '';
+  const trove=b.paymentMethod==='trove';
+  const steps=trove?[_t('Requested'),_t('Confirmed'),_t('Paid'),_t('Done')]:[_t('Requested'),_t('Confirmed'),_t('Done')];
+  const done=b.status==='completed'?steps.length:b.status==='confirmed'?(trove?3:2):b.status==='awaiting_payment'?2:1;
+  return `<ol class="bv-steps" aria-label="${esc(_t('Booking progress'))}">${steps.map((s,i)=>`<li class="${i<done?'done':i===done?'now':''}"${i===done?' aria-current="step"':''}>${s}</li>`).join('')}</ol>`;
 }
 async function mountBookingPay(){
   const st=$('bvPayStatus'),btn=$('bvPayBtn');if(!st)return;
@@ -1203,6 +1314,15 @@ async function loadMyBookings(){
   const bv=path.match(BV_RE), pay=path.match(PAY_RE);
   if(bv)return openBookingView(bv[1].toUpperCase(),new URLSearchParams(location.search).get('t')||'',false);
   if(pay)return openBookingView(pay[1],pay[2],true);
+  if(/^\/services\/(booking|pay)\//i.test(path))return badBookingLink();
+  // A service's own address: its provider's page with the service open over it.
+  const sv=path.match(SV_RE);
+  if(sv){
+    history.replaceState({provider:sv[1],service:Number(sv[2])},'',path);
+    await openProvider(sv[1],false);
+    if(trovePath(location.pathname)===path)openService(Number(sv[2]),false);
+    return;
+  }
   const m=path.match(PV_RE);
   if(m){history.replaceState({provider:m[1]},'',path);await openProvider(m[1],false);return;}
   // /services?q=… (a search from the storefront or a booking page): show the matches here.

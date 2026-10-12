@@ -87,6 +87,8 @@
   "All services": "All services",
   "Show all {n} services": "Show all {n} services",
   "Trove Services Marketplace": "Trove Services Marketplace",
+  "+{n} more": "+{n} more",
+  "Close this service": "Close this service",
   "Service providers on Trove": "Service providers on Trove",
   "Services Marketplace · Trove": "Services Marketplace · Trove",
   "Creative services at your place in Dubai and Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.": "Creative services at your place in Dubai and Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.",
@@ -96,6 +98,8 @@
   "ON TROVE SINCE": "ON TROVE SINCE",
   "{name} hasn't listed a service yet — check back soon.": "{name} hasn't listed a service yet — check back soon.",
   "{name}{where} · Trove Services Marketplace": "{name}{where} · Trove Services Marketplace",
+  "{title} · {name} · Trove Services Marketplace": "{title} · {name} · Trove Services Marketplace",
+  "{price}, booked in Dubai and Abu Dhabi. ": "{price}, booked in Dubai and Abu Dhabi. ",
   "{n} services, from {price}, booked in Dubai and Abu Dhabi. ": {
     "one": "{n} service, from {price}, booked in Dubai and Abu Dhabi. ",
     "other": "{n} services, from {price}, booked in Dubai and Abu Dhabi. "

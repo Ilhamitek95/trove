@@ -68,10 +68,11 @@ router.post('/register', (req, res, next) => {
     if (taken && (!existing || taken.id !== existing.id))
       return res.status(409).json({ error: 'An account with this mobile number already exists' });
   }
-  // Instagram and WhatsApp are required to apply — validated up front so a
-  // failed application never leaves behind an account without a shop.
-  if (wantsShop && !String(req.body.instagram || '').trim())
-    return res.status(400).json({ error: 'Instagram is required for a shop application' });
+  // A way to see the work (Instagram, or a website/portfolio for makers who
+  // sell without one — F382) and WhatsApp are required to apply — validated
+  // up front so a failed application never leaves behind an account without a shop.
+  if (wantsShop && !String(req.body.instagram || '').trim() && !String(req.body.links || '').trim())
+    return res.status(400).json({ error: 'Share your Instagram or a website so our curation team can see your work' });
   if (wantsShop && !String(req.body.phone || '').trim())
     return res.status(400).json({ error: 'A WhatsApp number is required for a shop application' });
   // The application's short answers are shown in the admin review queue.

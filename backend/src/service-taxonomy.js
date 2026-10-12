@@ -8,9 +8,11 @@
  * Everything is delivered in person in Dubai & Abu Dhabi (or remotely where
  * the setting allows). Like the product taxonomy, anything regulated is out:
  * no food or catering, no beauty/skin treatments, no medical or financial
- * services beyond plain advice. Providers pay a monthly platform
- * subscription (fees.PROVIDER_SUB_FEE_CENTS); Trove takes no cut of the
- * service price itself.
+ * services beyond plain advice. Listing is free during launch (the monthly
+ * fee, fees.PROVIDER_SUB_FEE_CENTS, starts later with 30 days' notice).
+ * Trove keeps a platform fee (fees.SERVICE_COMMISSION_PERCENT, 10%) only on
+ * bookings the customer pays through Trove by card; direct bookings, settled
+ * between customer and provider, carry nothing.
  */
 
 const AUDIENCES = [

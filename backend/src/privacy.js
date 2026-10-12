@@ -311,7 +311,7 @@ function anonymise(email) {
     }
     // Bookings: amounts and dates stay; who booked goes.
     for (const bk of bookings) {
-      db.prepare("UPDATE service_bookings SET name = ?, email = ?, phone = '', notes = '' WHERE id = ?").run(PLACEHOLDER_NAME, placeholder, bk.id);
+      db.prepare("UPDATE service_bookings SET name = ?, email = ?, phone = '', notes = '', confirm_note = '' WHERE id = ?").run(PLACEHOLDER_NAME, placeholder, bk.id);
       done.bookings++;
     }
     for (const m of messages) db.prepare('DELETE FROM contact_messages WHERE id = ?').run(m.id);

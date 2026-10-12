@@ -72,8 +72,26 @@ function serviceDateError(v, { required }) {
   if (s > max) return 'The service date must be within the next year';
   return null;
 }
-/** Before the service day (Dubai time)? A booking with no agreed date counts as before. */
-const beforeService = (bk) => !bk.service_date || dubaiToday() < bk.service_date;
+// A booking confirmed with no date (direct bookings may leave it open) stops
+// counting as 'before the service' this long after it was confirmed — it must
+// not stay cancellable for ever, months after the work was done (F332).
+const DATELESS_CANCEL_DAYS = 30;
+/** Before the service day (Dubai time)? With no agreed date: within
+ *  DATELESS_CANCEL_DAYS of the confirmation (always, before a confirmation). */
+const beforeService = (bk) => {
+  if (bk.service_date) return dubaiToday() < bk.service_date;
+  if (!bk.confirmed_at) return true;
+  const at = Date.parse(String(bk.confirmed_at).replace(' ', 'T') + 'Z');
+  return Number.isNaN(at) || Date.now() < at + DATELESS_CANCEL_DAYS * 86400000;
+};
+/**
+ * Can the customer cancel this booking themselves? Nothing has been paid on a
+ * request or a booking waiting for its card payment, so those can always be
+ * withdrawn — even on a same-day booking (F260). A confirmed booking only
+ * before its service day.
+ */
+const customerCanCancel = (bk) => ['requested', 'awaiting_payment'].includes(bk.status)
+  || (bk.status === 'confirmed' && beforeService(bk));
 /** The agreed service day has gone (Dubai time) — paying for it now makes no sense. */
 const datePassed = (bk) => !!bk.service_date && bk.service_date < dubaiToday();
 /** Is the provider still allowed to take bookings and money through Trove? */
@@ -160,7 +178,7 @@ function mail(kind, bk, extra = {}) {
  * Trove's account, and the booking waits in 'awaiting_payment'.
  * Returns { booking } or { status, error }.
  */
-async function confirm(bk, { priceCents, serviceDate } = {}) {
+async function confirm(bk, { priceCents, serviceDate, note } = {}) {
   if (bk.status !== 'requested') return { status: 409, error: 'Only a new request can be confirmed' };
   // A suspended, rejected or pending practice can decline or cancel, but never
   // take on a booking (and with it the customer's mobile and money).
@@ -171,10 +189,14 @@ async function confirm(bk, { priceCents, serviceDate } = {}) {
   const dateErr = serviceDateError(serviceDate, { required: trove });
   if (dateErr) return { status: 400, error: dateErr };
   const date = String(serviceDate || '').trim() || null;
+  // An optional word to the customer with the confirmation — what the final
+  // price includes, why that date (F416). Plain text: it reaches an email.
+  const confirmNote = String(note == null ? '' : note).trim().slice(0, 500);
+  if (/[<>]/.test(confirmNote)) return { status: 400, error: "Your note can't contain < or >" };
 
   if (!trove) {
     const r = db.prepare(`UPDATE service_bookings SET status='confirmed', confirmed_at=datetime('now'),
-        service_date=COALESCE(?, service_date) WHERE id=? AND status='requested'`).run(date, bk.id);
+        service_date=COALESCE(?, service_date), confirm_note=? WHERE id=? AND status='requested'`).run(date, confirmNote, bk.id);
     if (!r.changes) return { status: 409, error: 'Only a new request can be confirmed' };
     mail('confirmed', bk);
     return { booking: get(bk.id) };
@@ -194,8 +216,8 @@ async function confirm(bk, { priceCents, serviceDate } = {}) {
   }, { idempotencyKey: `trove-svc-confirm-${bk.id}-${amt.amount}` });
   const split = fees.serviceSplit(amt.amount);
   const r = db.prepare(`UPDATE service_bookings SET status='awaiting_payment', confirmed_at=datetime('now'),
-      amount_cents=?, service_date=?, stripe_payment_intent_id=?, commission_cents=?, provider_net_cents=?
-    WHERE id=? AND status='requested'`).run(amt.amount, date, intent.id, split.fee, split.net, bk.id);
+      amount_cents=?, service_date=?, stripe_payment_intent_id=?, commission_cents=?, provider_net_cents=?, confirm_note=?
+    WHERE id=? AND status='requested'`).run(amt.amount, date, intent.id, split.fee, split.net, confirmNote, bk.id);
   if (!r.changes) {
     // Cancelled in the meantime: the intent was never shown to anyone.
     stripe.paymentIntents.cancel(intent.id).catch(() => {});
@@ -245,7 +267,10 @@ function onPaymentSucceeded(event) {
   if (!result) return null;
   if (result.kind === 'paid') mail('paid', get(result.id));
   else if (result.kind === 'orphan') refundOrphan(result);
-  else refund(get(result.id), { reason: 'paid_after_cancel', notify: 'refunded' });
+  // Not awaited (the webhook answers at once), but never left unhandled: a
+  // database error while recording it must be logged, not crash the process.
+  else refund(get(result.id), { reason: 'paid_after_cancel', notify: 'refunded' })
+    .catch((e) => console.error(`booking ${result.id}: refund after a late payment failed — refund by hand in Stripe:`, e.message));
   return result;
 }
 
@@ -293,10 +318,25 @@ async function refund(bk, { reason = 'cancelled', notify = null } = {}) {
     return false;
   }
   try {
-    await stripe.refunds.create({
-      payment_intent: bk.stripe_payment_intent_id,
-      metadata: { booking_id: String(bk.id), code: bk.code, reason },
-    }, { idempotencyKey: `trove-svc-refund-${bk.id}` });
+    // A retry after a failed attempt (attention = refund_failed): Stripe
+    // replays the stored result of an idempotency key for 24 hours — errors
+    // included — so the same key would only fail again (F463). Look first: a
+    // refund that did go through counts as done; otherwise each retry gets a
+    // fresh key. Stripe never refunds more than was paid, so it can't double.
+    const retry = bk.attention === 'refund_failed';
+    let already = false;
+    if (retry) {
+      const list = await stripe.refunds.list({ payment_intent: bk.stripe_payment_intent_id, limit: 100 });
+      const back = ((list && list.data) || []).filter((x) => !['failed', 'canceled'].includes(x.status))
+        .reduce((t, x) => t + (Number(x.amount) || 0), 0);
+      already = back > 0 && back >= (bk.amount_cents || 0);
+    }
+    if (!already) {
+      await stripe.refunds.create({
+        payment_intent: bk.stripe_payment_intent_id,
+        metadata: { booking_id: String(bk.id), code: bk.code, reason },
+      }, { idempotencyKey: retry ? `trove-svc-refund-${bk.id}-retry-${Date.now()}` : `trove-svc-refund-${bk.id}` });
+    }
   } catch (e) {
     db.prepare("UPDATE service_bookings SET attention='refund_failed' WHERE id=?").run(bk.id);
     console.error(`booking ${bk.code}: AUTOMATIC REFUND FAILED — refund by hand in Stripe:`, e.message);
@@ -336,16 +376,19 @@ function decline(bk, reason) {
 }
 
 /**
- * Cancel a booking (customer, provider or admin). Customers can cancel only
- * before the service day; a paid booking is refunded in full. Returns
+ * Cancel a booking (customer, provider or admin). Customers can withdraw an
+ * unpaid request any time, and a confirmed booking only before the service
+ * day (customerCanCancel); a paid booking is refunded in full. Returns
  * { booking, refunded } or { status, error }; the refund is awaited so the
  * caller can say what happened.
  */
 async function cancel(bk, { by, reason = '' }) {
   const open = by === 'provider' ? ['confirmed'] : ['requested', 'awaiting_payment', 'confirmed'];
   if (!open.includes(bk.status)) return { status: 409, error: 'This booking can no longer be cancelled' };
-  if (by === 'customer' && !beforeService(bk)) {
-    return { status: 409, error: 'The service day has arrived, so this booking can no longer be cancelled here — contact Trove if something went wrong' };
+  if (by === 'customer' && !customerCanCancel(bk)) {
+    return { status: 409, error: bk.service_date
+      ? 'The service day has arrived, so this booking can no longer be cancelled here — contact Trove if something went wrong'
+      : 'This booking was confirmed a while ago, so it can no longer be cancelled here — contact Trove if something went wrong' };
   }
   const r = db.prepare(`UPDATE service_bookings SET status='cancelled', cancelled_at=datetime('now'), cancelled_by=?,
       decline_reason=CASE WHEN ?<>'' THEN ? ELSE decline_reason END WHERE id=? AND status=?`)
@@ -457,7 +500,11 @@ function forCustomer(bk) {
     // Why it can't be paid now ('' when it can): the date passed, or the
     // provider can no longer take bookings through Trove.
     payBlocked: row.status === 'awaiting_payment' && !paid ? payBlock(row) : '',
-    canCancel: ['requested', 'awaiting_payment', 'confirmed'].includes(row.status) && beforeService(row),
+    canCancel: customerCanCancel(row),
+    // The provider's note on confirming (what the price includes…), F416.
+    confirmNote: row.confirm_note || '',
+    // Days after the service date to tell Trove something went wrong.
+    complaintDays: require('./service-credits').GRACE_DAYS,
     createdAt: row.created_at,
   };
 }
@@ -484,6 +531,6 @@ async function paymentSession(bk) {
 
 module.exports = {
   paymentsEnabled, linkToken, tokenOk, viewUrl, payUrl, PAY_REF, byCodeAndToken,
-  dubaiToday, serviceDateError, beforeService, datePassed, payBlock, confirmAmount, sweepStale, REMIND_AFTER_HOURS, EXPIRE_REQUEST_DAYS,
+  dubaiToday, serviceDateError, beforeService, customerCanCancel, DATELESS_CANCEL_DAYS, datePassed, payBlock, confirmAmount, sweepStale, REMIND_AFTER_HOURS, EXPIRE_REQUEST_DAYS,
   confirm, onPaymentSucceeded, refund, decline, cancel, complete, forCustomer, paymentSession, mail, serviceVat, refundOrphan,
 };

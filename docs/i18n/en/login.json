@@ -42,6 +42,8 @@
   "New to Trove? <a href=\"#\" onclick=\"toggleRegister();return false\">Create an account</a>": "New to Trove? <a href=\"#\" onclick=\"toggleRegister();return false\">Create an account</a>",
   "Email (for order updates)": "Email (for order updates)",
   "Use email instead": "Use email instead",
+  "Use mobile number instead": "Use mobile number instead",
+  "Create your account to follow your orders, save your addresses and check out faster.": "Create your account to follow your orders, save your addresses and check out faster.",
   "Check your email": "Check your email",
   "We sent a 6-digit code to {to}. It expires in 10 minutes.": "We sent a 6-digit code to {to}. It expires in 10 minutes.",
   "your email": "your email",

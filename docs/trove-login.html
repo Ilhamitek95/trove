@@ -125,6 +125,10 @@
     input,select{font-size:16px!important}
   }
   /* ---- accessibility ---- */
+  .skip{position:absolute;left:12px;top:-80px;z-index:300;background:var(--char);color:var(--cream);padding:11px 18px;border-radius:12px;font-size:13.5px;font-weight:700;letter-spacing:.02em;text-decoration:none}
+  .skip:focus{top:12px}
+  /* phones: the brand panel's heading stays the page's <h1> for screen readers (F508) */
+  @media(max-width:860px){.brandside .bmid.vh{display:block;position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}.brandside .bmid.vh .eyebrow,.brandside .bmid.vh p{display:none}}
   :focus-visible{outline:2px solid var(--char);outline-offset:2px}
   input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char)!important;outline-offset:1px}
   .pweye{width:44px;height:44px;right:2px}
@@ -140,11 +144,12 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="shell">
   <!-- BRAND PANEL -->
   <div class="brandside" id="brandside">
     <a class="logo serif" href="/" aria-label="Trove — home" id="logoLink">trove</a>
-    <div class="bmid">
+    <div class="bmid vh">
       <span class="eyebrow" id="bEyebrow">Welcome back</span>
       <h1 id="bTitle" data-i18n>Beautiful things, <em>gathered</em>.</h1>
       <p id="bText">Sign in to pick up where you left off — your orders, your shops, your Trove.</p>
@@ -155,7 +160,7 @@
   </div>
 
   <!-- AUTH PANEL -->
-  <div class="authside">
+  <main class="authside" id="main" tabindex="-1">
     <div class="auth">
       <div class="tabs" id="tabs" role="group" aria-label="How you use Trove">
         <button class="on" id="tabShop" aria-pressed="true" onclick="setMode('shop')">
@@ -190,12 +195,12 @@
       <div class="or" id="orRow">or</div>
       <div class="social" id="socialRow">
         <div class="gwrap" id="gWrap"><div id="gBtn"></div></div>
-        <button id="phoneBtn" aria-pressed="false" onclick="togglePhone()"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg><span id="phoneBtnLabel">UAE mobile</span></button>
+        <button id="phoneBtn" aria-pressed="false" onclick="togglePhone()"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg><span id="phoneBtnLabel">Use mobile number instead</span></button>
       </div>
 
       <div class="swap" id="swap">New to Trove? <a href="#" onclick="toggleRegister();return false" id="swapLink">Create an account</a></div>
     </div>
-  </div>
+  </main>
 </div>
 
 <script src="/config.js"></script>
@@ -252,6 +257,16 @@ function updateRegisterUI(){
   $('mobileField').style.display=phoneMode?'block':'none';
   $('emailField').style.display=(!phoneMode||registering)?'block':'none';
   $('emailLabel').textContent=(phoneMode&&registering)?_t('Email (for order updates)'):_t('Email');
+  // A new account speaks to a newcomer (F299): a new password (password
+  // managers offer a strong one), the 8-character rule up front, no 'Forgot
+  // your password?', no 'Welcome back'.
+  if(view==='signin'){
+    $('pass').setAttribute('autocomplete',registering?'new-password':'current-password');
+    $('pass').placeholder=registering?_t('At least 8 characters'):_t('Your password');
+    $('forgotLink').style.display=registering?'none':'';
+  }
+  $('bEyebrow').textContent=registering?_t('Welcome'):c.eyebrow;
+  $('bText').textContent=registering?_t('Create your account to follow your orders, save your addresses and check out faster.'):c.text;
   $('authErr').style.display='none';
 }
 /* Enter in any field submits, like a real form. */
@@ -270,7 +285,7 @@ let phoneMode=false;
 function togglePhone(){
   phoneMode=!phoneMode;
   $('phoneBtn').classList.toggle('on',phoneMode);$('phoneBtn').setAttribute('aria-pressed',String(phoneMode));
-  $('phoneBtnLabel').textContent=phoneMode?_t('Use email instead'):_t('UAE mobile');
+  $('phoneBtnLabel').textContent=phoneMode?_t('Use email instead'):_t('Use mobile number instead');
   updateRegisterUI();
   if(phoneMode)$('mobile').focus();
 }
@@ -289,9 +304,14 @@ function emailProblem(e){
   if(hint)return _t('That email doesn’t look right — did you mean {email}?',{email:hint});
   return EMAIL_SHAPE.test(e)&&e.length<=254?'':_t("That email address doesn't look right — check it and try again");
 }
+/* The same reading as the server (backend/src/phone.js): 05x…, +971 5x…,
+   the international 00971 5x… and +971 (0)5x… (F479). */
 function validUAEMobile(v){
-  const d=String(v||'').replace(/[\s().-]/g,'').replace(/^\+/,'');
-  return /^(971|0)?5\d{8}$/.test(d);
+  let d=String(v||'').trim().replace(/[\s().-]/g,'');
+  if(d.startsWith('00971'))d=d.slice(2);
+  if(d.startsWith('+971'))d=d.slice(4); else if(d.startsWith('971'))d=d.slice(3);
+  if(d.startsWith('0'))d=d.slice(1);
+  return /^5\d{8}$/.test(d);
 }
 
 /* ---- Forgot / reset password ----
@@ -311,7 +331,7 @@ function setView(v){
     $('passLabel').textContent=_t('Password'); $('forgotLink').style.display=''; $('pass2Field').style.display='none'; $('passField').style.display='';
     if(trovePath(location.pathname)==='/reset'||/[?&](forgot|token)=/.test(location.search)) history.replaceState(null,'','/login');
     setMode(mode); return; }
-  registering=false; phoneMode=false; $('phoneBtn').classList.remove('on'); $('phoneBtnLabel').textContent=_t('UAE mobile');
+  registering=false; phoneMode=false; $('phoneBtn').classList.remove('on'); $('phoneBtnLabel').textContent=_t('Use mobile number instead');
   ['nameField','mobileField','shopField'].forEach(id=>$(id).style.display='none');
   $('forgotLink').style.display='none';
   if(v==='code'){
@@ -397,6 +417,7 @@ async function signIn(){
   if((!phoneMode||registering)&&!email) return showErr(phoneMode?_t('Enter your email too — order updates go there.'):_t('Enter your email and password.'));
   if(registering&&!name) return showErr(_t('Enter your name.'));
   if(registering&&email){ const bad=emailProblem(email); if(bad) return showErr(bad); }
+  if(registering&&pass.length<8) return showErr(_t('Choose a password of at least 8 characters.'));
 
   const label=btn.textContent;
   btn.textContent=_t('One moment…'); btn.style.opacity='.7'; btn.disabled=true;
@@ -431,13 +452,24 @@ function gaAuth(event,method){
   catch(_){ return Promise.resolve(); }
 }
 /* ?next= — come back to where the person was (e.g. the services application
-   at /apply?for=services). Only a few of our own pages, never another site. */
-function nextDest(){
-  const n=new URLSearchParams(location.search).get('next')||'';
-  const p=trovePath(n.split('?')[0]), q=n.includes('?')?n.slice(n.indexOf('?')):'';
-  if(!/^\/(apply|services|account|sell|provider)$/.test(p))return '';
+   at /apply?for=services). Only our own pages, never another site. Without
+   it, a shopper who signs in from a page of the shop (the header's Sign in,
+   mid-purchase) goes back to that page, basket and all (F401). */
+const NEXT_OK=/^\/(?:|apply|account|sell|provider|sell-on-trove|shop(?:\/[a-z0-9-]+)?|pieces\/[A-Za-z0-9-]+|makers\/[a-z0-9-]+|services(?:\/[a-z0-9-]+(?:\/[0-9][a-z0-9-]*)?)?)$/;
+function safeNext(n){
+  n=String(n||'');
+  const p=trovePath(n.split(/[?#]/)[0]), q=n.includes('?')?n.slice(n.indexOf('?')).split('#')[0]:'';
+  if(!NEXT_OK.test(p))return '';
   if(q&&!/^\?[\w=&%.-]*$/.test(q))return '';
   return p+q;
+}
+function nextDest(){ return safeNext(new URLSearchParams(location.search).get('next')); }
+/* The page a shopper came from on this site (the shop door only — makers and
+   providers still land on their dashboard). */
+function cameFrom(){
+  if(mode!=='shop')return '';
+  try{ const r=new URL(document.referrer); if(r.origin===location.origin)return safeNext(r.pathname+r.search); }catch(_){}
+  return '';
 }
 async function postAuthDest(){
   let dest = mode==='sell' ? '/sell' : '/account';
@@ -445,6 +477,8 @@ async function postAuthDest(){
   try{
     const me=await TroveAPI.me();
     if(next&&!(me&&me.user&&me.user.role==='admin')) return troveUrl(next);
+    const back=cameFrom();
+    if(back&&me&&me.user&&me.user.role!=='admin'&&!me.shop&&!me.provider) return troveUrl(back);
     // Platform owner → admin panel, always. Since house mode /api/auth/me also
     // returns the Trove Collection as the admin's shop, so the role is checked
     // first; 'Manage Trove Collection' in the admin opens /sell.

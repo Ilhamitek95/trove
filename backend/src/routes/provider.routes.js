@@ -246,6 +246,7 @@ function shapeBookingForProvider(bk) {
     commissionCents: bk.commission_cents || 0,
     providerNetCents: bk.provider_net_cents || 0,
     declineReason: bk.decline_reason || '', cancelledBy: bk.cancelled_by || '',
+    confirmNote: bk.confirm_note || '',
     phone: secured ? bk.phone : null,
     createdAt: bk.created_at, confirmedAt: bk.confirmed_at, completedAt: bk.completed_at,
   };
@@ -257,10 +258,11 @@ router.get('/bookings', (req, res) => {
 });
 
 // PATCH /api/provider/bookings/:id
-//   { action: 'confirm', serviceDate?: 'YYYY-MM-DD', priceCents? }
+//   { action: 'confirm', serviceDate?: 'YYYY-MM-DD', priceCents?, note? }
 //       direct: confirmed (date optional). trove: the service date is required,
 //       and so is the final price for a 'from' / 'hourly' listing — a
 //       PaymentIntent opens and the booking waits for the customer's card.
+//       note: optional words for the customer (what the price includes).
 //   { action: 'decline', reason? }   a new or unpaid request
 //   { action: 'cancel', reason? }    a confirmed booking — refunded in full if paid
 //   { action: 'complete' }           done — on or after the service date only; it does not
@@ -272,7 +274,7 @@ router.patch('/bookings/:id', async (req, res, next) => {
     if (!bk) return res.status(404).json({ error: 'Not found' });
     const b = req.body || {};
     let r;
-    if (b.action === 'confirm') r = await svc.confirm(bk, { priceCents: b.priceCents, serviceDate: b.serviceDate });
+    if (b.action === 'confirm') r = await svc.confirm(bk, { priceCents: b.priceCents, serviceDate: b.serviceDate, note: b.note });
     else if (b.action === 'decline') r = svc.decline(bk, b.reason);
     else if (b.action === 'cancel') r = await svc.cancel(bk, { by: 'provider', reason: String(b.reason || '') });
     else if (b.action === 'complete') r = svc.complete(bk);

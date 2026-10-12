@@ -54,20 +54,22 @@ function providerRow(providerId) {
 }
 const dashboard = (kind) => `${accounts.siteUrl()}${kind === 'shop' ? '/sell' : '/provider'}`;
 
-function applied(kind, row) {
+// { applicant: false } skips the applicant's copy (the services half of a
+// 'both' application — the shop half already sent it, F488).
+function applied(kind, row, { applicant = true } = {}) {
   if (!row) return Promise.resolve(null);
   const category = kind === 'shop' ? row.category : (() => {
     try { return JSON.parse(row.categories || '[]').join(', '); } catch (_) { return ''; }
   })();
   return Promise.all([
-    deliver(`${kind}-application-received`, row.owner_email,
-      email().applicationReceived({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind), lang: row.owner_lang })),
+    applicant ? deliver(`${kind}-application-received`, row.owner_email,
+      email().applicationReceived({ kind, name: row.owner_name, businessName: row.name, link: dashboard(kind), lang: row.owner_lang })) : null,
     deliver(`${kind}-application-alert`, accounts.adminEmail(),
       email().applicationAlert({ kind, businessName: row.name, applicantName: row.owner_name, location: row.location, category, link: `${accounts.siteUrl()}/admin` })),
   ]);
 }
 const shopApplied = (shopId) => safely('shop-application', () => applied('shop', shopRow(shopId)));
-const providerApplied = (providerId) => safely('provider-application', () => applied('provider', providerRow(providerId)));
+const providerApplied = (providerId, opts) => safely('provider-application', () => applied('provider', providerRow(providerId), opts));
 
 function decided(kind, row, status) {
   if (!row) return Promise.resolve(null);
