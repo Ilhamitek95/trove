@@ -28,9 +28,12 @@
  * card refund fails everything is put back exactly as it was.
  */
 const db = require('./db');
-const cfg = require('./config');
 
 const REASONS = { buyer_request: 'The buyer asked to cancel', not_shipped: 'The maker could not send it', other: 'Other' };
+// Reasons only Trove itself records (not offered in the admin picker): a
+// line that could not be sold when the payment landed (paid-effects, F212).
+const SYSTEM_REASONS = { sold_out: 'Sold out before the payment went through' };
+const reasonLabel = (r) => REASONS[r] || SYSTEM_REASONS[r] || r;
 const fail = (status, error) => Object.assign(new Error(error), { status });
 
 /** Units on each line already refunded through a return. */
@@ -131,10 +134,13 @@ const shopDone = (orderId, shopId) => db.prepare(`SELECT COUNT(*) AS c FROM orde
  * order_items. Resolves { cancellation, parcels[] } once the card refund,
  * the books and the courier calls are done; throws { status } on a bad
  * request or a failed card refund (nothing changed in that case).
+ * `soldOut` words the buyer's email for lines that sold out at payment;
+ * `notifyMakers: false` skips the makers' 'leave these out' emails (they
+ * were never told to pack a line that sold out at payment).
  */
-async function cancel(order, picks, { reason = 'buyer_request', note = '', refundDelivery = null, byUserId = null } = {}) {
+async function cancel(order, picks, { reason = 'buyer_request', note = '', refundDelivery = null, byUserId = null, soldOut = false, notifyMakers = true } = {}) {
   const p = plan(order, picks, { refundDelivery });
-  const why = REASONS[reason] ? reason : 'other';
+  const why = REASONS[reason] || SYSTEM_REASONS[reason] ? reason : 'other';
 
   // 1. Reserve the units (a double click or a second admin can't cancel them twice).
   const cid = db.transaction(() => {
@@ -178,7 +184,9 @@ async function cancel(order, picks, { reason = 'buyer_request', note = '', refun
     const o = db.prepare('SELECT vat_amount_cents, vat_reversed_cents, public_id FROM orders WHERE id=?').get(order.id);
     let vat = 0, cn = null;
     if (o.vat_amount_cents > 0) {
-      vat = Math.max(0, Math.min(cfg.vatFromGross(p.refundCents), o.vat_amount_cents - (o.vat_reversed_cents || 0)));
+      // 5/105 of the refund — or, when this cancellation completes refunding
+      // everything paid, exactly what is left (F447, returns.vatToReverse).
+      vat = require('./returns').vatToReverse(order.id, p.refundCents, p.refundCents);
       cn = `CN-${o.public_id}-C${cid}`;
       db.prepare('UPDATE orders SET vat_reversed_cents = vat_reversed_cents + ? WHERE id=?').run(vat, order.id);
     }
@@ -208,7 +216,7 @@ async function cancel(order, picks, { reason = 'buyer_request', note = '', refun
   const courier = require('./courier-ops');
   const parcels = await Promise.all(emptied.map((id) => courier.stopParcel(id, 'Cancelled by Trove').then((r) => ({ shipmentId: id, ...r }))));
   const notify = require('./notify');
-  for (const shopId of touched) {
+  for (const shopId of notifyMakers ? touched : []) {
     notify.parcelCancelled({ shopId, publicId: order.public_id, whole: emptied.some((id) => db.prepare('SELECT shop_id FROM shipments WHERE id=?').get(id).shop_id === shopId),
       items: p.units.filter((u) => u.line.shopId === shopId).map((u) => ({ name: u.line.name, qty: u.qty })) });
   }
@@ -217,7 +225,7 @@ async function cancel(order, picks, { reason = 'buyer_request', note = '', refun
     const imgs = db.prepare('SELECT oi.id, p.images FROM order_items oi LEFT JOIN products p ON p.id = oi.product_id WHERE oi.order_id=?').all(order.id);
     const imgOf = (id, name) => email.productImage({ images: (imgs.find((x) => x.id === id) || {}).images, name });
     const msg = email.itemsCancelled({
-      order, whole: p.whole,
+      order, whole: p.whole, soldOut,
       items: p.units.map((u) => ({ name: u.line.name, qty: u.qty, price_cents: u.line.priceCents, image: imgOf(u.line.id, u.line.name) })),
       money: { items: p.itemsCents, delivery: p.deliveryCents, refund: p.refundCents },
     });
@@ -242,7 +250,7 @@ function shape(c) {
   const items = db.prepare(`SELECT ci.qty, oi.id, oi.name_snapshot, oi.price_cents, s.name AS shop FROM order_cancellation_items ci
     JOIN order_items oi ON oi.id = ci.order_item_id JOIN shops s ON s.id = oi.shop_id WHERE ci.cancellation_id=?`).all(c.id);
   return {
-    id: c.id, status: c.status, reason: c.reason, reasonLabel: REASONS[c.reason] || c.reason, note: c.note || null,
+    id: c.id, status: c.status, reason: c.reason, reasonLabel: reasonLabel(c.reason), note: c.note || null,
     refund: c.refund_cents / 100, items: items.map((i) => ({ orderItemId: i.id, name: i.name_snapshot, qty: i.qty, price: i.price_cents / 100, shop: i.shop })),
     deliveryRefund: c.delivery_refund_cents / 100, vatReversed: c.vat_reversed_cents / 100, creditNoteRef: c.credit_note_ref || null,
     createdAt: c.created_at, refundedAt: c.refunded_at || null,

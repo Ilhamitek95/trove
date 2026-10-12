@@ -46,6 +46,8 @@ const ATTENTION = {
   // Set by Admin → Orders → Edit delivery details (src/admin-ops.js) when the
   // courier already holds the old address: change it in the OTO dashboard too.
   address_changed: 'Delivery details corrected after the courier order was made — update them with the courier too',
+  // Paid without a delivery address or mobile (F213): no courier until they are added.
+  missing_address: 'No delivery address or mobile on the order — courier not booked',
 };
 
 const facts = (id) => db.prepare(`SELECT sh.*, o.public_id, o.status AS order_status, o.refunded_at AS order_refunded_at,
@@ -99,6 +101,15 @@ function bookingFailed(shipmentId, stage, err) {
   console.error(`Courier ${stage === 'order' ? 'booking' : 'collection booking'} failed for shipment ${shipmentId}:`, msg);
   db.prepare("UPDATE shipments SET booking_error=?, booking_error_at=datetime('now'), booking_attempts=booking_attempts+1 WHERE id=?")
     .run(msg, shipmentId);
+  if (err && err.code === 'missing_address') {
+    // Nothing for the courier to deliver to: the owner adds the details,
+    // then the hourly retry (or Retry on the parcel) books it.
+    raise(shipmentId, 'missing_address', [
+      'This order was paid without a delivery address or mobile number, so no courier has been booked and nothing can be delivered yet.',
+      'Contact the buyer, then add the details in Admin → Orders → Edit delivery details. Trove books the courier within the hour after that.',
+    ]);
+    return;
+  }
   const wallet = isWalletEmpty(err);
   if (wallet) walletEmpty();
   raise(shipmentId, 'booking_failed', [
@@ -111,7 +122,7 @@ function bookingFailed(shipmentId, stage, err) {
 }
 function bookingOk(shipmentId) {
   db.prepare('UPDATE shipments SET booking_error=NULL, booking_error_at=NULL WHERE id=?').run(shipmentId);
-  clear(shipmentId, ['booking_failed']);
+  clear(shipmentId, ['booking_failed', 'missing_address']);
 }
 
 /** Create the courier order (at payment). Never throws. */
