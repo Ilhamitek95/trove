@@ -72,6 +72,8 @@ Use this when orders or accounts were damaged or deleted by mistake. Everything 
 
 Anything that happened after the copy was made, such as new orders or sign-ups, is not in it. Look in Stripe for payments made since then. Stripe keeps its own record of every payment.
 
+Everyone, you included, will need to sign in again afterwards: backups never keep anyone signed in, so a copy that leaks cannot be used to get into an account.
+
 ## Restoring photos and documents
 
 If the photos or private documents are lost (for example on a new disk):
