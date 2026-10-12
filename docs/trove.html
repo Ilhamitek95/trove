@@ -1,3 +1,4 @@
+<!doctype html>
 <!-- Trove — multi-vendor marketplace · brand-aligned build -->
 <html lang="en">
 <head>
@@ -15,12 +16,17 @@
 <title>Trove — Curated for Living</title>
 <meta name="trove-i18n" content="storefront,content">
 <meta name="description" content="Thoughtfully designed homeware from the Trove Collection, alongside handcrafted finds from independent makers in the Trove Marketplace. Objects worth keeping.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Display: Cormorant (Google Fonts; upright 400/500/600 only — no italics anywhere) · Body: Quicksand -->
-<link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Display: Cormorant (upright 400/500/600 only — no italics anywhere) · Body: Quicksand.
+     Served from our own /fonts (F359): no outside stylesheet stands between the
+     visitor and the first paint. The same Google Fonts files, latin + latin-ext. -->
+<link rel="preload" href="/fonts/quicksand-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/cormorant-latin.woff2" as="font" type="font/woff2" crossorigin>
 <script>document.documentElement.classList.add('js')</script>
 <style>
+  @font-face{font-family:'Cormorant';font-style:normal;font-weight:400 600;font-display:swap;src:url(/fonts/cormorant-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  @font-face{font-family:'Cormorant';font-style:normal;font-weight:400 600;font-display:swap;src:url(/fonts/cormorant-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
+  @font-face{font-family:'Quicksand';font-style:normal;font-weight:400 700;font-display:swap;src:url(/fonts/quicksand-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  @font-face{font-family:'Quicksand';font-style:normal;font-weight:400 700;font-display:swap;src:url(/fonts/quicksand-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C4,U+2113,U+2C60-2C7F,U+A720-A7FF}
   em,i,cite{font-style:normal} /* brand: no italics anywhere, not even the browser default */
   :root{
     --font-display:'Cormorant',Georgia,serif;
@@ -73,7 +79,9 @@
   .wrap{max-width:1200px;margin:0 auto;padding:0 32px}
   .serif{font-family:var(--font-display)}
   /* ONE small-label style for the whole storefront: 12px, bold, tracked, 4.5:1 or better on every band */
-  .eyebrow{font-family:'Quicksand';font-weight:700;font-size:12px;line-height:1.4;letter-spacing:.12em;color:var(--eyebrow)}
+  /* display:block: every eyebrow sits on its own line, and in standards mode an inline one
+     would take its parent's taller line box (F283) */
+  .eyebrow{font-family:'Quicksand';font-weight:700;font-size:12px;line-height:1.4;letter-spacing:.12em;display:block;color:var(--eyebrow)}
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500;letter-spacing:.002em}
   h1 em,h2 em,h3 em{font-style:normal;color:var(--coral)}
 
@@ -118,7 +126,7 @@
   }
 
   /* ---------- MOBILE NAV ---------- */
-  .mnav{position:fixed;top:0;left:0;bottom:0;width:330px;max-width:88vw;background:var(--cream);z-index:110;transform:translateX(-103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;display:flex;flex-direction:column;padding:16px 24px calc(24px + env(safe-area-inset-bottom));overflow-y:auto}
+  .mnav{position:fixed;top:0;left:0;bottom:var(--cmp-h,0px);width:330px;max-width:88vw;background:var(--cream);z-index:110;transform:translateX(-103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;display:flex;flex-direction:column;padding:16px 24px calc(24px + env(safe-area-inset-bottom));overflow-y:auto}
   .mnav.open{transform:none;visibility:visible}
   .mn-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
   .mn-brand{font-family:var(--font-display);font-size:32px;line-height:1}
@@ -126,8 +134,8 @@
   .mn-search input{border:none;outline:none;background:none;flex:1;min-width:0;font-family:inherit;font-size:16px;color:var(--char)}
   .mn-link{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 2px;font-family:var(--font-display);font-size:24px;font-weight:600;border-bottom:1px solid var(--line-soft);cursor:pointer}
   .mn-link span{color:var(--taupe);font-size:18px}
-  .mn-foot{margin-top:auto;padding-top:22px;display:flex;flex-direction:column;gap:14px;font-size:14px;font-weight:600;color:var(--ink-80)}
-  .mn-foot a{display:flex;align-items:center;gap:11px}
+  .mn-foot{margin-top:auto;padding-top:16px;display:flex;flex-direction:column;gap:0;font-size:14px;font-weight:600;color:var(--ink-80)}
+  .mn-foot a{display:flex;align-items:center;gap:11px;min-height:44px} /* 44px tap targets (F515) */
   .mn-foot svg{width:17px;height:17px;stroke-width:1.7;opacity:.7}
 
   .view{display:none}
@@ -220,13 +228,17 @@
   .hs-dot i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--char);border-radius:999px}
   .hs-dot.on i{animation:hsfill var(--hs-dur,4.6s) linear forwards}
   .hs-dots.paused .hs-dot i{animation-play-state:paused}
+  .hs-pp{position:relative}
+  .hs-pp::before{content:"";position:absolute;inset:-5px} /* a 44px tap target */
+  .hs-pp .pp-play,.hs-pp.off .pp-pause{display:none}
+  .hs-pp.off .pp-play{display:block}
   @keyframes hsfill{from{width:0}to{width:100%}}
   .marquee{margin-top:42px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:26px 0}
   .marquee .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px}
   .marquee .mk{display:flex;align-items:center;justify-content:center;gap:13px}
   .marquee .mk .ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex-shrink:0;color:var(--char)}
   .marquee .mk .tx b{display:block;font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--char);line-height:1.1}
-  .marquee .mk .tx span{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  .marquee .mk .tx span{display:block;font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:600}
 
   /* ---------- SCROLL MOTION ---------- */
   /* .rv = reveal on first sight: a short rise, eased out, once. The classes
@@ -477,6 +489,17 @@
   .sortbar .n{font-size:13px;color:var(--muted);font-weight:500}
   .sortbar .n b{color:var(--char)}
   .sortbar select{font-family:inherit;font-weight:600;font-size:13px;border:1px solid var(--line);border-radius:999px;padding:11px 18px;background:var(--paper);color:var(--char);letter-spacing:.03em}
+  /* An empty shelf (the Trove Collection before its first piece, a search that
+     found nothing): no '0 pieces from 0 shops' and no sort over nothing (F395).
+     The Filter button stays — the rail always shows. :has() covers the
+     server-drawn first paint, the class the page's own render. */
+  .sortbar.empty .n,.sortbar.empty select{display:none}
+  .browse-layout:has(#shopGrid>.noresult:first-child) .sortbar .n,.browse-layout:has(#shopGrid>.noresult:first-child) .sortbar select{display:none} /* own rule: a browser without :has() drops only this one */
+  .fitem input:disabled{cursor:default}
+  /* A long shelf draws 48 pieces at a time (F356). */
+  .shop-more{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:44px;text-align:center}
+  .shop-more[hidden]{display:none}
+  .shop-more .sm-n{font-size:13px;color:var(--muted);font-weight:600}
 
   /* a short shelf: bigger cards (the filter rail stays) */
   .pgrid.few{grid-template-columns:repeat(3,1fr);gap:40px 32px}
@@ -525,6 +548,8 @@
   .pdp .pricerow .price{font-size:26px;font-weight:600}
   .pdp .desc{color:var(--ink-80);font-size:16px;line-height:1.75;margin:22px 0 28px;max-width:50ch;font-weight:400}
   .rev-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px}
+  /* the review headings mix sizes: as flex items, a wrapped summary keeps its own line height (F283) */
+  #vRevHead,#pdpRevHead{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.28em}
   .rev{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
   .rev .rhead{display:flex;align-items:center;gap:10px;margin-bottom:8px}
   .rev .rstars{color:var(--coral);font-size:15px;letter-spacing:2px}
@@ -571,7 +596,7 @@
   .pdp .gallery.one .thumbs{display:none}
   .pdp-by{font-size:13px;color:var(--muted);font-weight:600;letter-spacing:.02em;line-height:1.6}
   .pdp-by .vlink{color:var(--char);text-decoration:underline;text-underline-offset:3px;font-size:13px;letter-spacing:.02em}
-  .perso-in{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);resize:vertical}
+  .perso-in{display:block;width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-family:inherit;font-size:14px;font-weight:500;background:var(--paper);color:var(--char);resize:vertical}
   .perso-in:focus{border-color:var(--char)}
   .perso-note{font-size:12.5px;color:var(--ink-80);font-weight:500;line-height:1.55;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--rose-tint)}
   .ship-list{list-style:none;display:grid;gap:10px;padding:18px 20px;background:var(--rose-tint);border-radius:16px;margin:0}
@@ -593,15 +618,16 @@
   .acc-mk{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--char);display:block;line-height:1.2}
   .acc-meta{font-size:13px;color:var(--muted);font-weight:600;margin:2px 0 8px}
   .acc-body p{margin:0 0 10px}
+  .acc-body .link-more{display:block;width:fit-content;line-height:1.4}
   .pdp-bar{display:none}
   @media(max-width:960px){
-    .pdp-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:80;align-items:center;gap:14px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:rgba(253,247,245,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .3s cubic-bezier(.22,.61,.36,1)}
+    .pdp-bar{display:flex;position:fixed;left:0;right:0;bottom:var(--cmp-h,0px);z-index:80;align-items:center;gap:14px;padding:12px 20px calc(12px + env(safe-area-inset-bottom));background:rgba(253,247,245,.97);backdrop-filter:blur(10px);border-top:1px solid var(--line);transform:translateY(110%);transition:transform .3s cubic-bezier(.22,.61,.36,1)}
     body.pdp-bar-on .pdp-bar{transform:none}
     .pdp-bar .pb-t{flex:1;min-width:0;display:flex;flex-direction:column}
     .pdp-bar .pb-n{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .pdp-bar .pb-p{font-size:13.5px;font-weight:600}
     .pdp-bar .btn{padding:13px 22px;min-height:46px;flex-shrink:0}
-    body.pdp-bar-on .toast{bottom:calc(90px + env(safe-area-inset-bottom))}
+    body.pdp-bar-on .toast{bottom:calc(90px + env(safe-area-inset-bottom) + var(--cmp-h,0px))}
     body.pdp-bar-on footer.site{padding-bottom:110px}
   }
   @media(max-width:560px){.acc-dl div{grid-template-columns:118px 1fr}}
@@ -609,7 +635,7 @@
   /* ---------- CART ---------- */
   .scrim{position:fixed;inset:0;background:rgba(41,39,39,.4);z-index:90;opacity:0;visibility:hidden;transition:.35s}
   .scrim.open{opacity:1;visibility:visible}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:440px;max-width:92vw;background:var(--cream);z-index:100;transform:translateX(103%);visibility:hidden;transition:transform .4s cubic-bezier(.4,0,.2,1),visibility .4s;display:flex;flex-direction:column}
+  .drawer{position:fixed;top:0;right:0;bottom:var(--cmp-h,0px);width:440px;max-width:92vw;background:var(--cream);z-index:100;transform:translateX(103%);visibility:hidden;transition:transform .4s cubic-bezier(.4,0,.2,1),visibility .4s;display:flex;flex-direction:column}
   .drawer.open{transform:none;visibility:visible}
   .drawer .dhead{padding:26px 28px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
   .drawer .dhead .dtitle{font-size:28px;font-weight:500;line-height:1.1}
@@ -659,8 +685,17 @@
 
   /* pointer-events:none — the faded-out toast is still a fixed box over the
      cart drawer's Checkout button on phones and was swallowing the tap */
-  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:15px 26px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:120;opacity:0;transition:.35s;box-shadow:var(--shadow);letter-spacing:.03em;max-width:calc(100vw - 36px);text-align:center;pointer-events:none}
+  .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom) + var(--cmp-h,0px));left:50%;transform:translateX(-50%) translateY(20px);background:var(--char);color:var(--cream);padding:15px 26px;border-radius:999px;font-size:13.5px;font-weight:500;z-index:120;opacity:0;transition:.35s;box-shadow:var(--shadow);letter-spacing:.03em;max-width:calc(100vw - 36px);text-align:center;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%)}
+  /* a toast may carry one action (View basket, F394): tappable only while it shows */
+  .toast.has-act{display:flex;align-items:center;gap:16px;width:max-content;text-align:start;border-radius:18px;padding-top:11px;padding-bottom:11px}
+  .toast-act{flex-shrink:0;white-space:nowrap;padding:8px 2px;font:inherit;font-weight:700;color:var(--cream);text-decoration:underline;text-underline-offset:3px}
+  .toast.show.has-act{pointer-events:auto}
+  /* with the basket open, a toast sits at the top: never over its total or Checkout (F510) */
+  .drawer.open~.toast{top:calc(20px + env(safe-area-inset-top));bottom:auto}
+  /* Without JavaScript the basket and checkout can't work: say so (F424). */
+  .nojs-note{background:var(--rose-tint);color:var(--char);text-align:center;padding:10px 20px;font-size:13.5px;font-weight:600}
+  .js .nojs-note{display:none}
 
 
   /* ---------- A SMALL CATALOGUE, SHOWN WITH INTENT ----------
@@ -767,7 +802,7 @@
     .card .ph .add{display:none}
     .card .add.add-row{display:flex;position:relative;left:auto;right:auto;bottom:auto;z-index:3;opacity:1;transform:none;margin-top:12px;min-height:44px;width:100%;background:var(--char);color:var(--cream)}
     /* filters become a bottom sheet, opened from the sortbar */
-    .filters{position:fixed;left:0;right:0;bottom:0;z-index:105;background:var(--cream);border-radius:24px 24px 0 0;max-height:80vh;overflow-y:auto;padding:14px 26px calc(18px + env(safe-area-inset-bottom));transform:translateY(103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;box-shadow:0 -18px 60px -22px rgba(41,39,39,.4)}
+    .filters{position:fixed;left:0;right:0;bottom:var(--cmp-h,0px);z-index:105;background:var(--cream);border-radius:24px 24px 0 0;max-height:min(80vh,calc(100vh - var(--cmp-h,0px) - 24px));overflow-y:auto;padding:14px 26px calc(18px + env(safe-area-inset-bottom));transform:translateY(103%);visibility:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1),visibility .35s;box-shadow:0 -18px 60px -22px rgba(41,39,39,.4)}
     .filters::before{content:"";display:block;width:44px;height:4px;border-radius:99px;background:var(--line);margin:0 auto 14px}
     .filters.open{transform:none;visibility:visible}
     .f-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
@@ -812,6 +847,7 @@
     .hs-label b{font-size:16px}
     .hs-ctrl{flex:1 1 100%;justify-content:center}
     .hs-btn{display:none} /* swipe is the gesture on phones; dots + counter stay */
+    .hs-btn.hs-pp{display:grid;width:34px;height:34px} /* ...and the pause button, so a touch user can stop it */
     .marquee{margin-top:26px;padding:18px 0}
     section.band{padding:56px 0}
     .band-head{margin-bottom:34px}
@@ -928,7 +964,7 @@
 
   /* checkout */
   .co-wrap{max-width:1080px;margin:0 auto;padding:38px 32px 90px}
-  .co-back{font-family:inherit;background:none;border:0;padding:0;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px;display:inline-flex;gap:8px;cursor:pointer}
+  .co-back{font-family:inherit;background:none;border:0;padding:0;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:16px;display:flex;width:fit-content;gap:8px;cursor:pointer}
   .co-back:hover{color:var(--char)}
   .co-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:48px;align-items:start}
   .co-step{margin-bottom:30px}
@@ -981,6 +1017,16 @@
   .co-tot .row.grand{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--char);margin-top:8px;padding-top:12px;border-top:1px solid var(--line-soft)}
   .co-place{width:100%;padding:16px;border-radius:999px;background:var(--char);color:var(--cream);font-weight:600;font-size:14px;letter-spacing:.04em;margin-top:18px;transition:.18s}
   .co-place:hover{background:#3B3737}
+  .co-place:disabled{opacity:.6;cursor:progress}
+  .co-signin{font-size:13.5px;font-weight:500;color:var(--ink-80);margin:-4px 0 16px;line-height:1.55}
+  .co-signin a{color:var(--char);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+  .acct-offer .ao-err a{color:inherit;text-decoration:underline}
+  /* the delivery step when every parcel arrives in the same window (F510) */
+  .co-dl-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500}
+  .co-dl-row>span{color:var(--ink-80)}
+  .co-dl-row b{white-space:nowrap}
+  .co-dl-shops summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--char);text-decoration:underline;text-underline-offset:3px;padding:10px 0 2px;width:fit-content}
+  .co-dl-shops .co-dl-row{font-size:12.5px;padding:7px 0}
   .co-agree{font-size:12px;color:var(--muted);font-weight:500;line-height:1.5;text-align:center;margin-top:10px}
   .co-agree a{color:var(--char);text-decoration:underline}
   .co-secure{font-size:12px;color:var(--muted);font-weight:500;text-align:center;margin-top:12px;display:flex;gap:6px;align-items:center;justify-content:center}
@@ -1039,7 +1085,7 @@
   .h-lanes .h-mid{position:relative}
   .h-lanes .h-mid::before{content:'';position:absolute;left:50%;top:-18px;bottom:-12px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
   .h-lane b{font-family:var(--font-display);font-size:21px;font-weight:600;display:block}
-  .h-lane span{font-size:12.5px;color:var(--muted)}
+  .h-lane span{display:block;font-size:12.5px;color:var(--muted)}
   .hl-you{text-align:right}
   .h-rows{position:relative;display:flex;flex-direction:column}
   .h-rows::before{content:'';position:absolute;left:50%;top:8px;bottom:8px;border-left:1.5px dashed rgba(41,39,39,.22);transform:translateX(-1px)}
@@ -1102,7 +1148,7 @@
   /* the makers marquee drifts in screen space; each card reads right to left */
   [dir="rtl"] .vcarousel{direction:ltr}
   [dir="rtl"] .vcard{direction:rtl}
-  [dir="rtl"] .co-back{display:inline-block}
+  [dir="rtl"] .co-back{display:block}
   .rev .rtr{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:6px}
   @media(max-width:860px){
     [dir="rtl"] .h-rows::before{left:auto;right:13px}
@@ -1138,7 +1184,7 @@
     <nav class="links">
       <a href="/shop">Shop all</a>
       <a href="/shop/trove-collection">Trove Collection</a>
-      <a href="/#vendors">Marketplace</a>
+      <a href="/#vendors">Makers</a>
       <a href="/services">Services Marketplace</a>
       <a href="/sell-on-trove">Sell on Trove</a>
     </nav>
@@ -1172,6 +1218,7 @@
 </header>
 
 <main id="main">
+<div class="nojs-note">Trove needs JavaScript to add pieces to your basket and check out. Please switch it on in your browser.</div>
 <div class="outage" id="outage" hidden><div class="wrap">
   <h2>We're having trouble loading the shop.</h2>
   <p>Something between us and Trove didn't answer just now. It's usually back within a minute — nothing in your basket is lost.</p>
@@ -1205,6 +1252,8 @@
             <button class="hs-btn" aria-label="Previous piece" onclick="hcStep(-1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
             <div class="hs-dots" id="hsDots"></div>
             <button class="hs-btn" aria-label="Next piece" onclick="hcStep(1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <!-- WCAG 2.2.2: the slideshow moves on its own, so it can be paused (F369) -->
+            <button class="hs-btn hs-pp" id="hsPlay" aria-label="Pause the slideshow" onclick="hcUserPause()"><svg class="pp-pause" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="pp-play" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
           </div>
         </div>
       </div>
@@ -1342,6 +1391,7 @@
         </select>
       </div>
       <div class="pgrid" id="shopGrid"></div>
+      <div class="shop-more" id="shopMore" hidden><span class="sm-n" id="shopMoreN"></span><button type="button" class="btn btn-ghost" onclick="showMorePieces()">Show more pieces</button></div>
     </div>
   </div>
 </div>
@@ -1378,7 +1428,7 @@
     <div class="pdp">
       <div class="gallery" id="pdpGallery">
         <div class="thumbs" id="pdpThumbs"></div>
-        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="imgRetry(this)"><span class="illus" id="pdpIllus" hidden>Illustrative photo</span></div>
+        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="window.imgRetry?imgRetry(this):0"><span class="illus" id="pdpIllus" hidden>Illustrative photo</span></div>
       </div>
       <div class="info">
         <div class="pdp-by">Made by <a class="vlink" id="pdpVendorLink" href="#"></a> · Sold and delivered by Trove</div>
@@ -1397,12 +1447,12 @@
           <p class="perso-note" id="pdpPersoNote">Made just for you, so a personalised piece can be returned only if it arrives faulty, damaged, wrong or not as described. Everything else on Trove has 15-day returns.</p>
         </div>
         <div class="buyrow">
-          <button class="btn btn-dark" id="pdpAdd">Add to basket</button>
+          <button class="btn btn-dark" id="pdpAdd" onclick="window.pdpEarlyTap?pdpEarlyTap():0">Add to basket</button>
         </div>
         <ul class="ship-list" aria-label="Delivery and returns">
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 7h11v9H2z"/><path d="M13 10h5l3 3v3h-8"/><circle cx="6.5" cy="17.5" r="1.8"/><circle cx="16.5" cy="17.5" r="1.8"/></svg><span id="pdpShipLine">Arrives in 3–6 days across Dubai &amp; Abu Dhabi</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg><span id="pdpFreeLine">Delivery AED 30 · free on orders over AED 200</span></li>
-          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg><span>15-day returns, collection free if a piece is faulty</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.8 5v5h5"/><path d="M4.5 14.5a8 8 0 1 0 1.7-8.7L2.8 10"/></svg><span id="pdpReturnLine">15-day returns, collection free if a piece is faulty</span></li>
         </ul>
         <a class="ship-more" href="/returns">Delivery &amp; returns in full</a>
         <div class="pdp-acc" id="pdpAcc"></div>
@@ -1514,6 +1564,8 @@
       <div>
         <div class="co-step">
           <div class="sh"><span class="num">1</span><h3 data-i18n="Contact details">Contact</h3></div>
+          <!-- Returning buyers sign in here (F388); the basket waits in this browser -->
+          <p class="co-signin" id="coSignIn" hidden data-i18n>Already have an account? <a href="/login?next=%2F%3Fcart%3D1">Sign in</a> and come straight back to your basket.</p>
           <div class="co-field"><label for="coEmail">Email</label><input id="coEmail" type="email" placeholder="you@email.com" autocomplete="email"></div>
           <div class="co-field"><label for="coPhone">Mobile</label><input id="coPhone" type="tel" placeholder="05X XXX XXXX" autocomplete="tel" inputmode="tel">
             <div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:6px">For the driver on delivery day. The shops never see it — Trove books the courier.</div></div>
@@ -1553,7 +1605,7 @@
           <h3>Order summary</h3>
           <div id="coSummary"></div>
           <div class="co-tot" id="coTotals"></div>
-          <button class="co-place" onclick="placeOrder()">Place order · <span id="coPlaceTot"></span></button>
+          <button class="co-place" onclick="placeOrder()"><span class="cp-idle">Place order · <span id="coPlaceTot"></span></span><span class="cp-busy" hidden>Placing your order…</span></button>
           <p class="co-agree" data-i18n>By placing your order you agree to our <a href="/terms" target="_blank" rel="noopener">Terms of Sale</a> and <a href="/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</p>
           <div class="co-secure"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Secured by Stripe</div>
         </div>
@@ -1603,7 +1655,7 @@
   </div>
   <a class="mn-link" href="/shop">Shop all<span>→</span></a>
   <a class="mn-link" href="/shop/trove-collection">Trove Collection<span>→</span></a>
-  <a class="mn-link" href="/#vendors">Marketplace<span>→</span></a>
+  <a class="mn-link" href="/#vendors">Makers<span>→</span></a>
   <a class="mn-link" href="/services">Services Marketplace<span>→</span></a>
   <a class="mn-link" href="/sell-on-trove">Sell on Trove<span>→</span></a>
   <div class="mn-foot">
@@ -1640,14 +1692,14 @@
         <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.</p>
       </div>
       <nav aria-label="Shop"><h2 class="fh">Shop</h2><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></nav>
-      <nav aria-label="Sell"><h2 class="fh">Sell</h2><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#makers">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></nav>
+      <nav aria-label="Sell"><h2 class="fh">Sell</h2><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#what-does-it-cost-to-sell">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></nav>
       <nav aria-label="About"><h2 class="fh">About</h2><ul><li><a href="/about">Our story</a></li><li><a href="/about#curation">How curation works</a></li><li><a href="/faq">Help centre</a></li><li><a href="/contact">Contact</a></li></ul></nav>
     </div>
     <div class="fbot"><span data-cms="site.footer.legal">© 2026 Trove · Dubai, UAE</span><span class="flegal"><a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="/seller-agreement">Seller agreement</a> · <a href="/provider-agreement">Provider agreement</a> · <a href="/services-terms">Services terms</a> · <a href="/privacy#2-what-we-collect" class="iubenda-cs-preferences-link">Cookie settings</a></span></div>
   </div>
 </footer>
 
-<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><span id="toastMsg"></span></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"><span id="toastMsg"></span><button type="button" class="toast-act" id="toastAct" hidden></button></div>
 
 <script src="/config.js"></script>
 <script src="/api.js"></script>
@@ -1802,9 +1854,6 @@ function aedNum(n){n=Number(n)||0;n=Math.round(n*100)/100;return Number.isIntege
 function aed(n){return troveMoney(n);}
 /* Every API or CMS string that reaches innerHTML goes through esc(). */
 function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-/* A value for an inline handler: a JSON string literal, HTML-escaped, so a
-   quote in a shop slug or category can never close the handler's string. */
-const jsq=s=>esc(JSON.stringify(String(s==null?'':s)));
 /* Shop colours are seller-supplied: only a #hex ever reaches a style. */
 const safeColor=c=>/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c||''))?String(c):'#DBC7BD';
 /* Image addresses: our own uploads, https or an inline image, nothing that
@@ -1822,10 +1871,15 @@ function vColor(v){return VENDORS[v].color;}
 function stars(r){const f=Math.round(+r);return '★★★★★'.slice(0,f)+'☆☆☆☆☆'.slice(0,5-f);}
 
 /* ---------------- PAYMENTS ----------------
- * Demo mode until both values in config.js are set; then checkout creates a
- * real order on the API and takes payment with Stripe's card form. */
+ * The card form needs both halves: a publishable key on the page (/api/config
+ * may hand one, docs/config.js keeps the fallback) and a server that can
+ * charge (/api/config cardPayments, F430). Demo payments — an order recorded
+ * with no charge — only where the server offers them (a developer's or test
+ * machine, never production); anywhere else the page says card payments are
+ * paused rather than showing Stripe's own developer errors. */
 const CFG = window.TROVE_CONFIG || {};
-const paymentsLive = () => LIVE && TroveAPI.paymentsEnabled;
+const paymentsLive = () => LIVE && TroveAPI.paymentsEnabled && FEES.cardPayments!==false;
+const demoPayments = () => LIVE && !paymentsLive() && FEES.demoPayments===true;
 function feeBreakdown(subAed){
   // Delivery is charged on orders at or below the threshold, free above it —
   // so 'remaining' is the gap to the threshold, and the buyer must add MORE
@@ -1910,6 +1964,10 @@ async function doMountPayment(){
       stripeElements=stripeJs.elements({clientSecret:data.clientSecret});
       payElement=stripeElements.create('payment');
       payIntent=data;
+      // Stripe charges the server's own total: the button must show that figure
+      // before the buyer can pay (F210).
+      const charged=Number(data.amount);
+      if(Number.isFinite(charged)&&charged!==coShownFils&&!(await pricesMoved(charged)))return;
     }
     try{payElement.unmount();}catch(_){/* not mounted yet */}
     payElement.mount('#payment-element');
@@ -1971,14 +2029,19 @@ function cropCss(sec,p){
 /* product card — eager===true only for above-the-fold uses (weekly finds);
  * .map(productCard) passes an index as the 2nd arg, hence the strict check.
  * `crop` (a cropCss string) is only ever passed by homepage sections. */
+/* Nothing left to sell: no stock at all, or no combination in stock (F423). */
+function soldOutP(p){return (p.options||[]).length?!(p.variants||[]).some(v=>v.stock>0):p.stock===0;}
 function productCard(p,eager,crop){
   const V=VENDORS[p.vendor], house=V.house;
+  // A sold-out piece says so on the photo and carries a label, never a button (F423).
+  const gone=p.forSale!==false&&soldOutP(p);
+  const add=cls=>p.forSale===false?`<span class="${cls} disp">${_t('On display only')}</span>`:gone?`<span class="${cls} disp">${_t('Sold out')}</span>`:`<button class="${cls}" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`;
   return `<article class="card">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
       <img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
-      ${p.was?`<span class="sale">${_t('Sale')}</span>`:''}${pIsStock(p)?ILLUS:''}
-      ${p.forSale===false?`<span class="add disp">${_t('On display only')}</span>`:`<button class="add" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`}
+      ${gone?`<span class="sale">${_t('Sold out')}</span>`:p.was?`<span class="sale">${_t('Sale')}</span>`:''}${pIsStock(p)?ILLUS:''}
+      ${add('add')}
     </div>
     <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
@@ -1986,7 +2049,7 @@ function productCard(p,eager,crop){
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
       ${p.rating?`<span class="stars">${stars(p.rating)}<span>${esc(p.rating)}</span></span>`:''}
     </div>
-    ${p.forSale===false?`<span class="add add-row disp">${_t('On display only')}</span>`:`<button class="add add-row" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`}
+    ${add('add add-row')}
   </article>`;
 }
 
@@ -2067,7 +2130,7 @@ function firstPieceHTML(p){
     <div class="fc-body">
       <div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(where)}</div>
       <h3><a href="${u}">${esc(p.name)}</a></h3>
-      ${p.desc?`<p class="fc-desc">${esc(clip(p.desc,220))}</p>`:''}
+      ${(p.desc||p.summary)?`<p class="fc-desc">${esc(clip(p.desc||p.summary,220))}</p>`:''}
       <span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span>
       <div class="fc-acts"><a class="btn btn-dark" href="${u}">${_t('See the piece')}</a>${V.house?'':`<a class="txt-link" href="${esc(makerUrl(p.vendor))}">${_t('More from {name}',{name:esc(V.name)})}</a>`}</div>
     </div>
@@ -2112,7 +2175,9 @@ function heroSoloHTML(p){
 const REDUCED=matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* Arabic pages read right to left: the shelf fans the next piece out to the left. */
 const RTL=document.documentElement.dir==='rtl';
-const HC={i:0,n:0,items:[],timer:0,dur:4600,paused:false};
+/* paused = the pointer is over it; held = keyboard focus is inside it;
+   stopped = the shopper pressed the pause button (F369, WCAG 2.2.2). */
+const HC={i:0,n:0,items:[],timer:0,dur:4600,paused:false,held:false,stopped:false};
 function heroPicks(){
   const isHouse=p=>!!(VENDORS[p.vendor]&&VENDORS[p.vendor].house);
   const picks=cmsGet('home.hero.productIds');
@@ -2175,9 +2240,18 @@ function hcDots(){
   [...$('hsDots').children].forEach((d,k)=>{d.classList.remove('on');if(k===HC.i){void d.offsetWidth;d.classList.add('on');}});
   $('hsCount').textContent=troveIso(HC.n?String(HC.i+1).padStart(2,'0')+' / '+String(HC.n).padStart(2,'0'):'— / —');
 }
-function hcPlay(){ hcStop(); if(REDUCED||HC.n<2||HC.paused)return; HC.timer=setInterval(()=>{ if(document.hidden||state.view!=='home')return; hcStep(1,true); },HC.dur); }
+function hcPlay(){ hcStop(); if(REDUCED||HC.n<2||HC.paused||HC.held||HC.stopped)return; HC.timer=setInterval(()=>{ if(document.hidden||state.view!=='home')return; hcStep(1,true); },HC.dur); }
 function hcStop(){ if(HC.timer)clearInterval(HC.timer); HC.timer=0; }
-function hcPause(on){ if(HC.paused===on)return; HC.paused=on; $('hsDots').classList.toggle('paused',on); if(on)hcStop(); else{hcDots();hcPlay();} }
+function hcSettle(){ const still=HC.paused||HC.held||HC.stopped; $('hsDots').classList.toggle('paused',still); if(still)hcStop(); else{hcDots();hcPlay();} }
+function hcPause(on){ if(HC.paused===on)return; HC.paused=on; hcSettle(); }
+function hcHold(on){ if(HC.held===on)return; HC.held=on; hcSettle(); }
+/* The pause / play button: a stop that lasts until the shopper presses play. */
+function hcUserPause(){
+  HC.stopped=!HC.stopped;
+  const b=$('hsPlay'); b.classList.toggle('off',HC.stopped);
+  b.setAttribute('aria-label',HC.stopped?_t('Play the slideshow'):_t('Pause the slideshow'));
+  hcSettle();
+}
 function hcBind(){
   const deck=$('heroDeck'), stage=$('heroStage');
   if(deck.dataset.bound)return; deck.dataset.bound='1';
@@ -2199,6 +2273,10 @@ function hcBind(){
     stage.addEventListener('mouseleave',()=>hcPause(false));
   }
   stage.addEventListener('keydown',e=>{ const fwd=RTL?'ArrowLeft':'ArrowRight', back=RTL?'ArrowRight':'ArrowLeft'; if(e.key===fwd){hcStep(1);e.preventDefault();} else if(e.key===back){hcStep(-1);e.preventDefault();} });
+  // Keyboard focus inside the shelf holds it still, so a piece never slides
+  // away from under the reader (the pause button itself does not hold it).
+  stage.addEventListener('focusin',e=>{ let kb=true; try{kb=e.target.matches(':focus-visible');}catch(_){} if(kb&&e.target.id!=='hsPlay')hcHold(true); });
+  stage.addEventListener('focusout',e=>{ if(!stage.contains(e.relatedTarget))hcHold(false); });
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden&&!HC.paused){hcDots();hcPlay();} });
 }
 
@@ -2284,7 +2362,7 @@ function initParallax(){
 
 /* Makers carousel drive: auto-drift right→left; grab/swipe/fling anywhere; taps still open shops.
  * Re-render safe — handlers bind once to the viewport, the track is re-read each init. */
-const MK={off:0,setW:0,speed:0,dragging:false,hovering:false,vx:0,resumeAt:0,bound:false,lastT:0,track:null,static:false};
+const MK={off:0,setW:0,speed:0,dragging:false,hovering:false,vx:0,resumeAt:0,bound:false,lastT:0,track:null,static:false,raf:0};
 // Fewer makers than fit across the viewport → no marquee: the clone set is
 // hidden and the cards sit still (a lone maker would otherwise show twice and
 // slide forever). Re-checked on resize.
@@ -2302,6 +2380,7 @@ function initMakerCarousel(){
   MK.setW=set.getBoundingClientRect().width;
   MK.speed=matchMedia('(prefers-reduced-motion: reduce)').matches?0:MK.setW/Math.max(30,set.children.length*9); // px per second
   if(MK.setW)MK.off=((MK.off%MK.setW)+MK.setW)%MK.setW;
+  startMakers();
   if(MK.bound)return;
   MK.bound=true;
   if(matchMedia('(hover: hover)').matches){ // tap-synthesised mouseenter would freeze touch devices
@@ -2329,13 +2408,17 @@ function initMakerCarousel(){
   };
   vp.addEventListener('pointerup',endDrag);
   vp.addEventListener('pointercancel',endDrag);
-  addEventListener('resize',()=>{settleMakers();const s=MK.track&&MK.track.querySelector('.vset');const w=s&&s.getBoundingClientRect().width;if(w)MK.setW=w;});
-  requestAnimationFrame(tickMakers);
+  addEventListener('resize',()=>{settleMakers();const s=MK.track&&MK.track.querySelector('.vset');const w=s&&s.getBoundingClientRect().width;if(w)MK.setW=w;startMakers();});
 }
+/* The drift runs only while it can be seen and has somewhere to go: on the
+   homepage, with more makers than fit. Off it, no frame is asked for (F474);
+   showView('home') and a resize start it again. */
+function startMakers(){ if(!MK.raf&&MK.track&&MK.setW&&!MK.static&&state.view==='home')MK.raf=requestAnimationFrame(tickMakers); }
 function tickMakers(t){
-  requestAnimationFrame(tickMakers);
+  MK.raf=0;
+  if(!MK.track||!MK.setW||MK.static||state.view!=='home'){MK.lastT=0;return;}
+  MK.raf=requestAnimationFrame(tickMakers);
   const dt=MK.lastT?Math.min(64,t-MK.lastT):16; MK.lastT=t;
-  if(!MK.track||!MK.setW||MK.static)return;
   if(!MK.dragging){
     if(Math.abs(MK.vx)>0.02){MK.off-=MK.vx*dt;MK.vx*=Math.pow(.94,dt/16);} // fling momentum, eased out
     else if(!MK.hovering&&t>MK.resumeAt)MK.off+=MK.speed*dt/1000;          // gentle auto drift
@@ -2354,7 +2437,8 @@ function matchesFilters(p,skip){
   const houseOk=skip.house||!state.houseOnly||VENDORS[p.vendor].house;
   const shopOk=skip.shop||state.shop==='all'||p.vendor===state.shop;
   const saleOk=skip.sale||!state.sale||!!p.was; // same truthiness rule as the Sale badge
-  const priceOk=skip.price||(p.price>=state.min&&p.price<=state.max);
+  // half-open bands, so a piece at exactly AED 80 or 200 sits in one band only (F473)
+  const priceOk=skip.price||(p.price>=state.min&&(state.max>=9999||p.price<state.max));
   const qOk=skip.q||!q||(p.name+' '+(p.nameEn||'')+' '+p.cat+' '+_t(p.cat)+' '+VENDORS[p.vendor].name+' '+(p.tags||[]).join(' ')).toLowerCase().includes(q);
   return catOk&&houseOk&&shopOk&&saleOk&&priceOk&&qOk;
 }
@@ -2407,7 +2491,8 @@ function buildShopFilter(){
 // programmatic reset they must be re-pointed at state, or they show a
 // filter that isn't applied (and re-clicking a checked radio fires nothing).
 function syncFilterUI(){
-  const h=$('fltHouse'); if(h)h.checked=state.houseOnly;
+  // On the Trove Collection's own shelf the filter is the page itself: shown ticked, not changeable (F513).
+  const h=$('fltHouse'); if(h){h.checked=state.houseOnly||state.cat==='House';h.disabled=state.cat==='House';}
   const s=$('fltShop'); if(s)s.value=state.shop;
   const sl=$('fltSale'); if(sl)sl.checked=state.sale;
   document.querySelectorAll('input[name="pr"]').forEach(r=>{r.checked=r.dataset.pr===state.min+'-'+state.max;});
@@ -2445,6 +2530,11 @@ function similarProducts(n){
     return [s,p];
   }).filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0]).slice(0,n).map(x=>x[1]);
 }
+/* The fullest categories in the live catalogue, most pieces first. */
+function hintCategories(n){
+  const by={};PRODUCTS.forEach(p=>{if(p.cat)by[p.cat]=(by[p.cat]||0)+1;});
+  return Object.keys(by).sort((a,b)=>by[b]-by[a]).slice(0,n);
+}
 function emptyStateHTML(){
   const n=4;
   const btn=(fn,label,dark)=>`<button class="btn ${dark?'btn-dark':'btn-ghost'}" onclick="${fn}">${label}</button>`;
@@ -2466,7 +2556,14 @@ function emptyStateHTML(){
       pop='<div class="pop-search" id="popSearch"></div>';
       recs=similarProducts(n);
       if(recs.length)recHead=_t('Close matches');
-      else{recs=PRODUCTS.slice(0,n);sub=_t('Check the spelling, or try a broader word — “ceramics”, “linen”, “brass”. Here are some favourites in the meantime.');}
+      else{
+        recs=PRODUCTS.slice(0,n);
+        // The example words are real shelves that hold pieces right now, never
+        // fixed words that may find nothing themselves (F390).
+        const words=hintCategories(3).map(c=>'“'+esc(_t(c).toLowerCase())+'”').join(_t(', '));
+        sub=words?_t('Check the spelling, or try a broader word — {words}. Here are some favourites in the meantime.',{words})
+          :_t('Check the spelling, or try a broader word. Here are some favourites in the meantime.');
+      }
     }
   }else{
     const inCat=state.cat!=='all'?PRODUCTS.filter(p=>matchesFilters(p,{house:1,shop:1,sale:1,price:1})):[];
@@ -2509,10 +2606,18 @@ async function fillPopularSearches(){
   if(!POP_SHOWN.length)return;
   box.innerHTML=`<span class="eyebrow">${_t('Popular right now')}</span><div class="pop-chips">${POP_SHOWN.map((t,i)=>`<button class="ptag" onclick="searchTag(POP_SHOWN[${i}])">${esc(t)}</button>`).join('')}</div>`;
 }
+/* A long shelf draws SHOP_PAGE pieces, then 'Show more pieces' adds the next
+   batch (F356): 2,000 cards at once froze a phone for seconds. The counts
+   still cover the whole filtered list; any filter, sort or search starts
+   again from the first batch. */
+const SHOP_PAGE=48;
+let shopShown=SHOP_PAGE;
 function renderShop(){
   buildCatFilters();
   buildShopFilter();
   syncFilterGroups();
+  syncFilterUI();
+  shopShown=SHOP_PAGE;
   const list=filteredProducts(), shops=new Set(list.map(p=>p.vendor));
   $('resCount').textContent=list.length; $('resNoun').textContent=_tn(list.length,'piece','pieces');
   $('shopCount').textContent=shops.size; $('shopNoun').textContent=_tn(shops.size,'shop','shops');
@@ -2521,9 +2626,26 @@ function renderShop(){
   $('shopCrumb').innerHTML=crumbHTML();
   $('searchChip').innerHTML=state.q?`<span class="schip">${_t('Searching for <b>“{q}”</b>',{q:esc(state.q)})}<button onclick="clearSearch()" aria-label="${_t('Clear search')}">×</button></span>`:'';
   serviceHits();
-  $('shopGrid').innerHTML=list.length?list.map(productCard).join(''):emptyStateHTML();
+  $('shopGrid').innerHTML=list.length?list.slice(0,shopShown).map(productCard).join(''):emptyStateHTML();
   $('shopGrid').className='pgrid'+(list.length&&list.length<=3?' few':'')+(list.length===1?' one':'');
+  // nothing to count or sort on an empty shelf (F395)
+  document.querySelector('#view-shop .sortbar').classList.toggle('empty',!list.length);
+  shopMore(list.length);
   if(!list.length)fillPopularSearches();
+}
+function shopMore(total){
+  const left=total-shopShown, box=$('shopMore');
+  box.hidden=left<=0;
+  if(left>0)$('shopMoreN').textContent=_t('Showing {shown} of {total} pieces',{shown:shopShown,total});
+}
+function showMorePieces(){
+  const list=filteredProducts(), next=list.slice(shopShown,shopShown+SHOP_PAGE);
+  $('shopGrid').insertAdjacentHTML('beforeend',next.map(productCard).join(''));
+  const first=$('shopGrid').children[shopShown];
+  shopShown+=next.length;
+  shopMore(list.length);
+  // keyboard and screen-reader users land on the first new piece
+  const link=first&&first.querySelector('.card-link'); if(link)link.focus({preventScroll:true});
 }
 
 /* ---------------- Shop analytics beacon ----------------
@@ -2651,7 +2773,9 @@ function openPDP(id){
   $('pdpName').textContent=p.name;
   $('pdpStars').innerHTML=p.rating?`${stars(p.rating)} <span>${esc(p.rating)} · ${_tn(Number(p.reviews)||0,'{n} review','{n} reviews')}</span>`:'';
   $('pdpPrice').innerHTML=`${p.was?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(p.price)}`;
-  $('pdpDesc').textContent=p.desc;
+  pdpDescription(p);
+  // A personalised piece can't go back for a change of mind: the returns line says so (F512).
+  $('pdpReturnLine').textContent=p.perso?_t('Made for you: returns only if it arrives faulty, damaged or wrong'):_t('15-day returns, collection free if a piece is faulty');
   // Tags stay out of sight (they still power search). The structured data
   // (Product, Offer, breadcrumbs) comes with the page from the server at
   // /pieces/<id>-<slug>, which is the address crawlers read.
@@ -2686,10 +2810,28 @@ function openPDP(id){
   $('pdpAcc').innerHTML=pdpAccHTML(p);
   $('pbName').textContent=p.name;
   loadProductReviews(p.id);
-  setAddress(pieceUrl(p),_t('{piece} by {maker} · Trove',{piece:p.name,maker:V.name}),_t('{price} from {maker}.',{price:aed(p.price),maker:V.name+(V.loc?', '+V.loc:'')})+' '+(p.desc?clip(p.desc,70)+' ':'')+_t('Delivered across Dubai and Abu Dhabi.'));
+  setAddress(pieceUrl(p),_t('{piece} by {maker} · Trove',{piece:p.name,maker:V.name}),_t('{price} from {maker}.',{price:aed(p.price),maker:V.name+(V.loc?', '+V.loc:'')})+' '+((p.desc||p.summary)?clip(p.desc||p.summary,70)+' ':'')+_t('Delivered across Dubai and Abu Dhabi.'));
   showView('pdp'); jumpTop();
 }
 let pdpSrcs=[];
+/* The catalogue arrives without full descriptions (/api/products?view=list,
+   F357): the product page shows the piece's own text — already in the page
+   when the server drew it, else fetched with the piece — and the short
+   summary only for the moment that takes. */
+function pdpDescription(p){
+  const el=$('pdpDesc');
+  if(p.desc!=null){el.textContent=p.desc;return;}
+  if(!p.summary){p.desc='';el.textContent='';return;}   // no description at all
+  const head=String(p.summary||'').replace(/…$/,''), cur=el.textContent;
+  if(head&&cur.replace(/\s+/g,' ').trim().startsWith(head)){p.desc=cur;return;}   // the server's page for this piece
+  el.textContent=p.summary||'';
+  if(!LIVE)return;
+  TroveAPI.api('/api/products/'+p.id).then(r=>{
+    const d=r&&r.product; if(!d)return;
+    p.desc=d.description||'';
+    if(pdpProduct&&pdpProduct.id===p.id&&state.view==='pdp')el.textContent=p.desc;
+  }).catch(()=>{});
+}
 /* Details + About the maker: only what the shop has actually told us — no
  * invented dimensions, care or lead times. */
 function pdpAccHTML(p){
@@ -2883,7 +3025,7 @@ function lineStillValid(c){
 }
 function cleanLines(saved){
   return (Array.isArray(saved)?saved:[])
-    .map(c=>c&&typeof c==='object'?{pid:Number(c.pid),qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[],extras:Array.isArray(c.extras)?c.extras.filter(x=>typeof x==='string'):[]}:null)
+    .map(c=>c&&typeof c==='object'?{pid:Number(c.pid),qty:Math.max(1,Math.min(99,parseInt(c.qty)||1)),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[],extras:Array.isArray(c.extras)?c.extras.filter(x=>typeof x==='string'):[],n:String(c.n||'').slice(0,120)}:null)
     .filter(c=>c&&lineStillValid(c));
 }
 function restoreCart(){
@@ -2893,13 +3035,28 @@ function restoreCart(){
   const clean=cleanLines(saved);
   const dropped=saved.length-clean.length;
   cart=clean; updateCartCount(); renderCart();
-  if(dropped)toast(_tn(dropped,'One piece from your basket is no longer available','{n} pieces from your basket are no longer available'));
+  if(dropped===1)droppedLineToast(saved.map(rawLine).find(c=>c&&!clean.some(k=>sameLine(k,c))));
+  else if(dropped)toast(_tn(dropped,'One piece from your basket is no longer available','{n} pieces from your basket are no longer available'));
+}
+/* cleanLines' field tidy without the 'still on sale' check: the shape a saved line had. */
+const rawLine=c=>c&&typeof c==='object'?{pid:Number(c.pid),note:String(c.note||''),opts:Array.isArray(c.opts)?c.opts:[],extras:Array.isArray(c.extras)?c.extras:[],n:String(c.n||'').slice(0,120)}:null;
+/* One saved line could not come back: say which piece (F523). When the piece
+   is still on sale — a glaze or an extra was retired — offer to choose again. */
+function droppedLineToast(c){
+  const p=c&&PRODUCTS.find(x=>x.id===c.pid);
+  const what=p?p.name+((c.opts||[]).length?' ('+(c.opts||[]).map(o=>optVal(p,o.name,o.value)).join(', ')+')':''):(c&&c.n)||'';
+  if(!what){toast(_tn(1,'One piece from your basket is no longer available','{n} pieces from your basket are no longer available'));return;}
+  if(p&&p.forSale!==false)toast(_t('“{piece}” is no longer available as you chose it',{piece:what}),7000,{label:_t('Choose again'),fn:()=>openPDP(p.id)});
+  else toast(_t('“{piece}” is no longer available',{piece:what}),6000);
 }
 
 function persoCount(){const ta=$('pdpPersoText');$('pdpPersoCount').textContent=`${ta.value.length} / ${ta.maxLength}`;}
 function addToCart(id,btn,note,opts,extras){
+  // Before the catalogue has loaded the tap is kept, not lost (F424).
+  if(!BOOTED){EARLY_TAP={id,note,opts,extras};toast(_t('Just a moment…'));return;}
   const p=PRODUCTS.find(x=>x.id===id);
-  if(p&&p.forSale===false){toast(_t('This piece is on display only — it isn’t for sale.'));return;}
+  if(!p){toast(_t('This piece is no longer available'));return;}
+  if(p.forSale===false){toast(_t('This piece is on display only — it isn’t for sale.'));return;}
   // A required personalisation or a choice of options can only be made on the
   // product page — send them there rather than guessing on their behalf.
   // Extras are always optional, so a quick add from a card simply skips them.
@@ -2916,12 +3073,14 @@ function addToCart(id,btn,note,opts,extras){
     const already=cart.filter(c=>c.pid===id&&optLabel(c.opts)===optLabel(opts)).reduce((n,c)=>n+c.qty,0);
     if(already+1>have){toast(have?_tn(have,'Only {n} left of this one','Only {n} left of this one'):_t('{piece} is sold out just now',{piece:p.name}));return;}
   }
-  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts,extras});
+  // n: the piece's name as the shopper saw it, so a line dropped later can be named (F523)
+  if(ex)ex.qty++; else cart.push({pid:id,qty:1,note,opts,extras,n:p.name});
   track('add_to_cart',{productId:id});   // only once it really went in — the guards above bail out first
   gaEcommerce('add_to_cart',[gaItem(p,1,opts,extras)]);
   updateCartCount(); renderCart();
   if(btn&&btn.classList.contains('add')){const o=btn.textContent;btn.classList.add('added');btn.textContent='✓ '+_t('Added');setTimeout(()=>{btn.classList.remove('added');btn.textContent=o;},1100);}
-  toast(_t('{piece} added to your basket',{piece:p.name}));
+  // The next step, one tap away (F394): the toast carries 'View basket'.
+  toast(_t('{piece} added to your basket',{piece:p.name}),4500,{label:_t('View basket'),fn:openCart});
 }
 function changeQty(i,d){
   const c=cart[i];if(!c)return;
@@ -2936,7 +3095,8 @@ function removeItem(i){cart.splice(i,1);updateCartCount();renderCart();}
 function updateCartCount(){const n=cart.reduce((s,c)=>s+c.qty,0);const el=$('cartCount');el.textContent=n;el.classList.toggle('hide',n===0);saveCart();resetPayment();}
 function renderCart(){
   const body=$('cartBody');
-  if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">${_t('Your basket is empty')}</div><p style="font-weight:400">${_t('Pieces you add will gather here, grouped by shop.')}</p></div>`;$('cartFoot').style.display='none';return;}
+  // Empty: somewhere to go next, not a dead end (F524).
+  if(!cart.length){body.innerHTML=`<div class="empty"><div class="big">${_t('Your basket is empty')}</div><p style="font-weight:400">${_t('Pieces you add will gather here, grouped by shop.')}</p><div class="nr-actions" style="margin-top:24px"><a class="btn btn-dark" href="/shop">${_t('Shop all')}</a><a class="btn btn-ghost" href="/shop/trove-collection">${_t('Trove Collection')}</a></div></div>`;$('cartFoot').style.display='none';return;}
   const groups={};
   cart.forEach((c,idx)=>{const p=PRODUCTS.find(x=>x.id===c.pid);if(p)(groups[p.vendor]=groups[p.vendor]||[]).push({...c,p,idx});});
   let html='';
@@ -2948,7 +3108,7 @@ function renderCart(){
       const short=have!=null&&have<qty;
       html+=`<div class="citem">
         <div class="cimg"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(pThumb(p))}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>
-        <div class="ci"><div class="n">${esc(p.name)}</div><div class="v">${esc(V.name)}</div>
+        <div class="ci"><div class="n">${esc(p.name)}</div>
           ${(opts&&opts.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(optShow(p,opts))}</div>`:''}
           ${(extras&&extras.length)?`<div class="v" style="color:var(--accent-ink);font-weight:600">${esc(exLabel(p,extras))}</div>`:''}
           ${note?`<div class="v" style="color:var(--accent-ink);font-weight:600">${_t('Personalisation: “{note}”',{note:esc(note)})}</div>`:''}
@@ -2977,7 +3137,7 @@ function renderCart(){
 /* The basket, the mobile menu and the filter sheet are dialogs (site-chrome.js
  * TroveDialog): focus moves in, Tab stays inside, Escape closes, and focus
  * returns to the button that opened them. */
-function openCart(){closeSheets();renderCart();$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';TroveDialog.open($('drawer'),{onClose:closeCart});}
+function openCart(){closeSheets();hideToast();/* never over the basket's total (F510) */renderCart();$('scrim').classList.add('open');$('drawer').classList.add('open');document.body.style.overflow='hidden';TroveDialog.open($('drawer'),{onClose:closeCart});}
 function closeCart(){$('scrim').classList.remove('open');$('drawer').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('drawer'));}
 /* mobile menu + filter sheet (share one scrim) */
 function openMenu(focusSearch){closeCart();closeFilterSheet();$('mnav').classList.add('open');$('uiScrim').classList.add('open');document.body.style.overflow='hidden';TroveDialog.open($('mnav'),{onClose:closeSheets,focus:focusSearch?$('mSearchInput'):null});}
@@ -3002,11 +3162,13 @@ function serviceHits(){
   SVC_HITS={q,n:0};
   TroveAPI.api('/api/services?q='+encodeURIComponent(q)).then(r=>{if(SVC_HITS.q!==q)return;SVC_HITS.n=((r&&r.services)||[]).length;paint();}).catch(()=>{});
 }
-function runSearch(q){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');jumpTop();
+function runSearch(q,opts){state.q=(q||'').trim();state.cat='all';state.houseOnly=false;state.shop='all';state.sale=false;state.min=0;state.max=9999;syncFilterUI();renderShop();showView('shop');jumpTop();
   shelfAddress();
   // Report the search (anonymously — just the words + hit count) so trending
-  // terms can steer the AI tag writer. Tag taps run through here too.
-  if(state.q&&LIVE){try{TroveAPI.api('/api/search-log',{method:'POST',body:{q:state.q,results:filteredProducts().length}}).catch(()=>{});}catch(_){}}
+  // terms can steer the AI tag writer. Tag taps run through here too. Only a
+  // search someone typed or tapped: a reload, a shared link or Back/Forward
+  // (ROUTING) is the same search again and is not counted twice (F290).
+  if(state.q&&LIVE&&(!ROUTING||(opts&&opts.typed))){try{TroveAPI.api('/api/search-log',{method:'POST',body:{q:state.q,results:filteredProducts().length}}).catch(()=>{});}catch(_){}}
 }
 function searchTag(t){const si=$('searchInput');if(si)si.value=t;runSearch(t);}
 function toggleAcct(e){e.stopPropagation();const open=$('acctMenu').classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',open?'true':'false');}
@@ -3037,6 +3199,7 @@ function prepCheckout(){
   }else if(!SAVED_ADDR[coAddr]&&!coNewAddr){coNewAddr=!SAVED_ADDR.length;coAddr=SAVED_ADDR.length?0:-1;}
   const guest=LIVE&&!ME;
   $('coAcctBox').style.display=guest?'block':'none';
+  $('coSignIn').hidden=!guest; // a returning buyer can sign in instead (F388)
   // The offer is opt-in, and a hidden offer can never block the order.
   if(!guest)$('coAcctChk').checked=false;
   toggleCoAcct();
@@ -3072,7 +3235,7 @@ async function ensureGuestAccount(){
   if(!/^\S+@\S+\.\S+$/.test(email)){coAcctError(_t('Enter your email above first — that becomes your account.'));return false;}
   if(!pw){coAcctError(_t('Choose a password to create your account — or pick “check out as a guest” below.'));return false;}
   if(pw.length<8){coAcctError(_t('Your password needs at least 8 characters.'));return false;}
-  const name=($('coNewName')&&$('coNewName').value.trim())||email.split('@')[0];
+  const name=coName()||email.split('@')[0];
   try{
     const reg=await TroveAPI.api('/api/auth/register',{method:'POST',body:{role:'buyer',name,email,password:pw}});
     if(reg&&reg.created&&window.troveTrack)troveTrack('sign_up',{method:'email'});
@@ -3083,12 +3246,18 @@ async function ensureGuestAccount(){
     toast(_t('Account created — welcome to Trove'));
     return true;
   }catch(e){
-    coAcctError(e.status===409
-      ?_t('This email already has an account — sign in to use it, or untick the box to check out as a guest.')
-      :(e.message||_t('Could not create the account — please try again.')));
+    if(e.status===409){
+      // Say where to sign in (F388): the basket waits in this browser.
+      coAcctError(' ');
+      $('coAcctErr').innerHTML=_t('This email already has an account — <a href="{href}">sign in</a> to use it, or untick the box to check out as a guest.',{href:esc(troveUrl(SIGN_IN_BACK))});
+      return false;
+    }
+    coAcctError(e.message||_t('Could not create the account — please try again.'));
     return false;
   }
 }
+/* Sign in and come back to the basket (the login page honours ?next=). */
+const SIGN_IN_BACK='/login?next=%2F%3Fcart%3D1';
 function selAddr(i){coAddr=i;coNewAddr=false;renderCheckout();}
 function newAddr(){coNewAddr=true;coAddr=-1;renderCheckout();}
 function selCard(i){coCard=i;renderCheckout();}
@@ -3109,12 +3278,21 @@ function renderCheckout(){
   }).join('')
     +`<button type="button" class="saved-opt ${coNewAddr?'on':''}" aria-pressed="${coNewAddr}" onclick="newAddr()"><span class="radio"></span><span><b>${_t('Use a new address')}</b></span></button>`;
   // The emirate's value stays English (the server checks it); the label is the page's language.
-  $('coAddrForm').innerHTML=coNewAddr?`<div style="margin-top:6px"><div class="co-field"><label for="coNewName">${_t('Full name')}</label><input id="coNewName" placeholder="${_t('Your name')}" autocomplete="name" value="${ME?esc(ME.name||''):''}"></div><div class="co-field"><label for="coNewLine">${_t('Address')}</label><input id="coNewLine" placeholder="${_t('Street, building, apt')}" autocomplete="street-address"></div><div class="co-two"><div class="co-field"><label for="coNewCity">${_t('Area')}</label><input id="coNewCity" placeholder="${_t('e.g. Dubai Marina, Khalifa City')}"></div><div class="co-field"><label for="coNewEmirate">${_t('Emirate')}</label><select id="coNewEmirate" required><option value="" selected disabled>${_t('Choose emirate…')}</option><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div></div><div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:-4px">${_t('We deliver in Dubai and Abu Dhabi only for now.')}</div></div>`:'';
+  // Built once and then only shown or hidden, so what the shopper typed survives
+  // a look at a saved address; the autocomplete names let the browser fill it (F288).
+  if(!$('coNewLine'))$('coAddrForm').innerHTML=`<div style="margin-top:6px"><div class="co-field"><label for="coNewName">${_t('Full name')}</label><input id="coNewName" placeholder="${_t('Your name')}" autocomplete="shipping name" value="${ME?esc(ME.name||''):''}"></div><div class="co-field"><label for="coNewLine">${_t('Address')}</label><input id="coNewLine" placeholder="${_t('Street, building, apt')}" autocomplete="shipping street-address"></div><div class="co-two"><div class="co-field"><label for="coNewCity">${_t('Area')}</label><input id="coNewCity" placeholder="${_t('e.g. Dubai Marina, Khalifa City')}" autocomplete="shipping address-level2"></div><div class="co-field"><label for="coNewEmirate">${_t('Emirate')}</label><select id="coNewEmirate" required autocomplete="shipping address-level1"><option value="" selected disabled>${_t('Choose emirate…')}</option><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div></div><div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:-4px">${_t('We deliver in Dubai and Abu Dhabi only for now.')}</div></div>`;
+  $('coAddrForm').hidden=!coNewAddr;
   // delivery grouped by shop
   // Each shop's parcel waits for its slowest piece; the order is the slowest parcel.
-  const coEst=orderEst(groups);
-  $('coDelivery').innerHTML=Object.entries(groups).map(([v])=>{const V=VENDORS[v];return `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500"><span style="color:var(--ink-80)">${esc(V.name)} · ${V.house?_t('Trove-fulfilled'):_t('ships from {place}',{place:esc(String(V.loc||'').split(/[,،]/)[0])})}</span><b style="white-space:nowrap">${esc(coEst.perShop[v].label)}</b></div>`;}).join('')
-    +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">${coEst.separately?_t('Pieces arrive separately as each is ready — the last in {label}.',{label:esc(coEst.est.label)}):_t('Your order arrives in {label}.',{label:esc(coEst.est.label)})} ${_t('Trove currently delivers across Dubai & Abu Dhabi.')}</div>`;
+  // When every parcel shares one window it is said once, with the shops a tap
+  // away, instead of the same line per shop (F510).
+  const coEst=orderEst(groups), shopIds=Object.keys(groups);
+  const shopRow=v=>{const V=VENDORS[v];return `<div class="co-dl-row"><span>${esc(V.name)} · ${V.house?_t('Trove-fulfilled'):_t('ships from {place}',{place:esc(String(V.loc||'').split(/[,،]/)[0])})}</span><b>${esc(coEst.perShop[v].label)}</b></div>`;};
+  const oneWindow=shopIds.length>1&&shopIds.every(v=>coEst.perShop[v].label===coEst.est.label);
+  $('coDelivery').innerHTML=(oneWindow
+    ?`<div class="co-dl-row"><span>${_tn(shopIds.length,'{n} parcel, tracked together','{n} parcels, tracked together')}</span><b>${_t('All arrive in {label}',{label:esc(coEst.est.label)})}</b></div><details class="co-dl-shops"><summary>${_t('See each shop')}</summary>${shopIds.map(shopRow).join('')}</details>`
+    :shopIds.map(shopRow).join(''))
+    +`<div style="font-size:12.5px;color:var(--muted);font-weight:600;padding-top:10px">${coEst.separately?_t('Pieces arrive separately as each is ready — the last in {label}.',{label:esc(coEst.est.label)})+' ':shopIds.length>1&&!oneWindow?_t('Your order arrives in {label}.',{label:esc(coEst.est.label)})+' ':''}${_t('Trove currently delivers across Dubai & Abu Dhabi.')}</div>`;
   // payment — real Stripe card form when configured, demo cards otherwise
   if(paymentsLive()){
     $('coPaySaved').innerHTML=`<div id="payment-element" style="margin:6px 0 4px"></div><div id="payStatus" style="font-size:13px;color:var(--muted);min-height:18px;margin-top:6px"></div>`;
@@ -3123,12 +3301,21 @@ function renderCheckout(){
   }else if(LIVE){
     // Never a pretend card on a real host: there is nothing to pick.
     $('coPaySaved').innerHTML='';
-    $('payNote').textContent=_t('Demo mode — card payments launch soon. Nothing is charged; your order is recorded so you can track it in your account.');
+    $('payNote').textContent=demoPayments()?_t('Demo mode — card payments launch soon. Nothing is charged; your order is recorded so you can track it in your account.')
+      :_t('Card payments are paused for a few minutes. Your basket is saved — please try again shortly. Nothing has been charged.');
   }else{
-    $('coPaySaved').innerHTML=DEMO_CARDS.map((c,i)=>`<button type="button" class="saved-opt ${coCard===i?'on':''}" aria-pressed="${coCard===i}" onclick="selCard(${i})"><span class="radio"></span><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></button>`).join('');
+    // (a developer's own machine only — never a pretend card anywhere else, F477)
+    $('coPaySaved').innerHTML=!IS_LOCAL?'':DEMO_CARDS.map((c,i)=>`<button type="button" class="saved-opt ${coCard===i?'on':''}" aria-pressed="${coCard===i}" onclick="selCard(${i})"><span class="radio"></span><span style="background:${c.color};color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.05em">${c.brand}</span> •••• ${c.last4} <span style="color:var(--muted)">exp ${c.exp}</span></button>`).join('');
     $('payNote').textContent=_t('Demo mode — card payments launch soon. No charge is made and no real order is placed.');
   }
-  // summary
+  renderCoSummary();
+}
+/* The order summary and the figure on the Place order button. coShownFils
+   remembers that figure so the payment form can check it against the amount
+   the server will charge (F210). */
+let coShownFils=0;
+function renderCoSummary(){
+  const groups=cartGroups();
   let sub=0,html='';
   Object.entries(groups).forEach(([v,items])=>{const V=VENDORS[v];
     html+=`<div class="co-sum-group"><div class="co-sum-shop"><span class="gem"></span>${esc(V.name)}</div>`;
@@ -3138,6 +3325,29 @@ function renderCheckout(){
   const fb=feeBreakdown(sub);
   $('coTotals').innerHTML=`<div class="row"><span>${_t('Subtotal')}</span><span>${aed(sub)}</span></div>${fb.service?`<div class="row"><span>${_t('Service fee')}</span><span>${aed(fb.service)}</span></div>`:''}<div class="row"><span>${_t('Delivery')}</span><span>${fb.delivery===0?_t('Free'):aed(fb.delivery)}</span></div><div class="row grand"><span>${_t('Total')}</span><span>${aed(fb.total)}</span></div>`;
   $('coPlaceTot').textContent=aed(fb.total);
+  coShownFils=Math.round(fb.total*100);
+}
+/* A maker changed a price while this page was open (F210): the payment form
+   opened for the server's own total, which differs from the figure on screen.
+   The catalogue is read again and the summary redrawn before anyone can pay.
+   Returns false when the basket itself changed (a piece went): the payment
+   form opened for the old basket is dropped and opened again for this one. */
+const cartSig=()=>cart.map(c=>[c.pid,c.qty,optLabel(c.opts),(c.extras||[]).join(','),c.note||''].join('|')).join(';');
+async function pricesMoved(charged){
+  const before=cartSig();
+  await fetchCatalog();
+  cart=cleanLines(cart);
+  if(cartSig()!==before){
+    updateCartCount(); renderCart(); // saves the basket and drops the old payment form
+    renderCheckout(); setTimeout(mountPaymentElement,0);
+    toast(_t('Your basket changed while this page was open — please check it before you pay.'),6000);
+    return false;
+  }
+  renderCoSummary();
+  // Still different (a price the page can't see): the button shows what will be charged.
+  if(coShownFils!==charged)$('coPlaceTot').textContent=aed(charged/100);
+  toast(_t('Prices were updated — please check your total before you pay.'),6000);
+  return true;
 }
 function showConfirmation(orderId){
   gaPurchase(orderId);   // first: it reads the basket, which is emptied below
@@ -3211,83 +3421,106 @@ async function showOrderPage(id){
   $('confShip').hidden=false;
   drawReceipt(r);
 }
+/* The delivery name the buyer gave: the saved address picked, or the
+   new-address form (which stays in the page, hidden, when a saved one is). */
+function coName(){
+  const a=checkoutPayload().address;
+  if(a&&a.name)return String(a.name).trim();
+  return coNewAddr&&$('coNewName')?$('coNewName').value.trim():'';
+}
+/* The order a redirect-type payment is out paying for (this tab only). */
+const PENDING_KEY='trove.pendingOrder';
+/* One order at a time: Place order locks at the first tap — before the
+ * account is created or the card confirmed — and every way out unlocks it
+ * (F286). The label says what is happening. */
+let PLACING=false;
+function coPlacing(busy){
+  const b=document.querySelector('.co-place'); if(!b)return;
+  b.disabled=busy; b.setAttribute('aria-busy',busy?'true':'false');
+  b.querySelector('.cp-idle').hidden=busy; b.querySelector('.cp-busy').hidden=!busy;
+}
 async function placeOrder(){
-  // Contact + delivery details must be complete and inside the service area.
-  // Each problem is written under its field and the field takes the focus
-  // (F085); the toast is only a second cue.
-  if(LIVE){
-    coClearErrs();
-    const g=id=>($(id)?$(id).value.trim():'');
-    if(!/^\S+@\S+\.\S+$/.test(g('coEmail')))return coInvalid('coEmail',_t('Enter your email so we can send your receipt'));
-    if(!isUAEMobile(g('coPhone')))return coInvalid('coPhone',_t('Add a UAE mobile so the driver can reach you'));
-    if(coNewAddr){
-      if(!g('coNewName'))return coInvalid('coNewName',_t('Add the name for the delivery'));
-      if(!g('coNewLine'))return coInvalid('coNewLine',_t('Add your street, building and apartment'));
-      if(!g('coNewEmirate'))return coInvalid('coNewEmirate',_t('Choose Dubai or Abu Dhabi'));
+  if(PLACING)return;
+  PLACING=true; coPlacing(true);
+  try{
+    // Contact + delivery details must be complete and inside the service area.
+    // Each problem is written under its field and the field takes the focus
+    // (F085); the toast is only a second cue.
+    if(LIVE){
+      coClearErrs();
+      const g=id=>($(id)?$(id).value.trim():'');
+      if(!/^\S+@\S+\.\S+$/.test(g('coEmail')))return coInvalid('coEmail',_t('Enter your email so we can send your receipt'));
+      if(!isUAEMobile(g('coPhone')))return coInvalid('coPhone',_t('Add a UAE mobile so the driver can reach you'));
+      if(coNewAddr){
+        if(!g('coNewName'))return coInvalid('coNewName',_t('Add the name for the delivery'));
+        if(!g('coNewLine'))return coInvalid('coNewLine',_t('Add your street, building and apartment'));
+        if(!g('coNewEmirate'))return coInvalid('coNewEmirate',_t('Choose Dubai or Abu Dhabi'));
+      }
+      const a=checkoutPayload().address;
+      if(!a||!a.name||!a.line){toast(_t('Add your delivery name and address'),4500);return;}
+      if(!deliverable(a)){
+        if(coNewAddr)return coInvalid(OTHER_EMIRATES.test(g('coNewLine'))?'coNewLine':'coNewCity',_t('We deliver in Dubai and Abu Dhabi only for now.'));
+        toast(_t('We deliver in Dubai and Abu Dhabi only'),4500);return;
+      }
     }
-    const a=checkoutPayload().address;
-    if(!a||!a.name||!a.line){toast(_t('Add your delivery name and address'),4500);return;}
-    if(!deliverable(a)){
-      if(coNewAddr)return coInvalid(OTHER_EMIRATES.test(g('coNewLine'))?'coNewLine':'coNewCity',_t('We deliver in Dubai and Abu Dhabi only for now.'));
-      toast(_t('We deliver in Dubai and Abu Dhabi only'),4500);return;
-    }
-  }
-  if(!(await ensureGuestAccount()))return;
-  if(paymentsLive()){
-    if(!payIntent||!stripeElements){
-      // The form never loaded (or an earlier attempt failed): try again now,
-      // with everything the buyer has filled in, and let them add the card.
-      await mountPaymentElement();
-      const ps=$('payStatus');
-      if(!payIntent){toast((ps&&ps.textContent)||_t('The payment form could not load — please try again'));return;}
-      toast(_t('Add your card details to finish'));
-      const pe=$('payment-element'); if(pe)pe.scrollIntoView({behavior:'smooth',block:'center'});
+    if(!(await ensureGuestAccount()))return;
+    if(paymentsLive()){
+      if(!payIntent||!stripeElements){
+        // The form never loaded (or an earlier attempt failed): try again now,
+        // with everything the buyer has filled in, and let them add the card.
+        await mountPaymentElement();
+        const ps=$('payStatus');
+        if(!payIntent){toast((ps&&ps.textContent)||_t('The payment form could not load — please try again'));return;}
+        toast(_t('Add your card details to finish'));
+        const pe=$('payment-element'); if(pe)pe.scrollIntoView({behavior:'smooth',block:'center'});
+        return;
+      }
+      // Write the final email + address onto the order before taking payment —
+      // the order was opened when the payment form mounted, before these fields
+      // were filled in.
+      try{
+        await TroveAPI.api('/api/checkout/update',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),phone:$('coPhone').value.trim(),address:checkoutPayload().address}});
+      }catch(e){
+        $('payStatus').textContent=e.message||_t('Could not save your delivery details — please try again.');
+        return;
+      }
+      const id=payIntent.orderId;
+      // Kept before paying: a payment method that leaves the site (a bank
+      // page, pay later) comes back to the order's own page, which finishes
+      // from here (F217).
+      saveReceiptKey(id,payIntent.receiptKey);
+      lastOrder={orderId:id,clientSecret:payIntent.clientSecret,amountCents:Number(payIntent.amount),email:$('coEmail').value.trim(),name:coName()};
+      try{sessionStorage.setItem(PENDING_KEY,JSON.stringify({orderId:id,amountCents:lastOrder.amountCents,email:lastOrder.email,name:lastOrder.name}));}catch(_){}
+      const {error}=await stripeJs.confirmPayment({
+        elements:stripeElements,
+        confirmParams:{return_url:location.origin+troveUrl('/order/'+encodeURIComponent(id)+'/thanks')},
+        redirect:'if_required',
+      });
+      if(error){$('payStatus').textContent=error.message;return;}
+      try{sessionStorage.removeItem(PENDING_KEY);}catch(_){}
+      resetPayment();
+      showConfirmation(id);
       return;
     }
-    const btn=document.querySelector('.co-place');
-    btn.disabled=true;btn.style.opacity=.6;
-    // Write the final email + address onto the order before taking payment —
-    // the order was opened when the payment form mounted, before these fields
-    // were filled in.
-    try{
-      await TroveAPI.api('/api/checkout/update',{method:'POST',body:{orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,email:$('coEmail').value.trim(),phone:$('coPhone').value.trim(),address:checkoutPayload().address}});
-    }catch(e){
-      btn.disabled=false;btn.style.opacity=1;
-      $('payStatus').textContent=e.message||_t('Could not save your delivery details — please try again.');
+    if(LIVE){
+      // No card form (F430): orders are recorded without a charge only where
+      // the server offers demo payments — never on the live site.
+      if(!demoPayments()){toast(_t('Card payments are paused for a few minutes. Your basket is saved — please try again shortly. Nothing has been charged.'),6000);return;}
+      // Demo-payments mode: the order is real (trackable, fulfilled, returnable)
+      // — only the card charge is skipped until Stripe goes live.
+      try{
+        const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
+        await TroveAPI.api('/api/checkout/demo-complete',{method:'POST',body:{orderId:data.orderId}});
+        saveReceiptKey(data.orderId,data.receiptKey);
+        lastOrder={orderId:data.orderId,demo:true,amountCents:Number(data.amount),email:$('coEmail').value.trim(),name:coName()};
+        showConfirmation(data.orderId);
+      }catch(e){toast(e.message||_t('Could not place the order — please try again'));}
       return;
     }
-    const {error}=await stripeJs.confirmPayment({
-      elements:stripeElements,
-      confirmParams:{return_url:location.href.split('#')[0]},
-      redirect:'if_required',
-    });
-    btn.disabled=false;btn.style.opacity=1;
-    if(error){$('payStatus').textContent=error.message;return;}
-    const id=payIntent.orderId;
-    saveReceiptKey(payIntent.orderId,payIntent.receiptKey);
-    lastOrder={orderId:payIntent.orderId,clientSecret:payIntent.clientSecret,amountCents:Number(payIntent.amount),email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
-    resetPayment();
-    showConfirmation(id);
-    return;
-  }
-  if(LIVE){
-    // Demo-payments mode: the order is real (trackable, fulfilled, returnable)
-    // — only the card charge is skipped until Stripe goes live.
-    const btn=document.querySelector('.co-place');
-    btn.disabled=true;btn.style.opacity=.6;
-    try{
-      const data=await TroveAPI.api('/api/checkout',{method:'POST',body:checkoutPayload()});
-      await TroveAPI.api('/api/checkout/demo-complete',{method:'POST',body:{orderId:data.orderId}});
-      saveReceiptKey(data.orderId,data.receiptKey);
-      lastOrder={orderId:data.orderId,demo:true,amountCents:Number(data.amount),email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
-      showConfirmation(data.orderId);
-    }catch(e){toast(e.message||_t('Could not place the order — please try again'));}
-    finally{btn.disabled=false;btn.style.opacity=1;}
-    return;
-  }
-  if(!IS_LOCAL){toast(_t('We can’t take orders just now — please refresh and try again'));return;}
-  lastOrder={email:$('coEmail').value.trim(),name:($('coNewName')&&$('coNewName').value.trim())||''};
-  showConfirmation('TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10));
+    if(!IS_LOCAL){toast(_t('We can’t take orders just now — please refresh and try again'));return;}
+    lastOrder={email:$('coEmail').value.trim(),name:coName()};
+    showConfirmation('TRV-'+Math.random().toString(36).slice(2,6).toUpperCase()+Math.floor(Math.random()*90+10));
+  }finally{PLACING=false;coPlacing(false);}
 }
 
 /* The confirmation-page account offer: same account, one field later. */
@@ -3317,8 +3550,17 @@ async function confCreateAccount(){
 }
 
 let toastT;
-/* #toast is a polite live region (role=status), so screen readers hear it too. */
-function toast(m,ms){$('toastMsg').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),ms||2200);}
+/* #toast is a polite live region (role=status), so screen readers hear it too.
+   act = {label, fn}: one action button (View basket, Choose again), live only
+   while the toast shows (F394). */
+function toast(m,ms,act){
+  const t=$('toast'), b=$('toastAct');
+  $('toastMsg').textContent=m;
+  b.hidden=!act; b.textContent=act?act.label:''; b.onclick=act?()=>{hideToast();act.fn();}:null;
+  t.classList.toggle('has-act',!!act); t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(hideToast,ms||2200);
+}
+function hideToast(){clearTimeout(toastT);$('toast').classList.remove('show','has-act');$('toastAct').hidden=true;}
 /* Checkout field errors: the message sits under the field (aria-invalid +
    aria-describedby), the field takes the focus, and typing clears it. */
 function coFieldErr(id,msg){
@@ -3339,7 +3581,8 @@ function coInvalid(id,msg){
 ['input','change'].forEach(t=>document.addEventListener(t,e=>{const f=e.target;if(f&&f.id&&f.getAttribute&&f.getAttribute('aria-invalid')==='true')coFieldErr(f.id,'');}));
 
 function showView(v){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$('view-'+v).classList.add('active');state.view=v;syncHeadings(v);
-  if(v==='pdp')watchPdpBar(); else document.body.classList.remove('pdp-bar-on');}
+  if(v==='pdp')watchPdpBar(); else document.body.classList.remove('pdp-bar-on');
+  if(v==='home')startMakers();}
 /* One h1 heading on the page: the active view's title. The others step down to h2
  * while their view is hidden (the server sends the page the same way). */
 function syncHeadings(v){
@@ -3480,17 +3723,20 @@ function showOutage(){
   $('outage').hidden=false;
   jumpTop();
 }
+/* No separate health check first (F507): the catalogue call fails on its own
+ * when the backend is away, into loadCatalog's retries and the outage page
+ * (local dev keeps the demo data). The list comes without full descriptions
+ * (?view=list, F357): a summary for the cards, the full text on the piece's page. */
 async function fetchCatalog(){
-  if(!(await TroveAPI.health())) return;            // no backend reachable (local dev keeps the demo data)
   try{
-    const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products'),TroveAPI.api('/api/shops')]);
+    const [pRes,sRes]=await Promise.all([TroveAPI.api('/api/products?view=list'),TroveAPI.api('/api/shops')]);
     VENDORS={};
     sRes.shops.forEach(s=>{VENDORS[s.slug]={name:s.isHouse?_t(s.name):s.name,house:s.isHouse,loc:s.location,color:safeColor(s.color),img:safeImg(s.image)||null,imgSmall:safeImg(s.imageSmall)||null,bio:s.bio,prods:s.productCount,since:s.since,joined:s.joined||null,rating:s.rating?s.rating.avg:null,ratingCount:s.rating?s.rating.count:0,provider:s.provider||null};});
     PRODUCTS=pRes.products.map(p=>{
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
       // On an Arabic page name/description/options arrive translated (?lang=ar);
       // nameEn keeps the address slug and the matched stock photo unchanged.
-      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description,seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null,forSale:p.forSale!==false};
+      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description!=null?p.description:null,summary:p.summary||'',seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null,forSale:p.forSale!==false};
     });
     LIVE=true;
   }catch(e){console.warn('trove: catalogue did not load —',e.message);}
@@ -3613,12 +3859,17 @@ function linkQuoteShops(){
   });
 }
 /* Checkout hand-off from the Trove app: /?basket=<json lines>&ret=<return
- * address> swaps the app's basket in and opens checkout, so payment runs here
- * on Stripe. The confirmation offers a way back, but only to the app's own
- * addresses — anything else is ignored rather than followed. */
+ * address> brings the app's basket here, so payment runs on Stripe. Anyone
+ * can write such a link, so it can only ADD pieces to the basket — never
+ * empty or swap what the shopper had (a line already there keeps the larger
+ * quantity) — and it opens the basket for a look, not checkout, which would
+ * open a payment for pieces the shopper never chose (F434). The confirmation
+ * offers a way back, but only to the app's own addresses — anything else is
+ * ignored rather than followed. */
 const APP_RET_KEY='trove.appReturn';
 const APP_RETURN=[/^trove:\/\/order\/$/,/^https:\/\/trove-app-ub4k\.onrender\.com\/order\/$/,/^http:\/\/localhost:8081\/order\/$/];
 function appReturn(){try{const r=sessionStorage.getItem(APP_RET_KEY)||'';return APP_RETURN.some(re=>re.test(r))?r:'';}catch(_){return '';}}
+const sameLine=(a,b)=>a.pid===b.pid&&(a.note||'')===(b.note||'')&&optLabel(a.opts)===optLabel(b.opts)&&(a.extras||[]).join('|')===(b.extras||[]).join('|');
 function takeAppBasket(){
   let q;try{q=new URLSearchParams(location.search);}catch(_){return false;}
   const raw=q.get('basket');
@@ -3627,13 +3878,62 @@ function takeAppBasket(){
   const ret=q.get('ret')||'';
   try{if(APP_RETURN.some(re=>re.test(ret)))sessionStorage.setItem(APP_RET_KEY,ret);else sessionStorage.removeItem(APP_RET_KEY);}catch(_){}
   let lines=[];try{lines=JSON.parse(raw);}catch(_){}
-  const clean=cleanLines(lines);
-  cart=clean; updateCartCount(); renderCart();
-  if(!clean.length){toast(_t('The pieces in your app basket are no longer available'));return true;}
-  const dropped=(Array.isArray(lines)?lines.length:0)-clean.length;
-  startCheckout();
-  if(dropped)toast(_tn(dropped,'One piece from your basket is no longer available','{n} pieces from your basket are no longer available'));
+  const incoming=cleanLines(lines);
+  if(!incoming.length){toast(_t('The pieces in your app basket are no longer available'));return true;}
+  const had=cart.length;
+  incoming.forEach(l=>{const ex=cart.find(c=>sameLine(c,l));if(ex)ex.qty=Math.max(ex.qty,l.qty);else cart.push(l);});
+  updateCartCount(); renderCart(); openCart();
+  const dropped=(Array.isArray(lines)?lines.length:0)-incoming.length;
+  toast(dropped?_tn(dropped,'One piece from your basket is no longer available','{n} pieces from your basket are no longer available')
+    :had?_t('Your pieces from the Trove app were added to your basket'):_t('Your pieces from the Trove app are in your basket'),5000);
   return true;
+}
+/* Back from a payment method that leaves the site (a bank page, pay later):
+ * Stripe returns to /order/<id>/thanks?payment_intent=…&payment_intent_client_secret=…&redirect_status=…
+ * The secret leaves the address at once; then the payment's own status says
+ * what happened — paid (or still processing): the confirmation, basket
+ * cleared; not paid: back to the basket with a plain note (F217). */
+async function takeStripeReturn(){
+  let q;try{q=new URLSearchParams(location.search);}catch(_){return false;}
+  const secret=q.get('payment_intent_client_secret'), m=trovePath(location.pathname).match(/^\/order\/([A-Za-z0-9-]+)\/thanks\/?$/);
+  if(!secret||!m)return false;
+  const id=m[1];
+  history.replaceState(null,'',trovePath(location.pathname));
+  const said=q.get('redirect_status');
+  let status=said==='succeeded'?'succeeded':said==='failed'?'requires_payment_method':'';
+  try{
+    await loadStripeJs();
+    if(!stripeJs)stripeJs=window.Stripe(TroveAPI.stripeKey);
+    const r=await stripeJs.retrievePaymentIntent(secret);
+    if(r&&r.paymentIntent&&r.paymentIntent.status)status=r.paymentIntent.status;
+  }catch(_){/* the redirect's own word stands */}
+  let pending=null;
+  try{pending=JSON.parse(sessionStorage.getItem(PENDING_KEY)||'null');sessionStorage.removeItem(PENDING_KEY);}catch(_){}
+  if(status==='succeeded'||status==='processing'||status==='requires_capture'){
+    if(pending&&pending.orderId===id&&cart.length){
+      lastOrder={orderId:id,clientSecret:secret,amountCents:Number(pending.amountCents),email:pending.email||'',name:pending.name||''};
+      showConfirmation(id);
+    }else showOrderPage(id);
+    return true;
+  }
+  if(status){
+    ROUTING=true; try{go('home');}finally{ROUTING=false;}
+    openCart();
+    toast(_t('Your payment didn’t go through, so nothing was charged. Your basket is still here — please try again.'),7000);
+    return true;
+  }
+  showOrderPage(id); // status unknown: the order page asks the server
+  return true;
+}
+/* Tapped before the catalogue had loaded (F424): the tap is kept and
+ * replayed once the page is ready, so it never silently does nothing. */
+let BOOTED=false, EARLY_TAP=null;
+function pdpEarlyTap(){if(!BOOTED){EARLY_TAP={pdp:true};toast(_t('Just a moment…'));}}
+function replayEarlyTap(){
+  const t=EARLY_TAP; EARLY_TAP=null;
+  if(!t)return;
+  if(t.pdp){if(state.view==='pdp')$('pdpAdd').click();return;}
+  if(PRODUCTS.some(p=>p.id===t.id))addToCart(t.id,null,t.note,t.opts,t.extras);
 }
 async function boot(){
   await Promise.all([loadCatalog(),loadAuth(),loadFees(),loadContent()]);
@@ -3647,13 +3947,16 @@ async function boot(){
   // After the catalogue, so a saved basket can be checked against what's
   // actually still on sale (restoreCart updates the count itself).
   restoreCart(); updateCartCount();
+  BOOTED=true;
+  // Back from a bank page or pay-later: finish the order (F217).
+  if(await takeStripeReturn()){replayEarlyTap();return;}
   // The address names the view: /pieces/<id>-<slug>, /makers/<slug>,
   // /shop[/<category>][?q=], /sell-on-trove or / (#vendors, #weekly). The old
   // query addresses (/?p=, /?shop=, /?view=shop[&cat=House], /?view=sell)
   // are 301'd by the server; they are still understood here in case a copy
   // of the page is served without it. /?q=<search> and /?cart=1 come from
   // the shared header on the other pages.
-  if(takeAppBasket())return;
+  if(takeAppBasket()){replayEarlyTap();return;}
   ROUTING=true;
   try{
     const q=new URLSearchParams(location.search);
@@ -3662,7 +3965,8 @@ async function boot(){
     const atHome=trovePath(location.pathname)==='/';
     if(shopSlug&&VENDORS[shopSlug])openVendor(shopSlug);
     else if(pid&&PRODUCTS.some(p=>p.id===pid))openPDP(pid);
-    else if(search!=null&&atHome){if($('searchInput'))$('searchInput').value=search;runSearch(search);}
+    // /?q= is a search typed into the header on another page: it counts (F290)
+    else if(search!=null&&atHome){if($('searchInput'))$('searchInput').value=search;runSearch(search,{typed:true});}
     else if(view==='shop')go('shop',cat||'all');
     else if(view==='sell')go('sell');
     else if(atHome&&location.hash==='#vendors')setTimeout(()=>{const v=$('vendors').hidden?$('makerStory'):$('vendors');if(v)v.scrollIntoView({behavior:'smooth'});},120);
@@ -3671,7 +3975,32 @@ async function boot(){
     if(q.get('cart')){openCart();q.delete('cart');const rest=q.toString();history.replaceState(history.state,'',trovePath(location.pathname)+(rest?'?'+rest:'')+location.hash);}
   }catch(e){console.warn('trove: could not open this address —',e.message);}
   finally{ROUTING=false;}
+  replayEarlyTap();
 }
+/* The cookie banner sits along the bottom of the screen until it is answered.
+   --cmp-h is its height there, so the basket, the menu, the filter sheet, the
+   phone buy bar and the toast sit above it and it never hides the basket's
+   total or Checkout (F287). Escape closes the basket to reach it by keyboard. */
+(function watchCookieBanner(){
+  const root=document.documentElement;
+  let ro=null, seen=null;
+  const measure=()=>{
+    const b=document.getElementById('iubenda-cs-banner');
+    let h=0;
+    if(b){
+      const r=b.getBoundingClientRect(), cs=getComputedStyle(b);
+      if(r.height&&cs.display!=='none'&&cs.visibility!=='hidden'&&r.bottom>=innerHeight-2&&r.top>0)h=Math.round(Math.min(innerHeight-r.top,innerHeight*.6));
+    }
+    root.style.setProperty('--cmp-h',h+'px');
+    if(b!==seen){
+      seen=b; if(ro){ro.disconnect();ro=null;}
+      if(b){if('ResizeObserver' in window){ro=new ResizeObserver(measure);ro.observe(b);}[300,900,2000].forEach(ms=>setTimeout(measure,ms));}
+    }
+  };
+  try{new MutationObserver(measure).observe(document.body,{childList:true});}catch(_){}
+  addEventListener('resize',measure);
+  measure();
+})();
 boot();
 </script>
 </body>

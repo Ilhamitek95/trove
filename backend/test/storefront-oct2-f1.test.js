@@ -221,7 +221,8 @@ test('F192: an address naming another emirate is refused even with Dubai chosen;
   const serverSrc = fs.readFileSync(path.join(__dirname, '..', 'src', 'service-area.js'), 'utf8').match(/const OTHER_EMIRATES = (\/.*\/i);/)[1];
   assert.equal(client, serverSrc, 'client and server emirate lists match');
   const rc = fnSrc('renderCheckout');
-  assert.match(rc, /<select id="coNewEmirate" required><option value="" selected disabled>\$\{_t\('Choose emirate…'\)\}<\/option>/);
+  // (the browser may fill it from the shopper's saved address: autocomplete, F288)
+  assert.match(rc, /<select id="coNewEmirate" required autocomplete="shipping address-level1"><option value="" selected disabled>\$\{_t\('Choose emirate…'\)\}<\/option>/);
   assert.doesNotMatch(fnSrc('checkoutPayload'), /\|\|'Dubai'/, 'no silent Dubai default');
 });
 

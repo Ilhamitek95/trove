@@ -82,7 +82,8 @@ test('the shelf: the full filter rail even with one piece, a short shelf gets a 
   assert.match(html, /<input type="checkbox" id="fltSale"[^>]*> On sale only/);
   assert.match(store, /<button class="f-open-btn" onclick="openFilters\(\)">/, 'the phone Filter sheet button');
   assert.match(html, /<div class="pgrid few one" id="shopGrid">/);
-  assert.match(noScripts(html), /<button class="add add-row" onclick="event\.stopPropagation\(\);addToCart\(\d+,this\)">Add to basket<\/button>/);
+  // (the tap waits for the page's script — window.addToCart — instead of erroring before it loads, F424)
+  assert.match(noScripts(html), /<button class="add add-row" onclick="event\.stopPropagation\(\);window\.addToCart\?addToCart\(\d+,this\):0">Add to basket<\/button>/);
   for (const id of ['fgCat', 'fgSeller', 'fgOffers', 'fgPrice']) assert.match(store, new RegExp(`class="fgroup" id="${id}"`));
   assert.match(store, /const inPillar=p=>state\.cat!=='House'/, 'facet counts follow the pillar');
   assert.match(store, /opt\.hidden=!rated;opt\.disabled=!rated;/, 'Top rated waits for real ratings');
