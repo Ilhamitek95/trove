@@ -16,11 +16,13 @@
     --font-display:'Cormorant',Georgia,serif;
     --rose:#DBC7BD; --coral:#F19A82; --accent-ink:#292727; --cream:#FDF7F5;
     --sage:#CAD5CC; --char:#292727; --taupe:#BD9C8C; --paper:#FFFCFA;
-    --rose-tint:#F2E9E4; --line:rgba(41,39,39,.1); --line-soft:rgba(41,39,39,.06);
+    --rose-tint:#F2E9E4; --sage-tint:#E9EFEA; /* the same tints as trove-services.html and provider-panel.js */ --line:rgba(41,39,39,.1); --line-soft:rgba(41,39,39,.06);
     --muted:rgba(41,39,39,.72); --ink-80:rgba(41,39,39,.78); --green:#292727; /* muted .72 = 5.8:1 on cream (WCAG AA) */ /* status ink: Charcoal on tinted surfaces */
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
+  body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500;
+       font-variant-numeric:lining-nums} /* Cormorant's default old-style figures print 0 like a letter o in amounts and order numbers */
+  .stat .v,.tbl td{font-variant-numeric:lining-nums tabular-nums}
   h1,h2,h3{font-family:var(--font-display);font-weight:600}
   button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
   a{color:inherit;text-decoration:none}
@@ -49,7 +51,7 @@
   .view{display:none}
   .view.active{display:block}
 
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:22px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,calc(50% - 7px)),1fr));gap:14px;margin-bottom:22px} /* wide enough for 'AED 1,234.50' on one line; two a row on phones */
   .stat{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
   .stat .k{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:700}
   .stat .v{font-family:var(--font-display);font-size:30px;font-weight:600;margin-top:6px}
@@ -154,7 +156,25 @@
   .btn-ghost{border:1px solid var(--line);background:var(--paper)}
   .btn-ghost:hover{border-color:var(--char)}
   .btn-dark{background:var(--char);color:var(--cream)}
+  .btn-sm{padding:6px 12px;font-size:11.5px}
   .actions{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+  /* Payments: one heading per group of people paid, and the quiet 'not active yet' row */
+  .pay-sec{font-family:var(--font-display);font-size:24px;font-weight:600;margin:6px 2px 12px}
+  .pay-next{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .pay-next>div{flex:1;min-width:240px}
+  .pay-next .big{font-family:var(--font-display);font-size:30px;font-weight:600;line-height:1.15;font-variant-numeric:lining-nums tabular-nums}
+  details.later{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px 22px;margin-bottom:18px}
+  details.later summary{cursor:pointer;font-weight:700;font-size:14px}
+  details.later .later-row{font-size:13px;color:var(--muted);font-weight:600;margin-top:10px;line-height:1.55}
+  details.rules summary{cursor:pointer;font-weight:700;font-size:12.5px;color:var(--char);margin-bottom:6px}
+  /* Site content: jump links to each section, and a save error that stays until read */
+  .cms-index{position:sticky;top:0;z-index:5;display:flex;gap:6px;flex-wrap:wrap;padding:10px 0;margin-bottom:12px;background:var(--cream)}
+  .cms-index a{font-size:12px;font-weight:700;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--paper)}
+  .cms-index a:hover{border-color:var(--char)}
+  .cmserr{display:flex;gap:10px;align-items:flex-start;background:#FDF3EF;border:1px solid var(--rose);border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:13px;font-weight:600}
+  .cmserr button{margin-left:auto;font-weight:700;text-decoration:underline;flex-shrink:0}
+  .cmscard{scroll-margin-top:64px}
+  @media(max-width:920px){.cms-index{position:static}}
 
   .empty{color:var(--muted);font-weight:600;font-size:13.5px;padding:14px 0}
 
@@ -264,7 +284,7 @@
     <a class="mitem" data-v="sitecontent" onclick="go('sitecontent')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Site content</a>
     <a class="mitem" data-v="translations" onclick="go('translations')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3Z"/></svg>Translations<span class="badge zero" id="trBadge">0</span></a>
     <a class="mitem" data-v="messages" onclick="go('messages')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Messages<span class="badge zero" id="msgBadge">0</span></a>
-    <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Trove payouts</a>
+    <a class="mitem" data-v="payouts" onclick="go('payouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg>Payments</a>
     <a class="mitem" data-v="activity" onclick="go('activity')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Activity</a>
     <div class="sfoot">
       <a href="/" target="_blank" rel="noopener">View storefront ↗</a>
@@ -326,12 +346,7 @@
         <div class="hint">Trove is the customer's contracting party on these: the customer pays Trove by card, Trove keeps the 10% platform fee and owes the provider the rest. Refund gives the customer their full payment back (a booking that hasn't happened yet is cancelled with it). Anything flagged needs you — a failed refund is refunded by hand in Stripe, then here.</div></div>
         <div id="svcBookingsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
       </div>
-      <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h3>Provider payouts</h3>
-        <div class="hint">What providers are owed for bookings paid through Trove at this fortnight's run<span id="svcRunDate"></span>. A fee is payable once the service date has passed and the 3-day complaint window has closed (marking a booking done does not bring it forward), and goes out on the same every-other-Tuesday schedule as makers. Paid by manual bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf: download the bank transfer file, send each transfer with its reference, then mark that provider paid here (they get an email). Mark paid closes exactly what was in the file you downloaded — anything that became payable after it waits for the next file. Providers without bank details wait and are left out of the file.</div></div>
-        <a class="btn btn-ghost" id="svcCsvBtn" style="display:none" href="#" onclick="setTimeout(loadServiceMoney,1200)">Download bank transfer file</a></div>
-        <div id="svcCreditsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
-      </div>
+      <div class="hint" style="margin:0 4px 18px">Paying providers what they are owed for these bookings is on the <a href="#payouts" onclick="go('payouts');return false" style="text-decoration:underline">Payments</a> tab, beside paying makers.</div>
     </div>
 
     <div class="view" id="view-products">
@@ -374,7 +389,8 @@
 
     <div class="view" id="view-returns">
       <div class="card" style="padding:0">
-        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Buyers pick the items (and units) going back, a reason and photos, within 15 days of delivery. Approving books the courier collection; the refund goes back to their card once the courier has collected the item, and only then do the shops' credits reverse. The AED 30 collection fee applies only to 'changed my mind' on orders of AED 200 and below — tick or untick it to override. It is charged per request, so pieces sent back together pay it once. The original delivery fee is refunded only when the whole order comes back for a fault (the request that completes the order, with every returned unit a fault) — the second tick box overrides that either way. Declines go back to the buyer with your reason.</div></div>
+        <div style="padding:20px 22px 4px"><h3>Return requests</h3><div class="hint">Approving books the courier collection; the buyer's card is refunded once the courier has the piece. Each request shows what it would refund.</div>
+          <details class="rules hint"><summary>How returns work</summary>Buyers pick the items (and units) going back, a reason and photos, within 15 days of delivery. Approving books the courier collection; the refund goes back to their card once the courier has collected the item, and only then do the shops' credits reverse. The AED 30 collection fee applies only to 'changed my mind' on orders of AED 200 and below — tick or untick it to override. It is charged per request, so pieces sent back together pay it once. The original delivery fee is refunded only when the whole order comes back for a fault (the request that completes the order, with every returned unit a fault) — the second tick box overrides that either way. Declines go back to the buyer with your reason.</details></div>
         <div id="returnsWrap" style="padding:14px 22px 22px"></div>
       </div>
     </div>
@@ -415,7 +431,18 @@
     </div>
 
     <div class="view" id="view-payouts">
+      <!-- Everyone Trove pays, on one tab (F324): makers first, then service providers. -->
+      <h2 class="pay-sec">Makers · every other Tuesday</h2>
       <div id="payoutsWrap"></div>
+      <h2 class="pay-sec" style="margin-top:26px">Service providers · same Tuesdays</h2>
+      <div class="card" style="padding:0">
+        <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:260px"><h3>Provider payouts</h3>
+        <div class="steps" aria-label="Steps for paying providers" style="margin:4px 0 10px"><span>1. Download the bank transfer file</span><span>2. Send each transfer with its reference</span><span>3. Mark each provider paid — they are emailed</span></div>
+        <div class="hint">What providers are owed for bookings paid through Trove at this fortnight's run<span id="svcRunDate"></span>. A fee is payable once the service date has passed and the 3-day complaint window has closed (marking a booking done does not bring it forward). Paid by bank transfer from <b id="svcPayerName">Serein Consultancy</b> on Trove's behalf. Mark paid closes exactly what was in the file you downloaded — anything that became payable after it waits for the next file. Providers without bank details wait and are left out of the file.</div></div>
+        <a class="btn btn-ghost" id="svcCsvBtn" style="display:none" href="#" onclick="setTimeout(loadServiceMoney,1200)">1. Download bank transfer file</a></div>
+        <div id="svcCreditsWrap" style="padding:0 22px 18px"><div class="empty">Loading…</div></div>
+      </div>
+      <div id="payoutsLater"></div>
     </div>
 
     <div class="view" id="view-activity">
@@ -544,7 +571,7 @@ function tile(s){
 }
 
 /* ---------------- navigation ---------------- */
-const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to book the collection; the refund follows the pickup'],translations:['Translations','Arabic for everything people write: status, retranslate, hand edits'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Trove payouts','Pay your managed sellers'],activity:['Activity','Who changed what, and when']};
+const TITLES={overview:['Overview','The whole marketplace at a glance'],members:['Members','Shops and services practices, one row per account'],shops:['Shops','Approve and manage every shop'],providers:['Service providers','Approve and manage the Services Marketplace'],products:['Products','The full catalogue — moderate and tune discovery'],orders:['Orders','Everything shoppers have bought'],reviews:['Reviews','What verified buyers are saying'],returns:['Returns','Buyer return requests — approve to book the collection; the refund follows the pickup'],translations:['Translations','Arabic for everything people write: status, retranslate, hand edits'],sitecontent:['Site content','Edit the storefront copy — homepage, Sell-on-Trove page, announcement bar, footer and company details'],messages:['Messages','What people sent through the contact form'],payouts:['Payments','Paying makers and service providers, in one place'],activity:['Activity','Who changed what, and when']};
 function go(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
   $('view-'+v).classList.add('active');
@@ -719,6 +746,7 @@ async function reloadPayouts(){
   try{ GRAD=await TroveAPI.api('/api/admin/graduation'); }catch(_){ GRAD={queue:[],railBEnabled:false}; }
   try{ VAT=await TroveAPI.api('/api/admin/vat-report'); }catch(_){ VAT={vatRegistered:false,rows:[]}; }
   renderPayouts();
+  if(STATS)renderOverview(); // the Overview's 'Next maker payments' tile reads the same preview
   if(typeof NEEDS!=='undefined'&&NEEDS)reloadNeeds(); // a run sent or paid changes the to-do list
 }
 
@@ -733,6 +761,13 @@ function courierStatHTML(){
   const n=c.empty?'a booking was refused for lack of credit — top it up':c.low?`credit left, under the ${c.threshold} warning level — top it up`:c.checkedAt?`checked ${fmtDate(c.checkedAt)}`:'not read yet';
   return `<div class="stat ${c.low?'hot':''}"><div class="k">Courier wallet (OTO)</div><div class="v">${esc(v)}</div><div class="n">${esc(n)} · <a href="#" role="button" onclick="checkWallet();return false" style="color:inherit">check now</a></div></div>`;
 }
+/* The next fortnightly run, on the Overview (F386): its day and what it would
+ * pay today, from the same preview the Payments tab shows. */
+function nextRunStatHTML(){
+  const p=PREVIEW; if(!p)return '';
+  const n=(p.eligible||[]).length;
+  return `<div class="stat"><div class="k">Next maker payments</div><div class="v">${p.nextRunDate?esc(runDay(p.nextRunDate)):'—'}</div><div class="n">${n?`${money(p.totalNetCents)} to ${n} maker${n===1?'':'s'} so far`:'nothing due yet'} · <a href="#payouts" onclick="go('payouts');return false" style="color:inherit">Payments</a></div></div>`;
+}
 async function checkWallet(){
   try{ COURIER=await TroveAPI.api('/api/admin/courier/check-wallet',{method:'POST'}); toast('Wallet read'); }
   catch(e){ toast(e.message||'OTO did not answer'); }
@@ -743,12 +778,14 @@ function renderOverview(){
   $('statCards').innerHTML=`
     <div class="stat ${s.shops.pending?'hot':''}"><div class="k">Pending approval</div><div class="v">${s.shops.pending}</div><div class="n">new shop${s.shops.pending===1?'':'s'} waiting</div></div>
     <div class="stat"><div class="k">Live shops</div><div class="v">${s.shops.approved}</div><div class="n">of ${s.shops.total} total</div></div>
-    <div class="stat"><div class="k">Orders</div><div class="v">${s.orders}</div><div class="n">paid, not refunded in full</div></div>
-    <div class="stat"><div class="k">Sales</div><div class="v">${money(s.gmvCents)}</div><div class="n">after refunds · incl. delivery${s.refundedCents?` · ${money(s.refundedCents)} refunded`:''}</div></div>
+    <div class="stat"><div class="k">Orders · all time</div><div class="v">${s.orders}</div><div class="n">paid, not refunded in full</div></div>
+    <div class="stat"><div class="k">Sales · all time</div><div class="v">${money(s.gmvCents)}</div><div class="n">after refunds · incl. delivery and your Collection${s.refundedCents?` · ${money(s.refundedCents)} refunded`:''}</div></div>
+    <div class="stat"><div class="k">Trove’s share · 30 days</div><div class="v">${money(s.troveShare30Cents||0)}</div><div class="n">after refunds and the makers’ share · before courier and card fees</div></div>
+    ${nextRunStatHTML()}
     <div class="stat"><div class="k">Buyers</div><div class="v">${s.buyers}</div><div class="n">registered</div></div>
     <div class="stat"><div class="k">Live products</div><div class="v">${s.liveProducts}</div><div class="n">across all shops</div></div>
     ${courierStatHTML()}
-    <div class="stat ${s.licensed&&s.licensed.awaiting?'hot':''}"><div class="k">Licensed sellers</div><div class="v">${s.licensed?s.licensed.total:0}</div><div class="n">${s.licensed&&s.licensed.total?`${s.licensed.verified} verified · ${s.licensed.awaiting} awaiting check`:'none yet — makers sell licence-free'}</div></div>
+    ${s.railBEnabled?`<div class="stat ${s.licensed&&s.licensed.awaiting?'hot':''}"><div class="k">Licensed sellers</div><div class="v">${s.licensed?s.licensed.total:0}</div><div class="n">${s.licensed&&s.licensed.total?`${s.licensed.verified} verified · ${s.licensed.awaiting} awaiting check`:'none yet — makers sell licence-free'}</div></div>`:''}
     <div class="stat ${s.providers&&s.providers.pending?'hot':''}"><div class="k">Service providers</div><div class="v">${s.providers?s.providers.approved:0}</div><div class="n">${s.providers&&s.providers.pending?`${s.providers.pending} waiting for review`:'live on the Services Marketplace'}</div></div>`;
   const b=$('pendBadge');const n=s.shops.pending;b.textContent=n;b.classList.toggle('zero',!n);
   const pend=SHOPS.filter(x=>x.status==='pending');
@@ -804,10 +841,13 @@ function applicationFactsHTML(s){
 }
 
 /* ---------------- members: shop + services on one row ---------------- */
+const hiddenWhy=x=>x.status==='pending'?'hidden until approved':x.status==='suspended'?'hidden while suspended':'hidden from shoppers';
 function memberSideHTML(kind, x){
   if(!x) return '<span style="color:var(--muted)">—</span>';
-  const pub = kind==='shop' ? `/?shop=${encodeURIComponent(x.slug)}` : `/services/${encodeURIComponent(x.slug)}`;
-  const live = kind==='shop' ? `${x.liveProducts} live piece${x.liveProducts===1?'':'s'}` : `${x.liveServices} live service${x.liveServices===1?'':'s'}`;
+  const pub = kind==='shop' ? `/makers/${encodeURIComponent(x.slug)}` : `/services/${encodeURIComponent(x.slug)}`;
+  // 'Live' only when shoppers can see it: an unapproved shop's pieces wait (F491).
+  const live = kind==='shop' ? (x.status==='approved'?`${x.liveProducts} live piece${x.liveProducts===1?'':'s'}`:`${x.liveProducts} piece${x.liveProducts===1?'':'s'} ready · ${hiddenWhy(x)}`)
+    : (x.status==='approved'?`${x.liveServices} live service${x.liveServices===1?'':'s'}`:`${x.liveServices} service${x.liveServices===1?'':'s'} ready · ${hiddenWhy(x)}`);
   const acts = kind==='shop' ? shopActions(x) : providerActions(x);
   return `<div style="display:flex;flex-direction:column;gap:6px;min-width:220px">
     <div><a href="${pub}" target="_blank" rel="noopener" class="nm" style="text-decoration:underline">${esc(x.name)}</a> <span class="pill ${esc(x.status)}">${esc(x.status)}</span></div>
@@ -866,7 +906,11 @@ function idCellHTML(s){
   const id=s.identity||{}, eid=s.eid||{};
   let out='';
   if(s.licenseVerifiedAt) out+='<span class="pill approved">licence ✓</span>';
-  else if(s.licenseNumber) out+='<span class="pill pending" title="Typed by the maker — verify it under Graduation">licence to verify</span> ';
+  // A typed licence number, checked here: once verified it replaces the
+  // Emirates ID check for payments.
+  else if(s.licenseNumber) out+=`<span class="pill pending" title="Typed by the maker — check it, then mark it verified">licence to check</span>
+    <div class="sl" style="margin-top:3px">${esc(s.licenseNumber)}${s.hasLicenseImage?` · <a href="${TroveAPI.base}/api/admin/shops/${s.id}/license-image" target="_blank" rel="noopener">licence image</a>`:''}</div>
+    <button class="btn btn-ghost" style="margin:4px 0;padding:5px 10px;font-size:12px" onclick="verifyLicense(${s.id})">Mark licence verified</button>`;
   if(!s.licenseVerifiedAt){
     if(s.eidFront&&s.eidBack){
       const st=eid.state;
@@ -899,6 +943,19 @@ function makerPhoneHTML(s){
   const nums=[s.pickupPhone&&['Pickup',s.pickupPhone],s.pitchPhone&&s.pitchPhone!==s.pickupPhone&&['WhatsApp',s.pitchPhone]].filter(Boolean);
   return nums.length?`<div class="sl">${nums.map(([k,v])=>`${k} <a href="tel:${esc(String(v).replace(/[^\d+]/g,''))}" style="color:inherit">${esc(v)}</a>`).join(' · ')}</div>`:'';
 }
+/* A photo session the maker asked for from their dashboard (F318): open until
+ * you have arranged it — call them, set a visit or a collection, then tick it. */
+function photoAskHTML(s){
+  if(!s.photoSessionRequestedAt||s.photoSessionArrangedAt)return '';
+  return `<div class="sl" style="margin-top:4px;color:var(--char);font-weight:700">Asked for a photo session ${fmtDate(s.photoSessionRequestedAt)}</div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:3px" onclick="photoArranged(${s.id})">Mark arranged</button>`;
+}
+async function photoArranged(id){
+  const s=SHOPS.find(x=>x.id===id);
+  if(!confirm(`Mark the photo session for "${s?s.name:'this shop'}" as arranged? Do this once you have agreed a visit or a collection with the maker.`))return;
+  try{ await TroveAPI.api(`/api/admin/shops/${id}/photo-session`,{method:'POST',body:{arranged:true}}); toast('Photo session marked arranged'); await reload(); }
+  catch(e){ toast(e.message||'Could not save'); }
+}
 /* How the maker is paid (tier), and — named — what stops the settlement run
  * paying them: bank details, the signed agreement, the identity check. */
 function payoutCellHTML(s){
@@ -909,9 +966,9 @@ function payoutCellHTML(s){
 }
 function shopRowHTML(s){
   return `<tr>
-    <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div>${makerPhoneHTML(s)}</div></div></td>
+    <td><div class="shoprow">${tile(s)}<div><div class="nm">${esc(s.name)}${s.isHouse?'<span class="house-tag">house</span>':''}</div><div class="sl">${esc(s.owner.email)}</div>${makerPhoneHTML(s)}${photoAskHTML(s)}</div></div></td>
     <td style="color:var(--muted)">${esc(s.location||'—')}</td>
-    <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} live</span></td>
+    <td>${s.liveProducts}<span style="color:var(--muted)">/${s.products} ${s.status==='approved'?'live':`ready<div class="sl">${hiddenWhy(s)}</div>`}</span></td>
     <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.salesCents)}</td>
     <td style="color:var(--muted)">${payoutCellHTML(s)}</td>
     <td>${idCellHTML(s)}</td>
@@ -1009,7 +1066,7 @@ async function loadServiceMoney(){
   const rows=[...(credits.eligible||[]),...(credits.excluded||[])].filter(r=>r.netCents>0||r.batch);
   SVC_PAY=rows;
   if(credits.payerName)$('svcPayerName').textContent=credits.payerName;
-  $('svcRunDate').textContent=credits.runDate?` (run of ${credits.runDate}; next run ${credits.nextRunDate||''})`:'';
+  $('svcRunDate').textContent=credits.runDate?` (run of ${runDay(credits.runDate)}${credits.nextRunDate?`; next run ${runDay(credits.nextRunDate)}`:''})`:'';
   const csv=$('svcCsvBtn');
   csv.href=`${TroveAPI.base}/api/admin/provider-payouts/export.csv`;
   csv.style.display=(credits.eligible||[]).length?'':'none';
@@ -1109,7 +1166,8 @@ function renderProducts(){
         <button class="btn btn-ghost" onclick="openTagModal(${p.id},false)">Tags</button>
         ${AI_TAGS?`<button class="btn btn-ghost" onclick="openTagModal(${p.id},true)">✨ AI</button>`:''}
         ${p.status==='live'?`<button class="btn btn-ghost" onclick="setProductStatus(${p.id},'hidden',true)">Hide</button>`
-          :`<button class="btn btn-green" onclick="setProductStatus(${p.id},'live')">Put live</button>`}
+          :p.adminHidden?`<button class="btn btn-green" onclick="setProductStatus(${p.id},'live',true)">Undo Trove hide</button>`
+          :`<span class="sl" title="Only the maker can put their own draft or hidden piece on sale">${p.status==='draft'?'maker’s draft':'hidden by the maker'}</span>`}
       </div></td>
     </tr>`).join(''):`<tr><td colspan="7" class="empty">No products match.</td></tr>`}</tbody>`;
 }
@@ -1121,9 +1179,14 @@ async function patchProduct(id,body,okMsg){
     renderProducts();
   }catch(e){ toast(e.message||'Could not update the product'); }
 }
+/* Hide a live piece, or lift a hide Trove made. A maker's own draft or hidden
+ * piece has no button: going live is the maker's call (F327). */
 function setProductStatus(id,status,confirmFirst){
   const p=PRODUCTS.find(x=>x.id===id);
-  if(confirmFirst&&!confirm(`Hide "${p?p.name:'this product'}" from the storefront? The seller keeps it in their dashboard and you can put it live again any time.`))return;
+  const ask=status==='live'
+    ?`Put "${p?p.name:'this product'}" by ${p?p.shop.name:'this shop'} back on sale? This lifts the hide you placed; shoppers can buy it straight away.`
+    :`Hide "${p?p.name:'this product'}" from the storefront? The seller keeps it in their dashboard and you can put it live again any time.`;
+  if(confirmFirst&&!confirm(ask))return;
   patchProduct(id,{status},status==='live'?'Product is live':'Product hidden');
 }
 /* --- tag editor modal: chip editing + tap-to-add Claude suggestions --- */
@@ -1271,6 +1334,7 @@ function renderReturns(){
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         ${pill(r.status)}
         <b style="font-size:13.5px">${esc(r.order.publicId)}</b>
+        <button class="btn btn-ghost btn-sm" onclick="openOrder('${esc(r.order.publicId)}')" title="The whole order: what was bought, parcels and tracking, other returns">Open the order</button>
         <span style="color:var(--muted);font-size:12.5px;font-weight:600">${esc(r.order.buyer||'')} · ${esc(r.order.email)}</span>
         <span style="color:var(--muted);font-size:12px;margin-left:auto">${fmtDate(r.createdAt)}</span>
       </div>
@@ -1281,17 +1345,17 @@ function renderReturns(){
         ${r.items.length<r.order.itemCount?` <span style="color:var(--muted)">(${r.items.length} of ${r.order.itemCount} items on the order)</span>`:''}
       </div>
       <div style="margin-top:10px;font-size:12.5px;font-weight:600;color:var(--muted)">
-        Returning AED ${r.itemsTotal} of the order's AED ${r.order.itemsTotal}
-        ${r.status==='refunded'?` · <b style="color:var(--char)">refunded AED ${r.refund}</b>${retMoneyNote(r.fee,r.deliveryRefund)}${r.refundedAt?' on '+fmtDate(r.refundedAt):''}${r.creditNoteRef?` · credit note ${esc(r.creditNoteRef)} (VAT AED ${r.vatReversed})`:''}${r.refundNote?` · ${esc(r.refundNote)}`:''}`
-          :open(r.status)?` · <b style="color:var(--char)">AED ${r.refund}</b> goes back once the courier has it${retMoneyNote(r.fee,r.deliveryRefund)}`
+        Returning ${aedx(r.itemsTotal)} of the order's ${aedx(r.order.itemsTotal)}
+        ${r.status==='refunded'?` · <b style="color:var(--char)">refunded ${aedx(r.refund)}</b>${retMoneyNote(r.fee,r.deliveryRefund)}${r.refundedAt?' on '+fmtDate(r.refundedAt):''}${r.creditNoteRef?` · credit note ${esc(r.creditNoteRef)} (VAT ${aedx(r.vatReversed)})`:''}${r.refundNote?` · ${esc(r.refundNote)}`:''}`
+          :open(r.status)?` · <b style="color:var(--char)">${aedx(r.refund)}</b> goes back once the courier has it${retMoneyNote(r.fee,r.deliveryRefund)}`
           :r.status==='declined'?` · declined: “${esc(r.declineReason||'')}”`
-          :` · would refund <b style="color:var(--char)">AED ${r.refundPreview}</b>${retMoneyNote(r.feePreview,r.deliveryPreview)||' (free collection)'}`}${r.order.deliveryPaid?` · delivery paid AED ${r.order.deliveryPaid}`:''}
+          :` · would refund <b style="color:var(--char)">${aedx(r.refundPreview)}</b>${retMoneyNote(r.feePreview,r.deliveryPreview)||' (free collection)'}`}${r.order.deliveryPaid?` · delivery paid ${aedx(r.order.deliveryPaid)}`:''}
       </div>
       ${(r.collections||[]).length?`<div style="margin-top:6px;font-size:12px;color:var(--muted);font-weight:600">Courier: ${r.collections.map(c=>`${esc(({not_needed:'nothing to collect',failed:'booking failed — the refund waits for it'})[c.status]||c.status)}${c.ref?' · '+esc(c.ref):''}${c.note?' · '+esc(c.note):''}`).join(' &nbsp;|&nbsp; ')}</div>`:''}
       ${r.status==='requested'?`<div style="display:flex;gap:9px;margin-top:12px;align-items:center;flex-wrap:wrap">
-        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" id="retFee${r.id}" ${r.feePreview?'checked':''} ${r.feeIfCharged?'':'disabled'} onchange="retFeePreview(${r.id},true)">Charge the AED ${r.feeIfCharged||0} collection fee</label>
-        ${r.deliveryIfRefunded?`<label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer" title="By the rule the original delivery comes back when the whole order is returned for a fault"><input type="checkbox" id="retDel${r.id}" ${r.deliveryPreview?'checked':''} onchange="retFeePreview(${r.id})">Refund the AED ${r.deliveryIfRefunded} original delivery</label>`:''}
-        <span id="retAmt${r.id}" style="font-size:12.5px;color:var(--muted);font-weight:600">refund AED ${r.refundPreview}</span>
+        <label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer"><input type="checkbox" id="retFee${r.id}" ${r.feePreview?'checked':''} ${r.feeIfCharged?'':'disabled'} onchange="retFeePreview(${r.id},true)">Charge the ${aedx(r.feeIfCharged||0)} collection fee</label>
+        ${r.deliveryIfRefunded?`<label style="display:flex;gap:7px;align-items:center;font-size:12.5px;font-weight:600;cursor:pointer" title="By the rule the original delivery comes back when the whole order is returned for a fault"><input type="checkbox" id="retDel${r.id}" ${r.deliveryPreview?'checked':''} onchange="retFeePreview(${r.id})">Refund the ${aedx(r.deliveryIfRefunded)} original delivery</label>`:''}
+        <span id="retAmt${r.id}" style="font-size:12.5px;color:var(--muted);font-weight:600">refund ${aedx(r.refundPreview)}</span>
         <span style="flex:1"></span>
         <button class="btn btn-green" onclick="approveReturn(${r.id})">Approve · book collection</button>
         <button class="btn btn-ghost" onclick="declineReturn(${r.id})">Decline…</button>
@@ -1303,11 +1367,16 @@ function renderReturns(){
     </div>`).join('')
     :'<div class="empty" style="padding:26px 4px">No return requests yet — they appear here when a buyer asks to send something back.</div>';
 }
+/* Return amounts arrive in dirhams with fils as decimals (45.5): shown like
+ * every other amount ('AED 45.50'), and sums made here are taken back to
+ * whole fils first, so 45.1 − 30 never reads 15.100000000000001 (F326). */
+const toFils=x=>Math.round((Number(x)||0)*100);
+const aedx=x=>money(toFils(x));
 // The bracket after a return amount: delivery given back and/or fee taken off.
 function retMoneyNote(fee,delivery){
   const b=[];
-  if(delivery)b.push(`incl. AED ${delivery} original delivery`);
-  if(fee)b.push(`AED ${fee} collection fee deducted`);
+  if(delivery)b.push(`incl. ${aedx(delivery)} original delivery`);
+  if(fee)b.push(`${aedx(fee)} collection fee deducted`);
   return b.length?` (${b.join('; ')})`:'';
 }
 // What the rule would do with the delivery for a given fee choice: charging
@@ -1318,7 +1387,7 @@ function retChoice(id){
   const fb=$('retFee'+id), db=$('retDel'+id);
   const charge=fb?fb.checked:r.feeRule>0;
   const deliv=db?db.checked:false;
-  const amount=Math.max(0,r.itemsTotal-(charge?r.feeIfCharged:0))+(deliv?r.deliveryIfRefunded:0);
+  const amount=(Math.max(0,toFils(r.itemsTotal)-(charge?toFils(r.feeIfCharged):0))+(deliv?toFils(r.deliveryIfRefunded):0))/100;
   const body={};
   if(charge!==(r.feeRule>0))body.chargeFee=charge;
   if(db&&deliv!==retDeliveryDefault(r,charge))body.refundDelivery=deliv;
@@ -1329,12 +1398,12 @@ function retFeePreview(id,feeChanged){
   // Changing the fee resets the delivery box to what the rule would do.
   if(feeChanged&&$('retDel'+id))$('retDel'+id).checked=retDeliveryDefault(r,$('retFee'+id).checked);
   const c=retChoice(id);
-  $('retAmt'+id).textContent=`refund AED ${c.amount}${Object.keys(c.body).length?' · overriding the rule':''}`;
+  $('retAmt'+id).textContent=`refund ${aedx(c.amount)}${Object.keys(c.body).length?' · overriding the rule':''}`;
 }
 async function approveReturn(id){
   const r=RETURNS.find(x=>x.id===id); if(!r)return;
   const {amount,body}=retChoice(id);
-  if(!confirm(`Approve this return? The courier collection is booked now; AED ${amount} goes back to the buyer's card once the courier has collected the item.`))return;
+  if(!confirm(`Approve this return? The courier collection is booked now; ${aedx(amount)} goes back to the buyer's card once the courier has collected the item.`))return;
   try{
     await TroveAPI.api(`/api/admin/returns/${id}/approve`,{method:'POST',body});
     toast('Return approved — collection booked');
@@ -1346,7 +1415,7 @@ async function rebookReturn(id){
   catch(e){ toast(e.message||'Could not book the collection'); }
 }
 async function refundReturnNow(id,amount){
-  const note=prompt(`Refund AED ${amount} now, before the courier confirms collection? Add a short note for the record (optional).`);
+  const note=prompt(`Refund ${aedx(amount)} now, before the courier confirms collection? Add a short note for the record (optional).`);
   if(note===null)return;
   try{
     await TroveAPI.api(`/api/admin/returns/${id}/refund-now`,{method:'POST',body:{note:note.trim()}});
@@ -1533,14 +1602,18 @@ function cmsShopPickerHTML(spec){
 }
 function cmsShopAdd(key,sel){const v=$(sel).value;const slugs=CMS_EDIT[key].shopSlugs||(CMS_EDIT[key].shopSlugs=[]);if(v&&!slugs.includes(v))slugs.push(v);cmsDirty(key);renderCms();}
 function cmsShopRemove(key,i){CMS_EDIT[key].shopSlugs.splice(i,1);cmsDirty(key);renderCms();}
+/* Jump links across the long Site content page (F420). */
+const CMS_INDEX=[['site.company','Company details'],['site.promo','Announcement bar'],['home.hero','Homepage'],['sell.hero','Sell page'],['site.footer','Footer']];
+const cmsAnchor=key=>'cms-'+key.replace(/\W/g,'-');
+let CMS_ERR={}; // a save the server refused: the reason stays on the section until dismissed
 function renderCms(){
   const w=$('cmsWrap'); if(!w)return;
   if(!CMS){w.innerHTML='<div class="empty">Could not load the site content — refresh to try again.</div>';return;}
-  w.innerHTML=CMS_SPEC.map(spec=>{
+  w.innerHTML=`<nav class="cms-index" aria-label="Site content sections">${CMS_INDEX.map(([k,l])=>`<a href="#${cmsAnchor(k)}">${l}</a>`).join('')}</nav>`+CMS_SPEC.map(spec=>{
     const overridden=!!CMS.overrides[spec.key];
-    const page=spec.page||(spec.key.startsWith('sell.')?'/?view=sell':'/');
+    const page=spec.page||(spec.key.startsWith('sell.')?'/sell-on-trove':'/');
     const fields=(spec.fields||[]).map(([f,lab,kind])=>cmsField(spec.key,f,lab,kind,CMS_EDIT[spec.key][f])).join('');
-    return `<div class="cmscard">
+    return `<div class="cmscard" id="${cmsAnchor(spec.key)}">
       <div class="chead"><h3>${spec.label}</h3>${overridden?'<span class="cmsbadge">customised</span>':''}
         <span class="cmsbadge dirty" id="dirty-${spec.key}" ${CMS_DIRTY[spec.key]?'':'hidden'}>unsaved</span>
         <div class="actions">
@@ -1548,26 +1621,39 @@ function renderCms(){
           ${overridden?`<button class="btn btn-ghost" onclick="cmsReset('${spec.key}')">Reset to original</button>`:''}
           <button class="btn btn-coral" onclick="cmsSave('${spec.key}')">Save</button>
         </div></div>
+      ${CMS_ERR[spec.key]?`<div class="cmserr" role="alert"><span>Not saved: ${esc(CMS_ERR[spec.key])}</span><button type="button" onclick="cmsErrClear('${spec.key}')">Dismiss</button></div>`:''}
       ${fields}${spec.list?cmsListHTML(spec):''}${spec.picker?cmsPickerHTML(spec):''}${spec.shopPicker?cmsShopPickerHTML(spec):''}
     </div>`;
   }).join('');
 }
+function cmsErrClear(key){ delete CMS_ERR[key]; renderCms(); }
 async function cmsSave(key){
   try{
-    await TroveAPI.api('/api/admin/content/'+key,{method:'PUT',body:CMS_EDIT[key]});
-    CMS.overrides[key]=cmsClone(CMS_EDIT[key]);
-    delete CMS_DIRTY[key];
+    const r=await TroveAPI.api('/api/admin/content/'+key,{method:'PUT',body:CMS_EDIT[key]});
+    // Show what is live: the server's cleaned copy (trimmed text, rounded
+    // crops), not what was typed (F494).
+    const saved=r&&r.value&&typeof r.value==='object'?r.value:CMS_EDIT[key];
+    CMS.overrides[key]=cmsClone(saved);
+    CMS_EDIT[key]=cmsClone({...CMS.defaults[key],...saved});
+    delete CMS_DIRTY[key]; delete CMS_ERR[key];
     toast('Saved — live on the storefront');
     renderCms();
-  }catch(e){ toast(e.message||'Could not save that section'); }
+  }catch(e){
+    CMS_ERR[key]=e.message||'Could not save that section';
+    toast(CMS_ERR[key]);
+    renderCms();
+  }
 }
+/* Leaving with unsaved site-content edits — a refresh, closing the tab, or
+ * 'Manage Trove Collection' — asks first (F420). */
+window.addEventListener('beforeunload',e=>{ if(Object.keys(CMS_DIRTY).length){ e.preventDefault(); e.returnValue=''; } });
 async function cmsReset(key){
   if(!confirm('Put this section back to the original copy? Your custom text will be removed.'))return;
   try{
     await TroveAPI.api('/api/admin/content/'+key,{method:'DELETE'});
     delete CMS.overrides[key];
     CMS_EDIT[key]=cmsClone(CMS.defaults[key]);
-    delete CMS_DIRTY[key];
+    delete CMS_DIRTY[key]; delete CMS_ERR[key];
     toast('Back to the original copy');
     renderCms();
   }catch(e){ toast(e.message||'Could not reset that section'); }
@@ -1704,6 +1790,13 @@ async function loadMoreOrders(btn){
   catch(e){ toast(e.message||'Could not load more'); if(btn)btn.disabled=false; }
 }
 function searchOrders(){ ORD_Q=($('ordSearch').value||'').trim(); loadOrders(); }
+/* From a return card (F521): the order itself, found and opened in Orders. */
+async function openOrder(pid){
+  ORD_FILTER='all'; ORD_Q=pid; const s=$('ordSearch'); if(s)s.value=pid;
+  await loadOrders(); go('orders');
+  if(!ORD_OPEN[pid]) await toggleOrderDetail(pid);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
 function setOrdFilter(f){ ORD_FILTER=f; loadOrders(); }
 async function toggleOrderDetail(pid){
   if(ORD_OPEN[pid]){ delete ORD_OPEN[pid]; renderOrders(); return; }
@@ -1755,7 +1848,9 @@ function renderOrders(){
         ${o.dispute&&o.dispute.dueBy&&o.hold==='dispute'?small(`Evidence due ${esc(fmtDate(o.dispute.dueBy))}`):''}
         ${o.hold?small(`Makers' payment held${o.hold==='external_refund'||(o.dispute&&['won','warning_closed'].includes(o.dispute.status))?` · <a href="#" role="button" onclick="releaseHold('${esc(o.publicId)}');return false" style="color:inherit">release hold</a>`:''}`):''}</td>
       <td style="color:var(--muted)">${fmtDate(o.createdAt)}</td>
-      <td style="text-align:right"><div class="actions" style="justify-content:flex-end">${open&&parcels.some(p=>p.cancellable)?`<button class="btn btn-ghost" onclick="openCancelModal('${esc(o.publicId)}')">Cancel items…</button>`:''}${open?`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`:''}</div></td>
+      <td style="text-align:right"><div class="actions" style="justify-content:flex-end">${open&&parcels.some(p=>p.cancellable)?`<button class="btn btn-ghost" onclick="openCancelModal('${esc(o.publicId)}')">Cancel items…</button>`:''}${!open?'':o.refundBlocked==='return_in_progress'?`<button class="btn btn-ghost" onclick="go('returns')" title="Pieces from this order are on their way back in an approved return: let it finish, or use Refund now on the return">See the return</button>`
+        :o.refundBlocked==='no_card_payment'?'<span class="sl">no card payment to refund</span>'
+        :`<button class="btn btn-ghost" onclick="refundOrder('${esc(o.publicId)}')">Refund</button>`}</div></td>
     </tr>${ORD_OPEN[o.publicId]?`<tr class="odetail"><td colspan="8">${orderDetailHTML(ORD_OPEN[o.publicId])}</td></tr>`:''}`;}).join(''):`<tr><td colspan="8" class="empty">${ORD_Q||ORD_FILTER!=='all'?'No orders match.':'No orders yet.'}</td></tr>`}</tbody>`;
 }
 
@@ -1882,6 +1977,7 @@ document.addEventListener('keydown',(e)=>{if(!$('cxScrim').classList.contains('o
 
 /* ---------------- settlements (supplier purchases) ---------------- */
 const SETTLE_PILL={draft:'pending',exported:'pending',paid:'approved'};
+const SETTLE_WORD={draft:'draft',exported:'file downloaded',paid:'paid',cancelled:'cancelled'};
 const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward',on_hold:'payouts on hold',bank_details_changed:'bank details just changed — check with the maker by phone before releasing',
   id_missing:'Emirates ID not given yet',id_to_check:'ID waiting for your check (Shops)',id_expired:'Emirates ID expired — waiting for the renewed ID'};
 function heldLine(h){
@@ -1904,16 +2000,26 @@ async function removeFromRun(stId,itemId,exported){
   try{ await TroveAPI.api(`/api/admin/settlements/${stId}/items/${itemId}/remove`,{method:'POST',body:{hold:true}}); toast('Removed from the run and held'); reloadPayouts(); }
   catch(e){ toast(e.message||'Could not remove'); }
 }
+/* 'Tue 6 Oct' — the way every other screen writes a run day (F387). */
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function runDay(d){ const t=new Date(String(d||'').slice(0,10)+'T00:00:00Z'); return isNaN(t)?String(d||''):`${DOW[t.getUTCDay()]} ${t.getUTCDate()} ${MON[t.getUTCMonth()]}`; }
+/* Payments (F324/F387): makers first — one big 'next run' card with the one
+ * button that matters, then each run with its three steps — then service
+ * providers (the card below in the page). VAT reporting and direct payouts
+ * for licensed makers sit in one folded 'Not active yet' row until they are
+ * switched on, in plain words (no setting names). */
 function renderPayouts(){
   const owed=PREVIEW.eligible||[], held=PREVIEW.excluded||[];
+  const nextDay=PREVIEW.nextRunDate?runDay(PREVIEW.nextRunDate):'';
   $('payoutsWrap').innerHTML=`
     <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
-        <div><h3>Next settlement run</h3>
-          <div class="hint" style="margin:0">${owed.length} supplier${owed.length===1?'':'s'} payable · ${money(PREVIEW.totalNetCents)} total · purchases whose 15-day buyer return window closed before ${PREVIEW.cutoffAt?esc(fmtDateTime(PREVIEW.cutoffAt)):'now'} (Dubai time) — Run settlement uses this same cut-off${PREVIEW.nextRunDate?` · next scheduled run ${esc(PREVIEW.nextRunDate)}`:''}</div></div>
+      <div class="pay-next">
+        <div><div class="hint" style="margin:0 0 4px">Next settlement run${nextDay?'':' · whenever you run it'}</div>
+          <div class="big">${nextDay?esc(nextDay)+' · ':''}${owed.length?`${money(PREVIEW.totalNetCents)} to ${owed.length} maker${owed.length===1?'':'s'}`:'nothing due yet'}</div>
+          <div class="hint" style="margin:4px 0 0">Sales whose 15-day buyer return window closed before ${PREVIEW.cutoffAt?esc(fmtDateTime(PREVIEW.cutoffAt)):'now'} (Dubai time). Run settlement makes a draft with this same cut-off; then follow the three steps on it below.</div></div>
         <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()">Run settlement</button>
       </div>
-      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Supplier</th><th>Pay to</th><th>Purchases</th><th>Refund adj.</th><th>To pay</th><th></th></tr></thead>
+      ${owed.length?`<table class="tbl" style="margin-top:14px"><thead><tr><th>Maker</th><th>Pay to</th><th>Sales</th><th>Refunds taken off</th><th>To pay</th><th></th></tr></thead>
         <tbody>${owed.map(s=>`<tr>
           <td style="font-weight:700">${esc(s.name)}</td>
           <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}<div class="sl">${esc(s.bank.accountName||'')}${s.accountNameMatches===false?` <span style="color:var(--accent-ink);font-weight:700">≠ maker ${esc(s.ownerName||'')} — check before paying</span>`:''}</div>`:'<span style="color:var(--accent-ink);font-weight:700">no bank details</span>'}</td>
@@ -1922,16 +2028,16 @@ function renderPayouts(){
           <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(s.netCents)}</td>
           <td style="text-align:right"><button class="btn btn-ghost" title="Hold this maker's payouts while you look into something" onclick="setPayoutHold(${Number(s.shopId)},true)">Hold</button></td>
         </tr>`).join('')}</tbody></table>`
-       :`<div class="empty" style="margin-top:8px">Nothing payable — no purchase has cleared its return window since the last run.</div>`}
+       :`<div class="empty" style="margin-top:8px">Nothing to pay yet — no sale has cleared its return window since the last run.</div>`}
       ${held.length?`<div class="hint" style="margin:12px 2px 0;line-height:2">Held back: ${held.map(heldLine).join(' · ')}</div>`:''}
     </div>
     <div class="card" style="padding:0">
-      <div style="padding:20px 22px 4px"><h3>Settlement history</h3></div>
+      <div style="padding:20px 22px 4px"><h3>Settlement runs</h3></div>
       ${SETTLEMENTS.length?`<div style="padding:0 10px 10px">${SETTLEMENTS.map(st=>`
         <div style="padding:12px;border-bottom:1px solid var(--line)">
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <strong>Run ${st.runDate}</strong>
-            <span class="pill ${SETTLE_PILL[st.status]||'pending'}">${st.status}</span>
+            <strong>Run ${esc(runDay(st.runDate))}</strong>
+            <span class="pill ${SETTLE_PILL[st.status]||'pending'}">${esc(SETTLE_WORD[st.status]||st.status)}</span>
             <span style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(st.totalCents)}</span>
             <span style="flex:1"></span>
             <a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(reloadPayouts,1200)">${st.status==='draft'?'1. Download bank CSV':'Download bank CSV again'}</a>
@@ -1940,7 +2046,7 @@ function renderPayouts(){
               :`<span style="color:var(--muted);font-size:12px">paid ${fmtDate(st.paidAt)}</span>${st.canUndoPaid?` <button class="btn btn-ghost" onclick="undoSettlementPaid(${st.id})" title="Only if the transfers did not actually go out">Undo paid</button>`:''}`}
           </div>
           ${settleSteps(st)}
-          <table class="tbl" style="margin-top:10px"><thead><tr><th>Supplier</th><th>Reference</th><th>Amount</th><th></th></tr></thead>
+          <table class="tbl" style="margin-top:10px"><thead><tr><th>Maker</th><th>Reference</th><th>Amount</th><th></th></tr></thead>
             <tbody>${st.items.map(i=>`<tr>
               <td style="font-weight:700">${esc(i.shopName)}${i.bankChangedSinceRun&&st.status!=='paid'?`<div style="font-size:11.5px;color:var(--accent-ink);font-weight:700">Bank details changed since this run — the file pays the account below; check with the maker before sending</div>`:''}${i.bank&&i.bank.iban?`<div style="font-size:11.5px;color:var(--muted);font-weight:600">${esc(i.bank.name||'')} · ${esc(i.bank.accountName||'')} · ${esc(i.bank.iban)}</div>`:''}</td>
               <td style="color:var(--muted);font-size:12px">${esc(i.bankReference)}</td>
@@ -1948,11 +2054,29 @@ function renderPayouts(){
               <td style="text-align:right">${i.purchaseNoteId?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">Purchase note</a>`:''}${st.status!=='paid'?`<button class="btn btn-ghost" onclick="removeFromRun(${Number(st.id)},${Number(i.id)},${st.status==='exported'})">Remove &amp; hold</button>`:''}</td>
             </tr>`).join('')}</tbody></table>
         </div>`).join('')}</div>`
-       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every other Tuesday, or run one above.</div>`}
+       :`<div class="empty" style="padding:8px 22px 22px">No settlement runs yet — they happen every other Tuesday${nextDay?` (next: ${esc(nextDay)})`:''}, or run one above.</div>`}
     </div>
-    <div class="card" style="padding:0">
+    ${BATCHES.length?`<div class="card" style="padding:0">
+      <div style="padding:20px 22px 4px"><h3>Older payments</h3><div class="hint">Paid the old way, before fortnightly settlement runs.</div></div>
+      <div style="padding:0 10px 10px"><table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+        <tbody>${BATCHES.map(b=>`<tr>
+          <td style="font-weight:700">${fmtDate(b.createdAt)}</td>
+          <td>${esc(b.shopName)}</td>
+          <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(b.amountCents)}</td>
+          <td><span class="pill ${b.status==='paid'?'approved':'pending'}">${esc(b.status)}</span></td>
+          <td style="text-align:right">${b.status==='pending'?`<button class="btn btn-ghost" onclick="markLegacyPaid(${b.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">${fmtDate(b.paidAt)}</span>`}</td>
+        </tr>`).join('')}</tbody></table></div>
+    </div>`:''}`;
+  renderPayoutsLater();
+}
+/* VAT reporting and direct payouts for licensed makers: full cards once they
+ * are in use, otherwise one folded row that says what each is in plain words. */
+function renderPayoutsLater(){
+  const vatActive=VAT.vatRegistered||VAT.rows.length||(VAT.creditNotes||[]).length;
+  const gradActive=GRAD.railBEnabled;
+  const vatCard=`<div class="card" style="padding:0">
       <div style="padding:20px 22px 4px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap"><div style="flex:1;min-width:240px"><h3>VAT by quarter</h3>
-        <div class="hint">${VAT.vatRegistered?`5% captured on every order and every card booking (prices are VAT-inclusive; bookings on ${VAT.serviceVatBasis==='fee'?'Trove’s platform fee':'the full booking price'}). Quarters follow Dubai time. Output VAT counts in the sale’s quarter; a credit note reduces the quarter it was issued in.`:'VAT capture is off (VAT_REGISTERED=false) — numbers appear here once Trove is registered.'}</div></div>
+        <div class="hint">${VAT.vatRegistered?`5% captured on every order and every card booking (prices are VAT-inclusive; bookings on ${VAT.serviceVatBasis==='fee'?'Trove’s platform fee':'the full booking price'}). Quarters follow Dubai time. Output VAT counts in the sale’s quarter; a credit note reduces the quarter it was issued in.`:'VAT is not being added to sales yet — these figures are from before. New numbers appear once Trove is VAT-registered.'}</div></div>
         ${VAT.rows.length||(VAT.creditNotes||[]).length?`<a class="btn btn-ghost" href="${TroveAPI.base}/api/admin/vat-report.csv">Download CSV</a>`:''}</div>
       ${VAT.rows.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Quarter</th><th>Rail</th><th>Sales</th><th>Gross</th><th>Output VAT (5/105)</th><th>Reversed</th><th>Net VAT due</th></tr></thead>
         <tbody>${VAT.rows.map(r=>`<tr>
@@ -1969,34 +2093,32 @@ function renderPayouts(){
       <div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Credit note</th><th>Order / booking</th><th>Quarter</th><th>Refunded</th><th>VAT credited</th><th>Issued</th></tr></thead>
         <tbody>${VAT.creditNotes.map(n=>`<tr><td>${n.rail==='services'?`<b>${esc(n.reference||'')}</b>`:`<a href="/api/admin/orders/${encodeURIComponent(n.order)}/credit-notes/${encodeURIComponent(n.reference)}" target="_blank" rel="noopener" style="font-weight:700;color:inherit">${esc(n.reference)}</a>`}</td>
           <td>${n.rail==='services'?esc(n.order||''):`<a href="/api/admin/orders/${encodeURIComponent(n.order)}/tax-invoice" target="_blank" rel="noopener" style="color:inherit">${esc(n.order)}</a>`}</td><td>${esc(n.quarter)}</td><td>${money(n.refundCents)}</td><td>${money(n.vatCents)}</td><td style="color:var(--muted)">${esc(n.issuedOn||'')}</td></tr>`).join('')}</tbody></table></div>`:''}
-    </div>
-    <div class="card" style="padding:0">
-      <div style="padding:20px 22px 4px"><h3>Graduation queue</h3>
-        <div class="hint">Suppliers over the trailing-30-day cap, plus licensed direct entries. Verify the licence, then approve to create their direct-payout account.${GRAD.railBEnabled?'':' <strong>Rail B is OFF (RAIL_B_ENABLED)</strong> — approvals are held until it\'s switched on.'}</div></div>
-      ${GRAD.queue.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Supplier</th><th>30-day paid</th><th>Licence</th><th>Status</th><th></th></tr></thead>
+    </div>`;
+  const threshold=money(GRAD.thresholdCents||1200000);
+  const gradCard=`<div class="card" style="padding:0">
+      <div style="padding:20px 22px 4px"><h3>Direct payouts for licensed makers</h3>
+        <div class="hint">Makers whose payments over the last 30 days passed ${threshold}, and makers who applied with a trade licence. Check the licence, then approve to set up their own Stripe account, so each sale is paid to them directly.</div></div>
+      ${GRAD.queue.length?`<div style="padding:0 10px 14px"><table class="tbl"><thead><tr><th>Maker</th><th>Paid · last 30 days</th><th>Licence</th><th>Status</th><th></th></tr></thead>
         <tbody>${GRAD.queue.map(g=>`<tr>
-          <td style="font-weight:700">${esc(g.name)}<div style="font-size:11.5px;color:var(--muted)">${esc(g.owner.email)}${g.directEntry?' · applied with licence':''}</div></td>
+          <td style="font-weight:700">${esc(g.name)}<div style="font-size:11.5px;color:var(--muted)">${esc(g.owner.email)}${g.directEntry?' · applied with a licence':''}</div></td>
           <td>${money(g.paid30Cents)}</td>
           <td style="color:var(--muted)">${g.licenseNumber?esc(g.licenseNumber):'—'}${g.hasLicenseImage?` · <a href="${TroveAPI.base}/api/admin/shops/${g.shopId}/license-image" target="_blank" rel="noopener">image</a>`:''}</td>
-          <td>${g.licenseVerifiedAt?'<span class="pill approved">licence verified</span>':g.licenseNumber?'<span class="pill pending">awaiting check</span>':'<span class="pill pending">no licence yet</span>'}</td>
+          <td>${g.licenseVerifiedAt?'<span class="pill approved">licence verified</span>':g.licenseNumber?'<span class="pill pending">licence to check</span>':'<span class="pill pending">no licence yet</span>'}</td>
           <td style="text-align:right">
-            ${!g.licenseVerifiedAt&&g.licenseNumber?`<button class="btn btn-ghost" onclick="verifyLicense(${g.shopId})">Verify licence</button>`:''}
-            ${g.licenseVerifiedAt?`<button class="btn btn-coral" ${GRAD.railBEnabled?'':'disabled style="opacity:.45;cursor:default" title="Rail B is off"'} onclick="approveGraduation(${g.shopId})">${g.stripeAccountId?'Re-send onboarding':'Approve → Stripe'}</button>`:''}
+            ${!g.licenseVerifiedAt&&g.licenseNumber?`<button class="btn btn-ghost" onclick="verifyLicense(${g.shopId})">Mark licence verified</button>`:''}
+            ${g.licenseVerifiedAt?`<button class="btn btn-coral" onclick="approveGraduation(${g.shopId})">${g.stripeAccountId?'Send the Stripe link again':'Approve · set up Stripe'}</button>`:''}
           </td>
         </tr>`).join('')}</tbody></table></div>`
-       :`<div class="empty" style="padding:8px 22px 22px">Nobody is waiting to graduate.</div>`}
-    </div>
-    ${BATCHES.length?`<div class="card" style="padding:0">
-      <div style="padding:20px 22px 4px"><h3>Legacy payout batches</h3><div class="hint">From before the settlement ledger.</div></div>
-      <div style="padding:0 10px 10px"><table class="tbl"><thead><tr><th>Date</th><th>Shop</th><th>Amount</th><th>Status</th><th></th></tr></thead>
-        <tbody>${BATCHES.map(b=>`<tr>
-          <td style="font-weight:700">${fmtDate(b.createdAt)}</td>
-          <td>${esc(b.shopName)}</td>
-          <td style="font-family:var(--font-display);font-size:16px;font-weight:600">${money(b.amountCents)}</td>
-          <td><span class="pill ${b.status==='paid'?'approved':'pending'}">${b.status}</span></td>
-          <td style="text-align:right">${b.status==='pending'?`<button class="btn btn-ghost" onclick="markLegacyPaid(${b.id})">Mark paid</button>`:`<span style="color:var(--muted);font-size:12px">${fmtDate(b.paidAt)}</span>`}</td>
-        </tr>`).join('')}</tbody></table></div>
-    </div>`:''}`;
+       :`<div class="empty" style="padding:8px 22px 22px">Nobody is waiting for direct payouts.</div>`}
+    </div>`;
+  const later=[];
+  if(!vatActive)later.push('<b>VAT reporting</b> — turns on once Trove is VAT-registered. Until then no VAT is added to sales and there is nothing to report.');
+  if(!gradActive){
+    const n=GRAD.queue.length;
+    later.push(`<b>Direct payouts for licensed makers</b> — switched off. Every maker is paid by bank transfer in the fortnightly runs above.${n?` ${n} maker${n===1?' has':'s have'} a trade licence or would qualify; check licences on the Shops tab.`:''}`);
+  }
+  $('payoutsLater').innerHTML=(vatActive?vatCard:'')+(gradActive?gradCard:'')
+    +(later.length?`<details class="later"><summary>Not active yet</summary>${later.map(t=>`<div class="later-row">${t}</div>`).join('')}</details>`:'');
 }
 async function runSettlement(){
   if(!confirm('Run the settlement now? This sweeps every purchase whose return window has closed into a draft for review.'))return;
@@ -2034,15 +2156,20 @@ async function undoSettlementPaid(id){
   catch(e){ toast(e.message||'Could not undo'); }
 }
 async function markLegacyPaid(id){
+  const b=BATCHES.find(x=>x.id===id);
+  if(!confirm(`Mark the ${b?money(b.amountCents):''} payment to ${b?b.shopName:'this shop'} as paid? Only once the bank transfer has gone out — this can't be undone here.`))return;
   try{ await TroveAPI.api('/api/admin/payouts/'+id+'/paid',{method:'POST'}); toast('Marked as paid'); reloadPayouts(); }
   catch(e){ toast(e.message||'Could not mark as paid'); }
 }
 async function verifyLicense(shopId){
-  if(!confirm('Confirm you have checked this licence against the Invest in Dubai / DED registry?'))return;
-  try{ await TroveAPI.api('/api/admin/graduation/'+shopId+'/verify-license',{method:'POST'}); toast('Licence verified'); reloadPayouts(); }
+  const s=(SHOPS||[]).find(x=>x.id===shopId);
+  if(!confirm(`Mark the trade licence of "${s?s.name:'this shop'}"${s&&s.licenseNumber?` (${s.licenseNumber})`:''} as verified?\n\nOnly once you have checked it against the Invest in Dubai / DED registry. A verified licence replaces the Emirates ID check for payments.`))return;
+  try{ await TroveAPI.api('/api/admin/graduation/'+shopId+'/verify-license',{method:'POST'}); toast('Licence verified'); await reload(); }
   catch(e){ toast(e.message||'Could not verify'); }
 }
 async function approveGraduation(shopId){
+  const g=(GRAD.queue||[]).find(x=>x.shopId===shopId);
+  if(!confirm(`Set up direct payouts for ${g?g.name:'this maker'}? This creates their own Stripe account (in the name of ${g?g.owner.email:'the maker'}) and gives you a link to send them.`))return;
   try{
     const r=await TroveAPI.api('/api/admin/graduation/'+shopId+'/approve',{method:'POST'});
     prompt('Send this Stripe onboarding link to the supplier (Ctrl+C):', r.onboardingUrl);
