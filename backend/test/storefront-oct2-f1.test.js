@@ -168,19 +168,14 @@ test('F137: every checkout choice is a real button or link a keyboard can reach'
   assert.match(store, /\.saved-opt\{display:flex;width:100%;text-align:start;font-family:inherit;color:inherit;background:none;/, 'the buttons keep the look');
 });
 
-/* ---------------- F138 contrast ---------------- */
-test('F138: accent words in headings meet 3:1 on Cream, Clay Beige and Sage', () => {
-  const lum = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
-    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4))
-    .reduce((s, v, i) => s + v * [0.2126, 0.7152, 0.0722][i], 0);
-  const ratio = (a, b) => { const x = lum(a); const y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
-  const ink = store.match(/--coral-text:(#[0-9A-Fa-f]{6})/)[1];
-  assert.notEqual(ink.toUpperCase(), '#A85138', 'not the banned rust');
-  for (const bg of ['#FDF7F5', '#DBC7BD', '#CAD5CC', '#FFFCFA']) assert.ok(ratio(ink, bg) >= 3, `${ink} on ${bg}: ${ratio(ink, bg).toFixed(2)}`);
+/* ---------------- F138 accent colour ---------------- */
+// Owner 2026-10-12: no new colours. Heading accent words stay the brand Orange (--coral); the darker
+// #B4502F introduced for contrast was reverted because it is not a brand colour.
+test('F138: heading accent words use the brand Orange, no off-palette accent', () => {
   for (const [name, html] of [['trove.html', store], ['trove-services.html', services], ['404.html', fs.readFileSync(path.join(DOCS, '404.html'), 'utf8')]]) {
-    assert.doesNotMatch(html, /(h[1-3]|hero-t|\[data-vh\])[^{}]*\b(em|span)\{[^}]*color:var\(--coral\)/, `${name}: no heading accent in plain Orange`);
+    assert.doesNotMatch(html, /--coral-text|#B4502F/i, `${name}: no off-palette accent token`);
   }
-  assert.doesNotMatch(store, /<em style="font-style:normal;color:var\(--coral\)">/);
+  assert.match(store, /h1 em,h2 em,h3 em\{font-style:normal;color:var\(--coral\)\}/);
 });
 
 /* ---------------- F154 hero while the Collection is empty ---------------- */

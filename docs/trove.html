@@ -27,7 +27,6 @@
     /* brand palette — 2026 brand book */
     --rose:#DBC7BD;        /* Clay Beige */
     --coral:#F19A82;       /* Orange — display accents only; never paired with Charcoal, never small text */
-    --coral-text:#B4502F;  /* Orange as heading text: the accent word in a heading (Orange itself is 2:1 on Cream, 1.3:1 on Clay Beige; this is 4.8:1 / 3.1:1 / 3.4:1 on Sage — WCAG 3:1 for large text, F138) */
     --accent-ink:#292727;  /* Charcoal — the accent ink for small text and links (Orange fails contrast there) */
     --cream:#FDF7F5;       /* Cream — default background */
     --sage:#CAD5CC;        /* Sage Green */
@@ -76,7 +75,7 @@
   /* ONE small-label style for the whole storefront: 12px, bold, tracked, 4.5:1 or better on every band */
   .eyebrow{font-family:'Quicksand';font-weight:700;font-size:12px;line-height:1.4;letter-spacing:.12em;color:var(--eyebrow)}
   h1,h2,h3,h4{font-family:var(--font-display);font-weight:500;letter-spacing:.002em}
-  h1 em,h2 em,h3 em{font-style:normal;color:var(--coral-text)}
+  h1 em,h2 em,h3 em{font-style:normal;color:var(--coral)}
 
   /* ---------- HEADER ---------- */
   .promo{background:var(--char);color:var(--cream)}
@@ -165,7 +164,7 @@
   .hero .wrap{display:grid;grid-template-columns:1fr 1.3fr;gap:44px;align-items:center}
   .hero .lead .eyebrow{margin-bottom:22px;display:block}
   .hero h1,.hero [data-vh]{font-size:clamp(54px,6.8vw,96px);line-height:.94;font-weight:400;letter-spacing:-.012em}
-  .hero h1 em,.hero [data-vh] em{font-style:normal;color:var(--coral-text)} /* the hero accent word: Orange, upright like everything else */
+  .hero h1 em,.hero [data-vh] em{font-style:normal;color:var(--coral)} /* the hero accent word: Orange, upright like everything else */
   .hero .lead p{font-size:17px;color:var(--ink-80);max-width:34ch;margin:26px 0 34px;font-weight:400}
   .hero .ctas{display:flex;align-items:center;gap:24px}
   /* first paint: the copy settles in line by line — short, eased, once */
@@ -370,7 +369,7 @@
   /* sell */
   .sell{background:var(--sage);border-radius:28px;padding:72px 60px;display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
   .sell h2{font-size:clamp(38px,4vw,54px);line-height:1.0;font-weight:400;margin:16px 0 18px}
-  .sell h2 em{font-style:normal;color:var(--coral-text)}
+  .sell h2 em{font-style:normal;color:var(--coral)}
   .sell p{color:var(--char);opacity:.82;max-width:42ch;margin-bottom:30px;font-weight:400;font-size:16px}
   .steps{display:flex;flex-direction:column}
   .step{display:flex;gap:22px;padding:20px 0;border-bottom:1px solid rgba(41,39,39,.13)}
@@ -434,7 +433,7 @@
   #view-sell .faqs{max-width:1020px;display:grid;grid-template-columns:1fr 1fr;gap:0 46px;align-items:start}
   #view-sell .sellcta{background:var(--rose);border-radius:24px;padding:38px 44px;margin:44px auto 0;max-width:1020px;display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap;text-align:left}
   #view-sell .sellcta h2{font-size:clamp(26px,3vw,34px);margin:12px 0 10px;font-weight:400;line-height:1.1}
-  #view-sell .sellcta h2 em{font-style:normal;color:var(--coral-text)}
+  #view-sell .sellcta h2 em{font-style:normal;color:var(--coral)}
   #view-sell .sellcta p{margin:0;font-size:14.5px;color:var(--ink-80);max-width:52ch;font-weight:400}
   #view-sell .sellcta .btn{flex-shrink:0}
 
@@ -992,7 +991,7 @@
   .confirm{max-width:620px;margin:0 auto;padding:70px 32px 90px;text-align:center}
   .confirm .check{width:74px;height:74px;border-radius:50%;background:var(--green-bg);color:var(--green);display:grid;place-items:center;margin:0 auto 24px}
   .confirm h1,.confirm [data-vh]{font-size:clamp(40px,5vw,58px);font-weight:400;line-height:1.0}
-  .confirm h1 em,.confirm [data-vh] em{font-style:normal;color:var(--coral-text)}
+  .confirm h1 em,.confirm [data-vh] em{font-style:normal;color:var(--coral)}
   .confirm .lede{font-size:16px;color:var(--ink-80);font-weight:400;margin:14px 0 6px}
   .confirm .ordid{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--char)}
   .confirm .ship-card{border:1px solid var(--line);border-radius:16px;padding:22px 24px;text-align:left;margin:30px 0}
