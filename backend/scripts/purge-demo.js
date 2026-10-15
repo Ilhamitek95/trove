@@ -1,18 +1,24 @@
 #!/usr/bin/env node
 'use strict';
 /**
- * Clear the demo data out of a database, keeping one shop, one piece and one
- * service provider (each optional) plus every admin account. See src/purge.js.
+ * Clear the demo data out of a database. It keeps every admin account and the
+ * Trove Collection, plus any shops, pieces and service providers you name.
+ * See src/purge.js.
  *
+ *   npm run purge-demo                                   (keep nothing else)
  *   npm run purge-demo -- --keep-shop=kiln-and-clay --keep-product=1 --keep-provider=noor-letters
+ *
+ * --keep-shop and --keep-provider take slugs or ids, comma-separated; a kept
+ * shop keeps all its pieces unless --keep-product names the ones to keep.
+ * Extra accounts to spare: --keep-user=a@b.com,c@d.com
  *
  * Without --yes it only PRINTS what would go. With --yes it writes a
  * VACUUM INTO backup next to the database first (backups/, see src/backup.js)
- * and then removes everything listed. Extra accounts to spare:
- * --keep-user=a@b.com,c@d.com
+ * and then removes everything listed.
  *
- * On Render: the service's Shell tab opens in the backend folder already, so
- * the same command works there against the live database on /var/data.
+ * On Render: the service's Shell tab, then `cd backend` (or the full path
+ * /opt/render/project/src/backend), and the same command works against the
+ * live database on /var/data.
  */
 require('dotenv').config();
 
@@ -39,18 +45,20 @@ catch (e) { console.error(`\n${e.message}\n`); process.exit(2); }
 const list = (rows, fmt) => (rows.length ? rows.map((r) => `    ${fmt(r)}`).join('\n') : '    (none)');
 console.log(`\nDatabase: ${process.env.DB_PATH || 'backend/trove.db'}\n`);
 console.log('KEEPING');
-console.log(`  shop:      ${p.keep.shop ? `#${p.keep.shop.id} ${p.keep.shop.name} (${p.keep.shop.slug})` : '- none -'}`);
-console.log(`  piece:     ${p.keep.product ? `#${p.keep.product.id} ${p.keep.product.name}` : '- none -'}`);
-console.log(`  provider:  ${p.keep.provider ? `#${p.keep.provider.id} ${p.keep.provider.name} (${p.keep.provider.slug})` : '- none -'}`);
+console.log(`  Trove Collection:\n${list(p.keep.house, (s) => `#${s.id} ${s.name} (${s.slug}), ${s.pieces} piece(s)`)}`);
+console.log(`  shops:\n${list(p.keep.shops, (s) => `#${s.id} ${s.name} (${s.slug})`)}`);
+console.log(`  pieces:\n${list(p.keep.products, (x) => `#${x.id} ${x.name} (shop ${x.shop_id})`)}`);
+console.log(`  providers:\n${list(p.keep.providers, (x) => `#${x.id} ${x.name} (${x.slug})`)}`);
 console.log(`  accounts:\n${list(p.keep.users, (u) => `${u.email} (${u.role})`)}`);
 console.log('\nREMOVING');
 console.log(`  accounts (${p.users.length}):\n${list(p.users, (u) => `${u.email} (${u.role})`)}`);
-console.log(`  shops (${p.shops.length}):\n${list(p.shops, (s) => `#${s.id} ${s.name}${s.is_house ? ' [house line]' : ''}`)}`);
+console.log(`  shops (${p.shops.length}):\n${list(p.shops, (s) => `#${s.id} ${s.name} [${s.status}]`)}`);
 console.log(`  pieces (${p.products.length}):\n${list(p.products, (x) => `#${x.id} ${x.name} (shop ${x.shop_id})`)}`);
-console.log(`  providers (${p.providers.length}):\n${list(p.providers, (x) => `#${x.id} ${x.name}`)}`);
+console.log(`  providers (${p.providers.length}):\n${list(p.providers, (x) => `#${x.id} ${x.name} [${x.status}]`)}`);
 console.log(`  service listings: ${p.services}`);
 const nonEmpty = Object.entries(p.tables).filter(([, n]) => n > 0);
 console.log(`  emptied tables: ${nonEmpty.length ? nonEmpty.map(([t, n]) => `${t} ${n}`).join(', ') : '(all already empty)'}`);
+console.log(`  Arabic translations of removed rows: ${p.translations}`);
 console.log(`  homepage picks pruned in: ${p.content.length ? p.content.join(', ') : '(nothing to prune)'}`);
 console.log(`  files (${p.files.length}):\n${list(p.files, (f) => f)}`);
 

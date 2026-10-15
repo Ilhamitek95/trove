@@ -160,3 +160,23 @@ test('services: a brand tile per service, a Request button, empty categories fol
   assert.match(prov, /<div class="pv-hero vpanel" id="pvHero" style="--t0:#[0-9A-Fa-f]{3,6};--t1:#[0-9a-f]{6}"><div class="wrap pv-back-wrap"><a class="pv-back"/);
   assert.match(prov, /class="sv-req"/);
 });
+
+/* ---------------- nothing on sale yet (after the go-live purge) ---------------- */
+test('no pieces and no makers: no empty shelf, tiles, weekly grid or Meet the makers; the shop says the first pieces are coming', async () => {
+  db.prepare("UPDATE products SET status = 'hidden'").run();
+  db.prepare("UPDATE shops SET status = 'pending' WHERE is_house = 0").run();
+  const html = (await get('/')).text;
+  assert.match(html, /<html lang="en" class="house-soon no-pieces">/);
+  assert.match(html, /<section class="band" id="vendors" hidden>/);
+  assert.match(store, /html\.no-pieces #heroStage,html\.no-pieces #browseBand,html\.no-pieces #weekly\{display:none\}/);
+  assert.match(store, /classList\.toggle\('no-pieces',LIVE&&!PRODUCTS\.length\)/);
+  assert.match(store, /if\(LIVE&&!Object\.values\(VENDORS\)\.some\(v=>!v\.house\)\)\{sec\.hidden=true;vendors\.hidden=true;return;\}/);
+  // the shop page: not 'Nothing matches these filters' when there is nothing at all
+  assert.match(store, /if\(LIVE&&!PRODUCTS\.length\)\{\r?\n {4}return `<div class="noresult"><div class="big">\$\{_t\('The first pieces are on their way'\)\}/);
+  // pieces back: the classes go
+  db.prepare("UPDATE products SET status = 'live'").run();
+  db.prepare("UPDATE shops SET status = 'approved'").run();
+  const back = (await get('/')).text;
+  assert.doesNotMatch(back, /<html lang="en" class="[^"]*no-pieces/);
+  assert.match(back, /<section class="band" id="vendors">/);
+});

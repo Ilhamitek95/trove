@@ -391,6 +391,10 @@ function renderHome(base, lang = 'en') {
     html = html.replace('<div class="hstage" id="heroStage" tabindex="0" aria-roledescription="carousel" aria-label="Featured pieces">', '<div class="hstage solo" id="heroStage" aria-label="Featured piece">');
     html = fill(html, 'heroDeck', heroSoloHtml(list[0], byShop[list[0].shop.slug], lang));
   }
+  // Nothing on sale yet: the empty shelf, tiles and grid stay hidden from the
+  // first paint (html.no-pieces), and so does 'Meet the makers' with no makers.
+  if (!list.length) html = addHtmlClass(html, 'no-pieces');
+  if (!Object.values(byShop).some((s) => !s.isHouse)) html = html.replace('<section class="band" id="vendors">', '<section class="band" id="vendors" hidden>');
   if (list.length > 0 && list.length < 3) {
     // A small catalogue: 'The first pieces' instead of one tile + one card.
     html = addHtmlClass(html, 'few-pieces');

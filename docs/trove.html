@@ -924,6 +924,10 @@
   .fcard .price{font-size:20px;display:block;margin-bottom:24px}
   .fc-acts{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
   html.few-pieces #browseBand,html.few-pieces #weekly .link-more{display:none}
+  /* Nothing on sale yet (html.no-pieces, set by the server and in renderHome):
+     no empty shelf, browse tiles or weekly grid; the Collection band and the
+     Sell band carry the page. */
+  html.no-pieces #heroStage,html.no-pieces #browseBand,html.no-pieces #weekly{display:none}
   html.few-pieces #weekly{padding-top:80px!important}
   .story{background:var(--rose);border-radius:28px;overflow:hidden;display:grid;grid-template-columns:1fr 1.05fr;min-height:440px}
   .story-media{position:relative;min-height:320px;display:block}
@@ -2317,6 +2321,7 @@ function renderHome(){
   // hold one lonely card, so they merge into one feature row instead.
   const few=LIVE&&PRODUCTS.length>0&&PRODUCTS.length<3;
   document.documentElement.classList.toggle('few-pieces',few);
+  document.documentElement.classList.toggle('no-pieces',LIVE&&!PRODUCTS.length);
   if(few){
     $('trendingGrid').className='firsts n'+PRODUCTS.length;
     $('trendingGrid').innerHTML=PRODUCTS.map(firstPieceHTML).join('');
@@ -2390,6 +2395,8 @@ function firstPieceHTML(p){
 function renderMakerStory(){
   const sec=$('makerStory'), vendors=$('vendors');
   const makers=Object.entries(VENDORS).filter(([k,v])=>!v.house&&(v.prods==null?PRODUCTS.some(p=>p.vendor===k):v.prods>0));
+  // No makers on Trove yet: no empty 'Meet the makers' heading either.
+  if(LIVE&&!Object.values(VENDORS).some(v=>!v.house)){sec.hidden=true;vendors.hidden=true;return;}
   if(!LIVE||makers.length!==1){sec.hidden=true;vendors.hidden=false;return;}
   makers.sort((a,b)=>(b[1].prods||0)-(a[1].prods||0));
   const [k,v]=makers[0];
@@ -2787,6 +2794,10 @@ function emptyStateHTML(){
   const n=4;
   const btn=(fn,label,dark)=>`<button class="btn ${dark?'btn-dark':'btn-ghost'}" onclick="${fn}">${label}</button>`;
   let head='',sub='',actions='',recs=[],recHead=_t('You might like'),pop='';
+  // Nothing on sale at all yet: say so plainly, never blame the filters.
+  if(LIVE&&!PRODUCTS.length){
+    return `<div class="noresult"><div class="big">${_t('The first pieces are on their way')}</div><p>${_t('Makers are setting up their shops on Trove now. Make things yourself? Open a shop and be one of the first.')}</p><div class="nr-actions">${btn("go('sell')",_t('Sell on Trove'),1)}</div></div>`;
+  }
   if(state.q){
     const qMatches=PRODUCTS.filter(p=>matchesFilters(p,{cat:1,house:1,shop:1,sale:1,price:1}));
     if(qMatches.length){
