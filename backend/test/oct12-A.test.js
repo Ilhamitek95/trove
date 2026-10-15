@@ -571,6 +571,6 @@ test('F287: the basket, menu, filter sheet, buy bar and toast sit above the cook
     /\.toast\{position:fixed;bottom:calc\(24px \+ env\(safe-area-inset-bottom\) \+ var\(--cmp-h,0px\)\);/,
   ]) assert.match(store, re);
   assert.match(store, /\(function watchCookieBanner\(\)\{/);
-  assert.match(store, /document\.getElementById\('iubenda-cs-banner'\)/);
+  assert.match(store, /document\.getElementById\('troveCmp'\)/);
   assert.match(store, /root\.style\.setProperty\('--cmp-h',h\+'px'\);/);
 });

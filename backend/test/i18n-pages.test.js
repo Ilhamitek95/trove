@@ -232,17 +232,13 @@ test('what people wrote shows in Arabic only while its translation is current', 
   db.prepare("DELETE FROM translations WHERE entity = 'product' AND entity_id = ?").run(String(p.id));
 });
 
-test('Arabic pages give the cookie banner Arabic text (iubenda has no Arabic)', async () => {
-  const settings = (html) => JSON.parse(html.match(/_iub\.csConfiguration=(\{.*?\});<\/script>/)[1]);
-  const ar = settings((await get('/ar/about')).text);
-  assert.equal(ar.lang, 'ar');
-  assert.equal(ar.banner.acceptButtonCaption, 'قبول');
-  assert.equal(ar.banner.rejectButtonCaption, 'رفض');
-  assert.match(ar.banner.content, /\/ar\/privacy/);
-  assert.doesNotMatch(ar.banner.content, /تسويق|إعلانات مخصصة/, 'no marketing purpose');
-  const en = settings((await get('/about')).text);
-  assert.equal(en.lang, undefined, 'English pages keep the dashboard language');
-  assert.equal(en.banner.acceptButtonCaption, 'Accept');
-  for (const k of ['purposes', 'gdprAppliesGlobally', 'enableUspr']) assert.deepEqual(ar[k], en[k], `${k}: same consent settings in both languages`);
-  for (const k of ['position', 'backgroundColor', 'acceptButtonColor', 'rejectButtonColor']) assert.equal(ar.banner[k], en.banner[k], `${k}: same look in both languages`);
+test('Arabic pages give the cookie banner Arabic text (our own banner reads <html lang>)', async () => {
+  const settings = (html) => html.match(/_iub\.csConfiguration=(\{.*?\});_iub\.csConfiguration\.callback=/)[1];
+  const arPage = (await get('/ar/about')).text, enPage = (await get('/about')).text;
+  assert.equal(settings(arPage), settings(enPage), 'one consent setting for both languages');
+  assert.match(arPage, /<html lang="ar" dir="rtl"/, 'consent.js picks Arabic from the page');
+  assert.match(arPage, /<script src="\/consent\.js(\?v=[a-f0-9]+)?" defer><\/script>/, 'the banner script is not rewritten to /ar');
+  const js = fs.readFileSync(path.join(__dirname, '..', '..', 'docs', 'consent.js'), 'utf8');
+  assert.match(js, /var AR = \/\^ar\\b\/i\.test\(document\.documentElement\.lang/);
+  assert.match(js, /title: 'خياراتك لملفات تعريف الارتباط'/);
 });

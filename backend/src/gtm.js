@@ -44,105 +44,73 @@
 const GTM_ID = 'GTM-5F87RHVM';
 
 /*
- * The cookie banner (iubenda). The settings line in each page overrides the
- * iubenda dashboard, so what it says and how it looks live here:
+ * The cookie banner: Trove's own (docs/consent.js), with iubenda behind it
+ * (owner 2026-10-15: "customised in Trove's branding, similar logic to what
+ * we have for Josephine"). iubenda keeps the legal plumbing — the consent
+ * log, the stored choice, the Google Consent Mode signals — and draws
+ * nothing: its banner is parked out of sight and our banner opens in its
+ * place. The settings line in each page overrides the iubenda dashboard:
  *   - consent model: opt-in for every visitor (no US opt-out model, which
- *     granted consent on the second page), purposes 1-4 only (no marketing),
- *     no floating button;
- *   - look (owner 2026-10-12: "it does not look on brand"): a Cream card with
- *     a Clay Beige edge, Charcoal text and Charcoal buttons, Quicksand body and
- *     a Cormorant title — Trove's own tokens only, never Orange on Charcoal.
- *     Reject and Accept are identical buttons side by side (refusing must be
- *     as easy as agreeing); Customise opens iubenda's preferences panel;
- *   - size: a short notice, one row of buttons, flush to the bottom of a
- *     phone (a fraction of the old half-screen sheet, F393), a small card
- *     bottom-left on wider screens.
- * iubenda has no Arabic, so Arabic pages swap in the 'ar' line (src/i18n.js).
+ *     granted consent on the second page), no floating button;
+ *   - purposes 1 (necessary) and 4 (measurement) only — exactly what the
+ *     Privacy Policy says the banner asks about (Google Analytics through Tag
+ *     Manager, and the shop analytics' anonymous visitor id). No marketing;
+ *   - callbacks: onBannerShown parks iubenda's banner and opens ours;
+ *     onConsentRead / onPreferenceExpressed apply Trove's own Consent Mode
+ *     update after iubenda's (analytics from purpose 4; advertising, and the
+ *     functionality / personalisation storage nothing here uses, always
+ *     denied — iubenda grants a purpose the settings leave out), and a choice
+ *     pushes `consent_ready` so the Google tag fires for this page view.
+ * The banner's words live in docs/consent.js (English + Arabic, picked by the
+ * page's lang), so both languages share this one settings line.
  */
 const IUB_SETTINGS = {
   enableGdpr: true, gdprAppliesGlobally: true, gdprApplies: true,
   enableUspr: false, usprApplies: false, showBannerForUS: false,
   enableFadp: false, fadpApplies: false, enableLgpd: false, lgpdApplies: false,
-  purposes: '1,2,3,4', floatingPreferencesButtonDisplay: false,
+  purposes: '1,4', floatingPreferencesButtonDisplay: false,
   // No advertising frameworks (Trove runs no advertising cookies — Privacy
-  // Policy v2). The preferences panel's Marketing section and 'personalised
-  // advertising by Google' switches come from the iubenda dashboard (IAB TCF
-  // + Google Additional Consent there), so those must be off there as well.
+  // Policy v3). Turn IAB TCF + Google Additional Consent off in the iubenda
+  // dashboard as well.
   enableTcf: false, googleAdditionalConsentMode: false,
+  // iubenda's own banner still exists (it is what fires onBannerShown); it is
+  // parked off-screen and never seen, so it carries no look or words.
+  banner: { position: 'float-bottom-left', closeButtonDisplay: false, acceptButtonDisplay: true, rejectButtonDisplay: true, customizeButtonDisplay: true },
 };
-const IUB_LOOK = {
-  position: 'float-bottom-left', closeButtonDisplay: false, showTitle: false,
-  backgroundColor: '#FFFCFA', textColor: '#292727', linksColor: '#292727', fontSizeBody: '14px',
-  acceptButtonDisplay: true, acceptButtonColor: '#292727', acceptButtonCaptionColor: '#FDF7F5',
-  rejectButtonDisplay: true, rejectButtonColor: '#292727', rejectButtonCaptionColor: '#FDF7F5',
-  customizeButtonDisplay: true, customizeButtonColor: '#FFFCFA', customizeButtonCaptionColor: '#292727',
-};
-const IUB_TEXT = {
-  en: {
-    content: '<span class="trove-cmp-title">Your cookie choices</span>We use cookies to run Trove. With your consent, we and selected partners also use them to remember your choices, improve your experience and measure visits, as set out in our <a href="/privacy#2-what-we-collect" class="iubenda-cs-cookie-policy-lnk">cookie policy</a>. Change your mind any time under Cookie settings at the foot of every page.',
-    acceptButtonCaption: 'Accept', rejectButtonCaption: 'Reject', customizeButtonCaption: 'Customise',
-  },
-  ar: {
-    content: '<span class="trove-cmp-title">خياراتك لملفات تعريف الارتباط</span>نستخدم ملفات تعريف الارتباط لتشغيل Trove. وبموافقتك، نستخدمها نحن وشركاء مختارون أيضاً لتذكّر اختياراتك وتحسين تجربتك وقياس الزيارات، كما هو موضّح في <a href="/ar/privacy" class="iubenda-cs-cookie-policy-lnk">سياسة ملفات تعريف الارتباط</a>. يمكنك تغيير رأيك في أي وقت من «إعدادات ملفات تعريف الارتباط» أسفل كل صفحة.',
-    acceptButtonCaption: 'قبول', rejectButtonCaption: 'رفض', customizeButtonCaption: 'تخصيص',
-  },
-};
-/** The banner settings line for a language ('en' | 'ar'). */
-function iubSettingsLine(lang = 'en') {
-  const cfg = { ...(lang === 'ar' ? { lang: 'ar' } : {}), ...IUB_SETTINGS, banner: { ...IUB_LOOK, ...IUB_TEXT[lang === 'ar' ? 'ar' : 'en'] } };
-  return `  <script>var _iub=window._iub=window._iub||[];_iub.csConfiguration=${JSON.stringify(cfg).replace(/</g, '\\u003c')};</script>`;
+const IUB_CALLBACKS = ''
+  + "_iub.csConfiguration.callback={"
+  + "onBannerShown:function(){window.__trovePark();var o=function(){window.troveConsent.open('notice')};if(window.troveConsent)o();else window.addEventListener('trove:consent-ready',o,{once:true})},"
+  + 'onConsentRead:function(){window.__troveGcm()},'
+  + "onPreferenceExpressed:function(){window.__troveGcm();(window.dataLayer=window.dataLayer||[]).push({event:'consent_ready'})}"
+  + '};'
+  // park iubenda's banner with inline !important styles (they beat every
+  // stylesheet, iubenda's phone rules included); it stays in the page because
+  // iubenda puts focus back on it after a choice
+  + "window.__trovePark=function(){var b=document.getElementById('iubenda-cs-banner');if(!b)return;b.setAttribute('aria-hidden','true');b.setAttribute('inert','');"
+  + "var P={position:'fixed',left:'-200vw',top:'0',width:'1px',height:'1px',overflow:'hidden',opacity:'0','pointer-events':'none','clip-path':'inset(100%)'};"
+  + "for(var k in P)b.style.setProperty(k,P[k],'important')};"
+  + "window.__troveGcm=function(){try{var p=(_iub.cs&&_iub.cs.api&&_iub.cs.api.getPreferences()||{}).purposes||{};var a=p['4']===true?'granted':'denied';"
+  + "gtag('consent','update',{analytics_storage:a,ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',functionality_storage:'denied',personalization_storage:'denied'})}catch(e){}};";
+/** The banner settings line (one for every language — the words are in docs/consent.js). */
+function iubSettingsLine() {
+  return `  <script>var _iub=window._iub=window._iub||[];_iub.csConfiguration=${JSON.stringify(IUB_SETTINGS).replace(/</g, '\u003c')};${IUB_CALLBACKS}</script>`;
 }
-/* The banner's shape and type, over iubenda's own stylesheet: its rules are
-   !important and injected after ours, so every selector here doubles the
-   banner's id (#iubenda-cs-banner#iubenda-cs-banner) to outrank all of its
-   rules (the preferences panel behind Customise likewise, #iubenda-iframe).
-   Colours are the brand tokens above. */
+/* iubenda's banner and floating button never show, from the first frame (the
+   doubled id outranks iubenda's injected !important rules); the inline park
+   above backs it up. */
 const IUB_STYLE = '  <style id="trove-cmp">'
-  + '#iubenda-cs-banner#iubenda-cs-banner *{font-family:"Quicksand",system-ui,sans-serif!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-content{background:#FFFCFA!important;color:#292727!important;border:1px solid #DBC7BD!important;border-radius:18px!important;box-shadow:0 18px 48px -18px rgba(41,39,39,.32)!important;padding:20px 22px 18px!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-rationale{max-width:none!important;margin:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content,#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content p,#iubenda-cs-banner#iubenda-cs-banner .iub-p{font:500 14px/1.55 "Quicksand",system-ui,sans-serif!important;color:#292727!important;margin:0!important;padding:0!important;letter-spacing:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content{margin:0!important;max-height:none!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .trove-cmp-title{display:block;font:500 22px/1.15 "Cormorant",Georgia,serif!important;color:#292727;margin:0 0 6px}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-cookie-policy-lnk{color:#292727!important;font-weight:600!important;text-decoration:underline!important;text-underline-offset:3px}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;margin:16px 0 0!important;padding:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group>div{display:flex!important;flex-direction:row!important;gap:8px!important;margin:0!important;width:auto!important;order:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group-custom{flex:0 0 auto!important;padding:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group-consent{flex:1 1 auto!important;justify-content:flex-end!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group-consent button{flex:1 1 0!important;max-width:150px!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group button{width:auto!important;margin:0!important;border-radius:999px!important;font:600 14px/1 "Quicksand",system-ui,sans-serif!important;letter-spacing:0!important;padding:12px 20px!important;min-height:44px;cursor:pointer;box-shadow:none!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-reject-btn,#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-accept-btn{background:#292727!important;color:#FDF7F5!important;border:1.5px solid #292727!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-reject-btn:hover,#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-accept-btn:hover{opacity:.86}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group .iubenda-cs-customize-btn{background:transparent!important;color:#292727!important;border:0!important;padding:12px 0!important;min-width:0!important;text-align:start!important;text-decoration:underline!important;text-underline-offset:3px}'
-  + '#iubenda-cs-banner#iubenda-cs-banner button:focus-visible,#iubenda-cs-banner#iubenda-cs-banner a:focus-visible{outline:2px solid #292727!important;outline-offset:2px!important}'
-  + '@media (min-width:640px){#iubenda-cs-banner#iubenda-cs-banner.iubenda-cs-default-floating .iubenda-cs-container{max-width:420px!important}}'
-  + '@media (max-width:639px){#iubenda-cs-banner#iubenda-cs-banner.iubenda-cs-default-floating{padding:0!important;bottom:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-container{max-width:none!important;width:100%!important;margin:0!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-content{border-radius:18px 18px 0 0!important;border-width:1px 0 0!important;padding:16px 16px calc(14px + env(safe-area-inset-bottom,0px))!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content,#iubenda-cs-banner#iubenda-cs-banner .iubenda-banner-content p,#iubenda-cs-banner#iubenda-cs-banner .iub-p{font-size:13px!important;line-height:1.5!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .trove-cmp-title{font-size:19px;margin-bottom:4px}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group{margin-top:12px!important}'
-  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-opt-group button{padding:11px 18px!important}}'
-  + '#iubenda-iframe#iubenda-iframe #iubenda-iframe-content,#iubenda-iframe#iubenda-iframe #iubenda-iframe-content *{font-family:"Quicksand",system-ui,sans-serif!important}'
-  + '#iubenda-iframe#iubenda-iframe #iubenda-iframe-content{background:#FFFCFA!important;color:#292727!important;border-radius:18px!important}'
-  + '#iubenda-iframe#iubenda-iframe #iubenda-iframe-content .purposes-header-title,#iubenda-iframe#iubenda-iframe #iubenda-iframe-content .purposes-section-header-title{font-family:"Cormorant",Georgia,serif!important;font-weight:500!important;color:#292727!important;letter-spacing:0!important}'
-  + '#iubenda-iframe#iubenda-iframe .iub-btn,#iubenda-iframe#iubenda-iframe #iubFooterBtn,#iubenda-iframe#iubenda-iframe #iubRejectBtn{border-radius:999px!important;font-weight:600!important;box-shadow:none!important}'
-  + '#iubenda-iframe#iubenda-iframe #iubFooterBtn,#iubenda-iframe#iubenda-iframe #iubRejectBtn{background:#292727!important;color:#FDF7F5!important;border:1.5px solid #292727!important}'
-  + '#iubenda-iframe#iubenda-iframe .iub-btn-consent,#iubenda-iframe#iubenda-iframe .iub-btn-cp,#iubenda-iframe#iubenda-iframe .iub-btn-config{background:#FDF7F5!important;color:#292727!important;border:1.5px solid #292727!important}'
-  + '#iubenda-iframe#iubenda-iframe .iub-btn-consent svg path{fill:#292727!important;stroke:#292727!important}'
-  + '#iubenda-iframe#iubenda-iframe input.style1:checked,#iubenda-iframe#iubenda-iframe input.style1.locked{background-color:#292727!important;border-color:#292727!important}'
-  + '#iubenda-iframe#iubenda-iframe a,#iubenda-iframe#iubenda-iframe .purposes-item-title-btn{color:#292727!important}'
-  + '#iubenda-iframe#iubenda-iframe #iubenda-iframe-content .iub-btn:focus,#iubenda-iframe#iubenda-iframe #iubenda-iframe-content .iub-btn:focus-visible,#iubenda-iframe#iubenda-iframe #iubenda-iframe-content a:focus-visible,#iubenda-iframe#iubenda-iframe #iubenda-iframe-content input:focus-visible{outline:2px solid #292727!important;outline-offset:2px!important;box-shadow:none!important}'
-  // iubenda has no Arabic: the panel stays English, so it keeps left-to-right on Arabic pages
-  + '[dir=rtl] #iubenda-iframe#iubenda-iframe #iubenda-iframe-content{direction:ltr!important;text-align:left!important}'
+  + '#iubenda-cs-banner#iubenda-cs-banner{position:fixed!important;left:-200vw!important;top:0!important;width:1px!important;height:1px!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;clip-path:inset(100%)!important}'
+  + '#iubenda-cs-banner#iubenda-cs-banner .iubenda-cs-container{position:absolute!important;opacity:0!important;pointer-events:none!important}'
+  + '.iubenda-tp-btn,.iubenda-tp-alert-btn{display:none!important}'
   + '</style>';
 
 const SNIPPET = [
   `  <!-- gtm:begin — Consent Mode v2: everything denied until the cookie banner records a choice; then Google Tag Manager ${GTM_ID}. No <noscript> iframe on purpose: it cannot respect consent. -->`,
   '  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("consent","default",{ad_storage:"denied",ad_user_data:"denied",ad_personalization:"denied",analytics_storage:"denied",functionality_storage:"denied",personalization_storage:"denied",security_storage:"granted"});gtag("set","ads_data_redaction",true);</script>',
-  '  <!-- iubenda: cookie banner + consent log (Privacy Controls and Cookie Solution, site 4702684). After the Consent Mode defaults, before GTM, so a saved choice is applied before any tag can run. The settings line overrides the dashboard: opt-in for every visitor (no US opt-out model, which granted consent on the second page), no marketing purpose, no floating button, and the banner in Trove\'s own look and words (src/gtm.js). -->',
-  iubSettingsLine('en'),
+  '  <!-- Cookie banner: Trove\'s own (/consent.js) over iubenda, which keeps the consent log and Consent Mode signals and draws nothing (Privacy Controls and Cookie Solution, site 4702684). After the Consent Mode defaults, before GTM, so a saved choice is applied before any tag can run. Settings: opt-in for every visitor, necessary + measurement only, no floating button (src/gtm.js). -->',
+  iubSettingsLine(),
   IUB_STYLE,
+  '  <script src="/consent.js" defer></script>',
   '  <script src="https://embeds.iubenda.com/widgets/e5a8f7dc-abe7-4798-a50d-a94138033fad.js"></script>',
   `  <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer','${GTM_ID}');</script>`,
   '  <!-- gtm:end -->',

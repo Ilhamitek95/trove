@@ -43,7 +43,8 @@ const CONSENT = 'gtag("consent","default"';
 
 /** Everything the tag block must be on a tagged page. */
 function assertTagged(html, where) {
-  html = html.replace(/\r\n/g, '\n');
+  // the server stamps local scripts with ?v=<hash> for caching (traffic.js)
+  html = html.replace(/\r\n/g, '\n').replace(/(src="\/consent\.js)\?v=[a-f0-9]+"/g, '$1"');
   assert.equal((html.match(/gtm:begin/g) || []).length, 1, `${where}: exactly one tag block`);
   assert.ok(html.includes(gtm.SNIPPET), `${where}: the block is the canonical one, unedited`);
   assert.ok(html.includes(gtm.GTM_ID), `${where}: the container id`);
@@ -130,7 +131,7 @@ test('cookie banner: opt-in for every visitor, no US opt-out model, no marketing
   const cfgAt = s.indexOf('_iub.csConfiguration='), embedAt = s.indexOf('embeds.iubenda.com/widgets/');
   assert.ok(cfgAt > -1 && embedAt > -1 && cfgAt < embedAt, 'the settings are declared before the iubenda embed loads');
   assert.ok(s.indexOf('gtag("consent","default"') < cfgAt, 'Consent Mode defaults still come first');
-  const cfgSrc = s.slice(cfgAt).match(/_iub\.csConfiguration=(\{.*?\});<\/script>/)[1];
+  const cfgSrc = s.slice(cfgAt).match(/_iub\.csConfiguration=(\{.*?\});_iub\.csConfiguration\.callback=/)[1];
   const cfg = vm.runInNewContext(`(${cfgSrc})`);
   // The site settings set usprApplies:true for everyone, and the US opt-out
   // model treats a visitor as consenting until they opt out: the second page
@@ -140,11 +141,123 @@ test('cookie banner: opt-in for every visitor, no US opt-out model, no marketing
   assert.equal(cfg.gdprApplies, true);
   for (const k of ['enableUspr', 'usprApplies', 'showBannerForUS', 'enableFadp', 'fadpApplies', 'enableLgpd', 'lgpdApplies'])
     assert.equal(cfg[k], false, k);
-  // Purposes: 1 necessary, 2 functionality, 3 experience, 4 measurement — no
-  // 5 (marketing / personalised ads): Trove runs no advertising cookies.
-  assert.deepEqual(String(cfg.purposes).split(',').map(Number), [1, 2, 3, 4]);
-  // The footer's Cookie settings link reopens the panel; no extra tab stops before Skip to content.
+  // Purposes: 1 necessary, 4 measurement — what the Privacy Policy says the
+  // banner asks about. No 5 (marketing / personalised ads).
+  assert.deepEqual(String(cfg.purposes).split(',').map(Number), [1, 4]);
+  // The footer's Cookie settings link reopens the banner; no extra tab stops before Skip to content.
   assert.equal(cfg.floatingPreferencesButtonDisplay, false);
+});
+
+/* A tiny stand-in for the page around the settings line: runs the callbacks
+   the way iubenda would and records what reaches the dataLayer. */
+function runSettingsLine(prefs) {
+  const line = gtm.SNIPPET.match(/<script>(var _iub=window\._iub[^]*?)<\/script>/)[1];
+  const banner = { attrs: {}, style: {}, setAttribute(k, v) { this.attrs[k] = v; } };
+  banner.style.setProperty = (k, v, imp) => { banner.style[k] = `${v}${imp ? ' !important' : ''}`; };
+  const listeners = {};
+  const w = {
+    dataLayer: [],
+    addEventListener: (ev, fn) => { listeners[ev] = fn; },
+    document: { getElementById: (id) => (id === 'iubenda-cs-banner' ? banner : null) },
+  };
+  w.window = w;
+  w.gtag = function () { w.dataLayer.push(arguments); };
+  vm.runInNewContext(line, w);
+  w._iub.cs = { api: { getPreferences: () => prefs } };
+  return { w, banner, listeners, cb: w._iub.csConfiguration.callback };
+}
+
+test('cookie banner: iubenda only keeps the record — its banner is parked and ours opens in its place', () => {
+  const opened = [];
+  // our banner not loaded yet: it opens as soon as consent.js says it is ready
+  let r = runSettingsLine(null);
+  r.cb.onBannerShown();
+  assert.equal(r.banner.attrs.inert, '', 'iubenda’s banner is inert');
+  assert.equal(r.banner.attrs['aria-hidden'], 'true');
+  assert.equal(r.banner.style.left, '-200vw !important', 'and parked off-screen');
+  assert.equal(r.banner.style.opacity, '0 !important');
+  assert.equal(typeof r.listeners['trove:consent-ready'], 'function', 'waits for our banner');
+  r.w.troveConsent = { open: (step) => opened.push(step) };
+  r.listeners['trove:consent-ready']();
+  assert.deepEqual(opened, ['notice']);
+  // our banner already there: it opens straight away
+  r = runSettingsLine(null);
+  r.w.troveConsent = { open: (step) => opened.push(step) };
+  r.cb.onBannerShown();
+  assert.deepEqual(opened, ['notice', 'notice']);
+  // and iubenda's own look never shows, even before the callback runs
+  const style = gtm.SNIPPET.match(/<style id="trove-cmp">([\s\S]*?)<\/style>/)[1];
+  assert.match(style, /#iubenda-cs-banner#iubenda-cs-banner\{[^}]*left:-200vw!important/);
+  assert.match(style, /\.iubenda-tp-btn,\.iubenda-tp-alert-btn\{display:none!important\}/);
+  // our banner loads with the tag block (so never on the dashboards or /admin)
+  assert.match(gtm.SNIPPET, /<script src="\/consent\.js" defer><\/script>/);
+  assert.ok(gtm.SNIPPET.indexOf('/consent.js') < gtm.SNIPPET.indexOf('embeds.iubenda.com'), 'listed before iubenda');
+});
+
+test('cookie banner: Consent Mode follows measurement only — advertising always denied — and a choice fires the Google tag', () => {
+  const consent = (dl) => dl.filter((e) => e[0] === 'consent' && e[1] === 'update').map((e) => e[2]);
+  let r = runSettingsLine({ purposes: { 1: true, 4: true } });
+  r.cb.onPreferenceExpressed();
+  let [u] = consent(r.w.dataLayer);
+  assert.equal(u.analytics_storage, 'granted');
+  for (const k of ['ad_storage', 'ad_user_data', 'ad_personalization', 'functionality_storage', 'personalization_storage'])
+    assert.equal(u[k], 'denied', `${k} stays denied: nothing on Trove uses it`);
+  assert.equal(r.w.dataLayer.filter((e) => e.event === 'consent_ready').length, 1, 'one consent_ready per choice');
+  // a refusal (or a withdrawn choice) turns analytics off again
+  r = runSettingsLine({ purposes: { 1: true, 4: false } });
+  r.cb.onPreferenceExpressed();
+  [u] = consent(r.w.dataLayer);
+  assert.equal(u.analytics_storage, 'denied');
+  // a returning visitor's stored choice is re-applied, without a second page view
+  r = runSettingsLine({ purposes: { 1: true, 4: true } });
+  r.cb.onConsentRead();
+  assert.equal(consent(r.w.dataLayer)[0].analytics_storage, 'granted');
+  assert.equal(r.w.dataLayer.filter((e) => e.event === 'consent_ready').length, 0);
+  // iubenda's API missing: nothing throws, nothing is granted
+  r = runSettingsLine(null);
+  r.w._iub.cs = undefined;
+  r.cb.onConsentRead();
+  assert.equal(consent(r.w.dataLayer)[0].analytics_storage, 'denied');
+});
+
+test('cookie banner: Trove’s own look and words, Reject as easy as Accept, brand colours only, English and Arabic', () => {
+  const js = fs.readFileSync(path.join(DOCS, 'consent.js'), 'utf8');
+  // Reject and Accept side by side on the first screen, the same button
+  const rejectBtn = js.match(/<button type="button" class="([^"]+)" data-act="reject">/)[1];
+  const acceptBtn = js.match(/<button type="button" class="([^"]+)" data-act="accept">' \+ esc\(T\.accept\)/)[1];
+  assert.equal(rejectBtn, acceptBtn, 'Reject looks exactly like Accept');
+  // every choice is recorded by iubenda
+  assert.match(js, /cs\.consentGiven\(\)/);
+  assert.match(js, /cs\.rejectAll\(\)/);
+  assert.match(js, /cs\.setPreferences\(\{ purposes: \{ 1: true, 4: measurement \} \}, true\)/);
+  assert.match(js, /role="switch" aria-checked=/);
+  // the footer's Cookie settings link opens our banner, not iubenda's panel
+  assert.match(js, /\.iubenda-cs-preferences-link/);
+  assert.match(js, /stopImmediatePropagation\(\)/);
+  // the same words in both languages, the cookie policy linked in each, no marketing
+  const words = (lang) => {
+    const w = { document: { documentElement: { lang } } };
+    w.window = w;
+    return vm.runInNewContext(`${js.match(/ {2}var AR = [^]*?\n {2}\};\n/)[0]}; T`, w);
+  };
+  const en = words('en'), ar = words('ar');
+  assert.deepEqual(Object.keys(ar).sort(), Object.keys(en).sort(), 'every English string has its Arabic');
+  assert.equal(en.reject, 'Reject');
+  assert.equal(en.policyHref, '/privacy#2-what-we-collect');
+  assert.equal(ar.policyHref, '/ar/privacy');
+  assert.equal(ar.reject, 'رفض');
+  assert.equal(ar.accept, 'قبول');
+  for (const T of [en, ar]) for (const v of Object.values(T)) assert.doesNotMatch(v, /marketing|advertis|تسويق|إعلان/i, 'no marketing purpose');
+  // Owner rule 2026-10-12: no new colours — only Trove's palette, never Orange.
+  const BRAND = new Set(['#292727', '#FDF7F5', '#FFFCFA', '#DBC7BD']);
+  const style = gtm.SNIPPET.match(/<style id="trove-cmp">([\s\S]*?)<\/style>/)[1];
+  const used = [...js.matchAll(/#[0-9A-Fa-f]{6}\b/g), ...style.matchAll(/#[0-9A-Fa-f]{6}\b/g)].map((m) => m[0].toUpperCase());
+  assert.ok(used.length > 5);
+  for (const c of used) assert.ok(BRAND.has(c), `${c} is a brand colour`);
+  assert.doesNotMatch(js, /F19A82|italic/i, 'no Orange, no italics');
+  assert.match(js, /"Cormorant",Georgia,serif/);
+  assert.match(js, /"Quicksand",system-ui,sans-serif/);
+  assert.doesNotMatch(gtm.SNIPPET, /<\/script>[^]*?_iub\.csConfiguration=[^;]*<\//, 'no raw < inside the settings line');
 });
 
 test('private links never meet Tag Manager, and pass on only the origin', async () => {
@@ -338,25 +451,4 @@ test('the sign-up endpoints say whether they opened a new account', async (t) =>
   assert.equal(r.data.created, true);
   r = await ctx.api('POST', '/api/auth/google', { body: { credential: 'good-token' } });
   assert.equal(r.data.created, false);
-});
-
-test('cookie banner: Trove’s own look and words, Reject as easy as Accept, brand colours only', () => {
-  const s = gtm.SNIPPET;
-  const cfg = JSON.parse(s.match(/_iub\.csConfiguration=(\{.*?\});<\/script>/)[1]);
-  const b = cfg.banner;
-  assert.equal(b.position, 'float-bottom-left');
-  assert.equal(b.acceptButtonDisplay, true);
-  assert.equal(b.rejectButtonDisplay, true, 'a Reject button on the first screen');
-  assert.equal(b.rejectButtonColor, b.acceptButtonColor, 'Reject looks exactly like Accept');
-  assert.equal(b.rejectButtonCaptionColor, b.acceptButtonCaptionColor);
-  assert.match(b.content, /class="iubenda-cs-cookie-policy-lnk"/, 'the cookie policy link iubenda requires');
-  assert.match(b.content, /consent/i);
-  assert.doesNotMatch(b.content, /marketing|advertis/i, 'no marketing purpose');
-  // Owner rule 2026-10-12: no new colours — only Trove's palette, never Orange on Charcoal.
-  const BRAND = new Set(['#292727', '#FDF7F5', '#FFFCFA', '#DBC7BD']);
-  const style = s.match(/<style id="trove-cmp">([\s\S]*?)<\/style>/)[1];
-  const used = [...JSON.stringify(b).matchAll(/#[0-9A-Fa-f]{6}/g), ...style.matchAll(/#[0-9A-Fa-f]{6}/g)].map((m) => m[0].toUpperCase());
-  for (const c of used) assert.ok(BRAND.has(c), `${c} is a brand colour`);
-  assert.doesNotMatch(style, /F19A82/i, 'no Orange in the banner');
-  assert.doesNotMatch(s, /<\/script>[^]*?_iub\.csConfiguration=[^;]*<\//, 'no raw < inside the settings line');
 });

@@ -45,9 +45,6 @@ const LOCALIZED_RE = /^\/(?:|shop(?:\/[a-z0-9-]*)?|pieces\/[^/]+|makers\/[^/]+|s
 
 /** The path part of a local URL ('/shop?q=x#y' → '/shop'). */
 const pathOf = (u) => String(u || '').split(/[?#]/)[0] || '/';
-/* The cookie banner's settings line, English as the pages carry it and its Arabic twin. */
-const IUB_EN = require('./gtm').iubSettingsLine('en').trim();
-const IUB_AR = require('./gtm').iubSettingsLine('ar').trim();
 
 function isLocalizable(p) {
   const x = pathOf(p);
@@ -331,10 +328,7 @@ function finishPage(html, { lang = 'en', base = '', path: reqPath = '/', query =
   });
   out = out.replace('<meta property="og:locale" content="en_GB">', '<meta property="og:locale" content="ar_AE">\n<meta property="og:locale:alternate" content="en_GB">');
   out = out.replace(/"inLanguage":"en"/g, '"inLanguage":"ar"');
-  // The cookie banner (iubenda) in Arabic too: iubenda has no Arabic among
-  // its languages, so the page's settings line is swapped for the Arabic one
-  // (same consent settings and look, Arabic text and buttons — src/gtm.js).
-  out = out.replace(IUB_EN, IUB_AR);
+  // The cookie banner speaks Arabic by itself: docs/consent.js reads <html lang>.
   const data = `<script>window.TROVE_LANG="ar";window.TROVE_I18N=${JSON.stringify(d).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029')};</script>`;
   if (/<meta charset="utf-8">/i.test(out)) out = out.replace(/<meta charset="utf-8">/i, (m) => `${m}\n${data}`);
   else out = out.replace(/<head>/i, (m) => `${m}\n${data}`);
