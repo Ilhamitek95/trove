@@ -2382,14 +2382,14 @@ function payoutSetupCard(){
     ${b.iban&&(!ME||ME.hasPassword!==false)?`<div class="field"><label for="bkPw">${_t('Your Trove password — needed to change payout details')}</label><input id="bkPw" type="password" autocomplete="current-password"></div>
     <div class="demo-note" style="margin:-4px 0 12px">${_t('We email you whenever your bank details change, and the first payment to a new account waits until Trove has checked it.')}</div>`:''}
     ${SHOP.needsId&&!idManual()?`
-    <div class="up" style="margin-top:18px">${_t('Home address')}</div>
-    <div class="demo-note" style="margin:6px 0 12px">${idDiditVerified()?_t('Your identity is verified with Didit. Trove keeps your home address on record with it.'):_t('Trove verifies your identity with the selfie check in the Identity card on this page, and keeps your home address on record with it.')}
-      ${idDiditVerified()?'':` <a href="#" onclick="ID_MANUAL=true;renderPayments();return false" style="color:var(--accent-ink)">${_t('Send photos of your Emirates ID instead')}</a>`}</div>
+    <div class="up" style="margin-top:18px">${_t('Identity verification')}</div>
+    <div class="demo-note" style="margin:6px 0 12px"><span>${idDiditVerified()?_t('Your identity is verified with Didit. Trove keeps your home address on record with it.'):_t('Trove verifies your identity with the selfie check in the Identity card on this page, and keeps your home address on record with it.')}
+      ${idDiditVerified()?'':` <a href="#" onclick="ID_MANUAL=true;renderPayments();return false" style="color:var(--accent-ink)">${_t('Send photos of your Emirates ID instead')}</a>`}</span></div>
     ${addressFieldsHTML()}`:''}
     ${SHOP.needsId&&idManual()?`
     <div class="up" style="margin-top:18px">${_t('Identity verification')}</div>
-    <div class="demo-note" style="margin:6px 0 12px">${_t('You sell under Trove’s consignment model without a verified trade licence, so Trove keeps a copy of your Emirates ID and your home address on record, and checks them before your first payment. The photos are stored encrypted and only Trove’s admin can view them.')}
-      ${idCheckOn()?` <a href="#" onclick="ID_MANUAL=false;renderPayments();return false" style="color:var(--accent-ink)">${_t('Use the selfie check instead')}</a>`:''}</div>
+    <div class="demo-note" style="margin:6px 0 12px"><span>${_t('You sell under Trove’s consignment model without a verified trade licence, so Trove keeps a copy of your Emirates ID and your home address on record, and checks them before your first payment. The photos are stored encrypted and only Trove’s admin can view them.')}
+      ${idCheckOn()?` <a href="#" onclick="ID_MANUAL=false;renderPayments();return false" style="color:var(--accent-ink)">${_t('Use the selfie check instead')}</a>`:''}</span></div>
     ${idOnFile?`<div class="demo-note" style="margin:0 0 10px">${_t('On file: ID ending {last4}, expires {date}. Leave these empty to keep it, or fill them in if you have a renewed ID.',{last4:`<bdi>${esc(SHOP.eidLast4)}</bdi>`,date:esc(troveDate(SHOP.eidExpiry+'T08:00:00Z'))})}</div>`:''}
     <div class="ftwo">
       <div class="field"><label>${_t('Emirates ID · last 4 digits')}</label><input id="psEid" maxlength="4" inputmode="numeric" placeholder="${idOnFile?esc(SHOP.eidLast4):'1234'}"></div>
@@ -2466,7 +2466,7 @@ function idCheckCardHTML(){
   else if(st==='Declined'){title=_t('Your identity check did not pass');lead=_t('You can try again. Use your own, current Emirates ID, in good light, and keep your face fully visible.');}
   else if(open){title=_t('Finish your identity check');lead=_t('You started a check but it is not finished yet. Pick up where you left off.');}
   else{title=_t('Verify your identity');lead=_t('Trove pays makers only once it knows who they are. The check takes about two minutes: you scan both sides of your Emirates ID and take a selfie, on your phone or a computer with a camera.');}
-  const reasons=(st==='Declined'&&Array.isArray(c.reasons)&&c.reasons.length)?`<ul style="margin:8px 0 0 18px;font-size:13px;font-weight:600;color:var(--muted)">${c.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:'';
+  const reasons=(st==='Declined'&&Array.isArray(c.reasons)&&c.reasons.length)?`<ul style="margin:8px 0 0;padding-inline-start:18px;font-size:13px;font-weight:600;color:var(--muted)">${c.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:'';
   return `<div class="card">
     <div class="up">${_t('Identity')}</div>
     <h3 style="font-size:19px;font-weight:600;margin:6px 0">${title}</h3>
@@ -2475,8 +2475,8 @@ function idCheckCardHTML(){
       <span>${_t('I agree that Trove asks Didit, its identity verification provider, to check my Emirates ID and a live selfie. Trove keeps only the result. See the <a href="{privacy}" target="_blank" rel="noopener" style="color:var(--accent-ink)">Privacy Policy</a>, Didit’s <a href="https://didit.me/terms/verification-privacy-notice" target="_blank" rel="noopener" style="color:var(--accent-ink)">Verification Privacy Notice</a> and <a href="https://didit.me/terms/identity-verification" target="_blank" rel="noopener" style="color:var(--accent-ink)">End User Terms</a>.',{privacy:troveUrl('/privacy')})}</span></label>
     <button class="btn btn-dark owner-only" id="idcStart" onclick="startIdCheck()">${open?_t('Continue my check'):(expired||expiring)?_t('Verify my renewed ID'):st==='Declined'?_t('Try again'):_t('Verify my Emirates ID')}</button>
     ${open?`<button class="btn btn-ghost btn-sm" style="margin-inline-start:8px" onclick="refreshIdCheck(false)">${_t('Check again')}</button>`:''}
-    <div class="demo-note" style="margin-top:10px">${_t('You will be taken to Didit’s secure check and brought back here when it is done.')}
-      <a href="#" onclick="ID_MANUAL=true;PAYOUT_EDIT=true;renderPayments();return false" style="color:var(--accent-ink)">${_t('Can’t do the selfie check? Send photos of your Emirates ID instead')}</a></div>
+    <div class="demo-note" style="margin-top:10px"><span>${_t('You will be taken to Didit’s secure check and brought back here when it is done.')}
+      <a href="#" onclick="ID_MANUAL=true;PAYOUT_EDIT=true;renderPayments();return false" style="color:var(--accent-ink)">${_t('Can’t do the selfie check? Send photos of your Emirates ID instead')}</a></span></div>
   </div>`;
 }
 async function startIdCheck(){
