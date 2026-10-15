@@ -285,6 +285,11 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     require('./order-sweep').sweepPackBy()
       .then(({ reminded, escalated, failed }) => { if (reminded || escalated) console.log(`pack-by: reminded ${reminded} maker(s), escalated ${escalated} to admin`); if (!failed) jobs.ok('pack-by'); })
       .catch((e) => jobs.fail('pack-by', e));
+    // Didit checks still open (started, in progress, in review): re-read
+    // them, so a missed webhook never leaves a maker waiting (didit.js).
+    require('./didit').sweepOpen()
+      .then(({ checked, changed }) => { if (changed) console.log(`identity checks: re-read ${checked}, ${changed} changed`); jobs.ok('identity'); })
+      .catch((e) => jobs.fail('identity', e, { quiet: true }));
     // Service bookings nobody can act on: unpaid past their date, or requests
     // with no answer (provider reminded at 2 days, closed at 7).
     require('./service-bookings').sweepStale()

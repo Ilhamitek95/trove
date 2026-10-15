@@ -901,7 +901,30 @@ function shopActions(s){
 // ticked. A typed licence number alone counts for nothing. Settlement pays
 // only verified makers, and holds an Emirates-ID maker once the ID expires.
 // The payout account holder is shown beside the maker, flagged if it differs.
+// Since 15 Oct 2026 a Didit check (backend/src/didit.js) also establishes it:
+// no tick needed; 'Undo ID check' withdraws it. Checks Didit could not decide
+// alone wait in the Didit console (business.didit.me), not here.
 function eidDate(d){ return d?fmtDate(d+' 00:00:00'):'—'; }
+const DIDIT_CONSOLE='https://business.didit.me';
+function diditHTML(s){
+  const id=s.identity||{}, eid=s.eid||{}, c=s.idCheck||{};
+  if(id.method==='didit'&&(id.verified||id.reason==='id_expired')){
+    const st=eid.state;
+    return `${st==='expired'?'<span class="pill rejected" style="color:var(--accent-ink)">ID expired</span>':'<span class="pill approved" title="Emirates ID scan, live selfie and face match approved by Didit">ID verified · Didit ✓</span>'}
+      ${st==='expiring'?' <span class="pill pending" style="color:var(--accent-ink)">expires soon</span>':''}
+      ${s.identityName?`<div class="sl" style="margin-top:3px">Name on ID: <b>${esc(s.identityName)}</b></div>`:''}
+      <div class="sl">ID ····${esc(eid.last4||'????')} · issued ${eidDate(eid.issue)} · expires ${eidDate(eid.expiry)}</div>
+      ${s.sellerAddress?`<div class="sl" style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(s.sellerAddress)}">${esc(s.sellerAddress)}</div>`:''}
+      ${c.sessionId?`<div class="sl" title="Look this session up in the Didit console">Didit session ${esc(String(c.sessionId).slice(0,8))}…</div>`:''}
+      ${id.verified?`<button class="btn btn-ghost" style="margin-top:4px;padding:5px 10px;font-size:12px" onclick="markIdChecked(${s.id},false)" title="Withdraw it: the maker must verify again before the next payment">Undo ID check</button>`:''}`;
+  }
+  if(c.status==='In Review') return `<span class="pill pending" style="color:var(--accent-ink)" title="Didit could not decide alone: approve or decline it in the Didit console">Didit check to review</span>
+    <div class="sl" style="margin-top:3px"><a href="${DIDIT_CONSOLE}" target="_blank" rel="noopener">Open the Didit console</a>${c.sessionId?` · session ${esc(String(c.sessionId).slice(0,8))}…`:''}</div>`;
+  if(c.status==='Declined') return `<span class="pill rejected" title="${esc((c.reasons||[]).join(' · '))}">Didit check failed</span>
+    ${(c.reasons||[]).length?`<div class="sl" style="margin-top:3px;max-width:240px">${esc(c.reasons.join(' · '))}</div>`:''}`;
+  if(c.status&&c.status!=='Approved') return `<span class="pill pending" title="The maker started a Didit check">Didit check: ${esc(c.status.toLowerCase())}</span>`;
+  return '';
+}
 function idCellHTML(s){
   if(s.isHouse) return '<span style="color:var(--muted)">—</span>';
   const id=s.identity||{}, eid=s.eid||{};
@@ -912,7 +935,10 @@ function idCellHTML(s){
   else if(s.licenseNumber) out+=`<span class="pill pending" title="Typed by the maker — check it, then mark it verified">licence to check</span>
     <div class="sl" style="margin-top:3px">${esc(s.licenseNumber)}${s.hasLicenseImage?` · <a href="${TroveAPI.base}/api/admin/shops/${s.id}/license-image" target="_blank" rel="noopener">licence image</a>`:''}</div>
     <button class="btn btn-ghost" style="margin:4px 0;padding:5px 10px;font-size:12px" onclick="verifyLicense(${s.id})">Mark licence verified</button>`;
-  if(!s.licenseVerifiedAt){
+  const dHTML=s.licenseVerifiedAt?'':diditHTML(s);
+  if(!s.licenseVerifiedAt&&(s.identity||{}).method==='didit'&&((s.identity||{}).verified||(s.identity||{}).reason==='id_expired')) out+=dHTML;
+  else if(!s.licenseVerifiedAt){
+    if(dHTML) out+=dHTML+'<div style="height:4px"></div>';
     if(s.eidFront&&s.eidBack){
       const st=eid.state;
       out+= st==='expired'?'<span class="pill rejected" style="color:var(--accent-ink)">ID expired</span>'
@@ -925,10 +951,10 @@ function idCellHTML(s){
         ${st!=='expired'?(id.verified
           ?`<button class="btn btn-ghost" style="margin-top:4px;padding:5px 10px;font-size:12px" onclick="markIdChecked(${s.id},false)">Undo ID check</button>`
           :`<button class="btn btn-ghost" style="margin-top:4px;padding:5px 10px;font-size:12px" onclick="markIdChecked(${s.id},true)" title="You compared the photos with the details, the address and the account holder">Mark ID checked</button>`):''}`;
-    }else out+='<span class="pill pending" style="color:var(--accent-ink)">ID missing</span>';
+    }else if(!dHTML) out+='<span class="pill pending" style="color:var(--accent-ink)">ID missing</span>';
   }
   if(s.payoutAccountName){
-    out+=`<div class="sl" style="margin-top:4px">Paid to: <b>${esc(s.payoutAccountName)}</b>${s.accountNameMatches===false?` <span style="color:var(--accent-ink);font-weight:700" title="The bank account holder does not match the maker (${esc(s.owner.name||'')}) or the shop name — check before paying">≠ maker</span>`:''}</div>`;
+    out+=`<div class="sl" style="margin-top:4px">Paid to: <b>${esc(s.payoutAccountName)}</b>${s.accountNameMatches===false?` <span style="color:var(--accent-ink);font-weight:700" title="The bank account holder does not match the maker (${esc(s.owner.name||'')}), the shop name or the name on a Didit-verified ID — check before paying">≠ maker</span>`:''}</div>`;
   }
   return out;
 }
@@ -1992,7 +2018,8 @@ document.addEventListener('keydown',(e)=>{if(!$('cxScrim').classList.contains('o
 const SETTLE_PILL={draft:'pending',exported:'pending',paid:'approved'};
 const SETTLE_WORD={draft:'draft',exported:'file downloaded',paid:'paid',cancelled:'cancelled'};
 const EXCLUDE_REASON={payout_setup_incomplete:'payout setup incomplete',netted_negative:'refunds exceed purchases — carried forward',on_hold:'payouts on hold',bank_details_changed:'bank details just changed — check with the maker by phone before releasing',
-  id_missing:'Emirates ID not given yet',id_to_check:'ID waiting for your check (Shops)',id_expired:'Emirates ID expired — waiting for the renewed ID'};
+  id_missing:'Emirates ID not given yet',id_to_check:'ID waiting for your check (Shops)',id_expired:'Emirates ID expired — waiting for the renewed ID',
+  id_in_review:'Didit identity check waiting for your review in the Didit console',id_declined:'Didit identity check failed — waiting for the maker to try again'};
 function heldLine(h){
   const why=h.suspended?'shop suspended — payouts paused until it is reinstated':(EXCLUDE_REASON[h.reason]||h.reason);
   const btn=(h.reason==='on_hold'&&!h.suspended)||h.reason==='bank_details_changed'

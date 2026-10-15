@@ -44,6 +44,9 @@ function publicShop(shop) {
   safe.needsIdVerification = identity.needsEmiratesId(shop);
   const id = identity.status(shop);
   safe.identity = { verified: id.verified, method: id.method, reason: id.reason, eidExpiry: id.eidExpiry || null, eidState: id.eidState || null };
+  // The Didit check (src/didit.js): available or not, and where the maker's
+  // latest one stands, with Didit's decline reasons when it failed.
+  safe.idCheck = require('../didit').sellerState(shop);
   // What still stands between this shop and approval / its first collection.
   safe.agreementAccepted = !!shop.agreement_accepted_at;
   safe.pickupReady = !!(shop.pickup_address && shop.pickup_phone);
@@ -59,7 +62,7 @@ function publicShop(shop) {
   safe.sellingPaused = !agreements.canSell(shop);
   safe.agreementChangeNote = safe.agreementUpdateDue ? agreements.changeNote(current) : '';
   // The Trove Collection is Trove's own line: no agreement, ID checks or payouts.
-  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, agreementAccepted: true, sellingPaused: false, agreementChangeNote: '' });
+  if (shop.is_house) Object.assign(safe, { isHouse: true, needsIdVerification: false, agreementUpdateDue: false, agreementAccepted: true, sellingPaused: false, agreementChangeNote: '', idCheck: { available: false, status: null, reasons: [], updatedAt: null } });
   // The graduation banner quotes the real threshold, never a number in the page (F483).
   safe.graduationThresholdCents = require('../config').graduationThresholdCents();
   return safe;
@@ -924,16 +927,26 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     // only the bank details never asks for them again. A maker with a
     // Trove-verified trade licence isn't asked for them at all.
     const needsId = identity.needsEmiratesId(req.shop);
+    // A Didit check on file and in date IS the maker's identity: typed ID
+    // details and photos are not asked for, and are ignored if sent, so a
+    // payout save can never undo it (src/didit.js).
+    const idNow = identity.status(req.shop);
+    const diditOnFile = idNow.method === 'didit' && idNow.verified;
+    if (diditOnFile) for (const k of ['emiratesIdLast4', 'emiratesIdExpiry', 'emiratesIdIssue', 'eidFront', 'eidBack']) delete b[k];
+    // With Didit switched on, the photo route is the fallback: its details
+    // are required only from a maker who chose it (sent any of them).
+    const sentManualId = !!(b.emiratesIdLast4 || b.emiratesIdExpiry || b.emiratesIdIssue || b.eidFront || b.eidBack);
+    const manualIdRequired = needsId && !diditOnFile && (!require('../didit').enabled() || sentManualId);
     const givenLast4 = String(b.emiratesIdLast4 || '').trim();
     if (givenLast4 && !/^\d{4}$/.test(givenLast4)) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
     const last4 = givenLast4 || req.shop.emirates_id_last4 || '';
-    if (needsId && !last4) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
+    if (manualIdRequired && !last4) return res.status(400).json({ error: 'Enter the last 4 digits of your Emirates ID' });
     const givenExpiry = String(b.emiratesIdExpiry || '').trim();
     const todayIso = new Date().toISOString().slice(0, 10);
     if (givenExpiry && (!/^\d{4}-\d{2}-\d{2}$/.test(givenExpiry) || givenExpiry <= todayIso))
       return res.status(400).json({ error: 'Your Emirates ID expiry date must be in the future' });
     const expiry = givenExpiry || req.shop.emirates_id_expiry || '';
-    if (needsId && (!expiry || expiry <= todayIso)) {
+    if (manualIdRequired && (!expiry || expiry <= todayIso)) {
       return res.status(400).json({ error: expiry ? 'The Emirates ID on file has expired — enter your renewed ID’s expiry date' : 'Your Emirates ID expiry date must be in the future' });
     }
     const givenIssue = String(b.emiratesIdIssue || '').trim();
@@ -979,6 +992,8 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     if (needsId) {
       if (!address && !req.shop.seller_address)
         return res.status(400).json({ error: 'Your home address is required — Trove verifies the identity of sellers without a trade license' });
+    }
+    if (manualIdRequired) {
       if (!b.eidFront && !req.shop.eid_front_file)
         return res.status(400).json({ error: 'Add a photo of the front of your Emirates ID' });
       if (!b.eidBack && !req.shop.eid_back_file)
@@ -1028,10 +1043,11 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     if (address) db.prepare('UPDATE shops SET seller_address=? WHERE id=?').run(address, req.shop.id);
     // New ID details (photos, number, dates or address) need a fresh admin
     // check, and a new expiry earns a new reminder. Changing only the bank
-    // details keeps the check.
-    const idChanged = !!(front || back) || last4 !== (req.shop.emirates_id_last4 || '')
+    // details keeps the check, and so does anything on a Didit-verified
+    // shop (Didit checked the ID and the face; the address is not part of it).
+    const idChanged = !diditOnFile && (!!(front || back) || last4 !== (req.shop.emirates_id_last4 || '')
       || expiry !== (req.shop.emirates_id_expiry || '') || issue !== (req.shop.emirates_id_issue || '')
-      || (address && address !== (req.shop.seller_address || ''));
+      || (address && address !== (req.shop.seller_address || '')));
     if (idChanged) {
       db.prepare(`UPDATE shops SET identity_checked_at=NULL, identity_checked_by=NULL, eid_reminder_for=NULL,
           verification_method=CASE WHEN license_verified_at IS NOT NULL THEN 'trade_licence' ELSE NULL END WHERE id=?`).run(req.shop.id);
@@ -1043,6 +1059,47 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
     if (back) {
       uploads.removeEncryptedPrivate(req.shop.eid_back_file);
       db.prepare('UPDATE shops SET eid_back_file=?, eid_back_mime=? WHERE id=?').run(back.file, back.mime, req.shop.id);
+    }
+    res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
+  } catch (e) { next(e); }
+});
+
+/* ---------------- Identity check (Didit) ---------------- */
+// POST /api/seller/identity/start { consent: true } → { url } — Didit's
+// hosted check (Emirates ID scan + live selfie). The maker agrees first, on
+// Trove's page, that Didit checks their ID and face for Trove; the time is
+// recorded with the session. Refused in shop view: only the maker can do it.
+router.post('/identity/start', requireSeller, notHouse, notInShopView, async (req, res, next) => {
+  const didit = require('../didit');
+  try {
+    if (!didit.enabled()) return res.status(503).json({ code: 'not_configured', error: 'The identity check is not available right now — add photos of your Emirates ID under Payout setup instead' });
+    if (!identity.needsEmiratesId(req.shop)) return res.status(409).json({ code: 'licence', error: 'Your verified trade licence already establishes your identity' });
+    const id = identity.status(req.shop);
+    if (id.method === 'didit' && id.verified && id.eidState !== 'expiring') return res.status(409).json({ code: 'verified', error: 'Your identity is already verified' });
+    if ((req.body || {}).consent !== true) return res.status(400).json({ error: 'Tick the box to agree to the identity check' });
+    const out = await didit.startSession(req.shop, req.user, { lang: req.lang });
+    res.json({ url: out.url });
+  } catch (e) {
+    if (e instanceof didit.DiditError) {
+      if (e.code === 'too_many') return res.status(429).json({ code: e.code, error: e.message });
+      // Didit unreachable, out of credits or refusing the key: the owner is
+      // told (once a day at most), the maker gets the photo route.
+      require('../job-runs').fail('identity', e, { lines: [e.noCredits ? 'Didit says the account is out of credits: top up at business.didit.me.' : 'Makers cannot start the Didit identity check; they can still send Emirates ID photos under Payouts.'] });
+      return res.status(503).json({ code: 'unavailable', error: 'The identity check is not available right now — please try again later, or add photos of your Emirates ID instead' });
+    }
+    next(e);
+  }
+});
+
+// POST /api/seller/identity/refresh → { shop } — re-read the latest check
+// from Didit (the dashboard calls this when Didit sends the maker back).
+// The answer always comes from Didit's API, never from the return address.
+router.post('/identity/refresh', requireSeller, async (req, res, next) => {
+  try {
+    const didit = require('../didit');
+    if (didit.enabled() && req.shop.didit_session_id && !req.shop.is_house) {
+      try { await didit.refreshShop(req.shop); }
+      catch (e) { if (!(e instanceof didit.DiditError)) throw e; console.warn('identity refresh:', e.message); }
     }
     res.json({ shop: publicShop(db.prepare('SELECT * FROM shops WHERE id=?').get(req.shop.id)) });
   } catch (e) { next(e); }

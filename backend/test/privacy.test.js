@@ -290,11 +290,11 @@ test('the nightly sweep keeps the retention periods the policy states', async ()
   assert.deepEqual(privacy.sweep(), { messages: 0, returnPhotos: 0, idDocuments: 0 });
 });
 
-test('Privacy Policy v2 says what the code does', () => {
+test('Privacy Policy v3 says what the code does', () => {
   const cfg = require('../src/config');
   const privacy = require('../src/privacy');
-  assert.equal(cfg.PRIVACY_VERSION, 'v2');
-  const md = fs.readFileSync(path.join(__dirname, '..', 'legal', 'privacy-v2.md'), 'utf8').replace(/\s+/g, ' ');
+  assert.equal(cfg.PRIVACY_VERSION, 'v3');
+  const md = fs.readFileSync(path.join(__dirname, '..', 'legal', 'privacy-v3.md'), 'utf8').replace(/\s+/g, ' ');
   assert.equal(privacy.CONTACT_MESSAGE_DAYS, 730);
   assert.match(md, /Contact form messages\*\*: two years from when they were sent, then deleted automatically/);
   assert.equal(privacy.RETURN_PHOTO_DAYS, 365);
@@ -316,6 +316,14 @@ test('Privacy Policy v2 says what the code does', () => {
   // The 18+ rule is in the Terms of Sale too now.
   const terms = fs.readFileSync(path.join(__dirname, '..', 'legal', `buyer-terms-${cfg.BUYER_TERMS_VERSION}.md`), 'utf8');
   assert.match(terms, /## 2\. Who can buy\s+You must be \*\*18 or over\*\*/);
+  // v3: the Didit check — what Trove keeps, what it never stores, the basis.
+  assert.match(md, /Trove does not download or store your ID images or your selfie, and does not store your full ID number or your date of birth/);
+  assert.match(md, /\*\*Didit\*\* \(identity verification, only for makers who choose it\)/);
+  assert.match(md, /we rely on your \*\*explicit consent\*\*, given on Trove's page before the check starts/);
+  assert.match(md, /the result of a Didit check, home address and licence document \(makers\)\*\*: while you sell on Trove, and for five years after your shop is closed/);
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'legal', 'privacy-v3-ar.md')), 'the Arabic convenience translation exists');
+  // v2 stays untouched as the published record.
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '..', 'legal', 'privacy-v2.md'), 'utf8'), /Didit/);
   // v1 stays untouched as the published record.
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'legal', 'privacy-v1.md'), 'utf8'), /if you choose to save a card/);
 });

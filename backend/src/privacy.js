@@ -1,6 +1,6 @@
 'use strict';
 /**
- * PDPL tooling: what the Privacy Policy (backend/legal/privacy-v2.md, sections
+ * PDPL tooling: what the Privacy Policy (backend/legal/privacy-v3.md, sections
  * 5 and 7) promises, carried out by code so the owner never edits the live
  * database by hand.
  *
@@ -250,6 +250,11 @@ function exportData(email) {
         lastFourDigits: shop.emirates_id_last4 || '', issueDate: shop.emirates_id_issue || '', expiryDate: shop.emirates_id_expiry || '',
         frontPhotoOnFile: !!shop.eid_front_file, backPhotoOnFile: !!shop.eid_back_file,
       },
+      // A Didit check: the result Trove keeps (never the photos or the selfie).
+      identityCheck: {
+        provider: shop.didit_session_id ? 'Didit' : '', status: shop.didit_status || '', nameOnId: shop.identity_name || '',
+        verified: shop.verification_method === 'didit' && !!shop.identity_checked_at, verifiedAt: shop.verification_method === 'didit' ? shop.identity_checked_at || null : null,
+      },
       homeAddress: shop.seller_address || '',
       licence: { number: shop.license_number || '', documentOnFile: !!shop.license_image },
       sellerAgreement: { version: shop.agreement_version || '', acceptedAt: shop.agreement_accepted_at || null },
@@ -362,7 +367,7 @@ function anonymise(email) {
 
 function hasIdDocuments(shop) {
   return !!(shop.eid_front_file || shop.eid_back_file || shop.license_image || shop.seller_address
-    || shop.emirates_id_last4 || shop.emirates_id_expiry);
+    || shop.emirates_id_last4 || shop.emirates_id_expiry || shop.identity_name || shop.didit_session_id);
 }
 
 function privateRoot() {
@@ -383,8 +388,11 @@ function wipeIdDocuments(shop) {
   uploads.removeEncryptedPrivate(shop.eid_back_file);
   removeLicenceFile(shop.license_image);
   db.prepare(`UPDATE shops SET eid_front_file = NULL, eid_front_mime = NULL, eid_back_file = NULL, eid_back_mime = NULL,
-    license_image = '', seller_address = '', emirates_id_last4 = '', emirates_id_issue = '', emirates_id_expiry = ''
+    license_image = '', seller_address = '', emirates_id_last4 = '', emirates_id_issue = '', emirates_id_expiry = '',
+    identity_name = NULL, didit_session_id = NULL, didit_status = NULL, didit_updated_at = NULL
     WHERE id = ?`).run(shop.id);
+  // The record of each Didit check (status, dates, last four digits) goes too.
+  db.prepare('DELETE FROM identity_sessions WHERE shop_id = ?').run(shop.id);
 }
 
 /** Delete a closed shop's ID documents now (the policy's 'sooner on request'). */

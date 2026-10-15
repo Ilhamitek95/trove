@@ -50,7 +50,11 @@ const BUYER_TERMS_VERSION = 'v3';
 // payer of provider fees, drops the saved-card line (there is no saved card),
 // lists the Emirates ID digits and dates, and states retention periods and
 // the export / close-and-anonymise process exactly as src/privacy.js runs them.
-const PRIVACY_VERSION = 'v2';
+// v3 (2026-10-15): the Didit identity check — what Didit does, what Trove
+// keeps from it (name on the ID, last four digits, dates, pass/fail and
+// reasons; never the images, selfie, full number or date of birth), explicit
+// consent as the basis, Didit among the services we share with, retention.
+const PRIVACY_VERSION = 'v3';
 // One number (fees.RETURN_WINDOW_DAYS, 15 by default) is both the buyer's
 // return window and the maker's settlement hold — the two names are kept so
 // older readers keep working, but they can no longer drift apart.

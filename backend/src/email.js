@@ -1163,7 +1163,10 @@ function idExpiring({ name, shopName, expiry, expired, link, lang }) {
     p(expired
       ? T('The Emirates ID we have on file for {shop} expired on {date}. We can only pay makers whose ID is current, so your payments are on hold until you add your renewed ID.', { shop: `<b>${esc(shopName)}</b>`, date: `<b>${esc(expiry)}</b>` })
       : T('The Emirates ID we have on file for {shop} expires on {date}. Please add your renewed ID before then, so your fortnightly payments carry on without a pause.', { shop: `<b>${esc(shopName)}</b>`, date: `<b>${esc(expiry)}</b>` }))
-    + p(T('Open Payouts in your dashboard and update your Emirates ID details and photos. Your bank details stay as they are.'))
+    // With Didit on, the renewal is a new selfie check (src/didit.js).
+    + p(require('./didit').enabled()
+      ? T('Open Payouts in your dashboard and verify your renewed Emirates ID with the quick selfie check. Your bank details stay as they are.')
+      : T('Open Payouts in your dashboard and update your Emirates ID details and photos. Your bank details stay as they are.'))
     + button(T('Update my Emirates ID'), esc(link));
   return {
     subject: expired ? T('Your Emirates ID on Trove has expired') : T('Your Emirates ID on Trove expires soon'),

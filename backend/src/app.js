@@ -302,6 +302,8 @@ function createApp() {
   app.use('/api/checkout', require('./routes/checkout.routes'));
   app.use('/api/account', require('./routes/account.routes'));
   app.use('/api/delivery', require('./routes/delivery.routes'));
+  // Didit identity-check webhook (signed; the decision is re-read from Didit).
+  app.use('/api/identity', require('./routes/identity.routes'));
   app.use('/api/return-photos', require('./routes/return-photos.routes'));
   app.use('/api/services', require('./routes/services.routes'));
   app.use('/api/provider', require('./routes/provider.routes'));

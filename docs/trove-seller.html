@@ -1126,6 +1126,7 @@ function applyShop(s){
     needsId:s.needsIdVerification!==undefined?!!s.needsIdVerification:(!s.connect_queue&&!s.license_verified_at),
     eidFront:!!s.eidFrontProvided,eidBack:!!s.eidBackProvided,sellerAddress:s.seller_address||'',
     identity:s.identity||{verified:false},eidExpiry:s.emirates_id_expiry||'',eidLast4:s.emirates_id_last4||'',
+    idCheck:s.idCheck||{available:false,status:null,reasons:[]},
     agreementAccepted:s.agreementAccepted!==undefined?!!s.agreementAccepted:!!s.agreement_accepted_at,
     whatsapp:s.pitch_phone||'',
     bank:{name:s.payout_bank_name||'',accountName:s.payout_account_name||'',iban:s.iban_masked||''},
@@ -2184,12 +2185,18 @@ function todoCardHTML(managed, sc, firstSale){
       add({urgent:true,step:true,title:_t('Finish your payout setup'),detail:_t('Add your bank details so Trove can pay for the pieces it buys from you — until then you’re left out of the fortnightly settlement run.'),action:btn(_t('Set up payouts'),"go('payments')",true)});
     }else add({done:true,step:true,title:_t('Payout details')});
     if(SHOP.needsId){
-      const est=SHOP.identity&&SHOP.identity.eidState;
+      const idv=SHOP.identity||{},est=idv.eidState,didit=idCheckOn();
       if(est==='expired'||est==='expiring'){
         const when=fmtDate(SHOP.eidExpiry+' 00:00:00');
         add({urgent:est==='expired',step:true,title:est==='expired'?_t('Your Emirates ID has expired'):_t('Your Emirates ID expires soon'),
           detail:est==='expired'?_t('The ID on file expired on {date}. Trove can only pay makers whose ID is current, so your payments wait until you add your renewed ID.',{date:when}):_t('The ID on file expires on {date}. Add your renewed ID before then so your payments carry on without a pause.',{date:when}),
-          action:btn(_t('Update my ID'),"PAYOUT_EDIT=true;go('payments')",true)});
+          action:didit?btn(_t('Verify my renewed ID'),"go('payments')",true):btn(_t('Update my ID'),"PAYOUT_EDIT=true;go('payments')",true)});
+      }else if(idv.verified&&idv.method==='didit'){
+        add({done:true,step:true,title:_t('Identity verified with Didit')});
+      }else if(idv.reason==='id_in_review'){
+        add({step:true,title:_t('Your identity check is being reviewed'),detail:_t('Didit needs a person to look at your check. There is nothing to do for now: this page updates once it is decided.')});
+      }else if(didit&&!idv.verified&&idv.reason!=='id_to_check'){
+        add({urgent:true,step:true,title:_t('Verify your identity'),detail:_t('A two-minute check: scan your Emirates ID and take a selfie. Trove pays makers only once it is done.'),action:btn(_t('Verify now'),"go('payments')",true)});
       }else if(!(SHOP.eidFront&&SHOP.eidBack&&SHOP.sellerAddress)){
         add({urgent:true,step:true,title:_t('Add your Emirates ID and home address'),detail:_t('Trove checks them before your first payment. The photos are stored encrypted and only Trove’s admin can view them.'),action:btn(_t('Add my ID'),"PAYOUT_EDIT=true;go('payments')",true)});
       }else add({done:true,step:true,title:SHOP.identity&&SHOP.identity.verified?_t('Emirates ID checked by Trove'):_t('Emirates ID and home address sent — Trove checks them before your first payment')});
@@ -2267,6 +2274,7 @@ function consignmentPayoutUI(){
       </div>
       ${payoutSetupCard()}
     </div>
+    ${idCheckCardHTML()}
     ${licenseCardHTML()}
     <div class="card" style="padding:0">
       <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">${_t('Settlement history')}</h3></div>
@@ -2356,9 +2364,7 @@ function payoutSetupCard(){
       <div class="fee-row"><span class="muted">${_t('Account holder')}</span><span>${esc(b.accountName||'')}</span></div>
       <div class="fee-row"><span class="muted">IBAN</span><span class="ltr">${esc(b.iban||'')}</span></div>
       ${SHOP.bankHeld?`<div class="demo-note" style="margin:8px 0">${_t('You changed your bank details recently. For your protection, Trove checks a change before the next payment goes to the new account — we may call you to confirm.')}</div>`:''}
-      ${SHOP.needsId?`<div class="fee-row"><span class="muted">${_t('Emirates ID')}</span><span>${!(SHOP.eidFront&&SHOP.eidBack)?`<b style="color:var(--accent-ink)">${_t('Missing — update your details')}</b>`
-        :SHOP.identity.eidState==='expired'?`<b style="color:var(--accent-ink)">${_t('Expired — add your renewed ID')}</b>`
-        :SHOP.identity.verified?_t('Checked by Trove ✓'):_t('On file · Trove checks it before your first payment')}</span></div>
+      ${SHOP.needsId?`<div class="fee-row"><span class="muted">${_t('Emirates ID')}</span><span>${idStatusText()}</span></div>
       <div class="fee-row"><span class="muted">${_t('Home address')}</span><span>${SHOP.sellerAddress?esc(SHOP.sellerAddress):`<b style="color:var(--accent-ink)">${_t('Missing')}</b>`}</span></div>`:''}
       <div class="fee-row"><span class="muted">${_t('Seller Agreement')}</span><span>${_t('Accepted · {version}',{version:esc(SHOP.agreementVersion||'v1')})}${SHOP.agreementUpdateDue?` · <a href="#" onclick="acceptAgreement();return false" style="color:var(--accent-ink)">${_t('accept {version}',{version:esc(SHOP.currentAgreementVersion)})}</a>`:''}</span></div>
       <button class="btn btn-ghost owner-only" onclick="PAYOUT_EDIT=true;renderPayments()">${_t('Update details')}</button>
@@ -2375,9 +2381,15 @@ function payoutSetupCard(){
     <div class="field"><label>IBAN</label><input id="bkIban" class="ltr" placeholder="${b.iban?esc(_t('Leave empty to keep {iban}',{iban:b.iban})):_t('AE followed by 21 digits')}"></div>
     ${b.iban&&(!ME||ME.hasPassword!==false)?`<div class="field"><label for="bkPw">${_t('Your Trove password — needed to change payout details')}</label><input id="bkPw" type="password" autocomplete="current-password"></div>
     <div class="demo-note" style="margin:-4px 0 12px">${_t('We email you whenever your bank details change, and the first payment to a new account waits until Trove has checked it.')}</div>`:''}
-    ${SHOP.needsId?`
+    ${SHOP.needsId&&!idManual()?`
+    <div class="up" style="margin-top:18px">${_t('Home address')}</div>
+    <div class="demo-note" style="margin:6px 0 12px">${idDiditVerified()?_t('Your identity is verified with Didit. Trove keeps your home address on record with it.'):_t('Trove verifies your identity with the selfie check in the Identity card on this page, and keeps your home address on record with it.')}
+      ${idDiditVerified()?'':` <a href="#" onclick="ID_MANUAL=true;renderPayments();return false" style="color:var(--accent-ink)">${_t('Send photos of your Emirates ID instead')}</a>`}</div>
+    ${addressFieldsHTML()}`:''}
+    ${SHOP.needsId&&idManual()?`
     <div class="up" style="margin-top:18px">${_t('Identity verification')}</div>
-    <div class="demo-note" style="margin:6px 0 12px">${_t('You sell under Trove’s consignment model without a verified trade licence, so Trove keeps a copy of your Emirates ID and your home address on record, and checks them before your first payment. The photos are stored encrypted and only Trove’s admin can view them.')}</div>
+    <div class="demo-note" style="margin:6px 0 12px">${_t('You sell under Trove’s consignment model without a verified trade licence, so Trove keeps a copy of your Emirates ID and your home address on record, and checks them before your first payment. The photos are stored encrypted and only Trove’s admin can view them.')}
+      ${idCheckOn()?` <a href="#" onclick="ID_MANUAL=false;renderPayments();return false" style="color:var(--accent-ink)">${_t('Use the selfie check instead')}</a>`:''}</div>
     ${idOnFile?`<div class="demo-note" style="margin:0 0 10px">${_t('On file: ID ending {last4}, expires {date}. Leave these empty to keep it, or fill them in if you have a renewed ID.',{last4:`<bdi>${esc(SHOP.eidLast4)}</bdi>`,date:esc(troveDate(SHOP.eidExpiry+'T08:00:00Z'))})}</div>`:''}
     <div class="ftwo">
       <div class="field"><label>${_t('Emirates ID · last 4 digits')}</label><input id="psEid" maxlength="4" inputmode="numeric" placeholder="${idOnFile?esc(SHOP.eidLast4):'1234'}"></div>
@@ -2391,16 +2403,105 @@ function payoutSetupCard(){
       <div class="field"><label>${_t('Emirates ID — back')}</label>
         <button class="btn btn-ghost btn-sm" id="psEidBackBtn" onclick="$('psEidBackFile').click()">${SHOP.eidBack?_t('On file ✓ — replace'):_t('Add photo')}</button></div>
     </div>
-    <div class="field"><label>${_t('Home address — villa/apartment, building, street')}</label><input id="psAddrLine" placeholder="${_t('e.g. Apt 402, Marina Heights, Al Sufouh Rd')}">
-      ${SHOP.sellerAddress?`<div class="demo-note" style="margin-top:5px">${_t('On file: {address} — leave empty to keep it.',{address:esc(SHOP.sellerAddress)})}</div>`:''}</div>
-    <div class="ftwo">
-      <div class="field"><label>${_t('Area')}</label><input id="psAddrArea" placeholder="${_t('e.g. Al Quoz')}"></div>
-      <div class="field"><label>${_t('Emirate')}</label><select id="psAddrEmirate"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
-    </div>`:''}
+    ${addressFieldsHTML()}`:''}
     ${agreed?'':`<label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:10px 0;cursor:pointer"><input type="checkbox" id="psAgree" style="margin-top:2px;accent-color:var(--coral)">
       <span>${_t('I accept the <a href="#" onclick="showAgreement();return false" style="color:var(--accent-ink)">Trove Seller Agreement</a> — Trove buys my pieces at my list price minus {pct}% and pays me fortnightly once the buyer’s {days}-day return window has closed.',{pct:s.commissionPercent,days:retDays()})}</span></label>`}
     <button class="btn btn-dark owner-only" onclick="savePayoutSetup()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>${_t('Save payout details')}</button>
   </div>`;
+}
+function addressFieldsHTML(){
+  return `<div class="field"><label>${_t('Home address — villa/apartment, building, street')}</label><input id="psAddrLine" placeholder="${_t('e.g. Apt 402, Marina Heights, Al Sufouh Rd')}">
+      ${SHOP.sellerAddress?`<div class="demo-note" style="margin-top:5px">${_t('On file: {address} — leave empty to keep it.',{address:esc(SHOP.sellerAddress)})}</div>`:''}</div>
+    <div class="ftwo">
+      <div class="field"><label>${_t('Area')}</label><input id="psAddrArea" placeholder="${_t('e.g. Al Quoz')}"></div>
+      <div class="field"><label>${_t('Emirate')}</label><select id="psAddrEmirate"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
+    </div>`;
+}
+/* ---------------- Identity check (Didit) ----------------
+   A maker without a verified licence proves who they are with Didit's
+   selfie check: scan the Emirates ID, take a live selfie, Didit matches the
+   two. Trove keeps the result only (backend/src/didit.js). The photo route
+   stays as the fallback (ID_MANUAL). */
+let ID_MANUAL=false;
+const idCheckOn=()=>!!(SHOP.idCheck&&SHOP.idCheck.available)&&!SHOP.house;
+const idDiditVerified=()=>!!(SHOP.identity&&SHOP.identity.verified&&SHOP.identity.method==='didit');
+// The photo fields show when Didit is off, or the maker chose photos, or
+// photos are what is on file (waiting for Trove's check or already checked).
+const idManual=()=>!idCheckOn()||ID_MANUAL||(!idDiditVerified()&&!!(SHOP.eidFront||SHOP.eidBack)&&(SHOP.identity||{}).reason!=='id_declined'&&(SHOP.identity||{}).method!=='didit');
+function idStatusText(){
+  const idv=SHOP.identity||{};
+  if(idv.eidState==='expired')return `<b style="color:var(--accent-ink)">${_t('Expired — add your renewed ID')}</b>`;
+  if(idv.verified)return idv.method==='didit'?_t('Verified with Didit ✓'):_t('Checked by Trove ✓');
+  if(idv.reason==='id_in_review')return _t('Being reviewed by Didit');
+  if(idv.reason==='id_to_check')return _t('On file · Trove checks it before your first payment');
+  return `<b style="color:var(--accent-ink)">${idCheckOn()?_t('Not verified yet'):_t('Missing — update your details')}</b>`;
+}
+function idCheckCardHTML(){
+  if(!SHOP.needsId||!idCheckOn())return '';
+  const idv=SHOP.identity||{},c=SHOP.idCheck||{},st=c.status||'';
+  const expiring=idv.eidState==='expiring',expired=idv.eidState==='expired';
+  // Photos already checked by Trove and in date: nothing to do here.
+  if(idv.verified&&idv.method!=='didit'&&!expiring)return '';
+  const when=SHOP.eidExpiry?esc(troveDate(SHOP.eidExpiry+'T08:00:00Z')):'';
+  if(idv.verified&&!expiring){
+    return `<div class="card">
+      <div class="up">${_t('Identity')}</div>
+      <div class="fee-row"><span class="muted">${_t('Status')}</span><span>${_t('Verified with Didit ✓')}</span></div>
+      ${SHOP.eidLast4?`<div class="fee-row"><span class="muted">${_t('Emirates ID')}</span><span>${_t('ending {last4} · expires {date}',{last4:`<bdi>${esc(SHOP.eidLast4)}</bdi>`,date:when})}</span></div>`:''}
+      <div class="demo-note" style="margin-top:8px">${_t('Trove emails you 30 days before your Emirates ID expires, so you can verify the renewed card in time.')}</div>
+    </div>`;
+  }
+  const open=['Not Started','In Progress','Resubmitted','Awaiting User'].includes(st);
+  let title,lead='';
+  if(expired){title=_t('Verify your renewed Emirates ID');lead=_t('The ID on file has expired, so your payments wait until you verify your renewed card.');}
+  else if(expiring){title=_t('Verify your renewed Emirates ID');lead=_t('The ID on file expires on {date}. Verify the renewed card before then so your payments carry on without a pause.',{date:when});}
+  else if(st==='In Review'){
+    return `<div class="card">
+      <div class="up">${_t('Identity')}</div>
+      <h3 style="font-size:19px;font-weight:600;margin:6px 0">${_t('Your identity check is being reviewed')}</h3>
+      <div class="demo-note">${_t('Didit needs a person to look at your check. There is nothing to do for now: this page updates once it is decided.')}</div>
+      <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="refreshIdCheck(false)">${_t('Check again')}</button>
+    </div>`;
+  }
+  else if(st==='Declined'){title=_t('Your identity check did not pass');lead=_t('You can try again. Use your own, current Emirates ID, in good light, and keep your face fully visible.');}
+  else if(open){title=_t('Finish your identity check');lead=_t('You started a check but it is not finished yet. Pick up where you left off.');}
+  else{title=_t('Verify your identity');lead=_t('Trove pays makers only once it knows who they are. The check takes about two minutes: you scan both sides of your Emirates ID and take a selfie, on your phone or a computer with a camera.');}
+  const reasons=(st==='Declined'&&Array.isArray(c.reasons)&&c.reasons.length)?`<ul style="margin:8px 0 0 18px;font-size:13px;font-weight:600;color:var(--muted)">${c.reasons.map(r=>`<li>${esc(r)}</li>`).join('')}</ul>`:'';
+  return `<div class="card">
+    <div class="up">${_t('Identity')}</div>
+    <h3 style="font-size:19px;font-weight:600;margin:6px 0">${title}</h3>
+    <div class="demo-note">${lead}</div>${reasons}
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;font-weight:600;margin:14px 0 10px;cursor:pointer"><input type="checkbox" id="idcAgree" style="margin-top:2px;accent-color:var(--coral)">
+      <span>${_t('I agree that Trove asks Didit, its identity verification provider, to check my Emirates ID and a live selfie. Trove keeps only the result. See the <a href="{privacy}" target="_blank" rel="noopener" style="color:var(--accent-ink)">Privacy Policy</a>, Didit’s <a href="https://didit.me/terms/verification-privacy-notice" target="_blank" rel="noopener" style="color:var(--accent-ink)">Verification Privacy Notice</a> and <a href="https://didit.me/terms/identity-verification" target="_blank" rel="noopener" style="color:var(--accent-ink)">End User Terms</a>.',{privacy:troveUrl('/privacy')})}</span></label>
+    <button class="btn btn-dark owner-only" id="idcStart" onclick="startIdCheck()">${open?_t('Continue my check'):(expired||expiring)?_t('Verify my renewed ID'):st==='Declined'?_t('Try again'):_t('Verify my Emirates ID')}</button>
+    ${open?`<button class="btn btn-ghost btn-sm" style="margin-inline-start:8px" onclick="refreshIdCheck(false)">${_t('Check again')}</button>`:''}
+    <div class="demo-note" style="margin-top:10px">${_t('You will be taken to Didit’s secure check and brought back here when it is done.')}
+      <a href="#" onclick="ID_MANUAL=true;PAYOUT_EDIT=true;renderPayments();return false" style="color:var(--accent-ink)">${_t('Can’t do the selfie check? Send photos of your Emirates ID instead')}</a></div>
+  </div>`;
+}
+async function startIdCheck(){
+  const box=$('idcAgree');
+  if(!box||!box.checked){toast(_t('Tick the box to agree to the identity check'));return;}
+  const b=$('idcStart'); if(b)b.disabled=true;
+  try{
+    const {url}=await TroveAPI.api('/api/seller/identity/start',{method:'POST',body:{consent:true}});
+    location.href=url;
+  }catch(e){ toast(e.message||_t('Could not start the identity check')); if(b)b.disabled=false; }
+}
+// Re-read the latest check from Didit (after Didit sends the maker back, or
+// on 'Check again'). The server asks Didit itself; the address bar is ignored.
+async function refreshIdCheck(quiet){
+  const before=SHOP.identity&&SHOP.identity.verified&&SHOP.identity.method==='didit';
+  try{
+    const {shop}=await TroveAPI.api('/api/seller/identity/refresh',{method:'POST',body:{}});
+    applyShop(shop);
+    const idv=SHOP.identity||{},st=(SHOP.idCheck||{}).status;
+    if(idv.verified&&idv.method==='didit'&&!before)toast(_t('Identity verified — thank you'));
+    else if(st==='Declined')toast(_t('Your identity check did not pass'));
+    else if(st==='In Review')toast(_t('Your identity check is being reviewed'));
+    else if(!quiet)toast(_t('Not finished yet'));
+  }catch(e){ if(!quiet)toast(e.message||_t('Could not check')); }
+  renderPayments(); renderOverview();
 }
 /* Emirates ID photos: picked → downsized in the browser (≤1600px JPEG) and
    held until Save; the server stores them encrypted, admin-eyes-only. */
@@ -2435,12 +2536,14 @@ async function savePayoutSetup(){
   if($('psExp')&&$('psExp').value)body.emiratesIdExpiry=$('psExp').value;
   if($('bkPw')){ body.currentPassword=$('bkPw').value; if(!body.currentPassword){ toast(_t('Enter your Trove password to change your payout details')); return; } }
   if(SHOP.needsId){
-    if(!body.emiratesIdLast4&&!SHOP.eidLast4){toast(_t('Enter the last 4 digits of your Emirates ID'));return;}
-    if(!body.emiratesIdExpiry&&!SHOP.eidExpiry){toast(_t('Add your Emirates ID expiry date'));return;}
-    if(PSU_ID.front)body.eidFront=PSU_ID.front;
-    if(PSU_ID.back)body.eidBack=PSU_ID.back;
-    if(!body.eidFront&&!SHOP.eidFront){toast(_t('Add a photo of the front of your Emirates ID'));return;}
-    if(!body.eidBack&&!SHOP.eidBack){toast(_t('Add a photo of the back of your Emirates ID'));return;}
+    if(idManual()){
+      if(!body.emiratesIdLast4&&!SHOP.eidLast4){toast(_t('Enter the last 4 digits of your Emirates ID'));return;}
+      if(!body.emiratesIdExpiry&&!SHOP.eidExpiry){toast(_t('Add your Emirates ID expiry date'));return;}
+      if(PSU_ID.front)body.eidFront=PSU_ID.front;
+      if(PSU_ID.back)body.eidBack=PSU_ID.back;
+      if(!body.eidFront&&!SHOP.eidFront){toast(_t('Add a photo of the front of your Emirates ID'));return;}
+      if(!body.eidBack&&!SHOP.eidBack){toast(_t('Add a photo of the back of your Emirates ID'));return;}
+    }
     const line=$('psAddrLine').value.trim(),area=$('psAddrArea').value.trim();
     if(line||area){
       if(!line||!area){toast(_t('Enter your full home address — street line and area'));return;}
@@ -2452,7 +2555,7 @@ async function savePayoutSetup(){
     const {shop}=await TroveAPI.api('/api/seller/payout-setup',{method:'POST',body});
     applyShop(shop);
     PSU_ID={front:null,back:null};
-    PAYOUT_EDIT=false;
+    PAYOUT_EDIT=false; ID_MANUAL=false;
     await reloadPayouts();
     toast(_t('Payout setup complete — you’re in the fortnightly settlement runs'));
     renderPayments(); renderOverview();
@@ -2869,6 +2972,9 @@ async function boot(){
   fillStoreForm();
   const params=new URLSearchParams(location.search);
   if(params.get('connect')){ await refreshStripeStatus(); go('payments'); }
+  // Back from Didit's identity check (it adds ?verificationSessionId=…&status=…):
+  // ask the server for the result, then tidy the address.
+  else if(params.has('verificationSessionId')){ go('payments'); history.replaceState(null,'',troveUrl('/sell')); await refreshIdCheck(true); }
   // Email links land on a tab, e.g. the order-to-pack email opens /sell?view=orders.
   else if(/^[a-z]+$/.test(params.get('view')||'')&&$('view-'+params.get('view'))&&TITLES[params.get('view')]) go(params.get('view'));
   else go('overview');

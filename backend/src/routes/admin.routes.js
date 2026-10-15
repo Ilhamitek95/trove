@@ -274,6 +274,10 @@ router.get('/shops', requireAdmin, (_req, res) => {
     eid: { last4: s.emirates_id_last4 || '', issue: s.emirates_id_issue || '', expiry: s.emirates_id_expiry || '', state: identity.eidExpiryState(s) },
     identity: (() => { const id = identity.status(s); return { verified: id.verified, method: id.method, reason: id.reason }; })(),
     identityCheckedAt: s.identity_checked_at || null,
+    // The Didit check (src/didit.js): its status, the session to look up in
+    // the Didit console, decline reasons, and the name printed on the ID.
+    idCheck: require('../didit').adminState(s),
+    identityName: s.identity_name || '',
     // Whose bank account the payouts go to, and whether it looks like the maker.
     payoutAccountName: s.payout_account_name || '', payoutBankName: s.payout_bank_name || '', ibanMasked: s.iban_masked || '',
     accountNameMatches: identity.payoutNameMatches(s, s.owner_name),
@@ -382,8 +386,10 @@ router.post('/shops/:id/identity-check', requireAdmin, (req, res) => {
   if (!shop) return res.status(404).json({ error: 'Shop not found' });
   if (shop.is_house) return res.status(409).json({ error: 'The Trove Collection needs no identity check' });
   if ((req.body || {}).checked === false) {
+    // Unticking also withdraws a Didit verification: the maker is asked to
+    // verify again (or send photos) before the next payment.
     db.prepare(`UPDATE shops SET identity_checked_at=NULL, identity_checked_by=NULL,
-        verification_method=CASE WHEN verification_method='emirates_id' THEN NULL ELSE verification_method END WHERE id=?`).run(shop.id);
+        verification_method=CASE WHEN verification_method IN ('emirates_id','didit') THEN NULL ELSE verification_method END WHERE id=?`).run(shop.id);
   } else {
     if (!identity.eidSubmitted(shop)) return res.status(409).json({ error: 'The maker has not given both Emirates ID photos, the ID details and a home address yet' });
     if (identity.eidExpiryState(shop) === 'expired') return res.status(409).json({ error: 'This Emirates ID has expired — ask the maker to add their renewed ID' });

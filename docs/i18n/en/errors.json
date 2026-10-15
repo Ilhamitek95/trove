@@ -144,5 +144,11 @@
   "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.": "Too many wrong passwords for this account. Try again in 15 minutes, or reset your password.",
   "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.": "Your mobile number works for signing in once your email is confirmed. For now, sign in with your email address.",
   "Something changed while we were checking — please try again": "Something changed while we were checking — please try again",
-  "Not allowed": "Not allowed"
+  "Not allowed": "Not allowed",
+  "The identity check is not available right now — add photos of your Emirates ID under Payout setup instead": "The identity check is not available right now — add photos of your Emirates ID under Payout setup instead",
+  "Your verified trade licence already establishes your identity": "Your verified trade licence already establishes your identity",
+  "Your identity is already verified": "Your identity is already verified",
+  "Tick the box to agree to the identity check": "Tick the box to agree to the identity check",
+  "The identity check is not available right now — please try again later, or add photos of your Emirates ID instead": "The identity check is not available right now — please try again later, or add photos of your Emirates ID instead",
+  "You have started several checks today. Please try again tomorrow, or send photos of your Emirates ID instead.": "You have started several checks today. Please try again tomorrow, or send photos of your Emirates ID instead."
 }

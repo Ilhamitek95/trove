@@ -23,6 +23,7 @@ const LABELS = {
   'pack-by': 'Pack-by reminders',
   'service-bookings': 'Service booking reminders and closing',
   'nightly-checks': 'Nightly checks (sales cap, ID expiry)',
+  identity: 'Identity checks (Didit)',
   privacy: 'Privacy retention sweep',
   'disk-space': 'Free space on the data disk',
   unhandled: 'Unexpected server error',

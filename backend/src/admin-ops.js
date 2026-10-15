@@ -94,6 +94,11 @@ function needsYou() {
       AND license_verified_at IS NULL AND identity_checked_at IS NULL`).all()
     .filter((s) => identity.eidSubmitted(s) && identity.eidExpiryState(s) !== 'expired').length;
   add('ids', toCheck, 'Emirates IDs to check', 'shops', { hint: 'Makers are paid only once you tick ID checked' });
+  // A Didit check Didit could not decide alone: the owner approves or
+  // declines it in the Didit console, and the answer comes back by webhook.
+  add('id_reviews', n(`SELECT COUNT(*) AS n FROM shops WHERE is_house = 0 AND status <> 'rejected'
+      AND license_verified_at IS NULL AND didit_status = 'In Review'`),
+    'Identity checks waiting for your review in Didit', 'shops', { hint: 'Open business.didit.me → Users or Verifications → Needs review' });
   // A typed licence number counts for nothing until you check it (it then
   // replaces the Emirates ID step) — the Shops tab has the button (oct12 F386).
   add('licences', n(`SELECT COUNT(*) AS n FROM shops WHERE is_house = 0 AND status <> 'rejected'

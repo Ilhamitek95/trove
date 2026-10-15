@@ -13,17 +13,23 @@
  *                    details and a home address at payout setup, AND an
  *                    admin compared them and ticked 'ID checked'
  *                    (identity_checked_at / identity_checked_by).
+ *   'didit'          the maker passed a Didit check (15 Oct 2026,
+ *                    src/didit.js): Emirates ID scan + live selfie + face
+ *                    match, approved by Didit and by Trove's own rules (UAE
+ *                    Identity Card, in date). No admin tick is needed;
+ *                    identity_checked_by stays NULL. The ID's last four
+ *                    digits and dates are recorded like the photo route's.
  *   'uae_pass'       reserved — the owner's long-term route once Trove is
  *                    onboarded with UAE Pass. Adding it means one more entry
  *                    in METHODS and a verify endpoint that stamps it.
  *
  * Settlement pays a shop only when its identity is established and, on the
- * Emirates ID route, the ID has not expired. The payout account holder name
+ * Emirates ID and Didit routes, the ID has not expired. The payout account holder name
  * is compared with the maker's own name and the shop name; a mismatch is
  * flagged to the admin (never silently blocked — joint and business accounts
  * exist), next to the details in the Shops review and the settlement preview.
  */
-const METHODS = ['trade_licence', 'emirates_id', 'uae_pass'];
+const METHODS = ['trade_licence', 'emirates_id', 'didit', 'uae_pass'];
 const EXPIRY_WARN_DAYS = 30;
 
 const today = (now = Date.now()) => new Date(now + 4 * 3600000).toISOString().slice(0, 10); // Dubai calendar day
@@ -50,7 +56,10 @@ const eidSubmitted = (shop) => !!(shop.eid_front_file && shop.eid_back_file && s
  * and settlement:
  *   { method, verified, reason, eidExpiry, eidState }
  * reason (when not verified): 'id_missing' (nothing handed in yet),
- * 'id_to_check' (handed in, waiting for the admin's tick) or 'id_expired'.
+ * 'id_to_check' (photos handed in, waiting for the admin's tick),
+ * 'id_in_review' (a Didit check waiting for the owner's decision in the
+ * Didit console), 'id_declined' (the latest Didit check failed and no
+ * photos are on file) or 'id_expired'.
  */
 function status(shop, now = Date.now()) {
   if (!shop) return { method: null, verified: false, reason: 'id_missing' };
@@ -59,7 +68,15 @@ function status(shop, now = Date.now()) {
   const base = { eidExpiry: shop.emirates_id_expiry || null, eidState };
   if (shop.license_verified_at) return { ...base, method: 'trade_licence', verified: true, reason: null };
   if (shop.verification_method === 'uae_pass' && shop.identity_checked_at) return { ...base, method: 'uae_pass', verified: true, reason: null };
-  if (!eidSubmitted(shop)) return { ...base, method: null, verified: false, reason: 'id_missing' };
+  if (shop.verification_method === 'didit' && shop.identity_checked_at) {
+    if (eidState === 'expired') return { ...base, method: 'didit', verified: false, reason: 'id_expired' };
+    return { ...base, method: 'didit', verified: true, reason: null };
+  }
+  if (!eidSubmitted(shop)) {
+    if (shop.didit_status === 'In Review') return { ...base, method: 'didit', verified: false, reason: 'id_in_review' };
+    if (shop.didit_status === 'Declined') return { ...base, method: 'didit', verified: false, reason: 'id_declined' };
+    return { ...base, method: null, verified: false, reason: 'id_missing' };
+  }
   if (eidState === 'expired') return { ...base, method: 'emirates_id', verified: false, reason: 'id_expired' };
   if (!shop.identity_checked_at) return { ...base, method: 'emirates_id', verified: false, reason: 'id_to_check' };
   return { ...base, method: 'emirates_id', verified: true, reason: null };
@@ -83,19 +100,21 @@ function namesMatch(a, b) {
 
 /**
  * Does the bank account holder look like this maker? Compared with the
- * account owner's name and with the shop name (a licensed maker may be paid
- * into the business account). null when no account name is on file.
+ * account owner's name, with the shop name (a licensed maker may be paid
+ * into the business account) and with the name on a Didit-verified Emirates
+ * ID. null when no account name is on file.
  */
 function payoutNameMatches(shop, ownerName) {
   if (!shop || !shop.payout_account_name) return null;
-  return namesMatch(shop.payout_account_name, ownerName) || namesMatch(shop.payout_account_name, shop.name);
+  return namesMatch(shop.payout_account_name, ownerName) || namesMatch(shop.payout_account_name, shop.name)
+    || (!!shop.identity_name && namesMatch(shop.payout_account_name, shop.identity_name));
 }
 
 /**
  * Daily: email makers whose Emirates ID expires within 30 days (once) and
  * again when it has expired (once) — payments pause at expiry until they add
- * the renewed ID under Payouts. Only the Emirates ID route: a verified
- * licence does not depend on it. Stamped on shops.eid_reminder_for as
+ * the renewed ID under Payouts (a new Didit check, or new photos). Only the
+ * Emirates ID and Didit routes: a verified licence does not depend on it. Stamped on shops.eid_reminder_for as
  * '<expiry>:expiring' / '<expiry>:expired', so a renewed ID (a new expiry
  * date) starts afresh. Returns { reminded, expired }.
  */
