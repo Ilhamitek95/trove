@@ -23,7 +23,7 @@ Last updated 15 October 2026 (laptop session, afternoon). The detailed engineeri
   - Workflow "Trove maker identity (Emirates ID + selfie)": UAE ID card only, liveness, face match, under-18s declined.
   - API key "Trove production (troveathome.com)": can create sessions and read decisions for that one workflow, nothing else.
   - Webhook "Trove production" sends status changes to troveathome.com. A signed test was delivered successfully on 15 Oct.
-- **Email for troveathome.com (GoDaddy DNS):** MX `@` → smtp.google.com (priority 1); TXT `@` SPF `v=spf1 include:_spf.google.com ~all`; TXT `google._domainkey` (Google DKIM, 2048-bit); two `google-site-verification` TXT records on `@` (one for Search Console, one for Workspace — never delete either). Resend's sending records (`send` MX/TXT, `resend._domainkey`) and `_dmarc` are unchanged. The site still sends its own emails through Resend from noreply@troveathome.com.
+- **Email for troveathome.com (GoDaddy DNS):** MX `@` → smtp.google.com (priority 1); TXT `@` SPF `v=spf1 include:_spf.google.com ~all`; TXT `google._domainkey` (Google DKIM, 2048-bit); two `google-site-verification` TXT records on `@` (one for Search Console, one for Workspace — never delete either). Resend's sending records (`send` MX/TXT, `resend._domainkey`) and `_dmarc` are unchanged. The site still sends its own emails through Resend from noreply@troveathome.com. **Your rule (15 Oct): noreply@ is for order emails, hello@ is for the company.** Order emails stay no-reply.
 - **Render settings:** `DIDIT_API_KEY`, `DIDIT_WORKFLOW_ID` and `DIDIT_WEBHOOK_SECRET`. Deleting `DIDIT_API_KEY` switches Didit off and makers go back to sending photos.
 
 ## How to handle things
@@ -38,9 +38,8 @@ Last updated 15 October 2026 (laptop session, afternoon). The detailed engineeri
 2. **Seller Agreement v5 still describes only the photo route.** A v6 naming Didit would make it match, but every maker would be asked to accept it again. Your call; it could go with the lawyer review.
 3. **Run one real check.** Nobody has done a full check with a real Emirates ID yet. A maker account (not the admin) is needed, since the Trove Collection never needs one.
 4. Didit's decline reasons (for example "Document is a screen capture") show in English on Arabic pages.
-5. **Should Trove's emails invite replies to hello@?** Today they come from noreply@ and the footer says replies are not read. Setting `EMAIL_REPLY_TO=hello@troveathome.com` on Render switches every email to 'reply to hello@' with a footer inviting replies. This is a one-line change, and Claude can do it.
-6. **Sending as hello@ from Gmail:** in Gmail (ilhami@sereinstudio.uk) → Settings → See all settings → Accounts → Send mail as → Add another email address → hello@troveathome.com. No code is needed, because it is your own alias.
-7. Older open items are unchanged: iubenda dashboard TCF switch (the iubenda panel no longer shows, so this is now housekeeping only), `BACKUP_ENC_KEY` and `PAYOUT_ENC_KEY` into your password manager, delete `SEED_DEMO` on Render, lawyer review, SMS provider, uptime monitor.
+5. **Sending as hello@ from Gmail:** in Gmail (ilhami@sereinstudio.uk) → Settings → See all settings → Accounts → Send mail as → Add another email address → hello@troveathome.com. No code is needed, because it is your own alias.
+6. Older open items are unchanged: iubenda dashboard TCF switch (the iubenda panel no longer shows, so this is now housekeeping only), `BACKUP_ENC_KEY` and `PAYOUT_ENC_KEY` into your password manager, delete `SEED_DEMO` on Render, lawyer review, SMS provider, uptime monitor.
 
 ## Memory text to re-record on the other machine
 
