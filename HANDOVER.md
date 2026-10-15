@@ -5,7 +5,7 @@ Last updated 15 October 2026 (laptop session, later the same day). The detailed 
 ## What is live
 
 - **troveathome.com** runs on Render (service `srv-d931flsm0tmc73b0qem0`). Stripe takes real money. The courier is OTO.
-- **Clearing out the test shop, piece and services (ready 15 Oct, you run it).** The clean-up script now always keeps your admin account and the Trove Collection, and handles everything added since September. When the shop is empty, the homepage hides its empty shelves and the Makers section, and Shop all says the first pieces are on their way, with a Sell on Trove button. To run it:
+- **Test shop, piece and services removed (15 Oct, 08:00 UTC).** Kiln & Clay, its mug and Noor Letters are gone; a backup was saved first (`/var/data/backups/trove-20261015-0800.db`). The site now shows only the Trove Collection (coming soon), and Shop all says the first pieces are on their way. For a future clean-up: The clean-up script now always keeps your admin account and the Trove Collection, and handles everything added since September. When the shop is empty, the homepage hides its empty shelves and the Makers section, and Shop all says the first pieces are on their way, with a Sell on Trove button. To run it:
   1. Render dashboard → service **trove** → **Shell**.
   2. Paste `cd /opt/render/project/src/backend && node scripts/purge-demo.js` and press Enter. This only lists what would go. Paste the list to Claude to check.
   3. Then paste `node scripts/purge-demo.js --yes` and press Enter. It saves a backup first, then removes everything listed.
