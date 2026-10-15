@@ -13,10 +13,12 @@
  *                   (the domain must be verified in the Resend dashboard).
  *                   A no-reply address: nobody reads replies, so the
  *                   templates point people to their account, never "reply".
- *   EMAIL_REPLY_TO  optional: a mailbox that really receives mail (e.g.
- *                   hello@troveathome.com once forwarding is set up). Set,
- *                   every email carries it as reply-to and the footer invites
- *                   replies instead of saying they are not read.
+ *   EMAIL_REPLY_TO  optional, and deliberately UNSET (owner, 2026-10-15:
+ *                   noreply@ is for order emails, hello@ is for the
+ *                   company). Set, every email carries it as reply-to and the
+ *                   footer invites replies instead of saying they are not
+ *                   read. Unset, the footer points people to the company
+ *                   address (writeTo()).
  * Every email also carries a plain-text part (textOf), for deliverability.
  *
  * Markup is table-based with inline styles — the only layout every inbox
@@ -38,10 +40,9 @@ const enabled = () => !!process.env.RESEND_API_KEY;
 const from = () => process.env.EMAIL_FROM || 'Trove <noreply@troveathome.com>';
 
 /**
- * Where a reply lands (F197): EMAIL_REPLY_TO — set it on Render once that
- * inbox really receives mail (troveathome.com had no MX record on
- * 2026-10-02). Unset, emails stay no-reply and the footer says so; set,
- * replies go there and the footer invites them.
+ * Where a reply lands (F197): EMAIL_REPLY_TO. Unset (the owner's choice),
+ * emails stay no-reply, the footer says so and names the company address;
+ * set, replies go there and the footer invites them.
  */
 function replyTo() {
   const env = String(process.env.EMAIL_REPLY_TO || '').trim();
@@ -275,6 +276,19 @@ function companyLine(T) {
 }
 
 /**
+ * Where to write instead of replying (owner, 2026-10-15: noreply@ sends the
+ * order emails, hello@ is the company's inbox). The address comes from Admin
+ * → Site content → Company details; blank → no line.
+ */
+function writeTo(T, I) {
+  let addr = '';
+  try { addr = String(require('./content').company().email || '').trim(); } catch (_) { return ''; }
+  if (!/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(addr)) return '';
+  const link = `<a href="mailto:${esc(addr)}" style="color:${INK};text-decoration:underline">${I(esc(addr))}</a>`;
+  return '<br>' + T('Questions? Write to us at {email}.', { email: link });
+}
+
+/**
  * The building blocks of every template, in one language. English output is
  * exactly what the templates produced before languages existed.
  */
@@ -415,7 +429,7 @@ function kit(lang) {
       ${T('Trove · Curated for Living · Dubai, UAE')}<br>
       ${companyLine(T)}
       ${esc(reason)}<br>
-      ${replyTo() ? T('Questions? Reply to this email and a real person will read it.') : T("This is an automated email from a no-reply address, so replies aren't read.")}
+      ${replyTo() ? T('Questions? Reply to this email and a real person will read it.') : T("This is an automated email from a no-reply address, so replies aren't read.") + writeTo(T, I)}
     </td></tr>
   </table>
 </td></tr></table>

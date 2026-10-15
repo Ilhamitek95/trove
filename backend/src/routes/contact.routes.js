@@ -46,11 +46,12 @@ function problem(b) {
   return null;
 }
 
-// The owner's own inbox comes before the public company address: until the
-// troveathome.com mailbox exists (no MX record on 2026-10-02, F197) mail to
-// hello@troveathome.com bounces, and a contact message must never vanish.
+// Contact messages go to the company address (Admin → Site content →
+// Company details, hello@troveathome.com — a real inbox since 2026-10-15).
+// The owner's own inbox is only the fallback when that field is blank, so a
+// contact message never vanishes.
 function recipient() {
-  return (process.env.CONTACT_EMAIL || process.env.ADMIN_EMAIL || content.company().email || '').trim();
+  return (process.env.CONTACT_EMAIL || content.company().email || process.env.ADMIN_EMAIL || '').trim();
 }
 
 const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

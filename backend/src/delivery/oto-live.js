@@ -94,8 +94,9 @@ function location(shop) {
     name: `${shop.name} · Trove #${shop.id}`,
     mobile: mobile(shop.pickup_phone),
     contactName: shop.owner_name || shop.name,
-    // Never an address that cannot receive mail (troveathome.com has no inbox yet, F197).
-    contactEmail: shop.owner_email || process.env.OTO_CONTACT_EMAIL || process.env.ADMIN_EMAIL || require('../content').company().email || '',
+    // A maker's own email; for the Trove Collection, the company address
+    // (hello@troveathome.com — owner, 2026-10-15: hello@ is for the company).
+    contactEmail: (shop.is_house && require('../content').company().email) || shop.owner_email || process.env.OTO_CONTACT_EMAIL || process.env.ADMIN_EMAIL || require('../content').company().email || '',
     address: line,
     city: town(line || shop.location),
     country: 'AE',
