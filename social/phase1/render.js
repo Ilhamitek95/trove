@@ -66,10 +66,12 @@ function inner(f, n, total) {
     case 'quote':
       return `${wm}${counter}<div class="box" style="top:340px"><div class="d" style="font-size:86px;line-height:1.12">${fmt(f.title)}</div><p class="body" style="margin-top:50px;opacity:.75">${fmt(f.body)}</p></div>${url}`;
     case 'photo': {
-      const band = 300;
+      const band = f.big ? 400 : 300;
+      const size = f.big ? 84 : f.caption && f.caption.length > 34 ? 62 : 74;
       return `<div style="position:absolute;left:0;right:0;top:0;height:${h - band}px">${photoTag(f)}</div>
         <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:#FDF7F5"></div>
-        <div class="box" style="bottom:120px"><div class="d" style="font-size:${f.caption && f.caption.length > 34 ? 62 : 74}px;line-height:1.08">${fmt(f.caption || '')}</div></div>
+        ${f.big ? '<div class="wm" style="top:auto;bottom:' + (band - 96) + 'px;font-size:40px">trove<i></i></div>' : ''}
+        <div class="box" style="bottom:120px"><div class="d" style="font-size:${size}px;line-height:1.06">${fmt(f.caption || '')}</div>${f.sub ? `<p class="body" style="margin-top:14px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>
         <div class="url" style="bottom:52px;font-size:26px">trove · troveathome.com/apply</div>${counter.replace('class="ct"', 'class="ct" style="background:#FDF7F5;padding:8px 18px;border-radius:999px;opacity:.9;top:56px"')}`;
     }
     case 'cover':
@@ -78,6 +80,8 @@ function inner(f, n, total) {
       return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:128px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}<p class="body" style="margin-top:70px;font-size:40px">Apply in ten minutes.</p><div style="margin-top:26px"><span class="pill" style="font-size:40px">troveathome.com/apply</span></div></div>`;
     case 'lower-third':
       return `<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:46px;padding:30px 54px;box-shadow:0 8px 30px rgba(0,0,0,.12)">${fmt(f.text)}</span></div>`;
+    case 'reel-cover-photo':
+      return `<div style="position:absolute;inset:0;${f.photo && fs.existsSync(path.join(PHOTOS, f.photo)) ? '' : 'bottom:910px'}">${photoTag(f)}</div><div style="position:absolute;left:90px;right:90px;top:1010px;background:#FDF7F5;border-radius:6px;padding:56px 56px 60px;text-align:center"><div class="wm" style="position:static;font-size:44px">trove<i></i></div><div class="small" style="font-size:34px;margin-top:26px">${fmt(f.kicker)}</div><div class="d" style="font-size:112px;line-height:1.02;margin-top:22px">${fmt(f.title)}</div></div>`;
     case 'reel-photo':
       return `${photoTag(f)}<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:50px;padding:32px 58px">${fmt(f.text)}</span></div>`;
   }
@@ -103,7 +107,7 @@ function inner(f, n, total) {
     const name = (/^\d+$/.test(f.id) ? 'slide-' + f.id.padStart(2, '0') : f.id) + (jpg ? '.jpg' : '.png');
     await page.screenshot(jpg ? { path: path.join(dir, name), type: 'jpeg', quality: 90 } : { path: path.join(dir, name), omitBackground: f.bg === 'clear' });
     const placeholders = /\[/.test(JSON.stringify(f)) || (f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)));
-    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, note: f.note || '' });
+    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, note: f.note || '' });
   }
   fs.rmSync(path.join(__dirname, '_frame.html'), { force: true });
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));

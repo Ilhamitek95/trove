@@ -20,6 +20,7 @@ h1 i{display:inline-block;width:.16em;height:.16em;border-radius:50%;background:
 .key{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;font-size:14px}
 .chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:600;background:var(--ok);color:var(--fg)}
 .chip.todo{background:var(--todo)}
+.chip.mood{background:transparent;border:1px solid var(--tan)}
 section{border-top:1px solid var(--line);margin-top:44px;padding-top:26px}
 .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
 h2{font-size:34px;line-height:1.1}
@@ -37,10 +38,11 @@ figcaption{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4
 
 <div class="wrap">
   <h1>Trove Phase 1 creatives<i></i></h1>
-  <p class="lede">Every frame for posts 1 to 10 of the founding-maker campaign, in the brand palette and type. Slides are 1080 × 1350 (4:5). Reel frames are 1080 × 1920 (9:16) and keep their text inside the grid-safe centre. Tap any frame to see it full size.</p>
+  <p class="lede">Built to the launch guidance: show the real thing, not just say it. Every post opens on craft (a bench, materials, a studio, a Dubai home), real makers fill the spotlight slots, and generated images are used only for mood and the Collection tease. Every frame for posts 1 to 10 of the founding-maker campaign, in the brand palette and type. Slides are 1080 × 1350 (4:5). Reel frames are 1080 × 1920 (9:16) and keep their text inside the grid-safe centre. Tap any frame to see it full size.</p>
   <div class="key">
     <span><span class="chip">Ready</span> can be posted as it is</span>
     <span><span class="chip todo">Needs input</span> a dashed box or photo slot is still waiting for a real maker, provider or photo</span>
+    <span><span class="chip mood">Mood image</span> made with Higgsfield: materials, tools or spaces only, never shown as a maker’s work</span>
   </div>
   <div id="posts"></div>
   <div class="where">
@@ -50,16 +52,16 @@ figcaption{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4
 
 <script>
 const POSTS = {
-  1: ['Made here, by someone', 'Tue 21 Oct', 'Reel', 'Film 3-second hands-at-work clips from 4–5 real makers. Lay the name tag over each clip with the maker’s real first name and neighbourhood. Cover and end card are ready.'],
-  2: ['What you don’t need', 'Fri 24 Oct', 'Carousel, 7 slides', 'Ready to post once a business adviser confirms the “no trade licence to start” line.'],
+  1: ['Made here, by someone', 'Tue 21 Oct', 'Reel', 'Shows real craft across the UAE. Film 3-second hands-at-work clips from 4–5 real makers, lay the name tag over each with their real first name and neighbourhood, and use a frame of that footage as the cover.'],
+  2: ['What you don’t need', 'Fri 24 Oct', 'Carousel, 7 slides', 'Opens on a maker’s bench and closes on raw materials (“just your work”), with the crossed-out list in between. Ready once a business adviser confirms the “no trade licence to start” line.'],
   3: ['Meet our first maker', 'Mon 27 Oct', 'Reel + carousel, 6 slides', 'Needs a real founding maker: name, craft, neighbourhood, years, their own sentence and three photos (portrait, workspace, finished piece).'],
-  4: ['Set your price. Keep 60%', 'Thu 30 Oct', 'Carousel, 6 slides', 'Ready. Figures match the live Sell on Trove page.'],
-  5: ['Teach it, style it, shoot it?', 'Sun 2 Nov', 'Carousel, 6 slides', 'Ready. The cover photo is an illustrative image made with Higgsfield, not a Trove workshop. Swap in a real provider’s class when you have one.'],
-  6: ['Something of our own', 'Wed 5 Nov', 'Single image', 'Two options. The photo version uses an illustrative Higgsfield sketch and glaze-test still. A real photo from the Trove Collection design table is better if you have one. The text-only version is the fallback.'],
-  7: ['Apply in ten minutes', 'Sat 8 Nov', 'Reel', 'Film a real maker applying on their phone, with a timer running. Lay the four step captions over the matching clips. Cover and end card are ready.'],
-  8: ['Meet our first provider', 'Tue 11 Nov', 'Reel', 'Needs a real founding provider filmed mid-class. Fill in the name, service and neighbourhood on the end card.'],
-  9: ['More being made here than you think', 'Fri 14 Nov', 'Carousel, 8 slides', 'Each middle slide needs a real photo of a real maker’s work, with the neighbourhood confirmed. Dubai and Abu Dhabi areas only. AI images are deliberately not used here, because the slides name real places.'],
-  10: ['From sold to paid', 'Mon 17 Nov', 'Reel, 5 scenes', 'Ready as a stills Reel (about 2.5 seconds per frame), or use the scenes as a shot list for real footage. The scene photos are illustrative Higgsfield images.'],
+  4: ['Set your price. Keep 60%', 'Thu 30 Oct', 'Carousel, 6 slides', 'Opens on a blank price tag on a workbench: the maker sets the price. Figures match the live Sell on Trove page.'],
+  5: ['Teach it, style it, shoot it?', 'Sun 2 Nov', 'Carousel, 6 slides', 'Opens on a studio table set for a class, before anyone arrives. Swap in a real provider’s class when you have one.'],
+  6: ['Something of our own', 'Wed 5 Nov', 'Single image', 'Collection tease: a sketch and glaze tests, no finished product. A mood image is allowed here by the strategy. The text-only version is the fallback.'],
+  7: ['Apply in ten minutes', 'Sat 8 Nov', 'Reel', 'Shows how easy it is, with a real maker. Film them applying on their phone with a timer running, lay the four step captions over the matching clips, and use a frame as the cover.'],
+  8: ['Meet our first provider', 'Tue 11 Nov', 'Reel', 'Needs a real founding provider filmed mid-class, with a happy group holding what they made. Fill in the name, service and neighbourhood.'],
+  9: ['More being made here than you think', 'Fri 14 Nov', 'Carousel, 8 slides', 'Opens on a home studio window over a Dubai neighbourhood. Each middle slide needs a real photo of a real maker’s work with the neighbourhood confirmed (Dubai and Abu Dhabi only). No AI images there, because the slides name real makers and places.'],
+  10: ['From sold to paid', 'Mon 17 Nov', 'Reel, 5 scenes', 'The five steps from the site, shown in Dubai homes. Ready as a stills Reel (about 2.5 seconds a frame), or use the scenes as a shot list for real footage. No finished pieces appear.'],
 };
 const label = (f) => f.split('/').pop().replace(/\.(png|jpg)$/, '').replace('slide-', 'Slide ').replace('scene-', 'Scene ').replace('step-', 'Step ').replace('name-tag', 'Name tag (overlay)').replace('cover', 'Cover').replace('end', 'End card').replace('photo', 'Photo version').replace('type', 'Text-only version');
 fetch('out/manifest.json').then((r) => r.json()).then((m) => {
@@ -70,7 +72,7 @@ fetch('out/manifest.json').then((r) => r.json()).then((m) => {
     const ready = frames.filter((x) => x.ready).length;
     const s = document.createElement('section');
     s.id = 'post' + n;
-    s.innerHTML = `<div class="head"><h2>${n}. ${title}</h2><span class="meta">${date} · ${format} · ${ready} of ${frames.length} frames ready</span></div><p class="notes">${notes}</p><div class="grid">${frames.map((f) => `<figure><a href="out/${f.file}" target="_blank" rel="noopener"><img loading="lazy" src="out/${f.file}" alt="Post ${n}, ${label(f.file)}"></a><figcaption>${label(f.file)}${/step|scene/.test(f.file) && f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span></figcaption></figure>`).join('')}</div>`;
+    s.innerHTML = `<div class="head"><h2>${n}. ${title}</h2><span class="meta">${date} · ${format} · ${ready} of ${frames.length} frames ready</span></div><p class="notes">${notes}</p><div class="grid">${frames.map((f) => `<figure><a href="out/${f.file}" target="_blank" rel="noopener"><img loading="lazy" src="out/${f.file}" alt="Post ${n}, ${label(f.file)}"></a><figcaption>${label(f.file)}${/step|scene/.test(f.file) && f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}</figcaption></figure>`).join('')}</div>`;
     root.appendChild(s);
   }
 }).catch(() => { document.getElementById('posts').innerHTML = '<p class="lede">The frame list did not load. Refresh the page to try again.</p>'; });

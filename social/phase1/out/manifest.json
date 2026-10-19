@@ -3,8 +3,9 @@
     "post": 1,
     "file": "post-01/cover.png",
     "kind": "reel",
-    "layout": "cover",
-    "ready": true,
+    "layout": "reel-cover-photo",
+    "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -13,6 +14,7 @@
     "kind": "reel",
     "layout": "lower-third",
     "ready": false,
+    "mood": false,
     "note": "One per clip, e.g. Sara, Al Barsha"
   },
   {
@@ -21,14 +23,16 @@
     "kind": "reel",
     "layout": "end",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
     "post": 2,
-    "file": "post-02/slide-01.png",
+    "file": "post-02/slide-01.jpg",
     "kind": "slide",
-    "layout": "hero",
+    "layout": "photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -37,6 +41,7 @@
     "kind": "slide",
     "layout": "strike",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -45,6 +50,7 @@
     "kind": "slide",
     "layout": "strike",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -53,6 +59,7 @@
     "kind": "slide",
     "layout": "strike",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -61,6 +68,7 @@
     "kind": "slide",
     "layout": "strike",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -69,22 +77,25 @@
     "kind": "slide",
     "layout": "strike",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
     "post": 2,
-    "file": "post-02/slide-07.png",
+    "file": "post-02/slide-07.jpg",
     "kind": "slide",
-    "layout": "cta",
+    "layout": "photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
     "post": 3,
     "file": "post-03/cover.png",
     "kind": "reel",
-    "layout": "cover",
-    "ready": true,
+    "layout": "reel-cover-photo",
+    "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -93,6 +104,7 @@
     "kind": "reel",
     "layout": "end",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -101,6 +113,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -109,6 +122,7 @@
     "kind": "slide",
     "layout": "hero",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -117,6 +131,7 @@
     "kind": "slide",
     "layout": "quote",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -125,6 +140,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -133,6 +149,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -141,14 +158,16 @@
     "kind": "slide",
     "layout": "cta",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
     "post": 4,
-    "file": "post-04/slide-01.png",
+    "file": "post-04/slide-01.jpg",
     "kind": "slide",
-    "layout": "hero",
+    "layout": "photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -157,6 +176,7 @@
     "kind": "slide",
     "layout": "figure",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -165,6 +185,7 @@
     "kind": "slide",
     "layout": "split",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -173,6 +194,7 @@
     "kind": "slide",
     "layout": "list",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -181,6 +203,7 @@
     "kind": "slide",
     "layout": "hero",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -189,6 +212,7 @@
     "kind": "slide",
     "layout": "cta",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -197,6 +221,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -205,6 +230,7 @@
     "kind": "slide",
     "layout": "list",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -213,6 +239,7 @@
     "kind": "slide",
     "layout": "hero",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -221,6 +248,7 @@
     "kind": "slide",
     "layout": "split",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -229,6 +257,7 @@
     "kind": "slide",
     "layout": "split",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -237,6 +266,7 @@
     "kind": "slide",
     "layout": "cta",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -245,6 +275,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -253,14 +284,16 @@
     "kind": "slide",
     "layout": "hero",
     "ready": true,
+    "mood": false,
     "note": "Text-only fallback if the photo is not ready"
   },
   {
     "post": 7,
     "file": "post-07/cover.png",
     "kind": "reel",
-    "layout": "cover",
-    "ready": true,
+    "layout": "reel-cover-photo",
+    "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -269,6 +302,7 @@
     "kind": "reel",
     "layout": "lower-third",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -277,6 +311,7 @@
     "kind": "reel",
     "layout": "lower-third",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -285,6 +320,7 @@
     "kind": "reel",
     "layout": "lower-third",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -293,6 +329,7 @@
     "kind": "reel",
     "layout": "lower-third",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
@@ -301,14 +338,16 @@
     "kind": "reel",
     "layout": "end",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
     "post": 8,
     "file": "post-08/cover.png",
     "kind": "reel",
-    "layout": "cover",
-    "ready": true,
+    "layout": "reel-cover-photo",
+    "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -317,14 +356,16 @@
     "kind": "reel",
     "layout": "end",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
     "post": 9,
-    "file": "post-09/slide-01.png",
+    "file": "post-09/slide-01.jpg",
     "kind": "slide",
-    "layout": "hero",
+    "layout": "photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -333,6 +374,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -341,6 +383,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -349,6 +392,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -357,6 +401,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -365,6 +410,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -373,6 +419,7 @@
     "kind": "slide",
     "layout": "photo",
     "ready": false,
+    "mood": false,
     "note": ""
   },
   {
@@ -381,14 +428,16 @@
     "kind": "slide",
     "layout": "cta",
     "ready": true,
+    "mood": false,
     "note": ""
   },
   {
     "post": 10,
     "file": "post-10/cover.png",
     "kind": "reel",
-    "layout": "cover",
+    "layout": "reel-cover-photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -397,6 +446,7 @@
     "kind": "reel",
     "layout": "reel-photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -405,6 +455,7 @@
     "kind": "reel",
     "layout": "reel-photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -413,6 +464,7 @@
     "kind": "reel",
     "layout": "reel-photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -421,6 +473,7 @@
     "kind": "reel",
     "layout": "reel-photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -429,6 +482,7 @@
     "kind": "reel",
     "layout": "reel-photo",
     "ready": true,
+    "mood": true,
     "note": ""
   },
   {
@@ -437,6 +491,7 @@
     "kind": "reel",
     "layout": "end",
     "ready": true,
+    "mood": false,
     "note": ""
   }
 ]
