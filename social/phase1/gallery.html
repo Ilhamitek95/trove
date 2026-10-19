@@ -43,8 +43,17 @@ section{border-top:1px solid var(--line);margin-top:46px;padding-top:28px}
 @media (max-width:900px){.post{grid-template-columns:1fr}}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px;align-content:start}
 figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
-figure a{display:block;border-radius:7px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#8a8584 0 25%,#9a9594 0 50%) 0/16px 16px}
-figure a:focus-visible{outline:3px solid var(--tan);outline-offset:2px}
+.thumb{display:block;width:100%;padding:0;border-radius:7px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#8a8584 0 25%,#9a9594 0 50%) 0/16px 16px;cursor:zoom-in;transition:transform .15s ease}
+.thumb:hover{transform:translateY(-2px)}
+.thumb:focus-visible{outline:3px solid var(--tan);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.thumb{transition:none}.thumb:hover{transform:none}}
+.lb{--lb-bg:rgba(20,18,18,.94);--lb-fg:#FDF7F5;position:fixed;inset:0;z-index:50;background:var(--lb-bg);display:flex;flex-direction:column;align-items:center;gap:14px;padding:calc(env(safe-area-inset-top,0px) + 60px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 18px) max(16px,env(safe-area-inset-left,0px));touch-action:pan-y}
+.lb .stage{flex:1;min-height:0;width:100%;display:flex;align-items:center;justify-content:center}
+.lb img{max-width:100%;max-height:100%;object-fit:contain;border-radius:6px;background:repeating-conic-gradient(#8a8584 0 25%,#9a9594 0 50%) 0/16px 16px;user-select:none;-webkit-user-drag:none}
+.lb .bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 14px;color:var(--lb-fg);font-size:14px;text-align:center}
+.lb button{color:var(--lb-fg);border-color:var(--lb-fg)}
+.lb button:disabled{opacity:.3;cursor:default}
+.lb .close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:max(16px,env(safe-area-inset-right,0px))}
 figure img{display:block;width:100%;height:auto}
 figcaption{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
 .copy{display:flex;flex-direction:column;gap:14px;min-width:0}
@@ -120,10 +129,17 @@ th{font-weight:600;color:var(--muted)}
     <ul id="verify"></ul>
   </section>
 
-  <p class="footer">Dates are corrected to the real weekdays: 21 October 2026 is a Wednesday, so the earlier calendar was a day out. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
+  <div class="lb" id="lb" hidden role="dialog" aria-modal="true" aria-label="Post preview">
+    <button type="button" class="close" id="lbClose">Close</button>
+    <div class="stage"><img id="lbImg" alt=""></div>
+    <div class="bar"><button type="button" id="lbPrev">Previous</button><span id="lbLabel"></span><button type="button" id="lbNext">Next</button></div>
+  </div>
+
+  <p class="footer">Tap any frame to open it full size, then use Previous and Next (or swipe, or the arrow keys) to page through the post. Dates are corrected to the real weekdays: 21 October 2026 is a Wednesday, so the earlier calendar was a day out. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
 </div>
 
 <script>
+const FR = {};
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const label = (f) => {
   const b = f.split('/').pop().replace(/\.(png|jpg)$/, '');
@@ -147,12 +163,13 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
   const root = document.getElementById('posts');
   for (const p of d.posts) {
     const frames = m.filter((x) => x.post == p.n);
+    FR[p.n] = frames;
     const ready = frames.filter((x) => x.ready).length;
     const s = document.createElement('section');
     s.id = 'post' + p.n;
     s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
       <div class="post">
-        <div class="grid">${frames.map((f) => `<figure><a href="out/${f.file}" target="_blank" rel="noopener"><img loading="lazy" src="out/${f.file}" alt="Post ${p.n}, ${esc(label(f.file))}"></a><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}</figcaption></figure>`).join('')}</div>
+        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}</figcaption></figure>`).join('')}</div>
         <div class="copy">
           <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
           <div class="caption" id="cap${p.n}">${esc(p.caption)}<span class="tags">${esc(c.hashtags)}</span></div>
@@ -170,4 +187,26 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
   document.getElementById('dms').innerHTML = d.dms.map(([who, text]) => `<div class="card"><h3>${esc(who)}</h3><p>${esc(text)}</p></div>`).join('');
   document.getElementById('verify').innerHTML = d.verify.map((x) => `<li>${esc(x)}</li>`).join('');
 }).catch(() => { document.getElementById('posts').innerHTML = '<p class="lede">The posts did not load. Refresh the page to try again.</p>'; });
+
+const lb = document.getElementById('lb'), lbImg = document.getElementById('lbImg'), lbLabel = document.getElementById('lbLabel');
+let cur = null, lastFocus = null, sx = null;
+function show() {
+  const list = FR[cur.post], f = list[cur.i];
+  lbImg.src = 'out/' + f.file;
+  lbImg.alt = 'Post ' + cur.post + ', ' + label(f.file);
+  lbLabel.textContent = 'Post ' + cur.post + ' · ' + label(f.file) + ' · ' + (cur.i + 1) + ' of ' + list.length;
+  document.getElementById('lbPrev').disabled = cur.i === 0;
+  document.getElementById('lbNext').disabled = cur.i === list.length - 1;
+}
+function openLb(post, i) { cur = { post, i }; lastFocus = document.activeElement; show(); lb.hidden = false; document.body.style.overflow = 'hidden'; document.getElementById('lbClose').focus(); }
+function closeLb() { lb.hidden = true; document.body.style.overflow = ''; if (lastFocus) lastFocus.focus(); }
+function step(d) { const n = cur.i + d; if (n >= 0 && n < FR[cur.post].length) { cur.i = n; show(); } }
+document.getElementById('posts').addEventListener('click', (e) => { const b = e.target.closest('.thumb'); if (b) openLb(+b.dataset.post, +b.dataset.i); });
+document.getElementById('lbClose').addEventListener('click', closeLb);
+document.getElementById('lbPrev').addEventListener('click', () => step(-1));
+document.getElementById('lbNext').addEventListener('click', () => step(1));
+lb.addEventListener('click', (e) => { if (e.target === lb || e.target.classList.contains('stage')) closeLb(); });
+document.addEventListener('keydown', (e) => { if (lb.hidden) return; if (e.key === 'Escape') closeLb(); else if (e.key === 'ArrowLeft') step(-1); else if (e.key === 'ArrowRight') step(1); });
+lb.addEventListener('pointerdown', (e) => { sx = e.clientX; });
+lb.addEventListener('pointerup', (e) => { if (sx === null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 50) step(dx < 0 ? 1 : -1); });
 </script>
