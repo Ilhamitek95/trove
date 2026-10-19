@@ -49,7 +49,7 @@ function inner(f, n, total) {
   const [w, h] = SIZE[f.kind];
   const counter = f.kind === 'slide' && total > 1 ? `<div class="ct">${n} / ${total}</div>` : '';
   const wm = '<div class="wm">trove<i></i></div>';
-  const url = '<div class="url">troveathome.com/apply</div>';
+  const url = `<div class="url">${f.foot ? fmt(f.foot) : 'troveathome.com/apply'}</div>`;
   const swipe = f.foot ? `<div class="sw">${esc(f.foot)} →</div>` : '';
   switch (f.layout) {
     case 'hero':
@@ -63,6 +63,22 @@ function inner(f, n, total) {
       return `${wm}${counter}<div class="box" style="top:420px"><div class="small">${fmt(f.small)}</div><div class="d" style="font-size:230px;line-height:1;margin-top:30px">${fmt(f.figure)}</div>${f.body ? `<p class="body" style="font-size:52px;margin-top:24px">${fmt(f.body)}</p>` : ''}</div>${url}`;
     case 'list':
       return `${wm}${counter}<div class="box" style="top:260px"><div class="d" style="font-size:84px;line-height:1.05">${fmt(f.title)}</div><ul style="list-style:none;margin-top:50px">${f.items.map((it) => `<li style="font-size:44px;padding:22px 0;border-top:2px solid rgba(41,39,39,.15)">${fmt(it)}</li>`).join('')}</ul></div>${url}`;
+    case 'phone':
+    case 'reel-phone': {
+      // A real Trove page (or the shop template) on a phone. screens/<screen> is a 1170px-wide (3x) capture.
+      const reel = f.layout === 'reel-phone';
+      const pw = reel ? 820 : 780, bez = 20, sw = pw - bez * 2, scale = sw / 1170;
+      const top = f.phoneTop || (reel ? 700 : (f.sub ? 560 : 470));
+      const src = 'file:///' + path.join(__dirname, 'screens', f.screen).split(path.sep).join('/');
+      const head = reel
+        ? `<div class="wm" style="left:0;right:0;text-align:center;top:260px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:360px;text-align:center"><div class="d" style="font-size:${f.size || 96}px;line-height:1.04">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin:24px auto 0;font-size:38px">${fmt(f.sub)}</p>` : ''}</div>`
+        : `${wm}${counter}<div class="box" style="top:170px"><div class="d" style="font-size:${f.size || 80}px;line-height:1.04">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin-top:20px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>`;
+      return `${head}<div style="position:absolute;left:${(w - pw) / 2}px;top:${top}px;width:${pw}px;height:${h}px;background:#292727;border-radius:68px;padding:${bez}px;box-shadow:0 30px 70px rgba(41,39,39,.22)"><div style="width:${sw}px;height:100%;border-radius:52px;overflow:hidden;background:#FDF7F5"><img src="${src}" style="display:block;width:${sw}px;margin-top:-${Math.round((f.offset || 0) * 3 * scale)}px"></div></div>${f.label ? `<div style="position:absolute;right:72px;top:${top + 40}px;background:#FDF7F5;border-radius:999px;padding:10px 20px;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.08)">${fmt(f.label)}</div>` : ''}`;
+    }
+    case 'grid':
+      return `${wm}${counter}<div class="box" style="top:230px"><div class="d" style="font-size:${f.size || 96}px;line-height:1.04">${fmt(f.title)}</div><div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:64px">${f.items.map((it) => `<span style="font-size:46px;border:2px solid rgba(41,39,39,.22);background:rgba(255,255,255,.55);border-radius:999px;padding:20px 34px">${fmt(it)}</span>`).join('')}</div>${f.sub ? `<p class="body" style="margin-top:56px">${fmt(f.sub)}</p>` : ''}</div>${url}`;
+    case 'steps':
+      return `${wm}${counter}<div class="box" style="top:230px"><div class="d" style="font-size:${f.size || 96}px;line-height:1.04">${fmt(f.title)}</div><ol style="list-style:none;margin-top:70px;display:flex;flex-direction:column;gap:40px">${f.steps.map((st, i) => `<li style="display:flex;align-items:center;gap:30px"><span style="font-weight:600;flex:none;width:96px;height:96px;border-radius:50%;background:${f.bg === 'sage' ? '#FDF7F5' : '#CAD5CC'};display:flex;align-items:center;justify-content:center;font-size:42px">${i + 1}</span><span style="font-size:48px;line-height:1.25">${fmt(st)}</span></li>`).join('')}</ol></div>${url}`;
     case 'pair':
       return `${wm}${counter}<div class="box" style="top:400px"><div class="small">You</div><div class="d" style="font-size:90px;line-height:1.05;margin-top:14px">${fmt(f.you)}</div><div style="border-top:2px solid rgba(41,39,39,.18);margin:64px 0 56px"></div><div class="small">Trove</div><div class="d" style="font-size:90px;line-height:1.05;margin-top:14px">${fmt(f.trove)}</div></div>${url}`;
     case 'qa':
@@ -78,7 +94,7 @@ function inner(f, n, total) {
         <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:#FDF7F5"></div>
         ${f.big ? '<div class="wm" style="top:auto;bottom:' + (band - 96) + 'px;font-size:40px">trove<i></i></div>' : ''}
         <div class="box" style="bottom:120px"><div class="d" style="font-size:${size}px;line-height:1.06">${fmt(f.caption || '')}</div>${f.sub ? `<p class="body" style="margin-top:14px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>
-        <div class="url" style="bottom:52px;font-size:26px">trove · troveathome.com/apply</div>${counter.replace('class="ct"', 'class="ct" style="background:#FDF7F5;padding:8px 18px;border-radius:999px;opacity:.9;top:56px"')}`;
+        <div class="url" style="bottom:52px;font-size:26px">${f.foot ? fmt(f.foot) : 'trove · troveathome.com/apply'}</div>${counter.replace('class="ct"', 'class="ct" style="background:#FDF7F5;padding:8px 18px;border-radius:999px;opacity:.9;top:56px"')}`;
     }
     case 'cover':
       return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="small" style="font-size:38px">${fmt(f.kicker)}</div><div class="d" style="font-size:150px;line-height:1.02;margin-top:40px">${fmt(f.title)}</div></div>`;
@@ -113,7 +129,7 @@ function inner(f, n, total) {
     const name = (/^\d+$/.test(f.id) ? 'slide-' + f.id.padStart(2, '0') : f.id) + (jpg ? '.jpg' : '.png');
     await page.screenshot(jpg ? { path: path.join(dir, name), type: 'jpeg', quality: 90 } : { path: path.join(dir, name), omitBackground: f.bg === 'clear' });
     const placeholders = /\[/.test(JSON.stringify(f)) || (f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)));
-    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, note: f.note || '' });
+    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', note: f.note || '' });
   }
   fs.rmSync(path.join(__dirname, '_frame.html'), { force: true });
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));

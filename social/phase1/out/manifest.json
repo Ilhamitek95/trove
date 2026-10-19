@@ -6,6 +6,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "Two friends at a kitchen table, one holding up a cushion cover the other embroidered (shot 1–2)",
     "note": ""
   },
   {
@@ -15,6 +16,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -24,33 +26,37 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 1,
-    "file": "post-01/slide-04.jpg",
+    "file": "post-01/slide-04.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": true,
-    "mood": true,
+    "layout": "grid",
+    "ready": false,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 1,
-    "file": "post-01/slide-05.jpg",
+    "file": "post-01/slide-05.png",
     "kind": "slide",
-    "layout": "photo",
+    "layout": "phone",
     "ready": true,
-    "mood": true,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 1,
     "file": "post-01/slide-06.png",
     "kind": "slide",
-    "layout": "hero",
-    "ready": true,
+    "layout": "steps",
+    "ready": false,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -60,6 +66,7 @@
     "layout": "cta",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -69,6 +76,7 @@
     "layout": "reel-cover-photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -78,6 +86,7 @@
     "layout": "reel-photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -87,6 +96,7 @@
     "layout": "reel-photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -96,6 +106,7 @@
     "layout": "reel-photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -105,15 +116,27 @@
     "layout": "reel-photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 2,
-    "file": "post-02/scene-5.jpg",
+    "file": "post-02/scene-5.png",
+    "kind": "reel",
+    "layout": "reel-phone",
+    "ready": true,
+    "mood": false,
+    "upgrade": "Hands scrolling the Sell on Trove page on a phone at a kitchen table (shot 8)",
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/scene-6.jpg",
     "kind": "reel",
     "layout": "reel-photo",
     "ready": true,
     "mood": true,
+    "upgrade": "Hands passing a packed parcel across a front door (shot 7)",
     "note": ""
   },
   {
@@ -123,60 +146,67 @@
     "layout": "end",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 3,
-    "file": "post-03/slide-01.jpg",
+    "file": "post-03/slide-01.png",
     "kind": "slide",
-    "layout": "photo",
+    "layout": "phone",
     "ready": true,
-    "mood": true,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 3,
     "file": "post-03/slide-02.png",
     "kind": "slide",
-    "layout": "pair",
-    "ready": true,
+    "layout": "steps",
+    "ready": false,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 3,
-    "file": "post-03/slide-03.png",
+    "file": "post-03/slide-03.jpg",
     "kind": "slide",
-    "layout": "pair",
+    "layout": "photo",
     "ready": true,
-    "mood": false,
+    "mood": true,
+    "upgrade": "The in-house photographer at a kitchen table shooting a piece in window light (shot 6)",
     "note": ""
   },
   {
     "post": 3,
     "file": "post-03/slide-04.png",
     "kind": "slide",
-    "layout": "pair",
+    "layout": "phone",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 3,
-    "file": "post-03/slide-05.png",
+    "file": "post-03/slide-05.jpg",
     "kind": "slide",
-    "layout": "pair",
+    "layout": "photo",
     "ready": true,
-    "mood": false,
+    "mood": true,
+    "upgrade": "Hands holding out a packed parcel at the front door (shot 7)",
     "note": ""
   },
   {
     "post": 3,
     "file": "post-03/slide-06.png",
     "kind": "slide",
-    "layout": "hero",
+    "layout": "phone",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -186,6 +216,7 @@
     "layout": "cta",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -195,6 +226,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -204,6 +236,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -213,6 +246,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -222,24 +256,27 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 4,
-    "file": "post-04/slide-05.jpg",
+    "file": "post-04/slide-05.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": true,
-    "mood": true,
+    "layout": "grid",
+    "ready": false,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 4,
     "file": "post-04/slide-06.png",
     "kind": "slide",
-    "layout": "hero",
+    "layout": "phone",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -249,15 +286,37 @@
     "layout": "cta",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 5,
-    "file": "post-05/image.jpg",
+    "file": "post-05/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "Two pairs of hands at a table, one holding out a crocheted blanket, the other pointing at the stitches (shot 2 or 9)",
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-02.png",
+    "kind": "slide",
+    "layout": "grid",
+    "ready": false,
+    "mood": false,
+    "upgrade": "",
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-03.png",
+    "kind": "slide",
+    "layout": "steps",
+    "ready": false,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -267,51 +326,47 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "An established maker who has applied, at their own stall, wrapping a piece (collab)",
     "note": ""
   },
   {
     "post": 6,
     "file": "post-06/slide-02.png",
     "kind": "slide",
-    "layout": "hero",
+    "layout": "phone",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 6,
     "file": "post-06/slide-03.png",
     "kind": "slide",
-    "layout": "hero",
-    "ready": true,
+    "layout": "steps",
+    "ready": false,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 6,
     "file": "post-06/slide-04.png",
     "kind": "slide",
-    "layout": "list",
-    "ready": false,
+    "layout": "hero",
+    "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 6,
     "file": "post-06/slide-05.png",
     "kind": "slide",
-    "layout": "hero",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 6,
-    "file": "post-06/slide-06.png",
-    "kind": "slide",
     "layout": "cta",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -321,6 +376,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -330,6 +386,7 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "Hands placing diyas and marigolds in a real home (a real stylist who has applied)",
     "note": ""
   },
   {
@@ -339,24 +396,27 @@
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 7,
     "file": "post-07/slide-04.png",
     "kind": "slide",
-    "layout": "hero",
-    "ready": true,
+    "layout": "grid",
+    "ready": false,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 7,
-    "file": "post-07/slide-05.jpg",
+    "file": "post-07/slide-05.png",
     "kind": "slide",
-    "layout": "photo",
+    "layout": "phone",
     "ready": true,
-    "mood": true,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -366,6 +426,7 @@
     "layout": "hero",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -375,6 +436,7 @@
     "layout": "cta",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -384,15 +446,7 @@
     "layout": "reel-cover-photo",
     "ready": false,
     "mood": false,
-    "note": ""
-  },
-  {
-    "post": 8,
-    "file": "post-08/name-tag.png",
-    "kind": "reel",
-    "layout": "lower-third",
-    "ready": false,
-    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -402,6 +456,27 @@
     "layout": "lower-third",
     "ready": false,
     "mood": false,
+    "upgrade": "",
+    "note": ""
+  },
+  {
+    "post": 8,
+    "file": "post-08/craft.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": false,
+    "mood": false,
+    "upgrade": "",
+    "note": ""
+  },
+  {
+    "post": 8,
+    "file": "post-08/shop.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": false,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -411,33 +486,47 @@
     "layout": "end",
     "ready": false,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 9,
-    "file": "post-09/image.jpg",
+    "file": "post-09/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
     "ready": true,
     "mood": true,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 9,
-    "file": "post-09/type.png",
+    "file": "post-09/slide-02.png",
     "kind": "slide",
     "layout": "hero",
     "ready": true,
     "mood": false,
-    "note": "Text-only fallback"
+    "upgrade": "",
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-03.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "mood": false,
+    "upgrade": "",
+    "note": ""
   },
   {
     "post": 10,
-    "file": "post-10/slide-01.jpg",
+    "file": "post-10/slide-01.png",
     "kind": "slide",
-    "layout": "photo",
+    "layout": "phone",
     "ready": true,
-    "mood": true,
+    "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -447,6 +536,7 @@
     "layout": "qa",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -456,6 +546,7 @@
     "layout": "qa",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -465,6 +556,7 @@
     "layout": "qa",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -474,6 +566,7 @@
     "layout": "qa",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -483,15 +576,17 @@
     "layout": "qa",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
     "post": 10,
     "file": "post-10/slide-07.png",
     "kind": "slide",
-    "layout": "qa",
-    "ready": true,
+    "layout": "steps",
+    "ready": false,
     "mood": false,
+    "upgrade": "",
     "note": ""
   },
   {
@@ -501,6 +596,7 @@
     "layout": "cta",
     "ready": true,
     "mood": false,
+    "upgrade": "",
     "note": ""
   }
 ]

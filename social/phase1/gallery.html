@@ -33,6 +33,9 @@ p{margin:0}
 .chip{display:inline-flex;align-items:center;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--ok);color:var(--fg);white-space:nowrap}
 .chip.todo{background:var(--todo)}
 .chip.mood{background:transparent;border:1px solid var(--tan)}
+.chip.real{background:var(--soft);border:1px dashed var(--tan)}
+.changed{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:16px}
+.changed ul{margin-top:8px}
 nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
 nav a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px}
 nav a:hover,nav a:focus-visible{border-color:var(--tan);outline:none}
@@ -92,10 +95,33 @@ th{font-weight:600;color:var(--muted)}
     <span><span class="chip">Ready</span> can be posted as it is</span>
     <span><span class="chip todo">Needs input</span> a dashed box or photo slot is waiting for a real person</span>
     <span><span class="chip mood">Mood image</span> made with Higgsfield: props, tools and spaces only, never shown as anyone's work</span>
+    <span><span class="chip real">Real shot planned</span> the half-day shoot replaces this image with real hands (see the shoot plan)</span>
   </div>
+  <section style="margin-top:30px">
+    <h2>What changed in this version</h2>
+    <div class="changed">
+      <div class="card"><h3>Why it read abstract</h3><ul id="abstract"></ul></div>
+      <div class="card"><h3>What the marketers changed</h3><ul id="fixes"></ul></div>
+    </div>
+  </section>
   <nav id="nav" aria-label="Posts"></nav>
 
   <div id="posts"></div>
+
+  <section id="shoot">
+    <h2>The real-people shoot</h2>
+    <p class="lede" id="shootIntro" style="margin-top:10px"></p>
+    <div class="tablewrap"><table><thead><tr><th>#</th><th>Where</th><th>In frame</th><th>Posts</th><th>Hands-only option</th></tr></thead><tbody id="shots"></tbody></table></div>
+    <p class="muted" id="shootRules" style="margin-top:10px;font-size:13.5px"></p>
+    <h3 style="margin-top:22px">The consent form should cover</h3>
+    <ul id="release"></ul>
+  </section>
+
+  <section id="site">
+    <h2>Fix on the site first</h2>
+    <p class="muted" style="margin-top:6px;font-size:14px">The marketers found three things on troveathome.com that work against this campaign. Nothing has been changed yet.</p>
+    <div class="cols" id="siteFixes"></div>
+  </section>
 
   <section id="manifesto-sec">
     <h2>Manifesto</h2>
@@ -157,8 +183,9 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
   const c = d.campaign;
   document.getElementById('insight').textContent = c.insight;
   document.getElementById('hooks').insertAdjacentHTML('beforeend',
-    `<div class="hook"><b>${esc(c.line)} <span class="ar" lang="ar">${esc(c.lineAr)}</span></b><span>The campaign line, on every end card. Made in the UAE, made at home, and how a place becomes home.</span></div>` +
-    c.hooks.map(([en, why, ar]) => `<div class="hook"><b>${esc(en)} <span class="ar" lang="ar">${esc(ar)}</span></b><span>${esc(why)}</span></div>`).join('') +
+    `<div class="hook"><b>${esc(c.proposition)}</b><span>The plain proposition, along the bottom of every first frame.</span> <span class="ar" lang="ar">${esc(c.propositionAr)}</span></div>` +
+    `<div class="hook"><b>${esc(c.line)} <span class="ar" lang="ar">${esc(c.lineAr)}</span></b><span>The campaign line, on the end cards.</span></div>` +
+    c.hooks.map(([en, why, ar]) => `<div class="hook"><b>${esc(en)}${ar ? ` <span class="ar" lang="ar">${esc(ar)}</span>` : ''}</b><span>${esc(why)}</span></div>`).join('') +
     '<span class="muted" style="font-size:12.5px">Arabic lines need a native speaker\'s review before use.</span>');
   document.getElementById('nav').innerHTML = d.posts.map((p) => `<a href="#post${p.n}">${p.n}. ${esc(p.date)}</a>`).join('');
   const root = document.getElementById('posts');
@@ -170,7 +197,7 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     s.id = 'post' + p.n;
     s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
       <div class="post">
-        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}</figcaption></figure>`).join('')}</div>
+        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div>
         <div class="copy">
           <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
           <div class="caption" id="cap${p.n}">${esc(p.caption)}<span class="tags">${esc(c.hashtags)}</span></div>
@@ -182,6 +209,13 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     document.getElementById('copy' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.caption + '\n\n' + c.hashtags));
   }
   document.getElementById('manifesto').textContent = c.manifesto;
+  document.getElementById('abstract').innerHTML = c.abstract.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('fixes').innerHTML = c.fixes.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('shootIntro').textContent = d.shoot.intro;
+  document.getElementById('shots').innerHTML = d.shoot.shots.map((r) => `<tr>${r.map((x) => `<td>${esc(x)}</td>`).join('')}</tr>`).join('');
+  document.getElementById('shootRules').textContent = d.shoot.rules;
+  document.getElementById('release').innerHTML = d.shoot.release.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('siteFixes').innerHTML = d.siteFixes.map(([what, why]) => `<div class="card"><h3>${esc(what)}</h3><p>${esc(why)}</p></div>`).join('');
   document.getElementById('series').innerHTML = d.series.map(([en, ar, what]) => `<div class="card"><h3>${esc(en)} <span class="ar" lang="ar" style="font-size:16px">${esc(ar)}</span></h3><p>${esc(what)}</p></div>`).join('');
   document.getElementById('nomination').innerHTML = d.nomination.map((x) => `<li>${esc(x)}</li>`).join('');
   document.getElementById('stories').innerHTML = d.stories.map(([w, what, st]) => `<tr><td style="white-space:nowrap">${esc(w)}</td><td>${esc(what)}</td><td>${esc(st)}</td></tr>`).join('');
@@ -195,7 +229,7 @@ function show() {
   const list = FR[cur.post], f = list[cur.i];
   lbImg.src = 'out/' + f.file;
   lbImg.alt = 'Post ' + cur.post + ', ' + label(f.file);
-  lbLabel.textContent = 'Post ' + cur.post + ' · ' + label(f.file) + ' · ' + (cur.i + 1) + ' of ' + list.length;
+  lbLabel.textContent = 'Post ' + cur.post + ' · ' + label(f.file) + ' · ' + (cur.i + 1) + ' of ' + list.length + (f.upgrade ? ' · Real shot planned: ' + f.upgrade : '');
   document.getElementById('lbPrev').disabled = cur.i === 0;
   document.getElementById('lbNext').disabled = cur.i === list.length - 1;
 }
