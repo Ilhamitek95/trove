@@ -1,103 +1,104 @@
-// Every frame for Phase 1 posts 1–10. Copy matches the "Trove Phase 1 social drafts" doc.
+// Every frame for Phase 1 posts 1–10: the merged campaign "Made here. Made home." (v3, 19 Oct 2026),
+// built from agents/brand-strategist.md and agents/social-creative.md. Copy and captions live in posts.js.
 // Square-bracketed text renders as a dashed placeholder box: fill it in before posting.
 // photo: a file name in ./photos — rendered when present, otherwise a labelled photo slot.
-// mood: true = a generated mood image (materials, tools, spaces). The strategy allows these only for mood
+// mood: true = a generated mood image (props, tools, spaces). The strategy allows these only for mood
 // and Collection teases, never as a maker's work — real makers' pieces and hands always come from real photos.
 
-const APPLY = 'Apply in ten minutes.';
+const LINE = 'Made here.|Made home.';
+const end = (post, id, extra = {}) => ({ post, id, kind: 'slide', bg: 'sage', layout: 'cta', title: LINE, body: 'Apply in about ten minutes.', ...extra });
+const photo = (post, id, file, caption, extra = {}) => ({ post, id, kind: 'slide', bg: 'cream', layout: 'photo', photo: file, mood: true, caption, ...extra });
 
 module.exports = [
-  // 1. Made here, by someone (Reel)
-  { post: 1, id: 'cover', kind: 'reel', bg: 'cream', layout: 'reel-cover-photo', photo: 'p1-cover.jpg', slot: 'A frame from the real hands-at-work footage',
-    kicker: 'Trove is opening to UAE makers', title: 'Made here,|by someone.' },
-  { post: 1, id: 'name-tag', kind: 'reel', bg: 'clear', layout: 'lower-third',
-    text: '[First name], [neighbourhood]', note: 'One per clip, e.g. Sara, Al Barsha' },
-  { post: 1, id: 'end', kind: 'reel', bg: 'sage', layout: 'end',
-    title: 'Made here,|by someone.', body: 'Trove is opening to UAE makers.' },
+  // 1. You should sell these. (Carousel, 7) — the gifted person and the friend who keeps telling them
+  photo(1, '1', 'c1-evening.jpg', 'You should sell these.', { big: true, sub: 'Everyone knows someone who has heard it.' }),
+  photo(1, '2', 'c1-qalam.jpg', 'The cousin who letters every name|on the Eid envelopes.'),
+  photo(1, '3', 'c1-hoop.jpg', 'The neighbour whose cushions keep|turning up in other people’s homes.'),
+  photo(1, '4', 'c1-chair.jpg', 'The father who spends his weekends|bringing old chairs back to life.'),
+  photo(1, '5', 'c1-table.jpg', 'The friend who always does the table.|Iftar, Diwali, Christmas, every birthday.'),
+  { post: 1, id: '6', kind: 'slide', bg: 'clay', layout: 'hero', title: 'They’d never call|it a business.',
+    body: 'They don’t need to be one to start. Trove is a new home for handmade pieces and creative services from people in Dubai and Abu Dhabi.' },
+  end(1, '7', { title: 'Send this to the|one you thought of.', body: 'Made here. Made home.' }),
 
-  // 2. What you don't need (Carousel, 7)
-  { post: 2, id: '1', kind: 'slide', bg: 'cream', layout: 'photo', big: true, photo: 'p2-bench.jpg', mood: true,
-    caption: 'To sell on Trove,|you don’t need…' },
+  // 2. Behind the door (Reel, ~30 s) — manifesto voiceover over doors and the sounds of making
+  { post: 2, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'c2-street.jpg', mood: true,
+    kicker: 'Somewhere in your building', title: 'someone is|making something.' },
   ...[
-    ['A trade licence', 'Not to start. Trove buys each piece from you and resells it.'],
-    ['A website', 'Your shop lives on Trove.'],
-    ['A photographer', 'Our photographer shoots your pieces.'],
-    ['A courier', 'We collect from your door in Dubai and Abu Dhabi.'],
-    ['An upfront fee', 'Nothing to join. Nothing to pay if nothing sells.'],
-  ].map(([strike, body], i) => ({ post: 2, id: String(i + 2), kind: 'slide', bg: 'cream', layout: 'strike', strike, body })),
-  { post: 2, id: '7', kind: 'slide', bg: 'cream', layout: 'photo', big: true, photo: 'p2-materials.jpg', mood: true,
-    caption: 'Just your work.', sub: APPLY },
+    ['c2-gate.jpg', 'Bringing a chair back.'],
+    ['c2-townhouse.jpg', 'Throwing a bowl.'],
+    ['c2-majlis.jpg', 'Tuning the oud.'],
+    ['c2-apartment.jpg', 'Wrapping someone else’s gift.'],
+    ['c2-street.jpg', 'Trove is a home for what’s made behind these doors.'],
+  ].map(([file, text], i) => ({ post: 2, id: 'scene-' + (i + 1), kind: 'reel', bg: 'cream', layout: 'reel-photo', photo: file, mood: true, text })),
+  { post: 2, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: LINE, body: 'Dubai and Abu Dhabi.' },
 
-  // 3. Meet our first maker (Reel + carousel, 6)
-  { post: 3, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'p3-cover.jpg', slot: 'A frame from the maker’s own footage',
-    kicker: 'A founding maker on Trove', title: 'Meet our|first maker.' },
-  { post: 3, id: 'end', kind: 'reel', bg: 'cream', layout: 'end',
-    title: '[Maker].', body: '[Craft], [neighbourhood].|A founding maker on Trove.' },
-  { post: 3, id: '1', kind: 'slide', bg: 'cream', layout: 'photo', photo: 'p3-portrait.jpg',
-    slot: 'Portrait of the maker at their bench', caption: 'Meet [maker].' },
-  { post: 3, id: '2', kind: 'slide', bg: 'clay', layout: 'hero', title: '[Years] years|of [craft].' },
-  { post: 3, id: '3', kind: 'slide', bg: 'cream', layout: 'quote', title: '“[Their sentence, in their own words.]”', body: '[Maker], [neighbourhood]' },
-  { post: 3, id: '4', kind: 'slide', bg: 'cream', layout: 'photo', photo: 'p3-workspace.jpg', slot: 'The workspace' },
-  { post: 3, id: '5', kind: 'slide', bg: 'cream', layout: 'photo', photo: 'p3-piece.jpg', slot: 'The finished piece' },
-  { post: 3, id: '6', kind: 'slide', bg: 'sage', layout: 'cta', title: 'Founding makers|are joining now.', body: APPLY },
-
-  // 4. Set your price. Keep 60% (Carousel, 6)
-  { post: 4, id: '1', kind: 'slide', bg: 'cream', layout: 'photo', big: true, photo: 'p4-tag.jpg', mood: true, caption: 'Set your price.|Keep 60%.' },
-  { post: 4, id: '2', kind: 'slide', bg: 'cream', layout: 'figure', small: 'Price a piece at', figure: 'AED 150' },
-  { post: 4, id: '3', kind: 'slide', bg: 'sage', layout: 'split', small: 'When it sells', figure: 'AED 90', body: 'is yours.' },
-  { post: 4, id: '4', kind: 'slide', bg: 'cream', layout: 'list', title: 'The AED 60 covers',
-    items: ['Photography', 'Marketing', 'Checkout', 'Customer care', 'Returns', 'The courier'] },
-  { post: 4, id: '5', kind: 'slide', bg: 'clay', layout: 'hero', title: 'Paid every|other Tuesday.',
-    body: 'To your bank, once the buyer’s 15-day return window has closed.' },
-  { post: 4, id: '6', kind: 'slide', bg: 'sage', layout: 'cta', title: 'No joining fee.|No listing fee.',
-    body: 'Nothing to pay if nothing sells.|' + APPLY },
-
-  // 5. Teach it, style it, shoot it? (Carousel, 6)
-  { post: 5, id: '1', kind: 'slide', bg: 'cream', layout: 'photo', photo: 'p5-studio.jpg', mood: true, big: true, slot: 'A workshop in progress',
-    caption: 'Teach it, style it, shoot it?|There’s a place for that too.' },
-  { post: 5, id: '2', kind: 'slide', bg: 'cream', layout: 'list', title: 'Trove lists services|from UAE independents',
-    items: ['Workshops', 'Interior styling', 'Photography'] },
-  { post: 5, id: '3', kind: 'slide', bg: 'cream', layout: 'hero', title: 'Free to list|during launch.',
-    body: 'A flat AED 30 a month comes later, never without 30 days’ notice.' },
-  { post: 5, id: '4', kind: 'slide', bg: 'blue', layout: 'split', small: 'Paid directly by the customer?', figure: '100%', body: 'is yours.' },
-  { post: 5, id: '5', kind: 'slide', bg: 'cream', layout: 'split', small: 'Paid by card through Trove?', figure: '90%',
-    body: 'is yours, by bank transfer after the service date.' },
-  { post: 5, id: '6', kind: 'slide', bg: 'blue', layout: 'cta', title: 'Booking requests|come straight|to your dashboard.', body: APPLY },
-
-  // 6. Something of our own (Single image)
-  { post: 6, id: 'photo', kind: 'slide', bg: 'cream', layout: 'photo', photo: 'p6-sketch.jpg',
-    slot: 'A pencil sketch or glaze test on a worktable. No finished product.', caption: 'Something of our own.' },
-  { post: 6, id: 'type', kind: 'slide', bg: 'clay', layout: 'hero', title: 'Something|of our own.',
-    body: 'The Trove Collection. More when it is ready.', note: 'Text-only fallback if the photo is not ready' },
-
-  // 7. Apply in ten minutes (Reel)
-  { post: 7, id: 'cover', kind: 'reel', bg: 'sage', layout: 'reel-cover-photo', photo: 'p7-cover.jpg', slot: 'A frame of the maker at the kitchen table, timer running', kicker: 'We timed it', title: 'Apply in|ten minutes.' },
-  ...['Open troveathome.com/apply', 'Tell us about you and your craft', 'List what you plan to sell', 'Submit']
-    .map((text, i) => ({ post: 7, id: 'step-' + (i + 1), kind: 'reel', bg: 'clear', layout: 'lower-third', text, step: i + 1 })),
-  { post: 7, id: 'end', kind: 'reel', bg: 'cream', layout: 'end', title: 'A real person reads|every application.',
-    body: 'Usually within a day or two.' },
-
-  // 8. Meet our first provider (Reel)
-  { post: 8, id: 'cover', kind: 'reel', bg: 'blue', layout: 'reel-cover-photo', photo: 'p8-cover.jpg', slot: 'A frame from the class in progress', kicker: 'A founding provider on Trove', title: 'Meet our|first provider.' },
-  { post: 8, id: 'end', kind: 'reel', bg: 'cream', layout: 'end',
-    title: '[Provider].', body: '[Service], [neighbourhood].|A founding provider on Trove.' },
-
-  // 9. More being made here than you think (Carousel, 8)
-  { post: 9, id: '1', kind: 'slide', bg: 'cream', layout: 'photo', big: true, photo: 'p9-window.jpg', mood: true, caption: 'There is more being made|here than you think.' },
+  // 3. Your part. Our part. (Carousel, 7) — what the platform does
+  photo(3, '1', 'c3-setup.jpg', 'You make it.|We help it find a home.', { big: true }),
   ...[
-    ['Stoneware, thrown in [Al Quoz].', 'p9-stoneware.jpg'],
-    ['Rugs, woven in [Mirdif].', 'p9-rugs.jpg'],
-    ['Silver, set in [Khalifa City].', 'p9-silver.jpg'],
-    ['Candles, poured in [Jumeirah].', 'p9-candles.jpg'],
-    ['Prints, pulled in [Al Reem].', 'p9-prints.jpg'],
-    ['Workshops, taught in [Alserkal Avenue].', 'p9-workshop.jpg'],
-  ].map(([caption, photo], i) => ({ post: 9, id: String(i + 2), kind: 'slide', bg: 'cream', layout: 'photo',
-    photo, caption, slot: 'Real photo of a real maker’s work' })),
-  { post: 9, id: '8', kind: 'slide', bg: 'sage', layout: 'cta', title: 'Made here?', body: APPLY },
+    ['Make at your own pace.', 'Photograph it, or use your own photos.'],
+    ['Set the price.', 'Give it a shop of its own.'],
+    ['Choose how many orders a month.', 'Look after the buyer.'],
+    ['Pack it your way.', 'Send a courier to your door.'],
+  ].map(([you, trove], i) => ({ post: 3, id: String(i + 2), kind: 'slide', bg: i % 2 ? 'clay' : 'cream', layout: 'pair', you, trove })),
+  { post: 3, id: '6', kind: 'slide', bg: 'cream', layout: 'hero', title: 'Keep your Instagram.|Keep your|market table.', size: 100,
+    body: 'Trove isn’t instead. It’s one more home for your work.' },
+  end(3, '7'),
 
-  // 10. From sold to paid (Reel)
-  { post: 10, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'p10-scene3.jpg', mood: true, kicker: 'From sold to paid', title: 'We collect.|We deliver.|You get paid.' },
-  ...['It sells.', 'You pack it.', 'We collect.', 'It’s delivered.', 'You’re paid. Every other Tuesday.']
-    .map((text, i) => ({ post: 10, id: 'scene-' + (i + 1), kind: 'reel', bg: 'cream', layout: 'reel-photo', photo: ['p10-scene1.jpg', 'p10-pack.jpg', 'p10-scene3.jpg', 'p10-parcel.jpg', 'p10-tuesday.jpg'][i], mood: true, text, step: i + 1 })),
-  { post: 10, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: 'We collect.|We deliver.|You get paid.' },
+  // 4. Who do you call? (Carousel, 7) — handy people who would never call it a service
+  photo(4, '1', 'c4-bowl.jpg', 'Your grandmother’s bowl has|cracked. Who do you call?', { big: true, size: 72 }),
+  photo(4, '2', 'c4-cards.jpg', 'The wedding cards need every name|lettered by hand.'),
+  photo(4, '3', 'c4-diyas.jpg', 'Diwali is at yours this year, and the|table needs to feel like home.'),
+  photo(4, '4', 'c4-kids.jpg', 'Eight six-year-olds, one afternoon,|one craft table.'),
+  photo(4, '5', 'c4-armchair.jpg', 'The armchair your father|won’t let go of.'),
+  { post: 4, id: '6', kind: 'slide', bg: 'blue', layout: 'hero', title: 'Every family here|has someone|they call.', size: 104,
+    body: 'Sometimes it’s a business. Often it’s just the handy one.' },
+  end(4, '7', { bg: 'blue', title: 'If that’s you,|there’s a place on Trove.', body: 'Teach, style, letter, repair, shoot, perform.' }),
+
+  // 5. Who's the one everyone asks? (Single image) — nominations
+  photo(5, 'image', 'c5-doorway.jpg', 'Who’s the one|everyone asks?', { big: true, sub: 'For the cushions. The wedding cards. The chair that wobbles. Tag them.' }),
+
+  // 6. This isn't instead. (Carousel, 6) — established makers, Downtown Design week
+  photo(6, '1', 'c6-market.jpg', 'You already have the Instagram, the|market table and the midnight DMs.', { big: true, size: 64 }),
+  { post: 6, id: '2', kind: 'slide', bg: 'cream', layout: 'hero', title: 'Trove isn’t instead.', body: 'Keep all of it.' },
+  { post: 6, id: '3', kind: 'slide', bg: 'clay', layout: 'hero', title: 'One more home|for your work.',
+    body: 'A curated place where people in Dubai and Abu Dhabi will come looking for handmade things for their homes.' },
+  { post: 6, id: '4', kind: 'slide', bg: 'cream', layout: 'list', title: 'What we add',
+    items: ['Our photographer, if you’d like one', 'A courier at your door', 'The buyer looked after', 'A spotlight for founding makers'] },
+  { post: 6, id: '5', kind: 'slide', bg: 'cream', layout: 'hero', title: 'Your price.|Your pace.',
+    body: 'You choose how many orders a month you take, and pack in your own packaging.' },
+  end(6, '6'),
+
+  // 7. One building. A whole year of celebrations. (Carousel, 7) — providers, Diwali
+  photo(7, '1', 'c7-tower.jpg', 'One building.|A whole year of celebrations.', { big: true, size: 76 }),
+  photo(7, '2', 'c7-diyas.jpg', 'Lamps in a window on the fourth floor.'),
+  photo(7, '3', 'c7-tree.jpg', 'A tree going up on the ninth.'),
+  { post: 7, id: '4', kind: 'slide', bg: 'cream', layout: 'hero', title: 'Eid tables.|National Day gatherings.|Birthdays in between.', size: 92 },
+  photo(7, '5', 'c7-wrap.jpg', 'Someone makes them beautiful.|Often, a neighbour.'),
+  { post: 7, id: '6', kind: 'slide', bg: 'clay', layout: 'hero', title: 'Styling, gift wrapping,|party setups and|hand-lettered names.', size: 92,
+    body: 'Trove is opening to you. From December, people can give your services as gifts.' },
+  end(7, '7'),
+
+  // 8. Just a hobby, No. 1 (Collab Reel) — the first real founding maker
+  { post: 8, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'c8-cover.jpg',
+    slot: 'Frame from the real maker’s footage: their work on the shelf', kicker: 'Just a hobby', title: 'Meet [Name].' },
+  { post: 8, id: 'name-tag', kind: 'reel', bg: 'clear', layout: 'lower-third', text: '[Name], [neighbourhood]' },
+  { post: 8, id: 'words', kind: 'reel', bg: 'clear', layout: 'lower-third', text: '“[Their own words]”' },
+  { post: 8, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: 'Know someone|like [Name]?', body: 'Made here. Made home.' },
+
+  // 9. Something of our own. (Single image) — Trove Collection tease
+  photo(9, 'image', 'c9-drape.jpg', 'Something of our own.', { big: true, sub: 'Trove Collection. Not yet. While we make ours, we’re looking for yours.' }),
+  { post: 9, id: 'type', kind: 'slide', bg: 'clay', layout: 'hero', title: 'Something|of our own.',
+    body: 'Trove Collection. Not yet. While we make ours, we’re looking for yours.', note: 'Text-only fallback' },
+
+  // 10. Before you apply: the honest answers. (Carousel, 8) — the one post about money
+  photo(10, '1', 'p4-tag.jpg', 'Before you apply:|the honest answers.', { big: true }),
+  ...[
+    ['Do I need a company?', 'Not to start. Trove buys each piece and resells it. We check your Emirates ID and address before your first payout, and may ask for an e-Trader licence if sales grow a lot.'],
+    ['What does it cost?', 'Nothing to join. Nothing to pay if nothing sells.'],
+    ['What do I keep?', 'You set the price and keep 60% when a piece sells.'],
+    ['When am I paid?', 'Every other Tuesday, once the buyer’s 15-day return window has closed.'],
+    ['I offer a service.', 'Free to list during launch. Paid directly, you keep 100%. Paid by card through Trove, you keep 90%.'],
+    ['Can I keep selling elsewhere?', 'Yes. Your Instagram and your markets stay yours.'],
+  ].map(([q, a], i) => ({ post: 10, id: String(i + 2), kind: 'slide', bg: i % 2 ? 'clay' : 'cream', layout: 'qa', q, a })),
+  end(10, '8', { title: 'Have a wander.|There’s no rush.', body: 'Made here. Made home.' }),
 ];

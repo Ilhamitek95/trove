@@ -1,0 +1,135 @@
+{
+  "campaign": {
+    "line": "Made here. Made home.",
+    "lineAr": "صُنِعَ هنا، فصارَ بيتاً",
+    "insight": "The most gifted hands in the UAE don't think of themselves as makers. They think of themselves as the one everyone asks. Their work already lives in other people's homes as favours and gifts, and what holds them back is not talent: nobody has told them it deserves a home of its own.",
+    "hooks": [
+      ["You should sell these.", "Spoken to the gifted person, and sent by the friend who believes in them.", "موهبتك تستحقّ بيتًا"],
+      ["You're the one everyone asks.", "Names a moment hobbyists already live.", "الكلُّ يقصدُك أنت"],
+      ["Who's the one everyone asks?", "The same idea, turned into a nomination.", "مَن الذي يقصدُه الجميع؟"],
+      ["From one home to another.", "How Trove works: from a maker's door to a buyer's door.", "من بيتٍ إلى بيت"]
+    ],
+    "manifesto": "Some of us were born here. Some of us came from far away.\nEither way, home is something we make.\nA blanket stitched in the evenings.\nA chair brought back to life at the weekend.\nThe lettering on every wedding card in the family.\nThe candles that are always on the table.\nHere, home is made by hand: by neighbours, by friends, by the one everyone asks.\nMaybe you've never sold a thing. Maybe you'd never call it work.\nTrove is a home for that work, in Dubai and Abu Dhabi.\nWe take the photographs. A courier comes to your door. You keep making.\nMade here. Made home.",
+    "hashtags": "#MadeHereMadeHome #UAEMakers #MadeInUAE #HandmadeUAE #DubaiMakers #AbuDhabiMakers #TroveAtHome"
+  },
+  "posts": [
+    {
+      "n": 1, "date": "Wed 21 Oct", "title": "You should sell these.", "format": "Carousel, 7 slides",
+      "for": "Gifted people who have never sold, and the friend who keeps telling them",
+      "drives": "Shares by DM (nominations), then applications",
+      "caption": "Every family here has one: the person whose work is always asked for and never sold. The cousin with the calligraphy pen, the neighbour with the sewing basket, the father in the garage at weekends, the friend who does every table. Trove is a new home for handmade pieces and creative services from people in Dubai and Abu Dhabi, and you don't need a company to start. Thought of someone? Send this to them. If it's you, apply at troveathome.com/apply",
+      "prompt": "Who came to mind first? Tag them.",
+      "notes": "Ready to post once a UAE business adviser confirms the \"no company needed to start\" line (slide 6 and the caption). Every image is a mood still of tools and materials, never anyone's work."
+    },
+    {
+      "n": 2, "date": "Sat 24 Oct", "title": "Behind the door", "format": "Reel, about 30 seconds, sound-led",
+      "for": "Home-based makers and providers",
+      "drives": "Saves, shares and applications; sets the campaign line",
+      "caption": "Listen closely and homes here are full of small sounds. A sewing machine after dinner. Sandpaper on a Saturday. An oud being tuned in the majlis. Some of us were born here, some of us came from far away, and either way home is something we make. Trove is a home for that work, in Dubai and Abu Dhabi. If one of those doors is yours, apply at troveathome.com/apply. Made here. Made home.",
+      "prompt": "What would we hear behind your door?",
+      "notes": "Voiceover: the manifesto below, plus an Arabic cut with a native voice. Best version: the photographer films five real doors (team and friends, with permission, no numbers or faces) and records the sounds behind them. The mood stills here work as a stills Reel if filming slips. Use a licensed oud recording."
+    },
+    {
+      "n": 3, "date": "Tue 27 Oct", "title": "You make it. We help it find a home.", "format": "Carousel, 7 slides",
+      "for": "Makers, both hobbyists and established",
+      "drives": "Understanding how Trove works, then applications",
+      "caption": "Here is what Trove does, plainly. You make, at your own pace, and set your price. We photograph your pieces (or use your own photos), give them a shop, look after the buyer and send a courier to your door in Dubai or Abu Dhabi. You pack it in your own packaging. Your Instagram and your markets stay yours. Trove isn't instead. Apply at troveathome.com/apply",
+      "prompt": "Which part would make the biggest difference to you?",
+      "notes": "This is the post about the platform itself. A real behind-the-scenes photo of the photographer at work can replace the cover later."
+    },
+    {
+      "n": 4, "date": "Fri 30 Oct", "title": "Who do you call?", "format": "Carousel, 7 slides",
+      "for": "Handy people who offer a service but would never call it one, and the families who rely on them",
+      "drives": "Nominations in the comments, and provider applications",
+      "caption": "Every family has someone they call: for the wedding cards, the party table, the cracked bowl, the tired chair. Often it isn't a business. It's just the handy one. Trove is opening a home for creative services in Dubai and Abu Dhabi, from workshops and styling to repairs, portraits and live music. If you're the one they call, apply at troveathome.com/apply",
+      "prompt": "Pick a slide and tell us who you'd call. We'll say hello.",
+      "notes": "Ready to post. The bowl is someone's own family piece, not a product, so a mood image is fine."
+    },
+    {
+      "n": 5, "date": "Mon 2 Nov", "title": "Who's the one everyone asks?", "format": "Single image, plus an Add Yours sticker in Stories",
+      "for": "Everyone, as nominators, above all friends of people who would never apply",
+      "drives": "Nominations (tags and DMs), and Stories posts that credit a maker",
+      "caption": "The people we most hope to meet would rarely put themselves forward. So we're asking you. Who's the friend whose embroidery is in your home, the neighbour who mends what others throw away, the cousin who styles every party? Tag them below, or send us their name privately and we'll write to them gently, mentioning you only if you're happy for us to. Tonight in Stories: show us the handmade thing in your home, and tag who made it.",
+      "prompt": "Tag them below.",
+      "notes": "Same evening, launch the Stories Add Yours sticker \"The handmade thing in my home\" with #WhoMadeThatTrove (check the tag is unused). Every nomination follows the nomination steps below."
+    },
+    {
+      "n": 6, "date": "Thu 5 Nov", "title": "This isn't instead.", "format": "Carousel, 6 slides",
+      "for": "Established makers with a following, a stall or a waiting list",
+      "drives": "Applications from established makers, and conversations at Downtown Design",
+      "caption": "Already have a following, a stall and a waiting list? Trove isn't instead. Keep your Instagram, your markets, everything. We add a curated home for your work, our photographer if you'd like one, and a courier at your door. Founding makers get a badge on their shop and a spotlight from us. We're walking Downtown Design this week, so say hello. Or apply at troveathome.com/apply",
+      "prompt": "Makers: what one thing would make this season easier for you?",
+      "notes": "Downtown Design week. Confirm the dates and that the team is going before mentioning it. Hand out \"I know someone who makes ____\" postcards with a QR code to /apply. If an established maker has applied, make it a collab post with their stall photos."
+    },
+    {
+      "n": 7, "date": "Sun 8 Nov", "title": "One building. A whole year of celebrations.", "format": "Carousel, 7 slides",
+      "for": "Stylists, gift wrappers, party setters and letterers, formal or not",
+      "drives": "Provider applications before the gifting season",
+      "caption": "Happy Diwali to everyone celebrating. Here, one building can hold a whole year of celebrations: lamps tonight, a tree next month, National Day gatherings, Eid tables in the spring. Behind many of them is someone with a good eye and a steady hand. If you style tables, wrap gifts, set up parties or letter names, Trove would love to list your work. From December, people can give your services as gifts. Apply at troveathome.com/apply",
+      "prompt": "Who sets the table in your family? Tag them.",
+      "notes": "Check Diwali falls on Sun 8 Nov 2026 and that gift services are ready for December. If a real stylist is ready, film \"The house call\" Reel instead: a real home dressed for Diwali, door to reveal."
+    },
+    {
+      "n": 8, "date": "Wed 11 Nov", "title": "Just a hobby, No. 1", "format": "Collab Reel, about 30 seconds",
+      "for": "Hobbyist makers who have never sold",
+      "drives": "Tags, reach into the maker's own circle, applications",
+      "caption": "[Name] has been making [craft] in [area] since [year]. Ask about it and you'll hear \"it's just a hobby\". \"Just a hobby\" is our series about people in Dubai and Abu Dhabi who are gifted with their hands. [Name] is one of Trove's founding makers. Know someone like [Name]? Tag them. Are you one? Apply at troveathome.com/apply",
+      "prompt": "Tag the person who always says \"it's just a hobby\".",
+      "notes": "Needs a real founding maker. Open on them saying, in their own words, that it's just a hobby, then cut to their work. Hands, workspace, the work in its place at home. Signed release; hands only is fine for anyone who prefers privacy. If nobody is approved by 8 Nov, run \"Just a hobby, No. 2\" with a weekend furniture restorer, or a real behind-the-scenes \"what a founding maker gets\"."
+    },
+    {
+      "n": 9, "date": "Sat 14 Nov", "title": "Something of our own.", "format": "Single image",
+      "for": "Everyone: it signals taste, and shows makers the company their work would keep",
+      "drives": "Follows and saves, turned back towards applications",
+      "caption": "We're making something of our own: the Trove Collection, our house range. It isn't ready yet, and we won't show it before next year. Meanwhile, the Trove Marketplace is for your work. While we make ours, we're looking for yours. Apply at troveathome.com/apply",
+      "prompt": "Guess what's under the cloth.",
+      "notes": "The Collection tease. A mood image is allowed here. Confirm you are happy to say \"not before next year\" in public."
+    },
+    {
+      "n": 10, "date": "Tue 17 Nov", "title": "Before you apply: the honest answers.", "format": "Carousel, 8 slides",
+      "for": "People who are tempted but careful, on both sides",
+      "drives": "Answers the last objections, then applications",
+      "caption": "The honest answers, in one place, for anyone still weighing it up. Your pieces, your price, your pace. A real person reads every application, usually within a day or two. Anything we haven't answered? Ask below and a real person will reply. Have a wander. There's no rush. Apply at troveathome.com/apply. Made here. Made home.",
+      "prompt": "What else would you want to know?",
+      "notes": "The only post about money. The answer on slide 2 needs the business adviser's sign-off. Answer replies in Stories, one per frame."
+    }
+  ],
+  "series": [
+    ["Just a hobby", "مجرّد هواية", "A 30-second collab Reel about a real person here who is gifted with their hands. Each one opens on \"it's just a hobby\" and shows why it isn't. Friends fill the comments, the subject reposts it."],
+    ["Who made that?", "من صنع هذا؟", "One handmade thing in a real home in Dubai or Abu Dhabi, and the person who made it. Followers join in with an Add Yours sticker, so every tag is a nomination."],
+    ["The house call", "زيارة منزلية", "A provider at work in someone's home: a table set, a bowl mended, a workshop, an oud set in a majlis. Host and provider both repost."]
+  ],
+  "nomination": [
+    "Ways in: a tag in the comments, the Add Yours sticker or #WhoMadeThatTrove, a \"Who should we meet?\" question sticker, or a DM with a name.",
+    "Log every name in one shared sheet: handle, who nominated them, craft or service, area, date and status.",
+    "Check they are in Dubai or Abu Dhabi and that their work is something Trove accepts. If not, reply warmly to the nominator only.",
+    "Thank the nominator: \"Thank you, we'll say hello.\"",
+    "A person writes to the nominee within two working days, after looking at their work. Name the nominator only if they tagged in public; otherwise ask the nominator first.",
+    "Follow up once after seven days, then stop.",
+    "If the nominee applies and agrees, tell the nominator. A founding maker's spotlight can thank their nominator by name, with both people's consent. No paid rewards."
+  ],
+  "stories": [
+    ["21–27 Oct", "Post 1 recut to 9:16, plus an Arabic set. A look behind the scenes of the first filming.", "Poll: \"Do you make things or do things?\" Question: \"What do people always ask you to make?\" Link to /apply."],
+    ["28 Oct–3 Nov", "One \"Who do you call?\" slide a day. Add Yours chain from 2 Nov.", "Add Yours: \"The handmade thing in my home\". Poll: \"Ever sold something you made?\""],
+    ["4–10 Nov", "Downtown Design (if attending): the team walking the fair, makers' tables only with consent. Diwali greeting.", "Question: \"Showing at the fair? Tell us your stand.\""],
+    ["11–17 Nov", "The money questions answered one per frame (fees live here, not on the grid). A screen recording of /apply. #WhoMadeThatTrove reposts.", "Question: \"Ask us anything before you apply.\" Link to /apply on every answer."]
+  ],
+  "dms": [
+    ["To a nominee", "Hello [name], [nominator] tagged you on our post, and we've just spent a happy ten minutes looking at your [craft]. We're Trove, a new home for handmade pieces and creative services from people in Dubai and Abu Dhabi. You don't need a company to start. If you're curious, troveathome.com/apply takes about ten minutes. No rush at all."],
+    ["To someone who has never sold", "Hello [name], [a friend's tag / your post] led us to your [craft], and we keep going back to it. We're Trove, a curated home for handmade pieces from people in Dubai and Abu Dhabi. You don't need to have sold anything before, or to have a company, to start. Our photographer can shoot your pieces, and a courier collects from your door. Curious? troveathome.com/apply"],
+    ["To an established maker", "Hello [name], we've admired your [specific piece or collection] for a while. We're Trove, a curated home for makers in Dubai and Abu Dhabi. It sits alongside what you already have: keep your Instagram, your markets and your own customers. We add photography if you'd like it, and a courier at your door. Founding makers get a badge and a spotlight. Would you consider troveathome.com/apply?"],
+    ["To a workshop host or stylist", "Hello [name], your [workshop / tablescape] is lovely. We're Trove, and alongside handmade pieces we're building a home for creative services in Dubai and Abu Dhabi: workshops at home, styling, repairs and portraits. Booking requests arrive in one place, and from December people can give services as gifts. If that appeals: troveathome.com/apply. Happy to answer anything here."]
+  ],
+  "verify": [
+    "\"No company needed to start\" (posts 1 and 10, the DMs): a UAE business adviser signs it off first. Always \"to start\", never \"ever\". Ask too whether providers without a company can take paid bookings.",
+    "Every Arabic line: native review (Modern Standard Arabic).",
+    "Diwali on Sun 8 Nov 2026, and the greeting wording.",
+    "Downtown Design: dates, whether Trove attends, and the fair's rules on filming and approaching exhibitors.",
+    "Gift services ready from December (post 7, DMs).",
+    "Saying \"not before next year\" about the Collection (post 9).",
+    "#MadeHereMadeHome and #WhoMadeThatTrove unused; trademark check on \"Made here. Made home.\"",
+    "Real people (post 8, the series): consent, approved edits, neighbourhood only, photo rights.",
+    "The buyer opening date: don't name 1 Dec in public until it is confirmed.",
+    "Link in bio set to troveathome.com/apply, since links in captions can't be tapped."
+  ]
+}

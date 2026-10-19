@@ -53,7 +53,7 @@ function inner(f, n, total) {
   const swipe = f.foot ? `<div class="sw">${esc(f.foot)} →</div>` : '';
   switch (f.layout) {
     case 'hero':
-      return `${wm}${counter}<div class="box" style="bottom:200px"><div class="d" style="font-size:118px;line-height:1.02">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px">${fmt(f.body)}</p>` : ''}</div>${url}${swipe}`;
+      return `${wm}${counter}<div class="box" style="bottom:200px"><div class="d" style="font-size:${f.size || 118}px;line-height:1.02">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px">${fmt(f.body)}</p>` : ''}</div>${url}${swipe}`;
     case 'strike':
       return `${wm}${counter}<div class="box" style="top:430px"><div class="small">You don’t need</div><div class="d" style="font-size:124px;line-height:1.05;margin-top:26px;text-decoration:line-through;text-decoration-color:#BD9C8C;text-decoration-thickness:7px">${fmt(f.strike)}</div><p class="body" style="margin-top:60px">${fmt(f.body)}</p></div>${url}`;
     case 'cta':
@@ -63,11 +63,17 @@ function inner(f, n, total) {
       return `${wm}${counter}<div class="box" style="top:420px"><div class="small">${fmt(f.small)}</div><div class="d" style="font-size:230px;line-height:1;margin-top:30px">${fmt(f.figure)}</div>${f.body ? `<p class="body" style="font-size:52px;margin-top:24px">${fmt(f.body)}</p>` : ''}</div>${url}`;
     case 'list':
       return `${wm}${counter}<div class="box" style="top:260px"><div class="d" style="font-size:84px;line-height:1.05">${fmt(f.title)}</div><ul style="list-style:none;margin-top:50px">${f.items.map((it) => `<li style="font-size:44px;padding:22px 0;border-top:2px solid rgba(41,39,39,.15)">${fmt(it)}</li>`).join('')}</ul></div>${url}`;
+    case 'pair':
+      return `${wm}${counter}<div class="box" style="top:400px"><div class="small">You</div><div class="d" style="font-size:90px;line-height:1.05;margin-top:14px">${fmt(f.you)}</div><div style="border-top:2px solid rgba(41,39,39,.18);margin:64px 0 56px"></div><div class="small">Trove</div><div class="d" style="font-size:90px;line-height:1.05;margin-top:14px">${fmt(f.trove)}</div></div>${url}`;
+    case 'qa':
+      return `${wm}${counter}<div class="box" style="top:330px"><div class="d" style="font-size:96px;line-height:1.04">${fmt(f.q)}</div><p class="body" style="margin-top:54px;font-size:46px;line-height:1.42">${fmt(f.a)}</p></div>${url}`;
     case 'quote':
       return `${wm}${counter}<div class="box" style="top:340px"><div class="d" style="font-size:86px;line-height:1.12">${fmt(f.title)}</div><p class="body" style="margin-top:50px;opacity:.75">${fmt(f.body)}</p></div>${url}`;
     case 'photo': {
-      const band = f.big ? 400 : 300;
-      const size = f.big ? 84 : f.caption && f.caption.length > 34 ? 62 : 74;
+      const size = f.size || (f.big ? 84 : 58);
+      const lines = (f.caption || '').split('|').length;
+      const need = 120 + lines * size * 1.06 + (f.sub ? 14 + Math.ceil(f.sub.length / 46) * 49 : 0) + (f.big ? 110 : 60);
+      const band = Math.max(f.big ? 400 : 300, Math.ceil(need));
       return `<div style="position:absolute;left:0;right:0;top:0;height:${h - band}px">${photoTag(f)}</div>
         <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:#FDF7F5"></div>
         ${f.big ? '<div class="wm" style="top:auto;bottom:' + (band - 96) + 'px;font-size:40px">trove<i></i></div>' : ''}
@@ -77,13 +83,13 @@ function inner(f, n, total) {
     case 'cover':
       return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="small" style="font-size:38px">${fmt(f.kicker)}</div><div class="d" style="font-size:150px;line-height:1.02;margin-top:40px">${fmt(f.title)}</div></div>`;
     case 'end':
-      return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:128px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}<p class="body" style="margin-top:70px;font-size:40px">Apply in ten minutes.</p><div style="margin-top:26px"><span class="pill" style="font-size:40px">troveathome.com/apply</span></div></div>`;
+      return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:128px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}<p class="body" style="margin-top:70px;font-size:40px">Apply in about ten minutes.</p><div style="margin-top:26px"><span class="pill" style="font-size:40px">troveathome.com/apply</span></div></div>`;
     case 'lower-third':
       return `<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:46px;padding:30px 54px;box-shadow:0 8px 30px rgba(0,0,0,.12)">${fmt(f.text)}</span></div>`;
     case 'reel-cover-photo':
       return `<div style="position:absolute;inset:0;${f.photo && fs.existsSync(path.join(PHOTOS, f.photo)) ? '' : 'bottom:910px'}">${photoTag(f)}</div><div style="position:absolute;left:90px;right:90px;top:1010px;background:#FDF7F5;border-radius:6px;padding:56px 56px 60px;text-align:center"><div class="wm" style="position:static;font-size:44px">trove<i></i></div><div class="small" style="font-size:34px;margin-top:26px">${fmt(f.kicker)}</div><div class="d" style="font-size:112px;line-height:1.02;margin-top:22px">${fmt(f.title)}</div></div>`;
     case 'reel-photo':
-      return `${photoTag(f)}<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:50px;padding:32px 58px">${fmt(f.text)}</span></div>`;
+      return `${photoTag(f)}<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:50px;padding:32px 58px;max-width:900px;line-height:1.3;border-radius:48px">${fmt(f.text)}</span></div>`;
   }
   throw new Error('unknown layout ' + f.layout);
 }
@@ -103,7 +109,7 @@ function inner(f, n, total) {
     await page.evaluate(() => document.fonts.ready);
     const dir = path.join(OUT, 'post-' + String(f.post).padStart(2, '0'));
     fs.mkdirSync(dir, { recursive: true });
-    const jpg = f.layout === 'photo' || f.layout === 'reel-photo';
+    const jpg = f.layout === 'photo' || f.layout === 'reel-photo' || (f.layout === 'reel-cover-photo' && f.mood);
     const name = (/^\d+$/.test(f.id) ? 'slide-' + f.id.padStart(2, '0') : f.id) + (jpg ? '.jpg' : '.png');
     await page.screenshot(jpg ? { path: path.join(dir, name), type: 'jpeg', quality: 90 } : { path: path.join(dir, name), omitBackground: f.bg === 'clear' });
     const placeholders = /\[/.test(JSON.stringify(f)) || (f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)));

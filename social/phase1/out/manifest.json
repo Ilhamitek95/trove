@@ -1,34 +1,7 @@
 [
   {
     "post": 1,
-    "file": "post-01/cover.png",
-    "kind": "reel",
-    "layout": "reel-cover-photo",
-    "ready": false,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 1,
-    "file": "post-01/name-tag.png",
-    "kind": "reel",
-    "layout": "lower-third",
-    "ready": false,
-    "mood": false,
-    "note": "One per clip, e.g. Sara, Al Barsha"
-  },
-  {
-    "post": 1,
-    "file": "post-01/end.png",
-    "kind": "reel",
-    "layout": "end",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 2,
-    "file": "post-02/slide-01.jpg",
+    "file": "post-01/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
     "ready": true,
@@ -36,53 +9,8 @@
     "note": ""
   },
   {
-    "post": 2,
-    "file": "post-02/slide-02.png",
-    "kind": "slide",
-    "layout": "strike",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 2,
-    "file": "post-02/slide-03.png",
-    "kind": "slide",
-    "layout": "strike",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 2,
-    "file": "post-02/slide-04.png",
-    "kind": "slide",
-    "layout": "strike",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 2,
-    "file": "post-02/slide-05.png",
-    "kind": "slide",
-    "layout": "strike",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 2,
-    "file": "post-02/slide-06.png",
-    "kind": "slide",
-    "layout": "strike",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 2,
-    "file": "post-02/slide-07.jpg",
+    "post": 1,
+    "file": "post-01/slide-02.jpg",
     "kind": "slide",
     "layout": "photo",
     "ready": true,
@@ -90,20 +18,110 @@
     "note": ""
   },
   {
-    "post": 3,
-    "file": "post-03/cover.png",
-    "kind": "reel",
-    "layout": "reel-cover-photo",
-    "ready": false,
+    "post": 1,
+    "file": "post-01/slide-03.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 1,
+    "file": "post-01/slide-04.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 1,
+    "file": "post-01/slide-05.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 1,
+    "file": "post-01/slide-06.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 3,
-    "file": "post-03/end.png",
+    "post": 1,
+    "file": "post-01/slide-07.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "mood": false,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/cover.jpg",
+    "kind": "reel",
+    "layout": "reel-cover-photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/scene-1.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/scene-2.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/scene-3.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/scene-4.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/scene-5.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/end.png",
     "kind": "reel",
     "layout": "end",
-    "ready": false,
+    "ready": true,
     "mood": false,
     "note": ""
   },
@@ -112,16 +130,16 @@
     "file": "post-03/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
-    "ready": false,
-    "mood": false,
+    "ready": true,
+    "mood": true,
     "note": ""
   },
   {
     "post": 3,
     "file": "post-03/slide-02.png",
     "kind": "slide",
-    "layout": "hero",
-    "ready": false,
+    "layout": "pair",
+    "ready": true,
     "mood": false,
     "note": ""
   },
@@ -129,32 +147,41 @@
     "post": 3,
     "file": "post-03/slide-03.png",
     "kind": "slide",
-    "layout": "quote",
-    "ready": false,
+    "layout": "pair",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 3,
-    "file": "post-03/slide-04.jpg",
+    "file": "post-03/slide-04.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "pair",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 3,
-    "file": "post-03/slide-05.jpg",
+    "file": "post-03/slide-05.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "pair",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 3,
     "file": "post-03/slide-06.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "mood": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-07.png",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
@@ -172,52 +199,7 @@
   },
   {
     "post": 4,
-    "file": "post-04/slide-02.png",
-    "kind": "slide",
-    "layout": "figure",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 4,
-    "file": "post-04/slide-03.png",
-    "kind": "slide",
-    "layout": "split",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 4,
-    "file": "post-04/slide-04.png",
-    "kind": "slide",
-    "layout": "list",
-    "ready": false,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 4,
-    "file": "post-04/slide-05.png",
-    "kind": "slide",
-    "layout": "hero",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 4,
-    "file": "post-04/slide-06.png",
-    "kind": "slide",
-    "layout": "cta",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 5,
-    "file": "post-05/slide-01.jpg",
+    "file": "post-04/slide-02.jpg",
     "kind": "slide",
     "layout": "photo",
     "ready": true,
@@ -225,17 +207,35 @@
     "note": ""
   },
   {
-    "post": 5,
-    "file": "post-05/slide-02.png",
+    "post": 4,
+    "file": "post-04/slide-03.jpg",
     "kind": "slide",
-    "layout": "list",
-    "ready": false,
-    "mood": false,
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
     "note": ""
   },
   {
-    "post": 5,
-    "file": "post-05/slide-03.png",
+    "post": 4,
+    "file": "post-04/slide-04.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-05.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-06.png",
     "kind": "slide",
     "layout": "hero",
     "ready": true,
@@ -243,26 +243,8 @@
     "note": ""
   },
   {
-    "post": 5,
-    "file": "post-05/slide-04.png",
-    "kind": "slide",
-    "layout": "split",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 5,
-    "file": "post-05/slide-05.png",
-    "kind": "slide",
-    "layout": "split",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 5,
-    "file": "post-05/slide-06.png",
+    "post": 4,
+    "file": "post-04/slide-07.png",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
@@ -270,73 +252,127 @@
     "note": ""
   },
   {
-    "post": 6,
-    "file": "post-06/photo.jpg",
+    "post": 5,
+    "file": "post-05/image.jpg",
     "kind": "slide",
     "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 6,
+    "file": "post-06/slide-01.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 6,
+    "file": "post-06/slide-02.png",
+    "kind": "slide",
+    "layout": "hero",
     "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 6,
-    "file": "post-06/type.png",
+    "file": "post-06/slide-03.png",
     "kind": "slide",
     "layout": "hero",
     "ready": true,
     "mood": false,
-    "note": "Text-only fallback if the photo is not ready"
+    "note": ""
   },
   {
-    "post": 7,
-    "file": "post-07/cover.png",
-    "kind": "reel",
-    "layout": "reel-cover-photo",
+    "post": 6,
+    "file": "post-06/slide-04.png",
+    "kind": "slide",
+    "layout": "list",
     "ready": false,
     "mood": false,
     "note": ""
   },
   {
-    "post": 7,
-    "file": "post-07/step-1.png",
-    "kind": "reel",
-    "layout": "lower-third",
+    "post": 6,
+    "file": "post-06/slide-05.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "mood": false,
+    "note": ""
+  },
+  {
+    "post": 6,
+    "file": "post-06/slide-06.png",
+    "kind": "slide",
+    "layout": "cta",
     "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 7,
-    "file": "post-07/step-2.png",
-    "kind": "reel",
-    "layout": "lower-third",
+    "file": "post-07/slide-01.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/slide-02.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/slide-03.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/slide-04.png",
+    "kind": "slide",
+    "layout": "hero",
     "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 7,
-    "file": "post-07/step-3.png",
-    "kind": "reel",
-    "layout": "lower-third",
+    "file": "post-07/slide-05.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/slide-06.png",
+    "kind": "slide",
+    "layout": "hero",
     "ready": true,
     "mood": false,
     "note": ""
   },
   {
     "post": 7,
-    "file": "post-07/step-4.png",
-    "kind": "reel",
-    "layout": "lower-third",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 7,
-    "file": "post-07/end.png",
-    "kind": "reel",
-    "layout": "end",
+    "file": "post-07/slide-07.png",
+    "kind": "slide",
+    "layout": "cta",
     "ready": true,
     "mood": false,
     "note": ""
@@ -352,6 +388,24 @@
   },
   {
     "post": 8,
+    "file": "post-08/name-tag.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": false,
+    "mood": false,
+    "note": ""
+  },
+  {
+    "post": 8,
+    "file": "post-08/words.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": false,
+    "mood": false,
+    "note": ""
+  },
+  {
+    "post": 8,
     "file": "post-08/end.png",
     "kind": "reel",
     "layout": "end",
@@ -361,7 +415,7 @@
   },
   {
     "post": 9,
-    "file": "post-09/slide-01.jpg",
+    "file": "post-09/image.jpg",
     "kind": "slide",
     "layout": "photo",
     "ready": true,
@@ -370,126 +424,81 @@
   },
   {
     "post": 9,
-    "file": "post-09/slide-02.jpg",
+    "file": "post-09/type.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "mood": false,
+    "note": "Text-only fallback"
+  },
+  {
+    "post": 10,
+    "file": "post-10/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
-    "ready": false,
+    "ready": true,
+    "mood": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/slide-02.png",
+    "kind": "slide",
+    "layout": "qa",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 9,
-    "file": "post-09/slide-03.jpg",
+    "post": 10,
+    "file": "post-10/slide-03.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "qa",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 9,
-    "file": "post-09/slide-04.jpg",
+    "post": 10,
+    "file": "post-10/slide-04.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "qa",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 9,
-    "file": "post-09/slide-05.jpg",
+    "post": 10,
+    "file": "post-10/slide-05.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "qa",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 9,
-    "file": "post-09/slide-06.jpg",
+    "post": 10,
+    "file": "post-10/slide-06.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "qa",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 9,
-    "file": "post-09/slide-07.jpg",
+    "post": 10,
+    "file": "post-10/slide-07.png",
     "kind": "slide",
-    "layout": "photo",
-    "ready": false,
+    "layout": "qa",
+    "ready": true,
     "mood": false,
     "note": ""
   },
   {
-    "post": 9,
-    "file": "post-09/slide-08.png",
+    "post": 10,
+    "file": "post-10/slide-08.png",
     "kind": "slide",
     "layout": "cta",
-    "ready": true,
-    "mood": false,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/cover.png",
-    "kind": "reel",
-    "layout": "reel-cover-photo",
-    "ready": true,
-    "mood": true,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/scene-1.jpg",
-    "kind": "reel",
-    "layout": "reel-photo",
-    "ready": true,
-    "mood": true,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/scene-2.jpg",
-    "kind": "reel",
-    "layout": "reel-photo",
-    "ready": true,
-    "mood": true,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/scene-3.jpg",
-    "kind": "reel",
-    "layout": "reel-photo",
-    "ready": true,
-    "mood": true,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/scene-4.jpg",
-    "kind": "reel",
-    "layout": "reel-photo",
-    "ready": true,
-    "mood": true,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/scene-5.jpg",
-    "kind": "reel",
-    "layout": "reel-photo",
-    "ready": true,
-    "mood": true,
-    "note": ""
-  },
-  {
-    "post": 10,
-    "file": "post-10/end.png",
-    "kind": "reel",
-    "layout": "end",
     "ready": true,
     "mood": false,
     "note": ""

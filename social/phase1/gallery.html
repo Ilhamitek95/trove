@@ -1,79 +1,173 @@
 <title>Trove Phase 1 Creatives</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;500&display=swap">
 <style>
-/* Layout: one band per post, frames laid out like a phone grid, status chip on each frame */
+/* Layout: campaign idea first, then one band per post (frames like a phone grid + copy beside them), then the kit around the posts */
 :root{
-  --bg:#FDF7F5; --fg:#292727; --muted:rgba(41,39,39,.62); --line:rgba(41,39,39,.14);
-  --card:#FFFFFF; --clay:#DBC7BD; --sage:#CAD5CC; --tan:#BD9C8C; --dot:#F19A82;
+  --bg:#FDF7F5; --fg:#292727; --muted:rgba(41,39,39,.64); --line:rgba(41,39,39,.14);
+  --card:#FFFFFF; --soft:#F6EDE9; --tan:#BD9C8C; --dot:#F19A82;
   --ok:#CAD5CC; --todo:#DBC7BD;
-  --display:'Cormorant',Georgia,'Times New Roman',serif; --body:'Quicksand',system-ui,sans-serif;
+  --display:'Cormorant',Georgia,'Times New Roman',serif; --body:'Quicksand',system-ui,sans-serif; --ar:'Noto Naskh Arabic','Geeza Pro',serif;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1F1D1D;--fg:#F3ECE9;--muted:rgba(243,236,233,.62);--line:rgba(243,236,233,.14);--card:#292727;--ok:#4A5A4D;--todo:#5E4E46;color-scheme:dark}}
-:root[data-theme="dark"]{--bg:#1F1D1D;--fg:#F3ECE9;--muted:rgba(243,236,233,.62);--line:rgba(243,236,233,.14);--card:#292727;--ok:#4A5A4D;--todo:#5E4E46;color-scheme:dark}
-body{background:var(--bg);color:var(--fg);font-family:var(--body);font-weight:500;line-height:1.5}
-.wrap{max-width:1180px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-h1,h2{font-family:var(--display);font-weight:500;text-wrap:balance;margin:0}
-h1{font-size:clamp(40px,6vw,64px);line-height:1}
-h1 i{display:inline-block;width:.16em;height:.16em;border-radius:50%;background:var(--dot);margin-left:.05em}
-.lede{max-width:66ch;color:var(--muted);margin:14px 0 0}
-.key{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;font-size:14px}
-.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 11px;font-size:12.5px;font-weight:600;background:var(--ok);color:var(--fg)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#1F1D1D;--fg:#F3ECE9;--muted:rgba(243,236,233,.64);--line:rgba(243,236,233,.14);--card:#292727;--soft:#2A2626;--ok:#4A5A4D;--todo:#5E4E46;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1F1D1D;--fg:#F3ECE9;--muted:rgba(243,236,233,.64);--line:rgba(243,236,233,.14);--card:#292727;--soft:#2A2626;--ok:#4A5A4D;--todo:#5E4E46;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-weight:500;line-height:1.55}
+.wrap{max-width:1180px;margin:0 auto;padding-block:40px 90px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3{font-family:var(--display);font-weight:500;text-wrap:balance;margin:0}
+h1{font-size:clamp(44px,7vw,76px);line-height:1}
+h1 i{display:inline-block;width:.14em;height:.14em;border-radius:50%;background:var(--dot);margin-left:.05em}
+h2{font-size:34px;line-height:1.1}
+h3{font-size:24px;line-height:1.15}
+p{margin:0}
+.muted{color:var(--muted)}
+.ar{font-family:var(--ar);direction:rtl;unicode-bidi:isolate}
+.intro{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:28px 44px;margin-top:22px;align-items:start}
+@media (max-width:820px){.intro{grid-template-columns:1fr}}
+.lede{max-width:64ch;font-size:16.5px}
+.insight{font-family:var(--display);font-size:24px;line-height:1.3;margin-top:16px;max-width:40ch}
+.hooks{display:flex;flex-direction:column;gap:12px;background:var(--soft);border-radius:10px;padding:20px}
+.hook b{font-family:var(--display);font-size:22px;font-weight:600;display:block;line-height:1.2}
+.hook span{font-size:13.5px;color:var(--muted)}
+.hook .ar{font-size:15px;color:var(--fg);margin-inline-start:6px}
+.key{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:20px;font-size:13.5px}
+.chip{display:inline-flex;align-items:center;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--ok);color:var(--fg);white-space:nowrap}
 .chip.todo{background:var(--todo)}
 .chip.mood{background:transparent;border:1px solid var(--tan)}
-section{border-top:1px solid var(--line);margin-top:44px;padding-top:26px}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-top:30px}
+nav a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px}
+nav a:hover,nav a:focus-visible{border-color:var(--tan);outline:none}
+section{border-top:1px solid var(--line);margin-top:46px;padding-top:28px}
 .head{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
-h2{font-size:34px;line-height:1.1}
 .meta{color:var(--muted);font-size:14px}
-.notes{margin:10px 0 0;max-width:72ch;font-size:14.5px}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:20px}
-figure{margin:0;display:flex;flex-direction:column;gap:7px;min-width:0}
-figure a{display:block;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#8a8584 0 25%,#9a9594 0 50%) 0/16px 16px}
+.post{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,380px);gap:24px 36px;margin-top:18px}
+@media (max-width:900px){.post{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:12px;align-content:start}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure a{display:block;border-radius:7px;overflow:hidden;border:1px solid var(--line);background:repeating-conic-gradient(#8a8584 0 25%,#9a9594 0 50%) 0/16px 16px}
 figure a:focus-visible{outline:3px solid var(--tan);outline-offset:2px}
 figure img{display:block;width:100%;height:auto}
-figcaption{font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center}
-.where{margin-top:48px;padding:20px;border-radius:10px;background:var(--card);border:1px solid var(--line);font-size:14.5px}
-.where code{font-size:13px;word-break:break-all}
+figcaption{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 6px;align-items:center}
+.copy{display:flex;flex-direction:column;gap:14px;min-width:0}
+.facts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;font-size:13.5px}
+.facts dt{color:var(--muted)} .facts dd{margin:0}
+.caption{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-size:14.5px;white-space:pre-wrap}
+.caption .tags{display:block;margin-top:10px;color:var(--muted);font-size:13px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+button{font:inherit;font-size:13px;font-weight:600;border-radius:999px;border:1px solid var(--fg);background:transparent;color:var(--fg);padding:5px 14px;cursor:pointer}
+button:focus-visible{outline:3px solid var(--tan);outline-offset:2px}
+.note{font-size:13.5px;border-left:3px solid var(--tan);padding-left:12px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:14.5px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.manifesto{font-family:var(--display);font-size:23px;line-height:1.35;white-space:pre-line;max-width:46ch}
+ol,ul{margin:12px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;max-width:80ch}
+.tablewrap{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;font-size:14px;min-width:640px}
+th,td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}
+th{font-weight:600;color:var(--muted)}
+.footer{margin-top:50px;font-size:13.5px;color:var(--muted)}
+.footer code{word-break:break-all}
 </style>
 
 <div class="wrap">
-  <h1>Trove Phase 1 creatives<i></i></h1>
-  <p class="lede">Built to the launch guidance: show the real thing, not just say it. Every post opens on craft (a bench, materials, a studio, a Dubai home), real makers fill the spotlight slots, and generated images are used only for mood and the Collection tease. Every frame for posts 1 to 10 of the founding-maker campaign, in the brand palette and type. Slides are 1080 × 1350 (4:5). Reel frames are 1080 × 1920 (9:16) and keep their text inside the grid-safe centre. Tap any frame to see it full size.</p>
+  <h1>Made here. Made home.<i></i></h1>
+  <div class="intro">
+    <div>
+      <p class="lede">Trove's Phase 1 campaign to find makers and providers in Dubai and Abu Dhabi, from 21 October to 17 November. It talks about the platform and the people rather than the commission. It speaks to gifted and handy people who would never call themselves a business, and to the friends who keep telling them they should sell. It treats the UAE as home, made by the people who live here.</p>
+      <p class="insight" id="insight"></p>
+      <p class="muted" style="margin-top:12px;font-size:13.5px">Merged from two marketing agents' proposals (a brand strategist and a social-first creative), written to the launch guidance. Their full work is in the Trove repo under <code>social/phase1/agents</code>.</p>
+    </div>
+    <div class="hooks" id="hooks"><h3>The line and the hooks</h3></div>
+  </div>
   <div class="key">
     <span><span class="chip">Ready</span> can be posted as it is</span>
-    <span><span class="chip todo">Needs input</span> a dashed box or photo slot is still waiting for a real maker, provider or photo</span>
-    <span><span class="chip mood">Mood image</span> made with Higgsfield: materials, tools or spaces only, never shown as a maker’s work</span>
+    <span><span class="chip todo">Needs input</span> a dashed box or photo slot is waiting for a real person</span>
+    <span><span class="chip mood">Mood image</span> made with Higgsfield: props, tools and spaces only, never shown as anyone's work</span>
   </div>
+  <nav id="nav" aria-label="Posts"></nav>
+
   <div id="posts"></div>
-  <div class="where">
-    <strong>Source files.</strong> PNG and JPEG files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in a real photo, put it in <code>social/phase1/photos</code> with the name shown on its slot, fill in the bracketed text in <code>frames.js</code>, and ask Claude to re-render.
-  </div>
+
+  <section id="manifesto-sec">
+    <h2>Manifesto</h2>
+    <p class="muted" style="margin-top:6px;font-size:14px">The voiceover for post 2. Record an Arabic cut with a native voice.</p>
+    <p class="manifesto" id="manifesto" style="margin-top:16px"></p>
+  </section>
+
+  <section>
+    <h2>Series that keep going</h2>
+    <div class="cols" id="series"></div>
+  </section>
+
+  <section>
+    <h2>Nominations: "Who's the one everyone asks?"</h2>
+    <ol id="nomination"></ol>
+  </section>
+
+  <section>
+    <h2>Stories, week by week</h2>
+    <div class="tablewrap"><table><thead><tr><th>Week</th><th>What runs</th><th>Stickers</th></tr></thead><tbody id="stories"></tbody></table></div>
+    <p class="muted" style="margin-top:10px;font-size:13.5px">No countdowns. Pin a "Sell on Trove" Highlight first: what Trove is, what it accepts, the company question, payouts, the apply walkthrough.</p>
+  </section>
+
+  <section>
+    <h2>Direct messages</h2>
+    <p class="muted" style="margin-top:6px;font-size:14px">One-to-one outreach is the main way to recruit. A person sends each one after looking at the work, and mentions one real thing about it.</p>
+    <div class="cols" id="dms"></div>
+  </section>
+
+  <section>
+    <h2>Check before posting</h2>
+    <ul id="verify"></ul>
+  </section>
+
+  <p class="footer">Dates are corrected to the real weekdays: 21 October 2026 is a Wednesday, so the earlier calendar was a day out. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
 </div>
 
 <script>
-const POSTS = {
-  1: ['Made here, by someone', 'Tue 21 Oct', 'Reel', 'Shows real craft across the UAE. Film 3-second hands-at-work clips from 4–5 real makers, lay the name tag over each with their real first name and neighbourhood, and use a frame of that footage as the cover.'],
-  2: ['What you don’t need', 'Fri 24 Oct', 'Carousel, 7 slides', 'Opens on a maker’s bench and closes on raw materials (“just your work”), with the crossed-out list in between. Ready once a business adviser confirms the “no trade licence to start” line.'],
-  3: ['Meet our first maker', 'Mon 27 Oct', 'Reel + carousel, 6 slides', 'Needs a real founding maker: name, craft, neighbourhood, years, their own sentence and three photos (portrait, workspace, finished piece).'],
-  4: ['Set your price. Keep 60%', 'Thu 30 Oct', 'Carousel, 6 slides', 'Opens on a blank price tag on a workbench: the maker sets the price. Figures match the live Sell on Trove page.'],
-  5: ['Teach it, style it, shoot it?', 'Sun 2 Nov', 'Carousel, 6 slides', 'Opens on a studio table set for a class, before anyone arrives. Swap in a real provider’s class when you have one.'],
-  6: ['Something of our own', 'Wed 5 Nov', 'Single image', 'Collection tease: a sketch and glaze tests, no finished product. A mood image is allowed here by the strategy. The text-only version is the fallback.'],
-  7: ['Apply in ten minutes', 'Sat 8 Nov', 'Reel', 'Shows how easy it is, with a real maker. Film them applying on their phone with a timer running, lay the four step captions over the matching clips, and use a frame as the cover.'],
-  8: ['Meet our first provider', 'Tue 11 Nov', 'Reel', 'Needs a real founding provider filmed mid-class, with a happy group holding what they made. Fill in the name, service and neighbourhood.'],
-  9: ['More being made here than you think', 'Fri 14 Nov', 'Carousel, 8 slides', 'Opens on a home studio window over a Dubai neighbourhood. Each middle slide needs a real photo of a real maker’s work with the neighbourhood confirmed (Dubai and Abu Dhabi only). No AI images there, because the slides name real makers and places.'],
-  10: ['From sold to paid', 'Mon 17 Nov', 'Reel, 5 scenes', 'The five steps from the site, shown in Dubai homes. Ready as a stills Reel (about 2.5 seconds a frame), or use the scenes as a shot list for real footage. No finished pieces appear.'],
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const label = (f) => {
+  const b = f.split('/').pop().replace(/\.(png|jpg)$/, '');
+  return b.replace(/^slide-0?/, 'Slide ').replace(/^scene-/, 'Scene ').replace('name-tag', 'Name tag').replace('words', 'Their words')
+    .replace(/^cover$/, 'Cover').replace(/^end$/, 'End card').replace(/^image$/, 'Image').replace(/^type$/, 'Text-only version');
 };
-const label = (f) => f.split('/').pop().replace(/\.(png|jpg)$/, '').replace('slide-', 'Slide ').replace('scene-', 'Scene ').replace('step-', 'Step ').replace('name-tag', 'Name tag (overlay)').replace('cover', 'Cover').replace('end', 'End card').replace('photo', 'Photo version').replace('type', 'Text-only version');
-fetch('out/manifest.json').then((r) => r.json()).then((m) => {
+function copyText(btn, text) {
+  const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy caption'; }, 1600); };
+  try {
+    navigator.clipboard.writeText(text).then(done, () => { btn.textContent = 'Select the text to copy'; });
+  } catch (e) { btn.textContent = 'Select the text to copy'; }
+}
+Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json').then((r) => r.json())]).then(([d, m]) => {
+  const c = d.campaign;
+  document.getElementById('insight').textContent = c.insight;
+  document.getElementById('hooks').insertAdjacentHTML('beforeend',
+    `<div class="hook"><b>${esc(c.line)} <span class="ar" lang="ar">${esc(c.lineAr)}</span></b><span>The campaign line, on every end card. Made in the UAE, made at home, and how a place becomes home.</span></div>` +
+    c.hooks.map(([en, why, ar]) => `<div class="hook"><b>${esc(en)} <span class="ar" lang="ar">${esc(ar)}</span></b><span>${esc(why)}</span></div>`).join('') +
+    '<span class="muted" style="font-size:12.5px">Arabic lines need a native speaker\'s review before use.</span>');
+  document.getElementById('nav').innerHTML = d.posts.map((p) => `<a href="#post${p.n}">${p.n}. ${esc(p.date)}</a>`).join('');
   const root = document.getElementById('posts');
-  for (const n of Object.keys(POSTS)) {
-    const [title, date, format, notes] = POSTS[n];
-    const frames = m.filter((x) => x.post == n);
+  for (const p of d.posts) {
+    const frames = m.filter((x) => x.post == p.n);
     const ready = frames.filter((x) => x.ready).length;
     const s = document.createElement('section');
-    s.id = 'post' + n;
-    s.innerHTML = `<div class="head"><h2>${n}. ${title}</h2><span class="meta">${date} · ${format} · ${ready} of ${frames.length} frames ready</span></div><p class="notes">${notes}</p><div class="grid">${frames.map((f) => `<figure><a href="out/${f.file}" target="_blank" rel="noopener"><img loading="lazy" src="out/${f.file}" alt="Post ${n}, ${label(f.file)}"></a><figcaption>${label(f.file)}${/step|scene/.test(f.file) && f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}</figcaption></figure>`).join('')}</div>`;
+    s.id = 'post' + p.n;
+    s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
+      <div class="post">
+        <div class="grid">${frames.map((f) => `<figure><a href="out/${f.file}" target="_blank" rel="noopener"><img loading="lazy" src="out/${f.file}" alt="Post ${p.n}, ${esc(label(f.file))}"></a><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}</figcaption></figure>`).join('')}</div>
+        <div class="copy">
+          <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
+          <div class="caption" id="cap${p.n}">${esc(p.caption)}<span class="tags">${esc(c.hashtags)}</span></div>
+          <div class="row"><button type="button" id="copy${p.n}">Copy caption</button><span class="muted" style="font-size:12.5px">18:30 Dubai time</span></div>
+          <p class="note">${esc(p.notes)}</p>
+        </div>
+      </div>`;
     root.appendChild(s);
+    document.getElementById('copy' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.caption + '\n\n' + c.hashtags));
   }
-}).catch(() => { document.getElementById('posts').innerHTML = '<p class="lede">The frame list did not load. Refresh the page to try again.</p>'; });
+  document.getElementById('manifesto').textContent = c.manifesto;
+  document.getElementById('series').innerHTML = d.series.map(([en, ar, what]) => `<div class="card"><h3>${esc(en)} <span class="ar" lang="ar" style="font-size:16px">${esc(ar)}</span></h3><p>${esc(what)}</p></div>`).join('');
+  document.getElementById('nomination').innerHTML = d.nomination.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('stories').innerHTML = d.stories.map(([w, what, st]) => `<tr><td style="white-space:nowrap">${esc(w)}</td><td>${esc(what)}</td><td>${esc(st)}</td></tr>`).join('');
+  document.getElementById('dms').innerHTML = d.dms.map(([who, text]) => `<div class="card"><h3>${esc(who)}</h3><p>${esc(text)}</p></div>`).join('');
+  document.getElementById('verify').innerHTML = d.verify.map((x) => `<li>${esc(x)}</li>`).join('');
+}).catch(() => { document.getElementById('posts').innerHTML = '<p class="lede">The posts did not load. Refresh the page to try again.</p>'; });
 </script>

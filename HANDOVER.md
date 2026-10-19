@@ -17,6 +17,13 @@ Last updated 15 October 2026 (laptop session, afternoon). The detailed engineeri
 - Sending ID photos for the admin to check still works as a fallback.
 - **Privacy Policy v3** (English and Arabic) names Didit and explains this.
 
+## Social: Phase 1 recruitment campaign (new, 19 Oct)
+
+- **Campaign "Made here. Made home."**: ten Instagram posts from Wed 21 Oct to Tue 17 Nov (18:30 Dubai time) to find makers and providers. Per the owner, it talks about the platform and the people (gifted and handy people with no company, the UAE as home), not the 60%; money appears in one post only (17 Nov). The review page, with every frame, caption (copy button), Stories plan, nominations and DMs, is https://claude.ai/artifact/FV3RgxEgVuWzY6AkGaDCaW.
+- **Two marketing agents** live in `.claude/agents/` (`trove-brand-strategist`, `trove-social-creative`). Both read `social/BRIEF.md` (the owner's direction, true facts, rules). Their full proposals are in `social/phase1/agents/`. On a new machine, copy the two agent files to `~/.claude/agents/`.
+- **Frames**: `social/phase1/frames.js` (what each frame says), `posts.json` (captions and notes), `render.js` (renders to `social/phase1/out` with headless Chrome), `photos/` (Higgsfield mood images: props, tools and spaces only, never shown as a maker's work). 51 of 56 frames are ready. Post 8 ("Just a hobby") needs a real founding maker.
+- **Before posting:** a UAE business adviser signs off "no company needed to start"; a native speaker reviews the Arabic lines; Diwali (8 Nov) and Downtown Design dates confirmed. The older "Trove Phase 1 social drafts" Claude Doc is superseded by this campaign.
+
 ## Where things are set up
 
 - **Didit console:** business.didit.me, organisation "Trove At Home", application "My Application" (Live).
