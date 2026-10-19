@@ -1,0 +1,442 @@
+[
+  {
+    "post": 1,
+    "file": "post-01/cover.png",
+    "kind": "reel",
+    "layout": "cover",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 1,
+    "file": "post-01/name-tag.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": false,
+    "note": "One per clip, e.g. Sara, Al Barsha"
+  },
+  {
+    "post": 1,
+    "file": "post-01/end.png",
+    "kind": "reel",
+    "layout": "end",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-01.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-02.png",
+    "kind": "slide",
+    "layout": "strike",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-03.png",
+    "kind": "slide",
+    "layout": "strike",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-04.png",
+    "kind": "slide",
+    "layout": "strike",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-05.png",
+    "kind": "slide",
+    "layout": "strike",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-06.png",
+    "kind": "slide",
+    "layout": "strike",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 2,
+    "file": "post-02/slide-07.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/cover.png",
+    "kind": "reel",
+    "layout": "cover",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/end.png",
+    "kind": "reel",
+    "layout": "end",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-01.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-02.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-03.png",
+    "kind": "slide",
+    "layout": "quote",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-04.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-05.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 3,
+    "file": "post-03/slide-06.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-01.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-02.png",
+    "kind": "slide",
+    "layout": "figure",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-03.png",
+    "kind": "slide",
+    "layout": "split",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-04.png",
+    "kind": "slide",
+    "layout": "list",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-05.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 4,
+    "file": "post-04/slide-06.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-01.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-02.png",
+    "kind": "slide",
+    "layout": "list",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-03.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-04.png",
+    "kind": "slide",
+    "layout": "split",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-05.png",
+    "kind": "slide",
+    "layout": "split",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 5,
+    "file": "post-05/slide-06.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 6,
+    "file": "post-06/photo.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 6,
+    "file": "post-06/type.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "note": "Text-only fallback if the photo is not ready"
+  },
+  {
+    "post": 7,
+    "file": "post-07/cover.png",
+    "kind": "reel",
+    "layout": "cover",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/step-1.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/step-2.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/step-3.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/step-4.png",
+    "kind": "reel",
+    "layout": "lower-third",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 7,
+    "file": "post-07/end.png",
+    "kind": "reel",
+    "layout": "end",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 8,
+    "file": "post-08/cover.png",
+    "kind": "reel",
+    "layout": "cover",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 8,
+    "file": "post-08/end.png",
+    "kind": "reel",
+    "layout": "end",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-01.png",
+    "kind": "slide",
+    "layout": "hero",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-02.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-03.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-04.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-05.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-06.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-07.jpg",
+    "kind": "slide",
+    "layout": "photo",
+    "ready": false,
+    "note": ""
+  },
+  {
+    "post": 9,
+    "file": "post-09/slide-08.png",
+    "kind": "slide",
+    "layout": "cta",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/cover.png",
+    "kind": "reel",
+    "layout": "cover",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/scene-1.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/scene-2.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/scene-3.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/scene-4.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/scene-5.jpg",
+    "kind": "reel",
+    "layout": "reel-photo",
+    "ready": true,
+    "note": ""
+  },
+  {
+    "post": 10,
+    "file": "post-10/end.png",
+    "kind": "reel",
+    "layout": "end",
+    "ready": true,
+    "note": ""
+  }
+]
