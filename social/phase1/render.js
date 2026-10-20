@@ -1,5 +1,8 @@
 // Renders every frame in frames.js to out/post-NN/<id>.png with headless Chrome.
 // Run: node render.js   (needs playwright-core; drop real photos into ./photos first)
+// v5 (20 Oct 2026): also renders screens/shop-example.html to screens/shop-example-full.png, clears out/ first,
+// adds the 'type' layout (bold type card: one headline, one line, the offer along the bottom) and the small
+// sign-off line (f.sign) on end cards.
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require(process.env.PW_CORE || 'playwright-core');
@@ -20,8 +23,10 @@ const fmt = (s) => esc(s || '').replace(/\[([^\]]+)\]/g, '<span class="ph">$1</s
 function photoTag(f) {
   const file = f.photo && path.join(PHOTOS, f.photo);
   if (file && fs.existsSync(file)) return `<img class="ph-img" src="file:///${file.replace(/\\/g, '/')}">`;
-  return `<div class="slot"><span>Photo</span>${esc(f.slot || f.photo || '')}</div>`;
+  return `<div class="slot"><span>Real photo</span>${esc(f.slot || f.photo || '')}${f.photo ? `<small style="font-size:24px;opacity:.65">photos/${esc(f.photo)}</small>` : ''}</div>`;
 }
+// Small campaign sign-off, end cards only (v5: "Made here. Made home." is no longer a headline)
+const signTag = (f, style = '') => (f.sign ? `<div class="url d" style="font-size:38px;opacity:.85;${style}">${fmt(f.sign)}</div>` : '');
 
 const CSS = `
 @font-face{font-family:Cormorant;src:url(file:///${FONTS}/cormorant-latin.woff2) format('woff2');font-weight:400 600}
@@ -57,7 +62,10 @@ function inner(f, n, total) {
     case 'strike':
       return `${wm}${counter}<div class="box" style="top:430px"><div class="small">You don’t need</div><div class="d" style="font-size:124px;line-height:1.05;margin-top:26px;text-decoration:line-through;text-decoration-color:#BD9C8C;text-decoration-thickness:7px">${fmt(f.strike)}</div><p class="body" style="margin-top:60px">${fmt(f.body)}</p></div>${url}`;
     case 'cta':
-      return `${wm}${counter}<div class="box" style="bottom:230px"><div class="d" style="font-size:112px;line-height:1.04">${fmt(f.title)}</div><p class="body" style="margin-top:40px">${fmt(f.body)}</p><div style="margin-top:56px"><span class="pill">troveathome.com/apply</span></div></div>`;
+      return `${wm}${counter}<div class="box" style="bottom:230px"><div class="d" style="font-size:${f.size || 112}px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:40px">${fmt(f.body)}</p>` : ''}<div style="margin-top:56px"><span class="pill">troveathome.com/apply</span></div></div>${signTag(f)}`;
+    case 'type':
+      // v5 bold type card: optional kicker, one headline, one line, the offer (or the address) along the bottom
+      return `${wm}${counter}<div class="box" style="${f.top ? `top:${f.top}px` : 'top:170px;bottom:170px;display:flex;flex-direction:column;justify-content:center'}">${f.kicker ? `<div class="small" style="margin-bottom:34px">${fmt(f.kicker)}</div>` : ''}<div class="d" style="font-size:${f.size || 132}px;line-height:1">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:52px;font-size:${f.bodySize || 46}px;line-height:1.38">${fmt(f.body)}</p>` : ''}</div><div class="url">${fmt(f.foot || 'troveathome.com')}</div>`;
     case 'figure':
     case 'split':
       return `${wm}${counter}<div class="box" style="top:420px"><div class="small">${fmt(f.small)}</div><div class="d" style="font-size:230px;line-height:1;margin-top:30px">${fmt(f.figure)}</div>${f.body ? `<p class="body" style="font-size:52px;margin-top:24px">${fmt(f.body)}</p>` : ''}</div>${url}`;
@@ -99,11 +107,11 @@ function inner(f, n, total) {
     case 'cover':
       return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="small" style="font-size:38px">${fmt(f.kicker)}</div><div class="d" style="font-size:150px;line-height:1.02;margin-top:40px">${fmt(f.title)}</div></div>`;
     case 'end':
-      return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:128px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}<p class="body" style="margin-top:70px;font-size:40px">Apply in about ten minutes.</p><div style="margin-top:26px"><span class="pill" style="font-size:40px">troveathome.com/apply</span></div></div>`;
+      return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:${f.size || 128}px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}<p class="body" style="margin-top:70px;font-size:40px">Apply in about ten minutes.</p><div style="margin-top:26px"><span class="pill" style="font-size:40px">troveathome.com/apply</span></div></div>${signTag(f, 'left:0;right:0;text-align:center;bottom:120px')}`;
     case 'lower-third':
       return `<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:46px;padding:30px 54px;box-shadow:0 8px 30px rgba(0,0,0,.12)">${fmt(f.text)}</span></div>`;
     case 'reel-cover-photo':
-      return `<div style="position:absolute;inset:0;${f.photo && fs.existsSync(path.join(PHOTOS, f.photo)) ? '' : 'bottom:910px'}">${photoTag(f)}</div><div style="position:absolute;left:90px;right:90px;top:1010px;background:#FDF7F5;border-radius:6px;padding:56px 56px 60px;text-align:center"><div class="wm" style="position:static;font-size:44px">trove<i></i></div><div class="small" style="font-size:34px;margin-top:26px">${fmt(f.kicker)}</div><div class="d" style="font-size:112px;line-height:1.02;margin-top:22px">${fmt(f.title)}</div></div>`;
+      return `<div style="position:absolute;inset:0;${f.photo && fs.existsSync(path.join(PHOTOS, f.photo)) ? '' : 'bottom:910px'}">${photoTag(f)}</div><div style="position:absolute;left:90px;right:90px;top:1010px;background:#FDF7F5;border-radius:6px;padding:56px 56px 60px;text-align:center"><div class="wm" style="position:static;font-size:44px">trove<i></i></div><div class="small" style="font-size:34px;margin-top:26px">${fmt(f.kicker)}</div><div class="d" style="font-size:${f.size || 112}px;line-height:1.02;margin-top:22px">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin:26px auto 0;font-size:38px">${fmt(f.sub)}</p>` : ''}</div>`;
     case 'reel-photo':
       return `${photoTag(f)}<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:50px;padding:32px 58px;max-width:900px;line-height:1.3;border-radius:48px">${fmt(f.text)}</span></div>`;
   }
@@ -112,6 +120,15 @@ function inner(f, n, total) {
 
 (async () => {
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
+  // Screens built from HTML (the example shop page) → 1170px-wide captures in ./screens
+  for (const name of ['shop-example']) {
+    const sp = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
+    await sp.goto('file:///' + path.join(__dirname, 'screens', name + '.html').split(path.sep).join('/'), { waitUntil: 'load' });
+    await sp.evaluate(() => document.fonts.ready);
+    await sp.screenshot({ path: path.join(__dirname, 'screens', name + '-full.png'), fullPage: true });
+    await sp.close();
+  }
+  fs.rmSync(OUT, { recursive: true, force: true });
   const page = await browser.newPage();
   const manifest = [];
   for (const f of frames) {
@@ -128,8 +145,11 @@ function inner(f, n, total) {
     const jpg = f.layout === 'photo' || f.layout === 'reel-photo' || (f.layout === 'reel-cover-photo' && f.mood);
     const name = (/^\d+$/.test(f.id) ? 'slide-' + f.id.padStart(2, '0') : f.id) + (jpg ? '.jpg' : '.png');
     await page.screenshot(jpg ? { path: path.join(dir, name), type: 'jpeg', quality: 90 } : { path: path.join(dir, name), omitBackground: f.bg === 'clear' });
-    const placeholders = /\[/.test(JSON.stringify(f)) || (f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)));
-    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', note: f.note || '' });
+    // Only [bracketed words] inside the frame's text count, not the brackets of its JSON arrays (v4 marked every list "Needs input")
+    const texts = [];
+    JSON.stringify(f, (k, v) => (typeof v === 'string' && texts.push(v), v));
+    const placeholders = texts.some((t) => /\[[^\]]+\]/.test(t)) || (f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)));
+    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', slot: f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)) ? f.slot || '' : '', note: f.note || '' });
   }
   fs.rmSync(path.join(__dirname, '_frame.html'), { force: true });
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));

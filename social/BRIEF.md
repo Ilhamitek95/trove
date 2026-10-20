@@ -64,6 +64,7 @@ Phase 1 of the launch (21 Oct to 22 Nov 2026) has one objective: **find founding
 
 - **Channels:** Instagram first. Facebook and TikTok where it is natural.
 - **Formats:** Reels (9:16), carousels (4:5), single images, Stories, collab posts with makers, DMs.
-- **Schedule:** ten grid posts, one every three days at 18:30 Dubai time: 21, 24, 27, 30 Oct and 2, 5, 8, 11, 14, 17 Nov. Stories run in between.
+- **Schedule:** one grid post every three days at 18:30 Dubai time. Since v5 (20 Oct): eleven posts, 21, 24, 27, 30 Oct and 2, 5, 8, 11, 14, 17, 20 Nov. Stories run in between. The dates are a plan only: nothing is scheduled or posted until the owner says launch.
+- **Cover rules (from the 20 Oct creative review, v5):** say what Trove is first, then who it's for (makers, providers, buyers). One headline of seven words or fewer, plus one short line, with the offer visible ("Free to join · We photograph it · We collect it"). Every cover shows real hands or real work, or is a plain type card; no AI image on a cover except a Collection tease. "Made here. Made home." is an end-card sign-off only. One-liner: "Trove is a new online marketplace for handmade pieces and creative services in Dubai and Abu Dhabi."
 - **Downtown Design:** in early November (around 4–8 Nov, VERIFY). Maker outreach happens in person there too.
 - **Call to action:** every post points to troveathome.com/apply.

@@ -82,27 +82,33 @@ th{font-weight:600;color:var(--muted)}
 </style>
 
 <div class="wrap">
-  <h1>Made here. Made home.<i></i></h1>
+  <h1>Trove Phase 1 creatives<i></i></h1>
   <div class="intro">
     <div>
-      <p class="lede">Trove's Phase 1 campaign to find makers and providers in Dubai and Abu Dhabi, from 21 October to 17 November. It talks about the platform and the people rather than the commission. It speaks to gifted and handy people who would never call themselves a business, and to the friends who keep telling them they should sell. It treats the UAE as home, made by the people who live here.</p>
+      <p class="lede">Version 5, a draft: nothing is scheduled or posted. Eleven posts to find makers and providers in Dubai and Abu Dhabi, planned for 21 October to 20 November. They run in three steps: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers. Money stays out of the headlines, and every cover shows real hands or real work, or is a plain type card.</p>
       <p class="insight" id="insight"></p>
-      <p class="muted" style="margin-top:12px;font-size:13.5px">Merged from two marketing agents' proposals (a brand strategist and a social-first creative), written to the launch guidance. Their full work is in the Trove repo under <code>social/phase1/agents</code>.</p>
+      <p class="muted" style="margin-top:12px;font-size:13.5px">Rebuilt from v4 after the 20 October creative review, checked against the brief and the live site. The marketing agents' earlier proposals are in the Trove repo under <code>social/phase1/agents</code>.</p>
     </div>
-    <div class="hooks" id="hooks"><h3>The line and the hooks</h3></div>
+    <div class="hooks" id="hooks"><h3>What Trove is, and who it's for</h3></div>
   </div>
   <div class="key">
     <span><span class="chip">Ready</span> can be posted as it is</span>
-    <span><span class="chip todo">Needs input</span> a dashed box or photo slot is waiting for a real person</span>
-    <span><span class="chip mood">Mood image</span> made with Higgsfield: props, tools and spaces only, never shown as anyone's work</span>
-    <span><span class="chip real">Real shot planned</span> the half-day shoot replaces this image with real hands (see the shoot plan)</span>
+    <span><span class="chip todo">Needs input</span> a real photo slot, or a dashed box waiting for a real person</span>
+    <span><span class="chip mood">Mood image</span> made with Higgsfield; only the Collection tease uses one</span>
+    <span><span class="chip real">Real shot planned</span> a real photo improves or replaces this frame later</span>
   </div>
   <section style="margin-top:30px">
     <h2>What changed in this version</h2>
     <div class="changed">
-      <div class="card"><h3>Why it read abstract</h3><ul id="abstract"></ul></div>
-      <div class="card"><h3>What the marketers changed</h3><ul id="fixes"></ul></div>
+      <div class="card"><h3>What the 20 Oct review found</h3><ul id="found"></ul></div>
+      <div class="card"><h3>What v5 changes</h3><ul id="fixes"></ul></div>
+      <div class="card"><h3>What v5 didn't take, and why</h3><ul id="declined"></ul></div>
     </div>
+  </section>
+  <section>
+    <h2>The series at a glance</h2>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Step</th><th>Cover headline</th><th>Cover</th><th>Ready</th></tr></thead><tbody id="glance"></tbody></table></div>
+    <p class="muted" style="margin-top:10px;font-size:13.5px">Pin posts 1 to 3 to the top of the profile. Buyers get posts of their own in December, when the Marketplace opens to them.</p>
   </section>
   <nav id="nav" aria-label="Posts"></nav>
 
@@ -135,7 +141,7 @@ th{font-weight:600;color:var(--muted)}
   </section>
 
   <section>
-    <h2>Nominations: "Who's the one everyone asks?"</h2>
+    <h2>Nominations</h2>
     <ol id="nomination"></ol>
   </section>
 
@@ -162,7 +168,7 @@ th{font-weight:600;color:var(--muted)}
     <div class="bar"><button type="button" id="lbPrev">Previous</button><span id="lbLabel"></span><button type="button" id="lbNext">Next</button></div>
   </div>
 
-  <p class="footer">Tap any frame to open it full size, then use Previous and Next (or swipe, or the arrow keys) to page through the post. Dates are corrected to the real weekdays: 21 October 2026 is a Wednesday, so the earlier calendar was a day out. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
+  <p class="footer">Tap any frame to open it full size, then use Previous and Next (or swipe, or the arrow keys) to page through the post. The dates are a plan, one post every three days at 18:30 Dubai time; nothing goes out until the owner says launch. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
 </div>
 
 <script>
@@ -171,7 +177,8 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const label = (f) => {
   const b = f.split('/').pop().replace(/\.(png|jpg)$/, '');
   return b.replace(/^slide-0?/, 'Slide ').replace(/^scene-/, 'Scene ').replace('name-tag', 'Name tag').replace('words', 'Their words')
-    .replace(/^cover$/, 'Cover').replace(/^end$/, 'End card').replace(/^image$/, 'Image').replace(/^type$/, 'Text-only version');
+    .replace(/^cover$/, 'Cover').replace(/^end$/, 'End card').replace(/^image$/, 'Image').replace(/^type$/, 'Text-only version')
+    .replace(/^alt-(\d+)$/, 'Back-up slide $1').replace(/^name-(\d+)$/, 'Name tag $1').replace(/^line$/, 'What Trove is').replace(/^craft$/, 'Craft').replace(/^shop$/, 'Shop');
 };
 function copyText(btn, text) {
   const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy caption'; }, 1600); };
@@ -183,9 +190,10 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
   const c = d.campaign;
   document.getElementById('insight').textContent = c.insight;
   document.getElementById('hooks').insertAdjacentHTML('beforeend',
-    `<div class="hook"><b>${esc(c.proposition)}</b><span>The plain proposition, along the bottom of every first frame.</span> <span class="ar" lang="ar">${esc(c.propositionAr)}</span></div>` +
-    `<div class="hook"><b>${esc(c.line)} <span class="ar" lang="ar">${esc(c.lineAr)}</span></b><span>The campaign line, on the end cards.</span></div>` +
-    c.hooks.map(([en, why, ar]) => `<div class="hook"><b>${esc(en)}${ar ? ` <span class="ar" lang="ar">${esc(ar)}</span>` : ''}</b><span>${esc(why)}</span></div>`).join('') +
+    `<div class="hook"><b>${esc(c.oneLiner)}</b><span>The one line. Posts 1 and 3 say it first.</span> <span class="ar" lang="ar">${esc(c.oneLinerAr)}</span></div>` +
+    c.audiences.map(([who, line, ar]) => `<div class="hook"><b>${esc(line)}${ar ? ` <span class="ar" lang="ar">${esc(ar)}</span>` : ''}</b><span>${esc(who)}</span></div>`).join('') +
+    `<div class="hook"><b>${esc(c.offer)}</b><span>The offer, along the bottom of maker covers. Providers: ${esc(c.offerProviders)}.</span></div>` +
+    `<div class="hook"><b>${esc(c.line)} <span class="ar" lang="ar">${esc(c.lineAr)}</span></b><span>A small sign-off on end cards only, never a headline.</span></div>` +
     '<span class="muted" style="font-size:12.5px">Arabic lines need a native speaker\'s review before use.</span>');
   document.getElementById('nav').innerHTML = d.posts.map((p) => `<a href="#post${p.n}">${p.n}. ${esc(p.date)}</a>`).join('');
   const root = document.getElementById('posts');
@@ -195,7 +203,7 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     const ready = frames.filter((x) => x.ready).length;
     const s = document.createElement('section');
     s.id = 'post' + p.n;
-    s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
+    s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.step)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
       <div class="post">
         <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div>
         <div class="copy">
@@ -209,8 +217,13 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     document.getElementById('copy' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.caption + '\n\n' + c.hashtags));
   }
   document.getElementById('manifesto').textContent = c.manifesto;
-  document.getElementById('abstract').innerHTML = c.abstract.map((x) => `<li>${esc(x)}</li>`).join('');
-  document.getElementById('fixes').innerHTML = c.fixes.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('found').innerHTML = c.review.found.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('fixes').innerHTML = c.review.changed.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('declined').innerHTML = c.review.declined.map((x) => `<li>${esc(x)}</li>`).join('');
+  document.getElementById('glance').innerHTML = d.posts.map((p) => {
+    const fr = FR[p.n], ok = fr.filter((x) => x.ready).length;
+    return `<tr><td style="white-space:nowrap"><a href="#post${p.n}" style="color:inherit">${esc(p.date)}</a></td><td>${esc(p.step)}</td><td>${esc(p.title)}</td><td>${esc(p.cover)}</td><td style="white-space:nowrap">${ok} of ${fr.length}</td></tr>`;
+  }).join('');
   document.getElementById('shootIntro').textContent = d.shoot.intro;
   document.getElementById('shots').innerHTML = d.shoot.shots.map((r) => `<tr>${r.map((x) => `<td>${esc(x)}</td>`).join('')}</tr>`).join('');
   document.getElementById('shootRules').textContent = d.shoot.rules;
@@ -229,7 +242,7 @@ function show() {
   const list = FR[cur.post], f = list[cur.i];
   lbImg.src = 'out/' + f.file;
   lbImg.alt = 'Post ' + cur.post + ', ' + label(f.file);
-  lbLabel.textContent = 'Post ' + cur.post + ' · ' + label(f.file) + ' · ' + (cur.i + 1) + ' of ' + list.length + (f.upgrade ? ' · Real shot planned: ' + f.upgrade : '');
+  lbLabel.textContent = 'Post ' + cur.post + ' · ' + label(f.file) + ' · ' + (cur.i + 1) + ' of ' + list.length + (f.slot ? ' · Real photo needed: ' + f.slot : '') + (f.upgrade ? ' · Real shot planned: ' + f.upgrade : '');
   document.getElementById('lbPrev').disabled = cur.i === 0;
   document.getElementById('lbNext').disabled = cur.i === list.length - 1;
 }

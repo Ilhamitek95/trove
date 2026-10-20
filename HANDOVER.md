@@ -1,6 +1,6 @@
 # Trove — handover
 
-Last updated 15 October 2026 (laptop session, afternoon). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+Last updated 20 October 2026 (laptop session: social Phase 1 v5). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
 ## What is live
 
@@ -17,13 +17,17 @@ Last updated 15 October 2026 (laptop session, afternoon). The detailed engineeri
 - Sending ID photos for the admin to check still works as a fallback.
 - **Privacy Policy v3** (English and Arabic) names Didit and explains this.
 
-## Social: Phase 1 recruitment campaign (new, 19 Oct)
+## Social: Phase 1 recruitment campaign (v5, 20 Oct): ALL DRAFT
 
-- **Campaign "Made here. Made home."**: ten Instagram posts from Wed 21 Oct to Tue 17 Nov (18:30 Dubai time) to find makers and providers. Per the owner, it talks about the platform and the people (gifted and handy people with no company, the UAE as home), not the 60%; money appears in one post only (17 Nov). The review page, with every frame, caption (copy button), Stories plan, nominations and DMs, is https://claude.ai/artifact/FV3RgxEgVuWzY6AkGaDCaW.
-- **Two marketing agents** live in `.claude/agents/` (`trove-brand-strategist`, `trove-social-creative`). Both read `social/BRIEF.md` (the owner's direction, true facts, rules). Their full proposals are in `social/phase1/agents/`. On a new machine, copy the two agent files to `~/.claude/agents/`.
-- **Frames**: `social/phase1/frames.js` (what each frame says), `posts.json` (captions and notes), `render.js` (renders to `social/phase1/out` with headless Chrome), `photos/` (Higgsfield mood images: props, tools and spaces only, never shown as a maker's work). 51 of 56 frames are ready. Post 8 ("Just a hobby") needs a real founding maker.
-- **v4 (19 Oct, later): made concrete** after the owner said it was "a bit abstract". Every first frame now says what Trove is (proposition "Sell what you make. Take bookings for what you do. On Trove."). Eight posts show the real site on a phone (`social/phase1/screens/`, plus a "Your shop on Trove" illustration in `screens/shop-template.html`), with named crafts and services and step-by-step lists. A half-day real-people shoot plan with friends and family (12 shots, consent points) is on the review page. 46 of 60 frames are ready. **Site fixes for the owner to decide:** (1) the Apply form needs an Instagram or website link, which blocks hobbyists with neither; (2) the homepage says "makers across the UAE"; (3) the homepage Collection band says the Marketplace "is full of handmade pieces" (it has none yet).
-- **Before posting:** a UAE business adviser signs off "no company needed to start"; a native speaker reviews the Arabic lines; Diwali (8 Nov) and Downtown Design dates confirmed. The older "Trove Phase 1 social drafts" Claude Doc is superseded by this campaign.
+- **Nothing is scheduled or posted.** Owner, 20 Oct: "we are not launching anything yet, everything is a draft". The dates are a plan only, and the auto-poster's Trove queue stays empty until the owner says launch.
+- **Review page** (every frame, captions with a copy button, the series at a glance, shoot plan, DMs, Stories, checks): https://claude.ai/artifact/FV3RgxEgVuWzY6AkGaDCaW
+- **v5 = the rebuild after the 20 Oct creative review.** Eleven posts, 21 Oct to 20 Nov, every three days at 18:30 Dubai time, in three steps: what Trove is (posts 1 to 3, pinned), who it's for (makers, providers, buyers), then posts of their own for makers (4 to 6) and providers (7, 8). Then money (9), a real founding maker (10, with ready back-up slides) and the Collection tease (11). Buyers get their own posts in December.
+- **Cover rules** (now in `social/BRIEF.md`): one headline of seven words or fewer plus one short line, the offer along the bottom ("Free to join · We photograph it · We collect it"), real hands or real work or a plain type card. No AI image on a cover except the Collection tease. "Made here. Made home." is only an end-card sign-off. One-liner: "Trove is a new online marketplace for handmade pieces and creative services in Dubai and Abu Dhabi."
+- **Not taken from the review, on purpose:** Dream Avenue (Cormorant stays, owner's 27 July call), cutting the services list (the categories are real; covers lead with workshops, styling and photography), "Keep 60%" as a headline (owner's 19 Oct money rule), "fast, throwaway things" (the brief never knocks mass-made goods). Kiln & Clay was a test shop and isn't in any post.
+- **Status:** 48 of 61 frames ready. Waiting on the half-day real-people shoot: the covers of posts 1, 2, 4, 7 and 8 are labelled "Real photo" slots (shot list on the review page, 13 shots), plus the name tags in post 2. Post 10 needs a real founding maker, or its two back-up slides run.
+- **Files:** `social/phase1/frames.js` (what each frame says), `posts.json` (captions, shoot plan, DMs, Stories, checks), `render.js` (renders to `social/phase1/out` and draws `screens/shop-example.html`, the labelled example shop page), `gallery.html` (the review page; publish it with `posts.json` and `out/`). Real photos go in `social/phase1/photos/` under the file name shown on each slot, then re-render: `PW_CORE=<repo>/e2e/node_modules/playwright-core node render.js` from `social/phase1`.
+- **Two marketing agents** live in `.claude/agents/` (`trove-brand-strategist`, `trove-social-creative`). Both read `social/BRIEF.md`. On a new machine, copy them to `~/.claude/agents/`.
+- **Before anything posts:** a UAE business adviser signs off "no company needed to start"; a native speaker reviews the Arabic; the photographer can take on every maker who wants photos; Diwali (8 Nov) and Downtown Design dates confirmed. **Site fixes for the owner to decide** (nothing changed yet): (1) the Apply form needs an Instagram or website link, which blocks hobbyists (the review calls this the most important fix); (2) the homepage says "makers across the UAE"; (3) the homepage Collection band says the Marketplace "is full of handmade pieces".
 
 ## Where things are set up
 
