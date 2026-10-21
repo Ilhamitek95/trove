@@ -54,7 +54,7 @@ html,body{background:transparent}
 // across the top (f.img in ./photos), a cream wordmark pill on it, and its content set smaller below.
 const STRIP = 600;
 const pillCounter = (counter) => counter.replace('class="ct"', 'class="ct" style="background:#FDF7F5;padding:8px 18px;border-radius:999px;opacity:.9;top:56px"');
-const strip = (f, counter) => `<div style="position:absolute;left:0;right:0;top:0;height:${STRIP}px">${photoTag({ photo: f.img, slot: f.img })}</div>`
+const strip = (f, counter, height = STRIP) => `<div style="position:absolute;left:0;right:0;top:0;height:${height}px">${photoTag({ photo: f.img, slot: f.img })}</div>`
   + `<div class="wm" style="top:48px;left:56px;font-size:40px;background:#FDF7F5;padding:10px 22px 14px;border-radius:999px">trove<i></i></div>${pillCounter(counter)}`;
 
 function inner(f, n, total) {
@@ -69,6 +69,8 @@ function inner(f, n, total) {
     case 'strike':
       return `${wm}${counter}<div class="box" style="top:430px"><div class="small">You don’t need</div><div class="d" style="font-size:124px;line-height:1.05;margin-top:26px;text-decoration:line-through;text-decoration-color:#BD9C8C;text-decoration-thickness:7px">${fmt(f.strike)}</div><p class="body" style="margin-top:60px">${fmt(f.body)}</p></div>${url}`;
     case 'cta':
+      // With f.img (21 Oct): a photo across the top two-thirds, the call to action set smaller below it
+      if (f.img) return `${strip(f, counter, 680)}<div class="box" style="bottom:150px"><div class="d" style="font-size:80px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:22px;font-size:36px">${fmt(f.body)}</p>` : ''}<div style="margin-top:34px"><span class="pill" style="font-size:32px;padding:22px 40px">troveathome.com/apply</span></div></div>${signTag(f)}`;
       return `${wm}${counter}<div class="box" style="bottom:230px"><div class="d" style="font-size:${f.size || 112}px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:40px">${fmt(f.body)}</p>` : ''}<div style="margin-top:56px"><span class="pill">troveathome.com/apply</span></div></div>${signTag(f)}`;
     case 'type':
       // v5 bold type card: optional kicker, one headline, one line, the offer (or the address) along the bottom
@@ -82,6 +84,15 @@ function inner(f, n, total) {
     case 'reel-phone': {
       // A real Trove page (or the shop template) on a phone. screens/<screen> is a 1170px-wide (3x) capture.
       const reel = f.layout === 'reel-phone';
+      if (f.img && !reel) {
+        // 21 Oct: the phone sits on a full-bleed photo (f.img), with the headline on a cream card above it
+        const pw = 640, bez = 18, sw = pw - bez * 2, scale = sw / 1170, top = 470, left = (w - pw) / 2;
+        const src = 'file:///' + path.join(__dirname, 'screens', f.screen).split(path.sep).join('/');
+        return `<div style="position:absolute;inset:0">${photoTag({ photo: f.img, slot: f.img })}</div>`
+          + `<div style="position:absolute;left:56px;right:56px;top:56px;background:#FDF7F5;border-radius:24px;padding:34px 40px 38px;box-shadow:0 12px 40px rgba(41,39,39,.14)"><div class="wm" style="position:static;font-size:38px">trove<i></i></div><div class="d" style="font-size:64px;line-height:1.04;margin-top:18px">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin-top:14px;font-size:32px">${fmt(f.sub)}</p>` : ''}</div>${counter}`
+          + `<div style="position:absolute;left:${left}px;top:${top}px;width:${pw}px;height:${h}px;background:#292727;border-radius:60px;padding:${bez}px;box-shadow:0 30px 70px rgba(41,39,39,.35)"><div style="width:${sw}px;height:100%;border-radius:46px;overflow:hidden;background:#FDF7F5"><img src="${src}" style="display:block;width:${sw}px;margin-top:-${Math.round((f.offset || 0) * 3 * scale)}px"></div></div>`
+          + (f.label ? `<div style="position:absolute;right:72px;top:${top + 40}px;background:#FDF7F5;border-radius:999px;padding:10px 20px;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.12)">${fmt(f.label)}</div>` : '');
+      }
       const pw = reel ? 820 : 780, bez = 20, sw = pw - bez * 2, scale = sw / 1170;
       const top = f.phoneTop || (reel ? 700 : (f.sub ? 560 : 470));
       const src = 'file:///' + path.join(__dirname, 'screens', f.screen).split(path.sep).join('/');

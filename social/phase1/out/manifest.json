@@ -34,22 +34,22 @@
   },
   {
     "post": 1,
-    "file": "post-01/slide-04.png",
+    "file": "post-01/slide-04.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
   },
   {
     "post": 1,
-    "file": "post-01/slide-05.png",
+    "file": "post-01/slide-05.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -166,11 +166,11 @@
   },
   {
     "post": 3,
-    "file": "post-03/slide-05.png",
+    "file": "post-03/slide-05.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -199,11 +199,11 @@
   },
   {
     "post": 4,
-    "file": "post-04/slide-03.png",
+    "file": "post-04/slide-03.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -232,11 +232,11 @@
   },
   {
     "post": 4,
-    "file": "post-04/slide-06.png",
+    "file": "post-04/slide-06.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -276,33 +276,33 @@
   },
   {
     "post": 5,
-    "file": "post-05/slide-04.png",
+    "file": "post-05/slide-04.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
   },
   {
     "post": 5,
-    "file": "post-05/slide-05.png",
+    "file": "post-05/slide-05.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
   },
   {
     "post": 5,
-    "file": "post-05/slide-06.png",
+    "file": "post-05/slide-06.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -320,11 +320,11 @@
   },
   {
     "post": 6,
-    "file": "post-06/slide-02.png",
+    "file": "post-06/slide-02.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -353,11 +353,11 @@
   },
   {
     "post": 6,
-    "file": "post-06/slide-05.png",
+    "file": "post-06/slide-05.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -386,11 +386,11 @@
   },
   {
     "post": 7,
-    "file": "post-07/slide-03.png",
+    "file": "post-07/slide-03.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -408,11 +408,11 @@
   },
   {
     "post": 7,
-    "file": "post-07/slide-05.png",
+    "file": "post-07/slide-05.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -441,11 +441,11 @@
   },
   {
     "post": 8,
-    "file": "post-08/slide-03.png",
+    "file": "post-08/slide-03.jpg",
     "kind": "slide",
     "layout": "phone",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -463,11 +463,11 @@
   },
   {
     "post": 8,
-    "file": "post-08/slide-05.png",
+    "file": "post-08/slide-05.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -551,11 +551,11 @@
   },
   {
     "post": 9,
-    "file": "post-09/slide-08.png",
+    "file": "post-09/slide-08.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""
@@ -661,11 +661,11 @@
   },
   {
     "post": 11,
-    "file": "post-11/slide-03.png",
+    "file": "post-11/slide-03.jpg",
     "kind": "slide",
     "layout": "cta",
     "ready": true,
-    "mood": false,
+    "mood": true,
     "upgrade": "",
     "slot": "",
     "note": ""

@@ -6,8 +6,9 @@
 // 21 Oct 2026 (owner): the photo covers of posts 1, 2, 4, 7 and 8 use Higgsfield images (hands only, no faces,
 // never named as a maker's work) until the shoot; each keeps its real shot as `upgrade`. Post 11 was already generated.
 // 21 Oct 2026, later (owner: "every carousel needs to have an image"): the type cards became photo slides (pic) and
-// the steps, lists and Q&As carry a photo strip (img). Only the closing call-to-action cards and the real-site phone
-// screens have no photo. Prompts for every generated image are in photos/prompts.json.
+// the steps, lists and Q&As carry a photo strip (img). Owner, 21 Oct: 'missing images still - fix those as well', so the
+// closing call-to-action cards got a photo (img) too, and the real-site phone screens sit on a full-bleed photo (img).
+// Every carousel slide now carries an image. Prompts for every generated image are in photos/prompts.json.
 // "Made here. Made home." is now a small sign-off on end cards only. Copy and captions live in posts.json.
 // Square-bracketed text renders as a dashed placeholder box: fill it in before posting.
 // photo: a file name in ./photos — rendered when present, otherwise a labelled "Real photo" slot.
@@ -33,8 +34,8 @@ module.exports = [
     { mood: true, upgrade: 'Real shot 1: hands finishing a real piece, close up' }),
   pic(1, '2', 'g-01-pieces.jpg', 'cream', 'Pieces,|made by hand.', 'Ceramics, candles, textiles, prints, jewellery and more, from makers who live here.', '', { size: 84 }),
   pic(1, '3', 'g-01-services.jpg', 'clay', 'Services,|at home.', 'Workshops, home styling and photography, from providers in Dubai and Abu Dhabi.', '', { size: 84 }),
-  phone(1, '4', 'sell-full.png', 47, 'All on|troveathome.com', 'Makers and providers apply in about ten minutes.', { bg: 'sage' }),
-  end(1, '5', 'Make something?|Sell it on Trove.', 'Offer a service? List it. Buyers, the Marketplace opens soon.'),
+  phone(1, '4', 'sell-full.png', 47, 'All on|troveathome.com', 'Makers and providers apply in about ten minutes.', { bg: 'sage', img: 'p-01-sell.jpg', mood: true }),
+  end(1, '5', 'Make something?|Sell it on Trove.', 'Offer a service? List it. Buyers, the Marketplace opens soon.', { img: 'e-01.jpg', mood: true }),
 
   // 2. Why Trove exists (Reel, about 30 seconds, manifesto voiceover over real footage from the shoot)
   { post: 2, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'real-02-piece.jpg',
@@ -51,7 +52,7 @@ module.exports = [
   pic(3, '2', 'g-03-maker.jpg', 'cream', 'Makers', 'Make things by hand and sell them on Trove: ceramics, candles, textiles, prints, jewellery and more. Free to join.', OFFER, { size: 110 }),
   pic(3, '3', 'g-03-provider.jpg', 'clay', 'Providers', 'Offer a creative service people can book: workshops, home styling, photography and more. Free to list during launch.', OFFER_P, { size: 110 }),
   pic(3, '4', 'g-03-buyer.jpg', 'cream', 'Buyers', 'Anyone looking for something handmade, or a workshop to book. The Marketplace opens to buyers soon.', '', { size: 110 }),
-  end(3, '5', 'Which one|are you?', 'Makers and providers, apply. Buyers, follow along.'),
+  end(3, '5', 'Which one|are you?', 'Makers and providers, apply. Buyers, follow along.', { img: 'e-03.jpg', mood: true }),
 
   // 4. Makers (Carousel, 6)
   cover(4, '1', 'real-04-own-piece.jpg', 'A maker’s own hands holding their own piece (shot 9)',
@@ -59,11 +60,11 @@ module.exports = [
     { mood: true, upgrade: 'Real shot 9: a maker’s own hands holding their own piece' }),
   { post: 4, id: '2', kind: 'slide', bg: 'cream', layout: 'grid', title: 'What makers sell|on Trove', img: 'g-04-sell.jpg', mood: true,
     items: ['Ceramics', 'Candles', 'Cushions and throws', 'Prints', 'Jewellery', 'Stationery', 'Baby blankets', 'Wheat bags', 'Pet collars'] },
-  phone(4, '3', EXAMPLE, 0, 'Your own|shop page.', 'Your name, your story, your pieces. This one is an example.', { label: 'Example' }),
+  phone(4, '3', EXAMPLE, 0, 'Your own|shop page.', 'Your name, your story, your pieces. This one is an example.', { label: 'Example', img: 'p-04-shop.jpg', mood: true }),
   steps(4, '4', 'cream', 'What happens next', ['Apply in about ten minutes', 'A real person reads it, usually within a day or two', 'We photograph your pieces, or you use your own', 'A courier collects each sale from your door'],
     { img: 'g-04-next.jpg', mood: true }),
   pic(4, '5', 'g-04-first.jpg', 'sage', 'Never sold anything?|That’s fine.', 'Four lovely pieces is a shop. You choose how many orders a month you can take.', '', { size: 80 }),
-  end(4, '6', 'Sell what you make|on Trove.', 'Know a maker? Tag them.'),
+  end(4, '6', 'Sell what you make|on Trove.', 'Know a maker? Tag them.', { img: 'e-04.jpg', mood: true }),
 
   // 5. You make it. Trove sells it. (Carousel, 6)
   cover(5, '1', 'g-05-cover.jpg', '', 'You make it.|Trove sells it.', 'We photograph it, give it a shop and send a courier to your door.', OFFER,
@@ -72,18 +73,18 @@ module.exports = [
     { img: 'g-05-yours.jpg', mood: true }),
   steps(5, '3', 'sage', 'Our part', ['Photograph your pieces, if you’d like', 'Give them a shop page', 'Look after the buyer and payment', 'Book a courier to your door'],
     { img: 'g-05-ours.jpg', mood: true, upgrade: 'Real shot 7: a parcel handed over at the door' }),
-  phone(5, '4', EXAMPLE, 0, 'Your shop, with|your name on it.', 'An example shop page on troveathome.com.', { bg: 'sage', label: 'Example' }),
-  phone(5, '5', 'apply-top.png', 120, 'About ten minutes|to apply.', 'Have ready: photos of your work, a WhatsApp number and rough prices.', { bg: 'cream' }),
-  end(5, '6', 'Ready when|you are.', 'Know a maker? Tag them.'),
+  phone(5, '4', EXAMPLE, 0, 'Your shop, with|your name on it.', 'An example shop page on troveathome.com.', { bg: 'sage', label: 'Example', img: 'p-05-shop.jpg', mood: true }),
+  phone(5, '5', 'apply-top.png', 120, 'About ten minutes|to apply.', 'Have ready: photos of your work, a WhatsApp number and rough prices.', { bg: 'cream', img: 'p-05-apply.jpg', mood: true }),
+  end(5, '6', 'Ready when|you are.', 'Know a maker? Tag them.', { img: 'e-05.jpg', mood: true }),
 
   // 6. Keep your stall. Add a Trove shop. (Carousel, 5) — established makers, Downtown Design week
   cover(6, '1', 'g-06-stall.jpg', '', 'Keep your stall.|Add a Trove shop.', 'Trove isn’t exclusive: keep your stall and your Instagram.', OFFER,
     { mood: true, upgrade: 'Collab photo: an established maker who has applied, at their own stall' }),
-  phone(6, '2', EXAMPLE, 0, 'One more place|to find your work.', 'An example shop page. Founding makers get a badge and a spotlight.', { bg: 'cream', label: 'Example' }),
+  phone(6, '2', EXAMPLE, 0, 'One more place|to find your work.', 'An example shop page. Founding makers get a badge and a spotlight.', { bg: 'cream', label: 'Example', img: 'p-06-shop.jpg', mood: true }),
   steps(6, '3', 'cream', 'What Trove handles', ['Product photos, if you’d like them', 'The buyer’s questions and payment', 'Booking the courier to your door', 'A spotlight for founding makers'],
     { img: 'g-06-handles.jpg', mood: true }),
   pic(6, '4', 'g-06-keep.jpg', 'sage', 'Keep all of it.', 'Your Instagram, your market days, your own customers. Trove is one more place people can find your work.', '', { size: 96 }),
-  end(6, '5', 'One more home|for your work.', 'At Downtown Design this week? Say hello.'),
+  end(6, '5', 'One more home|for your work.', 'At Downtown Design this week? Say hello.', { img: 'e-06.jpg', mood: true }),
 
   // 7. Providers (Carousel, 5) — Diwali
   cover(7, '1', 'real-07-table.jpg', 'Hands placing the last detail on a styled table, diyas lit (shot 5)',
@@ -92,9 +93,9 @@ module.exports = [
   { post: 7, id: '2', kind: 'slide', bg: 'cream', layout: 'grid', title: 'Services you can|list on Trove', img: 'g-07-services.jpg', mood: true,
     items: ['Workshops at home', 'Home styling', 'Tablescapes', 'Diwali and Christmas styling', 'Portraits at home', 'Photography for makers'],
     sub: 'And more: hand-lettering, repairs and gift wrapping.' },
-  phone(7, '3', 'sell-services-top.png', 47, 'Your service gets|its own page.', 'Booking requests arrive in one dashboard.'),
+  phone(7, '3', 'sell-services-top.png', 47, 'Your service gets|its own page.', 'Booking requests arrive in one dashboard.', { img: 'p-07-services.jpg', mood: true }),
   pic(7, '4', 'g-07-gift.jpg', 'cream', 'From December, your|service can be a gift.', 'People will be able to give a workshop, a styled table or a portrait session as a present.', '', { size: 76 }),
-  end(7, '5', 'Your service,|on Trove.', 'Know a provider? Tag them.'),
+  end(7, '5', 'Your service,|on Trove.', 'Know a provider? Tag them.', { img: 'e-07.jpg', mood: true }),
 
   // 8. Providers: workshops (Carousel, 5)
   cover(8, '1', 'real-08-workshop.jpg', 'A real workshop mid-class at home, hands at work (shot 13)',
@@ -102,10 +103,10 @@ module.exports = [
     { mood: true, upgrade: 'Real shot 13: a real workshop mid-class at home, hands at work' }),
   steps(8, '2', 'cream', 'How a booking works', ['Your workshop gets its own page', 'Someone requests a date', 'You confirm the date and final price', 'They pay you directly, or by card through Trove'],
     { img: 'g-08-booking.jpg', mood: true }),
-  phone(8, '3', 'services-top.png', 47, 'On the Services|Marketplace.', 'Workshops, styling and photography, in homes in Dubai and Abu Dhabi.', { bg: 'sage' }),
+  phone(8, '3', 'services-top.png', 47, 'On the Services|Marketplace.', 'Workshops, styling and photography, in homes in Dubai and Abu Dhabi.', { bg: 'sage', img: 'p-08-services.jpg', mood: true }),
   { post: 8, id: '4', kind: 'slide', bg: 'clay', layout: 'grid', title: 'Workshops people|book at home', img: 'g-08-workshops.jpg', mood: true,
     items: ['Pottery', 'Embroidery', 'Candle pouring', 'Calligraphy', 'Kids’ craft birthdays'] },
-  end(8, '5', 'Your workshop,|on Trove.', 'Know someone who teaches? Tag them.'),
+  end(8, '5', 'Your workshop,|on Trove.', 'Know someone who teaches? Tag them.', { img: 'e-08.jpg', mood: true }),
 
   // 9. What Trove costs, and what you keep. (Carousel, 8) — the one post about money
   cover(9, '1', 'g-09-cover.jpg', '', 'What Trove costs,|and what you keep.', 'Plain answers on money and paperwork, for makers and providers.', 'troveathome.com/apply', { mood: true }),
@@ -118,7 +119,7 @@ module.exports = [
   ].map(([q, a, img], i) => ({ post: 9, id: String(i + 2), kind: 'slide', bg: i % 2 ? 'clay' : 'cream', layout: 'qa', q, a, img, mood: true })),
   steps(9, '7', 'cream', 'After you press Apply', ['A real person reads it, usually within a day or two', 'Add your story, pieces and prices', 'Photos by us, or by you', 'A courier collects each sale from your door'],
     { img: 'g-09-apply.jpg', mood: true }),
-  end(9, '8', 'Have a wander.|There’s no rush.', 'Ask us anything below.'),
+  end(9, '8', 'Have a wander.|There’s no rush.', 'Ask us anything below.', { img: 'e-09.jpg', mood: true }),
 
   // 10. Meet [Name] (Collab Reel, face to camera) — only with a real founding maker; back-up slides below
   { post: 10, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'real-10-maker.jpg',
@@ -136,5 +137,5 @@ module.exports = [
   cover(11, '1', 'c9-drape.jpg', '', 'Something of|our own.', 'The Trove Collection, our own range. Coming next year.', 'troveathome.com',
     { mood: true, upgrade: 'A real material swatch or sketch from the Collection work' }),
   pic(11, '2', 'g-11-materials.jpg', 'clay', 'The Collection is ours.|The Marketplace is yours.', 'Both on troveathome.com. Ours comes next year. Yours starts with an application.', '', { size: 72 }),
-  end(11, '3', 'While we make ours,|we’re looking for yours.', 'Ceramics, candles, textiles, prints and more, made by hand.', { size: 96 }),
+  end(11, '3', 'While we make ours,|we’re looking for yours.', 'Ceramics, candles, textiles, prints and more, made by hand.', { size: 96, img: 'e-11.jpg', mood: true }),
 ];
