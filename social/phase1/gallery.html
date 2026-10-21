@@ -69,6 +69,9 @@ figcaption{font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px
 button{font:inherit;font-size:13px;font-weight:600;border-radius:999px;border:1px solid var(--fg);background:transparent;color:var(--fg);padding:5px 14px;cursor:pointer}
 button:focus-visible{outline:3px solid var(--tan);outline-offset:2px}
 .note{font-size:13.5px;border-left:3px solid var(--tan);padding-left:12px}
+.reel{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-start;margin-bottom:16px}
+.reel video{width:min(260px,100%);aspect-ratio:9/16;border-radius:10px;border:1px solid var(--line);background:#292727;display:block}
+.reel p{flex:1 1 200px;font-size:13.5px;margin:0}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:14.5px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .manifesto{font-family:var(--display);font-size:23px;line-height:1.35;white-space:pre-line;max-width:46ch}
@@ -85,7 +88,7 @@ th{font-weight:600;color:var(--muted)}
   <h1>Trove Phase 1 creatives<i></i></h1>
   <div class="intro">
     <div>
-      <p class="lede">Version 5, a draft: nothing is scheduled or posted. Eleven posts to find makers and providers in Dubai and Abu Dhabi, planned for 21 October to 20 November. They run in three steps: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers. Money stays out of the headlines, and every cover shows hands at work or real work, or is a plain type card. Since 21 October every carousel is photo-led: covers, type cards, steps and Q&amp;As carry Higgsfield images (hands only, Instagram AI label on) until the real shoot replaces them. Every carousel slide has a photo: the closing cards carry one above the call to action, and the real-site screens sit on one.</p>
+      <p class="lede">Version 5, a draft: nothing is scheduled or posted. Eleven posts to find makers and providers in Dubai and Abu Dhabi, planned for 21 October to 20 November. They run in three steps: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers. Money stays out of the headlines, and every cover shows hands at work or real work, or is a plain type card. Since 21 October every carousel is photo-led: covers, type cards, steps and Q&amp;As carry Higgsfield images (hands only, Instagram AI label on) until the real shoot replaces them. Every carousel slide has a photo: the closing cards carry one above the call to action, and the real-site screens sit on one. Each pillar has its own Reel: Trove itself (post 2), makers (12), providers (13) and buyers (14, for December), cut from Higgsfield video clips of hands at work. Press play on any of them below.</p>
       <p class="insight" id="insight"></p>
       <p class="muted" style="margin-top:12px;font-size:13.5px">Rebuilt from v4 after the 20 October creative review, checked against the brief and the live site. The marketing agents' earlier proposals are in the Trove repo under <code>social/phase1/agents</code>.</p>
     </div>
@@ -178,7 +181,7 @@ const label = (f) => {
   const b = f.split('/').pop().replace(/\.(png|jpg)$/, '');
   return b.replace(/^slide-0?/, 'Slide ').replace(/^scene-/, 'Scene ').replace('name-tag', 'Name tag').replace('words', 'Their words')
     .replace(/^cover$/, 'Cover').replace(/^end$/, 'End card').replace(/^image$/, 'Image').replace(/^type$/, 'Text-only version')
-    .replace(/^alt-(\d+)$/, 'Back-up slide $1').replace(/^name-(\d+)$/, 'Name tag $1').replace(/^line$/, 'What Trove is').replace(/^craft$/, 'Craft').replace(/^shop$/, 'Shop');
+    .replace(/^alt-(\d+)$/, 'Back-up slide $1').replace(/^hook$/, 'Opening line').replace(/^l-(\d+)$/, 'Line $1').replace(/^name-(\d+)$/, 'Name tag $1').replace(/^line$/, 'What Trove is').replace(/^craft$/, 'Craft').replace(/^shop$/, 'Shop');
 };
 function copyText(btn, text) {
   const done = () => { btn.textContent = 'Copied'; setTimeout(() => { btn.textContent = 'Copy caption'; }, 1600); };
@@ -205,7 +208,8 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     s.id = 'post' + p.n;
     s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.step)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
       <div class="post">
-        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div>
+        <div>${p.video ? `<div class="reel"><video controls playsinline preload="none" poster="out/post-${String(p.n).padStart(2, '0')}/cover.jpg" src="${esc(p.video)}" aria-label="The finished Reel for post ${p.n}"></video><p><b>The finished Reel</b><br>${esc(p.format)}, silent: add a track from Instagram's audio library when posting. Upload the Cover frame below as its cover. The frames below are its cover, text and closing card.</p></div>` : ''}
+        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' || f.layout === 'reel-hook' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div></div>
         <div class="copy">
           <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
           <div class="caption" id="cap${p.n}">${esc(p.caption)}<span class="tags">${esc(c.hashtags)}</span></div>

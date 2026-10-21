@@ -1,6 +1,6 @@
 {
   "campaign": {
-    "version": "v5, 20 October 2026; Higgsfield covers 21 October",
+    "version": "v5, 20 October 2026; Higgsfield images and pillar Reels 21 October",
     "oneLiner": "Trove is a new online marketplace for handmade pieces and creative services in Dubai and Abu Dhabi.",
     "oneLinerAr": "Trove سوقٌ إلكترونيّ جديد للقطع المصنوعة يدويًا والخدمات الإبداعية في دبي وأبوظبي.",
     "line": "Made here. Made home.",
@@ -67,12 +67,13 @@
       "step": "Why Trove exists",
       "title": "We'd rather know who made it.",
       "cover": "Higgsfield image: a handmade ceramic bowl held in two hands (real shot 9 replaces it)",
-      "format": "Reel, about 30 seconds",
+      "format": "Reel, 26 seconds",
       "for": "Everyone",
       "drives": "Saves and shares: the idea behind Trove",
       "caption": "We'd rather know who made it. A cushion cover stitched in the evenings. A chair brought back at the weekend. The lettering on every wedding card in the family. Trove brings together pieces made with care by people you can name, in Dubai and Abu Dhabi. Makers on Trove get their own shop, with their story. Make something by hand? Apply at troveathome.com/apply",
       "prompt": "What's the handmade thing in your home, and who made it?",
-      "notes": "Cover uses a Higgsfield image (21 Oct). Switch on Instagram's AI label when posting. Swap in the real shot once it is taken. The Reel itself still needs footage: real footage from the shoot (shots 1, 3, 4 and 9), each piece tagged with its maker's first name and area, only with their consent, or Higgsfield clips with craft-only tags (no invented names). The people filmed are friends of Trove, never described as Trove makers. Never name another company; the real makers are the contrast. Voiceover: the manifesto below."
+      "notes": "Ready since 21 Oct (owner: \"create a video post for each pillar\"): this is the Trove pillar's Reel, 26 seconds, cut from five Higgsfield clips (Kling 3.0, animated from the campaign's own photos) with the manifesto's lines on screen and craft-only tags, no names. Switch on Instagram's AI label. The file is silent: add a quiet track from Instagram's audio library when posting, and upload the Cover frame as the Reel's cover. Later, swap in real footage from the shoot (shots 1, 3, 4 and 9), each piece tagged with its maker's first name and area, only with their consent. The people filmed are friends of Trove, never described as Trove makers. Never name another company. Voiceover (optional, with real footage): the manifesto below.",
+      "video": "video/out/post-02.mp4"
     },
     {
       "n": 3,
@@ -191,6 +192,48 @@
       "caption": "We're making something of our own: the Trove Collection, our house range. It isn't ready, and we won't show it before next year. It will sit on troveathome.com beside the Trove Marketplace, where makers in Dubai and Abu Dhabi can have their own shop pages. While we make ours, we're looking for yours: ceramics, candles, textiles, prints and more, made by hand. Apply at troveathome.com/apply",
       "prompt": "Guess what's under the cloth.",
       "notes": "Both photos are Higgsfield images (the cover and the material swatches), which the brief allows for Collection teases. Better still: a real material swatch or sketch. Switch on Instagram's AI label. Confirm you're happy to say \"next year\" in public."
+    },
+    {
+      "n": 12,
+      "date": "Sun 1 Nov",
+      "step": "Makers (pillar Reel)",
+      "title": "From your hands to your own shop.",
+      "cover": "Higgsfield image: hands crocheting a cream blanket in the evening (real footage replaces it)",
+      "format": "Reel, 26 seconds",
+      "for": "Hobbyist makers who have never sold, and makers who already do",
+      "drives": "Reach beyond followers, shares and applications",
+      "caption": "From your hands to your own shop. The blanket you crochet in the evenings, the prints you pull at the kitchen table, the candles everyone asks about: on Trove they go on your own shop page. We photograph your pieces, or you use your own, and when something sells a courier collects it from your door. Make things by hand? You're a maker. Free to join. Apply in about ten minutes at troveathome.com/apply",
+      "prompt": "What do you make that everyone asks about?",
+      "notes": "An extra Reel between posts 4 and 5; move it to any day. Higgsfield video (Kling 3.0, animated from the campaign's own photos; hands only, no faces): switch on Instagram's AI label and never caption it as a named maker's work. The file is silent: add a quiet track from Instagram's audio library when posting, and upload the Cover frame as the Reel's cover. Swap in real footage after the shoot.",
+      "video": "video/out/post-12.mp4"
+    },
+    {
+      "n": 13,
+      "date": "Tue 10 Nov",
+      "step": "Providers (pillar Reel)",
+      "title": "Get booked for what you do best.",
+      "cover": "Higgsfield image: hands plumping a cushion in a sunlit living room (real footage replaces it)",
+      "format": "Reel, 26 seconds",
+      "for": "Stylists, workshop hosts, photographers and other providers",
+      "drives": "Reach beyond followers, tags and applications",
+      "caption": "Get booked for what you do best. Pottery around the dining table, a table set for Eid or Diwali, photos taken at home: if people book you for it, you can list it on Trove. Booking requests arrive in one place, and listing is free during launch. Style homes or run workshops? You're a provider. Apply at troveathome.com/apply",
+      "prompt": "Know someone who runs workshops or styles homes? Tag them.",
+      "notes": "An extra Reel between posts 7 and 8; move it to any day. Higgsfield video (Kling 3.0, animated from the campaign's own photos; hands only, no faces): switch on Instagram's AI label and never caption it as a named maker's work. The file is silent: add a quiet track from Instagram's audio library when posting, and upload the Cover frame as the Reel's cover. Swap in real footage after the shoot.",
+      "video": "video/out/post-13.mp4"
+    },
+    {
+      "n": 14,
+      "date": "December",
+      "step": "Buyers (pillar Reel)",
+      "title": "Handmade, by people who live here.",
+      "cover": "Higgsfield image: hands lifting a handmade vase out of its box (real footage replaces it)",
+      "format": "Reel, 26 seconds",
+      "for": "Buyers in Dubai and Abu Dhabi",
+      "drives": "Follows, saves and visits to troveathome.com",
+      "caption": "Handmade, by people who live here. Pieces for your home from makers in Dubai and Abu Dhabi, and workshops you can book at your own table. You can give a service as a gift, too. Have a wander at troveathome.com. There's no rush. Make something yourself? Apply at troveathome.com/apply",
+      "prompt": "What's the handmade thing in your home, and who made it?",
+      "notes": "For December: post only once the Marketplace is open to buyers and gift services are live. Higgsfield video (Kling 3.0, animated from the campaign's own photos; hands only, no faces): switch on Instagram's AI label and never caption it as a named maker's work. The file is silent: add a quiet track from Instagram's audio library when posting, and upload the Cover frame as the Reel's cover. Swap in real footage after the shoot.",
+      "video": "video/out/post-14.mp4"
     }
   ],
   "shoot": {
@@ -266,6 +309,7 @@
     "Real people (posts 2 and 10, the shoot): signed releases, approved edits, neighbourhood only.",
     "The buyer opening date: say \"soon\" in public (posts 1 and 3) until 1 Dec is confirmed.",
     "Link in bio set to troveathome.com/apply, and posts 1 to 3 pinned.",
-    "Every carousel and the post 2 cover use Higgsfield images: switch on Instagram's AI label on each post, never caption them as a named maker's work, and swap in real shots after the shoot."
+    "Every carousel and all four Reels (posts 2, 12, 13 and 14) use Higgsfield images or video: switch on Instagram's AI label on each post, never caption them as a named maker's work, and swap in real shots after the shoot.",
+    "The buyers Reel (post 14): the Marketplace is open to buyers and gift services work before it goes out."
   ]
 }

@@ -41,10 +41,13 @@ module.exports = [
   { post: 2, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'real-02-piece.jpg',
     slot: 'A real piece held in its maker’s two hands (shot 9)', kicker: '', title: 'We’d rather know|who made it.',
     sub: 'Pieces made with care, by people you can name.', mood: true, upgrade: 'Real shot 9: a real piece held in its maker’s two hands' },
-  { post: 2, id: 'name-1', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Cushion cover · [Name], [area]' },
-  { post: 2, id: 'name-2', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Wedding-card lettering · [Name], [area]' },
-  { post: 2, id: 'name-3', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'A chair, brought back · [Name], [area]' },
-  { post: 2, id: 'line', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Trove: handmade pieces and creative services' },
+  // 21 Oct 2026 (owner: "create a video post for each pillar"): the Reel is cut from Higgsfield clips (video/reels.js),
+  // so the tags name the craft only. With real footage, add the maker's first name and area, only with their consent.
+  { post: 2, id: 'hook', kind: 'reel', bg: 'clear', layout: 'reel-hook', title: 'We’d rather know|who made it.' },
+  { post: 2, id: 'name-1', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'A cushion cover,|stitched in the evenings' },
+  { post: 2, id: 'name-2', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'A chair,|brought back at the weekend' },
+  { post: 2, id: 'name-3', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'The lettering on every|wedding card in the family' },
+  { post: 2, id: 'line', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Trove: handmade pieces|and creative services|in Dubai and Abu Dhabi' },
   { post: 2, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: 'Makers on Trove get|their own shop.', body: 'And their own story.', sign: SIGN, size: 96 },
 
   // 3. The three words (Carousel, 5) — pinned
@@ -138,4 +141,40 @@ module.exports = [
     { mood: true, upgrade: 'A real material swatch or sketch from the Collection work' }),
   pic(11, '2', 'g-11-materials.jpg', 'clay', 'The Collection is ours.|The Marketplace is yours.', 'Both on troveathome.com. Ours comes next year. Yours starts with an application.', '', { size: 72 }),
   end(11, '3', 'While we make ours,|we’re looking for yours.', 'Ceramics, candles, textiles, prints and more, made by hand.', { size: 96, img: 'e-11.jpg', mood: true }),
+
+  // 12–14. One Reel per pillar (owner, 21 Oct 2026: "create a video post for each pillar"). Post 2 is the Trove Reel;
+  // these are the makers, providers and buyers Reels, cut from Higgsfield clips by video/build.js (shots in video/reels.js).
+  // 12. Makers (Reel)
+  { post: 12, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'g-04-first.jpg', mood: true,
+    slot: 'A maker’s hands at work on a real piece', title: 'From your hands|to your own shop.', sub: 'Sell your handmade pieces on Trove.|Free to join.', size: 92,
+    upgrade: 'Real footage from the shoot: a maker’s hands at work' },
+  { post: 12, id: 'hook', kind: 'reel', bg: 'clear', layout: 'reel-hook', title: 'Make things|by hand?' },
+  { post: 12, id: 'l-1', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'You’re a maker' },
+  { post: 12, id: 'l-2', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Sell your pieces|on your own Trove shop' },
+  { post: 12, id: 'l-3', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'We photograph them,|or you use your own' },
+  { post: 12, id: 'l-4', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'A courier collects|from your door' },
+  { post: 12, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: 'Make something?|Sell it on Trove.', body: 'Free to join.|We photograph it. We collect it.', sign: SIGN, size: 104 },
+
+  // 13. Providers (Reel)
+  { post: 13, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'g-03-provider.jpg', mood: true,
+    slot: 'A provider at work in someone’s home', title: 'Get booked for|what you do best.', sub: 'List your service on Trove.|Free during launch.', size: 92,
+    upgrade: 'Real footage from the shoot: a provider at work in a home' },
+  { post: 13, id: 'hook', kind: 'reel', bg: 'clear', layout: 'reel-hook', title: 'Style homes?' },
+  { post: 13, id: 'l-1', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Run workshops at home?' },
+  { post: 13, id: 'l-2', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Set the table for Eid or Diwali?' },
+  { post: 13, id: 'l-3', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Take photos at home?' },
+  { post: 13, id: 'l-4', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'You’re a provider' },
+  { post: 13, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: 'Offer a service?|List it on Trove.', body: 'Free to list during launch.|Bookings in one place.', sign: SIGN, size: 104 },
+
+  // 14. Buyers (Reel, December: only once the Marketplace is open to buyers)
+  { post: 14, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'g-03-buyer.jpg', mood: true,
+    slot: 'Hands unpacking a real handmade piece at home', title: 'Handmade, by people|who live here.', sub: 'Pieces and creative services|from Dubai and Abu Dhabi.', size: 92,
+    upgrade: 'Real footage: a buyer unpacking a real maker’s piece, with the maker’s consent' },
+  { post: 14, id: 'hook', kind: 'reel', bg: 'clear', layout: 'reel-hook', title: 'Handmade,|by people|who live here.' },
+  { post: 14, id: 'l-1', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Pieces for home, from makers|in Dubai and Abu Dhabi' },
+  { post: 14, id: 'l-2', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Workshops you can book at home' },
+  { post: 14, id: 'l-3', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Or give one as a gift' },
+  { post: 14, id: 'l-4', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Ceramics, candles, textiles,|prints and more' },
+  { post: 14, id: 'end', kind: 'reel', bg: 'sage', layout: 'end', title: 'Have a wander.|There’s no rush.', body: 'Handmade pieces and creative services.', sign: SIGN, size: 104,
+    lead: 'Shop at', pill: 'troveathome.com' },
 ];
