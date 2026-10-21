@@ -4,10 +4,10 @@
     "file": "post-01/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
-    "ready": false,
-    "mood": false,
-    "upgrade": "",
-    "slot": "Close-up of hands finishing a real piece (shot 1)",
+    "ready": true,
+    "mood": true,
+    "upgrade": "Real shot 1: hands finishing a real piece, close up",
+    "slot": "",
     "note": ""
   },
   {
@@ -56,13 +56,13 @@
   },
   {
     "post": 2,
-    "file": "post-02/cover.png",
+    "file": "post-02/cover.jpg",
     "kind": "reel",
     "layout": "reel-cover-photo",
-    "ready": false,
-    "mood": false,
-    "upgrade": "",
-    "slot": "A real piece held in its maker’s two hands (shot 9)",
+    "ready": true,
+    "mood": true,
+    "upgrade": "Real shot 9: a real piece held in its maker’s two hands",
+    "slot": "",
     "note": ""
   },
   {
@@ -180,10 +180,10 @@
     "file": "post-04/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
-    "ready": false,
-    "mood": false,
-    "upgrade": "",
-    "slot": "A maker’s own hands holding their own piece (shot 9)",
+    "ready": true,
+    "mood": true,
+    "upgrade": "Real shot 9: a maker’s own hands holding their own piece",
+    "slot": "",
     "note": ""
   },
   {
@@ -367,10 +367,10 @@
     "file": "post-07/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
-    "ready": false,
-    "mood": false,
-    "upgrade": "",
-    "slot": "Hands placing the last detail on a styled table, diyas lit (shot 5)",
+    "ready": true,
+    "mood": true,
+    "upgrade": "Real shot 5: hands placing the last detail on a styled table, diyas lit",
+    "slot": "",
     "note": ""
   },
   {
@@ -422,10 +422,10 @@
     "file": "post-08/slide-01.jpg",
     "kind": "slide",
     "layout": "photo",
-    "ready": false,
-    "mood": false,
-    "upgrade": "",
-    "slot": "A real workshop mid-class at home, hands at work (shot 13)",
+    "ready": true,
+    "mood": true,
+    "upgrade": "Real shot 13: a real workshop mid-class at home, hands at work",
+    "slot": "",
     "note": ""
   },
   {

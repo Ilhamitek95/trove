@@ -2,8 +2,9 @@
 // Order: what Trove is (posts 1–3), then makers and providers get their own posts (4–8), money (9), a real
 // founding maker (10) and the Collection tease (11). Buyers get their own posts in December.
 // Rules for v5 covers: one headline of seven words or fewer, one short line, the offer along the bottom.
-// Every cover shows real hands or real work (a labelled photo slot until the shoot), or is a plain type card.
-// The only generated image left is the Collection tease (post 11), which the brief allows.
+// Every cover shows hands at work or real work, or is a plain type card.
+// 21 Oct 2026 (owner): the photo covers of posts 1, 2, 4, 7 and 8 use Higgsfield images (hands only, no faces,
+// never named as a maker's work) until the shoot; each keeps its real shot as `upgrade`. Post 11 was already generated.
 // "Made here. Made home." is now a small sign-off on end cards only. Copy and captions live in posts.json.
 // Square-bracketed text renders as a dashed placeholder box: fill it in before posting.
 // photo: a file name in ./photos — rendered when present, otherwise a labelled "Real photo" slot.
@@ -23,7 +24,8 @@ const EXAMPLE = 'shop-example-full.png';
 module.exports = [
   // 1. What Trove is (Carousel, 5) — pinned
   cover(1, '1', 'real-01-hands.jpg', 'Close-up of hands finishing a real piece (shot 1)',
-    'Handmade in|Dubai and Abu Dhabi.', 'Trove is a new online marketplace for handmade pieces and creative services.', OFFER),
+    'Handmade in|Dubai and Abu Dhabi.', 'Trove is a new online marketplace for handmade pieces and creative services.', OFFER,
+    { mood: true, upgrade: 'Real shot 1: hands finishing a real piece, close up' }),
   type(1, '2', 'cream', 'Pieces,|made by hand.', 'Ceramics, candles, textiles, prints, jewellery and more, from makers who live here.'),
   type(1, '3', 'clay', 'Services,|at home.', 'Workshops, home styling and photography, from providers in Dubai and Abu Dhabi.'),
   phone(1, '4', 'sell-full.png', 47, 'All on|troveathome.com', 'Makers and providers apply in about ten minutes.', { bg: 'sage' }),
@@ -32,7 +34,7 @@ module.exports = [
   // 2. Why Trove exists (Reel, about 30 seconds, manifesto voiceover over real footage from the shoot)
   { post: 2, id: 'cover', kind: 'reel', bg: 'clay', layout: 'reel-cover-photo', photo: 'real-02-piece.jpg',
     slot: 'A real piece held in its maker’s two hands (shot 9)', kicker: '', title: 'We’d rather know|who made it.',
-    sub: 'Pieces made with care, by people you can name.' },
+    sub: 'Pieces made with care, by people you can name.', mood: true, upgrade: 'Real shot 9: a real piece held in its maker’s two hands' },
   { post: 2, id: 'name-1', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Cushion cover · [Name], [area]' },
   { post: 2, id: 'name-2', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'Wedding-card lettering · [Name], [area]' },
   { post: 2, id: 'name-3', kind: 'reel', bg: 'clear', layout: 'lower-third', text: 'A chair, brought back · [Name], [area]' },
@@ -48,7 +50,8 @@ module.exports = [
 
   // 4. Makers (Carousel, 6)
   cover(4, '1', 'real-04-own-piece.jpg', 'A maker’s own hands holding their own piece (shot 9)',
-    'Make things by hand?|You’re a maker.', 'Sell your handmade pieces on your own Trove shop page.', OFFER),
+    'Make things by hand?|You’re a maker.', 'Sell your handmade pieces on your own Trove shop page.', OFFER,
+    { mood: true, upgrade: 'Real shot 9: a maker’s own hands holding their own piece' }),
   { post: 4, id: '2', kind: 'slide', bg: 'cream', layout: 'grid', title: 'What makers sell|on Trove',
     items: ['Ceramics', 'Candles', 'Cushions and throws', 'Prints', 'Jewellery', 'Stationery', 'Baby blankets', 'Wheat bags', 'Pet collars'] },
   phone(4, '3', EXAMPLE, 0, 'Your own|shop page.', 'Your name, your story, your pieces. This one is an example.', { label: 'Example' }),
@@ -75,7 +78,8 @@ module.exports = [
 
   // 7. Providers (Carousel, 5) — Diwali
   cover(7, '1', 'real-07-table.jpg', 'Hands placing the last detail on a styled table, diyas lit (shot 5)',
-    'Style homes? Run workshops?|You’re a provider.', 'List your service on Trove, free during launch.', 'Workshops · Home styling · Photography', { size: 76 }),
+    'Style homes? Run workshops?|You’re a provider.', 'List your service on Trove, free during launch.', 'Workshops · Home styling · Photography',
+    { size: 76, mood: true, upgrade: 'Real shot 5: hands placing the last detail on a styled table, diyas lit' }),
   { post: 7, id: '2', kind: 'slide', bg: 'cream', layout: 'grid', title: 'Services you can|list on Trove',
     items: ['Workshops at home', 'Home styling', 'Tablescapes', 'Diwali and Christmas styling', 'Portraits at home', 'Photography for makers'],
     sub: 'And more: hand-lettering, repairs and gift wrapping.' },
@@ -85,7 +89,8 @@ module.exports = [
 
   // 8. Providers: workshops (Carousel, 5)
   cover(8, '1', 'real-08-workshop.jpg', 'A real workshop mid-class at home, hands at work (shot 13)',
-    'Run workshops?|Take bookings on Trove.', 'Your own service page, with booking requests in one place.', OFFER_P),
+    'Run workshops?|Take bookings on Trove.', 'Your own service page, with booking requests in one place.', OFFER_P,
+    { mood: true, upgrade: 'Real shot 13: a real workshop mid-class at home, hands at work' }),
   steps(8, '2', 'cream', 'How a booking works', ['Your workshop gets its own page', 'Someone requests a date', 'You confirm the date and final price', 'They pay you directly, or by card through Trove']),
   phone(8, '3', 'services-top.png', 47, 'On the Services|Marketplace.', 'Workshops, styling and photography, in homes in Dubai and Abu Dhabi.', { bg: 'sage' }),
   { post: 8, id: '4', kind: 'slide', bg: 'clay', layout: 'grid', title: 'Workshops people|book at home',

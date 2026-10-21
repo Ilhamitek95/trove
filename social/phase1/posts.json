@@ -1,6 +1,6 @@
 {
   "campaign": {
-    "version": "v5, 20 October 2026",
+    "version": "v5, 20 October 2026; Higgsfield covers 21 October",
     "oneLiner": "Trove is a new online marketplace for handmade pieces and creative services in Dubai and Abu Dhabi.",
     "oneLinerAr": "Trove سوقٌ إلكترونيّ جديد للقطع المصنوعة يدويًا والخدمات الإبداعية في دبي وأبوظبي.",
     "line": "Made here. Made home.",
@@ -53,26 +53,26 @@
       "date": "Wed 21 Oct",
       "step": "What Trove is",
       "title": "Handmade in Dubai and Abu Dhabi.",
-      "cover": "Real photo: hands finishing a real piece, close up",
+      "cover": "Higgsfield image: hands finishing an embroidered linen cushion, close up (real shot 1 replaces it)",
       "format": "Carousel, 5 slides, pinned",
       "for": "Everyone, makers and providers first",
       "drives": "Understanding what Trove is, then applications",
       "caption": "Trove is a new online marketplace for handmade pieces and creative services in Dubai and Abu Dhabi. Makers sell what they make by hand: ceramics, candles, textiles, prints, jewellery and more. Providers take bookings for workshops, home styling and photography. Makers join free, and providers list free during launch. We photograph your pieces, or you use your own, and a courier collects each sale from your door. Make something, or offer a service? Apply in about ten minutes at troveathome.com/apply. Looking to buy? Follow along: the Marketplace opens to buyers soon.",
       "prompt": "What do you make, or what would you love to find?",
-      "notes": "Needs one real photo: hands finishing a real piece, close up (shot 1). If it isn't ready, start later rather than open with an AI image. Pin posts 1 to 3 to the top of the profile."
+      "notes": "Cover uses a Higgsfield image (21 Oct, owner's call), hands only, not presented as a named maker's work. Switch on Instagram's AI label when posting. Swap in the real shot once it is taken. Pin posts 1 to 3 to the top of the profile."
     },
     {
       "n": 2,
       "date": "Sat 24 Oct",
       "step": "Why Trove exists",
       "title": "We'd rather know who made it.",
-      "cover": "Real photo: a real piece in its maker's hands",
+      "cover": "Higgsfield image: a handmade ceramic bowl held in two hands (real shot 9 replaces it)",
       "format": "Reel, about 30 seconds",
       "for": "Everyone",
       "drives": "Saves and shares: the idea behind Trove",
       "caption": "We'd rather know who made it. A cushion cover stitched in the evenings. A chair brought back at the weekend. The lettering on every wedding card in the family. Trove brings together pieces made with care by people you can name, in Dubai and Abu Dhabi. Makers on Trove get their own shop, with their story. Make something by hand? Apply at troveathome.com/apply",
       "prompt": "What's the handmade thing in your home, and who made it?",
-      "notes": "Voiceover: the manifesto below. Real footage from the shoot (shots 1, 3, 4 and 9), each piece tagged with its maker's first name and area, only with their consent. The people filmed are friends of Trove, never described as Trove makers. Never name another company; the real makers are the contrast."
+      "notes": "Cover uses a Higgsfield image (21 Oct). Switch on Instagram's AI label when posting. Swap in the real shot once it is taken. The Reel itself still needs footage: real footage from the shoot (shots 1, 3, 4 and 9), each piece tagged with its maker's first name and area, only with their consent, or Higgsfield clips with craft-only tags (no invented names). The people filmed are friends of Trove, never described as Trove makers. Never name another company; the real makers are the contrast. Voiceover: the manifesto below."
     },
     {
       "n": 3,
@@ -92,13 +92,13 @@
       "date": "Fri 30 Oct",
       "step": "Makers",
       "title": "Make things by hand? You're a maker.",
-      "cover": "Real photo: a maker's own hands holding their own piece",
+      "cover": "Higgsfield image: a maker's hands holding a hand-poured candle (real shot 9 replaces it)",
       "format": "Carousel, 6 slides",
       "for": "People who make things by hand, including those who have never sold",
       "drives": "Maker applications",
       "caption": "If you make things by hand, you're a maker, whether you've sold a hundred pieces or none. On Trove you get your own shop page with your name and story. It's free to join, and there's nothing to pay if nothing sells. Our photographer can shoot your pieces, and a courier collects each sale from your door in Dubai or Abu Dhabi. Four lovely pieces is a shop. Apply in about ten minutes at troveathome.com/apply. Know a maker? Tag them.",
       "prompt": "What do you make? Tell us below.",
-      "notes": "Needs a real photo: a maker's own hands holding their own piece (shot 9). Slide 3 is a labelled example shop page, not a real maker."
+      "notes": "Cover uses a Higgsfield image (21 Oct), hands only. Switch on Instagram's AI label when posting. Swap in the real shot once it is taken. Slide 3 is a labelled example shop page, not a real maker."
     },
     {
       "n": 5,
@@ -131,26 +131,26 @@
       "date": "Sun 8 Nov",
       "step": "Providers",
       "title": "Style homes? Run workshops? You're a provider.",
-      "cover": "Real photo: hands finishing a styled table, diyas lit",
+      "cover": "Higgsfield image: a hand placing the last diya on a styled Diwali table (real shot 5 replaces it)",
       "format": "Carousel, 5 slides",
       "for": "Stylists, workshop hosts and photographers, and handy people who'd never call it a service",
       "drives": "Provider applications before the gifting season",
       "caption": "Happy Diwali to everyone celebrating. If you style homes for the seasons, run workshops or take photos, you're a provider. List your service on Trove, free during launch. You get your own service page, booking requests arrive in one dashboard, and you work in homes in Dubai and Abu Dhabi. Hand-lettering, repairs and gift wrapping are welcome too. From December, people can give a service as a gift. Apply at troveathome.com/apply. Know a provider? Tag them.",
       "prompt": "Who sets the table in your family? Tag them.",
-      "notes": "Needs a real photo: hands placing the last detail on a styled table, diyas lit (shot 5). Check Diwali falls on Sun 8 Nov 2026 and that gift services will be ready in December."
+      "notes": "Cover uses a Higgsfield image (21 Oct), hand only. Switch on Instagram's AI label when posting. Swap in the real shot once it is taken. Check Diwali falls on Sun 8 Nov 2026 and that gift services will be ready in December."
     },
     {
       "n": 8,
       "date": "Wed 11 Nov",
       "step": "Providers",
       "title": "Run workshops? Take bookings on Trove.",
-      "cover": "Real photo: a real workshop mid-class at home",
+      "cover": "Higgsfield image: a pottery workshop at home, hands at work (real shot 13 replaces it)",
       "format": "Carousel, 5 slides",
       "for": "People who teach a craft: pottery, embroidery, candle pouring, calligraphy, kids' craft parties",
       "drives": "Workshop-provider applications",
       "caption": "Teach pottery at your kitchen table? Run calligraphy evenings, or craft parties for six-year-olds? Put your workshop on Trove. You get your own service page. People request a date, you confirm the date and final price, and they pay you directly or by card through Trove. Free to list during launch, in homes in Dubai and Abu Dhabi. Apply at troveathome.com/apply. Know someone who teaches? Tag them.",
       "prompt": "What would you love to learn at home?",
-      "notes": "Needs a real photo: a real workshop mid-class at home (new shot 13). Replaces v4's \"Who do you call?\"."
+      "notes": "Cover uses a Higgsfield image (21 Oct), no faces. Switch on Instagram's AI label when posting. Swap in the real shot once it is taken. Replaces v4's \"Who do you call?\"."
     },
     {
       "n": 9,
@@ -176,6 +176,7 @@
       "drives": "Tags, reach into the maker's own circle, applications",
       "caption": "Meet [Name]. [Name] has been making [craft] in [area] since [year], and [always called it \"just a hobby\"]. [Name] applied, [our photographer shot the pieces], and [Name] now has a shop on Trove as one of our founding makers. Know someone like [Name]? Tag them. If it's you, apply at troveathome.com/apply",
       "prompt": "Tag the person who always says \"it's just a hobby\".",
+      "altCaption": "What happens after you apply to Trove? A real person reads your application, usually within a day or two. You add your story, your pieces and your prices. We photograph your pieces, or you use your own, and your shop page goes live. When something sells, a courier collects it from your door. Make something by hand? Apply in about ten minutes at troveathome.com/apply",
       "notes": "Only with a real founding maker who has agreed, filmed face to camera. Say only what really happened. If nobody is ready by 14 Nov, run the two back-up slides (\"What happens after you apply\") instead; they're ready now."
     },
     {
@@ -264,6 +265,7 @@
     "#MadeHereMadeHome and #WhoMadeThatTrove unused; trademark check on \"Made here. Made home.\"",
     "Real people (posts 2 and 10, the shoot): signed releases, approved edits, neighbourhood only.",
     "The buyer opening date: say \"soon\" in public (posts 1 and 3) until 1 Dec is confirmed.",
-    "Link in bio set to troveathome.com/apply, and posts 1 to 3 pinned."
+    "Link in bio set to troveathome.com/apply, and posts 1 to 3 pinned.",
+    "Posts 1, 2, 4, 7, 8 and 11 use Higgsfield images: switch on Instagram's AI label, never caption them as a named maker's work, and swap in real shots after the shoot."
   ]
 }
