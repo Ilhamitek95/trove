@@ -85,7 +85,7 @@ th{font-weight:600;color:var(--muted)}
   <h1>Trove Phase 1 creatives<i></i></h1>
   <div class="intro">
     <div>
-      <p class="lede">Version 5, a draft: nothing is scheduled or posted. Eleven posts to find makers and providers in Dubai and Abu Dhabi, planned for 21 October to 20 November. They run in three steps: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers. Money stays out of the headlines, and every cover shows real hands or real work, or is a plain type card.</p>
+      <p class="lede">Version 5, a draft: nothing is scheduled or posted. Eleven posts to find makers and providers in Dubai and Abu Dhabi, planned for 21 October to 20 November. They run in three steps: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers. Money stays out of the headlines, and every cover shows hands at work or real work, or is a plain type card. Since 21 October the photo covers use Higgsfield images (hands only, Instagram AI label on) until the real shoot replaces them.</p>
       <p class="insight" id="insight"></p>
       <p class="muted" style="margin-top:12px;font-size:13.5px">Rebuilt from v4 after the 20 October creative review, checked against the brief and the live site. The marketing agents' earlier proposals are in the Trove repo under <code>social/phase1/agents</code>.</p>
     </div>
@@ -94,7 +94,7 @@ th{font-weight:600;color:var(--muted)}
   <div class="key">
     <span><span class="chip">Ready</span> can be posted as it is</span>
     <span><span class="chip todo">Needs input</span> a real photo slot, or a dashed box waiting for a real person</span>
-    <span><span class="chip mood">Mood image</span> made with Higgsfield; only the Collection tease uses one</span>
+    <span><span class="chip mood">Mood image</span> made with Higgsfield; turn on Instagram's AI label for that post</span>
     <span><span class="chip real">Real shot planned</span> a real photo improves or replaces this frame later</span>
   </div>
   <section style="margin-top:30px">
@@ -210,11 +210,13 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
           <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
           <div class="caption" id="cap${p.n}">${esc(p.caption)}<span class="tags">${esc(c.hashtags)}</span></div>
           <div class="row"><button type="button" id="copy${p.n}">Copy caption</button><span class="muted" style="font-size:12.5px">18:30 Dubai time</span></div>
+          ${p.altCaption ? `<p class="muted" style="font-size:13px">Back-up version caption (runs with the back-up slides):</p><div class="caption">${esc(p.altCaption)}<span class="tags">${esc(c.hashtags)}</span></div><div class="row"><button type="button" id="copyAlt${p.n}">Copy caption</button></div>` : ''}
           <p class="note">${esc(p.notes)}</p>
         </div>
       </div>`;
     root.appendChild(s);
     document.getElementById('copy' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.caption + '\n\n' + c.hashtags));
+    if (p.altCaption) document.getElementById('copyAlt' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.altCaption + '\n\n' + c.hashtags));
   }
   document.getElementById('manifesto').textContent = c.manifesto;
   document.getElementById('found').innerHTML = c.review.found.map((x) => `<li>${esc(x)}</li>`).join('');
