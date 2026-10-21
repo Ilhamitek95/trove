@@ -50,6 +50,13 @@ html,body{background:transparent}
 .ph-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 `;
 
+// 21 Oct 2026 (owner: every carousel needs images): a steps, grid or Q&A slide with f.img gets a photo strip
+// across the top (f.img in ./photos), a cream wordmark pill on it, and its content set smaller below.
+const STRIP = 600;
+const pillCounter = (counter) => counter.replace('class="ct"', 'class="ct" style="background:#FDF7F5;padding:8px 18px;border-radius:999px;opacity:.9;top:56px"');
+const strip = (f, counter) => `<div style="position:absolute;left:0;right:0;top:0;height:${STRIP}px">${photoTag({ photo: f.img, slot: f.img })}</div>`
+  + `<div class="wm" style="top:48px;left:56px;font-size:40px;background:#FDF7F5;padding:10px 22px 14px;border-radius:999px">trove<i></i></div>${pillCounter(counter)}`;
+
 function inner(f, n, total) {
   const [w, h] = SIZE[f.kind];
   const counter = f.kind === 'slide' && total > 1 ? `<div class="ct">${n} / ${total}</div>` : '';
@@ -83,14 +90,20 @@ function inner(f, n, total) {
         : `${wm}${counter}<div class="box" style="top:170px"><div class="d" style="font-size:${f.size || 80}px;line-height:1.04">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin-top:20px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>`;
       return `${head}<div style="position:absolute;left:${(w - pw) / 2}px;top:${top}px;width:${pw}px;height:${h}px;background:#292727;border-radius:68px;padding:${bez}px;box-shadow:0 30px 70px rgba(41,39,39,.22)"><div style="width:${sw}px;height:100%;border-radius:52px;overflow:hidden;background:#FDF7F5"><img src="${src}" style="display:block;width:${sw}px;margin-top:-${Math.round((f.offset || 0) * 3 * scale)}px"></div></div>${f.label ? `<div style="position:absolute;right:72px;top:${top + 40}px;background:#FDF7F5;border-radius:999px;padding:10px 20px;font-size:24px;box-shadow:0 6px 20px rgba(0,0,0,.08)">${fmt(f.label)}</div>` : ''}`;
     }
-    case 'grid':
-      return `${wm}${counter}<div class="box" style="top:230px"><div class="d" style="font-size:${f.size || 96}px;line-height:1.04">${fmt(f.title)}</div><div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:64px">${f.items.map((it) => `<span style="font-size:46px;border:2px solid rgba(41,39,39,.22);background:rgba(255,255,255,.55);border-radius:999px;padding:20px 34px">${fmt(it)}</span>`).join('')}</div>${f.sub ? `<p class="body" style="margin-top:56px">${fmt(f.sub)}</p>` : ''}</div>${url}`;
-    case 'steps':
-      return `${wm}${counter}<div class="box" style="top:230px"><div class="d" style="font-size:${f.size || 96}px;line-height:1.04">${fmt(f.title)}</div><ol style="list-style:none;margin-top:70px;display:flex;flex-direction:column;gap:40px">${f.steps.map((st, i) => `<li style="display:flex;align-items:center;gap:30px"><span style="font-weight:600;flex:none;width:96px;height:96px;border-radius:50%;background:${f.bg === 'sage' ? '#FDF7F5' : '#CAD5CC'};display:flex;align-items:center;justify-content:center;font-size:42px">${i + 1}</span><span style="font-size:48px;line-height:1.25">${fmt(st)}</span></li>`).join('')}</ol></div>${url}`;
+    case 'grid': {
+      const im = !!f.img;
+      return `${im ? strip(f, counter) : wm + counter}<div class="box" style="top:${im ? STRIP + 60 : 230}px"><div class="d" style="font-size:${im ? 72 : f.size || 96}px;line-height:1.04">${fmt(f.title)}</div><div style="display:flex;flex-wrap:wrap;gap:${im ? 16 : 20}px;margin-top:${im ? 40 : 64}px">${f.items.map((it) => `<span style="font-size:${im ? 36 : 46}px;border:2px solid rgba(41,39,39,.22);background:rgba(255,255,255,.55);border-radius:999px;padding:${im ? '14px 26px' : '20px 34px'}">${fmt(it)}</span>`).join('')}</div>${f.sub ? `<p class="body" style="margin-top:${im ? 32 : 56}px${im ? ';font-size:34px' : ''}">${fmt(f.sub)}</p>` : ''}</div>${url}`;
+    }
+    case 'steps': {
+      const im = !!f.img, c = im ? 76 : 96;
+      return `${im ? strip(f, counter) : wm + counter}<div class="box" style="top:${im ? STRIP + 60 : 230}px"><div class="d" style="font-size:${im ? 72 : f.size || 96}px;line-height:1.04">${fmt(f.title)}</div><ol style="list-style:none;margin-top:${im ? 40 : 70}px;display:flex;flex-direction:column;gap:${im ? 24 : 40}px">${f.steps.map((st, i) => `<li style="display:flex;align-items:center;gap:${im ? 26 : 30}px"><span style="font-weight:600;flex:none;width:${c}px;height:${c}px;border-radius:50%;background:${f.bg === 'sage' ? '#FDF7F5' : '#CAD5CC'};display:flex;align-items:center;justify-content:center;font-size:${im ? 36 : 42}px">${i + 1}</span><span style="font-size:${im ? 40 : 48}px;line-height:1.25">${fmt(st)}</span></li>`).join('')}</ol></div>${url}`;
+    }
     case 'pair':
       return `${wm}${counter}<div class="box" style="top:400px"><div class="small">You</div><div class="d" style="font-size:90px;line-height:1.05;margin-top:14px">${fmt(f.you)}</div><div style="border-top:2px solid rgba(41,39,39,.18);margin:64px 0 56px"></div><div class="small">Trove</div><div class="d" style="font-size:90px;line-height:1.05;margin-top:14px">${fmt(f.trove)}</div></div>${url}`;
-    case 'qa':
-      return `${wm}${counter}<div class="box" style="top:330px"><div class="d" style="font-size:96px;line-height:1.04">${fmt(f.q)}</div><p class="body" style="margin-top:54px;font-size:46px;line-height:1.42">${fmt(f.a)}</p></div>${url}`;
+    case 'qa': {
+      const im = !!f.img;
+      return `${im ? strip(f, counter) : wm + counter}<div class="box" style="top:${im ? STRIP + 60 : 330}px"><div class="d" style="font-size:${im ? 76 : 96}px;line-height:1.04">${fmt(f.q)}</div><p class="body" style="margin-top:${im ? 36 : 54}px;font-size:${im ? 40 : 46}px;line-height:1.42">${fmt(f.a)}</p></div>${url}`;
+    }
     case 'quote':
       return `${wm}${counter}<div class="box" style="top:340px"><div class="d" style="font-size:86px;line-height:1.12">${fmt(f.title)}</div><p class="body" style="margin-top:50px;opacity:.75">${fmt(f.body)}</p></div>${url}`;
     case 'photo': {
@@ -99,10 +112,10 @@ function inner(f, n, total) {
       const need = 120 + lines * size * 1.06 + (f.sub ? 14 + Math.ceil(f.sub.length / 46) * 49 : 0) + (f.big ? 110 : 60);
       const band = Math.max(f.big ? 400 : 300, Math.ceil(need));
       return `<div style="position:absolute;left:0;right:0;top:0;height:${h - band}px">${photoTag(f)}</div>
-        <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:#FDF7F5"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:${f.band ? BG[f.band] : '#FDF7F5'}"></div>
         ${f.big ? '<div class="wm" style="top:auto;bottom:' + (band - 96) + 'px;font-size:40px">trove<i></i></div>' : ''}
         <div class="box" style="bottom:120px"><div class="d" style="font-size:${size}px;line-height:1.06">${fmt(f.caption || '')}</div>${f.sub ? `<p class="body" style="margin-top:14px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>
-        <div class="url" style="bottom:52px;font-size:26px">${f.foot ? fmt(f.foot) : 'trove · troveathome.com/apply'}</div>${counter.replace('class="ct"', 'class="ct" style="background:#FDF7F5;padding:8px 18px;border-radius:999px;opacity:.9;top:56px"')}`;
+        <div class="url" style="bottom:52px;font-size:26px">${f.foot ? fmt(f.foot) : 'trove · troveathome.com/apply'}</div>${pillCounter(counter)}`;
     }
     case 'cover':
       return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="small" style="font-size:38px">${fmt(f.kicker)}</div><div class="d" style="font-size:150px;line-height:1.02;margin-top:40px">${fmt(f.title)}</div></div>`;
@@ -142,14 +155,15 @@ function inner(f, n, total) {
     await page.evaluate(() => document.fonts.ready);
     const dir = path.join(OUT, 'post-' + String(f.post).padStart(2, '0'));
     fs.mkdirSync(dir, { recursive: true });
-    const jpg = f.layout === 'photo' || f.layout === 'reel-photo' || (f.layout === 'reel-cover-photo' && f.mood);
+    const jpg = f.layout === 'photo' || f.layout === 'reel-photo' || (f.layout === 'reel-cover-photo' && f.mood) || !!f.img;
     const name = (/^\d+$/.test(f.id) ? 'slide-' + f.id.padStart(2, '0') : f.id) + (jpg ? '.jpg' : '.png');
     await page.screenshot(jpg ? { path: path.join(dir, name), type: 'jpeg', quality: 90 } : { path: path.join(dir, name), omitBackground: f.bg === 'clear' });
     // Only [bracketed words] inside the frame's text count, not the brackets of its JSON arrays (v4 marked every list "Needs input")
     const texts = [];
     JSON.stringify(f, (k, v) => (typeof v === 'string' && texts.push(v), v));
-    const placeholders = texts.some((t) => /\[[^\]]+\]/.test(t)) || (f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)));
-    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', slot: f.photo && !fs.existsSync(path.join(PHOTOS, f.photo)) ? f.slot || '' : '', note: f.note || '' });
+    const missing = [f.photo, f.img].find((p) => p && !fs.existsSync(path.join(PHOTOS, p)));
+    const placeholders = texts.some((t) => /\[[^\]]+\]/.test(t)) || !!missing;
+    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', slot: missing ? f.slot || missing : '', note: f.note || '' });
   }
   fs.rmSync(path.join(__dirname, '_frame.html'), { force: true });
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));
