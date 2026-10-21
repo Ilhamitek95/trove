@@ -70,7 +70,11 @@ button{font:inherit;font-size:13px;font-weight:600;border-radius:999px;border:1p
 button:focus-visible{outline:3px solid var(--tan);outline-offset:2px}
 .note{font-size:13.5px;border-left:3px solid var(--tan);padding-left:12px}
 .reel{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-start;margin-bottom:16px}
-.reel video{width:min(260px,100%);aspect-ratio:9/16;border-radius:10px;border:1px solid var(--line);background:#292727;display:block}
+.reelbox{position:relative;width:min(260px,100%)}
+.reel video{width:100%;aspect-ratio:9/16;border-radius:10px;border:1px solid var(--line);background:#292727;display:block}
+.reelplay{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%);white-space:nowrap;border:0;border-radius:999px;padding:12px 22px;background:#292727;color:#FDF7F5;font:600 14px/1.2 var(--body);cursor:pointer;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:88%;text-align:center}
+.reelplay:focus-visible{outline:3px solid var(--tan);outline-offset:3px}
+.reelplay[disabled]{cursor:progress}
 .reel p{flex:1 1 200px;font-size:13.5px;margin:0}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px;margin-top:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-size:14.5px;display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -189,6 +193,29 @@ function copyText(btn, text) {
     navigator.clipboard.writeText(text).then(done, () => { btn.textContent = 'Select the text to copy'; });
   } catch (e) { btn.textContent = 'Select the text to copy'; }
 }
+// The artifact host answers a video's range requests with the whole file, and iPhone Safari won't play a video served
+// that way. So Play fetches the Reel whole and plays it from memory (a blob: URL); a browser that can't falls back to the file.
+async function playReel(btn) {
+  const v = btn.parentElement.querySelector('video');
+  const file = v.dataset.src;
+  btn.disabled = true;
+  btn.textContent = 'Loading…';
+  const start = async (src) => { v.src = src; v.controls = true; await v.play(); };
+  try {
+    const r = await fetch(file);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    await start(URL.createObjectURL(new Blob([await r.blob()], { type: 'video/mp4' })));
+  } catch (e) {
+    try { await start(file); } catch (e2) {
+      v.controls = false;
+      btn.disabled = false;
+      btn.style.whiteSpace = 'normal';
+      btn.textContent = 'This browser can’t play it here. The Reel is in Downloads › Trove Phase 1 posts.';
+      return;
+    }
+  }
+  btn.hidden = true;
+}
 Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json').then((r) => r.json())]).then(([d, m]) => {
   const c = d.campaign;
   document.getElementById('insight').textContent = c.insight;
@@ -208,7 +235,7 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     s.id = 'post' + p.n;
     s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.step)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
       <div class="post">
-        <div>${p.video ? `<div class="reel"><video controls playsinline preload="none" poster="out/post-${String(p.n).padStart(2, '0')}/cover.jpg" src="${esc(p.video)}" aria-label="The finished Reel for post ${p.n}"></video><p><b>The finished Reel</b><br>${esc(p.format)}, silent: add a track from Instagram's audio library when posting. Upload the Cover frame below as its cover. The frames below are its cover, text and closing card.</p></div>` : ''}
+        <div>${p.video ? `<div class="reel"><div class="reelbox"><video playsinline muted preload="none" poster="out/post-${String(p.n).padStart(2, '0')}/cover.jpg" data-src="${esc(p.video)}" aria-label="The finished Reel for post ${p.n}"></video><button type="button" class="reelplay">Play the Reel</button></div><p><b>The finished Reel</b><br>${esc(p.format)}, silent: add a track from Instagram's audio library when posting. Upload the Cover frame below as its cover. The frames below are its cover, text and closing card.</p></div>` : ''}
         <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' || f.layout === 'reel-hook' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div></div>
         <div class="copy">
           <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
@@ -222,6 +249,7 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     document.getElementById('copy' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.caption + '\n\n' + c.hashtags));
     if (p.altCaption) document.getElementById('copyAlt' + p.n).addEventListener('click', (e) => copyText(e.currentTarget, p.altCaption + '\n\n' + c.hashtags));
   }
+  root.addEventListener('click', (e) => { const b = e.target.closest('.reelplay'); if (b) playReel(b); });
   document.getElementById('manifesto').textContent = c.manifesto;
   document.getElementById('found').innerHTML = c.review.found.map((x) => `<li>${esc(x)}</li>`).join('');
   document.getElementById('fixes').innerHTML = c.review.changed.map((x) => `<li>${esc(x)}</li>`).join('');
