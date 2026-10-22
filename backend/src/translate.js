@@ -299,7 +299,8 @@ async function callModel(fields, context) {
   const res = await c.messages.create({
     model: model(),
     max_tokens: 16000,
-    system: SYSTEM,
+    // prompt caching (owner rule, 22 Oct 2026): the standing brief is a cached prefix
+    system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     output_config: { effort: 'low', format: { type: 'json_schema', schema } },
     messages: [{ role: 'user', content: `What this is: ${context}\n\nFields to translate (JSON):\n${JSON.stringify(fields, null, 1)}` }],
   });

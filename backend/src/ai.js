@@ -60,19 +60,25 @@ When one of those searches genuinely fits this product, include it word-for-word
 }
 
 async function suggestTags({ name, description = '', category = '', shopName = '' }) {
+  // Prompt caching (owner rule, 22 Oct 2026): the standing instructions and the
+  // 30-day trend list are the system prompt, marked as a cached prefix, so only
+  // the product itself is fresh input on each call.
   const response = await client().messages.create({
     model: MODEL,
     max_tokens: 500,
-    output_config: { format: { type: 'json_schema', schema: TAG_SCHEMA } },
-    messages: [{
-      role: 'user',
-      content: `You write search tags for Trove, a curated marketplace of handmade goods in Dubai and Abu Dhabi. Shoppers type these into the search box, so pick the tags with the most search demand behind them:
+    system: [{
+      type: 'text',
+      text: `You write search tags for Trove, a curated marketplace of handmade goods in Dubai and Abu Dhabi. Shoppers type these into the search box, so pick the tags with the most search demand behind them:
 
 - Favour popular, high-traffic phrases — the plain words most people actually type ("home decor", "gift for her", "coffee mug") — over niche, poetic or trade wording.
 - Include 3-4 broad discovery terms shoppers browse with, then specific ones: material, style, room or use, occasion or gift angle, and close synonyms of the product's name.
-- Lowercase, one to three words each, no hashtags. Don't repeat the product name or category word-for-word. Return 8 to 12 tags.${trendsBlock()}
-
-Product: ${name}
+- Lowercase, one to three words each, no hashtags. Don't repeat the product name or category word-for-word. Return 8 to 12 tags.${trendsBlock()}`,
+      cache_control: { type: 'ephemeral' },
+    }],
+    output_config: { format: { type: 'json_schema', schema: TAG_SCHEMA } },
+    messages: [{
+      role: 'user',
+      content: `Product: ${name}
 Category: ${category}
 Shop: ${shopName}
 Description: ${description}`,
