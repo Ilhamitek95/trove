@@ -17,6 +17,20 @@ Last updated 26 October 2026 (laptop session: social Phase 1 v6, new calendar af
 - Sending ID photos for the admin to check still works as a fallback.
 - **Privacy Policy v3** (English and Arabic) names Didit and explains this.
 
+## Code tidy-up (26 Oct, laptop)
+
+Five reviewers read the whole codebase; the safe part of what they found is fixed and live (all 880 tests pass).
+
+- **Fixed:** makers were getting two "your payment is on its way" emails for each payout; now they get one. If the sign-in page can't reach the server, it now says so instead of sending people to a page that bounces them back. Two small Arabic-page fixes.
+- **Cleared out:** unused styling and code left from earlier versions, old demo-shop code, and 7 leftover working copies + 15 finished branches on the laptop.
+- **Your decisions, nothing changed yet:**
+  1. Remove the leftover demo-account code (it could overwrite a real person's password if they ever signed up with one of the old demo email addresses) and the stand-in stock photos for the old demo pieces. Claude recommends yes.
+  2. Remove the old "Trove payouts" tab inside /sell (Admin → Payments does the same job, better). Claude recommends yes.
+  3. Stop social-campaign commits redeploying the live site (a deploy filter in render.yaml). Claude recommends yes.
+  4. Move the social campaign's photos and videos (about 125 MB) out of the website repo, into their own repo or OneDrive.
+  5. Bigger restructures: split the two longest server files and the email and SEO files, and share one helper file across the dashboards. Several hours of work; no visible change.
+  6. Seven places count "units returned" slightly differently (for example, whether a goodwill refund where the maker kept the money counts). Pick one meaning per place.
+
 ## Social: Phase 1 recruitment campaign (v6, 26 Oct): ALL DRAFT
 
 - **Nothing is scheduled or posted.** Owner, 20 Oct: "we are not launching anything yet, everything is a draft". The dates are a plan only, and the auto-poster's Trove queue stays empty until the owner says launch.

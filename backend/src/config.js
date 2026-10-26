@@ -2,7 +2,8 @@
 /**
  * Feature flags + business rules for the two-rail payment architecture.
  * Everything env-driven is read at CALL time (not module load) so the test
- * suite can flip a flag mid-file without re-requiring the world.
+ * suite can flip a flag mid-file without re-requiring the world. The one
+ * exception is RETURN_WINDOW_DAYS below, copied from fees.js at load.
  *
  *   RAIL_B_ENABLED           '1'/'true' switches on the Connect graduation rail
  *   VAT_REGISTERED           '1'/'true' once Trove is VAT-registered (5% capture)

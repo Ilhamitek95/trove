@@ -7,10 +7,10 @@
  * `ensureDemoProviders(db)` is idempotent and keyed on the provider slug: it
  * creates whatever is missing and never touches a provider that exists (so a
  * demo account the owner has edited keeps its edits). It runs from the local
- * seed AND at boot on the live site (prod never reseeds), which is why it
- * lives here rather than in seed.js. The accounts are listed in server.js's
- * DEMO_EMAILS so DEMO_PASSWORD rotates them on a public deployment; locally
- * they sign in with the usual demo1234.
+ * seed, and at boot only when DEMO_PROVIDERS=1 (the e2e suite sets it; never
+ * set on Render, whose demo data was purged at go-live). The accounts are
+ * listed in seed-guard.js's DEMO_EMAILS so DEMO_PASSWORD rotates them on a
+ * public deployment; locally they sign in with the usual demo1234.
  *
  * Mara (Kiln & Clay) is the "one account, shop + services" story from the
  * services FAQ: her existing seller account gains a provider profile.

@@ -25,7 +25,7 @@
 const db = require('./db');
 const cfg = require('./config');
 
-const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const { esc } = require('./markdown');
 const aed = (c) => `AED ${((c || 0) / 100).toFixed(2)}`;
 const day = (sql) => {
   if (!sql) return '';

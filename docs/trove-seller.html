@@ -1,4 +1,4 @@
-<!-- trove for sellers — vendor back-office prototype -->
+<!-- trove for makers — the maker dashboard at /sell (shop, pieces, orders, payouts, services); also the admin's Trove Collection and shop view -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -272,9 +272,6 @@
   .field textarea{resize:vertical;min-height:80px;line-height:1.5}
   .field .hint{font-size:11.5px;color:var(--muted);font-weight:500;margin-top:6px}
   .ftwo{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .img-pick{display:flex;gap:12px;align-items:center;margin-bottom:20px}
-  .img-pick .pv{width:72px;height:88px;border-radius:12px;overflow:hidden;position:relative;background:var(--rose);flex-shrink:0}
-  .img-pick .pv .grad{position:absolute;inset:0}
   .seg{display:flex;gap:8px}
   .seg button{flex:1;padding:11px;border:1px solid var(--line);border-radius:11px;font-size:12.5px;font-weight:600;background:var(--paper);transition:.15s}
   .seg button.on{border-color:var(--char);background:var(--char);color:var(--cream)}
@@ -332,11 +329,6 @@
   .stripe-connect .mark{width:64px;height:64px;border-radius:16px;background:var(--stripe);display:grid;place-items:center;margin:0 auto 22px;color:#fff;font-family:var(--font-display);font-size:34px;font-weight:600}
   .stripe-connect h2{font-size:34px;font-weight:500;margin-bottom:10px}
   .stripe-connect p{color:var(--ink-80);font-size:15px;font-weight:400;max-width:42ch;margin:0 auto 26px}
-  .connect-pts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:30px 0}
-  .connect-pts .cp{text-align:center}
-  .connect-pts .cp .ic{width:40px;height:40px;border-radius:11px;background:var(--rose-tint);display:grid;place-items:center;margin:0 auto 10px;color:var(--accent-ink)}
-  .connect-pts .cp h5{font-family:var(--font-display);font-size:17px;font-weight:600}
-  .connect-pts .cp span{font-size:12px;color:var(--muted);font-weight:500}
   .demo-note{font-size:12px;color:var(--muted);font-weight:500;margin-top:8px;display:inline-flex;gap:7px;align-items:center;justify-content:center}
 
   .connected-head{display:flex;align-items:center;gap:14px;background:var(--green-bg);border:1px solid #CADBCC;border-radius:var(--r);padding:18px 22px;margin-bottom:22px}
@@ -344,7 +336,6 @@
   .connected-head h4{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--char)}
   .connected-head p{font-size:12.5px;color:var(--green);font-weight:600}
   .connected-head .btn{margin-left:auto}
-  .pay-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
   .balance .big{font-family:var(--font-display);font-size:44px;font-weight:600;line-height:1;margin:8px 0}
   .fee-row{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line-soft);font-size:13.5px;font-weight:500}
   .fee-row:last-child{border:none;font-weight:700}
@@ -376,7 +367,7 @@
     .app{grid-template-columns:1fr}
     .side{display:none}
     .grid-4{grid-template-columns:1fr 1fr}
-    .ov-row,.pay-grid,.store-grid,.connect-pts{grid-template-columns:1fr}
+    .ov-row,.store-grid{grid-template-columns:1fr}
     .content,.topbar{padding-left:24px;padding-right:24px}
     .topbar{position:static;padding-top:16px;padding-bottom:14px;flex-wrap:wrap;gap:10px}
     /* sidebar becomes a sticky scrollable tab bar */
@@ -434,23 +425,13 @@
 </head>
 <body>
 <style>
-  /* payout method + balance (managed vs connect) */
-  .pay-choose{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-  .pay-choose .opt{border:1.5px solid var(--line);border-radius:var(--r);padding:18px 20px;cursor:pointer;transition:.15s;background:var(--paper)}
-  .pay-choose .opt:hover{border-color:var(--char)}
-  .pay-choose .opt.on{border-color:var(--coral);box-shadow:0 0 0 3px var(--rose-tint)}
-  .pay-choose .opt .hd{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-  .pay-choose .opt .hd h4{font-family:var(--font-display);font-size:21px;font-weight:600;color:var(--char)}
-  .pay-choose .opt .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;transition:.15s}
-  .pay-choose .opt.on .dot{border-color:var(--coral);box-shadow:inset 0 0 0 4px var(--coral)}
-  .pay-choose .opt p{font-size:13px;color:var(--ink-80);font-weight:500;line-height:1.55;margin-bottom:10px}
-  .pay-choose .opt .tag{font-size:11.5px;font-weight:700;color:var(--accent-ink);letter-spacing:.03em}
+  /* payout details + balance */
   .pay-grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px}
   .up{font-size:11.5px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:10px}
   .bal{font-family:var(--font-display);font-size:42px;font-weight:600;color:var(--char);line-height:1}
   .bal-sub{font-size:12.5px;color:var(--muted);font-weight:600;margin:6px 0 14px}
   .warn{background:var(--rose-tint);border:1px solid #EBC9BD;color:var(--accent-ink);font-size:12.5px;font-weight:600;border-radius:10px;padding:10px 12px;margin-top:12px}
-  @media(max-width:760px){.pay-choose,.pay-grid2{grid-template-columns:1fr}}
+  @media(max-width:760px){.pay-grid2{grid-template-columns:1fr}}
   /* per-shop shipment cards (Orders view) */
   .ship-card{margin-bottom:18px}
   /* orders — filter chips + collapsed rows */
@@ -634,7 +615,6 @@
   input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--char)!important;outline-offset:1px}
   .banner :focus-visible,.impbar :focus-visible,.mitem.on:focus-visible{outline-color:var(--cream)}
   .banner a:focus-visible{outline-offset:1px}
-  .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
   @media(max-width:920px){
     .btn,.mtabs .mitem,.ochip,.svc-catopt,.seg button,.impbar button{min-height:44px}
     .iact,.optg-del{width:44px;height:44px}
@@ -994,7 +974,7 @@
 <script src="/provider-panel.js"></script>
 <script>
 /* ---------------- STATE ---------------- */
-let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',payoutType:'managed',bank:{name:'',accountName:'',iban:''},stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
+let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',bank:{name:'',accountName:'',iban:''},stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
 let products=[];
 let orders=[];
 let ME=null;
@@ -1079,7 +1059,7 @@ function img(seed){
   return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
 }
 function aed(n){return troveMoney(n);} /* shared formatter (api.js): en-GB digits, fils shown — never rounded */
-function money(c){const n=(c||0)/100; return Number.isInteger(n)?aed(n):troveMoney(n,{decimals:true});}
+function money(c){return troveMoney((c||0)/100);}
 /* Product status words, shown in the page's language (the value sent stays English). */
 const ST=s=>({live:_t('live'),draft:_t('draft'),hidden:_t('hidden'),ready:_t('ready')})[s]||s;
 /* Every API string that reaches innerHTML goes through esc(). */
@@ -1116,7 +1096,6 @@ function etaLabel(lead){const l=Math.max(1,parseInt(lead,10)||2),a=l+TRANSIT.min
 function applyShop(s){
   SHOP={...SHOP,id:s.id,name:s.name,slug:s.slug,house:!!(s.is_house||s.isHouse),bio:s.bio||'',loc:s.location||'',color:safeColor(s.color),image:safeImg(s.image),status:s.status||'approved',
     pickupAddress:s.pickup_address||'',pickupPhone:s.pickup_phone||'',
-    payoutType:s.payout_type||SHOP.payoutType||'managed',
     agreementVersion:s.agreement_version||'',
     agreementUpdateDue:!!s.agreementUpdateDue,currentAgreementVersion:s.currentAgreementVersion||'',
     sellingPaused:!!s.sellingPaused,agreementChangeNote:s.agreementChangeNote||'',
@@ -2757,7 +2736,6 @@ async function saveStore(){
  * Built from the dashboard's own data (SHOP + products), never from the public
  * storefront, so a maker still under review can check photos, choices and
  * prices before anything is public. Read-only: nothing here can be bought. */
-let PV_BACK=null;
 function pvRibbon(piece){
   if(SHOP.status!=='approved')return _t('Preview — not public yet. Your shop and its live pieces appear the moment Trove approves your shop.');
   if(piece&&piece.adminHidden)return _t('Preview — Trove has taken this piece off sale. Contact us to put it back.');

@@ -94,7 +94,9 @@ test('F206: the boot promotes ADMIN_EMAIL to admin only once that account has co
   const dbFile = tempDb();
   const Database = require('better-sqlite3');
   // Let the app create the schema on a first boot, then plant an unconfirmed account.
-  const env = { NODE_ENV: 'test', DB_PATH: dbFile, PORT: '0', CRON_DISABLED: '1', STRIPE_MOCK: '1', SESSION_SECRET: 's', ADMIN_EMAIL: 'boss@test.local' };
+  const env = { NODE_ENV: 'test', DB_PATH: dbFile, PORT: '0', CRON_DISABLED: '1', STRIPE_MOCK: '1', SESSION_SECRET: 's', ADMIN_EMAIL: 'boss@test.local',
+    // Set (blank) so a developer's backend/.env can't create the admin on the first boot.
+    ADMIN_PASSWORD: '', ADMIN_NAME: '' };
   let r = await boot(env);
   assert.match(r.out, /trove running/, r.out);
   let d = new Database(dbFile);

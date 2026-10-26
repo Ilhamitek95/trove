@@ -308,18 +308,6 @@ const refundedParcelComing = (orderId, shopId) => safely('return-coming', () => 
   return returnComing({ order, shopId, items, refundedOrder: true });
 });
 
-/** To the maker: their settlement payment has gone out. */
-const payoutSent = (settlementItemId) => safely('payout-sent', () => {
-  const it = db.prepare('SELECT * FROM settlement_items WHERE id=?').get(settlementItemId);
-  if (!it || !(it.amount_cents > 0)) return null;
-  const s = shopRow(it.shop_id);
-  if (!s || s.is_house) return null;
-  return deliver('payout-sent', s.owner_email, email().payoutSent({
-    shopName: s.name, ownerName: s.owner_name, amountCents: it.amount_cents, reference: it.bank_reference,
-    payer: require('./service-credits').payerName(), link: `${accounts.siteUrl()}/sell?view=payments`, lang: s.owner_lang,
-  }));
-});
-
 /* Owner alerts (owner 2026-10-02: tell me about each new paid order, return
  * request and automatic sold-out refund — short, the buyer's first name and
  * the order number only). Always English. */
@@ -386,7 +374,7 @@ const ownerSoldOut = (orderId, { refunded, soldOut = true, partial = null } = {}
 });
 
 module.exports = {
-  orderRefunded, parcelDelivered, returnApprovedMakers, refundedParcelComing, payoutSent,
+  orderRefunded, parcelDelivered, returnApprovedMakers, refundedParcelComing,
   ownerNewOrder, ownerReturnRequested, ownerSoldOut,
   idExpiring, adminAlert, alertOwner, makerPaid, parcelCancelled,
   packReminder, packOverdueAdmin, packByFor,

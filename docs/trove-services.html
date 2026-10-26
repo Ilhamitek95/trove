@@ -150,8 +150,6 @@
   .btn{display:inline-block;padding:11px 20px;border-radius:999px;font-size:13.5px;font-weight:600;transition:.18s;text-align:center}
   .btn-dark{background:var(--char);color:var(--cream)}
   .btn-dark:hover{background:#3B3737}
-  .btn-ghost{border:1px solid var(--line)}
-  .btn-ghost:hover{border-color:var(--char)}
 
   /* hero — the Sell-on-Trove composition: centred, one line of intro, the facts as dashed pills */
   .hero{padding:48px 0 18px}
@@ -200,7 +198,6 @@
   .dcard .top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
   .dcard h3{font-size:21px;line-height:1.1;font-weight:600}
   .dcard .cnt{flex:none;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--sage-tint);color:var(--accent-ink);white-space:nowrap;margin-top:2px}
-  .dcard .cnt.none{background:transparent;border:1px dashed rgba(41,39,39,.3);color:var(--muted)}
   .dcard .blurb{font-size:13px;color:var(--muted);font-weight:500;line-height:1.45;margin-top:-3px}
   /* what people book, as short pills (F340): three, then '+N more' */
   .dcard .exs{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
@@ -409,41 +406,19 @@
   .booked p{font-size:14px;color:var(--ink-80);font-weight:400;line-height:1.65;margin-top:10px}
   .booked .code{font-weight:700;letter-spacing:.05em}
 
-  /* ---- how it works: customers and providers side by side, each on their own dashed rail (the sell-page motif) ---- */
+  /* ---- section bands (how it works, providers, FAQ) ---- */
   .band{padding:50px 0 6px}
   .band-head{text-align:center;max-width:640px;margin:0 auto 28px}
   .band-head .eyebrow{font-size:12px;letter-spacing:.12em;font-weight:700;line-height:1.4;color:var(--eyebrow);display:block;margin-bottom:14px}
   .band-head h2{font-size:clamp(28px,3.6vw,40px);line-height:1.06}
   .band-head p{color:var(--ink-80);margin-top:12px;font-weight:400;font-size:15px;line-height:1.6}
-  .hiw{display:grid;grid-template-columns:1fr 1fr;gap:0 60px;max-width:1080px;margin:0 auto;position:relative}
-  .hiw::before{content:'';position:absolute;left:50%;top:4px;bottom:4px;border-left:1.5px dashed rgba(41,39,39,.18)}
-  .lane-h{display:flex;align-items:center;gap:12px}
-  .lane-h .ofic{width:38px;height:38px}
-  .lane-h .ofic svg{width:19px;height:19px}
-  .lane-h b{font-family:var(--font-display);font-size:23px;font-weight:600;display:block;line-height:1.05}
-  .lane-h small{display:block;font-size:12.5px;color:var(--muted);font-weight:500;margin-top:3px}
   .h-terms{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 4px}
   .h-terms span{display:inline-flex;align-items:center;gap:6px;background:var(--cream);border:1.5px dashed rgba(41,39,39,.26);border-radius:999px;padding:6px 12px;font-size:12px;font-weight:600;line-height:1.2;color:var(--char)}
   .h-terms svg{flex:none;opacity:.45}
-  .steps{position:relative;margin-top:12px}
-  .steps::before{content:'';position:absolute;left:15px;top:12px;bottom:12px;border-left:1.5px dashed rgba(41,39,39,.22)}
-  .step{display:grid;grid-template-columns:32px 1fr;gap:14px;padding:10px 0;align-items:start}
-  .step .dot{width:32px;height:32px;border-radius:50%;background:var(--cream);border:1.5px solid var(--char);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:14px;position:relative;z-index:1}
-  .step h4{font-family:var(--font-display);font-size:18px;font-weight:600;margin:5px 0 3px}
-  .step p{font-size:13.5px;line-height:1.58;color:var(--ink-80);font-weight:400;max-width:54ch}
   .ofic{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--char);flex:none}
-    @media(max-width:860px){
-    .hiw{grid-template-columns:1fr;gap:30px}
-    .hiw::before{display:none}
-    .step p{max-width:none}
-  }
   @media(max-width:560px){
     .band{padding:40px 0 4px}
     .band-head{margin-bottom:22px}
-    .step{padding:8px 0;gap:12px;grid-template-columns:27px 1fr}
-    .step .dot{width:27px;height:27px;font-size:12.5px}
-    .steps::before{left:13px}
-    .step h4{margin-top:3px;font-size:17px}
   }
 
   /* FAQ: two-column accordion */
@@ -481,9 +456,6 @@
   [dir="rtl"] .bv-rows b{text-align:left}
   [dir="rtl"] .modal .x{right:auto;left:16px}
   [dir="rtl"] .modal h3,[dir="rtl"] .modal h1{padding-right:0;padding-left:40px}
-  [dir="rtl"] .hiw::before{left:auto;right:50%;border-left:0;border-right:1.5px dashed rgba(41,39,39,.18)}
-  [dir="rtl"] .steps::before{left:auto;right:15px;border-left:0;border-right:1.5px dashed rgba(41,39,39,.22)}
-  @media(max-width:620px){[dir="rtl"] .steps::before{right:13px}}
   [dir="rtl"] .bkcard .s bdi,[dir="rtl"] .kick bdi,[dir="rtl"] .booked .code{direction:ltr;unicode-bidi:isolate}
   [dir="rtl"] .payopt,[dir="rtl"] .terms,[dir="rtl"] .field label{text-align:right}
   [dir="rtl"] .pv-stats span{font-size:12px}
@@ -613,7 +585,7 @@
     <div class="provs" id="provGrid"></div>
   </section>
 
-  <!-- HOW IT WORKS: booking one | offering one, side by side on the dashed rail -->
+  <!-- HOW IT WORKS: four rows, from finding a service to settling up -->
   <section class="band" id="how">
     <div class="band-head">
       <span class="eyebrow">How it works</span>
@@ -701,7 +673,7 @@ const safeImg=u=>{u=String(u||'');return /^(\/(?!\/)|https:\/\/|data:image\/)[^"
 let TAX=null, SERVICES=[], PROVIDERS=[], ME=null, MYBOOKINGS=[], CFG=null;
 /* The storefront's addresses (backend/src/seo.js has the same slugify). */
 function slugify(s){return String(s==null?'':s).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/&/g,' and ').replace(/['\u2019]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80).replace(/-+$/,'');}
-function pieceUrl(p){const s=slugify(p.name);return '/pieces/'+Number(p.id)+(s?'-'+s:'');}
+function pieceUrl(p){const s=slugify(p.nameEn||p.name);return '/pieces/'+Number(p.id)+(s?'-'+s:'');}
 function makerUrl(k){return '/makers/'+encodeURIComponent(k);}
 /* One h1 heading on the page: the directory's hero title, or the provider's name. */
 function pageH1(view){

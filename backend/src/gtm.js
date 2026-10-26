@@ -93,7 +93,7 @@ const IUB_CALLBACKS = ''
   + "gtag('consent','update',{analytics_storage:a,ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',functionality_storage:'denied',personalization_storage:'denied'})}catch(e){}};";
 /** The banner settings line (one for every language — the words are in docs/consent.js). */
 function iubSettingsLine() {
-  return `  <script>var _iub=window._iub=window._iub||[];_iub.csConfiguration=${JSON.stringify(IUB_SETTINGS).replace(/</g, '\u003c')};${IUB_CALLBACKS}</script>`;
+  return `  <script>var _iub=window._iub=window._iub||[];_iub.csConfiguration=${JSON.stringify(IUB_SETTINGS).replace(/</g, '\\u003c')};${IUB_CALLBACKS}</script>`;
 }
 /* iubenda's banner and floating button never show, from the first frame (the
    doubled id outranks iubenda's injected !important rules); the inline park

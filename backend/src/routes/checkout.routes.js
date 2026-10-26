@@ -182,7 +182,8 @@ router.post('/', async (req, res, next) => {
       subtotal += unitPrice * qty;
     }
 
-    // Buyer fees: a flat service fee plus delivery (delivery free over the threshold).
+    // Buyer fees: the service fee (0 since Aug 2026 — no buyer fee; the plumbing
+    // stays for a future change) plus delivery (free over the threshold).
     const serviceFee = SERVICE_FEE_CENTS;
     const delivery = deliveryFor(subtotal);
     const total = subtotal + serviceFee + delivery;

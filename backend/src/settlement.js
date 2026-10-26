@@ -268,10 +268,8 @@ function markPaid(settlementId) {
   for (const it of items) {
     try { generatePurchaseNote(it, st); }
     catch (e) { console.error(`purchase note failed for settlement item ${it.id}:`, e.message); }
-    // The maker hears the money has gone out (amount + bank reference).
-    require('./notify').payoutSent(it.id);
   }
-  // Each maker gets a payment note, like providers do (best-effort).
+  // Each maker hears the money has gone out: amount, bank reference, run date (best-effort).
   for (const it of items) require('./notify').makerPaid({ shopId: it.shop_id, amountCents: it.amount_cents, reference: it.bank_reference, runDate: st.run_date });
   return db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
 }
@@ -289,7 +287,7 @@ const UNDO_PAID_HOURS = 48;
 function cancelRun(settlementId) {
   const st = db.prepare('SELECT * FROM settlements WHERE id=?').get(settlementId);
   if (!st) { const e = new Error('Settlement not found'); e.status = 404; throw e; }
-  if (st.status === 'paid') { const e = new Error('This run is marked paid — use Undo paid first (within 48 hours)'); e.status = 409; throw e; }
+  if (st.status === 'paid') { const e = new Error('This run is marked paid — use Undo paid first (within ' + UNDO_PAID_HOURS + ' hours)'); e.status = 409; throw e; }
   db.transaction(() => {
     db.prepare("UPDATE seller_balances SET settlement_id=NULL WHERE settlement_id=? AND type IN ('credit_sale','debit_refund')").run(settlementId);
     db.prepare('DELETE FROM settlement_items WHERE settlement_id=?').run(settlementId);
@@ -360,7 +358,7 @@ function setHold(shopId, on) {
 /**
  * The lines a purchase note lists for one order of one shop: only the units
  * Trove actually bought — units refunded through a return before the run are
- * listed apart as returned, never as purchased (returns.refundedUnitsSql).
+ * listed apart as returned, never as purchased (mirrors refundedUnitsSql in returns.js).
  */
 // Units Trove cancelled before dispatch were never bought from the maker. A
 // goodwill refund where the buyer kept the piece (maker_credit_kept) is not a

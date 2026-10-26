@@ -8,8 +8,7 @@
  */
 const i18n = require('./i18n');
 
-const esc = (s) => String(s == null ? '' : s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const { esc } = require('./markdown');
 
 function render({ lang = 'en', token, email }) {
   const ar = lang === 'ar';

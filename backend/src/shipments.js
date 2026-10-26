@@ -8,7 +8,6 @@
 const db = require('./db');
 
 // The forward lifecycle a seller advances a shipment through.
-const FLOW = ['processing', 'shipped', 'out_for_delivery', 'delivered'];
 const LABELS = {
   processing: 'Processing',
   shipped: 'Shipped',
@@ -231,4 +230,4 @@ function assertUndoable(sh) {
   }
 }
 
-module.exports = { FLOW, LABELS, shape, shapeForBuyer, BUYER_NOTES, statusLabel, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };
+module.exports = { LABELS, shape, shapeForBuyer, BUYER_NOTES, statusLabel, packOverdue, arrivalWindow, noteFor, deriveOrderStatus, markDelivered, assertUndoable };

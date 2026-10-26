@@ -200,7 +200,7 @@ const pretty = (dc) => {
 module.exports = {
   name: 'OTO',
   carrierName: pretty,
-  _order: order, _location: location, _chooseOption: chooseOption, _orderRef: orderRef,   // for the tests
+  _order: order, _location: location, _chooseOption: chooseOption,   // for the tests
 
   /** Pickup location for the maker + the order in OTO. No courier yet — that waits for markReady. */
   async bookPickup(shipment, shop, items) {

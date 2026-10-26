@@ -79,14 +79,13 @@ const reasonLabel = (r) => REASONS[r] || LEGACY_REASONS[r] || r;
 const FAULT_REASONS = new Set(['damaged', 'wrong-item', 'not-as-described']);
 // Statuses that hold units (and the supplier's credit). Declined frees them.
 const LIVE_STATUSES = ['requested', 'approved', 'collected', 'refunded'];
-const IN_FLIGHT = ['requested', 'approved', 'collected'];
 const MAX_IMAGES = 3;
 const MAX_DETAILS = 1000;
 
 /* ---- money ---- */
 /** The changed-my-mind collection fee this order would carry (0 over the threshold). */
 function changeOfMindFee(order) {
-  return order.subtotal_cents > fees.FREE_DELIVERY_THRESHOLD_CENTS ? 0 : fees.DELIVERY_FEE_CENTS;
+  return fees.deliveryFor(order.subtotal_cents);   // the same rule as the delivery fee
 }
 /**
  * The collection fee for one request: the fee rule applies to 'changed my
@@ -247,17 +246,6 @@ function heldUnits(orderId) {
     cur.qty += r.qty;
     cur.statuses.push(r.status);
     map.set(r.id, cur);
-  }
-  return map;
-}
-/** order_item_id → 'requested' | 'approved' for items with NO unit left to send back. */
-function lockedItems(orderId) {
-  const held = heldUnits(orderId);
-  const lines = db.prepare('SELECT id, qty - cancelled_qty AS qty FROM order_items WHERE order_id=?').all(orderId);
-  const map = new Map();
-  for (const l of lines) {
-    const h = held.get(l.id);
-    if (h && h.qty >= l.qty) map.set(l.id, h.statuses.includes('requested') ? 'requested' : 'approved');
   }
   return map;
 }
@@ -862,8 +850,8 @@ function applyRefundEffects(order, { refundRef = null, bookReturns = true } = {}
 }
 
 module.exports = {
-  REASONS, LEGACY_REASONS, FAULT_REASONS, IN_FLIGHT, MAX_IMAGES, BUYER_RETURN_DAYS,
-  reasonLabel, changeOfMindFee, feeCents, money, deliveryRefundRule, deliveryRefundCents, deliveryLeftCents, grossCents, requestItems, returnableItems, lockedItems, heldUnits,
+  REASONS, LEGACY_REASONS, FAULT_REASONS, MAX_IMAGES, BUYER_RETURN_DAYS,
+  reasonLabel, changeOfMindFee, feeCents, money, deliveryRefundRule, deliveryRefundCents, deliveryLeftCents, grossCents, requestItems, returnableItems, heldUnits,
   ineligibleReason, deadline, parcelDeadline, parcelWindows, fullyReturned, reverseCreditsFor, vatToReverse,
   shape, shapeForBuyer, photoUrls, create, cancelOwn, approve, bookCollections, markCollected, collectionOnParcel, refund, applyRefundEffects, emailItems,
 };

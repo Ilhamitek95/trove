@@ -13,8 +13,7 @@
  * 3. The shared chrome (promo bar, header, account menu, mobile menu,
  *    footer) mirrored. Page-specific mirroring lives in each page's own
  *    <style> under [dir="rtl"].
- * 4. Helpers: .rtl-flip mirrors a directional icon; email/phone/IBAN/code
- *    inputs stay left-to-right.
+ * 4. Helpers: email/phone/IBAN/code inputs stay left-to-right.
  * ------------------------------------------------------------------ */
 
 /* 1 · Arabic glyphs for the brand families */
@@ -38,7 +37,6 @@ html[dir="rtl"] .eyebrow{font-size:13px}
 /* numbers, codes and contact details read left to right inside Arabic text */
 html[dir="rtl"] :is(input[type="email"],input[type="tel"],input[type="url"],input[type="number"],input[inputmode="numeric"],input[inputmode="decimal"],input[autocomplete="email"],input[autocomplete="tel"],.ltr){direction:ltr;text-align:right}
 html[dir="rtl"] input[type="email"]::placeholder,html[dir="rtl"] input[type="tel"]::placeholder{text-align:right}
-html[dir="rtl"] .rtl-flip,html[dir="rtl"] [data-rtl-flip]{transform:scaleX(-1)}
 html[dir="rtl"] bdi,html[dir="rtl"] .num{unicode-bidi:isolate}
 
 /* 3 · the shared chrome */

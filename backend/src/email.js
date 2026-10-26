@@ -194,8 +194,7 @@ function pieceName(lang, name) {
 }
 
 /* ---- shared bits for the templates ---- */
-const esc = (s) => String(s == null ? '' : s)
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const { esc } = require('./markdown');
 const aed = (cents) => {
   const n = (cents || 0) / 100;
   return 'AED ' + (Number.isInteger(n) ? n.toLocaleString('en-GB')
@@ -1435,22 +1434,4 @@ function returnComingMaker({ shopName, ownerName, publicId, items = [], reasonLa
  * To the maker: their fortnightly payment has gone out (settlement marked
  * paid). { shopName, ownerName, amountCents, reference, payer, link, lang }
  */
-function payoutSent({ shopName, ownerName, amountCents, reference, payer, link, lang }) {
-  const { T, A, I, p, note, panel, button, layout, serif } = kit(lang);
-  const inner =
-    panel(`<span style="font-family:${serif};font-size:26px;font-weight:600">${A(amountCents)}</span><br>${T('reference {ref}', { ref: `<b>${esc(I(reference))}</b>` })}`)
-    + p(T("This payment was sent from {payer} on Trove's behalf, so look for that name on your bank statement. Please allow 1–2 working days for it to arrive.", { payer: `<b>${esc(payer)}</b>` }))
-    + button(T('Open your payments'), esc(link))
-    + note(T('The purchase note for this payment, listing every piece it covers, is in your dashboard under Payments.'));
-  return {
-    subject: T('Your Trove payment is on its way — {amount}', { amount: A(amountCents) }),
-    html: layout(T('Your payment is on its way'), inner, {
-      kicker: esc(shopName),
-      intro: T("Hello {name}, we've sent your payment for {shop} by bank transfer.", { name: firstNameOr(ownerName, T), shop: esc(shopName) }),
-      reason: T("You're receiving this because you sell on Trove."),
-      preheader: T('{amount} sent — reference {ref}.', { amount: A(amountCents), ref: I(reference) }),
-    }),
-  };
-}
-
-Object.assign(module.exports, { orderRefunded, parcelDelivered, returnComingMaker, payoutSent });
+Object.assign(module.exports, { orderRefunded, parcelDelivered, returnComingMaker });

@@ -51,7 +51,6 @@ const SITE = () => (process.env.PUBLIC_URL || String(process.env.CLIENT_URL || p
   .trim().replace(/\/+$/, '');
 const viewUrl = (bk) => `${SITE()}/services/booking/${bk.code}?t=${linkToken(bk)}`;
 const payUrl = (bk) => `${SITE()}/services/pay/${bk.code}-${linkToken(bk)}`;
-const PAY_REF = /^(SRV-[0-9A-F]{6})-([0-9a-f]{32})$/;
 
 /** A booking by its code, if the token matches — else null. */
 function byCodeAndToken(code, token) {
@@ -530,7 +529,7 @@ async function paymentSession(bk) {
 }
 
 module.exports = {
-  paymentsEnabled, linkToken, tokenOk, viewUrl, payUrl, PAY_REF, byCodeAndToken,
+  paymentsEnabled, linkToken, tokenOk, viewUrl, payUrl, byCodeAndToken,
   dubaiToday, serviceDateError, beforeService, customerCanCancel, DATELESS_CANCEL_DAYS, datePassed, payBlock, confirmAmount, sweepStale, REMIND_AFTER_HOURS, EXPIRE_REQUEST_DAYS,
   confirm, onPaymentSucceeded, refund, decline, cancel, complete, forCustomer, paymentSession, mail, serviceVat, refundOrphan,
 };

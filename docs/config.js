@@ -18,8 +18,9 @@
  *              over from this one (served by /api/config); this value stays
  *              the fallback, so leave it in place.
  *
- * Data is live whenever the backend is reachable. If it isn't, the storefront
- * gracefully falls back to a demo catalogue so the page still renders.
+ * Data is always live. If the backend can't be reached, the storefront retries
+ * and then shows an outage page with a Retry button (F477): never a stand-in
+ * catalogue. The demo catalogue appears only on localhost / file:// pages.
  */
 window.TROVE_CONFIG = {
   API_URL: "",

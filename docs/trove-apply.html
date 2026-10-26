@@ -291,7 +291,7 @@
             <div class="help">So our curation team can reach you.</div></div>
         </div>
         <div class="subbox r-provider">
-          <div class="fee" id="subFee">Free <small>during launch</small></div>
+          <div class="fee">Free <small>during launch</small></div>
           <p data-i18n><span id="subFeeNote">Free during launch — the AED 30/month listing fee starts later; we'll give you 30 days' notice.</span> The only other cost is a 10% platform fee on bookings paid through Trove — direct bookings carry no commission. The service itself is always yours to deliver.</p>
           <label><input type="checkbox" id="fAgreeSvc"><span data-i18n>I understand how the listing fee works and accept the <a href="/provider-agreement" target="_blank" rel="noopener" style="text-decoration:underline">Provider Agreement</a> — my services are my own responsibility, not Trove's.</span></label>
         </div>
@@ -369,7 +369,7 @@ async function loadTax(){
   try{
     TAX=await TroveAPI.api('/api/services/taxonomy');
     // Free during launch (owner, 2026-09-30): the fee shown is the one that starts later.
-    if(TAX.providerSubFeeCents)$('subFeeNote').textContent=_t('Free during launch — the {fee}/month listing fee starts later; we\'ll give you 30 days\' notice.',{fee:troveMoney(Math.round(TAX.providerSubFeeCents/100))});
+    if(TAX.providerSubFeeCents)$('subFeeNote').textContent=_t('Free during launch — the {fee}/month listing fee starts later; we\'ll give you 30 days\' notice.',{fee:troveMoney(TAX.providerSubFeeCents/100)});
     renderCatPicker();
   }catch(_){ $('catPicker').innerHTML='<div class="help">'+_t('Couldn’t load the category list — refresh to try again.')+'</div>'; }
 }

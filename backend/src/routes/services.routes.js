@@ -160,10 +160,11 @@ router.get('/providers/:slug', (req, res) => {
 
 // POST /api/services/apply — an existing account gains a provider profile
 // only when it is the one signed in; a new email creates the account and the
-// profile together. No password is ever checked here: this route sits outside
-// the sign-in flow, so an existing email that isn't the signed-in account is
-// told to sign in first (409 sign_in_required) — it must not become a second,
-// quieter place to guess passwords. The profile starts 'pending' and only
+// profile together. An existing email that isn't the signed-in account must
+// come with that account's password (the form's sign-in step); otherwise it is
+// told to sign in first (409 sign_in_required), and a wrong password answers
+// 409 exists_wrong_password under the /api/auth rate limit, so this never
+// becomes a quieter place to guess passwords. The profile starts 'pending' and only
 // appears publicly once an admin approves. Rate-limited with /api/auth.
 router.post('/apply', (req, res, next) => {
   const v = require('../validate');
