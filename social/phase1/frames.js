@@ -56,7 +56,7 @@ module.exports = [
   cover(1, '1', 'real-01-hands.jpg', 'clay', 'Close-up of hands finishing a real piece (shot 1)',
     'Handmade in|Dubai, Abu Dhabi|and Sharjah.', 'A new online marketplace for handmade pieces and creative services.', OFFER,
     { size: 80, mood: true, upgrade: 'Real shot 1: hands finishing a real piece, close up' }),
-  pic(1, '2', 'v-pieces.jpg', 'pink', 'Pieces,|made by hand.', 'From makers who live here.', { size: 84 }),
+  pic(1, '2', 'v-pieces.jpg', 'pink', 'Pieces,|made by hand.', 'From makers who live here.', { size: 84, pos: 'center 30%' }),
   pic(1, '3', 'g-01-services.jpg', 'tan', 'Services,|at home.', 'Workshops, styling and photography.', { size: 84 }),
   phone(1, '4', 'sell-full.png', 47, 'All on|troveathome.com', 'Apply in about ten minutes.', 'p-01-sell.jpg'),
   end(1, '5', 'Make something?|Sell it on Trove.', 'e-01.jpg'),
@@ -90,7 +90,7 @@ module.exports = [
   cover(4, '1', 'g-04-pink.jpg', 'cream', 'A maker’s own hands holding their own piece (shot 9)',
     'Make things by hand?|You’re a maker.', 'Sell your handmade pieces on your own Trove shop page.', OFFER,
     { mood: true, upgrade: 'Real shot 9: a maker’s own hands holding their own piece' }),
-  pic(4, '2', 'g-04-range.jpg', 'pink', 'Pearls to|cobalt glaze.', 'Jewellery, prints, candles, toys, collars and more.', { size: 84 }),
+  pic(4, '2', 'g-04-range.jpg', 'pink', 'Pearls to|cobalt glaze.', 'Jewellery, prints, candles, toys, collars and more.', { size: 84, pos: 'center 20%' }),
   phone(4, '3', EXAMPLE, 0, 'Your own|shop page.', 'This one is an example.', 'p-04-shop.jpg', { label: 'Example' }),
   pic(4, '4', 'g-04-first.jpg', 'tan', 'Never sold anything?|That’s fine.', 'Four lovely pieces is a shop.', { size: 80 }),
   pic(4, '5', 'g-06-handles.jpg', 'char', 'Free to join.', 'We photograph it. We collect it from your door.', { size: 96 }),
@@ -125,7 +125,7 @@ module.exports = [
     'Keep your stall.|Add a Trove shop.', 'Trove isn’t exclusive.', OFFER,
     { mood: true, upgrade: 'Collab photo: an established maker who has applied, at their own stall' }),
   phone(6, '2', EXAMPLE, 0, 'One more place|to find your work.', 'An example shop page.', 'p-06-shop.jpg', { label: 'Example' }),
-  pic(6, '3', 'g-06-keep.jpg', 'char', 'Keep all of it.', 'Your Instagram, your market days, your customers.', { size: 96 }),
+  pic(6, '3', 'g-06-keep.jpg', 'char', 'Keep everything|you have.', 'Your Instagram, your market days, your customers.', { size: 96 }),
   end(6, '4', 'Tag a maker|with a stall.', 'e-06.jpg'),
 
   // 7. Style homes? Run workshops? You're a provider. (Carousel, 5) · Mon 16 Nov · lead Pastel Orange (in the photo

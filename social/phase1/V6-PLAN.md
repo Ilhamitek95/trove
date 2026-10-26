@@ -86,7 +86,7 @@ jewel-toned beads (new). Last line on screen "Any style. Made by hand." Light Bl
 **Post 5** (now a process Reel). Make (hand-bound notebook, new), photograph (12-4, moved), the example shop page on a phone
 (a rendered frame, no clip), pack (silk scarf, new), courier (12-5, moved). Clay cover card.
 
-**Post 6** (carousel 4, Tan). New cover (colourful stall in low sun), example shop page, "Keep all of it." on Charcoal, end card
+**Post 6** (carousel 4, Tan). New cover (colourful stall in low sun), example shop page, "Keep everything you have." on Charcoal (was "Keep all of it.", changed after validation COL-5), end card
 "Tag a maker with a stall." Downtown Design line removed; "What Trove handles" moved into the caption.
 
 **Post 7** (carousel 5, Pastel Orange in the photo). Not Diwali any more. New cover (seasonal table, pastel-orange roses,
