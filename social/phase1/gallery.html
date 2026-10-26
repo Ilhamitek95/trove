@@ -226,7 +226,10 @@ async function playReel(btn) {
   }
   btn.hidden = true;
 }
-Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json').then((r) => r.json())]).then(([d, m]) => {
+// Every file is fetched fresh and each image or Reel carries its content hash (?v=), so a re-publish always shows the new version
+const fresh = (u) => fetch(u, { cache: 'no-store' }).then((r) => r.json());
+const at = (f) => 'out/' + f.file + (f.v ? '?v=' + f.v : '');
+Promise.all([fresh('posts.json'), fresh('out/manifest.json'), fresh('video/out/versions.json').catch(() => ({}))]).then(([d, m, vv]) => {
   const c = d.campaign;
   // v6: show the posts in date order ("Sat 31 Oct"); the post numbers stay as they were
   const MON = { Oct: 9, Nov: 10, Dec: 11 };
@@ -250,8 +253,8 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     s.id = 'post' + p.n;
     s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.step)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready${p.colour ? ` · Colour: ${esc(p.colour)}` : ''}</span></div>
       <div class="post">
-        <div>${p.video ? `<div class="reel"><div class="reelbox"><video playsinline muted preload="none" poster="out/post-${String(p.n).padStart(2, '0')}/cover.jpg" data-src="${esc(p.video)}" aria-label="The finished Reel for post ${p.n}"></video><button type="button" class="reelplay">Play the Reel</button></div><p><b>The finished Reel</b><br>${esc(p.format)}, silent: add a track from Instagram's audio library when posting. Upload the Cover frame below as its cover. The frames below are its cover, text and closing card.</p></div>` : ''}
-        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' || f.layout === 'reel-hook' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div></div>
+        <div>${p.video ? `<div class="reel"><div class="reelbox"><video playsinline muted preload="none" poster="${esc((frames.find((x) => /\/cover\./.test(x.file)) && at(frames.find((x) => /\/cover\./.test(x.file)))) || '')}" data-src="${esc(p.video + (vv[p.video.split('/').pop()] ? '?v=' + vv[p.video.split('/').pop()] : ''))}" aria-label="The finished Reel for post ${p.n}"></video><button type="button" class="reelplay">Play the Reel</button></div><p><b>The finished Reel</b><br>${esc(p.format)}, silent: add a track from Instagram's audio library when posting. Upload the Cover frame below as its cover. The frames below are its cover, text and closing card.</p></div>` : ''}
+        <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="${esc(at(f))}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' || f.layout === 'reel-hook' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div></div>
         <div class="copy">
           <dl class="facts"><dt>For</dt><dd>${esc(p.for)}</dd><dt>Drives</dt><dd>${esc(p.drives)}</dd><dt>Ask</dt><dd>${esc(p.prompt)}</dd></dl>
           <div class="caption" id="cap${p.n}">${esc(p.caption)}<span class="tags">${esc(c.hashtags)}</span></div>
@@ -291,7 +294,7 @@ const lb = document.getElementById('lb'), lbImg = document.getElementById('lbImg
 let cur = null, lastFocus = null, sx = null;
 function show() {
   const list = FR[cur.post], f = list[cur.i];
-  lbImg.src = 'out/' + f.file;
+  lbImg.src = at(f);
   lbImg.alt = 'Post ' + cur.post + ', ' + label(f.file);
   lbLabel.textContent = 'Post ' + cur.post + ' · ' + label(f.file) + ' · ' + (cur.i + 1) + ' of ' + list.length + (f.slot ? ' · Real photo needed: ' + f.slot : '') + (f.upgrade ? ' · Real shot planned: ' + f.upgrade : '');
   document.getElementById('lbPrev').disabled = cur.i === 0;

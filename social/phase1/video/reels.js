@@ -65,7 +65,8 @@ module.exports = [
   // Moved to post 8: 13-2 (pottery workshop) and 13-5 (finished pots).
   { post: 13, pillar: 'Providers', shots: [
     { clip: '13-1.mp4', status: 'keep', start: 'g-03-provider.jpg', overlay: 'hook', motion: 'The hands plump the linen cushion on the sofa and smooth the woven throw over the sofa arm.' + STYLE },
-    { clip: '13-3.mp4', status: 'keep', start: 'real-07-table.jpg', overlay: 'l-1', motion: 'The hand sets the lit clay diya down on the table and draws back; the small flames of the diyas flicker softly along the table of marigolds and brass.' + STYLE },
+    // Final pass 26 Oct: regenerated without diyas or marigolds (Diwali is 8 Nov, this posts 18 Nov; Diwali lives in Stories)
+    { clip: '13-3.mp4', status: 'new', start: 'g-13-table.jpg', overlay: 'l-1', motion: 'The hand smooths the folded sage-green napkin on the handmade plate, straightens it slightly and draws back out of frame; the candles stay unlit and everything else on the table stays still.' + STYLE },
     { clip: '13-4.mp4', status: 'keep', start: 'v-camera.jpg', overlay: 'l-2', motion: 'The hands steady the camera and a finger presses the shutter, then the camera lowers slightly after the shot; the styled table beyond stays softly out of focus with the candle flames flickering.' + STYLE },
     { clip: '13-kintsugi.mp4', status: 'new', start: 'v-kintsugi.jpg', overlay: 'l-3', motion: 'The fine brush traces gold slowly along the mended crack of the deep green bowl, while the other hand turns the bowl a little.' + STYLE },
     { clip: '13-mural.mp4', status: 'new', start: 'v-mural.jpg', overlay: 'l-4', motion: 'The hand paints one more leaf onto the botanical mural with a slow, steady brushstroke, then lifts the brush away.' + STYLE },
@@ -86,7 +87,8 @@ module.exports = [
     { clip: '14-1.mp4', status: 'keep', start: 'g-03-buyer.jpg', overlay: 'hook', motion: 'The hands lift the handmade speckled vase slowly up out of the kraft box, the tissue paper shifting around it.' + STYLE },
     { clip: '14-2.mp4', status: 'keep', start: 'v-shelf.jpg', overlay: 'l-1', motion: 'The hand sets the speckled vase down on the shelf, turns it slightly so the dried stems face the room, and draws back.' + STYLE },
     { clip: '14-3.mp4', status: 'keep', start: 'v-candles.jpg', overlay: 'l-2', motion: 'The hands pour melted wax slowly from the small metal jugs into the ceramic jars, the wax rising gently around the wicks.' + STYLE },
-    { clip: '14-4.mp4', status: 'keep', start: 'g-07-gift.jpg', overlay: 'l-3', motion: 'The hand settles the cream envelope with the green ribbon onto the wrapped gift and smooths it flat; the diya flame and fairy lights flicker softly behind.' + STYLE },
+    // Final pass 26 Oct: new gift still without the lit diya, in pink tissue and a pastel-orange ribbon (VALIDATION-v6 CAL-6, COL-2)
+    { clip: '14-4.mp4', status: 'new', start: 'g-07-gift.jpg', overlay: 'l-3', motion: 'The hand settles the cream envelope under the pastel-orange ribbon on the wrapped gift, smooths it flat and draws back; the fairy lights twinkle softly in the blurred background.' + STYLE },
     { clip: '14-pieces.mp4', status: 'new', start: 'v-pieces.jpg', overlay: 'l-4', motion: 'Overhead flat-lay of colourful handmade pieces on a wooden table. The candle stays unlit the whole time: no flame, no smoke, the wick stays plain and dark. Only soft daylight and the shadows of leaves drift slowly across the table; the camera slowly pushes in. Nothing moves except light and shadow; nothing new appears in frame. No people, no text.', retake: 'take 1 lit the candle by itself; kept as 14-pieces-take1.mp4' },
   ] },
 ];

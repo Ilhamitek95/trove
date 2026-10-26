@@ -136,8 +136,8 @@ module.exports = [
     'Style homes? Run workshops?|You’re a provider.', 'List your service on Trove, free during launch.', 'Workshops · Home styling · Photography',
     { size: 76, mood: true, upgrade: 'Real shot 5: hands placing the last detail on a styled table' }),
   pic(7, '2', 'v-kintsugi.jpg', 'tan', 'Styling, workshops,|repairs, portraits.', 'If people book you for it, list it.', { size: 76 }),
-  phone(7, '3', 'sell-services-top.png', 47, 'Your service gets|its own page.', 'Booking requests arrive in one place.', 'p-07-services.jpg'),
-  pic(7, '4', 'g-07-gift.jpg', 'char', 'Services as gifts,|from December.', 'Free to list during launch.', { size: 84 }),
+  phone(7, '3', 'sell-services-top.png', 47, 'Your service gets|its own page.', 'Booking requests arrive in one place.', 'p-07-table.jpg'),
+  pic(7, '4', 'g-07-gift.jpg', 'char', 'Services as gifts,|from December.', 'Free to list during launch.', { size: 84, pos: 'center 30%' }),
   end(7, '5', 'Know a provider?|Tag them.', 'e-07.jpg'),
 
   // 13. Get booked for what you do best. (Providers pillar Reel) · Wed 18 Nov · lead Light Green: plants in the sunlit room

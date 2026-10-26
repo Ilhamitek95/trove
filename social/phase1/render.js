@@ -189,7 +189,9 @@ function inner(f, n, total) {
     JSON.stringify(f, (k, v) => (typeof v === 'string' && texts.push(v), v));
     const missing = [f.photo, f.img].find((p) => p && !fs.existsSync(path.join(PHOTOS, p)));
     const placeholders = texts.some((t) => /\[[^\]]+\]/.test(t)) || !!missing;
-    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', slot: missing ? f.slot || missing : '', note: f.note || '' });
+    // v = a short content hash: the review page adds it to each image's address so a re-render always shows (no stale cache)
+    const v = require('crypto').createHash('sha1').update(fs.readFileSync(path.join(dir, name))).digest('hex').slice(0, 10);
+    manifest.push({ post: f.post, file: `post-${String(f.post).padStart(2, '0')}/${name}`, v, kind: f.kind, layout: f.layout, ready: !placeholders, mood: !!f.mood, upgrade: f.upgrade || '', slot: missing ? f.slot || missing : '', note: f.note || '' });
   }
   fs.rmSync(path.join(__dirname, '_frame.html'), { force: true });
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify(manifest, null, 2));

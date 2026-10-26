@@ -72,3 +72,7 @@ for (const r of reels.filter((x) => !only.length || only.includes(x.post))) {
   const mb = (f) => (fs.statSync(f).size / 1e6).toFixed(1) + ' MB';
   console.log(`post ${r.post} (${r.pillar}): ${total.toFixed(1)} s, ${mb(master)} → ${master}; preview ${mb(preview)}`);
 }
+// Content hashes of every preview, so the review page always loads the latest cut (no stale cache)
+const crypto = require('crypto');
+fs.writeFileSync(path.join(PREVIEW, 'versions.json'), JSON.stringify(Object.fromEntries(fs.readdirSync(PREVIEW).filter((x) => x.endsWith('.mp4'))
+  .map((x) => [x, crypto.createHash('sha1').update(fs.readFileSync(path.join(PREVIEW, x))).digest('hex').slice(0, 10)])), null, 2));
