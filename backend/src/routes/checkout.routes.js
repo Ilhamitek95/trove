@@ -10,7 +10,6 @@ const { normalizeUAEMobile } = require('../phone');
 const options = require('../options');
 const extras = require('../extras');
 const customerBlock = require('../customer-block');
-const displayOnly = require('../display-only');
 
 const OUT_OF_AREA = `We currently deliver in ${SERVICE_AREAS.join(' and ')} only`;
 const BAD_PHONE = 'Enter a UAE mobile number so the courier can reach you on the day';
@@ -136,8 +135,6 @@ router.post('/', async (req, res, next) => {
       const p = get.get(Number(it.productId));
       const qty = Math.max(1, parseInt(it.qty, 10) || 1);
       if (!p) return unavailable(res, it.productId);
-      // A demo shop's piece is on display only on the live site (src/display-only.js).
-      if (displayOnly.isDemoShop(p.shop_id)) return res.status(409).json({ code: 'display_only', error: displayOnly.ORDER_REFUSED });
       // Personalisation: only kept when the product allows it; required means the
       // order can't go through without it (mirrors Etsy's listing personalisation).
       let perso = '';

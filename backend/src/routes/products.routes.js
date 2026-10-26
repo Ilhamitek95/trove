@@ -3,7 +3,6 @@ const express = require('express');
 const db = require('../db');
 const { parseTags } = require('../tags');
 const productOptions = require('../options');
-const { stockCover } = require('../stock-images');
 const leadTimes = require('../lead-times');
 
 const router = express.Router();
@@ -26,9 +25,6 @@ function shape(p) {
     images: parseImages(p.images),
     // Each photo's 480 px copy for cards and the basket, or null (uploads.smallOf).
     thumbs: parseImages(p.images).map((u) => require('../uploads').smallOf(u)),
-    // The interim matched photo the storefront shows when there are no
-    // uploads (docs/api.js TROVE_STOCK_IMG), so the native app shows it too.
-    stockImage: stockCover(p.name),
     options: productOptions.parse(p.options),
     // Per-combination availability, so the product page can grey out the
     // glaze that's sold out instead of taking the order and disappointing.
@@ -45,9 +41,6 @@ function shape(p) {
     // minDays, maxDays, label: '3–6 days' }. The app can adopt it as is.
     leadDays: leadTimes.leadOf(p.lead_days),
     estimate: leadTimes.estimate(p.lead_days),
-    // false for a demo shop's piece while the live site keeps demo
-    // listings display-only (src/display-only.js); checkout refuses it.
-    forSale: !require('../display-only').isDemoShop(p.shop_id),
     shop: { id: p.shop_id, name: p.shop_name, slug: p.slug, location: p.location, color: p.color, image: p.shop_image || null, imageSmall: require('../uploads').smallOf(p.shop_image), isHouse: !!p.is_house },
   };
 }
@@ -65,8 +58,8 @@ const BASE = `
 
 /* ?view=list (F357): the storefront's lighter catalogue. Each piece comes
  * without its full description (a 'summary' of about 240 characters instead,
- * cut at a word) and without the two fields the page builds for itself
- * (stockImage, estimate); the page fetches the full piece from
+ * cut at a word) and without the delivery estimate the page builds for
+ * itself; the page fetches the full piece from
  * /api/products/:id when it opens. Opt-in: without the parameter the answer
  * is exactly as before (the native app reads it). */
 const SUMMARY_LEN = 240;
@@ -77,7 +70,7 @@ function summaryOf(text) {
   return cut.slice(0, Math.max(cut.lastIndexOf(' '), SUMMARY_LEN - 40)).replace(/[\s,;:.–—-]+$/, '') + '…';
 }
 function listShape(p) {
-  const { description, stockImage, estimate, ...rest } = p;
+  const { description, estimate, ...rest } = p;
   return { ...rest, summary: summaryOf(description) };
 }
 

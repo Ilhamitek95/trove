@@ -63,30 +63,10 @@ if (process.env.ADMIN_EMAIL) {
 // — see src/demo-providers.js. Opt-in via DEMO_PROVIDERS=1 (the local seed
 // creates them anyway): the live site was cleared of its demo data on
 // 2026-09-22 (scripts/purge-demo.js) and must not grow them back at boot.
-// Runs before the lockdown below so new accounts get the DEMO_PASSWORD
-// rotation on the same boot.
+// The e2e suite (e2e/start-server.js) sets it.
 if (process.env.DEMO_PROVIDERS === '1') {
   const created = require('./demo-providers').ensureDemoProviders(db);
   if (created) console.log(`demo providers: created ${created}`);
-}
-
-// Demo-account lockdown: on a public deployment set DEMO_PASSWORD to replace
-// the seeded accounts' well-known "demo1234" password (re-applied every boot,
-// so changing the env changes the password). The house account also loses its
-// admin role — on a live site the only admin should be the ADMIN_EMAIL owner.
-// Real customer accounts are never touched. Leave unset in local dev.
-if (process.env.DEMO_PASSWORD) {
-  const { hashPassword } = require('./middleware');
-  const { DEMO_EMAILS } = require('./seed-guard');
-  const hash = hashPassword(process.env.DEMO_PASSWORD);
-  const rotate = db.prepare('UPDATE users SET password_hash=? WHERE email=?');
-  let rotated = 0;
-  for (const email of DEMO_EMAILS) rotated += rotate.run(hash, email).changes;
-  let demoted = 0;
-  if ((process.env.ADMIN_EMAIL || '').trim().toLowerCase() !== 'hello@trove.com') {
-    demoted = db.prepare("UPDATE users SET role='seller' WHERE email='hello@trove.com' AND role='admin'").run().changes;
-  }
-  if (rotated) console.log(`demo lockdown: rotated ${rotated} demo password(s)${demoted ? ', house account demoted to seller' : ''}`);
 }
 
 // Bank-detail encryption sweep: once PAYOUT_ENC_KEY is set, any IBAN still
@@ -185,7 +165,7 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
       jobs.ok('settlement', line);
     } catch (e) {
       // The owner is emailed (once a day at most): makers are waiting on this.
-      jobs.fail('settlement', e, { lines: ['No draft settlement was created this run Tuesday, so makers have not been paid. Open Trove payouts and press Run settlement once it is fixed.'] });
+      jobs.fail('settlement', e, { lines: ['No draft settlement was created this run Tuesday, so makers have not been paid. Open Admin → Payments and press Run settlement once it is fixed.'] });
     } finally {
       settling = false;
     }

@@ -217,15 +217,14 @@ const TILE = ['#DBC7BD', '#CAD5CC', '#E9D8CF', '#F8D7E4', '#CFDBBE', '#BED3DF'];
 
 /**
  * A product's picture for an email: the maker's first uploaded photo, else
- * the matched stock shot the storefront shows, else '' (the template then
- * draws a brand tile). Always an absolute URL.
+ * '' (the template then draws a brand tile). Always an absolute URL.
  */
-function productImage({ images, name } = {}) {
+function productImage({ images } = {}) {
   let list = images;
   if (typeof list === 'string') { try { list = JSON.parse(list); } catch (_) { list = []; } }
   const first = Array.isArray(list) && list.find(Boolean);
   if (first) return /^https?:/i.test(first) ? first : SITE() + (first.startsWith('/') ? '' : '/') + first;
-  return require('./stock-images').stockImage(name);
+  return '';
 }
 
 const dubaiDate = (sqlTime, lang = 'en') => {

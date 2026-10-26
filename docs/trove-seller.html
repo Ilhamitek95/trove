@@ -675,7 +675,6 @@
       <a class="mitem" data-v="analytics" onclick="go('analytics')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 21h18"/><rect x="4" y="12" width="4" height="6" rx="1"/><rect x="10" y="8" width="4" height="10" rx="1"/><rect x="16" y="4" width="4" height="14" rx="1"/></svg>Shop Analytics</a>
       <a class="mitem maker-only" data-v="payments" onclick="go('payments')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20"/></svg>Payments</a>
       <a class="mitem" data-v="storefront" onclick="go('storefront')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Storefront</a>
-      <a class="mitem" id="adminMenuItem" data-v="adminpayouts" style="display:none" onclick="go('adminpayouts')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="M2 10h20M6 15h5"/></svg>Trove payouts</a>
       <a class="mitem" id="adminPanelLink" style="display:none" href="/admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1.2l2-1.6-2-3.4-2.4 1a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.6a7 7 0 0 0-2 1.2l-2.4-1-2 3.4 2 1.6A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 2 1.2L10 21h4l.5-2.6a7 7 0 0 0 2-1.2l2.4 1 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z"/></svg>Super admin ↗</a>
     </nav>
     <div class="foot">Signed in as <span id="sellerName"></span> · <a href="/login" id="signOutLink">Sign out</a></div>
@@ -751,9 +750,6 @@
 
       <!-- PAYMENTS -->
       <div class="view" id="view-payments"></div>
-
-      <!-- ADMIN PAYOUTS (house/admin only) -->
-      <div class="view" id="view-adminpayouts"></div>
 
       <!-- SERVICES: the Services Marketplace side of the same account -->
       <div class="view" id="view-services">
@@ -2544,66 +2540,6 @@ async function savePayoutSetup(){
 // storefront footer link) — no raw-markdown modal here.
 function showAgreement(){ window.open(troveUrl('/seller-agreement'),'_blank','noopener'); }
 
-/* ---------------- ADMIN — fortnightly settlement run (house/admin only) ---------------- */
-const EXCLUDE_REASON={payout_setup_incomplete:_t('payout setup incomplete'),netted_negative:_t('refunds exceed purchases — carried forward'),on_hold:_t('payouts on hold (release in Admin → Settlements)'),bank_details_changed:_t('bank details just changed — check and release in Admin → Settlements')};
-async function renderAdminPayouts(){
-  const v=$('view-adminpayouts');
-  v.innerHTML=`<div class="card" style="color:var(--muted);font-weight:600">${_t('Loading settlements…')}</div>`;
-  let preview={eligible:[],excluded:[],totalNetCents:0}, hist={settlements:[]};
-  try{ preview=await TroveAPI.api('/api/admin/settlements/preview'); }
-  catch(e){ v.innerHTML=`<div class="card" style="color:var(--accent-ink);font-weight:600">${esc(e.message||_t('Could not load settlements'))}</div>`; return; }
-  try{ hist=await TroveAPI.api('/api/admin/settlements'); }catch(_){}
-  const owed=preview.eligible||[], held=preview.excluded||[], runs=hist.settlements||[];
-  const due=`
-    <div class="card">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
-        <div><h3 style="font-size:22px;font-weight:600">${_t('Next settlement run')}</h3>
-          <div style="font-size:13px;color:var(--muted);font-weight:600">${_tn(owed.length,'{n} supplier payable','{n} suppliers payable')} · ${_t('{amount} total',{amount:money(preview.totalNetCents)})}</div></div>
-        <button class="btn btn-coral" ${owed.length?'':'disabled style="opacity:.45;cursor:default"'} onclick="runSettlement()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>${_t('Run settlement')}</button>
-      </div>
-      ${owed.length?`<table class="tbl" style="margin-top:16px"><thead><tr><th>${_t('Supplier')}</th><th>${_t('Pay to')}</th><th>${_t('Purchases')}</th><th>${_t('Refund adj.')}</th><th>${_t('To pay')}</th></tr></thead>
-        <tbody>${owed.map(s=>`<tr>
-          <td style="font-weight:700">${esc(s.name)}</td>
-          <td style="color:var(--muted)">${s.bank&&s.bank.iban?`${esc(s.bank.name||'')} · ${esc(s.bank.iban)}`:`<span style="color:var(--accent-ink);font-weight:700">${_t('no bank details')}</span>`}</td>
-          <td>${money(s.creditCents)}</td>
-          <td style="color:var(--muted)">${s.debitCents?money(s.debitCents):'—'}</td>
-          <td style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(s.netCents)}</td>
-        </tr>`).join('')}</tbody></table>`
-       :`<div style="margin-top:14px;color:var(--muted);font-weight:600;font-size:13.5px">${_t('Nothing payable — no purchase has cleared the buyer’s {days}-day return window since the last run.',{days:retDays()})}</div>`}
-      ${held.length?`<div style="margin-top:12px;font-size:12.5px;color:var(--muted);font-weight:600">${_t('Held back:')} ${held.map(h=>`${esc(h.name)} (${money(h.netCents)} — ${EXCLUDE_REASON[h.reason]||h.reason})`).join(' · ')}</div>`:''}
-    </div>`;
-  const history=`
-    <div class="card" style="padding:0;margin-top:18px">
-      <div style="padding:18px 22px 4px"><h3 style="font-size:20px;font-weight:600">${_t('Settlement history')}</h3></div>
-      ${runs.length?runs.map(st=>`
-        <div style="padding:14px 22px;border-bottom:1px solid var(--line)">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <strong>${_t('Run {date}',{date:esc(runDayLabel(st.runDate))})}</strong>
-            <span class="order-pill ${st.status==='paid'?'fulfilled':'new'}">${esc(_t(st.status))}</span>
-            <span style="font-family:var(--font-display);font-size:17px;font-weight:600">${money(st.totalCents)}</span>
-            <span style="flex:1"></span>
-            <a class="btn btn-ghost btn-sm" href="${TroveAPI.base}/api/admin/settlements/${st.id}/export.csv" onclick="setTimeout(renderAdminPayouts,1200)">${_t('Bank CSV')}</a>
-            ${st.status!=='paid'?`<button class="btn btn-coral btn-sm" onclick="markSettlementPaid(${st.id})">${_t('Mark paid')}</button>`:`<span style="color:var(--muted);font-size:12px">${_t('paid {date}',{date:fmtDate(st.paidAt)})}</span>`}
-          </div>
-          <div style="margin-top:8px;font-size:13px;color:var(--muted);font-weight:600">${st.items.map(i=>`${esc(i.shopName)} · ${money(i.amountCents)}${i.purchaseNoteId?` · <a href="${TroveAPI.base}/api/admin/purchase-notes/${i.purchaseNoteId}" target="_blank" rel="noopener">${_t('note')}</a>`:''}`).join(' &nbsp;—&nbsp; ')}</div>
-        </div>`).join('')
-       :`<div style="padding:8px 22px 22px;color:var(--muted);font-weight:600;font-size:13.5px">${preview.nextRunDate?_t('No settlement runs yet — they happen every other Tuesday (next: {day}), or run one above.',{day:runDayLabel(preview.nextRunDate)}):_t('No settlement runs yet — they happen every other Tuesday, or run one above.')}</div>`}
-    </div>`;
-  v.innerHTML = `<div class="sec-head" style="margin-bottom:14px"><span class="n">${_t('Pay your consignment suppliers: run the settlement, upload the bank CSV to the bank, send the transfers, then mark it paid.')}</span></div>` + due + history;
-}
-async function runSettlement(){
-  if(!confirm(_t('Run the settlement now? This sweeps every purchase whose return window has closed into a draft for review.')))return;
-  try{
-    const r=await TroveAPI.api('/api/admin/settlements/run',{method:'POST',body:{}});
-    toast(r.created?_t('Settlement drafted — {amount}',{amount:money(r.totalCents)}):_t('Nothing payable right now'));
-    renderAdminPayouts();
-  }catch(e){ toast(e.message||_t('Could not run the settlement')); }
-}
-async function markSettlementPaid(id){
-  if(!confirm(_t('Mark this settlement as paid? Do this after the bank transfers have gone out — it writes the payout ledger and generates the purchase notes.')))return;
-  try{ await TroveAPI.api('/api/admin/settlements/'+id+'/paid',{method:'POST'}); toast(_t('Settlement marked paid')); renderAdminPayouts(); }
-  catch(e){ toast(e.message||_t('Could not update')); }
-}
 async function connectStripe(){
   const b=$('connectBtn'); if(b){b.textContent=_t('Opening Stripe…');b.style.opacity='.7';b.disabled=true;}
   try{ const {url}=await TroveAPI.api('/api/seller/connect/onboarding-link',{method:'POST'}); window.location=url; }
@@ -2843,7 +2779,7 @@ function revealActiveTab(){
   b.scrollTo({left:Math.max(0,on.offsetLeft-(b.clientWidth-on.offsetWidth)/2),behavior:'smooth'});
 }
 const TODAY_LABEL=new Date().toLocaleDateString(LOC,{weekday:'long',day:'numeric',month:'long'});
-const TITLES={overview:[_t('Overview'),TODAY_LABEL],products:[_t('Products'),_t('Manage your catalogue')],orders:[_t('Orders'),_t('Fulfil and track')],returns:[_t('Returns'),_t('Buyer requests, Trove decisions')],analytics:[_t('Shop Analytics'),_t('How shoppers are finding your work')],payments:[_t('Payments'),_t('How you get paid')],storefront:[_t('Storefront'),_t('How shoppers see you')],services:[_t('Services'),_t('Bookable services, beside your pieces')],adminpayouts:[_t('Trove payouts'),_t('Pay your managed sellers')]};
+const TITLES={overview:[_t('Overview'),TODAY_LABEL],products:[_t('Products'),_t('Manage your catalogue')],orders:[_t('Orders'),_t('Fulfil and track')],returns:[_t('Returns'),_t('Buyer requests, Trove decisions')],analytics:[_t('Shop Analytics'),_t('How shoppers are finding your work')],payments:[_t('Payments'),_t('How you get paid')],storefront:[_t('Storefront'),_t('How shoppers see you')],services:[_t('Services'),_t('Bookable services, beside your pieces')]};
 function go(v){
   if(SHOP.house&&(v==='payments'||v==='services'))v='overview';
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
@@ -2857,7 +2793,7 @@ function go(v){
   else if(v==='overview')ta.innerHTML=`<button class="btn btn-ghost" onclick="openPreview('shop')">${_t('Preview your shop')}</button>${SHOP.status==='approved'?`<a class="btn btn-ghost" href="/" target="_blank" rel="noopener">${_t('View storefront ↗')}</a>`:''}`;
   else if(v==='services'&&HAS_PROVIDER)ta.innerHTML=`<button class="btn btn-coral" onclick="ProviderPanel.openEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${_t('Add a service')}</button>`;
   else ta.innerHTML='';
-  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='services')renderServicesView(); if(v==='adminpayouts')renderAdminPayouts();
+  if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='services')renderServicesView();
   window.scrollTo(0,0);
 }
 
@@ -2941,7 +2877,7 @@ async function boot(){
   await refreshStripeStatus();
   await reloadPayouts();
   $('sideStatus').textContent=shopStatusLabel();
-  if(ME.role==='admin'){ const am=$('adminMenuItem'); if(am)am.style.display=''; const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
+  if(ME.role==='admin'){ const ap=$('adminPanelLink'); if(ap)ap.style.display=''; }
   buildMobileTabs();
   await Promise.all([reloadProducts(), reloadOrders(), reloadReturns(), reloadAnalytics(), loadServiceCounts()]);
   // Claude-written tag suggestions: only show the button when the server has a key.

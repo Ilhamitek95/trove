@@ -1544,7 +1544,7 @@ function cmsAdd(key,field){
  * weekly finds, Collection gallery). `picker.house` limits it to Collection
  * pieces, `picker.max` caps the list (default 8), and `picker.crop` adds a
  * per-piece crop editor (the aspect matches that section's tiles). */
-function cmsCover(p){ return (p.images&&p.images[0])||window.TROVE_STOCK_IMG&&window.TROVE_STOCK_IMG[p.name]||prodImg(p.imageSeed); }
+function cmsCover(p){ return (p.images&&p.images[0])||prodImg(p.imageSeed); }
 function cmsPickerHTML(spec){
   const key=spec.key, ids=CMS_EDIT[key].productIds||(CMS_EDIT[key].productIds=[]);
   const max=spec.picker.max||8;

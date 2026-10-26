@@ -403,14 +403,14 @@ test('F356: the shop draws 48 pieces, then Show more pieces adds the next batch'
 test('F357: /api/products?view=list leaves out the full description; the plain feed is unchanged for the app', async () => {
   const full = (await ctx.api('GET', '/api/products')).data.products.find((p) => p.id === mugId);
   assert.ok(full.description.length > 300, 'the app still gets the whole description');
-  assert.ok('stockImage' in full && 'estimate' in full);
+  assert.ok('estimate' in full);
+  assert.equal(full.stockImage, undefined, 'the interim stock photos are gone');
   const lite = (await ctx.api('GET', '/api/products?view=list')).data.products.find((p) => p.id === mugId);
   assert.equal(lite.description, undefined);
-  assert.equal(lite.stockImage, undefined);
   assert.equal(lite.estimate, undefined);
   assert.ok(lite.summary.length <= 240 && lite.summary.endsWith('…'), 'a short summary, cut at a word');
   assert.ok(full.description.startsWith(lite.summary.slice(0, -1)));
-  for (const k of ['id', 'name', 'price', 'category', 'tags', 'options', 'variants', 'extras', 'stock', 'leadDays', 'forSale', 'shop', 'images', 'thumbs']) assert.ok(k in lite, k);
+  for (const k of ['id', 'name', 'price', 'category', 'tags', 'options', 'variants', 'extras', 'stock', 'leadDays', 'shop', 'images', 'thumbs']) assert.ok(k in lite, k);
   const short = (await ctx.api('GET', '/api/products?view=list')).data.products.find((p) => p.id === soldId);
   assert.equal(short.summary, 'Short words.', 'a short description is its own summary');
   // the page asks for the list and fetches the full text with the piece
@@ -526,7 +526,7 @@ test('F395 + F513: an empty shelf hides its count and sort; on the Collection sh
 test('F523 + F524: a dropped basket line is named; the empty basket offers somewhere to go', () => {
   const toasts = [];
   const sb = run(fnSrc('droppedLineToast'), {
-    PRODUCTS: [{ id: 3, name: 'Reeded Mug', forSale: true }], optVal: (p, n, v) => v, openPDP() {},
+    PRODUCTS: [{ id: 3, name: 'Reeded Mug' }], optVal: (p, n, v) => v, openPDP() {},
     toast: (m, ms, act) => toasts.push([m, act && act.label]), _t: t, _tn: tn,
   });
   vm.runInContext("droppedLineToast({pid:3,opts:[{name:'Glaze',value:'Ash grey'}]})", sb);

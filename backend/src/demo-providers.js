@@ -9,8 +9,8 @@
  * demo account the owner has edited keeps its edits). It runs from the local
  * seed, and at boot only when DEMO_PROVIDERS=1 (the e2e suite sets it; never
  * set on Render, whose demo data was purged at go-live). The accounts are
- * listed in seed-guard.js's DEMO_EMAILS so DEMO_PASSWORD rotates them on a
- * public deployment; locally they sign in with the usual demo1234.
+ * listed in seed-guard.js's DEMO_EMAILS (the seed refuses to run against real
+ * accounts); locally they sign in with the usual demo1234.
  *
  * Mara (Kiln & Clay) is the "one account, shop + services" story from the
  * services FAQ: her existing seller account gains a provider profile.

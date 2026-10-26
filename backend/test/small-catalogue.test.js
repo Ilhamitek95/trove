@@ -66,8 +66,8 @@ test('one piece: the server draws the editorial hero and The first piece; the Co
   // the original two-way hero: Shop the Collection + Explore the Marketplace
   assert.match(html, /<button class="btn btn-dark live-only" id="heroShopBtn"[^>]*>Shop the Collection<\/button>/);
   assert.match(html, /<a class="txt-link live-only" id="heroMarketLink"[^>]*>Explore the Marketplace<\/a>/);
-  // the stock stand-in photo is labelled as such wherever it shows
-  assert.equal((noScripts(html).match(/class="illus">Illustrative photo</g) || []).length, 2);
+  // the interim stock photos and their 'Illustrative photo' badge are gone
+  assert.doesNotMatch(noScripts(html), /Illustrative photo|class="illus"|images\.unsplash\.com/);
   assert.equal(rawH1(noScripts(html)), 1);
 });
 
@@ -101,7 +101,7 @@ test('a piece: one photo has no thumbnail rail, details come only from real fiel
   const html = (await get(`/pieces/${mug.id}-reeded-stoneware-mug`)).text;
   const page = noScripts(html);
   assert.match(page, /<div class="gallery one" id="pdpGallery">/);
-  assert.match(page, /<span class="illus" id="pdpIllus">Illustrative photo<\/span>/);
+  assert.doesNotMatch(page, /pdpIllus|Illustrative photo|images\.unsplash\.com/, 'no stock stand-in photo or badge');
   assert.match(page, /Made by <a class="vlink" id="pdpVendorLink" href="\/makers\/kiln-and-clay">Kiln &amp; Clay<\/a> · Sold and delivered by Trove/);
   // the accordion: Details + About the maker, nothing invented
   assert.match(page, /<details class="acc" open><summary>Details/);
@@ -122,8 +122,8 @@ test('a piece: one photo has no thumbnail rail, details come only from real fiel
 });
 
 /* ---------------- a maker's page ---------------- */
-test('a maker: Pieces by <maker>, a meta line with the joined month, the calm panel instead of a stock cover', async () => {
-  db.prepare("UPDATE shops SET image = 'https://images.unsplash.com/photo-1470058869958-2a77ade41c02?auto=format&fit=crop&w=900&q=72' WHERE slug = 'kiln-and-clay'").run();
+test('a maker: Pieces by <maker>, a meta line with the joined month, the calm panel when the maker has no photo', async () => {
+  db.prepare("UPDATE shops SET image = NULL WHERE slug = 'kiln-and-clay'").run();
   const joined = db.prepare("SELECT created_at FROM shops WHERE slug = 'kiln-and-clay'").get().created_at;
   const month = new Date(String(joined).slice(0, 7) + '-01T00:00:00Z').toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   const page = noScripts((await get('/makers/kiln-and-clay')).text);
@@ -131,10 +131,9 @@ test('a maker: Pieces by <maker>, a meta line with the joined month, the calm pa
   assert.doesNotMatch(page, />The collection</);
   assert.match(page, new RegExp(`id="vMeta">Alserkal Avenue, Dubai · On Trove since ${month} · 1 piece( · [0-9.]+★ from [0-9]+ reviews?)?<`));
   assert.doesNotMatch(page, /1 Pieces/);
-  assert.match(page, /<div class="grad vpanel" id="vheroGrad" style="--t0:#[0-9A-Fa-f]{6};--t1:#[0-9a-f]{6}"/, 'a stock shop image is not shown as the maker cover');
-  assert.doesNotMatch(page, /images\.unsplash\.com\/photo-1470058869958/);
+  assert.match(page, /<div class="grad vpanel" id="vheroGrad" style="--t0:#[0-9A-Fa-f]{6};--t1:#[0-9a-f]{6}"/, 'no photo: the calm colour panel');
   assert.match(page, /<div class="pgrid few one" id="vendorProducts">/);
-  assert.match(page, /class="illus">Illustrative photo</);
+  assert.doesNotMatch(page, /Illustrative photo|images\.unsplash\.com/);
   // the API hands over the joined month for the storefront's own drawing
   const { data } = await ctx.api('GET', '/api/shops/kiln-and-clay');
   assert.match(data.shop.joined, /^\d{4}-\d{2}$/);

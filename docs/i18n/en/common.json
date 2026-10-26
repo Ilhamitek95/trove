@@ -116,7 +116,6 @@
   "Sold out": "Sold out",
   "Add to basket": "Add to basket",
   "Added": "Added",
-  "Illustrative photo": "Illustrative photo",
   "Email": "Email",
   "Password": "Password",
   "Name": "Name",
@@ -154,6 +153,5 @@
   "{n} services": {
     "one": "{n} service",
     "other": "{n} services"
-  },
-  "On display only": "On display only"
+  }
 }

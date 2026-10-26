@@ -23,7 +23,8 @@ Five reviewers read the whole codebase; the safe part of what they found is fixe
 
 - **Fixed:** makers were getting two "your payment is on its way" emails for each payout; now they get one. If the sign-in page can't reach the server, it now says so instead of sending people to a page that bounces them back. Two small Arabic-page fixes.
 - **Cleared out:** unused styling and code left from earlier versions, old demo-shop code, and 7 leftover working copies + 15 finished branches on the laptop.
-- **Your decisions, nothing changed yet:**
+- **Your decisions 1–4: done the same day (you said "do all the changes from 1-4"), all live.** The demo-account code and the stand-in stock photos are gone; the old "Trove payouts" tab in /sell is gone; the site now deploys whenever the website pages change (before, a change to only the pages never went live by itself) and never for social-campaign work; the social campaign moved to its own private repo, `~/trove-social`. **One thing for you:** Render → **trove** → **Environment** → delete `DEMO_PASSWORD` and `SEED_DEMO` (nothing uses them any more; Claude isn't allowed to delete secrets) → **Save changes**.
+- **The original list, for the record:**
   1. Remove the leftover demo-account code (it could overwrite a real person's password if they ever signed up with one of the old demo email addresses) and the stand-in stock photos for the old demo pieces. Claude recommends yes.
   2. Remove the old "Trove payouts" tab inside /sell (Admin → Payments does the same job, better). Claude recommends yes.
   3. Stop social-campaign commits redeploying the live site (a deploy filter in render.yaml). Claude recommends yes.

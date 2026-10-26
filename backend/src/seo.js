@@ -90,17 +90,14 @@ function compose(head, body, tail, n = 158) {
 }
 const safeImg = (u) => { u = String(u || ''); return /^(\/(?!\/)|https:\/\/)[^"'()\\\s<>]*$/.test(u) ? u : ''; };
 const safeColor = (c) => (/^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(String(c || '')) ? String(c) : '#DBC7BD');
-/** A piece's cover: the maker's first photo, else the matched stock shot. */
-const coverOf = (p) => safeImg((p.images || [])[0]) || safeImg(p.stockImage) || '';
+/** A piece's cover: the maker's first photo, else none (the brand tile shows). */
+const coverOf = (p) => safeImg((p.images || [])[0]) || '';
 /** srcset for a card: the 480 px copy of the maker's photo when it has one (F131), as the storefront draws it. */
 const srcsetOf = (p) => {
   const full = safeImg((p.images || [])[0]);
   const small = full && safeImg((p.thumbs || [])[0]);
   return small ? ` srcset="${esc(small)} 480w, ${esc(full)} 1400w" sizes="(max-width:700px) 50vw, 320px"` : '';
 };
-/** The cover is a stand-in stock shot, not the maker's own photo: the page says so. */
-const isStock = (p) => !safeImg((p.images || [])[0]) && !!safeImg(p.stockImage);
-const illus = (lang) => `<span class="illus">${esc(i18n.t(lang, 'Illustrative photo'))}</span>`;
 const ldScript = (obj) => `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', ...obj }).replace(/</g, '\\u003c')}</script>`;
 
 // The page's own copy states the fee figures as shipped; src/figures.js
@@ -216,18 +213,15 @@ function cardHtml(p, vendor, lang = 'en') {
   const [T] = tFor(lang);
   const cover = coverOf(p);
   const color = safeColor(p.shop && p.shop.color);
-  // A display-only demo piece (src/display-only.js) gets a label, never a button;
-  // so does a sold-out one, which also says so on the photo (F423, as the
-  // storefront's productCard() draws it). The tap waits for the page's script
-  // (window.addToCart) rather than erroring before it has loaded (F424).
-  const gone = p.forSale !== false && ((p.options || []).length ? !(p.variants || []).some((v) => v.stock > 0) : Number(p.stock) === 0);
-  const add = (cls) => (p.forSale === false
-    ? `<span class="${cls} disp">${esc(T('On display only'))}</span>`
-    : gone ? `<span class="${cls} disp">${esc(T('Sold out'))}</span>`
-      : `<button class="${cls}" onclick="event.stopPropagation();window.addToCart?addToCart(${Number(p.id)},this):0">${esc(T('Add to basket'))}</button>`);
+  // A sold-out piece gets a label, never a button, and also says so on the
+  // photo (F423, as the storefront's productCard() draws it). The tap waits
+  // for the page's script (window.addToCart) rather than erroring before it
+  // has loaded (F424).
+  const gone = (p.options || []).length ? !(p.variants || []).some((v) => v.stock > 0) : Number(p.stock) === 0;
+  const add = (cls) => (gone ? `<span class="${cls} disp">${esc(T('Sold out'))}</span>`
+    : `<button class="${cls}" onclick="event.stopPropagation();window.addToCart?addToCart(${Number(p.id)},this):0">${esc(T('Add to basket'))}</button>`);
   return `<article class="card">
-    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${gone ? `<span class="sale">${esc(T('Sold out'))}</span>` : p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}
-      ${add('add')}</div>
+    <div class="ph"><div class="grad" style="background:${color}"></div>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${gone ? `<span class="sale">${esc(T('Sold out'))}</span>` : p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}      ${add('add')}</div>
     <div class="vrow ${vendor && vendor.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(p.shop.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
     <div class="foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span></div>
@@ -356,7 +350,7 @@ function heroSoloHtml(p, vendor, lang = 'en') {
   const [T] = tFor(lang);
   const meta = p.shop.isHouse ? T('The Trove Collection') : (vendor && vendor.location ? T('Made in {place}', { place: vendor.location }) : '');
   const cover = coverOf(p);
-  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="${esc(p.name)}" fetchpriority="high" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}</span><span class="hs-cap">${meta ? `<span class="hs-meta">${esc(meta)}</span>` : ''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">${esc(T('by {maker}', { maker: p.shop.name }))}</span><span class="hc-foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span><span class="hc-go">${esc(T('View piece →'))}</span></span></span></a>`;
+  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}" alt="${esc(p.name)}" fetchpriority="high" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}</span><span class="hs-cap">${meta ? `<span class="hs-meta">${esc(meta)}</span>` : ''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">${esc(T('by {maker}', { maker: p.shop.name }))}</span><span class="hc-foot"><span class="price">${p.compareAt ? `<s>${money(p.compareAt, lang)}</s>` : ''}${money(p.price, lang)}</span><span class="hc-go">${esc(T('View piece →'))}</span></span></span></a>`;
 }
 /** One of 'The first pieces', as the storefront's firstPieceHTML() draws it. */
 function firstPieceHtml(p, vendor, lang = 'en') {
@@ -365,7 +359,7 @@ function firstPieceHtml(p, vendor, lang = 'en') {
   const u = esc(pieceUrl(p));
   const cover = coverOf(p);
   return `<article class="fcard">
-    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}${isStock(p) ? illus(lang) : ''}</a>
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="background:${safeColor(p.shop.color)}"></span>${cover ? `<img src="${esc(cover)}"${srcsetOf(p)} alt="" loading="lazy" decoding="async">` : ''}${p.compareAt ? `<span class="sale">${esc(T('Sale'))}</span>` : ''}</a>
     <div class="fc-body">
       <div class="vrow ${p.shop.isHouse ? 'is-house' : ''}"><span class="gem"></span>${esc(where)}</div>
       <h3><a href="${u}">${esc(p.name)}</a></h3>
@@ -487,7 +481,6 @@ function renderShop(base, slug, { search, lang = 'en' } = {}) {
 
 function productLd(base, p, url, lang = 'en') {
   const images = (p.images || []).map(safeImg).filter(Boolean).map((u) => abs(base, u));
-  if (!images.length && safeImg(p.stockImage)) images.push(p.stockImage);
   const f = require('./pages/facts').facts();
   const est = p.estimate || require('./lead-times').estimate(p.leadDays);
   // Variants with their own prices (F268): the prices a shopper can actually
@@ -546,8 +539,6 @@ function productLd(base, p, url, lang = 'en') {
     },
   };
   if (p.rating && p.rating.count) ld.aggregateRating = { '@type': 'AggregateRating', ratingValue: p.rating.avg, reviewCount: p.rating.count, bestRating: 5, worstRating: 1 };
-  // A display-only demo piece (src/display-only.js) is not offered for sale.
-  if (p.forSale === false) delete ld.offers;
   return JSON.parse(JSON.stringify(ld)); // drops the undefined keys
 }
 
@@ -632,9 +623,8 @@ function renderPiece(base, ref, lang = 'en') {
   html = fill(html, 'pdpCrumb', `<a href="${esc(shopUrl(p.category))}">${esc(catName)}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`);
   html = attr(html, 'pdpGrad', 'style', `background:${safeColor(p.shop.color)}`);
   if (cover) html = attr(attr(html, 'pdpImg', 'src', cover), 'pdpImg', 'alt', p.name);
-  // one picture: no thumbnail rail; a stock stand-in says so
+  // one picture: no thumbnail rail
   if ((p.images || []).length < 2) html = html.replace('<div class="gallery" id="pdpGallery">', '<div class="gallery one" id="pdpGallery">');
-  if (isStock(en)) html = html.replace('<span class="illus" id="pdpIllus" hidden>', '<span class="illus" id="pdpIllus">');
   html = attr(html, 'pdpVendorLink', 'href', shopHref(p.shop));
   html = fill(html, 'pdpVendorLink', esc(p.shop.name));
   html = fill(html, 'pdpName', esc(p.name));
@@ -677,8 +667,8 @@ function renderMaker(base, slug, lang = 'en') {
   html = fill(html, 'vMeta', esc([s.isHouse ? '' : s.location, since ? T('On Trove since {date}', { date: since }) : '', TN(list.length, '{n} piece', '{n} pieces'), rating].filter(Boolean).join(' · ')));
   html = fill(html, 'vBio', esc(s.bio || ''));
   html = text(html, 'vPiecesHead', T('Pieces by {maker}', { maker: s.name }));
-  // the maker's own photo, else the calm colour panel (a stock stand-in reads as unrelated)
-  const own = safeImg(s.image) && !/^https:\/\/images\.unsplash\.com\//.test(s.image) ? s.image : '';
+  // the maker's own photo, else the calm colour panel (as the storefront's ownImg())
+  const own = safeImg(s.image);
   const c = safeColor(s.color);
   html = own ? attr(html, 'vheroGrad', 'style', `background:center/cover no-repeat url("${own}")`)
     : attr(attr(html, 'vheroGrad', 'class', 'grad vpanel'), 'vheroGrad', 'style', `--t0:${c};--t1:${shade(c, 24)}`);
@@ -1089,8 +1079,7 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
       serviceType: (svcCat(svc.category, lang) || {}).name,
       provider: { '@id': `${url}#provider` },
       areaServed: svc.setting === 'remote' ? 'AE' : ['Dubai', 'Abu Dhabi'],
-      // a display-only demo listing (src/display-only.js) offers nothing
-      offers: svc.bookable === false ? undefined : {
+      offers: {
         '@type': 'Offer', url: surl, priceCurrency: 'AED', price,
         priceSpecification: {
           '@type': 'UnitPriceSpecification', priceCurrency: 'AED', price,

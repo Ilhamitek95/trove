@@ -9,6 +9,15 @@ services:
     runtime: node
     plan: standard
     rootDir: backend
+    # With rootDir set, Render would only auto-deploy on changes under backend/,
+    # so a push touching only the pages in docs/ never went live (15 Oct had to
+    # be deployed by hand). Deploy on the app (backend + docs) and this file;
+    # never on social/ (campaign assets) or e2e/.
+    buildFilter:
+      paths:
+        - backend/**
+        - docs/**
+        - render.yaml
     # npm ci installs exactly what package-lock.json pins (F280) — the same
     # versions the test suite ran against, never a newer patch picked at build.
     buildCommand: npm ci
@@ -73,7 +82,8 @@ services:
         sync: false
       # Also set on the live service when used (not declared here, so a
       # Blueprint sync never touches them): ANTHROPIC_API_KEY, GOOGLE_CLIENT_ID,
-      # DEMO_PASSWORD, CONTACT_EMAIL, PUBLIC_URL.
+      # CONTACT_EMAIL, PUBLIC_URL, and the Didit identity checks: DIDIT_API_KEY,
+      # DIDIT_WORKFLOW_ID, DIDIT_WEBHOOK_SECRET (delete the key = photo route only).
       # Added later in the dashboard (Environment tab):
       #   STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET  (pk_ key goes in docs/config.js)
       #   PAYOUT_ENC_KEY   64 hex chars — REQUIRED before suppliers can complete

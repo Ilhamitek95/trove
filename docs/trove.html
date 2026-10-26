@@ -318,7 +318,7 @@
   .card:focus-within .add{opacity:1;transform:none}
   .card .add.add-row{display:none}
   .card .add.added{background:var(--char);color:var(--cream);opacity:1;transform:none}
-  /* A display-only demo piece: a label where the button would be, never a button. */
+  /* A sold-out piece: a label where the button would be, never a button. */
   .card .add.disp,.card .add.disp:hover,.card .add.add-row.disp{background:var(--cream);color:var(--char);cursor:default;box-shadow:inset 0 0 0 1px rgba(41,39,39,.18)}
   .card .vrow{font-size:12px;letter-spacing:.04em;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:6px}
   .card .vrow.is-house{color:var(--accent-ink)} /* is-house, not house — .house is the Collection band */
@@ -870,9 +870,6 @@
      One piece gets an editorial hero instead of a one-card carousel; fewer
      than three pieces become 'The first pieces' (html.few-pieces); with no
      Trove Collection yet, the Collection band gives way to a real maker. */
-  .illus{position:absolute;top:12px;right:12px;z-index:3;background:rgba(253,247,245,.94);color:var(--char);font-size:12px;font-weight:600;letter-spacing:.02em;line-height:1.3;padding:4px 10px;border-radius:999px;pointer-events:none}
-  .card .illus{top:auto;right:auto;bottom:12px;left:12px}
-  @media(max-width:560px){.card .illus{bottom:8px;left:8px;font-size:12px;padding:3px 8px}}
   .hstage.solo .hs-deck{-webkit-mask-image:none;mask-image:none;cursor:auto}
   .hstage.solo .hs-bar{visibility:hidden}
   .hsolo{position:absolute;inset:0;display:block;border-radius:26px;overflow:hidden;background:var(--rose);box-shadow:0 30px 60px -34px rgba(41,39,39,.5)}
@@ -1219,8 +1216,6 @@
   /* ---------- Arabic (right-to-left): the storefront mirrored. The shared
      chrome (header, menus, footer) and the Arabic faces live in /rtl.css. ---------- */
   [dir="rtl"] .hc .sale,[dir="rtl"] .card .ph .sale,[dir="rtl"] .hsolo .sale,[dir="rtl"] .fc-img .sale{left:auto;right:14px}
-  [dir="rtl"] .illus{right:auto;left:12px}
-  [dir="rtl"] .card .illus{left:auto;right:12px}
   [dir="rtl"] .hs-cap{right:auto;left:18px}
   [dir="rtl"] .hs-dot i{left:auto;right:0}
   [dir="rtl"] .hs-btn svg,[dir="rtl"] .cat .arrow svg{transform:scaleX(-1)}
@@ -1254,7 +1249,6 @@
     [dir="rtl"] .citem .cp{right:auto;left:0}
   }
   @media(max-width:560px){
-    [dir="rtl"] .card .illus{left:auto;right:8px}
     [dir="rtl"] .house .gallery .gname{left:auto;right:8px}
   }
 </style>
@@ -1514,7 +1508,7 @@
     <div class="pdp">
       <div class="gallery" id="pdpGallery">
         <div class="thumbs" id="pdpThumbs"></div>
-        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="window.imgRetry?imgRetry(this):0"><span class="illus" id="pdpIllus" hidden>Illustrative photo</span></div>
+        <div class="main-img"><div class="grad" id="pdpGrad"></div><img id="pdpImg" alt="" onerror="window.imgRetry?imgRetry(this):0"></div>
       </div>
       <div class="info">
         <div class="pdp-by">Made by <a class="vlink" id="pdpVendorLink" href="#"></a> · Sold and delivered by Trove</div>
@@ -2219,25 +2213,15 @@ function imgRetry(el){
   const base=el.src.split(/[?#]/)[0];
   setTimeout(()=>{el.src=`${base}?rt=${n}`;},700*n);
 }
-/* Interim matched photography — the shared map lives in api.js (the admin crop
- * editor previews the same covers). Seller uploads always win over it. */
-const STOCK_IMG=window.TROVE_STOCK_IMG||{};
-/* Stock photos stand in until our own shoots land (api.js). Wherever one is
- * shown in place of the maker's own photo, the photo says so. */
-const isStockUrl=u=>/^https:\/\/images\.unsplash\.com\//.test(String(u||''));
-function pIsStock(p,i){return !i&&!(p.images&&p.images[0])&&!!STOCK_IMG[p.nameEn||p.name];}
-const ILLUS='<span class="illus">'+_t('Illustrative photo')+'</span>';
-/* A maker's own photo — never a stock stand-in, which reads as unrelated. */
-function ownImg(v){return v&&v.img&&!isStockUrl(v.img)?v.img:'';}
+/* A maker's own photo, or '' (the calm colour panel shows instead). */
+function ownImg(v){return v&&v.img?v.img:'';}
 /* 'September 2026' from the shop's joined month, or ''. */
 function sinceLabel(v){if(!v||!/^\d{4}-\d{2}$/.test(v.joined||''))return '';const d=new Date(v.joined+'-01T00:00:00Z');return troveDate(d,{month:'long',year:'numeric',timeZone:'UTC'});}
 /* A calm brand panel in the shop's own colour, with its initial. */
 function makerPanel(v){const c=safeColor(v.color);return `<span class="story-panel" style="--t0:${c};--t1:${shade(c,24)}"><span>${esc((v.name||'?')[0])}</span></span>`;}
-/* A product's cover: the seller's first uploaded photo, else the matched stock
- * shot, else the motif tile. */
+/* A product's cover: the seller's first uploaded photo, else the motif tile. */
 function pImg(p,i){
   if(p.images&&p.images[i||0])return p.images[i||0];
-  if(!i&&STOCK_IMG[p.nameEn||p.name])return STOCK_IMG[p.nameEn||p.name];
   return img(p.seed+(i?'ab'[i-1]||'':''));
 }
 /* Card-size photos (F131): the maker's upload has a 480 px copy for cards,
@@ -2262,14 +2246,13 @@ function soldOutP(p){return (p.options||[]).length?!(p.variants||[]).some(v=>v.s
 function productCard(p,eager,crop){
   const V=VENDORS[p.vendor], house=V.house;
   // A sold-out piece says so on the photo and carries a label, never a button (F423).
-  const gone=p.forSale!==false&&soldOutP(p);
-  const add=cls=>p.forSale===false?`<span class="${cls} disp">${_t('On display only')}</span>`:gone?`<span class="${cls} disp">${_t('Sold out')}</span>`:`<button class="${cls}" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`;
+  const gone=soldOutP(p);
+  const add=cls=>gone?`<span class="${cls} disp">${_t('Sold out')}</span>`:`<button class="${cls}" onclick="event.stopPropagation();addToCart(${p.id},this)">${_t('Add to basket')}</button>`;
   return `<article class="card">
     <div class="ph">
       <div class="grad" style="${grad(vColor(p.vendor))}"></div>
       <img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="${eager===true?'eager':'lazy'}" decoding="async"${typeof crop==='string'&&crop?` style="${crop}"`:''} onerror="imgRetry(this)">
-      ${gone?`<span class="sale">${_t('Sold out')}</span>`:p.was?`<span class="sale">${_t('Sale')}</span>`:''}${pIsStock(p)?ILLUS:''}
-      ${add('add')}
+      ${gone?`<span class="sale">${_t('Sold out')}</span>`:p.was?`<span class="sale">${_t('Sale')}</span>`:''}      ${add('add')}
     </div>
     <div class="vrow ${house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div>
     <h3><a class="card-link" href="${esc(pieceUrl(p))}">${esc(p.name)}</a></h3>
@@ -2355,7 +2338,7 @@ function firstPieceHTML(p){
   const where=V.house?_t('The Trove Collection'):[V.name,V.loc].filter(Boolean).join(' · ');
   const u=esc(pieceUrl(p));
   return `<article class="fcard">
-    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</a>
+    <a class="fc-img" href="${u}" tabindex="-1" aria-hidden="true"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}"${pSrcset(p)} alt="" loading="lazy" decoding="async" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}</a>
     <div class="fc-body">
       <div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(where)}</div>
       <h3><a href="${u}">${esc(p.name)}</a></h3>
@@ -2394,7 +2377,7 @@ function renderMakerStory(){
 function heroSoloHTML(p){
   const V=VENDORS[p.vendor];
   const meta=V.house?_t('The Trove Collection'):(V.loc?_t('Made in {place}',{place:V.loc}):'');
-  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}" alt="${esc(p.name)}" fetchpriority="high" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</span><span class="hs-cap">${meta?`<span class="hs-meta">${esc(meta)}</span>`:''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">${_t('by {name}',{name:esc(V.name)})}</span><span class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">${_t('View piece →')}</span></span></span></a>`;
+  return `<a class="hsolo" href="${esc(pieceUrl(p))}"><span class="hs-img"><span class="grad" style="${grad(vColor(p.vendor))}"></span><img src="${esc(pImg(p))}" alt="${esc(p.name)}" fetchpriority="high" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}</span><span class="hs-cap">${meta?`<span class="hs-meta">${esc(meta)}</span>`:''}<span class="hs-name">${esc(p.name)}</span><span class="hs-by">${_t('by {name}',{name:esc(V.name)})}</span><span class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">${_t('View piece →')}</span></span></span></a>`;
 }
 
 /* ---------------- THE SHELF: hero carousel ----------------
@@ -2437,7 +2420,7 @@ function renderHeroDeck(){
   }
   deck.innerHTML=HC.items.map((p,k)=>{const V=VENDORS[p.vendor];
     return `<article class="hc" data-k="${k}" onclick="hcTap(${k},event)" aria-label="${esc(p.name)}">
-      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}"${pSrcset(p,'(max-width:700px) 80vw, 420px')} alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}${pIsStock(p)?ILLUS:''}</div>
+      <div class="hc-ph"><div class="grad" style="${grad(vColor(p.vendor))}"></div><img src="${esc(pImg(p))}"${pSrcset(p,'(max-width:700px) 80vw, 420px')} alt="" loading="${k<3?'eager':'lazy'}" decoding="async" style="${cropCss('home.hero',p)}" onerror="imgRetry(this)">${p.was?'<span class="sale">'+_t('Sale')+'</span>':''}</div>
       <div class="hc-cap"><div class="vrow ${V.house?'is-house':''}"><span class="gem"></span>${esc(V.name)}</div><h3><a href="${esc(pieceUrl(p))}" tabindex="-1">${esc(p.name)}</a></h3>
         <div class="hc-foot"><span class="price">${p.was?`<s>${aed(p.was)}</s>`:''}${aed(p.price)}</span><span class="hc-go">${_t('View piece →')}</span></div></div>
     </article>`;}).join('');
@@ -2995,12 +2978,11 @@ function openPDP(id){
   gaEcommerce('view_item',[gaItem(p,1)]);
   $('pdpCrumb').innerHTML=`<a href="${esc(shopUrl(p.cat))}">${esc(_t(p.cat))}</a> &nbsp;/&nbsp; <span>${esc(p.name)}</span>`;
   $('pdpGrad').style=grad(V.color);
-  // Real seller photos when they exist, else the matched stock shot, else
-  // the piece's one motif tile (no invented variations of it).
-  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):STOCK_IMG[p.nameEn||p.name]?[STOCK_IMG[p.nameEn||p.name]]:[img(p.seed)];
+  // Real seller photos when they exist, else the piece's one motif tile
+  // (no invented variations of it).
+  pdpSrcs=(p.images&&p.images.length)?p.images.slice(0,4):[img(p.seed)];
   $('pdpImg').src=pdpSrcs[0]; $('pdpImg').alt=p.name;
   $('pdpGallery').classList.toggle('one',pdpSrcs.length<2);
-  $('pdpIllus').hidden=!pIsStock(p);
   $('pdpThumbs').innerHTML=pdpSrcs.length<2?'':pdpSrcs.map((s,i)=>`<div class="t ${i===0?'on':''}" onclick="swapMain(${i},this)"><div style="position:absolute;inset:0;${grad(V.color)}"></div><img src="${esc(s)}" alt="" loading="lazy" decoding="async" onerror="imgRetry(this)"></div>`).join('');
   $('pdpVendorLink').textContent=V.name;
   $('pdpVendorLink').href=makerUrl(p.vendor);
@@ -3130,14 +3112,11 @@ function updatePdpAvailability(){
   }
   price+=extrasPrice(p,chosenExtras(p));   // ticked extras ride on whatever the combination costs
   $('pdpPrice').innerHTML=`${(p.was&&!override)?`<s style="color:var(--muted);font-weight:400;font-size:18px;margin-right:8px">${aed(p.was)}</s>`:''}${aed(price)}`;
-  // A demo shop's piece on the live site is on display only (forSale false).
-  const display=p.forSale===false;
-  const show=display?_t('This piece is on display only — it isn’t for sale.')
-    :soldOut?_t('This piece is sold out — the shop may make more.')
+  const show=soldOut?_t('This piece is sold out — the shop may make more.')
     :(left!=null&&left>0&&left<=3)?(groups.length?_tn(left,'Only {n} left of this one.','Only {n} left of this one.'):_tn(left,'Only {n} left.','Only {n} left.')):'';
   note.textContent=show; note.style.display=show?'':'none';
-  btn.disabled=!!soldOut||display;
-  btn.textContent=display?_t('On display only'):soldOut?_t('Sold out'):_t('Add to basket');
+  btn.disabled=!!soldOut;
+  btn.textContent=soldOut?_t('Sold out'):_t('Add to basket');
   $('pbAdd').disabled=btn.disabled; $('pbAdd').textContent=btn.textContent; $('pbPrice').innerHTML=$('pdpPrice').innerHTML;
   btn.style.opacity=btn.disabled?.5:1;
   btn.style.cursor=btn.disabled?'not-allowed':'';
@@ -3245,7 +3224,7 @@ function saveCart(){
    holding a basket that fails at checkout. */
 function lineStillValid(c){
   const p=PRODUCTS.find(x=>x.id===c.pid);
-  if(!p||p.forSale===false)return false;   // gone, or a display-only demo piece
+  if(!p)return false;   // gone
   const groups=p.options||[];
   if(groups.length!==(c.opts||[]).length)return false;
   if(!groups.every(g=>(c.opts||[]).some(o=>o.name===g.name&&g.values.includes(o.value))))return false;
@@ -3279,7 +3258,7 @@ function droppedLineToast(c){
   const p=c&&PRODUCTS.find(x=>x.id===c.pid);
   const what=p?p.name+((c.opts||[]).length?' ('+(c.opts||[]).map(o=>optVal(p,o.name,o.value)).join(', ')+')':''):(c&&c.n)||'';
   if(!what){toast(_tn(1,'One piece from your basket is no longer available','{n} pieces from your basket are no longer available'));return;}
-  if(p&&p.forSale!==false)toast(_t('“{piece}” is no longer available as you chose it',{piece:what}),7000,{label:_t('Choose again'),fn:()=>openPDP(p.id)});
+  if(p)toast(_t('“{piece}” is no longer available as you chose it',{piece:what}),7000,{label:_t('Choose again'),fn:()=>openPDP(p.id)});
   else toast(_t('“{piece}” is no longer available',{piece:what}),6000);
 }
 
@@ -3289,7 +3268,6 @@ function addToCart(id,btn,note,opts,extras){
   if(!BOOTED){EARLY_TAP={id,note,opts,extras};toast(_t('Just a moment…'));return;}
   const p=PRODUCTS.find(x=>x.id===id);
   if(!p){toast(_t('This piece is no longer available'));return;}
-  if(p.forSale===false){toast(_t('This piece is on display only — it isn’t for sale.'));return;}
   // A required personalisation or a choice of options can only be made on the
   // product page — send them there rather than guessing on their behalf.
   // Extras are always optional, so a quick add from a card simply skips them.
@@ -3969,7 +3947,7 @@ async function fetchCatalog(){
       if(!VENDORS[p.shop.slug])VENDORS[p.shop.slug]={name:p.shop.name,house:p.shop.isHouse,loc:p.shop.location,color:safeColor(p.shop.color),bio:'',prods:0,since:null,rating:null,ratingCount:0};
       // On an Arabic page name/description/options arrive translated (?lang=ar);
       // nameEn keeps the address slug and the matched stock photo unchanged.
-      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description!=null?p.description:null,summary:p.summary||'',seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null,forSale:p.forSale!==false};
+      return {id:Number(p.id),name:p.name,nameEn:p.nameEn||(window.troveLang==='ar'?null:p.name),optionLabels:p.optionLabels||{},extraLabels:p.extraLabels||{},vendor:p.shop.slug,price:p.price,was:p.compareAt,cat:p.category,rating:p.rating?p.rating.avg:null,reviews:p.rating?p.rating.count:0,desc:p.description!=null?p.description:null,summary:p.summary||'',seed:p.imageSeed,images:(p.images||[]).map(safeImg).filter(Boolean),thumbs:(p.images||[]).map((u,i)=>safeImg(u)?safeImg((p.thumbs||[])[i])||null:0).filter(x=>x!==0),tags:p.tags||[],options:p.options||[],variants:p.variants||[],stock:p.stock,extras:p.extras||[],perso:p.personalization||null,lead:Number(p.leadDays)||null};
     });
     LIVE=true;
   }catch(e){console.warn('trove: catalogue did not load —',e.message);}
