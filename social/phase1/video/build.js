@@ -4,6 +4,8 @@
 // so every app accepts the file; add music from Instagram's own audio library when posting.
 // Writes <CLIPS>/finished/post-NN.mp4 (1080x1920, full quality, for Instagram) and video/out/post-NN.mp4 (720x1280
 // preview for the review page). Run after render.js: node video/build.js [post ...]
+// v6 (26 Oct 2026): a shot may name `still` (a rendered frame of the same post) instead of `clip`; it is held with a slow
+// push-in. A shot with `overlay: null` gets no text.
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -28,17 +30,28 @@ for (const r of reels.filter((x) => !only.length || only.includes(x.post))) {
   const dir = path.join(ROOT, 'out', 'post-' + nn);
   const args = ['-y', '-v', 'error'];
   const graph = [];
+  let n = 0; // next ffmpeg input index
   r.shots.forEach((s, i) => {
-    args.push('-i', path.join(CLIPS, s.clip));
+    const v = n++;
+    if (s.still) {
+      // v6: a rendered 1080x1920 frame of this post (out/post-NN/<still>.png) held for the shot with a slow push-in
+      // (1.00 to 1.05); scaled up first so the zoom stays smooth
+      const frames = Math.round(SEG * FPS);
+      args.push('-loop', '1', '-framerate', String(FPS), '-t', String(SEG), '-i', path.join(dir, s.still + '.png'));
+      graph.push(`[${v}:v]scale=2160:3840,zoompan=z='1+0.05*on/${frames - 1}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920:fps=${FPS},trim=0:${SEG},setpts=PTS-STARTPTS,format=yuv420p,settb=AVTB[c${i}]`);
+    } else {
+      args.push('-i', path.join(CLIPS, s.clip));
+      graph.push(`[${v}:v]trim=0:${SEG},setpts=PTS-STARTPTS,scale=1080:1920,fps=${FPS},format=yuv420p,settb=AVTB[c${i}]`);
+    }
+    if (!s.overlay) { graph.push(`[c${i}]null[s${i}]`); return; }
+    const o = n++;
     args.push('-loop', '1', '-framerate', String(FPS), '-t', String(SEG), '-i', path.join(dir, s.overlay + '.png'));
-    const v = 2 * i;
     // The opening line is on screen from the first frame; later lines fade in once the shot has settled
     const fadeIn = i === 0 ? '' : `fade=t=in:st=0.4:d=0.35:alpha=1,`;
-    graph.push(`[${v}:v]trim=0:${SEG},setpts=PTS-STARTPTS,scale=1080:1920,fps=${FPS},format=yuv420p,settb=AVTB[c${i}]`);
-    graph.push(`[${v + 1}:v]format=rgba,${fadeIn}fade=t=out:st=${(SEG - XF - 0.4).toFixed(2)}:d=0.35:alpha=1,settb=AVTB[o${i}]`);
+    graph.push(`[${o}:v]format=rgba,${fadeIn}fade=t=out:st=${(SEG - XF - 0.4).toFixed(2)}:d=0.35:alpha=1,settb=AVTB[o${i}]`);
     graph.push(`[c${i}][o${i}]overlay=0:0:format=auto,format=yuv420p,settb=AVTB[s${i}]`);
   });
-  const e = 2 * r.shots.length;
+  const e = n;
   args.push('-loop', '1', '-framerate', String(FPS), '-t', String(END), '-i', path.join(dir, 'end.png'));
   graph.push(`[${e}:v]scale=1080:1920,format=yuv420p,settb=AVTB[s${r.shots.length}]`);
   let prev = 's0';

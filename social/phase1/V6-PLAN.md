@@ -239,3 +239,17 @@ Then: `node render.js`, `node video/build.js`, check every frame and Reel, rebui
 All feedback colours are already brand colours (checked against `docs/trove.html` `:root`): Pink #F8D7E4 (`--blush`), Pastel
 Orange #FCC998 (`--peach`), Light Blue #BED3DF (`--sky`), Light Green #CFDBBE (`--moss`), Tan #BD9C8C (`--taupe`), Orange
 #F19A82 (`--coral`), plus Clay #DBC7BD, Sage #CAD5CC, Cream #FDF7F5, Charcoal #292727. None was flagged.
+
+## (e) Production record (agent 2, 26 Oct)
+
+- Higgsfield: 26 stills (25 planned + 1 retake) and 20 Kling 3.0 pro clips (5 s, silent, 9:16, start frame = the still's
+  own generation), 246.5 credits; balance 435.5 → 189. Retake: `g-06-market.jpg` (first take had blurred stallholders in
+  the background; its prompt in `photos/prompts.json` now says nobody else is in frame). Every still was checked before
+  animating; every clip was spot-checked at 1.5, 3.0 and 4.6 s.
+- Stills saved at 2160 px high (9:16 = 1221×2160, 4:5 = 1728×2160); each 9:16 still also cropped to 1080×1920 in
+  `video/start/`. Raw clips in the OneDrive clips folder under the names in `video/reels.js` (Kling returns 1080×1912;
+  build.js scales to 1080×1920).
+- `render.js` and `video/build.js` changed as listed in (c). render.js empties `out/` on every run, so frames of posts
+  3, 5 and 8 as carousels, post 6 slide 5, post 9 slide 8 and post 2's old `line.png` are gone.
+- Known: `14-pieces.mp4` lights the candle (the motion prompt asks for a flickering flame); the example shop page still
+  says "Delivering across Dubai & Abu Dhabi" (buyer delivery area, unchanged on purpose).

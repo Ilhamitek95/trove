@@ -3,6 +3,10 @@
 // v5 (20 Oct 2026): also renders screens/shop-example.html to screens/shop-example-full.png, clears out/ first,
 // adds the 'type' layout (bold type card: one headline, one line, the offer along the bottom) and the small
 // sign-off line (f.sign) on end cards.
+// v6 (26 Oct 2026, V6-PLAN.md "Renderer changes"): more brand colours for bands and Reel cover cards (pink, green = Light
+// Green, tan, char = Charcoal); Cream type and a Cream wordmark dot on Charcoal, a Charcoal dot on Light Blue (never
+// Orange with Charcoal or Light Blue); f.pos = object-position of a photo slide; Reel cover card colour from f.card;
+// Reel end cards with lead: null drop the 'Apply in about ten minutes.' line.
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require(process.env.PW_CORE || 'playwright-core');
@@ -13,7 +17,11 @@ const FONTS = path.resolve(__dirname, '../../docs/fonts').replace(/\\/g, '/');
 const PHOTOS = path.join(__dirname, 'photos');
 const OUT = path.join(__dirname, 'out');
 
-const BG = { cream: '#FDF7F5', clay: '#DBC7BD', sage: '#CAD5CC', blue: '#BED3DF', clear: 'transparent' };
+const BG = { cream: '#FDF7F5', clay: '#DBC7BD', sage: '#CAD5CC', blue: '#BED3DF', pink: '#F8D7E4', green: '#CFDBBE', tan: '#BD9C8C', char: '#292727', clear: 'transparent' };
+const CREAM = '#FDF7F5', CHAR = '#292727';
+// The wordmark's dot: Orange by default, Cream on Charcoal, Charcoal on Light Blue (never Orange next to either)
+const DOT = { char: CREAM, blue: CHAR };
+const wmDot = (bg) => (DOT[bg] ? `<i style="background:${DOT[bg]}"></i>` : '<i></i>');
 const SIZE = { slide: [1080, 1350], reel: [1080, 1920] };
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -22,7 +30,7 @@ const fmt = (s) => esc(s || '').replace(/\[([^\]]+)\]/g, '<span class="ph">$1</s
 
 function photoTag(f) {
   const file = f.photo && path.join(PHOTOS, f.photo);
-  if (file && fs.existsSync(file)) return `<img class="ph-img" src="file:///${file.replace(/\\/g, '/')}">`;
+  if (file && fs.existsSync(file)) return `<img class="ph-img" src="file:///${file.replace(/\\/g, '/')}"${f.pos ? ` style="object-position:${esc(f.pos)}"` : ''}>`;
   return `<div class="slot"><span>Real photo</span>${esc(f.slot || f.photo || '')}${f.photo ? `<small style="font-size:24px;opacity:.65">photos/${esc(f.photo)}</small>` : ''}</div>`;
 }
 // Small campaign sign-off, end cards only (v5: "Made here. Made home." is no longer a headline)
@@ -122,23 +130,25 @@ function inner(f, n, total) {
       const lines = (f.caption || '').split('|').length;
       const need = 120 + lines * size * 1.06 + (f.sub ? 14 + Math.ceil(f.sub.length / 46) * 49 : 0) + (f.big ? 110 : 60);
       const band = Math.max(f.big ? 400 : 300, Math.ceil(need));
+      if (f.band && !BG[f.band]) throw new Error('unknown band ' + f.band);
+      const ink = f.band === 'char' ? `;color:${CREAM}` : ''; // Cream type on Charcoal
       return `<div style="position:absolute;left:0;right:0;top:0;height:${h - band}px">${photoTag(f)}</div>
-        <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:${f.band ? BG[f.band] : '#FDF7F5'}"></div>
-        ${f.big ? '<div class="wm" style="top:auto;bottom:' + (band - 96) + 'px;font-size:40px">trove<i></i></div>' : ''}
-        <div class="box" style="bottom:120px"><div class="d" style="font-size:${size}px;line-height:1.06">${fmt(f.caption || '')}</div>${f.sub ? `<p class="body" style="margin-top:14px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>
-        <div class="url" style="bottom:52px;font-size:26px">${f.foot ? fmt(f.foot) : 'trove · troveathome.com/apply'}</div>${pillCounter(counter)}`;
+        <div style="position:absolute;left:0;right:0;bottom:0;height:${band}px;background:${f.band ? BG[f.band] : CREAM}"></div>
+        ${f.big ? `<div class="wm" style="top:auto;bottom:${band - 96}px;font-size:40px${ink}">trove${wmDot(f.band)}</div>` : ''}
+        <div class="box" style="bottom:120px${ink}"><div class="d" style="font-size:${size}px;line-height:1.06">${fmt(f.caption || '')}</div>${f.sub ? `<p class="body" style="margin-top:14px;font-size:36px">${fmt(f.sub)}</p>` : ''}</div>
+        <div class="url" style="bottom:52px;font-size:26px${ink}">${f.foot ? fmt(f.foot) : 'trove · troveathome.com/apply'}</div>${pillCounter(counter)}`;
     }
     case 'cover':
       return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;text-align:center"><div class="small" style="font-size:38px">${fmt(f.kicker)}</div><div class="d" style="font-size:150px;line-height:1.02;margin-top:40px">${fmt(f.title)}</div></div>`;
     case 'end':
-      return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:${f.size || 128}px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}<p class="body" style="margin-top:70px;font-size:40px">${fmt(f.lead || 'Apply in about ten minutes.')}</p><div style="margin-top:26px"><span class="pill" style="font-size:40px">${fmt(f.pill || 'troveathome.com/apply')}</span></div></div>${signTag(f, 'left:0;right:0;text-align:center;bottom:400px')}`;
+      return `<div class="wm" style="left:0;right:0;text-align:center;top:300px">trove<i></i></div><div style="position:absolute;left:90px;right:90px;top:0;bottom:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center"><div class="d" style="font-size:${f.size || 128}px;line-height:1.04">${fmt(f.title)}</div>${f.body ? `<p class="body" style="margin-top:44px;font-size:44px">${fmt(f.body)}</p>` : ''}${f.lead === null ? '' : `<p class="body" style="margin-top:70px;font-size:40px">${fmt(f.lead || 'Apply in about ten minutes.')}</p>`}<div style="margin-top:${f.lead === null ? 64 : 26}px"><span class="pill" style="font-size:40px">${fmt(f.pill || 'troveathome.com/apply')}</span></div></div>${signTag(f, 'left:0;right:0;text-align:center;bottom:400px')}`;
     // Reel text sits above Instagram's caption area and clear of the buttons on the right (top 1240, 860 px wide at most)
     case 'lower-third':
       return `<div style="position:absolute;left:90px;right:130px;top:1240px;text-align:center"><span class="pill" style="display:inline-block;background:#FDF7F5;color:#292727;font-size:44px;line-height:1.3;padding:28px 50px;border-radius:48px;box-shadow:0 8px 30px rgba(0,0,0,.12)">${fmt(f.text)}</span></div>`;
     case 'reel-hook':
       return `<div style="position:absolute;left:90px;right:130px;top:1060px;background:#FDF7F5;border-radius:6px;padding:46px 48px 52px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.12)"><div class="wm" style="position:static;font-size:40px">trove<i></i></div><div class="d" style="font-size:${f.size || 92}px;line-height:1.02;margin-top:18px">${fmt(f.title)}</div></div>`;
     case 'reel-cover-photo':
-      return `<div style="position:absolute;inset:0;${f.photo && fs.existsSync(path.join(PHOTOS, f.photo)) ? '' : 'bottom:910px'}">${photoTag(f)}</div><div style="position:absolute;left:90px;right:90px;top:1010px;background:#FDF7F5;border-radius:6px;padding:56px 56px 60px;text-align:center"><div class="wm" style="position:static;font-size:44px">trove<i></i></div><div class="small" style="font-size:34px;margin-top:26px">${fmt(f.kicker)}</div><div class="d" style="font-size:${f.size || 112}px;line-height:1.02;margin-top:22px">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin:26px auto 0;font-size:38px">${fmt(f.sub)}</p>` : ''}</div>`;
+      return `<div style="position:absolute;inset:0;${f.photo && fs.existsSync(path.join(PHOTOS, f.photo)) ? '' : 'bottom:910px'}">${photoTag(f)}</div><div style="position:absolute;left:90px;right:90px;top:1010px;background:${BG[f.card || 'cream']};border-radius:6px;padding:56px 56px 60px;text-align:center"><div class="wm" style="position:static;font-size:44px">trove${wmDot(f.card)}</div><div class="small" style="font-size:34px;margin-top:26px">${fmt(f.kicker)}</div><div class="d" style="font-size:${f.size || 112}px;line-height:1.02;margin-top:22px">${fmt(f.title)}</div>${f.sub ? `<p class="body" style="margin:26px auto 0;font-size:38px">${fmt(f.sub)}</p>` : ''}</div>`;
     case 'reel-photo':
       return `${photoTag(f)}<div style="position:absolute;left:0;right:0;top:1330px;text-align:center"><span class="pill" style="background:#FDF7F5;color:#292727;font-size:50px;padding:32px 58px;max-width:900px;line-height:1.3;border-radius:48px">${fmt(f.text)}</span></div>`;
   }
