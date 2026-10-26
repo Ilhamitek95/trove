@@ -92,9 +92,9 @@ th{font-weight:600;color:var(--muted)}
   <h1>Trove Phase 1 creatives<i></i></h1>
   <div class="intro">
     <div>
-      <p class="lede">Version 5, a draft: nothing is scheduled or posted. Eleven posts to find makers and providers in Dubai and Abu Dhabi, planned for 21 October to 20 November. They run in three steps: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers. Money stays out of the headlines, and every cover shows hands at work or real work, or is a plain type card. Since 21 October every carousel is photo-led: covers, type cards, steps and Q&amp;As carry Higgsfield images (hands only, Instagram AI label on) until the real shoot replaces them. Every carousel slide has a photo: the closing cards carry one above the call to action, and the real-site screens sit on one. Each pillar has its own Reel: Trove itself (post 2), makers (12), providers (13) and buyers (14, for December), cut from Higgsfield video clips of hands at work. Press play on any of them below.</p>
+      <p class="lede">Version 6, a draft: nothing is scheduled or posted. Thirteen posts to find makers and providers in Dubai, Abu Dhabi and Sharjah, planned for 31 October to 28 November, then the buyers Reel on 2 December. Same order as before: what Trove is, who it's for (makers, providers and buyers), then posts of their own for makers and for providers, money, a founding maker and the Collection. After the 22 October feedback and the owner's ask for more images and video, less text, eight of the fourteen posts are Reels (2, 3, 5, 8, 10, 12, 13, 14) cut from Higgsfield clips of hands at work, and every carousel slide is a photo with one short line; the captions do the explaining. Each post has its own lead colour, and the pieces shown cover every kind of maker, bright and patterned as well as quiet. Higgsfield images and video are stand-ins (hands only, Instagram AI label on) until the real shoot replaces them. Reels marked new in v6 play once the producer has generated and cut them.</p>
       <p class="insight" id="insight"></p>
-      <p class="muted" style="margin-top:12px;font-size:13.5px">Rebuilt from v4 after the 20 October creative review, checked against the brief and the live site. The marketing agents' earlier proposals are in the Trove repo under <code>social/phase1/agents</code>.</p>
+      <p class="muted" style="margin-top:12px;font-size:13.5px">v6 follows the 22 October feedback (<code>social/phase1/FEEDBACK-2026-10-22.md</code>); the plan and the producer's asset list are in <code>social/phase1/V6-PLAN.md</code>. v5 was rebuilt from v4 after the 20 October creative review, checked against the brief and the live site. The marketing agents' earlier proposals are in the Trove repo under <code>social/phase1/agents</code>.</p>
     </div>
     <div class="hooks" id="hooks"><h3>What Trove is, and who it's for</h3></div>
   </div>
@@ -107,15 +107,18 @@ th{font-weight:600;color:var(--muted)}
   <section style="margin-top:30px">
     <h2>What changed in this version</h2>
     <div class="changed">
-      <div class="card"><h3>What the 20 Oct review found</h3><ul id="found"></ul></div>
-      <div class="card"><h3>What v5 changes</h3><ul id="fixes"></ul></div>
-      <div class="card"><h3>What v5 didn't take, and why</h3><ul id="declined"></ul></div>
+      <div class="card"><h3>What the 22 Oct feedback found</h3><ul id="found"></ul></div>
+      <div class="card"><h3>What v6 changes</h3><ul id="fixes"></ul></div>
+      <div class="card"><h3>Not taken, and why</h3><ul id="declined"></ul></div>
     </div>
   </section>
   <section>
     <h2>The series at a glance</h2>
-    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Step</th><th>Cover headline</th><th>Cover</th><th>Ready</th></tr></thead><tbody id="glance"></tbody></table></div>
-    <p class="muted" style="margin-top:10px;font-size:13.5px">Pin posts 1 to 3 to the top of the profile. Buyers get posts of their own in December, when the Marketplace opens to them.</p>
+    <div class="tablewrap"><table><thead><tr><th>Date</th><th>Post</th><th>Step</th><th>Format</th><th>Cover headline</th><th>Lead colour</th><th>Ready</th></tr></thead><tbody id="glance"></tbody></table></div>
+    <p class="muted" style="margin-top:10px;font-size:13.5px">In date order. Pin posts 1 to 3 to the top of the profile. Buyers get posts of their own in December, when the Marketplace opens to them; their posts keep the delivery area, Dubai and Abu Dhabi.</p>
+    <h3 style="margin-top:22px">The palette</h3>
+    <p class="muted" style="margin-top:6px;font-size:13.5px">Only colours the brand already has. Colour sits in the band under each photo; Pastel Orange only inside photos.</p>
+    <div class="tablewrap"><table><thead><tr><th>Colour</th><th>Hex</th><th>Use</th></tr></thead><tbody id="palette"></tbody></table></div>
   </section>
   <nav id="nav" aria-label="Posts"></nav>
 
@@ -165,6 +168,12 @@ th{font-weight:600;color:var(--muted)}
   </section>
 
   <section>
+    <h2>Where to look for makers</h2>
+    <p class="muted" style="margin-top:6px;font-size:14px">In person and by DM, Sharjah added (22 October feedback). Check each place and its rules before approaching anyone there.</p>
+    <div class="cols" id="outreach"></div>
+  </section>
+
+  <section>
     <h2>Check before posting</h2>
     <ul id="verify"></ul>
   </section>
@@ -175,7 +184,7 @@ th{font-weight:600;color:var(--muted)}
     <div class="bar"><button type="button" id="lbPrev">Previous</button><span id="lbLabel"></span><button type="button" id="lbNext">Next</button></div>
   </div>
 
-  <p class="footer">Tap any frame to open it full size, then use Previous and Next (or swipe, or the arrow keys) to page through the post. The dates are a plan, one post every three days at 18:30 Dubai time; nothing goes out until the owner says launch. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
+  <p class="footer">Tap any frame to open it full size, then use Previous and Next (or swipe, or the arrow keys) to page through the post. The dates are a plan, one post every two or three days at 18:30 Dubai time; nothing goes out until the owner says launch. Source files are in <code>trove-repo/social/phase1/out</code>, one folder per post. To swap in real photos, put them in <code>social/phase1/photos</code> with the name on the slot and ask Claude to re-render.</p>
 </div>
 
 <script>
@@ -218,9 +227,14 @@ async function playReel(btn) {
 }
 Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json').then((r) => r.json())]).then(([d, m]) => {
   const c = d.campaign;
+  // v6: show the posts in date order ("Sat 31 Oct"); the post numbers stay as they were
+  const MON = { Oct: 9, Nov: 10, Dec: 11 };
+  const when = (p) => { const x = /(\d+) (\w{3})/.exec(p.date || ''); return x && MON[x[2]] !== undefined ? MON[x[2]] * 100 + +x[1] : 9999; };
+  d.posts.sort((a, b) => when(a) - when(b) || a.n - b.n);
   document.getElementById('insight').textContent = c.insight;
   document.getElementById('hooks').insertAdjacentHTML('beforeend',
-    `<div class="hook"><b>${esc(c.oneLiner)}</b><span>The one line. Posts 1 and 3 say it first.</span> <span class="ar" lang="ar">${esc(c.oneLinerAr)}</span></div>` +
+    `<div class="hook"><b>${esc(c.oneLiner)}</b><span>The one line, on every maker and provider end card. Post 1 says it first.</span> <span class="ar" lang="ar">${esc(c.oneLinerAr)}</span></div>` +
+    (c.oneLinerBuyers ? `<div class="hook"><b>${esc(c.oneLinerBuyers)}</b><span>The buyers' version (post 14 and December): deliveries stay in Dubai and Abu Dhabi.</span></div>` : '') +
     c.audiences.map(([who, line, ar]) => `<div class="hook"><b>${esc(line)}${ar ? ` <span class="ar" lang="ar">${esc(ar)}</span>` : ''}</b><span>${esc(who)}</span></div>`).join('') +
     `<div class="hook"><b>${esc(c.offer)}</b><span>The offer, along the bottom of maker covers. Providers: ${esc(c.offerProviders)}.</span></div>` +
     `<div class="hook"><b>${esc(c.line)} <span class="ar" lang="ar">${esc(c.lineAr)}</span></b><span>A small sign-off on end cards only, never a headline.</span></div>` +
@@ -233,7 +247,7 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
     const ready = frames.filter((x) => x.ready).length;
     const s = document.createElement('section');
     s.id = 'post' + p.n;
-    s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.step)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready</span></div>
+    s.innerHTML = `<div class="head"><h2>${p.n}. ${esc(p.title)}</h2><span class="meta">${esc(p.date)} · ${esc(p.step)} · ${esc(p.format)} · ${ready} of ${frames.length} frames ready${p.colour ? ` · Colour: ${esc(p.colour)}` : ''}</span></div>
       <div class="post">
         <div>${p.video ? `<div class="reel"><div class="reelbox"><video playsinline muted preload="none" poster="out/post-${String(p.n).padStart(2, '0')}/cover.jpg" data-src="${esc(p.video)}" aria-label="The finished Reel for post ${p.n}"></video><button type="button" class="reelplay">Play the Reel</button></div><p><b>The finished Reel</b><br>${esc(p.format)}, silent: add a track from Instagram's audio library when posting. Upload the Cover frame below as its cover. The frames below are its cover, text and closing card.</p></div>` : ''}
         <div class="grid">${frames.map((f, i) => `<figure><button type="button" class="thumb" data-post="${p.n}" data-i="${i}" aria-label="Open post ${p.n}, ${esc(label(f.file))}"><img loading="lazy" src="out/${f.file}" alt=""></button><figcaption>${esc(label(f.file))}${f.layout === 'lower-third' || f.layout === 'reel-hook' ? ' (overlay)' : ''} <span class="chip ${f.ready ? '' : 'todo'}">${f.ready ? 'Ready' : 'Needs input'}</span>${f.mood ? ' <span class="chip mood">Mood image</span>' : ''}${f.upgrade ? ' <span class="chip real">Real shot planned</span>' : ''}</figcaption></figure>`).join('')}</div></div>
@@ -256,8 +270,10 @@ Promise.all([fetch('posts.json').then((r) => r.json()), fetch('out/manifest.json
   document.getElementById('declined').innerHTML = c.review.declined.map((x) => `<li>${esc(x)}</li>`).join('');
   document.getElementById('glance').innerHTML = d.posts.map((p) => {
     const fr = FR[p.n], ok = fr.filter((x) => x.ready).length;
-    return `<tr><td style="white-space:nowrap"><a href="#post${p.n}" style="color:inherit">${esc(p.date)}</a></td><td>${esc(p.step)}</td><td>${esc(p.title)}</td><td>${esc(p.cover)}</td><td style="white-space:nowrap">${ok} of ${fr.length}</td></tr>`;
+    return `<tr><td style="white-space:nowrap"><a href="#post${p.n}" style="color:inherit">${esc(p.date)}</a></td><td>${p.n}</td><td>${esc(p.step)}</td><td>${esc(p.format)}</td><td>${esc(p.title)}</td><td>${esc((p.colour || '').split(';')[0])}</td><td style="white-space:nowrap">${ok} of ${fr.length}</td></tr>`;
   }).join('');
+  if (c.palette) document.getElementById('palette').innerHTML = c.palette.map(([n, hex, use]) => `<tr><td><span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${esc(hex)};border:1px solid rgba(41,39,39,.25);vertical-align:-2px;margin-right:8px"></span>${esc(n)}</td><td><code>${esc(hex)}</code></td><td>${esc(use)}</td></tr>`).join('');
+  if (c.outreach) document.getElementById('outreach').innerHTML = c.outreach.map(([where, what]) => `<div class="card"><h3>${esc(where)}</h3><p>${esc(what)}</p></div>`).join('');
   document.getElementById('shootIntro').textContent = d.shoot.intro;
   document.getElementById('shots').innerHTML = d.shoot.shots.map((r) => `<tr>${r.map((x) => `<td>${esc(x)}</td>`).join('')}</tr>`).join('');
   document.getElementById('shootRules').textContent = d.shoot.rules;
