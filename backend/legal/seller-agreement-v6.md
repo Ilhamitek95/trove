@@ -103,7 +103,7 @@ Trove buys goods from you, so Trove must know who you are.
 - From a Didit check, Trove keeps only the result: the **name printed on
   your ID**, its **last four digits**, its **issue and expiry dates**,
   whether each check passed, and the reasons a check did not pass. Trove
-  does not receive or keep your ID images or your selfie, your full ID
+  does not keep your ID images or your selfie, your full ID
   number or your date of birth; Didit processes those for Trove under its
   own verification privacy notice. ID photos you send Trove instead are
   stored **encrypted**. Your ID details, address and license document are

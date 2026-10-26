@@ -160,7 +160,7 @@ test('Seller Agreement v6 and Provider Agreement v5: Sharjah, Didit, Arabic twin
   assert.match(flat, /customers in \*\*Dubai and Abu Dhabi only\*\*; it does not deliver to Sharjah/);
   assert.match(flat, /online identity check through Didit/);
   assert.match(flat, /live selfie/);
-  assert.match(flat, /does not receive or keep your ID images or your selfie/);
+  assert.match(flat, /does not keep your ID images or your selfie/);
   assert.match(flat, /Serein Consultancy LLC/);
   for (const f of ['seller-agreement-v6.md', 'seller-agreement-v6-ar.md', 'provider-agreement-v5.md', 'provider-agreement-v5-ar.md']) {
     assert.ok(fs.existsSync(path.join(LEGAL, f)), f);
