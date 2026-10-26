@@ -36,7 +36,7 @@ before(async () => {
 after(async () => { await ctx.close(); });
 
 test('legal documents are served with a version and hash, and their pages exist', async () => {
-  for (const [doc, needle, version] of [['provider-agreement', 'not the provider of your services', 'v4'], ['services-terms', 'Trove is not the provider', 'v3']]) {
+  for (const [doc, needle, version] of [['provider-agreement', 'not the provider of your services', 'v5'], ['services-terms', 'Trove is not the provider', 'v3']]) {
     const r = await api('GET', '/api/legal/' + doc);
     assert.equal(r.status, 200);
     assert.equal(r.data.version, version);
@@ -46,14 +46,14 @@ test('legal documents are served with a version and hash, and their pages exist'
     assert.equal(page.status, 200);
     assert.ok(page.text.includes('/api/legal/' + doc));
   }
-  assert.equal((await api('GET', '/api/legal/seller-agreement')).data.version, 'v5', 'the seller agreement still serves');
+  assert.equal((await api('GET', '/api/legal/seller-agreement')).data.version, 'v6', 'the seller agreement still serves');
   assert.equal((await api('GET', '/api/legal/nope')).status, 404);
 });
 
 test('config exposes the services commission and document versions', async () => {
   const { data } = await api('GET', '/api/config');
   assert.equal(data.serviceCommissionPercent, 10);
-  assert.equal(data.providerAgreementVersion, 'v4'); // v4 since 12 Oct (F343)
+  assert.equal(data.providerAgreementVersion, 'v5'); // v5 since 26 Oct (Sharjah providers)
   assert.equal(data.servicesTermsVersion, 'v3');
 });
 
@@ -66,11 +66,11 @@ test('applying requires the Provider Agreement and records the accepted version'
   r = await api('POST', '/api/services/apply', { body: APPLY });
   assert.equal(r.status, 201);
   const p = db.prepare("SELECT * FROM service_providers WHERE slug='dana-letters'").get();
-  assert.equal(p.agreement_version, 'v4');
+  assert.equal(p.agreement_version, 'v5');
   assert.ok(p.agreement_accepted_at);
   providerCookie = await ctx.loginAs(APPLY.email, APPLY.password);
   const me = await api('GET', '/api/provider/me', { cookie: providerCookie });
-  assert.equal(me.data.provider.agreement.version, 'v4');
+  assert.equal(me.data.provider.agreement.version, 'v5');
   assert.equal(me.data.provider.commissionPercent, 10);
 
   await api('PATCH', '/api/admin/providers/' + p.id, { cookie: adminCookie, body: { status: 'approved' } });
@@ -79,7 +79,7 @@ test('applying requires the Provider Agreement and records the accepted version'
   serviceId = sv.data.service.id;
   const admin = await api('GET', '/api/admin/providers', { cookie: adminCookie });
   const row = admin.data.providers.find((x) => x.slug === 'dana-letters');
-  assert.equal(row.agreementVersion, 'v4');
+  assert.equal(row.agreementVersion, 'v5');
 });
 
 test('a booking requires the Services Terms and records the version', async () => {

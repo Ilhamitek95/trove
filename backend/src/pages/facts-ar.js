@@ -26,6 +26,7 @@ function factsAr() {
     transitDays: range(fees.COURIER_TRANSIT_MIN_DAYS, fees.COURIER_TRANSIT_MAX_DAYS),
     maxLeadText: weeks(f.maxLeadWeeks),
     areas: 'دبي وأبوظبي',
+    makerAreas: 'دبي وأبوظبي والشارقة',
   };
 }
 

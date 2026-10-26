@@ -63,6 +63,8 @@ Trove, is responsible for the service they deliver.
 
 ## Where we work
 
-Trove delivers to, and works with makers in, **${f.areas}**. We do not
-deliver elsewhere in the UAE or abroad yet.
+Trove delivers to **${f.areas}**. We do not deliver elsewhere in the UAE or
+abroad yet. Makers and service providers based in **${f.makerAreas}** can
+apply to sell on Trove; services are booked at customers' homes in
+${f.areas}.
 `;

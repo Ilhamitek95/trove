@@ -192,9 +192,11 @@ router.post('/apply', (req, res, next) => {
     return res.status(400).json({ error: 'Share your Instagram or a portfolio link so our curation team can see your work' });
   }
   if (!String(b.phone || '').trim()) return res.status(400).json({ error: 'A WhatsApp number is required to apply' });
-  const { SERVICE_AREAS, isServiceable } = require('../service-area');
-  if (!isServiceable(b.location)) {
-    return res.status(400).json({ error: `The Services Marketplace is currently open to providers in ${SERVICE_AREAS.join(' and ')} only` });
+  // Providers may be based in Dubai, Abu Dhabi or Sharjah (owner,
+  // 2026-10-26); the bookings themselves stay in Dubai + Abu Dhabi homes.
+  const { isMakerArea } = require('../service-area');
+  if (!isMakerArea(b.location)) {
+    return res.status(400).json({ error: 'The Services Marketplace is currently open to providers in Dubai, Abu Dhabi and Sharjah only' });
   }
   const cats = Array.isArray(b.categories) ? b.categories.map((c) => String(c).trim()).filter(Boolean) : [];
   if (!cats.length || cats.length > 3) return res.status(400).json({ error: 'Choose one to three service categories' });

@@ -45,7 +45,8 @@ test('unlicensed sellers must provide ID photos and a home address', async () =>
     [{ ...GOOD }, /home address/i],
     [{ ...GOOD, address: 'Apt 1, Blue Tower, Al Quoz, Dubai' }, /front of your Emirates ID/],
     [{ ...GOOD, address: 'Apt 1, Blue Tower, Al Quoz, Dubai', eidFront: FRONT }, /back of your Emirates ID/],
-    [{ ...GOOD, eidFront: FRONT, eidBack: BACK, address: 'Somewhere in Sharjah' }, /Dubai or Abu Dhabi/],
+    // Sharjah homes are fine since 2026-10-26 (makers may be based there); Ajman is not.
+    [{ ...GOOD, eidFront: FRONT, eidBack: BACK, address: 'Somewhere in Ajman' }, /Dubai, Abu Dhabi or Sharjah/],
   ]) {
     const res = await ctx.api('POST', '/api/seller/payout-setup', { cookie: plainCookie, body });
     assert.equal(res.status, 400, res.text);

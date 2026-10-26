@@ -21,7 +21,7 @@ after(async () => { await ctx.close(); });
 test('the seller agreement is served with a verifiable hash', async () => {
   const res = await ctx.api('GET', '/api/legal/seller-agreement');
   assert.equal(res.status, 200);
-  assert.equal(res.data.version, 'v5');
+  assert.equal(res.data.version, 'v6');
   assert.match(res.data.markdown, /Trove purchases that piece from you/);
   assert.match(res.data.markdown, /accountable for the goods you supply/);
   assert.equal(res.data.sha256, require('../src/crypto').sha256(res.data.markdown));
@@ -60,7 +60,7 @@ test('payout-setup validation: last4, expiry, IBAN, agreement', async () => {
   assert.ok(shop.iban_encrypted);
   assert.equal(shop.payout_iban, '');
   assert.equal(shop.emirates_id_last4, '4417');
-  assert.equal(shop.agreement_version, 'v5');
+  assert.equal(shop.agreement_version, 'v6');
   assert.ok(shop.agreement_accepted_at);
   assert.ok(shop.agreement_hash);
   assert.equal(require('../src/crypto').decrypt(shop.iban_encrypted), 'AE070331234567890123456');
@@ -103,9 +103,9 @@ test('register without a license leaves connect_queue off', async () => {
   assert.equal(shop.license_number, '');
 });
 
-test('Seller Agreement v5 names the company; v4 makers keep selling and are asked to accept', async () => {
+test('Seller Agreement v5+ names the company (v6 since 26 Oct); v4 makers keep selling and are asked to accept', async () => {
   const legal = await ctx.api('GET', '/api/legal/seller-agreement');
-  assert.equal(legal.data.version, 'v5');
+  assert.equal(legal.data.version, 'v6');
   assert.match(legal.data.markdown, /fortnightly, every other Tuesday/);
   assert.match(legal.data.markdown, /15-day return window has closed/);
   assert.match(legal.data.markdown, /refunded once the\s+courier has collected it/);
@@ -123,13 +123,13 @@ test('Seller Agreement v5 names the company; v4 makers keep selling and are aske
   assert.match(read('v3'), /weekly, on Tuesdays/);
   assert.match(read('v4'), /Trove's published threshold/);
 
-  // A v4 maker: v5 changes no money term, so selling carries on; they are asked to accept.
+  // A v4 maker: v5 and v6 change no money term, so selling carries on; they are asked to accept.
   db.prepare("UPDATE shops SET agreement_version='v4' WHERE slug='test-pots'").run();
   let me = await ctx.api('GET', '/api/seller/me', { cookie: sellerCookie });
   assert.equal(me.data.shop.agreementUpdateDue, true);
   assert.equal(me.data.shop.sellingPaused, false);
-  assert.equal(me.data.shop.currentAgreementVersion, 'v5');
-  assert.match(me.data.shop.agreementChangeNote, /Serein Consultancy LLC/);
+  assert.equal(me.data.shop.currentAgreementVersion, 'v6');
+  assert.match(me.data.shop.agreementChangeNote, /Sharjah/);
 
   let res = await ctx.api('POST', '/api/seller/agreement', { cookie: sellerCookie, body: {} });
   assert.equal(res.status, 400, 'acceptance must be explicit');
@@ -137,8 +137,8 @@ test('Seller Agreement v5 names the company; v4 makers keep selling and are aske
   assert.equal(res.status, 200, res.text);
   assert.equal(res.data.shop.agreementUpdateDue, false);
   const shop = db.prepare("SELECT * FROM shops WHERE slug='test-pots'").get();
-  assert.equal(shop.agreement_version, 'v5');
-  assert.equal(shop.agreement_hash, require('../src/crypto').sha256(legal.data.markdown), 'hash of the exact v5 text');
+  assert.equal(shop.agreement_version, 'v6');
+  assert.equal(shop.agreement_hash, require('../src/crypto').sha256(legal.data.markdown), 'hash of the exact v6 text');
   me = await ctx.api('GET', '/api/seller/me', { cookie: sellerCookie });
   assert.equal(me.data.shop.agreementUpdateDue, false);
 });

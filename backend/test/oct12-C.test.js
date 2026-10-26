@@ -205,14 +205,16 @@ test('F246: the shop record is an allow-list — no file paths, hashes, Stripe i
   assert.ok(!JSON.stringify(rej).includes('/var/data/private'));
 });
 
-test('F247: the courier pickup must be in Dubai or Abu Dhabi', async () => {
+test('F247: the courier pickup must be in Dubai, Abu Dhabi or Sharjah', async () => {
   const s = mkShop('pickup-pots');
   const cookie = await cookieOf(s);
   const patch = (pickupAddress) => api('PATCH', '/api/seller/me', { cookie, body: { pickupAddress } });
-  let r = await patch('Villa 3, Al Nahda, Sharjah');
+  let r = await patch('Villa 3, Al Rashidiya, Ajman');
   assert.equal(r.status, 400);
   assert.equal(r.data.code, 'pickup_area');
-  assert.equal((await patch('Villa 3, Al Nahda, Dubai, near Sharjah border')).status, 400, 'naming another emirate is refused');
+  assert.match(r.data.error, /Dubai, Abu Dhabi and Sharjah only/);
+  assert.equal((await patch('Villa 3, Al Nahda, Dubai, near Ajman border')).status, 400, 'naming another emirate is refused');
+  assert.equal((await patch('Villa 3, Al Nahda, Sharjah')).status, 200, 'Sharjah makers since 2026-10-26');
   assert.equal((await patch('Unit 5, Alserkal Avenue, Al Quoz 1')).status, 400, 'no emirate named');
   assert.equal((await patch('Unit 5, Alserkal Avenue, Al Quoz 1, Dubai')).status, 200);
   assert.equal((await patch('فيلا 3، القوز، دبي')).status, 200, 'typed in Arabic');

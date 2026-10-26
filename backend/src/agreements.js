@@ -16,6 +16,8 @@
  * truthful", verified before settlement), so the dashboard asks them to
  * accept without taking their pieces off sale. If a lawyer reads the
  * expired-ID pause as a new payment term, raise the minimum to v5.
+ * v6 (2026-10-26: Sharjah makers + the Didit check described) changes no
+ * money term either, so v4 and v5 shops keep selling and are prompted only.
  *
  * Not covered here: a shop with no accepted agreement at all (never got to
  * payout setup). That is the onboarding gate's business, not this one.
@@ -53,6 +55,7 @@ function sellableSql(alias = 's') {
 const CHANGES = {
   v4: 'pays you fortnightly, every other Tuesday, once the buyer’s return window has closed',
   v5: 'names the company behind Trove (Serein Consultancy LLC), states the licence threshold, and sets out the identity check (settlements pause while an Emirates ID has expired), the pickup details and how long you see a buyer’s address; margin, fortnightly runs and the return window do not change',
+  v6: 'welcomes makers based in Sharjah as well as Dubai and Abu Dhabi (buyers are still in Dubai and Abu Dhabi only) and describes the online identity check with your Emirates ID and a selfie; margin, fortnightly runs and the return window do not change',
 };
 const changeNote = (version) => CHANGES[version] || '';
 

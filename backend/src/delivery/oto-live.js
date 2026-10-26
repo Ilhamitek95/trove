@@ -77,7 +77,13 @@ async function call(method, path, body, retried = false) {
 }
 
 /* ---- payload builders (pure; pinned by test/oto.test.js) ---- */
-const town = (s) => (/abu\s*dhabi/i.test(String(s || '')) ? 'Abu Dhabi' : 'Dubai');
+// The emirate OTO prices and routes by. Sharjah only ever comes from a
+// MAKER's pickup address (makers may be based there since 2026-10-26); buyer
+// addresses are Dubai or Abu Dhabi (checkout refuses Sharjah). Arabic
+// spellings count too: /ar/sell accepts a pickup address typed in Arabic.
+// Addresses end with the emirate, so the LAST one named wins ('Al Qusais,
+// near the Sharjah border, Dubai' is Dubai); nothing named → Dubai.
+const town = require('../service-area').emirateOf;
 // OTO takes numbers without the plus: +971501112233 → 971501112233.
 const mobile = (p) => String(p || '').replace(/\D/g, '').replace(/^00/, '');
 const aed = (fils) => Math.round(Number(fils) || 0) / 100;

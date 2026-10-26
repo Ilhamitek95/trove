@@ -79,9 +79,12 @@ test('applying without agreeing to the subscription is refused', async () => {
   assert.match(data.error, /AED 30/);
 });
 
-test('applying outside Dubai & Abu Dhabi is refused', async () => {
-  const { status } = await api('POST', '/api/services/apply', { body: { ...APPLY, location: 'Sharjah, UAE' } });
-  assert.equal(status, 400);
+test('applying outside Dubai, Abu Dhabi & Sharjah is refused', async () => {
+  // Sharjah providers may apply since 2026-10-26 (test/sharjah-makers.test.js).
+  for (const location of ['Ajman, UAE', 'Al Jurf, Ajman', 'Ras Al Khaimah', 'Al Ain']) {
+    const { status } = await api('POST', '/api/services/apply', { body: { ...APPLY, location } });
+    assert.equal(status, 400, location);
+  }
 });
 
 test('an unknown category is refused', async () => {

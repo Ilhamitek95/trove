@@ -530,7 +530,9 @@ test('F317: the sell FAQ no longer says a maker can never owe anything; a saved 
 
 test('F343: Provider Agreement v4 says the mobile is released once the booking is secured (v3 untouched)', async () => {
   const r = await call('GET', '/api/legal/provider-agreement');
-  assert.equal(r.data.version, 'v4');
+  // v5 (26 Oct, Sharjah providers) keeps v4's wording on the mobile number.
+  assert.equal(r.data.version, 'v5');
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'legal', 'provider-agreement-v4.md'), 'utf8').replace(/\s+/g, ' '), /released to you once the booking is secured/, 'the accepted v4 stays as signed');
   assert.match(r.data.markdown.replace(/\s+/g, ' '), /released to you once the booking is secured/);
   assert.match(r.data.markdown.replace(/\s+/g, ' '), /when the customer's card payment is received/);
   const legal = path.join(__dirname, '..', 'legal');

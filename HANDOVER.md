@@ -2,6 +2,13 @@
 
 Last updated 26 October 2026 (laptop session: social Phase 1 v6, new calendar after the 22 Oct feedback, more Reels and photos). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
+## Sharjah makers and providers (26 Oct): BUILT ON BRANCH `sharjah-makers`, NOT LIVE YET
+
+- **What it does:** makers and service providers based in Sharjah can apply, open a shop, and have the courier collect from a Sharjah address. Buyers are still Dubai and Abu Dhabi only (checkout still refuses Sharjah), and services are still booked by customers in Dubai and Abu Dhabi (a Sharjah provider travels to them). Ajman and the other emirates are still refused everywhere.
+- **Words changed:** the apply form (new "Sharjah, UAE" choice), the Sell page (new question "Where do I need to be based?"), the Help centre, About, the services FAQ, the Sell/Apply page descriptions, in English and Arabic. Delivery wording everywhere still says Dubai and Abu Dhabi.
+- **Agreements:** Seller Agreement v6 (Sharjah + it now describes the Emirates ID and selfie check through Didit) and Provider Agreement v5 (Sharjah). Makers on v5 keep selling and see a prompt to accept v6 in their dashboard; providers are not asked again. Both are Claude drafts for the lawyer review.
+- **Before it goes live, check:** that OTO offers a courier pickup from Sharjah to Dubai and Abu Dhabi on Trove's account (and at what price, since the buyer still pays AED 30 or nothing); a native speaker reads the new Arabic.
+
 ## What is live
 
 - **troveathome.com** runs on Render (service `srv-d931flsm0tmc73b0qem0`). Stripe takes real money. The courier is OTO.

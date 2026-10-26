@@ -15,7 +15,12 @@ const on = (v) => v === '1' || v === 'true';
 // Seller Agreement. v5 (2026-10-02) names the contracting company (Serein
 // Consultancy LLC, whose brands Trove and Trove at Home are) and states the
 // licence threshold; the money terms are v4's.
-const AGREEMENT_VERSION = 'v5';
+// v6 (2026-10-26): makers may be based in Dubai, Abu Dhabi or Sharjah (pickup
+// and home address in one of the three; customers still Dubai + Abu Dhabi
+// only), and section 5 describes the Didit identity check (Emirates ID scan +
+// live selfie) next to the licence and photo routes. Money terms unchanged,
+// so v4/v5 shops keep selling and are only prompted to accept v6.
+const AGREEMENT_VERSION = 'v6';
 // The oldest Seller Agreement whose terms the code actually applies (40%
 // margin, fortnightly runs, payable after the 15-day return window). A shop
 // that accepted an OLDER version (v1–v3: weekly runs, 7-day hold) has not
@@ -32,7 +37,10 @@ const AGREEMENT_MIN_SELLING_VERSION = 'v4';
 // is SECURED — on confirm for a direct booking, on payment for a card booking
 // — as the Services Terms and the code already said (v3 said 'on confirm').
 // Nothing else changed; v3 acceptances stand (no re-acceptance gate).
-const PROVIDER_AGREEMENT_VERSION = 'v4';
+// v5 (2026-10-26): providers may be based in Dubai, Abu Dhabi or Sharjah;
+// bookings still come only from customers in Dubai + Abu Dhabi, and a Sharjah
+// provider travels to them. Earlier acceptances stand (no re-acceptance gate).
+const PROVIDER_AGREEMENT_VERSION = 'v5';
 // v2 (2026-09-30): card payment for bookings, private booking links, full
 // refund on cancelling a paid booking before the service date.
 // v3 (2026-10-02): names the contracting company. Nothing else changed.

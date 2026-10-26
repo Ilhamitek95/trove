@@ -800,7 +800,7 @@
             </div>
             <div class="field"><label>Shop name</label><input id="sfName"></div>
             <div class="field"><label>Area</label><input id="sfLoc" placeholder="e.g. Alserkal Avenue, Al Quoz"></div>
-            <div class="field"><label>Emirate</label><select id="sfEmirate"><option value="Dubai">Dubai</option><option value="Abu Dhabi">Abu Dhabi</option></select></div>
+            <div class="field"><label>Emirate</label><select id="sfEmirate"><option value="Dubai">Dubai</option><option value="Abu Dhabi">Abu Dhabi</option><option value="Sharjah">Sharjah</option></select></div>
             <div class="field"><label>Pickup address (courier only)</label><input id="sfPickup" placeholder="Building, street, area, emirate — where the courier collects your parcels">
               <button type="button" class="btn btn-ghost btn-sm" id="sfPickupSame" style="display:none;margin-top:6px" onclick="$('sfPickup').value=SHOP.sellerAddress;this.style.display='none'">Same as my home address</button></div>
             <div class="field"><label>Pickup phone (courier only)</label><input id="sfPickupTel" placeholder="05X XXX XXXX — the number the driver calls" inputmode="tel"></div>
@@ -1132,9 +1132,10 @@ function ensureCatOption(cat){ // legacy categories stay editable until re-picke
 function fillStoreForm(){
   if($('sfName'))$('sfName').value=SHOP.name||'';
   // Location is stored as "Area, Emirate" — split it back into the two fields.
-  const isAD=/abu dhabi/i.test(SHOP.loc||'');
-  if($('sfEmirate'))$('sfEmirate').value=isAD?'Abu Dhabi':'Dubai';
-  if($('sfLoc'))$('sfLoc').value=(SHOP.loc||'').replace(/,?\s*(abu dhabi|dubai)(,\s*uae)?\s*$/i,'').trim();
+  // Sharjah makers can sell too (2026-10-26); their buyers are still in Dubai + Abu Dhabi.
+  const emi=/abu dhabi/i.test(SHOP.loc||'')?'Abu Dhabi':/sharjah/i.test(SHOP.loc||'')?'Sharjah':'Dubai';
+  if($('sfEmirate'))$('sfEmirate').value=emi;
+  if($('sfLoc'))$('sfLoc').value=(SHOP.loc||'').replace(/,?\s*(abu dhabi|dubai|sharjah)(,\s*uae)?\s*$/i,'').trim();
   if($('sfBio'))$('sfBio').value=SHOP.bio||'';
   if($('sfPickup'))$('sfPickup').value=SHOP.pickupAddress||'';
   if($('sfPickupTel'))$('sfPickupTel').value=SHOP.pickupPhone||SHOP.whatsapp||'';
@@ -2389,7 +2390,7 @@ function addressFieldsHTML(){
       ${SHOP.sellerAddress?`<div class="demo-note" style="margin-top:5px">${_t('On file: {address} — leave empty to keep it.',{address:esc(SHOP.sellerAddress)})}</div>`:''}</div>
     <div class="ftwo">
       <div class="field"><label>${_t('Area')}</label><input id="psAddrArea" placeholder="${_t('e.g. Al Quoz')}"></div>
-      <div class="field"><label>${_t('Emirate')}</label><select id="psAddrEmirate"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
+      <div class="field"><label>${_t('Emirate')}</label><select id="psAddrEmirate"><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option><option value="Sharjah">${_t('Sharjah')}</option></select></div>
     </div>`;
 }
 /* ---------------- Identity check (Didit) ----------------

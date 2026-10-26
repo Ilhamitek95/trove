@@ -152,11 +152,12 @@ router.patch('/me', requireSeller, (req, res) => {
     cleanBio = r.value;
   }
   if (location != null) {
-    const { SERVICE_AREAS, isServiceable } = require('../service-area');
+    // Supply side: a shop may be based in Dubai, Abu Dhabi or Sharjah.
+    const { isMakerArea } = require('../service-area');
     const r = v.shortText(location, { label: 'Location', max: v.LIMITS.location });
     if (r.error) return res.status(400).json({ error: r.error });
-    if (!isServiceable(r.value))
-      return res.status(400).json({ error: `Trove shops are based in ${SERVICE_AREAS.join(' and ')} only` });
+    if (!isMakerArea(r.value))
+      return res.status(400).json({ error: 'Trove shops are based in Dubai, Abu Dhabi and Sharjah only' });
     cleanLocation = r.value;
   }
   if (color != null && !v.isHexColour(color)) {
@@ -170,12 +171,13 @@ router.patch('/me', requireSeller, (req, res) => {
     if (pickup.length > v.LIMITS.pickupAddress) return res.status(400).json({ error: `The pickup address must be ${v.LIMITS.pickupAddress} characters or fewer` });
     if (v.hasMarkup(pickup)) return res.status(400).json({ error: "The pickup address can't contain < or >" });
     if (pickup && pickup.length < 10) return res.status(400).json({ error: 'Enter the full pickup address — building, street and area' });
-    // The courier collects only inside the service area (F247): the same
-    // check, and the same words, as the shop's location.
-    const { SERVICE_AREAS, isServiceable, namesOtherEmirate } = require('../service-area');
-    const inArea = isServiceable(pickup) || /دبي|أبو ?ظبي|ابو ?ظبي/.test(pickup); // typed in Arabic on /ar/sell
-    if (pickup && pickup !== (req.shop.pickup_address || '') && (!inArea || namesOtherEmirate(pickup))) {
-      return res.status(400).json({ code: 'pickup_area', error: `The courier collects in ${SERVICE_AREAS.join(' and ')} only — end the pickup address with the emirate, e.g. Al Quoz, Dubai` });
+    // The courier collects only where makers may be based (F247; Sharjah
+    // added 2026-10-26): Dubai, Abu Dhabi or Sharjah, typed in English or in
+    // Arabic on /ar/sell, and no other emirate named. Buyer delivery stays
+    // Dubai + Abu Dhabi (isDeliverable).
+    const { isMakerArea } = require('../service-area');
+    if (pickup && pickup !== (req.shop.pickup_address || '') && !isMakerArea(pickup)) {
+      return res.status(400).json({ code: 'pickup_area', error: 'The courier collects in Dubai, Abu Dhabi and Sharjah only — end the pickup address with the emirate, e.g. Al Quoz, Dubai' });
     }
   }
   if (pickupPhone != null) {
@@ -1000,9 +1002,10 @@ router.post('/payout-setup', requireSeller, notHouse, notInShopView, (req, res, 
         return res.status(400).json({ error: 'Add a photo of the back of your Emirates ID' });
     }
     if (address) {
-      const { SERVICE_AREAS, isServiceable } = require('../service-area');
-      if (address.length < 10 || !isServiceable(address))
-        return res.status(400).json({ error: `Enter your full home address in ${SERVICE_AREAS.join(' or ')}` });
+      // A maker's home may be anywhere makers can be based (Sharjah included).
+      const { isMakerArea } = require('../service-area');
+      if (address.length < 10 || !isMakerArea(address))
+        return res.status(400).json({ error: 'Enter your full home address in Dubai, Abu Dhabi or Sharjah' });
     }
 
     const uploads = require('../uploads');

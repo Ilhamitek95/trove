@@ -81,9 +81,10 @@ to the card you paid with; your bank may take a few working days to show it.
 
 ### Who can sell on Trove?
 
-Makers in ${f.areas} who make their pieces themselves, at home or in a small
-studio. Apply at [Sell on Trove](/apply); a real person reviews every
-application.
+Makers in ${f.makerAreas} who make their pieces themselves, at home or in a
+small studio. Our courier collects sold pieces from your door in any of the
+three; Trove delivers to buyers in ${f.areas}. Apply at
+[Sell on Trove](/apply); a real person reviews every application.
 
 ### What does it cost to sell?
 
@@ -154,7 +155,9 @@ not delivered.
 
 ### How do I offer my services on Trove?
 
-Apply at [Offer your services](/apply?for=services). Listing is free during
+Apply at [Offer your services](/apply?for=services). Providers based in
+${f.makerAreas} can apply; services are booked at customers' homes in
+${f.areas}, so a provider based in Sharjah travels to them. Listing is free during
 launch: the ${f.providerSub} monthly platform subscription starts later, with
 30 days' notice. On bookings paid through Trove, Trove keeps
 ${f.serviceCommission}% of the price. See the

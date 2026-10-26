@@ -93,11 +93,12 @@ router.post('/register', async (req, res, next) => { try {
     const bad = validate.markupField(req.body, ['category', 'experience', 'maker', 'channels', 'capacity', 'links', 'instagram', 'phone', 'licenseNumber', 'location']);
     if (bad) return res.status(400).json({ error: "Application answers can't contain < or >" });
   }
-  // Trove is Dubai & Abu Dhabi only — sellers included.
+  // Makers may be based in Dubai, Abu Dhabi or Sharjah (owner, 2026-10-26);
+  // buyer delivery stays Dubai and Abu Dhabi (src/service-area.js).
   if (wantsShop) {
-    const { SERVICE_AREAS, isServiceable } = require('../service-area');
-    if (!isServiceable(req.body.location))
-      return res.status(400).json({ error: `Trove is currently open to makers in ${SERVICE_AREAS.join(' and ')} only` });
+    const { isMakerArea } = require('../service-area');
+    if (!isMakerArea(req.body.location))
+      return res.status(400).json({ error: 'Trove is currently open to makers in Dubai, Abu Dhabi and Sharjah only' });
   }
 
   let userId, created = false, shopId = null;

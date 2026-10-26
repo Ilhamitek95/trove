@@ -57,7 +57,8 @@ async function call(method, path, body, raw) {
 }
 
 /* ---- Payload builders (pure; pinned by test/quiqup.test.js) ---- */
-const town = (s) => (/abu\s*dhabi/i.test(String(s || '')) ? 'Abu Dhabi' : 'Dubai');
+// Sharjah only from a maker's pickup address (buyers are Dubai/Abu Dhabi).
+const town = require('../service-area').emirateOf;
 
 function shopPoint(shop) {
   const line = shop.pickup_address || shop.seller_address || shop.location || '';

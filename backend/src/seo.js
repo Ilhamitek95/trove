@@ -157,7 +157,7 @@ function setHead(html, opts) {
  * added only when the page has none of its own, never replacing anything.
  */
 const PAGE_DESCRIPTIONS = {
-  '/apply': 'Apply to sell your handmade pieces or offer your services on Trove. A real person reviews every application; makers keep 60% of every sale, delivered across Dubai and Abu Dhabi.',
+  '/apply': 'Apply to sell your handmade pieces or offer your services on Trove, open to makers and providers in Dubai, Abu Dhabi and Sharjah. A real person reviews every application; makers keep 60% of every sale.',
 };
 function withDefaultSocial(html, { base, url, noindex = false, path: pagePath }) {
   if (/property="og:title"/.test(html)) return html;
@@ -745,7 +745,7 @@ function renderSell(base, lang = 'en', path = '') {
   const html = sellFigures(activate(storefront(lang), 'sell'), lang, Array.isArray(path) ? path[0] : path);
   return setHead(html, {
     base, url: `${base}/sell-on-trove`, title: T('Sell your handmade pieces on Trove'), lang,
-    description: T('Open a shop on Trove: nothing up front, you set the price and keep {share}%. Trove handles photography, delivery and customer care in Dubai and Abu Dhabi.', { share: f.makerShare }),
+    description: T('Open a shop on Trove if you make in Dubai, Abu Dhabi or Sharjah: nothing up front, you set the price and keep {share}%. Trove handles photography, delivery and customer care.', { share: f.makerShare }),
     ld: [{ '@type': 'WebPage', '@id': `${base}/sell-on-trove#page`, url: `${base}/sell-on-trove`, name: T('Sell on Trove'), isPartOf: { '@id': `${base}/#website` }, about: orgRef(base) },
       crumbLd(base, [['Trove', '/'], [T('Sell on Trove'), '/sell-on-trove']])],
   });
