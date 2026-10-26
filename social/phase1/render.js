@@ -169,7 +169,9 @@ function inner(f, n, total) {
   const page = await browser.newPage();
   const manifest = [];
   for (const f of frames) {
-    const siblings = frames.filter((x) => x.post === f.post && x.kind === 'slide' && x.layout !== undefined && /^\d+$/.test(x.id));
+    // Count slides within their own set: 1, 2, 3… or post 10's back-up alt-1, alt-2, alt-3 (VALIDATION-v6 IMG-5)
+    const set = (id) => /^(alt-)?\d+$/.test(id) && id.replace(/\d+$/, '');
+    const siblings = frames.filter((x) => x.post === f.post && x.kind === 'slide' && x.layout !== undefined && set(x.id) !== false && set(x.id) === set(f.id));
     const n = siblings.indexOf(f) + 1;
     const [w, h] = SIZE[f.kind];
     await page.setViewportSize({ width: w, height: h });

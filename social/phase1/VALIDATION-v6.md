@@ -17,6 +17,8 @@ over a local static server; compared all 14 export folders in `~/Downloads/Trove
 
 **Fix pass (agent 2, 26 Oct, after this report):** FB-4, COL-5, IMG-3, REEL-4 and the 02-painting part of REEL-5 are FIXED (rows below say how; 17.5 Higgsfield credits, balance 189 → 171.5). Now PASS 55 · FIXED 5 · WARN 14 · FAIL 0. Left on purpose (owner decisions): CAP-5 earrings, FB-12 Sharjah courier wording, IMG-4 shop-page delivery bar.
 
+**Final images pass (26 Oct, after the fix pass):** VIS-4 FIXED (post 1 cover second line dropped, post 4's shortened to "Your own Trove shop page."), RNG-3 FIXED (post 1 cover is now `g-01-loom.jpg`, a terracotta, saffron and pink woven hanging; 1 still, about 2.75 credits), IMG-4 FIXED (the example screen skips its delivery bar, `PROMO = 34` in frames.js, on post 4 s3, post 6 s2 and post 5's Reel), IMG-5 FIXED (alt-N slides count as their own set in render.js), EXP-3 FIXED (export folders and README in posting order), GAL-2 FIXED (`<meta charset>`). EXP-2 still open: the 14 empty v5 folders carry an Everyone deny-delete permission, so they were left for the owner. Still owner decisions: CAL-6 Diwali, CAP-5 earrings, FB-12/FB-13 Sharjah wording, COL-9 saturated pieces; COL-2 (post 14 pastel orange) left as low priority for December.
+
 ## Results
 
 | ID | Area | Requirement (source) | Result | Evidence | Fix (FAIL / WARN) |

@@ -50,12 +50,14 @@ const hook = (post, title, extra = {}) => ({ post, id: 'hook', kind: 'reel', bg:
 const line = (post, id, text) => ({ post, id, kind: 'reel', bg: 'clear', layout: 'lower-third', text });
 const rend = (post, title, extra = {}) => ({ post, id: 'end', kind: 'reel', bg: 'cream', layout: 'end', title, body: ONE, lead: null, sign: SIGN, size: 104, ...extra });
 const EXAMPLE = 'shop-example-full.png';
+// The example page's top bar ("Delivering across Dubai & Abu Dhabi") is buyer delivery: skip it on maker posts (VALIDATION-v6 IMG-4)
+const PROMO = 34;
 
 module.exports = [
   // 1. Handmade in Dubai, Abu Dhabi and Sharjah. (Carousel, 5, pinned) · Sat 31 Oct · lead Clay · warm family
-  cover(1, '1', 'real-01-hands.jpg', 'clay', 'Close-up of hands finishing a real piece (shot 1)',
-    'Handmade in|Dubai, Abu Dhabi|and Sharjah.', 'A new online marketplace for handmade pieces and creative services.', OFFER,
-    { size: 80, mood: true, upgrade: 'Real shot 1: hands finishing a real piece, close up' }),
+  cover(1, '1', 'g-01-loom.jpg', 'clay', 'Close-up of hands finishing a real piece (shot 1)',
+    'Handmade in|Dubai, Abu Dhabi|and Sharjah.', '', OFFER,
+    { size: 80, mood: true, pos: 'center 62%', upgrade: 'Real shot 1: hands finishing a real piece, close up' }),
   pic(1, '2', 'v-pieces.jpg', 'pink', 'Pieces,|made by hand.', 'From makers who live here.', { size: 84, pos: 'center 30%' }),
   pic(1, '3', 'g-01-services.jpg', 'tan', 'Services,|at home.', 'Workshops, styling and photography.', { size: 84 }),
   phone(1, '4', 'sell-full.png', 47, 'All on|troveathome.com', 'Apply in about ten minutes.', 'p-01-sell.jpg'),
@@ -88,10 +90,10 @@ module.exports = [
   // 4. Make things by hand? You're a maker. (Carousel, 6) · Fri 6 Nov · lead Pink · warm family
   // Bands: Cream cover with Pink props in the photo, Pink, phone, Tan, Charcoal (the offer), Cream end card.
   cover(4, '1', 'g-04-pink.jpg', 'cream', 'A maker’s own hands holding their own piece (shot 9)',
-    'Make things by hand?|You’re a maker.', 'Sell your handmade pieces on your own Trove shop page.', OFFER,
+    'Make things by hand?|You’re a maker.', 'Your own Trove shop page.', OFFER,
     { mood: true, upgrade: 'Real shot 9: a maker’s own hands holding their own piece' }),
   pic(4, '2', 'g-04-range.jpg', 'pink', 'Pearls to|cobalt glaze.', 'Jewellery, prints, candles, toys, collars and more.', { size: 84, pos: 'center 20%' }),
-  phone(4, '3', EXAMPLE, 0, 'Your own|shop page.', 'This one is an example.', 'p-04-shop.jpg', { label: 'Example' }),
+  phone(4, '3', EXAMPLE, PROMO, 'Your own|shop page.', 'This one is an example.', 'p-04-shop.jpg', { label: 'Example' }),
   pic(4, '4', 'g-04-first.jpg', 'tan', 'Never sold anything?|That’s fine.', 'Four lovely pieces is a shop.', { size: 80 }),
   pic(4, '5', 'g-06-handles.jpg', 'char', 'Free to join.', 'We photograph it. We collect it from your door.', { size: 96 }),
   end(4, '6', 'Know a maker?|Tag them.', 'e-04.jpg'),
@@ -114,7 +116,7 @@ module.exports = [
     { upgrade: 'Real shot 6: the photographer shooting a maker’s piece' }),
   hook(5, 'You make it.'),
   line(5, 'l-1', 'We photograph it'),
-  { post: 5, id: 'shop', kind: 'reel', bg: 'clay', layout: 'reel-phone', screen: EXAMPLE, offset: 0, title: 'Your own|shop page.', sub: 'This one is an example.', label: 'Example' },
+  { post: 5, id: 'shop', kind: 'reel', bg: 'clay', layout: 'reel-phone', screen: EXAMPLE, offset: PROMO, title: 'Your own|shop page.', sub: 'This one is an example.', label: 'Example' },
   line(5, 'l-2', 'Someone buys it.|You pack it.'),
   line(5, 'l-3', 'A courier collects|from your door'),
   rend(5, 'Ready when|you are.'),
@@ -124,7 +126,7 @@ module.exports = [
   cover(6, '1', 'g-06-market.jpg', 'tan', '',
     'Keep your stall.|Add a Trove shop.', 'Trove isn’t exclusive.', OFFER,
     { mood: true, upgrade: 'Collab photo: an established maker who has applied, at their own stall' }),
-  phone(6, '2', EXAMPLE, 0, 'One more place|to find your work.', 'An example shop page.', 'p-06-shop.jpg', { label: 'Example' }),
+  phone(6, '2', EXAMPLE, PROMO, 'One more place|to find your work.', 'An example shop page.', 'p-06-shop.jpg', { label: 'Example' }),
   pic(6, '3', 'g-06-keep.jpg', 'char', 'Keep everything|you have.', 'Your Instagram, your market days, your customers.', { size: 96 }),
   end(6, '4', 'Tag a maker|with a stall.', 'e-06.jpg'),
 

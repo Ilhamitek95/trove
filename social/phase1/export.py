@@ -1,7 +1,7 @@
 """Rebuilds ~/Downloads/Trove Phase 1 posts (in OneDrive) from social/phase1: one folder per post, images in order,
 caption.txt and a README. Reels (posts with "video" in posts.json) get reel.mp4 from the full-quality build
 (<clips>/finished/post-NN.mp4, made by video/build.js) plus cover.jpg. Run: python export.py (after render.js and build.js)."""
-import json, os, shutil
+import json, os, shutil, datetime
 from PIL import Image
 
 src = os.path.dirname(os.path.abspath(__file__))
@@ -27,7 +27,9 @@ d = json.load(open(src + '/posts.json', encoding='utf-8'))
 m = json.load(open(src + '/out/manifest.json', encoding='utf-8'))
 tags = d['campaign']['hashtags']
 plan = []
-for p in d['posts']:
+# Folders and README in posting order (VALIDATION-v6 EXP-3): post 12 goes out on 9 Nov, before post 5
+when = lambda p: datetime.datetime.strptime(p['date'].split(' ', 1)[1] + ' 2026', '%d %b %Y')
+for order, p in enumerate(sorted(d['posts'], key=when), 1):
     n = p['n']
     frames = [f for f in m if f['post'] == n]
     cap = p['caption']
@@ -43,7 +45,7 @@ for p in d['posts']:
         frames = [f for f in frames if f['kind'] == 'slide']
         status = 'READY' if all(f['ready'] for f in frames) else 'NEEDS INPUT'
     title = p['title'].rstrip('.').replace('?', '').replace('[', '').replace(']', '')
-    folder = f"{dst}/{n:02d} {p['date']} - {title}"
+    folder = f"{dst}/{order:02d} {p['date']} - Post {n} - {title}"
     os.makedirs(folder, exist_ok=True)
     if video:
         if os.path.exists(video):
@@ -57,10 +59,10 @@ for p in d['posts']:
     ai = video or any(f['mood'] for f in frames)
     with open(folder + '/caption.txt', 'w', encoding='utf-8') as fh:
         fh.write(cap + '\n\n' + tags + '\n')
-    plan.append(f"{n:02d}  {p['date']:<11} {count:<13} {status}{'  [AI label ON]' if ai else ''}")
+    plan.append(f"{order:02d}  {p['date']:<11} post {n:<3} {count:<13} {status}{'  [AI label ON]' if ai else ''}")
 with open(dst + '/README.txt', 'w', encoding='utf-8') as fh:
     fh.write('Trove Phase 1 Instagram posts (DRAFT: nothing is scheduled; post only when the owner says launch)\n\n')
-    fh.write('Each folder = one post. Carousels: upload the images in number order. Reels: upload reel.mp4, then\n')
+    fh.write('Folders are in posting order. Each folder = one post. Carousels: upload the images in number order. Reels: upload reel.mp4, then\n')
     fh.write('Edit cover -> Add from camera roll -> cover.jpg. Reels are silent: tap Add audio and pick a quiet track.\n')
     fh.write('Paste caption.txt. Posts marked [AI label ON] use Higgsfield images or video: in Instagram,\n')
     fh.write('Advanced settings -> turn on "Add AI label".\n')
