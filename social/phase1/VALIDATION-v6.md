@@ -1,0 +1,115 @@
+# Trove Phase 1 v6: independent validation (26 Oct 2026)
+
+Checked: commits `14c4c0b` (plan) and `7ecc64e` (production) against the owner's 26 Oct request ("amend the social
+calendar. I would like to have more image/videos rather than text"), `FEEDBACK-2026-10-22.md`, the standing owner rules
+(`social/BRIEF.md`, CLAUDE.md, memory) and `V6-PLAN.md`. Report only: nothing was fixed, generated, pushed or posted.
+
+How: parsed `posts.json` and `photos/prompts.json`; loaded `frames.js` and `video/reels.js` in Node and resolved every
+referenced file; diffed `out/` against `out/manifest.json`; looked at every rendered frame (contact sheets at half size,
+zooms where in doubt), every Reel master (`OneDrive/Downloads/Trove Phase 1 video clips/finished/`, a frame every 2 s)
+and the 20 new Kling clips (a frame every 0.5 s); measured overlay bounding boxes from the PNG alpha; ffprobe for
+duration, size and audio level; opened `gallery.html` in headless Chromium (playwright-core from `e2e/node_modules`)
+over a local static server; compared all 14 export folders in `~/Downloads/Trove Phase 1 posts` with the source
+(captions byte for byte, images pixel-diffed, `reel.mp4` by MD5); checked the Serein auto-poster's Trove queue
+(`serein` repo, branch `lexicon-queue`, `social/trove/`).
+
+**Totals: 74 checks. PASS 55 · FAIL 0 · WARN 19.**
+
+## Results
+
+| ID | Area | Requirement (source) | Result | Evidence | Fix (FAIL / WARN) |
+|---|---|---|---|---|---|
+| CAL-1 | Calendar | Every date in the future (today Mon 26 Oct 2026) (owner 26 Oct) | PASS | posts.json dates run Sat 31 Oct to Wed 2 Dec; Stories from 31 Oct; frames.js comments, V6-PLAN table and gallery (sorted by date) agree | |
+| CAL-2 | Calendar | Weekday names match 2026 | PASS | All 15 dates checked with Python `date.strftime`: Sat 31 Oct, Mon 2, Wed 4, Fri 6, Sun 8 (Story), Mon 9, Wed 11, Sat 14, Mon 16, Wed 18, Fri 20, Mon 23, Wed 25, Sat 28 Nov, Wed 2 Dec | |
+| CAL-3 | Calendar | Order: what Trove is, makers, providers, money, founding maker, Collection, buyers last (BRIEF, V6-PLAN) | PASS | 1, 2, 3 → 4, 12, 5, 6 → 7, 13, 8 → 9 → 10 → 11 → 14 | |
+| CAL-4 | Calendar | No clashes or duplicates, sensible rhythm (BRIEF: every 2 or 3 days, 18:30) | PASS | One post per date; gaps 2–3 days, 4 days before post 14; grid C R R C R R C C R R C R C R as planned | |
+| CAL-5 | Calendar | Diwali, Downtown Design, National Day handled without breaking the order (V6-PLAN (a)) | PASS | Diwali = Story on Sun 8 Nov; Downtown Design in Stories 4–8 Nov; post 14 on 2 Dec gated on the Marketplace opening. All marked VERIFY | |
+| CAL-6 | Calendar | Diwali imagery no longer tied to the provider post (V6-PLAN: post 7 "not Diwali any more") | WARN | post-07/slide-03 background `p-07-services.jpg` (marigolds, diyas) and slide-04 `g-07-gift.jpg` (lit diya) on 16 Nov; post 13 caption "a table set for Diwali, Eid or Christmas" (18 Nov); post 14 shot 4 (clip 14-4) shows a lit diya on 2 Dec | Owner call. If unwanted: post 13 caption → "a table set for National Day, Eid or Christmas"; swap post 7 slide 3/4 backgrounds for non-diya stills (e.g. `g-07-season.jpg` crop) at the next re-render |
+| VIS-1 | More video | More Reels than v5 (owner 26 Oct) | PASS | v5: 4 built Reels (2, 12, 13, 14) + post 10. v6: 7 built (2, 3, 5, 8, 12, 13, 14) + post 10; carousels 9 → 6 | |
+| VIS-2 | Less text | Less text on carousel slides (owner 26 Oct) | PASS | Same counting over all carousel slides (back-ups excluded): v5 48 slides / 843 words; v6 30 slides / 451 words (−46%); inner slides now ≤ 12 words (max 12: post 4 s5, post 7 s2–s3, post 11 s2) | |
+| VIS-3 | Less text | Every carousel slide carries a photo (owner 21 Oct) | PASS | All 33 slide frames (incl. post 10 back-ups) have `photo` or `img`; all files exist; no "Real photo" slot left except post 10's real-maker Reel | |
+| VIS-4 | Less text | Slides over ~12 words (task) | WARN | Covers: post 1 s1 28 words, post 4 s1 28, post 6 s1 21, post 7 s1 21 (headline + line + offer row). Every end card 23–26 words (title + the 18-word one-liner + pill + sign-off), on all 6 carousels and 7 Reels | Covers follow the v5 cover formula and the one-liner is the feedback's own ask, so this is a judgement call. Lightest fix: drop the second line on post 1's cover ("A new online marketplace…", the headline already says it) and shorten post 4's to "Your own Trove shop page." |
+| VIS-5 | More video | Reels genuinely image-led | PASS | One 2–5-word line per shot; post 5 shot 3 is the only non-clip shot (the example shop page held 4.8 s with push-in) | |
+| FB-1 | Sharjah | Post 1 headline "Handmade in Dubai, Abu Dhabi and Sharjah." (feedback, What to change) | PASS | frames.js:57; post-01/slide-01.jpg | |
+| FB-2 | Sharjah | One-liner on every maker/provider end card + Arabic version (feedback) | PASS | frames.js:34 `ONE`, used by `end()` and `rend()`; seen on every end card in out/ and in the Reel masters; `oneLinerAr` includes الشارقة (flagged for native check) | |
+| FB-3 | Sharjah | Captions of posts 1, 2, 4, 5, 6, 7, 8, 11 name Sharjah (feedback) | PASS | posts.json captions: all eight say Dubai, Abu Dhabi and/or Sharjah; 12 too | |
+| FB-4 | Sharjah | Post 13 (provider-facing) consistent with 7 and 8 | WARN | posts.json post 13 caption has no area at all; 12 (makers' pillar) got Sharjah, 13 did not | Add "Providers based in Dubai, Abu Dhabi and Sharjah can apply, for bookings in homes in Dubai and Abu Dhabi." before "Apply at…" in post 13's caption |
+| FB-5 | Sharjah | The four DM scripts (feedback) | PASS | posts.json `dms`: all four name Sharjah; DM 4 keeps bookings in homes unstated (fine) | |
+| FB-6 | Sharjah | Nomination check (feedback: "Check they are in Dubai or Abu Dhabi") | PASS | posts.json `nomination[2]`: "Check they are in Dubai, Abu Dhabi or Sharjah" | |
+| FB-7 | Sharjah | Stories (feedback) | PASS | posts.json `stories[0]` frame "Makers and providers in Dubai, Abu Dhabi and Sharjah can apply."; `stories[2]` "can I sell from Sharjah" | |
+| FB-8 | Sharjah | #SharjahMakers in the hashtags (feedback) | PASS | posts.json `campaign.hashtags`; appended to every caption.txt by export.py | |
+| FB-9 | Sharjah | Outreach list: Sharjah colleges, creative spaces, markets (feedback) | PASS | posts.json `campaign.outreach` (AUS CAAD, UoS Fine Arts and Design, Irthi, SAF, Maraya, markets; VERIFY each; 18+ and student-visa caveat); shown in gallery "Where to look for makers" | |
+| FB-10 | Sharjah | Buyer-facing posts keep Dubai + Abu Dhabi (feedback; standing rule) | PASS | Post 14 cover sub, l-1 "delivered in Dubai and Abu Dhabi", end card `ONE_BUYERS`, caption; seen in post-14 Reel at 4–6 s and 22 s | |
+| FB-11 | Sharjah | Open owner decisions not silently decided: Ajman, Al Ain, apply-anyway, buyer delivery to Sharjah, courier, student visas (feedback "Confirm before saying it") | PASS | grep: no Ajman / Al Ain / "apply anyway" in any post; buyer posts keep D+AD; student series waits for the adviser; all listed in `verify` and V6-PLAN (d) | |
+| FB-12 | Sharjah | Unconfirmed facts stated as true in public copy | WARN | Captions 4, 5, 12 and DM 2 say "a courier collects … from your door in Dubai, Abu Dhabi or Sharjah"; the feedback lists the Sharjah courier as "confirm before saying it in public". Flagged only in `verify`/`siteFixes` | Keep it a hard gate (it is): no Sharjah post goes out until the courier and the apply form are confirmed. Optionally prepare a fallback line now ("a courier collects from your door") so posts can run if Sharjah collection is late |
+| FB-13 | Sharjah | Buyers may read the one-liner as delivery to Sharjah (feedback, buyer decision open) | WARN | Post 1 caption "Looking to buy? Follow along" and post 3's buyer line ("Buyers find it here, soon", out/post-03/l-4.png) sit next to the Sharjah one-liner on their end cards | Owner decision (see list). If buyer delivery stays D+AD, consider "for makers in Dubai, Abu Dhabi and Sharjah" on posts 1 and 3 only |
+| FB-14 | Post 2 | Five name tags, exact words, two-line style (feedback table) | PASS | frames.js:70–74; Reel master frames at 4–24 s show all five tags in order, two lines each | |
+| FB-15 | Post 2 | Scenes as specified: earrings (pliers, pearl pair on a dish, ribbon box), blanket (hook, over the knees, sofa, yarn basket), cushion (needle, linen, hoop, skeins), painting (final stroke, table easel by a window, palette, brush jar), chair (sandpaper on a carved leg, bold print) (feedback) | PASS | clips 02-earrings / -blanket / -cushion / -painting / -chair; styles classic, playful pastel stripes, terracotta + indigo geometric, colourful abstract, carved wood + bold print; lower middle plain enough, tags fully legible | |
+| FB-16 | Post 2 | Caption opening and manifesto swapped; wedding-card line gone everywhere (feedback) | PASS | posts.json post 2 caption opens with the five tags; `campaign.manifesto` lines 3–7. "wedding" appears only in historical agent briefs (`agents/*.md`, v5 inputs) and the image prompt of the v5 still `v-letters.jpg` (clip 02-4, now a wordless flourish under "Calligraphy classes?" in post 8), never in post copy | |
+| FB-17 | Post 2 | End card carries the one-liner (feedback) | PASS | out/post-02/end.png; master 26–30 s | |
+| FB-18 | "Any style" | "Any style. Made by hand." in post 3 straight after Makers over four very different pieces; post 4 caption opening; post 12 last on-screen line (feedback) | PASS | frames.js:83 (over clip 03-pieces: cobalt bowl, jewel necklace, geometric cushion, painted toy); posts.json post 4 caption starts with it; frames.js:108 l-4 is the last line before the end card | |
+| COL-1 | Colour | Lead colour per post as in the feedback table (re-dated) | PASS | 1 Clay band; 2 Cream + scene accents; 3 Pink card, Pink/Light Blue/Light Green per word; 4 Pink; 12 Light Blue yarn + card; 5 Clay card; 6 Tan + low sun; 7 pastel-orange roses; 13 Light Green card; 8 Light Blue card + hoops; 9 Sage; 10 Clay; 11 Cream + Sage | |
+| COL-2 | Colour | Post 14 "Pink and Pastel Orange gift tones" | WARN | Only the cover card is Pink; shots 1–4 are cream, kraft and neutral ceramics; Pastel Orange absent; only shot 5 (flat-lay) has colour | Low priority (posts in December). When re-shooting or regenerating shot 5 (see REEL-4), bring pink tissue / pastel-orange ribbon into one gift shot |
+| COL-3 | Colour | One colour family per carousel; no two slides in a row share a background (feedback) | PASS | 1 Clay·Pink·Tan·phone·Cream; 4 Cream·Pink·phone·Tan·Char·Cream; 6 Tan·phone·Char·Cream; 7 Cream·Tan·phone·Char·Cream; 9 Sage·Cream·Blue·Char·Green·Blue·Cream; 10 Clay·Pink·Cream; 11 Cream·Sage·Cream | |
+| COL-4 | Colour | Key slide (offer / 60% / apply) on Charcoal with Cream text (feedback) | PASS | post-04 s5, post-06 s3, post-07 s4, post-09 s4: Cream type, no Orange dot (render.js `DOT.char`) | |
+| COL-5 | Colour | Key slide wording | WARN | post-06/slide-03 "Keep all of it." on Charcoal, the money slot of the set, can be read as "keep all the money" (Trove keeps 40%) before the line is read | Change to "Keep everything you have." or "Keep your stall, too." (frames.js:128) |
+| COL-6 | Colour | End cards always Cream, wordmark, apply link (feedback) | PASS | All carousel `cta` and Reel `end` frames Cream with pill; titles vary by post (format constant) | |
+| COL-7 | Colour | Brand colours only, against docs/trove.html `:root` (standing rule) | PASS | render.js hexes = cream, rose(Clay), sage, sky, blush, moss, taupe, char, coral; banned #A85138 #7E6F67 #5E7E63 absent from social/ | |
+| COL-8 | Colour | Never Charcoal with Orange, never Light Blue with Orange, Pink never next to Sage, Pastel Orange only in images (BRIEF v6) | PASS | Wordmark dot Charcoal on blue cards (post 8, 12 covers, seen), Cream/none on Charcoal bands; no Pastel Orange band; no Pink/Sage adjacency. Only Orange near Charcoal: the live site's own accent word inside phone screenshots (post 1 s4, post 7 s3), which is the real page | |
+| COL-9 | Colour | "No more than two accent colours in one frame, nothing neon or saturated" (feedback limits) | WARN | `v-pieces` (post 1 s2, post 14 shot 5), `v-four` (post 3, post 10 alt-2) and `v-painting` are deliberately multi-colour and saturated (cobalt, ruby, emerald, coral) | Consistent with the feedback's "Show every kind of maker" (the limit reads as applying to Trove's frame); owner to eyeball. No change proposed |
+| RNG-1 | Range | Styles, colours, crafts, prices, hands vary across the set (feedback) | PASS | Crafts: jewellery, ceramics, textiles, prints, stationery, candles, children's, pet, painting, furniture + styling, photography, kintsugi, murals, workshops, calligraphy, kids' parties. Hands: deep brown to pale freckled, young to older, men and women | |
+| RNG-2 | Range | At least one non-neutral piece in every multi-piece post (feedback) | PASS | 1 (s2), 2, 3, 4 (s1–s2), 12, 5 (notebook, scarf), 6 (s1), 7 (s1–s2), 13 (marigolds, green bowl), 8, 9 (s6), 10 alt-2, 14 (shot 5). Post 11 is materials for the Collection, not makers' pieces | |
+| RNG-3 | Range | Neutral images still lead several slots | WARN | Post 1 cover is the same oatmeal-linen + sage-leaf cushion the feedback singled out; post 4 s3–s6, post 9 s1–s5 and post 11 all neutral | Optional: swap post 1's cover photo for `v-cushion.jpg` (terracotta + indigo, 4:5 crop) until real shot 1 exists |
+| IMG-1 | Images | No faces, no skyline/Burj, no logos, no flags (BRIEF AI rules) | PASS | All 88 frames, 25 new stills and 20 new clips viewed: hands, forearms, torsos only; windows show palms/low buildings, no skyline; no visible logos or flags | |
+| IMG-2 | Images | No garbled text, placeholder boxes or stale v5 frames | PASS | Only placeholders are post 10's real-maker Reel (expected: `[Name]`, "Real photo"); faint pseudo-handwriting in post-09/slide-02 notebook is illegible at post size; no v5 frame left in out/ (manifest = frames.js, 88/88) | |
+| IMG-3 | Images | Crops read at 4:5 | WARN | post-04/slide-02 "Pearls to cobalt glaze." cuts the cobalt cup at the top edge; post-01/slide-02 cuts the pink candle at the top | Add `pos: 'center 25%'` (or `'top'`) to frames.js post 4 slide 2 and post 1 slide 2, re-render, re-export |
+| IMG-4 | Images | Phone frames on maker posts show "Delivering across Dubai & Abu Dhabi" | WARN | post-04/slide-03, post-06/slide-02, post-05/shop.png (and the post 5 Reel) | True of buyer delivery, but sits beside "Sharjah" copy. Set `offset` on the `EXAMPLE` screens (as `sell-full.png` uses 47) to crop the delivery bar |
+| IMG-5 | Images | Carousel counters | WARN | post-10 alt-1..alt-3 have no "1 / 3" counter, unlike every other carousel | Render the counter for `alt-N` ids in render.js |
+| REEL-1 | Reels | Overlay text legible and inside the safe zone (render.js: text from y 1060/1240, right 130 px clear) | PASS | Alpha bboxes: lower thirds x 105–934, y 1240–1424; hook cards x 84–956 incl. shadow (card edge at 130), bottoms 1324–1511 (3-line hooks on posts 3 and 14 reach 1511, still above the caption area) | |
+| REEL-2 | Reels | Durations and format | PASS | Masters 1080×1920, 24 fps: post 2 30.0 s (6 shots), others 25.6 s; previews 720×1280 in video/out by design (HANDOVER) | |
+| REEL-3 | Reels | Silent as intended | PASS | One silent stereo track (anullsrc), volumedetect −91 dB | |
+| REEL-4 | Reels | Known oddity: candle in clip 14-pieces | WARN | The still `v-pieces.jpg` has an unlit wick; the clip lights it by itself between 0.3 and 1.0 s, visible after the 0.4 s crossfade in post 14 (~19.6 s) | Regenerate 14-pieces (8.75 credits) with "the candle stays unlit; no flame" or a start frame with the candle already lit; or start the shot at 1.2 s and pad the tail (`tpad=stop_mode=clone`). Post 14 is December, so not blocking the review |
+| REEL-5 | Reels | Clip glitches | WARN | 02-painting: the brush hand darts to the top right and back with heavy blur, briefly a floating hand (0.8–2.8 s, Reel ~17–19 s); 03-vase: the vase changes shape while lifted (2–3 s); 08-kids: an extra adult hand enters top right at ~4.5 s | Regenerate 02-painting first (8.75 credits; it is in the pinned Reel 2): "the hand stays at the canvas and adds one slow stroke". 03-vase and 08-kids acceptable for a mood Reel; trim SEG for 08-kids to 4.2 s if wanted |
+| REEL-6 | Reels | End cards correct | PASS | Every Reel ends 3.6 s on the Cream card; post 14 shows `ONE_BUYERS`, "Shop at" troveathome.com | |
+| REEL-7 | Reels | Cover headlines never repeat a carousel headline (BRIEF) | PASS | Reel covers 2, 3, 5, 8, 12, 13, 14 vs carousel headlines 1, 4, 6, 7, 9, 11: no repeat | |
+| FILE-1 | Files | posts.json and prompts.json parse; frames.js and reels.js load | PASS | Python json + Node require | |
+| FILE-2 | Files | Every referenced file exists | PASS | All photos, screens, start frames (photos/ and video/start/), clips in OneDrive and `video` paths resolve; only miss is `real-10-maker.jpg` (post 10's real maker, expected) | |
+| FILE-3 | Files | Nothing in out/ orphaned | PASS | 88 files = 88 manifest entries = 88 frames | |
+| FILE-4 | Files | All 25 new stills used; status updated | PASS | prompts.json: 25 v6 entries `status: generated`, all referenced; 44 older photos unused (v5 archive, harmless) | |
+| EXP-1 | Export | One folder per post, images in order, caption.txt = posts.json (task) | PASS | All 14 checked (not just 4): captions byte-identical (post 10 = `altCaption`) + hashtags; carousel JPGs match out/ frames in order (max pixel diff ≤ 40, JPEG noise); 7 `reel.mp4` MD5-identical to the masters; covers match | |
+| EXP-2 | Export | No stale folders | WARN | 15 empty v5 folders with past dates sit beside the new ones ("01 Wed 21 Oct …", "14 December …"); export.py empties but cannot remove them while OneDrive holds them | Delete the 15 empty old-date folders in OneDrive (owner, or next session with permission) |
+| EXP-3 | Export | Posting order obvious | WARN | Folders and README sort by post number, so 12 and 13 appear after 11 although they post on 9 and 18 Nov | Prefix folders with the running order (01–14 by date) or sort README.txt by date |
+| GAL-1 | Review page | Lists all 14 posts with the new dates, frames load, no console errors (task) | PASS | Headless Chromium: 14 post headings in date order, metas show the new dates and formats, 88/88 frame images loaded, 7 Reels listed, "Play the Reel" plays from a blob URL (2.8 s in after 3 s); only console error = 404 for /favicon.ico from the local server | |
+| GAL-2 | Review page | Character encoding | WARN | gallery.html has no `<meta charset>`; served without a charset header, "·" shows as "Â·" (pre-existing; the artifact host's wrapper normally supplies UTF-8) | Add `<meta charset="utf-8">` at the top of gallery.html |
+| CAP-1 | Captions | Facts match the business (CLAUDE.md: 40% / 60%, free to join, Trove photographs, courier collects, 100% / 90% services, AED 30 later, every other Tuesday after 15 days) | PASS | posts 1, 4, 5, 8, 9, 12 checked line by line; "to start" kept; no "instant" | |
+| CAP-2 | Captions | 60% at most once, never a headline (owner 19 Oct) | PASS | 60% only in post 9 (slide 4 line under "When a piece sells?" and caption) | |
+| CAP-3 | Captions | UK English, no emoji, "Trove" capitalised, no urgency or superiority words (BRIEF) | PASS | Scans for US spellings, "hurry/limited/last chance/first/only/largest/Etsy/empower/instant": none in post copy | |
+| CAP-4 | Captions | AI-label note on every post using generated images | PASS | posts.json notes (1–9, 11–14) and export README "[AI label ON]" on all 14 incl. post 10 back-up | |
+| CAP-5 | Captions | Jewellery category rule (BRIEF: "Jewellery (non-piercing)") | WARN | Pearl drop earrings for pierced ears in post 2 shot 2, `g-04-range` (post 4 s2) and `v-pieces` (post 1 s2, post 14); the feedback itself asked for earrings | Owner to confirm what "non-piercing" excludes. If pierced earrings are not accepted: change the tag to "A necklace, made for a bride" and regenerate one clip, or make the pair clip-on |
+| RULE-1 | Draft | Nothing queued (standing rule) | PASS | Serein auto-poster queue `lexicon-queue:social/trove/` holds only README.md (last change 30 Sep); no posting config in either v6 commit | |
+| RULE-2 | Draft | Never invent makers or names; AI never captioned as a named maker's work (BRIEF) | PASS | Name tags are craft only; post 10 keeps `[Name]` placeholders; captions say "friends of Trove", never a maker | |
+| RULE-3 | Type | Cormorant, no italics (owner 27 Jul) | PASS | render.js: Cormorant 400–600, no `italic`; frames show upright | |
+| RULE-4 | Handover | HANDOVER.md rewritten at the end of every git session (owner rule) | WARN | HANDOVER.md still describes v5 (21 Oct dates, "sage closing card", 4 Reels) | Rewrite the social section of HANDOVER.md for v6 before the push |
+| PLAN-1 | Plan | Output matches V6-PLAN (calendar, formats, shots, renderer changes) | PASS | Dates, formats, bands, shot lists and clip moves all as planned; renderer changes 1–7 visible in frames | |
+| PLAN-2 | Plan | Plan's declines are justified against the sources | PASS | Colour type cards declined because of the owner's 21 Oct no-text-slide rule and today's ask (surfaced as an owner question); "Any style" placements exact; Ajman/Al Ain left open | |
+| PLAN-3 | Plan | Credits and production record | PASS | 25 stills + 1 retake + 20 clips on disk with matching names; the 246.5-credit total was not re-checked against Higgsfield | |
+
+## Owner decisions surfaced
+
+1. **Launch blocker:** the website (apply form, one-liner, Sell page, FAQ, service area) and the Seller and Provider
+   Agreements still say Dubai and Abu Dhabi. Update them first, or hold every post that names Sharjah.
+2. **Courier in Sharjah:** posts 4, 5, 12 and DM 2 say the courier collects from Sharjah. Confirm cost and speed first.
+3. **Buyer delivery to Sharjah:** the one-liner beside buyer lines (posts 1 and 3) may read as delivery there. Keep it,
+   or use "for makers in…" on those two posts.
+4. **Providers travelling to Sharjah homes:** posts say bookings are in Dubai and Abu Dhabi homes for now.
+5. **Ajman, Al Ain, "apply anyway"** for other emirates: still open.
+6. **Students:** student-visa selling and 18+ in both agreements before any college outreach.
+7. **Earrings vs "Jewellery (non-piercing)":** post 2's first tag and three images show pierced earrings (new).
+8. **Two clip retakes** (02-painting, 14-pieces), about 17.5 Higgsfield credits (new).
+9. **Diwali** as a Story only; diya imagery still appears in posts 7, 13 and 14 (new: keep or swap).
+10. **Colour type cards** declined in favour of coloured bands under photos (no text-only slides).
+11. **National Day** greeting wording, and post 14 only once the Marketplace is open.
+12. **Downtown Design** attendance (Stories 4–8 Nov).
+13. **Arabic** one-liner, buyers line and "Student makers" title: native check.
+14. **"No company needed to start"** (post 9): business adviser sign-off.
+15. **Export clean-up:** OK to delete the 15 empty old-date folders in the OneDrive export.
