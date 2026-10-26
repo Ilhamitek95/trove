@@ -69,3 +69,6 @@ with open(dst + '/README.txt', 'w', encoding='utf-8') as fh:
     fh.write('Pin posts 1 to 3. Link in bio: troveathome.com/apply. Post 14 is for December (Marketplace open).\n\n')
     fh.write('\n'.join(plan) + '\n')
 print('\n'.join(plan))
+# The local review page (Review.html) with real pictures of every post
+import runpy
+runpy.run_path(os.path.join(src, 'review.py'))
