@@ -2,12 +2,13 @@
 
 Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
-## Dashboard tour (27 Oct): LIVE BUT HIDDEN, waiting for your OK
+## Dashboard tour (27 Oct): LIVE for everyone (you said "push the tour on live website now")
 
-- **What it is:** a one-minute guided tour of the maker dashboard (/sell, 12 steps) and the provider dashboard (/provider, 8 steps). A spotlight moves from one part of the page to the next with a short card (Back, Next, Skip tour). It works on phones (the card sits at the bottom) and in Arabic.
-- **Review page with every step (desktop, phone, Arabic phone):** https://claude.ai/artifact/KCimDw7sXsd3PuYJEWEZww
-- **Try it:** sign in and open troveathome.com/sell?tour=1. You run the Trove Collection, so the Payments, Services and to-do steps are left out for you. Your account has no services profile, so the provider tour is only on the review page.
-- **Nobody else sees it yet.** It only starts from that link. **After you approve it:** it opens once for each newly approved maker or provider, plus a "Take the tour" link in the dashboard menu (both still to build).
+- **What it is:** a one-minute guided tour of the maker dashboard (/sell, 12 steps) and the provider dashboard (/provider, 9 steps). A spotlight moves from one part of the page to the next with a short card (Back, Next, Skip tour). It works on phones (the card sits at the bottom) and in Arabic.
+- **When it shows:** it opens by itself once, the first time an approved maker or provider opens their dashboard. The account remembers it, so it doesn't open again on their phone or another computer. It never opens by itself for you (Trove Collection), in shop view, or when someone arrives from an email link to a tab.
+- **Take the tour button:** on the Overview of both dashboards, so anyone can watch it again. The last step of the tour points at it. troveathome.com/sell?tour=1 still works too.
+- **Review page with every step (desktop, phone, Arabic phone):** https://claude.ai/artifact/KCimDw7sXsd3PuYJEWEZww (screenshots from before the button was added).
+- D Vi (approved this morning) will see it the next time they open /provider.
 
 ## Approval email guide (27 Oct): LIVE, approved by you the same day
 
