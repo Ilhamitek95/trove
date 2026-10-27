@@ -2,7 +2,14 @@
 
 Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
-## Approval email guide (27 Oct): LIVE
+## Dashboard tour (27 Oct): LIVE BUT HIDDEN, waiting for your OK
+
+- **What it is:** a one-minute guided tour of the maker dashboard (/sell, 12 steps) and the provider dashboard (/provider, 8 steps). A spotlight moves from one part of the page to the next with a short card (Back, Next, Skip tour). It works on phones (the card sits at the bottom) and in Arabic.
+- **Review page with every step (desktop, phone, Arabic phone):** https://claude.ai/artifact/KCimDw7sXsd3PuYJEWEZww
+- **Try it:** sign in and open troveathome.com/sell?tour=1. You run the Trove Collection, so the Payments, Services and to-do steps are left out for you. Your account has no services profile, so the provider tour is only on the review page.
+- **Nobody else sees it yet.** It only starts from that link. **After you approve it:** it opens once for each newly approved maker or provider, plus a "Take the tour" link in the dashboard menu (both still to build).
+
+## Approval email guide (27 Oct): LIVE, approved by you the same day
 
 - **What it does:** the "You're approved" email that makers and providers get now has a short "Getting started" guide: five numbered steps that use the dashboard's own button and tab names in bold, then a link to the Help centre and the dashboard button. Makers: add a piece; set the make time and any choices; Live / Draft / Hidden and Edit; packing, Print label and the courier when a piece sells; Payments (bank details, ID check). Providers: add a service; Hide / Make live / Edit; Write your story; confirm or decline booking requests and Mark as done; Payouts for card bookings. English and Arabic.
 - **Preview of all four versions:** https://claude.ai/artifact/N29Km8vxwphgAWVW1baiJb
