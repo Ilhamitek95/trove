@@ -20,7 +20,11 @@ const on = (v) => v === '1' || v === 'true';
 // only), and section 5 describes the Didit identity check (Emirates ID scan +
 // live selfie) next to the licence and photo routes. Money terms unchanged,
 // so v4/v5 shops keep selling and are only prompted to accept v6.
-const AGREEMENT_VERSION = 'v6';
+// v7 (2026-10-27): customers in Sharjah can buy too, so section 1 says Trove
+// resells to customers in Dubai, Abu Dhabi and Sharjah (no longer 'does not
+// deliver to Sharjah'). Nothing else changed — money terms are v4's, so
+// v4/v5/v6 shops keep selling and are only prompted to accept v7.
+const AGREEMENT_VERSION = 'v7';
 // The oldest Seller Agreement whose terms the code actually applies (40%
 // margin, fortnightly runs, payable after the 15-day return window). A shop
 // that accepted an OLDER version (v1–v3: weekly runs, 7-day hold) has not
@@ -40,7 +44,10 @@ const AGREEMENT_MIN_SELLING_VERSION = 'v4';
 // v5 (2026-10-26): providers may be based in Dubai, Abu Dhabi or Sharjah;
 // bookings still come only from customers in Dubai + Abu Dhabi, and a Sharjah
 // provider travels to them. Earlier acceptances stand (no re-acceptance gate).
-const PROVIDER_AGREEMENT_VERSION = 'v5';
+// v6 (2026-10-27): bookings are taken from customers in Dubai, Abu Dhabi and
+// Sharjah; the Sharjah-provider travel line is gone. Nothing else changed;
+// earlier acceptances stand (no re-acceptance gate).
+const PROVIDER_AGREEMENT_VERSION = 'v6';
 // v2 (2026-09-30): card payment for bookings, private booking links, full
 // refund on cancelling a paid booking before the service date.
 // v3 (2026-10-02): names the contracting company. Nothing else changed.
@@ -54,7 +61,10 @@ const SERVICES_TERMS_VERSION = 'v3';
 // line, and states the returns rules exactly as the code applies them (at
 // least one photo; delivery charge refunded when the whole order comes back
 // for a fault).
-const BUYER_TERMS_VERSION = 'v3';
+// v4 (2026-10-27): section 3 — Trove delivers to Dubai, Abu Dhabi and
+// Sharjah (checkout accepts those three emirates). Nothing else changed;
+// delivery is still AED 30 on orders of AED 200 and below, free above.
+const BUYER_TERMS_VERSION = 'v4';
 // v2 (2026-10-02): names the controller (Serein Consultancy LLC) and the
 // payer of provider fees, drops the saved-card line (there is no saved card),
 // lists the Emirates ID digits and dates, and states retention periods and
