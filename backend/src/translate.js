@@ -275,7 +275,7 @@ function restore(text, kept) {
 }
 
 /* ---------------- the call ---------------- */
-const SYSTEM = `You translate content for Trove, a premium curated homeware marketplace in Dubai and Abu Dhabi, from English into Modern Standard Arabic (فصحى) for Gulf readers.
+const SYSTEM = `You translate content for Trove, a premium curated homeware marketplace in Dubai, Abu Dhabi and Sharjah, from English into Modern Standard Arabic (فصحى) for Gulf readers.
 Write natural, elegant, warm Arabic that reads as if it were written in Arabic — never word-for-word. Keep the meaning, facts, numbers and tone exactly; add nothing and leave nothing out.
 Rules:
 - Keep "Trove" and every proper name of a shop, maker, person, brand or place in its usual form (well-known UAE places in Arabic: دبي، أبوظبي، الشارقة؛ neighbourhoods may be transliterated).

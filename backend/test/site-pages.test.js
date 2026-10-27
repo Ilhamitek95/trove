@@ -55,7 +55,7 @@ async function contact(body, { ip = `10.0.0.${++ipSeq}`, form = false, cookie } 
 const GOOD = { name: 'Layla Haddad', email: 'layla@example.com', topic: 'order', orderRef: 'TRV-1A2B3C', message: 'Hello, my parcel has not arrived yet — could you check?' };
 
 const PAGES = {
-  '/about': ['About Trove', 'How curation works', 'A real person reviews every application', 'Dubai and Abu Dhabi', 'seller of every product', '15 days of delivery'],
+  '/about': ['About Trove', 'How curation works', 'A real person reviews every application', 'Dubai, Abu Dhabi and Sharjah', 'seller of every product', '15 days of delivery'],
   '/contact': ['Contact us', 'Send message', 'Privacy Policy'],
   '/faq': ['Help centre', 'Who am I buying from?', 'fortnightly, every other Tuesday', '15 days of delivery', 'the provider, not Trove, is responsible for the service'],
   '/returns': ['Delivery & Returns', '15 days of the day it was delivered', 'AED 30 delivery', 'free delivery', 'We refund you once the courier has collected the return', 'There is never a collection fee when a piece is faulty, damaged or not what you ordered', 'Personalised pieces'],
@@ -339,7 +339,7 @@ test('llms.txt and llms-full.txt are plain text with accurate facts', async () =
   const r = await get('/llms.txt');
   assert.equal(r.status, 200);
   assert.match(r.headers.get('content-type'), /^text\/plain/);
-  for (const n of ['# Trove', 'Trove at Home', 'Dubai and Abu Dhabi', 'seller of record', 'Stripe', 'AED 30 on orders of AED 200 and below', 'within 15 days of delivery', 'fortnightly, every other Tuesday', 'https://troveathome.com/about', 'https://troveathome.com/returns', 'https://troveathome.com/faq', 'https://troveathome.com/apply', 'https://troveathome.com/llms-full.txt']) {
+  for (const n of ['# Trove', 'Trove at Home', 'Dubai, Abu Dhabi and Sharjah', 'seller of record', 'Stripe', 'AED 30 on orders of AED 200 and below', 'within 15 days of delivery', 'fortnightly, every other Tuesday', 'https://troveathome.com/about', 'https://troveathome.com/returns', 'https://troveathome.com/faq', 'https://troveathome.com/apply', 'https://troveathome.com/llms-full.txt']) {
     assert.ok(r.text.includes(n), `llms.txt: ${n}`);
   }
   const full = await get('/llms-full.txt');

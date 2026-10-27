@@ -3,7 +3,7 @@ const express = require('express');
 const db = require('../db');
 const { requireAuth, notInShopView } = require('../middleware');
 const shipments = require('../shipments');
-const { SERVICE_AREAS, isServiceable, namesOtherEmirate } = require('../service-area');
+const { AREA_LIST, isServiceable, namesOtherEmirate } = require('../service-area');
 const phoneLib = require('../phone');
 
 const returns = require('../returns');
@@ -271,7 +271,7 @@ function addressPhone(raw) {
 router.post('/addresses', requireAuth, (req, res) => {
   const { label = 'Home', name, line, city, country = 'United Arab Emirates', phone = '', isDefault } = req.body || {};
   if (!name || !line || !city) return res.status(400).json({ error: 'name, line and city are required' });
-  if (!isServiceable(city) || namesOtherEmirate(line, city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
+  if (!isServiceable(city) || namesOtherEmirate(line, city)) return res.status(400).json({ error: `We currently deliver in ${AREA_LIST} only` });
   const ph = addressPhone(phone);
   if (ph.error) return res.status(400).json({ error: ph.error });
   if (isDefault) db.prepare('UPDATE addresses SET is_default=0 WHERE user_id=?').run(req.user.id);
@@ -284,7 +284,7 @@ router.patch('/addresses/:id', requireAuth, (req, res) => {
   const a = db.prepare('SELECT * FROM addresses WHERE id=? AND user_id=?').get(req.params.id, req.user.id);
   if (!a) return res.status(404).json({ error: 'Not found' });
   const b = req.body || {};
-  if ((b.city !== undefined && !isServiceable(b.city)) || namesOtherEmirate(b.line, b.city)) return res.status(400).json({ error: `We currently deliver in ${SERVICE_AREAS.join(' and ')} only` });
+  if ((b.city !== undefined && !isServiceable(b.city)) || namesOtherEmirate(b.line, b.city)) return res.status(400).json({ error: `We currently deliver in ${AREA_LIST} only` });
   const ph = b.phone === undefined ? { value: undefined } : addressPhone(b.phone);
   if (ph.error) return res.status(400).json({ error: ph.error });
   if (b.isDefault) db.prepare('UPDATE addresses SET is_default=0 WHERE user_id=?').run(req.user.id);

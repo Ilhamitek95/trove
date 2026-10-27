@@ -151,7 +151,7 @@ test('/api/products exposes leadDays and an estimate object; the PDP renders it 
   assert.deepEqual(sd.deliveryTime.transitTime, { '@type': 'QuantitativeValue', minValue: 1, maxValue: 4, unitCode: 'DAY' });
   // A cheaper standard piece: AED 30 delivery, 2 days' handling, the old 3–6 line.
   const sp = (await ctx.api('GET', seo.pieceUrl(scarf), { headers: { accept: 'text/html' } })).text;
-  assert.match(sp, /<span id="pdpShipLine">Arrives in 3–6 days across Dubai &amp; Abu Dhabi<\/span>/);
+  assert.match(sp, /<span id="pdpShipLine">Arrives in 3–6 days across Dubai, Abu Dhabi &amp; Sharjah<\/span>/);
   assert.match(sp, /"shippingRate":\{"@type":"MonetaryAmount","currency":"AED","value":30\}/);
   assert.match(sp, /"handlingTime":\{"@type":"QuantitativeValue","minValue":2,"maxValue":2,"unitCode":"DAY"\}/);
 });
@@ -174,8 +174,8 @@ test('the storefront says exactly what the server renders (PDP line, details row
   const seo = fs.readFileSync(path.join(__dirname, '..', 'src', 'seo.js'), 'utf8');
   assert.ok(seo.includes('`Arrives in ${est.label} · made for you, ready to send in ${est.leadDays} days`'));
   assert.equal(shipLine({ lead: 14 }), 'Arrives in 15–18 days · made for you, ready to send in 14 days');
-  assert.equal(shipLine({ lead: 2 }), 'Arrives in 3–6 days across Dubai & Abu Dhabi');
-  assert.equal(shipLine({}), 'Arrives in 3–6 days across Dubai & Abu Dhabi');
+  assert.equal(shipLine({ lead: 2 }), 'Arrives in 3–6 days across Dubai, Abu Dhabi & Sharjah');
+  assert.equal(shipLine({}), 'Arrives in 3–6 days across Dubai, Abu Dhabi & Sharjah');
   assert.equal(leadLine(14), '14 days after your order');
   assert.equal(estOf(7).label, lt.estimate(7).label);
   const oe = orderEst({ a: [{ p: { lead: 2 } }], b: [{ p: { lead: 14 } }, { p: { lead: 3 } }] });

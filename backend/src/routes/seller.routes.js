@@ -173,8 +173,8 @@ router.patch('/me', requireSeller, (req, res) => {
     if (pickup && pickup.length < 10) return res.status(400).json({ error: 'Enter the full pickup address — building, street and area' });
     // The courier collects only where makers may be based (F247; Sharjah
     // added 2026-10-26): Dubai, Abu Dhabi or Sharjah, typed in English or in
-    // Arabic on /ar/sell, and no other emirate named. Buyer delivery stays
-    // Dubai + Abu Dhabi (isDeliverable).
+    // Arabic on /ar/sell, and no other emirate named. Buyer delivery covers
+    // the same three since 2026-10-27 (isDeliverable).
     const { isMakerArea } = require('../service-area');
     if (pickup && pickup !== (req.shop.pickup_address || '') && !isMakerArea(pickup)) {
       return res.status(400).json({ code: 'pickup_area', error: 'The courier collects in Dubai, Abu Dhabi and Sharjah only — end the pickup address with the emirate, e.g. Al Quoz, Dubai' });

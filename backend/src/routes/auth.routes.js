@@ -94,7 +94,7 @@ router.post('/register', async (req, res, next) => { try {
     if (bad) return res.status(400).json({ error: "Application answers can't contain < or >" });
   }
   // Makers may be based in Dubai, Abu Dhabi or Sharjah (owner, 2026-10-26);
-  // buyer delivery stays Dubai and Abu Dhabi (src/service-area.js).
+  // buyers in the same three since 2026-10-27 (src/service-area.js).
   if (wantsShop) {
     const { isMakerArea } = require('../service-area');
     if (!isMakerArea(req.body.location))

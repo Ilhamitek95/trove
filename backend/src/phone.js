@@ -1,7 +1,7 @@
 'use strict';
 /**
  * UAE mobile numbers are the only phone identity Trove accepts — the
- * marketplace serves Dubai & Abu Dhabi only. Accepts what people actually
+ * marketplace serves Dubai, Abu Dhabi & Sharjah only. Accepts what people actually
  * type (050 123 4567, +971 50 123 4567, 971501234567, 50-123-4567, the
  * international 00971 50 123 4567, +971 (0)50 123 4567) and returns the
  * canonical +9715XXXXXXXX, or null when it isn't a UAE mobile.

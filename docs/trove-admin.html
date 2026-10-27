@@ -506,7 +506,7 @@
       <label>Address line (building, flat)<input id="dvLine" maxlength="200"></label>
       <label>Second line (optional)<input id="dvLine2" maxlength="200"></label>
       <label>Area<input id="dvArea" maxlength="200"></label>
-      <label>Emirate<select id="dvEmirate"><option>Dubai</option><option>Abu Dhabi</option></select></label>
+      <label>Emirate<select id="dvEmirate"><option>Dubai</option><option>Abu Dhabi</option><option>Sharjah</option></select></label>
       <label>Courier notes (optional)<input id="dvNotes" maxlength="200"></label>
       <label>Mobile<input id="dvPhone" maxlength="20" inputmode="tel"></label>
     </div>
@@ -1899,9 +1899,9 @@ function openDeliveryModal(pid){
   const d=ORD_OPEN[pid]; if(!d||d==='loading')return;
   DV_RET=document.activeElement; DV=pid;
   const s=d.ship||{};
-  $('dvSub').textContent=`Order ${pid}. Fix a mistyped flat number or mobile before the parcel is packed. Dubai and Abu Dhabi only.`;
+  $('dvSub').textContent=`Order ${pid}. Fix a mistyped flat number or mobile before the parcel is packed. Dubai, Abu Dhabi and Sharjah only.`;
   $('dvName').value=s.name||''; $('dvLine').value=s.line||''; $('dvLine2').value=s.line2||''; $('dvArea').value=s.area||'';
-  $('dvEmirate').value=/abu/i.test(s.emirate||s.city||'')?'Abu Dhabi':'Dubai'; $('dvNotes').value=s.notes||''; $('dvPhone').value=d.phone||'';
+  $('dvEmirate').value=/abu/i.test(s.emirate||s.city||'')?'Abu Dhabi':/sharjah/i.test(s.emirate||s.city||'')?'Sharjah':'Dubai'; $('dvNotes').value=s.notes||''; $('dvPhone').value=d.phone||'';
   $('dvScrim').classList.add('open'); $('dvLine').focus();
 }
 function closeDeliveryModal(){ $('dvScrim').classList.remove('open'); DV=null; if(DV_RET&&DV_RET.focus&&document.contains(DV_RET))DV_RET.focus(); DV_RET=null; }

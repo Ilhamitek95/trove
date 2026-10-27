@@ -199,22 +199,22 @@ test('F157: the floating cookie button never covers the sticky buy buttons', () 
 test('F192: an address naming another emirate is refused even with Dubai chosen; Emirate has no default', async () => {
   const sa = require('../src/service-area');
   for (const a of [
-    { ...ADDRESS, city: 'Al Nahda, Sharjah, Dubai' },
+    { ...ADDRESS, city: 'Al Jurf, Ajman, Dubai' },
     { ...ADDRESS, line: 'Villa 3, Al Rashidiya, Ajman' },
     { ...ADDRESS, city: 'Ras Al Khaimah, Dubai' },
     { ...ADDRESS, city: 'Umm Al Quwain' },
-    { ...ADDRESS, city: 'الشارقة، دبي' },
+    { ...ADDRESS, city: 'عجمان، دبي' },
   ]) {
     assert.equal(sa.isDeliverable(a), false, JSON.stringify(a));
     const res = await checkout({ address: a });
     assert.equal(res.status, 400, JSON.stringify(a));
-    assert.match(res.data.error, /Dubai and Abu Dhabi only/);
+    assert.match(res.data.error, /Dubai, Abu Dhabi and Sharjah only/);
   }
-  for (const a of [ADDRESS, { ...ADDRESS, city: 'Ras Al Khor, Dubai' }, { ...ADDRESS, city: 'Al Nahda 2, Dubai' }, { ...ADDRESS, city: 'Khalifa City, Abu Dhabi', emirate: 'Abu Dhabi' }]) {
+  for (const a of [ADDRESS, { ...ADDRESS, city: 'Ras Al Khor, Dubai' }, { ...ADDRESS, city: 'Al Nahda 2, Dubai' }, { ...ADDRESS, city: 'Khalifa City, Abu Dhabi', emirate: 'Abu Dhabi' }, { ...ADDRESS, city: 'Al Majaz, Sharjah', emirate: 'Sharjah' }]) {
     assert.equal(sa.isDeliverable(a), true, JSON.stringify(a));
   }
   // saved account addresses follow the same rule
-  const saved = await ctx.api('POST', '/api/account/addresses', { cookie: buyerCookie, body: { name: 'A', line: 'Flat 2', city: 'Al Majaz, Sharjah, Dubai' } });
+  const saved = await ctx.api('POST', '/api/account/addresses', { cookie: buyerCookie, body: { name: 'A', line: 'Flat 2', city: 'Al Jurf, Ajman, Dubai' } });
   assert.equal(saved.status, 400);
   // the page uses the same list as the server
   const client = constSrc('OTHER_EMIRATES').match(/=(\/.*\/i);/)[1];

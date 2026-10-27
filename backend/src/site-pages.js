@@ -34,7 +34,7 @@ const LEGAL = {
   terms: {
     file: 'buyer-terms', version: () => config.BUYER_TERMS_VERSION, path: '/terms',
     title: 'Terms of Sale',
-    description: 'The terms that apply when you buy from Trove: Trove is the seller, delivery across Dubai and Abu Dhabi, card payment via Stripe, 15-day returns.',
+    description: 'The terms that apply when you buy from Trove: Trove is the seller, delivery across Dubai, Abu Dhabi and Sharjah, card payment via Stripe, 15-day returns.',
   },
   privacy: {
     file: 'privacy', version: () => config.PRIVACY_VERSION, path: '/privacy',
@@ -173,7 +173,7 @@ function organizationLd(base, c) {
     alternateName: 'Trove at Home',
     url: `${base}/`,
     logo: `${base}/apple-touch-icon.png`,
-    description: 'A curated online marketplace for homeware and handmade pieces by independent makers, delivering across Dubai and Abu Dhabi.',
+    description: 'A curated online marketplace for homeware and handmade pieces by independent makers, delivering across Dubai, Abu Dhabi and Sharjah.',
     areaServed: [
       { '@type': 'City', name: 'Dubai', containedInPlace: { '@type': 'Country', name: 'United Arab Emirates' } },
       { '@type': 'City', name: 'Abu Dhabi', containedInPlace: { '@type': 'Country', name: 'United Arab Emirates' } },
@@ -383,7 +383,7 @@ function renderAbout(base, lang = 'en') {
   const c = content.company();
   return shell({
     base, pathName: '/about', title: T('About Trove'), h1: T('About Trove'), lang,
-    description: T('Trove is a curated marketplace for homeware and handmade pieces by independent makers, delivering across Dubai and Abu Dhabi. How curation works, who it is for, and who we are.'),
+    description: T('Trove is a curated marketplace for homeware and handmade pieces by independent makers, delivering across Dubai, Abu Dhabi and Sharjah. How curation works, who it is for, and who we are.'),
     body: arBody(`<div class="toc"><a href="#curation">${esc(T('How curation works'))}</a><a href="#who-trove-is-for">${esc(T('Who Trove is for'))}</a><a href="#company">${esc(T('Company details'))}</a></div>
 <div class="prose">${md.toHtml(src)}</div>
 ${companyBlockHtml(c, { lang })}`, lang),
@@ -398,8 +398,8 @@ function renderReturns(base, lang = 'en') {
   return shell({
     base, pathName: '/returns', title: T('Delivery & Returns'), h1: T('Delivery & Returns'), lang,
     description: lang === 'ar'
-      ? T('Trove delivers to Dubai and Abu Dhabi, with the delivery time shown on every piece (most arrive in {days}): AED 30 on orders of AED 200 and below, free above. Returns within {returns} of delivery, collected by our courier.', { days: fa.deliveryDays, returns: fa.returnDaysText })
-      : `Trove delivers to Dubai and Abu Dhabi, with the delivery time shown on every piece (most arrive in ${facts().deliveryDays}): AED 30 on orders of AED 200 and below, free above. Returns within ${facts().returnDays} days of delivery, collected by our courier.`,
+      ? T('Trove delivers to Dubai, Abu Dhabi and Sharjah, with the delivery time shown on every piece (most arrive in {days}): AED 30 on orders of AED 200 and below, free above. Returns within {returns} of delivery, collected by our courier.', { days: fa.deliveryDays, returns: fa.returnDaysText })
+      : `Trove delivers to Dubai, Abu Dhabi and Sharjah, with the delivery time shown on every piece (most arrive in ${facts().deliveryDays}): AED 30 on orders of AED 200 and below, free above. Returns within ${facts().returnDays} days of delivery, collected by our courier.`,
     body: arBody(`<div class="toc"><a href="#delivery">${esc(T('Delivery'))}</a><a href="#returns">${esc(T('Returns'))}</a><a href="#the-collection-fee">${esc(T('Collection fee'))}</a><a href="#personalised">${esc(T('Personalised pieces'))}</a></div>
 <div class="prose">${md.toHtml(src)}</div>`, lang),
     ld: [webPageLd(base, '/returns', T('Delivery & Returns'))],
@@ -427,7 +427,7 @@ function renderFaq(base, lang = 'en') {
   };
   return shell({
     base, pathName: '/faq', title: T('Help centre'), h1: T('Help centre'), lang,
-    description: T('Answers about buying on Trove (payment, delivery to Dubai and Abu Dhabi, 15-day returns), selling as a maker (60% to you, fortnightly payouts) and the Services Marketplace.'),
+    description: T('Answers about buying on Trove (payment, delivery to Dubai, Abu Dhabi and Sharjah, 15-day returns), selling as a maker (60% to you, fortnightly payouts) and the Services Marketplace.'),
     body: arBody(`<div class="toc">${toc}</div><div class="prose">${md.toHtml(src)}</div>`, lang),
     ld: [faqLd],
   });
@@ -515,7 +515,7 @@ ${companyBlockHtml(c, { lang })}`;
 </script>`;
   return shell({
     base, pathName: '/contact', title: T('Contact'), h1: T('Contact us'), lang,
-    description: T('Contact Trove about an order, a return, selling on Trove or the Services Marketplace. We deliver across Dubai and Abu Dhabi.'),
+    description: T('Contact Trove about an order, a return, selling on Trove or the Services Marketplace. We deliver across Dubai, Abu Dhabi and Sharjah.'),
     body: arBody(body, lang), script, ld: [webPageLd(base, '/contact', T('Contact Trove'), 'ContactPage')],
   });
 }
@@ -592,7 +592,7 @@ function llmsTxt(base) {
 - Delivery: ${f.deliveryFee} on orders of ${f.freeOver} and below; free on orders over ${f.freeOver}. Delivery time is shown on every piece: the maker's make/pack time plus ${f.transitDays} with the courier. Most pieces arrive in ${f.deliveryDays}; made-to-order pieces show their own time (up to ${f.maxLeadWeeks} weeks). Orders with pieces from several makers may arrive in separate parcels.
 - Returns: request within ${f.returnDays} days of delivery from the account's Orders page; Trove's courier collects the piece; the refund is issued once the courier has collected the return. An ${f.deliveryFee} collection fee applies only to change-of-mind returns on orders of ${f.freeOver} and below, never when a piece is faulty, damaged or wrong; it is charged once per return request. The original delivery charge is refunded when the whole order comes back faulty, damaged, wrong or not as described. Personalised pieces can be returned only if faulty or wrong.
 - Curation: every maker applies and a real person reviews every application before a shop goes live.
-- Makers: apply at ${base}/apply; makers and service providers based in ${f.makerAreas} can apply (delivery to buyers stays ${f.areas} only). Nothing to join; Trove buys each sold piece at ${f.makerShare}% of the maker's price (a ${f.commission}% margin covering photography, marketing, checkout, delivery and customer care) and pays makers ${f.payoutRhythm}, by bank transfer.
+- Makers: apply at ${base}/apply; makers and service providers based in ${f.makerAreas} can apply. Nothing to join; Trove buys each sold piece at ${f.makerShare}% of the maker's price (a ${f.commission}% margin covering photography, marketing, checkout, delivery and customer care) and pays makers ${f.payoutRhythm}, by bank transfer.
 - Services Marketplace (${base}/services): creative services at home in ${f.areas} by independent providers, who (not Trove) are responsible for the service. Customers settle directly with the provider or pay through Trove by card where available. Providers apply at ${base}/apply?for=services. Listing is free during launch (a ${f.providerSub} monthly fee starts later, with 30 days' notice first); Trove keeps ${f.serviceCommission}% of bookings paid through Trove, and nothing of bookings settled directly.
 - Company details: ${companyRows(c).length ? companyRows(c).map(([k, v]) => `${k}: ${v}`).join('; ') : `being finalised; write to Trove through the contact form at ${base}/contact`}
 

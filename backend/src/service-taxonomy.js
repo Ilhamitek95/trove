@@ -5,7 +5,7 @@
  *   home   — "At home": services for shoppers and hosts
  *   makers — "For makers": services for sellers and small brands
  *
- * Everything is delivered in person in Dubai & Abu Dhabi (or remotely where
+ * Everything is delivered in person in Dubai, Abu Dhabi & Sharjah (or remotely where
  * the setting allows). Like the product taxonomy, anything regulated is out:
  * no food or catering, no beauty/skin treatments, no medical or financial
  * services beyond plain advice. Listing is free during launch (the monthly

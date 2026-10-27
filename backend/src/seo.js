@@ -37,7 +37,7 @@ const tr = require('./translate');
 
 const DOCS_DIR = path.join(__dirname, '..', '..', 'docs');
 const OG_IMAGE = '/img/og-default.jpg';
-const OG_IMAGE_ALT = 'trove, curated homeware by independent makers in Dubai and Abu Dhabi';
+const OG_IMAGE_ALT = 'trove, curated homeware by independent makers in Dubai, Abu Dhabi and Sharjah';
 
 /* ---------------- addresses ---------------- */
 
@@ -172,8 +172,8 @@ function withDefaultSocial(html, { base, url, noindex = false, path: pagePath })
 }
 
 /* ---------------- storefront views ---------------- */
-const HOME_TITLE = 'Trove · Curated homeware by independent makers in Dubai & Abu Dhabi';
-const DEFAULT_DESCRIPTION = 'Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai and Abu Dhabi. Delivery AED 30, free on orders over AED 200.';
+const HOME_TITLE = 'Trove · Curated homeware by independent makers in Dubai, Abu Dhabi & Sharjah';
+const DEFAULT_DESCRIPTION = 'Handcrafted homeware from independent makers, each piece chosen by hand, delivered across Dubai, Abu Dhabi and Sharjah. Delivery AED 30, free on orders over AED 200.';
 
 /** Switch the storefront's active view and make its title the page's one <h1>. */
 function activate(html, view) {
@@ -455,13 +455,13 @@ function renderShop(base, slug, { search, lang = 'en' } = {}) {
   const u = shopUrl(cat);
   const title = cat === 'all' ? T('Shop all homeware · Trove') : T('{label} · Trove', { label });
   const description = cat === 'all'
-    ? TN(list.length, 'Every piece on Trove: {n} handmade and designed piece from independent makers, delivered across Dubai and Abu Dhabi.', 'Every piece on Trove: {n} handmade and designed pieces from independent makers, delivered across Dubai and Abu Dhabi.')
+    ? TN(list.length, 'Every piece on Trove: {n} handmade and designed piece from independent makers, delivered across Dubai, Abu Dhabi and Sharjah.', 'Every piece on Trove: {n} handmade and designed pieces from independent makers, delivered across Dubai, Abu Dhabi and Sharjah.')
     : cat === 'House'
-      ? (list.length ? T('The Trove Collection: homeware designed by Trove, made with quality materials, delivered across Dubai and Abu Dhabi.')
-        : T('The Trove Collection, Trove’s own line of homeware, is on its way. Until it lands, shop handmade pieces from independent makers across Dubai and Abu Dhabi.'))
+      ? (list.length ? T('The Trove Collection: homeware designed by Trove, made with quality materials, delivered across Dubai, Abu Dhabi and Sharjah.')
+        : T('The Trove Collection, Trove’s own line of homeware, is on its way. Until it lands, shop handmade pieces from independent makers across Dubai, Abu Dhabi and Sharjah.'))
       : list.length
-        ? TN(list.length, '{label} on Trove: {n} piece handmade by independent makers, delivered across Dubai and Abu Dhabi.', '{label} on Trove: {n} pieces handmade by independent makers, delivered across Dubai and Abu Dhabi.', { label })
-        : T('{label} on Trove: pieces handmade by independent makers, delivered across Dubai and Abu Dhabi.', { label });
+        ? TN(list.length, '{label} on Trove: {n} piece handmade by independent makers, delivered across Dubai, Abu Dhabi and Sharjah.', '{label} on Trove: {n} pieces handmade by independent makers, delivered across Dubai, Abu Dhabi and Sharjah.', { label })
+        : T('{label} on Trove: pieces handmade by independent makers, delivered across Dubai, Abu Dhabi and Sharjah.', { label });
   const itemList = {
     '@type': 'ItemList', name: label, numberOfItems: list.length,
     itemListElement: list.slice(0, 50).map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: base + pieceUrl(p), name: p.name })),
@@ -569,11 +569,11 @@ function shipLine(p, lang = 'en') {
     const label = rangeLabel(est, lang);
     return est.leadDays > fees.LEAD_DAYS_DEFAULT
       ? T('Arrives in {label} · made for you, ready to send in {lead}', { label, lead: daysAr(est.leadDays) })
-      : T('Arrives in {label} across Dubai & Abu Dhabi', { label });
+      : T('Arrives in {label} across Dubai, Abu Dhabi & Sharjah', { label });
   }
   return est.leadDays > fees.LEAD_DAYS_DEFAULT
     ? `Arrives in ${est.label} · made for you, ready to send in ${est.leadDays} days`
-    : `Arrives in ${est.label} across Dubai & Abu Dhabi`;
+    : `Arrives in ${est.label} across Dubai, Abu Dhabi & Sharjah`;
 }
 /* The PDP's delivery-cost line, as the storefront's pdpDeliveryLine() says it:
  * the AED 30 fee is stated where the buyer decides, not first in the basket
@@ -635,7 +635,7 @@ function renderPiece(base, ref, lang = 'en') {
   html = text(html, 'pdpFreeLine', deliveryLine(p, lang));
   const title = T('{name} by {maker} · Trove', { name: p.name, maker: p.shop.name });
   const description = compose(T('{price} from {maker}{where}. ', { price: money(p.price, lang), maker: p.shop.name, where: vendor.location ? `${lang === 'ar' ? '، ' : ', '}${vendor.location}` : '' }),
-    p.description || '', T(' Delivered across Dubai and Abu Dhabi.'));
+    p.description || '', T(' Delivered across Dubai, Abu Dhabi and Sharjah.'));
   const crumbs = [['Trove', '/'], [T('Shop all'), '/shop'], [catName, shopUrl(p.category)], [p.name, canonical]];
   return {
     html: setHead(html, {
@@ -680,7 +680,7 @@ function renderMaker(base, slug, lang = 'en') {
   const where = s.location ? `${lang === 'ar' ? '، ' : ', '}${s.location}` : '';
   const title = T('{maker}{where} · Maker on Trove', { maker: s.name, where });
   const description = compose(TN(list.length, '{n} piece by {maker}{where}. ', '{n} pieces by {maker}{where}. ', { maker: s.name, where }),
-    s.bio || '', T(' Delivered across Dubai and Abu Dhabi.'));
+    s.bio || '', T(' Delivered across Dubai, Abu Dhabi and Sharjah.'));
   const image = own ? abs(base, own) : (list[0] && coverOf(list[0]) ? abs(base, coverOf(list[0])) : '');
   const maker = {
     '@type': 'Organization',
@@ -941,7 +941,7 @@ function renderServicesDirectory(base, lang = 'en') {
   };
   return setHead(html, {
     base, url: `${base}/services`, title: T('Services Marketplace · Trove'), lang,
-    description: T('Creative services at your place in Dubai and Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.'),
+    description: T('Creative services at your place in Dubai, Abu Dhabi and Sharjah — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.'),
     ld: [servicesLd(base, lang), itemList, crumbLd(base, [['Trove', '/'], [T('Services Marketplace'), '/services']])],
   });
 }
@@ -1028,8 +1028,8 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
   const title = T('{name}{where} · Trove Services Marketplace', { name: p.name, where });
   const minCents = services.length ? Math.min(...services.map((s) => s.priceCents || 0)) : 0;
   const head = services.length
-    ? TN(services.length, '{n} service, from {price}, booked in Dubai and Abu Dhabi. ', '{n} services, from {price}, booked in Dubai and Abu Dhabi. ', { price: moneyCents(minCents, lang) })
-    : T('Book in Dubai and Abu Dhabi. ');
+    ? TN(services.length, '{n} service, from {price}, booked in Dubai, Abu Dhabi and Sharjah. ', '{n} services, from {price}, booked in Dubai, Abu Dhabi and Sharjah. ', { price: moneyCents(minCents, lang) })
+    : T('Book in Dubai, Abu Dhabi and Sharjah. ');
   const description = compose(head, p.bio || services.map((s) => s.title).join(lang === 'ar' ? '، ' : ', '), '');
   const business = {
     '@type': ['LocalBusiness', 'ProfessionalService'],
@@ -1092,7 +1092,7 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
       html: setHead(html, {
         base, url: surl, lang,
         title: T('{title} · {name} · Trove Services Marketplace', { title: svc.title, name: p.name }),
-        description: compose(T('{price}, booked in Dubai and Abu Dhabi. ', { price: priceLabel(svc, lang) }), svc.description || p.bio || '', ''),
+        description: compose(T('{price}, booked in Dubai, Abu Dhabi and Sharjah. ', { price: priceLabel(svc, lang) }), svc.description || p.bio || '', ''),
         ld: [JSON.parse(JSON.stringify(serviceLd)), JSON.parse(JSON.stringify(business)),
           crumbLd(base, [['Trove', '/'], [T('Services Marketplace'), '/services'], [p.name, u], [svc.title, su]])],
       }),

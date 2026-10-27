@@ -910,7 +910,7 @@ function passwordReset({ name, link, lang }) {
 function welcomeVerify({ name, link, lang }) {
   const { T, p, note, button, layout } = kit(lang);
   const inner =
-    p(T('Thank you for joining Trove — a curated home for pieces made by independent makers in Dubai and Abu Dhabi.'))
+    p(T('Thank you for joining Trove — a curated home for pieces made by independent makers in Dubai, Abu Dhabi and Sharjah.'))
     + p(T('Please confirm this is your email address, so we can reach you about your orders and help you back into your account if you ever forget your password.'))
     + button(T('Confirm my email'), esc(link))
     + note(T('You can shop straight away — confirming just keeps your account safe. The link expires in 7 days.'))

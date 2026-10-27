@@ -16,7 +16,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Services Marketplace · Trove</title>
 <meta name="trove-i18n" content="services">
-<meta name="description" content="Creative services at your place in Dubai &amp; Abu Dhabi — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.">
+<meta name="description" content="Creative services at your place in Dubai, Abu Dhabi &amp; Sharjah — made-to-order pieces, repair, styling, workshops and photography at home, plus brand and shop support for makers.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@400;500;600&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -467,7 +467,7 @@
 <a class="skip" href="#main">Skip to content</a>
 
 <!-- HEADER: the storefront's, with real addresses into it (test/header-sync.test.js keeps the two in step) -->
-<div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai &amp; Abu Dhabi · Delivery AED 30, free on orders over AED 200</div></div>
+<div class="promo"><div class="wrap" data-cms="site.promo.text">Delivering across Dubai, Abu Dhabi &amp; Sharjah · Delivery AED 30, free on orders over AED 200</div></div>
 <header class="top">
   <div class="wrap nav">
     <button class="icon-btn menu-btn" title="Menu" aria-label="Open menu" aria-controls="mnav" aria-expanded="false" onclick="openMenu()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
@@ -560,7 +560,7 @@
 
 <section class="hero">
   <div class="wrap lead">
-    <span class="eyebrow">Services Marketplace · Dubai &amp; Abu Dhabi</span>
+    <span class="eyebrow">Services Marketplace · Dubai, Abu Dhabi &amp; Sharjah</span>
     <h1 class="hero-t" data-i18n>Skilled hands, <span>at your place</span>.</h1>
     <p>Trove's makers and creatives, bookable. Made-to-order, repairs, styling and workshops for your home; photography, design and shop support for your brand.</p>
     <div class="h-terms">
@@ -618,7 +618,7 @@
       <details class="faq"><summary>What can I offer?<span class="faq-tg">+</span></summary>
         <div class="faq-a">Anything in the twelve categories above — creative work at people's homes, and brand, content or shop support for makers. Regulated trades are out of scope: no food or catering, no beauty or skin treatments, and advice-only where a profession is licensed.</div></details>
       <details class="faq"><summary>Where does it work?<span class="faq-tg">+</span></summary>
-        <div class="faq-a">Customers book in Dubai and Abu Dhabi, like the rest of Trove, and providers can be based in Dubai, Abu Dhabi or Sharjah. Each service says where it happens — at the customer's place, at your studio, or remote for work like design, copy and coaching.</div></details>
+        <div class="faq-a">Customers book in Dubai, Abu Dhabi and Sharjah, like the rest of Trove, and providers can be based in any of the three. Each service says where it happens — at the customer's place, at your studio, or remote for work like design, copy and coaching.</div></details>
       <details class="faq"><summary>I sell pieces on Trove — can I offer services too?<span class="faq-tg">+</span></summary>
         <div class="faq-a">Yes, and it's a natural pairing: one account can run a maker shop and a services practice side by side. A potter who sells bowls can host hand-building workshops; a photographer who shoots for makers can list family shoots at home.</div></details>
       <details class="faq"><summary>Do customers need an account to book?<span class="faq-tg">+</span></summary>
@@ -641,7 +641,7 @@
     <div class="fgrid">
       <div>
         <a href="/" class="fbrand" aria-label="Trove — home">trove</a>
-        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai and Abu Dhabi. Objects worth keeping.</p>
+        <p class="blurb" data-cms="site.footer.blurb">Thoughtfully designed homeware and handcrafted finds from independent makers in the Trove Marketplace, delivered across Dubai, Abu Dhabi and Sharjah. Objects worth keeping.</p>
       </div>
       <nav aria-label="Shop"><h2 class="fh">Shop</h2><ul><li><a href="/shop">All categories</a></li><li class="fhouse"><a href="/shop/trove-collection">Trove Collection</a></li><li><a href="/services">Services Marketplace</a></li><li><a href="/#weekly">The weekly edit</a></li><li><a href="/returns">Delivery &amp; returns</a></li></ul></nav>
       <nav aria-label="Sell"><h2 class="fh">Sell</h2><ul><li><a href="/sell-on-trove">Open a shop</a></li><li><a href="/apply?for=services">Offer your services</a></li><li><a href="/faq#what-does-it-cost-to-sell">Seller fees</a></li><li><a href="/faq#makers">Seller handbook</a></li></ul></nav>
@@ -1001,7 +1001,7 @@ function openService(id,push=true){
   if(push&&s.path&&trovePath(location.pathname)!==s.path)history.pushState({service:id,pushed:true},'',s.path);
   document.title=_t('{title} · {name} · Trove Services Marketplace',{title:s.title,name:s.provider.name});
   // 'Where' is the customer's emirate: chosen by them, never pre-filled (F336).
-  // Remote work still needs it — the Services Marketplace serves Dubai and Abu Dhabi.
+  // Remote work still needs it — the Services Marketplace serves Dubai, Abu Dhabi and Sharjah.
   const whereLabel=s.setting==='home'?_t('Where you are'):_t('Your emirate');
   const cat=TAX.categories.find(c=>c.slug===s.category);
   // Card payment is offered only when the SERVER says it can take one (and
@@ -1034,7 +1034,7 @@ function openService(id,push=true){
       </div>
       <div class="ftwo">
         <div class="field"><label for="bkPhone">${_t('UAE mobile')}</label><input id="bkPhone" type="tel" placeholder="05x xxx xxxx" autocomplete="tel"></div>
-        <div class="field"><label for="bkArea">${esc(whereLabel)}</label><select id="bkArea" required><option value="">${_t('Choose…')}</option><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option></select></div>
+        <div class="field"><label for="bkArea">${esc(whereLabel)}</label><select id="bkArea" required><option value="">${_t('Choose…')}</option><option value="Dubai">${_t('Dubai')}</option><option value="Abu Dhabi">${_t('Abu Dhabi')}</option><option value="Sharjah">${_t('Sharjah')}</option></select></div>
       </div>
       <div class="field"><label for="bkDate">${_t('When suits you?')} <span style="text-transform:none;letter-spacing:0;color:var(--muted)">${_t('· optional')}</span></label><input id="bkDate" placeholder="${esc(_t('e.g. a Friday afternoon, or 14 September'))}"></div>
       <div class="field"><label for="bkNotes">${_t('Tell them about it')}</label><textarea id="bkNotes" maxlength="1000" placeholder="${esc(_t('What you have in mind, how many people, anything they should know.'))}"></textarea></div>
@@ -1083,7 +1083,7 @@ async function submitBooking(){
   if(!$('bkName').value.trim())return show(_t('Please tell us your name.'));
   if(!/^\S+@\S+\.\S+$/.test($('bkEmail').value.trim()))return show(_t('That email doesn’t look right — mind checking it?'));
   if(!$('bkPhone').value.trim())return show(_t('Add a UAE mobile so the provider can reach you once they confirm.'));
-  if(!$('bkArea').value){show(_t('Choose the emirate you’re in — Dubai or Abu Dhabi.'));$('bkArea').focus();return;}
+  if(!$('bkArea').value){show(_t('Choose the emirate you’re in — Dubai, Abu Dhabi or Sharjah.'));$('bkArea').focus();return;}
   if(!$('bkTerms').checked)return show(_t('Please accept the Services Terms — they say plainly that the provider, not Trove, is responsible for the service.'));
   const btn=$('bkSubmit');btn.disabled=true;btn.textContent=_t('Sending…');
   const trove=((document.querySelector('input[name=bkPay]:checked')||{}).value)==='trove';

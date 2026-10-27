@@ -77,10 +77,10 @@ async function call(method, path, body, retried = false) {
 }
 
 /* ---- payload builders (pure; pinned by test/oto.test.js) ---- */
-// The emirate OTO prices and routes by. Sharjah only ever comes from a
-// MAKER's pickup address (makers may be based there since 2026-10-26); buyer
-// addresses are Dubai or Abu Dhabi (checkout refuses Sharjah). Arabic
-// spellings count too: /ar/sell accepts a pickup address typed in Arabic.
+// The emirate OTO prices and routes by: Dubai, Abu Dhabi or Sharjah, for
+// maker pickups (since 2026-10-26) and buyer deliveries (since 2026-10-27;
+// a buyer's comes from the Emirate box). Arabic spellings count too: /ar/sell
+// accepts a pickup address typed in Arabic.
 // Addresses end with the emirate, so the LAST one named wins ('Al Qusais,
 // near the Sharjah border, Dubai' is Dubai); nothing named → Dubai.
 const town = require('../service-area').emirateOf;

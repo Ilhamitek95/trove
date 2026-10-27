@@ -791,15 +791,15 @@ function openAddr(id){
   editAddrId=id||null; const a=id?addresses.find(x=>x.id===id):{};
   $('drawerTitle').textContent=id?_t('Edit address'):_t('Add address');
   // Split a stored "Area, Emirate" city back into its two fields.
-  const isAD=/abu dhabi/i.test(a.city||''); const emirate=isAD?'Abu Dhabi':'Dubai';
-  const area=(a.city||'').replace(/,?\s*(abu dhabi|dubai)\s*$/i,'').trim();
+  const emirate=/abu dhabi/i.test(a.city||'')?'Abu Dhabi':/sharjah/i.test(a.city||'')?'Sharjah':'Dubai';
+  const area=(a.city||'').replace(/,?\s*(abu dhabi|dubai|sharjah)\s*$/i,'').trim();
   $('drawerBody').innerHTML=`
     <div class="field"><label for="aLabel">${_t('Label')}</label><input id="aLabel" value="${esc(a.label||'')}" placeholder="${esc(_t('Home, Work…'))}"></div>
     <div class="field"><label for="aName">${_t('Full name')}</label><input id="aName" autocomplete="name" value="${esc(a.name||(ME&&ME.name)||'')}" placeholder="${esc(_t("Recipient's name"))}"></div>
     <div class="field"><label for="aLine">${_t('Address')}</label><input id="aLine" autocomplete="street-address" value="${esc(a.line||'')}" placeholder="${esc(_t('Street, building, apt'))}"></div>
     <div class="field"><label for="aCity">${_t('Area')}</label><input id="aCity" value="${esc(area)}" placeholder="${esc(_t('e.g. Dubai Marina, Khalifa City'))}"></div>
-    <div class="field"><label for="aEmirate">${_t('Emirate')}</label><select id="aEmirate"><option value="Dubai"${emirate==='Dubai'?' selected':''}>${_t('Dubai')}</option><option value="Abu Dhabi"${emirate==='Abu Dhabi'?' selected':''}>${_t('Abu Dhabi')}</option></select>
-      <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">${_t('We currently deliver in Dubai & Abu Dhabi only.')}</div></div>
+    <div class="field"><label for="aEmirate">${_t('Emirate')}</label><select id="aEmirate"><option value="Dubai"${emirate==='Dubai'?' selected':''}>${_t('Dubai')}</option><option value="Abu Dhabi"${emirate==='Abu Dhabi'?' selected':''}>${_t('Abu Dhabi')}</option><option value="Sharjah"${emirate==='Sharjah'?' selected':''}>${_t('Sharjah')}</option></select>
+      <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">${_t('We currently deliver in Dubai, Abu Dhabi & Sharjah only.')}</div></div>
     <div class="field"><label for="aPhone">${_t('UAE mobile for the courier')}</label><input id="aPhone" type="tel" autocomplete="tel" placeholder="05x xxx xxxx" value="${esc(a.phone||'')}">
       <div class="help" style="font-size:12px;color:var(--muted);font-weight:500;margin-top:6px">${_t('Optional. It fills in the courier contact at checkout.')}</div></div>`;
   $('drawerSave').onclick=saveAddr; openDrawer();

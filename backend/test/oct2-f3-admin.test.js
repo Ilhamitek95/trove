@@ -276,7 +276,7 @@ test('F199: the admin corrects the delivery details until a parcel is packed', a
   const s = mkShop('fix-shop');
   const o = sale(s.id, 25000, { status: 'processing' });
   const patch = (body) => api('PATCH', `/api/admin/orders/${o.publicId}/delivery`, { cookie: adminCookie, body });
-  assert.equal((await patch({ address: { emirate: 'Sharjah', city: 'Sharjah' } })).status, 400, 'still Dubai + Abu Dhabi only');
+  assert.equal((await patch({ address: { emirate: 'Ajman', city: 'Ajman' } })).status, 400, 'Dubai, Abu Dhabi and Sharjah only');
   assert.equal((await patch({ phone: '12345' })).status, 400, 'a UAE mobile');
   assert.equal((await patch({ address: { line: '<script>' } })).status, 400, 'no markup');
   const ok = await patch({ address: { line: 'Marina Gate 2, apt 2104' }, phone: '0501234999' });

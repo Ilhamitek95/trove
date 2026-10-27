@@ -1132,7 +1132,7 @@ function ensureCatOption(cat){ // legacy categories stay editable until re-picke
 function fillStoreForm(){
   if($('sfName'))$('sfName').value=SHOP.name||'';
   // Location is stored as "Area, Emirate" — split it back into the two fields.
-  // Sharjah makers can sell too (2026-10-26); their buyers are still in Dubai + Abu Dhabi.
+  // Sharjah makers can sell too (2026-10-26), and Sharjah buyers can order (2026-10-27).
   const emi=/abu dhabi/i.test(SHOP.loc||'')?'Abu Dhabi':/sharjah/i.test(SHOP.loc||'')?'Sharjah':'Dubai';
   if($('sfEmirate'))$('sfEmirate').value=emi;
   if($('sfLoc'))$('sfLoc').value=(SHOP.loc||'').replace(/,?\s*(abu dhabi|dubai|sharjah)(,\s*uae)?\s*$/i,'').trim();

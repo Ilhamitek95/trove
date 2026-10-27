@@ -174,7 +174,7 @@ let guestBookingId, buyerBookingId;
 
 test('a guest can request a booking; area and phone are validated', async () => {
   const body = { name: 'Amal Guest', email: 'amal@test.local', phone: '050 987 6543', area: 'Dubai', preferredDate: 'Friday afternoon', notes: 'Six adults, garden table.', paymentMethod: 'direct', agreeTerms: true };
-  assert.equal((await api('POST', `/api/services/${serviceId}/book`, { body: { ...body, area: 'Sharjah' } })).status, 400);
+  assert.equal((await api('POST', `/api/services/${serviceId}/book`, { body: { ...body, area: 'Ajman' } })).status, 400);
   assert.equal((await api('POST', `/api/services/${serviceId}/book`, { body: { ...body, phone: '12345' } })).status, 400);
   const res = await api('POST', `/api/services/${serviceId}/book`, { body });
   assert.equal(res.status, 201);

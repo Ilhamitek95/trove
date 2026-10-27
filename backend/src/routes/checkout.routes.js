@@ -4,14 +4,14 @@ const crypto = require('crypto');
 const db = require('../db');
 const { requireStripe } = require('../stripe');
 const { SERVICE_FEE_CENTS, deliveryFor } = require('../fees');
-const { SERVICE_AREAS, isDeliverable } = require('../service-area');
+const { AREA_LIST, isDeliverable } = require('../service-area');
 const receipt = require('../order-receipt');
 const { normalizeUAEMobile } = require('../phone');
 const options = require('../options');
 const extras = require('../extras');
 const customerBlock = require('../customer-block');
 
-const OUT_OF_AREA = `We currently deliver in ${SERVICE_AREAS.join(' and ')} only`;
+const OUT_OF_AREA = `We currently deliver in ${AREA_LIST} only`;
 const BAD_PHONE = 'Enter a UAE mobile number so the courier can reach you on the day';
 
 const router = express.Router();

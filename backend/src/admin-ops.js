@@ -242,7 +242,7 @@ const ADDRESS_FIELDS = ['name', 'line', 'line2', 'area', 'city', 'emirate', 'not
 
 /**
  * Correct the delivery address and/or mobile of a paid order until a parcel
- * is packed. Same rules as checkout (Dubai + Abu Dhabi only, a UAE mobile, no
+ * is packed. Same rules as checkout (Dubai, Abu Dhabi or Sharjah only, a UAE mobile, no
  * markup). A parcel whose courier order already exists (OTO books one at
  * payment) is flagged so the owner updates the courier too.
  * Returns { ok, changed, flagged } or { status, error }.
@@ -259,7 +259,7 @@ function editDelivery(order, body = {}) {
   if (!String(next.name || '').trim() || !String(next.line || '').trim()) return { status: 400, error: 'A delivery name and address are required' };
   if (require('./validate').markupField(next, ADDRESS_FIELDS)) return { status: 400, error: "The delivery address can't contain < or >" };
   const area = require('./service-area');
-  if (!area.isServiceable(next.emirate || next.city)) return { status: 400, error: `We currently deliver in ${area.SERVICE_AREAS.join(' and ')} only` };
+  if (!area.isServiceable(next.emirate || next.city)) return { status: 400, error: `We currently deliver in ${area.AREA_LIST} only` };
   let phone = order.phone || '';
   if (body.phone !== undefined) {
     phone = require('./phone').normalizeUAEMobile(String(body.phone || '').trim());

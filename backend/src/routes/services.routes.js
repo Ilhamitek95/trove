@@ -193,7 +193,7 @@ router.post('/apply', (req, res, next) => {
   }
   if (!String(b.phone || '').trim()) return res.status(400).json({ error: 'A WhatsApp number is required to apply' });
   // Providers may be based in Dubai, Abu Dhabi or Sharjah (owner,
-  // 2026-10-26); the bookings themselves stay in Dubai + Abu Dhabi homes.
+  // 2026-10-26); bookings come from homes in the same three (2026-10-27).
   const { isMakerArea } = require('../service-area');
   if (!isMakerArea(b.location)) {
     return res.status(400).json({ error: 'The Services Marketplace is currently open to providers in Dubai, Abu Dhabi and Sharjah only' });
@@ -329,9 +329,9 @@ router.post('/:id(\\d+)/book', (req, res) => {
   if (customerBlock.isBlocked({ email, userId: req.session.userId })) {
     return res.status(403).json({ code: 'blocked', error: customerBlock.BOOKING_REFUSED });
   }
-  const { SERVICE_AREAS, isServiceable } = require('../service-area');
+  const { AREA_LIST, isServiceable } = require('../service-area');
   if (!isServiceable(b.area)) {
-    return res.status(400).json({ error: `The Services Marketplace is available in ${SERVICE_AREAS.join(' and ')} only` });
+    return res.status(400).json({ error: `The Services Marketplace is available in ${AREA_LIST} only` });
   }
   const paymentMethod = PAYMENT_METHODS[String(b.paymentMethod || 'direct')] || 'direct';
   // Card payment is the SERVER's call: only while a Stripe client is

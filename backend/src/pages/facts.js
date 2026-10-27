@@ -52,10 +52,11 @@ function facts() {
     deliveryDays: `${fees.LEAD_DAYS_DEFAULT + fees.COURIER_TRANSIT_MIN_DAYS}–${fees.LEAD_DAYS_DEFAULT + fees.COURIER_TRANSIT_MAX_DAYS} days`,
     transitDays: `${fees.COURIER_TRANSIT_MIN_DAYS}–${fees.COURIER_TRANSIT_MAX_DAYS} days`,
     maxLeadWeeks: Math.round(fees.LEAD_DAYS_MAX / 7),
-    // Buyer delivery and service bookings (src/service-area.js SERVICE_AREAS).
-    areas: 'Dubai and Abu Dhabi',
+    // Buyer delivery and service bookings (src/service-area.js SERVICE_AREAS;
+    // Sharjah since 2026-10-27).
+    areas: 'Dubai, Abu Dhabi and Sharjah',
     // Where makers and providers may be based (MAKER_AREAS, owner 2026-10-26).
-    // Only ever in copy about who can sell or apply, never about delivery.
+    // Same three today; keep using it for who-can-sell lines, `areas` for delivery.
     makerAreas: 'Dubai, Abu Dhabi and Sharjah',
     // The licence threshold the Seller Agreement points makers to: paid
     // settlements in a trailing 30 days (graduation.js, GRADUATION_THRESHOLD_AED).

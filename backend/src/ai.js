@@ -68,7 +68,7 @@ async function suggestTags({ name, description = '', category = '', shopName = '
     max_tokens: 500,
     system: [{
       type: 'text',
-      text: `You write search tags for Trove, a curated marketplace of handmade goods in Dubai and Abu Dhabi. Shoppers type these into the search box, so pick the tags with the most search demand behind them:
+      text: `You write search tags for Trove, a curated marketplace of handmade goods in Dubai, Abu Dhabi and Sharjah. Shoppers type these into the search box, so pick the tags with the most search demand behind them:
 
 - Favour popular, high-traffic phrases — the plain words most people actually type ("home decor", "gift for her", "coffee mug") — over niche, poetic or trade wording.
 - Include 3-4 broad discovery terms shoppers browse with, then specific ones: material, style, room or use, occasion or gift angle, and close synonyms of the product's name.
