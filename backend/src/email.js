@@ -323,6 +323,14 @@ function kit(lang) {
   const panel = (html) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0"><tr>
   <td style="background:${CREAM};border:1px solid ${LINE};border-radius:14px;padding:16px 20px;font-family:${sans};font-size:15px;line-height:${ar ? 1.8 : 1.6};color:${INK}">${html}</td></tr></table>`;
 
+  /** A short numbered how-to: [{ title, text }], one row per step. */
+  const steps = (list) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 10px">${list.map((s, n) => `<tr>
+    <td width="30" valign="top" style="width:30px;padding:${ar ? '16px 0 0 14px' : '16px 14px 0 0'}"><div style="width:28px;height:28px;line-height:28px;border-radius:28px;background:${CREAM};border:1px solid ${LINE};text-align:center;font-family:${SANS};font-size:13px;font-weight:700;color:${INK}">${n + 1}</div></td>
+    <td valign="top" style="padding:16px 0 0;font-family:${sans};color:${INK}">
+      <div style="font-size:15px;font-weight:700;line-height:1.45">${s.title}</div>
+      <div style="font-size:14px;line-height:${ar ? 1.85 : 1.6};padding-top:3px">${s.text}</div>
+    </td></tr>`).join('')}</table>`;
+
   function button(text, href) {
     return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:30px auto 6px"><tr>
     <td style="background:${INK};border-radius:999px"><a href="${L(href)}" style="display:inline-block;padding:14px 32px;font-family:${sans};font-size:15px;font-weight:700;color:${CREAM};text-decoration:none;border-radius:999px">${text}</a></td>
@@ -453,7 +461,7 @@ function kit(lang) {
   const orderKicker = (id, extra = '') => T('Order {id}', { id: `<b style="color:${INK}">${esc(I(id))}</b>` }) + extra;
 
   return {
-    lang, ar, sans, serif, T, TN, A, I, L, date, sdate, p, note, label, heading, panel, button, itemsBlock, itemsByShop,
+    lang, ar, sans, serif, T, TN, A, I, L, date, sdate, p, note, label, heading, panel, steps, button, itemsBlock, itemsByShop,
     totalRow, totals, tracker, layout, svcSummary, svcLayout, svcKicker, svcPrice, orderKicker,
   };
 }
@@ -1008,15 +1016,37 @@ function applicationAlert({ kind = 'shop', businessName, applicantName, location
   };
 }
 
-/** Application approved. */
+/**
+ * Application approved, with a short how-to for the dashboard (owner
+ * 2026-10-27). The words in bold are the dashboard's own button and tab
+ * names, so keep them in step with trove-seller.html / provider-panel.js.
+ */
 function applicationApproved({ kind = 'shop', name, businessName, link, lang }) {
-  const { T, p, button, layout } = kit(lang);
+  const { T, L, p, heading, steps, button, layout } = kit(lang);
+  const b = (s) => `<b>${s}</b>`;
+  const help = `<a href="${esc(L(`${SITE_LINK}/faq`))}" style="color:${INK};font-weight:700">${T('Help centre')}</a>`;
   const inner = kind === 'shop'
     ? p(T('{business} is approved, and any piece you have marked live is now on sale on Trove.', { business: `<b>${esc(businessName)}</b>` }))
-      + p(T('When a piece sells we email you, and it appears in your dashboard with everything you need to pack it. Our courier collects from your pickup address — please make sure it and your pickup phone are filled in under Storefront.'))
+      + heading(T('Getting started'))
+      + steps([
+        { title: T('Add a piece'), text: T('In your dashboard, open {products} and tap {add}. Add up to four photos (the first is the cover), a name, a description, your price and how many you have.', { products: b(T('Products')), add: b(T('Add product')) }) },
+        { title: T('Set the make time and any choices'), text: T('Under {ready}, pick how many days you need to make and pack it. Buyers see it in the delivery time. {choices} lets buyers pick a colour or size, and {extras} adds options such as gift wrapping.', { ready: b(T('Ready to send in')), choices: b(T('Choices for the buyer')), extras: b(T('Paid extras')) }) },
+        { title: T('Put it on sale'), text: T('Under {visibility}, choose {live} to put it on sale, {draft} to keep working on it, or {hidden} to take it off sale without deleting it. To change a piece later, tap {edit} next to it in {products}.', { visibility: b(T('Visibility')), live: b(T('Live')), draft: b(T('Draft')), hidden: b(T('Hidden')), edit: b(T('Edit')), products: b(T('Products')) }) },
+        { title: T('When a piece sells'), text: T('We email you, and the order appears under {orders} with the day to pack it by. Pack it in your own packaging, tap {print}, then {packed}. Our courier collects it from the pickup address under {storefront}.', { orders: b(T('Orders')), print: b(T('Print label')), packed: b(T('Packed · ready for collection')), storefront: b(T('Storefront')) }) },
+        { title: T('Get paid'), text: T("Under {payments}, add your bank details and, if we ask, verify your Emirates ID. Trove pays you fortnightly, once the buyer's return window has closed.", { payments: b(T('Payments')) }) },
+      ])
+      + p(T('More answers are in our {help}.', { help }))
       + button(T('Go to your dashboard'), esc(link))
     : p(T('{business} is approved, and your live services now appear in the Trove Services Marketplace.', { business: `<b>${esc(businessName)}</b>` }))
-      + p(T('Booking requests arrive in your services dashboard.'))
+      + heading(T('Getting started'))
+      + steps([
+        { title: T('Add a service'), text: T('In your services dashboard, tap {add}. Give it a name and a category, say where it happens, set the price (fixed, a starting price or per hour) and describe it, then tap {save}.', { add: b(T('Add a service')), save: b(T('Save service')) }) },
+        { title: T('Keep your services up to date'), text: T('A saved service goes live on the Services Marketplace straight away. Tap {hide} to take it off without deleting it, {live} to bring it back, or {edit} to change it.', { hide: b(T('Hide')), live: b(T('Make live')), edit: b(T('Edit')) }) },
+        { title: T('Tell your story'), text: T('Tap {story} and write a few honest sentences about you, then preview the page customers see.', { story: b(T('Write your story')) }) },
+        { title: T('Answer booking requests'), text: T("We email you when a request arrives. Tap {confirm} and give the date (and the final price, for starting-price or hourly work), or {decline} with a short note. You get the customer's mobile once the booking is secured. After the service, tap {done}.", { confirm: b(T('Confirm')), decline: b(T('Decline')), done: b(T('Mark as done')) }) },
+        { title: T('Get paid'), text: T('Customers choose when they book: pay you directly, or pay Trove by card. For card bookings, add your bank details under {payouts} and Trove sends your fee by bank transfer every fortnight.', { payouts: b(T('Payouts')) }) },
+      ])
+      + p(T('More answers are in our {help}.', { help }))
       + button(T('Go to your services dashboard'), esc(link));
   const short = String(businessName).slice(0, 80);
   return {

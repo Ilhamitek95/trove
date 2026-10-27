@@ -116,6 +116,39 @@ test('approve and reject decisions email the applicant, once per change, quoting
   assert.match(sent[0].subject, /approved on Trove Services/);
 });
 
+test('the approval email carries a short how-to that names the real dashboard buttons, in English and Arabic', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const email = require('../src/email');
+  const docs = (f) => fs.readFileSync(path.join(__dirname, '..', '..', 'docs', f), 'utf8');
+  const seller = docs('trove-seller.html');
+  const panel = docs('provider-panel.js');
+  const cases = [
+    { kind: 'shop', link: 'https://trove.test/sell', source: seller,
+      steps: ['Add a piece', 'Set the make time and any choices', 'Put it on sale', 'When a piece sells', 'Get paid'],
+      labels: ['Products', 'Add product', 'Ready to send in', 'Choices for the buyer', 'Paid extras', 'Visibility', 'Draft', 'Hidden', 'Print label', 'Packed · ready for collection', 'Storefront', 'Payments'] },
+    { kind: 'provider', link: 'https://trove.test/provider', source: panel,
+      steps: ['Add a service', 'Keep your services up to date', 'Tell your story', 'Answer booking requests', 'Get paid'],
+      labels: ['Add a service', 'Save service', 'Hide', 'Make live', 'Write your story', 'Confirm', 'Decline', 'Mark as done', 'Payouts'] },
+  ];
+  for (const c of cases) {
+    const en = email.applicationApproved({ kind: c.kind, name: 'Mira Haddad', businessName: 'Mira Clay Studio', link: c.link, lang: 'en' }).html;
+    assert.match(en, /Getting started/);
+    for (const s of c.steps) assert.ok(en.includes(s), `${c.kind}: step "${s}"`);
+    for (const l of c.labels) {
+      assert.ok(en.includes(`<b>${l}</b>`), `${c.kind}: label "${l}" in bold`);
+      assert.ok(c.source.includes(l), `${c.kind}: "${l}" is still a dashboard label`);
+    }
+    assert.ok(en.includes('https://troveathome.com/faq'), `${c.kind}: Help centre link`);
+    assert.ok(en.includes(c.link), `${c.kind}: dashboard button`);
+
+    const ar = email.applicationApproved({ kind: c.kind, name: 'Mira Haddad', businessName: 'Mira Clay Studio', link: c.link, lang: 'ar' }).html;
+    assert.match(ar, /خطواتك الأولى/);
+    assert.ok(ar.includes('https://troveathome.com/ar/faq'), `${c.kind}: Arabic Help centre link`);
+    assert.ok(!/Getting started|Add a piece|Add a service/.test(ar), `${c.kind}: no English left in the Arabic guide`);
+  }
+});
+
 test('a paid order emails each maker only their own pieces and never the buyer contact details', async () => {
   const { hashPassword } = require('../src/middleware');
   const pw = hashPassword('testpass123');
