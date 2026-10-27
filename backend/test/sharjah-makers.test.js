@@ -162,7 +162,7 @@ test('a provider based in Sharjah can apply; bookings still need a Dubai or Abu 
   assert.equal(ok.status, 201, ok.text);
   const p = db.prepare("SELECT * FROM service_providers WHERE location='Al Khan, Sharjah'").get();
   assert.ok(p, 'the Sharjah practice exists');
-  assert.equal(p.agreement_version, 'v5', 'Provider Agreement v5 recorded');
+  assert.equal(p.agreement_version, 'v6', 'Provider Agreement v6 recorded');
   const no = await api('POST', '/api/services/apply', { body: { ...APPLY, email: 'noor@test.local', providerName: 'Noor Ajman', location: 'Al Jurf, Ajman' } });
   assert.equal(no.status, 400);
   assert.match(no.data.error, /Dubai, Abu Dhabi and Sharjah only/);
@@ -172,41 +172,68 @@ test('a provider based in Sharjah can apply; bookings still need a Dubai or Abu 
   assert.match(src, /if \(!isServiceable\(b\.area\)\)/);
 });
 
-test('Seller Agreement v6 and Provider Agreement v5: Sharjah, Didit, Arabic twins, re-acceptance prompt', async () => {
+test('Seller Agreement v6/v7 and Provider Agreement v5/v6: Sharjah, Didit, Arabic twins, re-acceptance prompt', async () => {
   const cfg = require('../src/config');
-  assert.equal(cfg.AGREEMENT_VERSION, 'v6');
+  // v7 / v6 (owner, 27 Oct): customers in Sharjah can buy and book too.
+  assert.equal(cfg.AGREEMENT_VERSION, 'v7');
   assert.equal(cfg.AGREEMENT_MIN_SELLING_VERSION, 'v4', 'no money term changed, so nobody is taken off sale');
-  assert.equal(cfg.PROVIDER_AGREEMENT_VERSION, 'v5');
+  assert.equal(cfg.PROVIDER_AGREEMENT_VERSION, 'v6');
   const seller = await api('GET', '/api/legal/seller-agreement');
-  assert.equal(seller.data.version, 'v6');
+  assert.equal(seller.data.version, 'v7');
   const flat = seller.data.markdown.replace(/\s+/g, ' ');
   assert.match(flat, /based in \*\*Dubai, Abu Dhabi or Sharjah\*\*/);
-  assert.match(flat, /customers in \*\*Dubai and Abu Dhabi only\*\*; it does not deliver to Sharjah/);
+  assert.match(flat, /Trove resells your pieces to customers in \*\*Dubai, Abu Dhabi and Sharjah only\*\*; it does not deliver anywhere else\./);
+  assert.doesNotMatch(flat, /does not deliver to Sharjah|Dubai and Abu Dhabi only/);
   assert.match(flat, /online identity check through Didit/);
   assert.match(flat, /live selfie/);
   assert.match(flat, /does not keep your ID images or your selfie/);
   assert.match(flat, /Serein Consultancy LLC/);
-  for (const f of ['seller-agreement-v6.md', 'seller-agreement-v6-ar.md', 'provider-agreement-v5.md', 'provider-agreement-v5-ar.md']) {
+  for (const f of ['seller-agreement-v6.md', 'seller-agreement-v6-ar.md', 'seller-agreement-v7.md', 'seller-agreement-v7-ar.md',
+    'provider-agreement-v5.md', 'provider-agreement-v5-ar.md', 'provider-agreement-v6.md', 'provider-agreement-v6-ar.md']) {
     assert.ok(fs.existsSync(path.join(LEGAL, f)), f);
   }
-  assert.match(read(path.join(LEGAL, 'seller-agreement-v6-ar.md')), /الشارقة/);
-  assert.match(read(path.join(LEGAL, 'seller-agreement-v6-ar.md')), /Didit/);
+  const flatFile = (f) => read(path.join(LEGAL, f)).replace(/\s+/g, ' ');
+  // Only the version line and the customer-area sentence differ from v6.
+  const sellerV6 = flatFile('seller-agreement-v6.md');
+  assert.match(sellerV6, /customers in \*\*Dubai and Abu Dhabi only\*\*; it does not deliver to Sharjah/, 'v6 stays as signed');
+  const sellerStrip = (s) => s.replace(/\*\*Version v\d+ · [^*]+\*\*/, '').replace(/Trove resells your pieces to customers in .*? anywhere else\./, '');
+  assert.equal(sellerStrip(flatFile('seller-agreement-v7.md')), sellerStrip(sellerV6), 'nothing else changed in the Seller Agreement');
+  const sellerAr = flatFile('seller-agreement-v7-ar.md');
+  assert.match(sellerAr, /\(الإصدار v7\)/);
+  assert.match(sellerAr, /\*\*دبي وأبوظبي والشارقة فقط\*\*/);
+  assert.doesNotMatch(sellerAr, /ولا توصل إلى الشارقة/);
+  assert.match(sellerAr, /Didit/);
+  assert.match(sellerAr, /يُعتدّ بالنص الإنجليزي/, 'the English version prevails');
   assert.doesNotMatch(read(path.join(LEGAL, 'seller-agreement-v5.md')), /Sharjah,|Didit/, 'v5 stays as signed');
   const provider = await api('GET', '/api/legal/provider-agreement');
-  assert.equal(provider.data.version, 'v5');
-  assert.match(provider.data.markdown.replace(/\s+/g, ' '), /customers in \*\*Dubai and Abu Dhabi only\*\*/);
+  assert.equal(provider.data.version, 'v6');
+  const pflat = provider.data.markdown.replace(/\s+/g, ' ');
+  assert.match(pflat, /Bookings are taken from customers in \*\*Dubai, Abu Dhabi and Sharjah only\*\*\. A service at your own studio/);
+  assert.doesNotMatch(pflat, /If you are based in Sharjah|Dubai and Abu Dhabi only/);
+  const providerV5 = flatFile('provider-agreement-v5.md');
+  assert.match(providerV5, /customers in \*\*Dubai and Abu Dhabi only\*\*\. If you are based in Sharjah/, 'v5 stays as signed');
+  const providerStrip = (s) => s.replace(/\*\*Version v\d+ · [^*]+\*\*/, '').replace(/Bookings are taken from customers in .*?(?= A service at your own studio)/, '');
+  assert.equal(providerStrip(flatFile('provider-agreement-v6.md')), providerStrip(providerV5), 'nothing else changed in the Provider Agreement');
+  const providerAr = flatFile('provider-agreement-v6-ar.md');
+  assert.match(providerAr, /\(الإصدار v6\)/);
+  assert.match(providerAr, /\*\*دبي وأبوظبي والشارقة فقط\*\*/);
+  assert.doesNotMatch(providerAr, /فإذا كان مقرّك في الشارقة/);
   assert.ok((await api('GET', '/api/legal/seller-agreement?lang=ar')).data.arabic, 'Arabic convenience translation served');
+  assert.ok((await api('GET', '/api/legal/provider-agreement?lang=ar')).data.arabic, 'Arabic convenience translation served');
 
-  // A maker on v5 keeps selling and is asked to accept v6.
-  const s = mkShop('v5-maker');
-  const cookie = await ctx.loginAs(s.email, 'testpass123');
-  const me = (await api('GET', '/api/seller/me', { cookie })).data.shop;
-  assert.equal(me.agreementUpdateDue, true);
-  assert.equal(me.sellingPaused, false);
-  assert.equal(me.currentAgreementVersion, 'v6');
-  assert.match(me.agreementChangeNote, /Sharjah/);
-  const ar = JSON.parse(read(path.join(DOCS, 'i18n', 'ar', 'seller.json')));
-  assert.ok(ar[me.agreementChangeNote], 'the change note has its Arabic');
+  // Makers on v5 and v6 keep selling and are asked to accept v7.
+  for (const [slug, v] of [['v5-maker', 'v5'], ['v6-maker', 'v6']]) {
+    const s = mkShop(slug, { agreement_version: v });
+    const cookie = await ctx.loginAs(s.email, 'testpass123');
+    const me = (await api('GET', '/api/seller/me', { cookie })).data.shop;
+    assert.equal(me.agreementUpdateDue, true, v);
+    assert.equal(me.sellingPaused, false, v);
+    assert.equal(me.currentAgreementVersion, 'v7');
+    assert.match(me.agreementChangeNote, /customers in Dubai, Abu Dhabi and Sharjah/);
+    assert.match(me.agreementChangeNote, /margin, fortnightly runs and the return window do not change/);
+    const ar = JSON.parse(read(path.join(DOCS, 'i18n', 'ar', 'seller.json')));
+    assert.ok(ar[me.agreementChangeNote], 'the change note has its Arabic');
+  }
 });
 
 test('public copy: who can sell and where Trove delivers both say Dubai, Abu Dhabi and Sharjah', async () => {

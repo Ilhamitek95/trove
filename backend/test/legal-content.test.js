@@ -42,7 +42,8 @@ test('/returns: the worked examples match the refund the code pays', async () =>
 });
 
 test('Terms of Sale v3: 18+, photos required, delivery refunded on a whole-order fault', async () => {
-  assert.equal(require('../src/config').BUYER_TERMS_VERSION, 'v3');
+  // v4 (27 Oct, Sharjah delivery) keeps v3's wording on all of this.
+  assert.equal(require('../src/config').BUYER_TERMS_VERSION, 'v4');
   const md = await legal('terms');
   assert.match(md, /## 2\. Who can buy You must be \*\*18 or over\*\* to open an account or place an order/);
   assert.match(md, /\*\*add at least one photo\*\* of what you are sending back/);
@@ -51,6 +52,26 @@ test('Terms of Sale v3: 18+, photos required, delivery refunded on a whole-order
   assert.match(md, /Your contract is with \*\*Serein Consultancy LLC\*\*/);
   // v2 is untouched.
   assert.match(fs.readFileSync(path.join(__dirname, '..', 'legal', 'buyer-terms-v2.md'), 'utf8'), /we may ask for a photo/);
+});
+
+test('Terms of Sale v4: delivery to Dubai, Abu Dhabi and Sharjah; delivery price unchanged; v3 kept as signed', async () => {
+  const md = await legal('terms');
+  assert.match(md, /Version v4 · Last updated 27 October 2026/);
+  assert.match(md, /Trove delivers to addresses in \*\*Dubai, Abu Dhabi and Sharjah only\*\*\. Checkout will not accept an address outside those three emirates\./);
+  assert.doesNotMatch(md, /Dubai and Abu Dhabi only|those two emirates/);
+  assert.match(md, /Delivery costs \*\*AED 30 on orders of AED 200 and below\*\* and is \*\*free on orders over AED 200\*\*/);
+  const read = (f) => fs.readFileSync(path.join(__dirname, '..', 'legal', f), 'utf8').replace(/\s+/g, ' ');
+  // Only the version line and the area sentence differ from v3.
+  const v3 = read('buyer-terms-v3.md');
+  assert.match(v3, /Trove delivers to addresses in \*\*Dubai and Abu Dhabi only\*\*\. Checkout will not accept an address outside those two emirates\./, 'v3 stays as signed');
+  const strip = (s) => s.replace(/\*\*Version v\d+ · Last updated [^*]+\*\*/, '').replace(/- Trove delivers to addresses in .*? emirates\./, '');
+  assert.equal(strip(read('buyer-terms-v4.md')), strip(v3), 'nothing else changed');
+  const ar = read('buyer-terms-v4-ar.md');
+  assert.match(ar, /\(الإصدار v4\)/);
+  assert.match(ar, /\*\*دبي وأبوظبي والشارقة فقط\*\*/);
+  assert.match(ar, /يُعتدّ بالنص الإنجليزي/, 'the English version prevails');
+  const arApi = (await ctx.api('GET', '/api/legal/terms?lang=ar')).data;
+  assert.ok(arApi.arabic && arApi.arabic.markdown.includes('الشارقة'), 'the Arabic convenience translation is served');
 });
 
 test('the licence threshold the Seller Agreement points to is published in the Help centre', async () => {

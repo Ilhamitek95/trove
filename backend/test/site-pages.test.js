@@ -60,7 +60,7 @@ const PAGES = {
   '/faq': ['Help centre', 'Who am I buying from?', 'fortnightly, every other Tuesday', '15 days of delivery', 'the provider, not Trove, is responsible for the service'],
   '/returns': ['Delivery & Returns', '15 days of the day it was delivered', 'AED 30 delivery', 'free delivery', 'We refund you once the courier has collected the return', 'There is never a collection fee when a piece is faulty, damaged or not what you ordered', 'Personalised pieces'],
   '/delivery-returns': ['Delivery & Returns', '15 days of the day it was delivered'],
-  '/terms': ['Terms of Sale', 'Trove is the seller of every product you buy on troveathome.com', 'Dubai and Abu Dhabi only', 'Stripe', '15 days of delivery', 'AED 30 on orders of AED 200 and below', 'no collection fee when a piece is faulty, damaged or not what you ordered', 'Federal Law No. 15 of 2020'],
+  '/terms': ['Terms of Sale', 'Trove is the seller of every product you buy on troveathome.com', 'Dubai, Abu Dhabi and Sharjah only', 'Stripe', '15 days of delivery', 'AED 30 on orders of AED 200 and below', 'no collection fee when a piece is faulty, damaged or not what you ordered', 'Federal Law No. 15 of 2020'],
   '/privacy': ['Privacy Policy', 'Federal Decree-Law No. 45 of 2021', 'anonymous visitor id', 'Emirates ID', 'IBAN', 'Stripe', 'OTO', 'Resend', 'Render', 'Google', 'Anthropic', 'Your rights'],
 };
 
@@ -112,7 +112,7 @@ test('the agreements render their current version server-side, picked from confi
 });
 
 test('the buyer terms and privacy policy are served by /api/legal with version and hash', async () => {
-  for (const [doc, needle, version] of [['terms', 'seller of every product', 'v3'], ['buyer-terms', 'seller of every product', 'v3'], ['privacy', 'Personal Data Protection Law', 'v3']]) {
+  for (const [doc, needle, version] of [['terms', 'seller of every product', 'v4'], ['buyer-terms', 'seller of every product', 'v4'], ['privacy', 'Personal Data Protection Law', 'v3']]) {
     const r = await get('/api/legal/' + doc);
     assert.equal(r.status, 200, doc);
     assert.equal(r.data.version, version, doc);
