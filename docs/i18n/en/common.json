@@ -154,5 +154,9 @@
   "{n} services": {
     "one": "{n} service",
     "other": "{n} services"
-  }
+  },
+  "Close the tour": "Close the tour",
+  "{n} of {total}": "{n} of {total}",
+  "Skip tour": "Skip tour",
+  "Finish": "Finish"
 }

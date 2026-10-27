@@ -243,5 +243,18 @@
   "{n} booking requests need your reply.": {
     "one": "One booking request needs your reply.",
     "other": "{n} booking requests need your reply."
-  }
+  },
+  "A quick tour of where everything is. It takes about a minute, and you can leave it at any time.": "A quick tour of where everything is. It takes about a minute, and you can leave it at any time.",
+  "That’s the tour": "That’s the tour",
+  "Welcome to your services dashboard": "Welcome to your services dashboard",
+  "Your first steps": "Your first steps",
+  "A short checklist that ticks itself off as you go: add a service, write your story, and add bank details when you need them.": "A short checklist that ticks itself off as you go: add a service, write your story, and add bank details when you need them.",
+  "Your bookings at a glance": "Your bookings at a glance",
+  "New requests waiting for your reply, bookings waiting for payment, and what is booked and done.": "New requests waiting for your reply, bookings waiting for payment, and what is booked and done.",
+  "Everything customers can book from you. <b>Edit</b> a service, <b>Hide</b> it to take it off the marketplace, or <b>Make live</b> to bring it back.": "Everything customers can book from you. <b>Edit</b> a service, <b>Hide</b> it to take it off the marketplace, or <b>Make live</b> to bring it back.",
+  "Tap <b>+ Add a service</b>, give it a name and a category, say where it happens, and set a fixed price, a starting price or an hourly rate. It goes live as soon as you save it.": "Tap <b>+ Add a service</b>, give it a name and a category, say where it happens, and set a fixed price, a starting price or an hourly rate. It goes live as soon as you save it.",
+  "Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.": "Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.",
+  "A few honest sentences about you. This is what customers read on your page.": "A few honest sentences about you. This is what customers read on your page.",
+  "For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.": "For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.",
+  "Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers."
 }

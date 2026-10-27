@@ -240,5 +240,18 @@
   "Reply now": "ردّ الآن",
   "waiting for your reply — open them": "بانتظار ردّك — افتحها",
   "Needs your reply": "بانتظار ردّك",
-  "{n} booking requests need your reply.": { "zero": "لا طلبات حجز بانتظار ردّك.", "one": "طلب حجز واحد بانتظار ردّك.", "two": "طلبا حجز بانتظار ردّك.", "few": "{n} طلبات حجز بانتظار ردّك.", "many": "{n} طلب حجز بانتظار ردّك.", "other": "{n} طلب حجز بانتظار ردّك." }
+  "{n} booking requests need your reply.": { "zero": "لا طلبات حجز بانتظار ردّك.", "one": "طلب حجز واحد بانتظار ردّك.", "two": "طلبا حجز بانتظار ردّك.", "few": "{n} طلبات حجز بانتظار ردّك.", "many": "{n} طلب حجز بانتظار ردّك.", "other": "{n} طلب حجز بانتظار ردّك." },
+  "A quick tour of where everything is. It takes about a minute, and you can leave it at any time.": "جولة سريعة لتعرف مكان كل شيء. تستغرق دقيقة تقريباً، ويمكنك الخروج منها في أي وقت.",
+  "That’s the tour": "انتهت الجولة",
+  "Welcome to your services dashboard": "أهلاً بك في لوحة تحكم الخدمات",
+  "Your first steps": "خطواتك الأولى",
+  "A short checklist that ticks itself off as you go: add a service, write your story, and add bank details when you need them.": "قائمة قصيرة تُستكمل تلقائياً مع تقدّمك: أضف خدمة، واكتب قصتك، وأضف بياناتك المصرفية عند الحاجة.",
+  "Your bookings at a glance": "حجوزاتك في لمحة",
+  "New requests waiting for your reply, bookings waiting for payment, and what is booked and done.": "الطلبات الجديدة التي تنتظر ردّك، والحجوزات التي تنتظر الدفع، وما تم حجزه وما اكتمل.",
+  "Everything customers can book from you. <b>Edit</b> a service, <b>Hide</b> it to take it off the marketplace, or <b>Make live</b> to bring it back.": "كل ما يمكن للعملاء حجزه منك. اضغط <b>تعديل</b> لتغيير خدمة، أو <b>إخفاء</b> لإزالتها من السوق، أو <b>اعرضها</b> لإعادتها.",
+  "Tap <b>+ Add a service</b>, give it a name and a category, say where it happens, and set a fixed price, a starting price or an hourly rate. It goes live as soon as you save it.": "اضغط <b>+ أضف خدمة</b>، واختر لها اسماً وفئة، وحدّد أين تُقدَّم، وضع سعراً ثابتاً أو سعراً ابتدائياً أو سعراً بالساعة. تظهر الخدمة فور حفظها.",
+  "Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.": "تصلك الطلبات هنا وعبر البريد الإلكتروني. اضغط <b>تأكيد</b> مع تحديد الموعد، والسعر النهائي للأعمال ذات السعر الابتدائي أو بالساعة، أو <b>اعتذار</b> مع ملاحظة قصيرة. وبعد تقديم الخدمة، اضغط <b>حدّده كمكتمل</b>.",
+  "A few honest sentences about you. This is what customers read on your page.": "بضع جمل صادقة عنك، وهي ما يقرؤه العملاء في صفحتك.",
+  "For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.": "للحجوزات المدفوعة بالبطاقة عبر Trove، أضف بياناتك المصرفية هنا. ترسل لك Trove أجرك بتحويل مصرفي كل أسبوعين.",
+  "Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "افتح سوق الخدمات في أي وقت لترى صفحتك كما يراها العملاء. وإن كان لديك سؤال، ستجد الإجابات في <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">مركز المساعدة</a>."
 }

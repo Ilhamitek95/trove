@@ -78,7 +78,7 @@ const dictFor = (names) => Object.assign({}, ...['common', ...names].map((n) => 
 const DOCS = path.join(ROOT, 'docs');
 const PAGES = fs.readdirSync(DOCS).filter((f) => f.endsWith('.html') && !['trove-admin.html', 'index.html'].includes(f));
 // Shared scripts and the bundles they read from.
-const SCRIPTS = { 'api.js': ['common'], 'site-chrome.js': ['common'], 'provider-panel.js': ['provider'] };
+const SCRIPTS = { 'api.js': ['common'], 'site-chrome.js': ['common'], 'provider-panel.js': ['provider'], 'tour.js': ['common'] };
 
 for (const file of PAGES) {
   test(`${file}: every _t()/_tn() string is in its dictionaries`, () => {

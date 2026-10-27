@@ -126,6 +126,7 @@
 <script src="/config.js"></script>
 <script src="/api.js"></script>
 <script src="/provider-panel.js"></script>
+<script src="/tour.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 let toastT;function toast(m){$('toast').textContent=m;$('toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>$('toast').classList.remove('show'),2400);}
@@ -176,7 +177,27 @@ async function signOut(){await TroveAPI.logout();window.location.href=troveUrl('
   ProviderPanel.mountServices($('ppServices'));
   ProviderPanel.mountBookings($('ppBookings'));
   go('overview');
+  if(new URLSearchParams(location.search).get('tour')==='1'){ history.replaceState(null,'',troveUrl('/provider')); startTour(); }
 })();
+/* ---------------- guided tour ----------------
+ * A one-minute walk round the dashboard (docs/tour.js). For now it only
+ * starts from /provider?tour=1 while the owner checks it (2026-10-27). */
+function startTour(){
+  const nav=v=>()=>[...document.querySelectorAll(`.side .mitem[data-v="${v}"],#mtabs .mitem[data-v="${v}"]`)].find(el=>el.offsetParent!==null);
+  const open=v=>()=>{ if(!$('view-'+v).classList.contains('active'))go(v); };
+  TroveTour.start([
+    {before:open('overview'),title:_t('Welcome to your services dashboard'),text:_t('A quick tour of where everything is. It takes about a minute, and you can leave it at any time.')},
+    // The checklist hides itself once everything on it is done.
+    document.querySelector('#ppOverview .pp-setup')?{target:'#ppOverview .pp-setup',before:open('overview'),title:_t('Your first steps'),text:_t('A short checklist that ticks itself off as you go: add a service, write your story, and add bank details when you need them.')}:null,
+    {target:'#ppOverview .pp-cards',before:open('overview'),title:_t('Your bookings at a glance'),text:_t('New requests waiting for your reply, bookings waiting for payment, and what is booked and done.')},
+    {target:nav('services'),before:open('services'),placement:'side',title:_t('My services'),text:_t('Everything customers can book from you. <b>Edit</b> a service, <b>Hide</b> it to take it off the marketplace, or <b>Make live</b> to bring it back.')},
+    {target:'#topActions button',before:open('services'),title:_t('Add a service'),text:_t('Tap <b>+ Add a service</b>, give it a name and a category, say where it happens, and set a fixed price, a starting price or an hourly rate. It goes live as soon as you save it.')},
+    {target:nav('bookings'),before:open('bookings'),placement:'side',title:_t('Bookings'),text:_t('Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.')},
+    {target:'#ppProfile',before:open('overview'),title:_t('Your public page'),text:_t('A few honest sentences about you. This is what customers read on your page.')},
+    {target:'#ppPayouts',before:open('overview'),title:_t('Payouts'),text:_t('For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.')},
+    {target:()=>[...document.querySelectorAll('.sfoot a[href$="/services"],.mbar .links a[href$="/services"]')].find(el=>el.offsetParent!==null),before:open('overview'),title:_t('That’s the tour'),text:_t('Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href="{url}" target="_blank" rel="noopener">Help centre</a> has the answers.',{url:troveUrl('/faq')})},
+  ],{onEnd:()=>go('overview')});
+}
 </script>
 </body>
 </html>

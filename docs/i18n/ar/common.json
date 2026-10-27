@@ -174,5 +174,9 @@
     "many": "{n} خدمة",
     "other": "{n} خدمة",
     "zero": "لا توجد خدمات"
-  }
+  },
+  "Close the tour": "أغلق الجولة",
+  "{n} of {total}": "{n} من {total}",
+  "Skip tour": "تخطَّ الجولة",
+  "Finish": "إنهاء"
 }

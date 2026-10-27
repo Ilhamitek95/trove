@@ -968,6 +968,7 @@
 <script src="/config.js"></script>
 <script src="/api.js"></script>
 <script src="/provider-panel.js"></script>
+<script src="/tour.js"></script>
 <script>
 /* ---------------- STATE ---------------- */
 let SHOP={id:null,name:'Your shop',slug:'',loc:'',color:'#BD9C8C',bio:'',bank:{name:'',accountName:'',iban:''},stripeStatus:{connected:false,chargesEnabled:false,payoutsEnabled:false,accountId:null}};
@@ -2858,6 +2859,30 @@ async function enableServices(){
   btn.disabled=false; btn.textContent=_t('Switch on services');
 }
 
+/* ---------------- GUIDED TOUR ----------------
+ * A one-minute walk round the dashboard (docs/tour.js). For now it only
+ * starts from /sell?tour=1 while the owner checks it (2026-10-27). The
+ * Payments and Services steps are left out for the Trove Collection. */
+function startTour(){
+  const nav=v=>()=>[...document.querySelectorAll(`.side .mitem[data-v="${v}"],#mtabs .mitem[data-v="${v}"]`)].find(el=>el.offsetParent!==null);
+  const open=v=>()=>{ if(!$('view-'+v).classList.contains('active'))go(v); };
+  const tab=(v,title,text)=>({target:nav(v),before:open(v),placement:'side',title,text});
+  TroveTour.start([
+    {before:open('overview'),title:_t('Welcome to your dashboard'),text:_t('A quick tour of where everything is. It takes about a minute, and you can leave it at any time.')},
+    {target:'#view-overview .grid-4',before:open('overview'),title:_t('Your shop at a glance'),text:_t('Sales and orders over the last 30 days, how many pieces are live, and what Trove will pay you next.')},
+    $('ovBanner').firstElementChild&&!SHOP.house?{target:()=>$('ovBanner').firstElementChild,before:open('overview'),title:_t('Your to-do list'),text:_t('Anything that needs you shows up here first, such as a piece to pack or a detail to add.')}:null,
+    tab('products',_t('Products'),_t('Every piece you sell lives here. Click a price or stock number to change it on the spot, or <b>Edit</b> to change everything else.')),
+    {target:'#topActions .btn-coral',before:open('products'),title:_t('Add a piece'),text:_t('Tap <b>Add product</b> to list a piece: up to four photos, a description, your price, stock and how many days you need to make it. Choose <b>Live</b> to put it on sale, or <b>Draft</b> to finish it later.')},
+    tab('orders',_t('Orders'),_t('When a piece sells we email you, and the order appears here with the day to pack it by. Pack it, tap <b>Print label</b>, then <b>Packed · ready for collection</b>. Our courier collects it.')),
+    tab('returns',_t('Returns'),_t('If a buyer asks to send something back, it shows here. Trove decides on every return, and the courier brings the piece back to you.')),
+    tab('analytics',_t('Shop Analytics'),_t('How many people view your shop and your pieces, and how often they add them to a basket. Visitors stay anonymous.')),
+    SHOP.house?null:tab('payments',_t('Payments'),_t('Add your bank details and verify your Emirates ID here, so Trove can pay you. Payments go out fortnightly, once a sale’s return window has closed.')),
+    tab('storefront',_t('Storefront'),_t('Your story, photo and shop colour, and the pickup address and phone the courier uses. Keep them up to date.')),
+    SHOP.house?null:tab('services',_t('Services'),_t('Do you also teach workshops or take commissions? Switch on services here and they appear on the Services Marketplace beside your shop.')),
+    {target:'#topActions .btn-ghost',before:open('overview'),title:_t('That’s the tour'),text:_t('Preview your shop at any time to see it the way buyers do. If you have a question, the <a href="{url}" target="_blank" rel="noopener">Help centre</a> has the answers.',{url:troveUrl('/faq')})},
+  ],{onEnd:()=>go('overview')});
+}
+
 /* ---------------- BOOT ---------------- */
 // Ends the admin's "shop view" and goes back to the admin panel.
 async function returnToAdmin(){
@@ -2893,6 +2918,7 @@ async function boot(){
   // Email links land on a tab, e.g. the order-to-pack email opens /sell?view=orders.
   else if(/^[a-z]+$/.test(params.get('view')||'')&&$('view-'+params.get('view'))&&TITLES[params.get('view')]) go(params.get('view'));
   else go('overview');
+  if(params.get('tour')==='1'){ history.replaceState(null,'',troveUrl('/sell')); startTour(); }
 }
 boot();
 </script>

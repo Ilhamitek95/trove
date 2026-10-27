@@ -734,5 +734,19 @@
   "Identity verified — thank you": "تم التحقق من الهوية — شكراً لك",
   "Not finished yet": "لم يكتمل بعد",
   "Could not check": "تعذّر التحقق",
-  "welcomes makers based in Sharjah as well as Dubai and Abu Dhabi (buyers are still in Dubai and Abu Dhabi only) and describes the online identity check with your Emirates ID and a selfie; margin, fortnightly runs and the return window do not change": "ترحّب بالصنّاع المقيمين في الشارقة إلى جانب دبي وأبوظبي (ويبقى المشترون في دبي وأبوظبي فقط)، وتصف التحقق الإلكتروني من الهوية ببطاقة هويتك الإماراتية وصورة ذاتية؛ ولا يتغيّر الهامش ولا التسويات كل أسبوعين ولا مهلة الإرجاع"
+  "welcomes makers based in Sharjah as well as Dubai and Abu Dhabi (buyers are still in Dubai and Abu Dhabi only) and describes the online identity check with your Emirates ID and a selfie; margin, fortnightly runs and the return window do not change": "ترحّب بالصنّاع المقيمين في الشارقة إلى جانب دبي وأبوظبي (ويبقى المشترون في دبي وأبوظبي فقط)، وتصف التحقق الإلكتروني من الهوية ببطاقة هويتك الإماراتية وصورة ذاتية؛ ولا يتغيّر الهامش ولا التسويات كل أسبوعين ولا مهلة الإرجاع",
+  "Welcome to your dashboard": "أهلاً بك في لوحة التحكم",
+  "Your shop at a glance": "متجرك في لمحة",
+  "Sales and orders over the last 30 days, how many pieces are live, and what Trove will pay you next.": "المبيعات والطلبات خلال آخر 30 يوماً، وعدد القطع المعروضة، والمبلغ الذي ستدفعه لك Trove في الدفعة القادمة.",
+  "Your to-do list": "قائمة مهامك",
+  "Anything that needs you shows up here first, such as a piece to pack or a detail to add.": "كل ما يحتاج إليك يظهر هنا أولاً، مثل قطعة عليك تغليفها أو معلومة عليك إضافتها.",
+  "Every piece you sell lives here. Click a price or stock number to change it on the spot, or <b>Edit</b> to change everything else.": "كل قطعة تبيعها موجودة هنا. اضغط على السعر أو المخزون لتغييره مباشرةً، أو على <b>تعديل</b> لتغيير أي شيء آخر.",
+  "Tap <b>Add product</b> to list a piece: up to four photos, a description, your price, stock and how many days you need to make it. Choose <b>Live</b> to put it on sale, or <b>Draft</b> to finish it later.": "اضغط <b>أضف منتجاً</b> لعرض قطعة: حتى أربع صور، ووصف، وسعرك، والمخزون، وعدد الأيام التي تحتاجها لصنعها. اختر <b>معروض</b> لطرحها للبيع، أو <b>مسودة</b> لإكمالها لاحقاً.",
+  "When a piece sells we email you, and the order appears here with the day to pack it by. Pack it, tap <b>Print label</b>, then <b>Packed · ready for collection</b>. Our courier collects it.": "عند بيع قطعة نراسلك، ويظهر الطلب هنا مع اليوم الذي يجب تغليفها بحلوله. غلّفها، واضغط <b>اطبع الملصق</b> ثم <b>جاهز للاستلام</b>، وسيستلمها مندوب التوصيل.",
+  "If a buyer asks to send something back, it shows here. Trove decides on every return, and the courier brings the piece back to you.": "إذا طلب مشترٍ إرجاع شيء، يظهر طلبه هنا. تبتّ Trove في كل طلب إرجاع، ويعيد مندوب التوصيل القطعة إليك.",
+  "How many people view your shop and your pieces, and how often they add them to a basket. Visitors stay anonymous.": "عدد من يشاهدون متجرك وقطعك، وعدد مرات إضافتها إلى السلة. تبقى هوية الزوار مجهولة.",
+  "Add your bank details and verify your Emirates ID here, so Trove can pay you. Payments go out fortnightly, once a sale’s return window has closed.": "أضف بياناتك المصرفية وتحقّق من هويتك الإماراتية هنا لتتمكن Trove من الدفع لك. تُصرف الدفعات كل أسبوعين، بعد انتهاء مهلة الإرجاع لكل عملية بيع.",
+  "Your story, photo and shop colour, and the pickup address and phone the courier uses. Keep them up to date.": "قصتك وصورتك ولون متجرك، وعنوان الاستلام ورقم الهاتف اللذان يستخدمهما مندوب التوصيل. احرص على تحديثها.",
+  "Do you also teach workshops or take commissions? Switch on services here and they appear on the Services Marketplace beside your shop.": "هل تقدّم ورش عمل أو تقبل طلبات خاصة أيضاً؟ فعّل الخدمات هنا لتظهر في سوق الخدمات إلى جانب متجرك.",
+  "Preview your shop at any time to see it the way buyers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "اعرض معاينة متجرك في أي وقت لتراه كما يراه المشترون. وإن كان لديك سؤال، ستجد الإجابات في <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">مركز المساعدة</a>."
 }
