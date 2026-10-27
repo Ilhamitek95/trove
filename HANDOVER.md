@@ -1,6 +1,13 @@
 # Trove — handover
 
-Last updated 26 October 2026 (laptop session: social Phase 1 v6, new calendar after the 22 Oct feedback, more Reels and photos). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+Last updated 27 October 2026 (home PC session: Sharjah buyers). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+
+## Sharjah buyers (27 Oct): LIVE
+
+- **What it does:** people in Sharjah can now buy pieces and book services, exactly like Dubai and Abu Dhabi. Delivery costs the same (AED 30, free on orders over AED 200). Ajman, Umm Al Quwain, Ras Al Khaimah and Fujairah are still refused.
+- **Where you see it:** "Sharjah" is now a choice in the checkout address form, the saved-address form in My account, the services booking form, the admin delivery-edit box, and the phone app's booking form. Every line that said "Dubai and Abu Dhabi" (promo bar, product pages, help pages, About, search-engine descriptions, emails) now says "Dubai, Abu Dhabi and Sharjah", in English and Arabic.
+- **Legal:** Terms of Sale v4, Seller Agreement v7 and Provider Agreement v6. Only the sentence about where customers are changed. Makers see a prompt to accept v7 but keep selling. All three are Claude drafts for the lawyer review, like the earlier versions.
+- **Instagram:** the buyer post (post 14, on hold) still says Dubai and Abu Dhabi; change it when it is taken off hold (see ~/trove-social HANDOVER).
 
 ## Sharjah makers and providers (26 Oct): LIVE (merged from branch `sharjah-makers`)
 
@@ -11,7 +18,7 @@ Last updated 26 October 2026 (laptop session: social Phase 1 v6, new calendar af
 - **OTO checked 26 Oct (live account, quote only, nothing booked):** Sharjah → Dubai has 6 door-to-door couriers with free pickup (cheapest J&T AED 16, Aramex 17), Sharjah → Abu Dhabi has 5 (cheapest Aramex 17), 1 to 3 working days. That is the same price as from Dubai (Dubai → Dubai 16, Dubai → Abu Dhabi 17), so Sharjah makers cost Trove nothing extra. No option is pinned, so Trove auto-picks the cheapest.
 - **OTO confirmed by the owner (27 Oct):** OTO collects from Sharjah on Trove's account. Live pages checked the same day: /apply, /sell-on-trove, /about and /services all name Sharjah.
 - **Still to check before the Instagram campaign starts on 15 Nov:** a native speaker reads the new Arabic.
-- **Owner decision open: Sharjah BUYERS.** Checkout, saved addresses and service bookings still refuse Sharjah (`isDeliverable`), and about 40 delivery lines say Dubai and Abu Dhabi (storefront, help, terms, SEO text). Opening it = add Sharjah to `SERVICE_AREAS`, rewrite the delivery copy EN + AR, a Buyer Terms + Services Terms version, and decide the delivery price to Sharjah.
+- **Sharjah buyers: decided and LIVE 27 Oct** (section above).
 
 ## What is live
 
