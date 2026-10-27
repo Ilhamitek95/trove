@@ -9,7 +9,9 @@ Last updated 26 October 2026 (laptop session: social Phase 1 v6, new calendar af
 - **Agreements:** Seller Agreement v6 (Sharjah + it now describes the Emirates ID and selfie check through Didit) and Provider Agreement v5 (Sharjah). Makers on v5 keep selling and see a prompt to accept v6 in their dashboard; providers are not asked again. Both are Claude drafts for the lawyer review.
 - **Wording fix at merge:** v6 §5 said Trove "does not receive" the full ID number; the code reads it briefly to take the last four digits, so it now says "does not keep" (EN + AR).
 - **OTO checked 26 Oct (live account, quote only, nothing booked):** Sharjah → Dubai has 6 door-to-door couriers with free pickup (cheapest J&T AED 16, Aramex 17), Sharjah → Abu Dhabi has 5 (cheapest Aramex 17), 1 to 3 working days. That is the same price as from Dubai (Dubai → Dubai 16, Dubai → Abu Dhabi 17), so Sharjah makers cost Trove nothing extra. No option is pinned, so Trove auto-picks the cheapest.
-- **Still to check before the Instagram campaign starts on 15 Nov:** that OTO offers a courier pickup from Sharjah to Dubai and Abu Dhabi on Trove's account (and at what price, since the buyer still pays AED 30 or nothing); a native speaker reads the new Arabic.
+- **OTO confirmed by the owner (27 Oct):** OTO collects from Sharjah on Trove's account. Live pages checked the same day: /apply, /sell-on-trove, /about and /services all name Sharjah.
+- **Still to check before the Instagram campaign starts on 15 Nov:** a native speaker reads the new Arabic.
+- **Owner decision open: Sharjah BUYERS.** Checkout, saved addresses and service bookings still refuse Sharjah (`isDeliverable`), and about 40 delivery lines say Dubai and Abu Dhabi (storefront, help, terms, SEO text). Opening it = add Sharjah to `SERVICE_AREAS`, rewrite the delivery copy EN + AR, a Buyer Terms + Services Terms version, and decide the delivery price to Sharjah.
 
 ## What is live
 
