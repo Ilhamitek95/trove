@@ -256,5 +256,8 @@
   "Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.": "Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.",
   "A few honest sentences about you. This is what customers read on your page.": "A few honest sentences about you. This is what customers read on your page.",
   "For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.": "For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.",
-  "Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers."
+  "Take the tour": "Take the tour",
+  "Your page on the marketplace": "Your page on the marketplace",
+  "Open the Services Marketplace at any time to see your page the way customers do.": "Open the Services Marketplace at any time to see your page the way customers do.",
+  "Tap <b>Take the tour</b> to see this tour again. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "Tap <b>Take the tour</b> to see this tour again. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers."
 }

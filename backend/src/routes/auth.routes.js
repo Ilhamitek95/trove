@@ -444,6 +444,18 @@ function sessionShape(req) {
 }
 router.get('/me', requireAuth, (req, res) => res.json(sessionShape(req)));
 
+// POST /api/auth/tour-seen { dashboard: 'sell' | 'provider' } — the dashboard
+// tour opened by itself, so it doesn't again (docs/tour.js, migration 030).
+// Only the first time counts. The admin's shop view never marks the maker's.
+const TOUR_COLUMN = { sell: 'tour_sell_at', provider: 'tour_provider_at' };
+router.post('/tour-seen', requireAuth, (req, res) => {
+  const col = TOUR_COLUMN[req.body && req.body.dashboard];
+  if (!col) return res.status(400).json({ error: 'Unknown dashboard' });
+  if (req.session.impersonatorId) return res.json({ ok: true, skipped: true });
+  db.prepare(`UPDATE users SET ${col} = COALESCE(${col}, datetime('now')) WHERE id = ?`).run(req.user.id);
+  res.json({ ok: true });
+});
+
 // GET /api/auth/session -> the same shape when signed in, and a plain 200
 // { user: null } when not. Every public page asks this on load; a signed-out
 // visitor is the normal case, not an error, so it must not answer 401 (the

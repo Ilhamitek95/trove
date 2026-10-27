@@ -253,5 +253,8 @@
   "Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.": "تصلك الطلبات هنا وعبر البريد الإلكتروني. اضغط <b>تأكيد</b> مع تحديد الموعد، والسعر النهائي للأعمال ذات السعر الابتدائي أو بالساعة، أو <b>اعتذار</b> مع ملاحظة قصيرة. وبعد تقديم الخدمة، اضغط <b>حدّده كمكتمل</b>.",
   "A few honest sentences about you. This is what customers read on your page.": "بضع جمل صادقة عنك، وهي ما يقرؤه العملاء في صفحتك.",
   "For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.": "للحجوزات المدفوعة بالبطاقة عبر Trove، أضف بياناتك المصرفية هنا. ترسل لك Trove أجرك بتحويل مصرفي كل أسبوعين.",
-  "Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "افتح سوق الخدمات في أي وقت لترى صفحتك كما يراها العملاء. وإن كان لديك سؤال، ستجد الإجابات في <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">مركز المساعدة</a>."
+  "Take the tour": "ابدأ الجولة",
+  "Your page on the marketplace": "صفحتك في السوق",
+  "Open the Services Marketplace at any time to see your page the way customers do.": "افتح سوق الخدمات في أي وقت لترى صفحتك كما يراها العملاء.",
+  "Tap <b>Take the tour</b> to see this tour again. If you have a question, the <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">Help centre</a> has the answers.": "اضغط <b>ابدأ الجولة</b> لمشاهدة هذه الجولة مجدداً. وإن كان لديك سؤال، ستجد الإجابات في <a href=\"{url}\" target=\"_blank\" rel=\"noopener\">مركز المساعدة</a>."
 }

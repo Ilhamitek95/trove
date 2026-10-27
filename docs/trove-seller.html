@@ -65,7 +65,8 @@
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:22px 36px;border-bottom:1px solid var(--line-soft);background:rgba(253,247,245,.8);backdrop-filter:blur(10px);position:sticky;top:0;z-index:20}
   .topbar h1{font-size:30px;font-weight:500}
   .topbar .sub{font-size:13px;color:var(--muted);font-weight:500;margin-top:1px}
-  .topbar .tact{display:flex;align-items:center;gap:12px}
+  .topbar .tact{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .topbar .tact .btn{white-space:nowrap}
   .content{padding:30px 36px 60px;max-width:1080px;width:100%}
 
   .view{display:none}
@@ -2792,7 +2793,7 @@ function go(v){
   // top actions
   const ta=$('topActions');
   if(v==='products')ta.innerHTML=`<button class="btn btn-ghost" onclick="openPreview('shop')">${_t('Preview shop')}</button><button class="btn btn-coral" onclick="openAdd()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${_t('Add product')}</button>`;
-  else if(v==='overview')ta.innerHTML=`<button class="btn btn-ghost" onclick="openPreview('shop')">${_t('Preview your shop')}</button>${SHOP.status==='approved'?`<a class="btn btn-ghost" href="/" target="_blank" rel="noopener">${_t('View storefront ↗')}</a>`:''}`;
+  else if(v==='overview')ta.innerHTML=`<button class="btn btn-ghost" onclick="openPreview('shop')">${_t('Preview your shop')}</button>${SHOP.status==='approved'?`<a class="btn btn-ghost" href="/" target="_blank" rel="noopener">${_t('View storefront ↗')}</a>`:''}<button class="btn btn-ghost" id="tourBtn" onclick="startTour()">${_t('Take the tour')}</button>`;
   else if(v==='services'&&HAS_PROVIDER)ta.innerHTML=`<button class="btn btn-coral" onclick="ProviderPanel.openEditor()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>${_t('Add a service')}</button>`;
   else ta.innerHTML='';
   if(v==='overview')renderOverview(); if(v==='products')renderProducts(); if(v==='orders')renderOrders(); if(v==='returns'){renderReturnsView();reloadReturns();} if(v==='analytics'){renderAnalytics();reloadAnalytics();} if(v==='payments')renderPayments(); if(v==='storefront')renderStore(); if(v==='services')renderServicesView();
@@ -2860,8 +2861,9 @@ async function enableServices(){
 }
 
 /* ---------------- GUIDED TOUR ----------------
- * A one-minute walk round the dashboard (docs/tour.js). For now it only
- * starts from /sell?tour=1 while the owner checks it (2026-10-27). The
+ * A one-minute walk round the dashboard (docs/tour.js, live 2026-10-27).
+ * It opens by itself once, on an approved maker's first visit (see boot),
+ * and again from Take the tour on the Overview or /sell?tour=1. The
  * Payments and Services steps are left out for the Trove Collection. */
 function startTour(){
   const nav=v=>()=>[...document.querySelectorAll(`.side .mitem[data-v="${v}"],#mtabs .mitem[data-v="${v}"]`)].find(el=>el.offsetParent!==null);
@@ -2879,7 +2881,7 @@ function startTour(){
     SHOP.house?null:tab('payments',_t('Payments'),_t('Add your bank details and verify your Emirates ID here, so Trove can pay you. Payments go out fortnightly, once a sale’s return window has closed.')),
     tab('storefront',_t('Storefront'),_t('Your story, photo and shop colour, and the pickup address and phone the courier uses. Keep them up to date.')),
     SHOP.house?null:tab('services',_t('Services'),_t('Do you also teach workshops or take commissions? Switch on services here and they appear on the Services Marketplace beside your shop.')),
-    {target:'#topActions .btn-ghost',before:open('overview'),title:_t('That’s the tour'),text:_t('Preview your shop at any time to see it the way buyers do. If you have a question, the <a href="{url}" target="_blank" rel="noopener">Help centre</a> has the answers.',{url:troveUrl('/faq')})},
+    {target:'#topActions',before:open('overview'),title:_t('That’s the tour'),text:_t('Preview your shop at any time to see it the way buyers do, and tap <b>Take the tour</b> to see this tour again. If you have a question, the <a href="{url}" target="_blank" rel="noopener">Help centre</a> has the answers.',{url:troveUrl('/faq')})},
   ],{onEnd:()=>go('overview')});
 }
 
@@ -2919,6 +2921,15 @@ async function boot(){
   else if(/^[a-z]+$/.test(params.get('view')||'')&&$('view-'+params.get('view'))&&TITLES[params.get('view')]) go(params.get('view'));
   else go('overview');
   if(params.get('tour')==='1'){ history.replaceState(null,'',troveUrl('/sell')); startTour(); }
+  // An approved maker's first visit: the tour opens by itself, once per
+  // account (users.tour_sell_at). Never in the admin's shop view or for the
+  // Trove Collection; a visit that came to do something (an email link to a
+  // tab, back from Stripe or the ID check) gets it next time instead.
+  else if(SHOP.status==='approved'&&!SHOP.house&&!session.impersonating&&!(ME.toursSeen&&ME.toursSeen.sell)
+    &&!params.has('view')&&!params.has('connect')&&!params.has('verificationSessionId')){
+    TroveAPI.api('/api/auth/tour-seen',{method:'POST',body:{dashboard:'sell'}}).catch(()=>{});
+    startTour();
+  }
 }
 boot();
 </script>

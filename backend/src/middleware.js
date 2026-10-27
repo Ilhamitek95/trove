@@ -34,9 +34,11 @@ function publicUser(u) {
   // emailVerified: the owner confirmed the address (welcome link, a reset or
   // Google). hasPassword: false for Google-only accounts, whose stored hash
   // is a random placeholder — the account page offers "Set a password".
+  // toursSeen: the dashboard tour already opened by itself (migration 030).
   return {
     id: u.id, email: u.email, name: u.name, role: u.role, phone: u.phone || null,
     emailVerified: !!u.email_verified_at, hasPassword: u.password_set !== 0,
+    toursSeen: { sell: !!u.tour_sell_at, provider: !!u.tour_provider_at },
   };
 }
 

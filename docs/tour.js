@@ -38,6 +38,7 @@
   .tt-text{font-size:14.5px;line-height:1.6;margin:0}
   [dir="rtl"] .tt-text{line-height:1.85}
   .tt-text b{font-weight:700}
+  .tt-text a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:3px}
   .tt-x{position:absolute;top:12px;inset-inline-end:12px;width:34px;height:34px;border:0;border-radius:999px;background:transparent;color:inherit;cursor:pointer;
     display:flex;align-items:center;justify-content:center}
   .tt-x:hover{background:var(--rose-tint,#F2E9E4)}

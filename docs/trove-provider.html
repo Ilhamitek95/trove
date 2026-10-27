@@ -55,6 +55,8 @@
   .btn{display:inline-block;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:600;transition:.15s;text-align:center;cursor:pointer}
   .btn-dark{background:var(--char);color:var(--cream)}
   .btn-dark:hover{background:#3B3737}
+  .btn-ghost{border:1px solid var(--line);color:var(--char);background:var(--paper)}
+  .btn-ghost:hover{background:var(--cream)}
   .shopnote{border:1px solid var(--line);border-radius:14px;background:var(--paper);padding:12px 16px;font-size:12.5px;color:var(--muted);font-weight:600;margin-bottom:18px}
   .shopnote a{text-decoration:underline;color:var(--char)}
   .mbar{display:none}
@@ -138,7 +140,8 @@ function go(v){
   $('view-'+v).classList.add('active');
   document.querySelectorAll('.mitem').forEach(m=>{const on=m.dataset.v===v;m.classList.toggle('on',on);if(on)m.setAttribute('aria-current','page');else m.removeAttribute('aria-current');});
   $('pageTitle').textContent=TITLES[v][0];$('pageSub').textContent=TITLES[v][1];
-  $('topActions').innerHTML=v==='services'?'<button class="btn btn-dark" onclick="ProviderPanel.openEditor()">'+_t('+ Add a service')+'</button>':'';
+  $('topActions').innerHTML=v==='services'?'<button class="btn btn-dark" onclick="ProviderPanel.openEditor()">'+_t('+ Add a service')+'</button>'
+    :v==='overview'?'<button class="btn btn-ghost" id="tourBtn" onclick="startTour()">'+_t('Take the tour')+'</button>':'';
   window.scrollTo(0,0);
 }
 function buildMobileTabs(){
@@ -178,10 +181,17 @@ async function signOut(){await TroveAPI.logout();window.location.href=troveUrl('
   ProviderPanel.mountBookings($('ppBookings'));
   go('overview');
   if(new URLSearchParams(location.search).get('tour')==='1'){ history.replaceState(null,'',troveUrl('/provider')); startTour(); }
+  // An approved provider's first visit: the tour opens by itself, once per
+  // account (users.tour_provider_at), never in the admin's shop view.
+  else if(ProviderPanel.provider.status==='approved'&&!me.impersonating&&!(me.user.toursSeen&&me.user.toursSeen.provider)){
+    TroveAPI.api('/api/auth/tour-seen',{method:'POST',body:{dashboard:'provider'}}).catch(()=>{});
+    startTour();
+  }
 })();
 /* ---------------- guided tour ----------------
- * A one-minute walk round the dashboard (docs/tour.js). For now it only
- * starts from /provider?tour=1 while the owner checks it (2026-10-27). */
+ * A one-minute walk round the dashboard (docs/tour.js, live 2026-10-27).
+ * It opens by itself once (see boot), and again from Take the tour on the
+ * Overview or /provider?tour=1. */
 function startTour(){
   const nav=v=>()=>[...document.querySelectorAll(`.side .mitem[data-v="${v}"],#mtabs .mitem[data-v="${v}"]`)].find(el=>el.offsetParent!==null);
   const open=v=>()=>{ if(!$('view-'+v).classList.contains('active'))go(v); };
@@ -195,7 +205,8 @@ function startTour(){
     {target:nav('bookings'),before:open('bookings'),placement:'side',title:_t('Bookings'),text:_t('Requests arrive here and by email. <b>Confirm</b> with the date, and the final price for starting-price or hourly work, or <b>Decline</b> with a short note. After the service, tap <b>Mark as done</b>.')},
     {target:'#ppProfile',before:open('overview'),title:_t('Your public page'),text:_t('A few honest sentences about you. This is what customers read on your page.')},
     {target:'#ppPayouts',before:open('overview'),title:_t('Payouts'),text:_t('For bookings paid by card through Trove, add your bank details here. Trove sends your fee by bank transfer fortnightly.')},
-    {target:()=>[...document.querySelectorAll('.sfoot a[href$="/services"],.mbar .links a[href$="/services"]')].find(el=>el.offsetParent!==null),before:open('overview'),title:_t('That’s the tour'),text:_t('Open the Services Marketplace at any time to see your page the way customers do. If you have a question, the <a href="{url}" target="_blank" rel="noopener">Help centre</a> has the answers.',{url:troveUrl('/faq')})},
+    {target:()=>[...document.querySelectorAll('.sfoot a[href$="/services"],.mbar .links a[href$="/services"]')].find(el=>el.offsetParent!==null),before:open('overview'),title:_t('Your page on the marketplace'),text:_t('Open the Services Marketplace at any time to see your page the way customers do.')},
+    {target:'#tourBtn',before:open('overview'),title:_t('That’s the tour'),text:_t('Tap <b>Take the tour</b> to see this tour again. If you have a question, the <a href="{url}" target="_blank" rel="noopener">Help centre</a> has the answers.',{url:troveUrl('/faq')})},
   ],{onEnd:()=>go('overview')});
 }
 </script>
