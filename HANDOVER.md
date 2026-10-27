@@ -1,6 +1,12 @@
 # Trove — handover
 
-Last updated 27 October 2026 (home PC session: Sharjah buyers). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+
+## Approval email guide (27 Oct): LIVE
+
+- **What it does:** the "You're approved" email that makers and providers get now has a short "Getting started" guide: five numbered steps that use the dashboard's own button and tab names in bold, then a link to the Help centre and the dashboard button. Makers: add a piece; set the make time and any choices; Live / Draft / Hidden and Edit; packing, Print label and the courier when a piece sells; Payments (bank details, ID check). Providers: add a service; Hide / Make live / Edit; Write your story; confirm or decline booking requests and Mark as done; Payouts for card bookings. English and Arabic.
+- **Preview of all four versions:** https://claude.ai/artifact/N29Km8vxwphgAWVW1baiJb
+- **If a dashboard button is renamed,** the email's wording must change too. A test now fails if any bold word in the guide stops appearing in the maker or provider dashboard.
 
 ## Sharjah buyers (27 Oct): LIVE
 
