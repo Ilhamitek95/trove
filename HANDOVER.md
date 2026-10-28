@@ -2,6 +2,11 @@
 
 Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
+## Provider profile photo + background image (28 Oct, laptop): LIVE `c0aa2bb`
+- You asked: providers can add a profile picture and a background image. In the dashboard: **Your public page** → **Photos on your page** → **Add a profile photo** / **Add a background image** (saved straight away; Change / Remove links next to them). The profile photo is cropped to a square and shows as a circle.
+- Where they show: the provider's page (banner across the top + round photo), their card in the Services Marketplace directory, and the customer preview. The background image is also the picture when someone shares the page link.
+- If an account is closed for privacy, both photos are deleted.
+
 ## Service photos + video (28 Oct, laptop): photos LIVE `d6107c0`, video waits for Cloudflare
 - You asked: providers can put photos on the services they offer, as a carousel, with video too. Your picks: videos in Cloudflare R2; 8 items per service, max 2 videos.
 - LIVE now: in the dashboard's service editor, **Photos and videos** → **+ Photo**, reorder with ‹ ›, × to remove; the first is the cover on the service card. On the public service page they show as a swipe carousel (arrows on desktop, swipe on phones, dots, Arabic mirrored). The first photo is the link-preview image.
