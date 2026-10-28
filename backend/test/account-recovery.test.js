@@ -229,6 +229,11 @@ test('register sends a welcome with a confirm link; the link confirms once and s
   const page = await call('GET', `/api/auth/verify-email?token=${token}`, { cookie: reg.cookie });
   assert.equal(page.status, 200);
   assert.match(page.text, /<form method="post" action="\/api\/auth\/verify-email">/);
+  // 28 Oct: 'no-referrer' here made browsers post the form with 'Origin: null',
+  // which the cross-site guard refuses — every confirm failed with a 403.
+  assert.equal(page.headers.get('referrer-policy'), 'same-origin');
+  const nullOrigin = await fetch(ctx.baseUrl + '/api/auth/verify-email', { method: 'POST', redirect: 'manual', body: 'token=x', headers: { 'content-type': 'application/x-www-form-urlencoded', origin: 'null' } });
+  assert.equal(nullOrigin.status, 403, 'a null Origin is still treated as cross-site');
   assert.equal((await call('GET', '/api/auth/me', { cookie: reg.cookie })).data.user.emailVerified, false, 'opening the link confirms nothing');
   const postForm = (fields, cookie) => fetch(ctx.baseUrl + '/api/auth/verify-email', {
     method: 'POST', redirect: 'manual', body: new URLSearchParams(fields).toString(),

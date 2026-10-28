@@ -396,7 +396,11 @@ router.get('/verify-email', (req, res) => {
   if (!found) return res.redirect(302, verifyLanding(req));
   if (found.user.email_verified_at) { accounts.spendToken(found.row); return res.redirect(302, verifyLanding(req, found.user.id)); }
   const lang = found.user.lang === 'ar' ? 'ar' : 'en';
-  res.set('Cache-Control', 'no-store').set('X-Robots-Tag', 'noindex, nofollow').set('Referrer-Policy', 'no-referrer');
+  // 'same-origin', not 'no-referrer': under no-referrer the browser sends the
+  // button's POST with 'Origin: null', which the cross-site check in app.js
+  // refuses (403) — nobody could confirm. same-origin still keeps the token
+  // out of the Referer sent to Google Fonts or anywhere off the site.
+  res.set('Cache-Control', 'no-store').set('X-Robots-Tag', 'noindex, nofollow').set('Referrer-Policy', 'same-origin');
   res.type('html').send(require('../verify-page').render({ lang, token, email: found.user.email }));
 });
 router.post('/verify-email', express.urlencoded({ extended: false, limit: '4kb' }), (req, res) => {
