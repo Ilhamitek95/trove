@@ -34,8 +34,9 @@
   body{font-family:'Quicksand',system-ui,sans-serif;background:var(--cream);color:var(--char);-webkit-font-smoothing:antialiased;font-weight:500}
   ::selection{background:var(--rose);color:var(--char)}
   /* Mirrors the storefront: no wishlist or following yet. The header
-     skeleton itself stays identical (test/header-sync.test.js). */
-  a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
+     skeleton itself stays identical (test/header-sync.test.js). Ends-with,
+     so the /ar/account#… links of Arabic pages are hidden too. */
+  a[href$="/account#wishlist"],a[href$="/account#following"]{display:none!important}
   /* iubenda's floating cookie-preferences button sat over the sticky Add to basket, the
      basket's Checkout and the filter sheet's Show button (F157). It is switched off in
      _iub.csConfiguration; this keeps it off even if the dashboard turns it back on.

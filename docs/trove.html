@@ -143,8 +143,9 @@
   .view{display:none}
   .view.active{display:block;animation:fade .32s ease}
   /* No wishlist or following yet. The header is one skeleton on every page
-     (test/header-sync.test.js), so their links are hidden here, not removed. */
-  a[href="/account#wishlist"],a[href="/account#following"]{display:none!important}
+     (test/header-sync.test.js), so their links are hidden here, not removed.
+     Ends-with, so the /ar/account#… links of Arabic pages are hidden too. */
+  a[href$="/account#wishlist"],a[href$="/account#following"]{display:none!important}
   /* iubenda's floating cookie-preferences button sat over the sticky Add to basket, the
      basket's Checkout and the filter sheet's Show button (F157). It is switched off in
      _iub.csConfiguration; this keeps it off even if the dashboard turns it back on.

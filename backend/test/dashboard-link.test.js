@@ -66,6 +66,13 @@ test('every signed-in menu outside the dashboards shows the way back', () => {
   assert.match(read('trove-services.html'), /function renderAuth\(\)\{[\s\S]*?troveShowDashboard\(ME\);[\s\S]*?\n}/, 'Services pages call it');
   assert.match(read('trove-account.html'), /const dash=troveDashboard\(session\);[\s\S]*?\$\('signOutLink'\)\.before\(a\)/, 'My account sidebar gets it');
 
+  // Saved items / Following (not built yet) are hidden on Arabic pages too, where
+  // the links read /ar/account#… — an exact href match missed them.
+  for (const f of ['trove.html', 'trove-services.html']) {
+    assert.match(read(f), /a\[href\$="\/account#wishlist"\],a\[href\$="\/account#following"\]\{display:none!important\}/, `${f}: ends-with hide rule`);
+    assert.doesNotMatch(read(f), /a\[href="\/account#wishlist"\]/, `${f}: no exact-match rule left`);
+  }
+
   // The menus being rewritten carry the hooks the helper looks for.
   for (const f of ['trove.html', 'trove-services.html']) {
     const html = read(f);
