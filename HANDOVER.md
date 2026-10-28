@@ -2,6 +2,12 @@
 
 Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
+## Service photos + video (28 Oct, laptop): photos LIVE `d6107c0`, video waits for Cloudflare
+- You asked: providers can put photos on the services they offer, as a carousel, with video too. Your picks: videos in Cloudflare R2; 8 items per service, max 2 videos.
+- LIVE now: in the dashboard's service editor, **Photos and videos** → **+ Photo**, reorder with ‹ ›, × to remove; the first is the cover on the service card. On the public service page they show as a swipe carousel (arrows on desktop, swipe on phones, dots, Arabic mirrored). The first photo is the link-preview image.
+- Video (60 seconds / 50 MB each) is built and tested but hidden until R2 is set up: a `trove-media` bucket with public access + a CORS rule for PUT from troveathome.com, a bucket-only token, and five Render env vars `MEDIA_S3_ENDPOINT`, `MEDIA_S3_BUCKET`, `MEDIA_S3_KEY_ID`, `MEDIA_S3_SECRET`, `MEDIA_PUBLIC_URL`. With them set, **+ Video** appears by itself.
+- Good to know: Trove can't convert video formats. MP4 plays everywhere; an iPhone .mov in HEVC may not play in Chrome on Windows (the dashboard says "MP4 plays everywhere"). The phone app (trove-app) doesn't show service media yet.
+
 ## Email confirmation fix (28 Oct, laptop): LIVE `faa4fe2`
 - You reported users couldn't confirm their email. Cause: since 12 Oct (`b877b91`) the "Confirm your email" page sent `Referrer-Policy: no-referrer`, so browsers posted the button with `Origin: null` and the cross-site guard in app.js answered 403 "Not allowed". Every confirm failed.
 - Fix: the page now sends `same-origin` (the token still never reaches Google Fonts or other sites). Regression test in test/account-recovery.test.js; 888/888 tests; checked by clicking the button in real Chrome against a local server.
