@@ -274,6 +274,7 @@
   .svtile{height:96px;position:relative;display:flex;align-items:flex-end;padding:14px 16px;background:radial-gradient(circle at 86% 18%,rgba(253,247,245,.85),transparent 56%),linear-gradient(160deg,#F2E9E4,#E7D9D1);border-bottom:1px solid var(--line-soft)}
   .svtile::before{content:"";position:absolute;top:16px;left:16px;width:9px;height:9px;background:var(--char);opacity:.28;transform:rotate(45deg);border-radius:1px}
   .svt-cat{font-family:var(--font-display);font-size:17px;font-weight:600;line-height:1.1;color:var(--char);max-width:90%}
+  .ph-img{background-color:var(--rose-tint);background-size:cover;background-position:center}
   .vpanel{background:radial-gradient(circle at 22% 30%,rgba(253,247,245,.55),transparent 58%),linear-gradient(160deg,var(--t1),var(--t0))}
   .svbody .meta .sv-req{margin-left:8px;padding:8px 16px;min-height:36px;border-radius:999px;background:var(--char);color:var(--cream);font-size:12.5px;font-weight:700;letter-spacing:.02em}
   .svbody .meta .sv-req:hover{background:#3B3737}
@@ -788,6 +789,12 @@ function svCover(s){
   if(!img)return svTile(s);
   return `<div class="svtile ph" aria-hidden="true" style="background-image:url(&quot;${esc(img)}&quot;)">${m.type==='video'?PLAY_ICON:''}</div>`;
 }
+/* A provider's background image and profile photo, or the colour tile and
+   initial (backend/src/seo.js coverAttrs/avAttrs draw the same). */
+const bgUrl=u=>`background-image:url(&quot;${esc(u)}&quot;)`;
+function coverAttrs(p,cls,thumb){const u=mediaUrl(thumb?(p.coverThumb||p.cover):p.cover);return u?`class="${cls} ph-img" style="${bgUrl(u)}"`:`class="${cls} vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}"`;}
+function avAttrs(p,cls,thumb){const u=mediaUrl(thumb?(p.avatarThumb||p.avatar):p.avatar);return u?`class="${cls} ph-img" style="${bgUrl(u)}"`:`class="${cls}" style="background:${safeColor(p.color)}"`;}
+const avLetter=p=>mediaUrl(p.avatar)?'':esc((p.name||'?')[0]);
 function svGallery(s){
   const list=(s.media||[]).filter(m=>mediaUrl(m.url));
   if(!list.length)return '';
@@ -959,8 +966,8 @@ async function cancelBooking(id,paid,amount){
 function catNames(slugs){return (slugs||[]).map(sl=>{const c=TAX.categories.find(x=>x.slug===sl);return c?c.name:null;}).filter(Boolean);}
 function provCardHTML(p){
   return `<article class="pcard" onclick="if(event.metaKey||event.ctrlKey||event.shiftKey)return;openProvider(${jsq(p.slug)});return false" role="link" tabindex="0" onkeydown="if(event.key==='Enter'){openProvider(${jsq(p.slug)})}">
-    <div class="cover vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}"></div>
-    <div class="av" style="background:${safeColor(p.color)}">${esc((p.name||'?')[0])}</div>
+    <div ${coverAttrs(p,'cover',true)}></div>
+    <div ${avAttrs(p,'av',true)}>${avLetter(p)}</div>
     <h3><a class="pcard-link" href="/services/${esc(encodeURIComponent(p.slug))}" tabindex="-1">${esc(p.name)}</a></h3>
     <div class="loc">${esc(p.location||_t('Dubai'))}</div>
     <p>${esc(p.bio)}</p>
@@ -997,8 +1004,11 @@ async function openProvider(slug,push=true){
   if(!push){const now=trovePath(location.pathname);const m=now.match(PV_RE)||now.match(SV_RE);if(!m||m[1]!==slug)return;}
   const p=data.provider;PV_SLUG=slug;
   for(const sv of data.services){if(!SERVICES.some(x=>x.id===sv.id))SERVICES.push(sv);}
-  $('pvHero').className='pv-hero vpanel'; $('pvHero').style.cssText=`--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}`;
-  $('pvAv').style.background=safeColor(p.color);$('pvAv').textContent=(p.name||'?')[0];
+  const cv=mediaUrl(p.cover),av=mediaUrl(p.avatar);
+  $('pvHero').className='pv-hero '+(cv?'ph-img':'vpanel'); $('pvHero').style.cssText=cv?`background-image:url("${cv}")`:`--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color),24)}`;
+  $('pvAv').className='pv-av'+(av?' ph-img':''); $('pvAv').style.cssText=av?`background-image:url("${av}")`:`background:${safeColor(p.color)}`;
+  $('pvAv').textContent=av?'':(p.name||'?')[0];
+  if(av){$('pvAv').setAttribute('role','img');$('pvAv').setAttribute('aria-label',_t('Profile photo of {name}',{name:p.name}));}else{$('pvAv').removeAttribute('role');$('pvAv').removeAttribute('aria-label');}
   pageH1('pv');
   $('pvName').textContent=p.name;
   $('pvLoc').textContent=p.location||_t('Dubai');$('pvBio').textContent=p.bio||'';

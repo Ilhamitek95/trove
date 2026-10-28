@@ -152,7 +152,13 @@
 .pp-pv :focus-visible{outline:2px solid var(--char,#292727);outline-offset:2px}
 .pp-pv .pv-rib{margin:16px 20px 0;background:var(--rose-tint,#F2E9E4);border-radius:12px;padding:10px 14px;font-size:12.5px;font-weight:700;line-height:1.5}
 .pp-pv .pv-head{padding:22px 24px 6px}
-.pp-pv .pv-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:28px;font-weight:600;color:var(--char,#292727)}
+.pp-pv .pv-av{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:28px;font-weight:600;color:var(--char,#292727);background-size:cover;background-position:center}
+.pp-pv .pv-cover{height:150px;margin:16px 20px 0;border-radius:14px;background-size:cover;background-position:center}
+.pp .pp-pics{position:relative;margin-bottom:46px}
+.pp .pp-pcover{height:140px;border-radius:14px;background-color:var(--rose-tint,#F2E9E4);background-size:cover;background-position:center}
+.pp .pp-pav{position:absolute;bottom:-38px;inset-inline-start:18px;width:84px;height:84px;border-radius:50%;border:4px solid var(--paper,#FFFCFA);display:grid;place-items:center;font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:34px;font-weight:600;color:var(--char,#292727);background-size:cover;background-position:center}
+.pp .pp-picrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;font-size:13px;font-weight:600}
+.pp .pp-picrow b{min-width:140px}
 .pp-pv h2{font-family:var(--font-display,'Cormorant',Georgia,serif);font-size:36px;font-weight:500;line-height:1.05;margin:12px 0 4px}
 .pp-pv .pv-loc{font-size:12px;letter-spacing:.05em;color:var(--muted,rgba(41,39,39,.72));font-weight:700}
 .pp-pv .pv-chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
@@ -412,12 +418,70 @@
           ${live ? `<a class="pp-btn pp-ghost" href="${troveUrl('/services/' + esc(encodeURIComponent(p.slug)))}" target="_blank" rel="noopener">${_t('View it live ↗')}</a>` : ''}
         </div></div>
       <div class="pp-err" id="ppProfErr" role="alert" style="margin-top:12px"></div>
-      <div class="pp-field" style="margin-top:14px"><label for="ppProfName">${_t('Practice name')}</label><input id="ppProfName" maxlength="60" value="${esc(p.name)}"></div>
+      <div class="pp-field" style="margin-top:14px"><label id="ppPicLbl">${_t('Photos on your page')}</label>
+        <div class="pp-hint">${_t('A profile photo — you or your logo — and a background image across the top of your page. Both show on the Services Marketplace.')}</div>
+        <div id="ppPics" role="group" aria-labelledby="ppPicLbl">${picsMarkup()}</div>
+        <input type="file" id="ppAvFile" accept="image/jpeg,image/png,image/webp" hidden onchange="ProviderPanel.pickImage('avatar',this.files)">
+        <input type="file" id="ppCvFile" accept="image/jpeg,image/png,image/webp" hidden onchange="ProviderPanel.pickImage('cover',this.files)">
+      </div>
+      <div class="pp-field"><label for="ppProfName">${_t('Practice name')}</label><input id="ppProfName" maxlength="60" value="${esc(p.name)}"></div>
       <div class="pp-field"><label for="ppProfBio">${_t('Your story')}</label><textarea id="ppProfBio" maxlength="2000" placeholder="${esc(_t('Who you are, what you do and how you work — a few honest sentences.'))}">${esc(p.bio || '')}</textarea></div>
       <div class="pp-field"><label id="ppProfCatLbl">${_t('Categories <span style="text-transform:none;letter-spacing:0;font-weight:600">· one to three</span>')}</label>
         <div role="group" aria-labelledby="ppProfCatLbl">${cats}</div></div>
       <div class="pp-actions"><button type="button" class="pp-btn pp-dark" id="ppProfSave" onclick="ProviderPanel.saveProfile()">${_t('Save profile')}</button></div>
     </div>`;
+  }
+  /* Profile photo + background image (owner, 28 Oct 2026). Each saves the
+     moment it is picked (POST /api/provider/me/image), like the shop photo. */
+  const okHex = (c) => (/^#[0-9a-f]{6}$/i.test(c || '') ? c : '#F2E9E4');
+  const bgOf = (u) => `background-image:url(&quot;${esc(u)}&quot;)`;
+  function picsMarkup() {
+    const p = PP.provider || {};
+    return `<div class="pp-pics" aria-hidden="true">
+        <div class="pp-pcover" style="${p.cover ? bgOf(p.cover) : `background:linear-gradient(160deg,${okHex(p.color)},var(--rose-tint,#F2E9E4))`}"></div>
+        <div class="pp-pav" style="${p.avatar ? bgOf(p.avatar) : `background:${okHex(p.color)}`}">${p.avatar ? '' : esc(((p.name || '?')[0] || '?').toUpperCase())}</div>
+      </div>
+      <div class="pp-picrow"><b>${_t('Profile photo')}</b>
+        <button type="button" class="pp-btn pp-ghost" id="ppAvBtn" onclick="document.getElementById('ppAvFile').click()">${p.avatar ? _t('Change profile photo') : _t('Add a profile photo')}</button>
+        ${p.avatar ? `<button type="button" class="pp-link" onclick="ProviderPanel.removeImage('avatar')">${_t('Remove profile photo')}</button>` : ''}</div>
+      <div class="pp-picrow"><b>${_t('Background image')}</b>
+        <button type="button" class="pp-btn pp-ghost" id="ppCvBtn" onclick="document.getElementById('ppCvFile').click()">${p.cover ? _t('Change background image') : _t('Add a background image')}</button>
+        ${p.cover ? `<button type="button" class="pp-link" onclick="ProviderPanel.removeImage('cover')">${_t('Remove background image')}</button>` : ''}</div>`;
+  }
+  function renderPics() { const el = $('ppPics'); if (el) el.innerHTML = picsMarkup(); }
+  async function sendImage(kind, image, small) {
+    const err = $('ppProfErr'); err.style.display = 'none';
+    try {
+      const r = await api('/api/provider/me/image', { method: 'POST', body: { kind, image, ...(small ? { small } : {}) } });
+      PP.provider = { ...PP.provider, ...r.provider };
+      renderPics(); changed();
+      toast(image ? (kind === 'avatar' ? _t('Profile photo saved') : _t('Background image saved')) : (kind === 'avatar' ? _t('Profile photo removed') : _t('Background image removed')));
+    } catch (e) { err.textContent = e.message || _t('Could not save — try again.'); err.style.display = 'block'; renderPics(); }
+  }
+  function pickImage(kind, files) {
+    const f = files && files[0]; const input = $(kind === 'avatar' ? 'ppAvFile' : 'ppCvFile'); if (input) input.value = '';
+    if (!f) return;
+    const btn = $(kind === 'avatar' ? 'ppAvBtn' : 'ppCvBtn'); if (btn) { btn.disabled = true; btn.textContent = _t('Saving…'); }
+    const url = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      const w = im.naturalWidth, h = im.naturalHeight;
+      let c;
+      if (kind === 'avatar') {
+        // A square from the middle, 600 px: it always shows as a circle.
+        const side = Math.min(w, h);
+        c = document.createElement('canvas'); c.width = c.height = Math.min(600, side);
+        const g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+        g.drawImage(im, (w - side) / 2, (h - side) / 2, side, side, 0, 0, c.width, c.height);
+      } else c = canvasOf(im, w, h, 2000);
+      sendImage(kind, c.toDataURL('image/jpeg', 0.85), smallOf(c));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); renderPics(); const e = $('ppProfErr'); e.textContent = _t('That file isn’t a photo we can use.'); e.style.display = 'block'; };
+    im.src = url;
+  }
+  function removeImage(kind) {
+    if (!confirm(kind === 'avatar' ? _t('Remove your profile photo?') : _t('Remove your background image?'))) return;
+    sendImage(kind, null);
   }
   function focusProfile(ev) {
     if (ev) ev.preventDefault();
@@ -481,7 +545,8 @@
     const live = PP.services.filter((s) => s.status === 'live');
     const rib = p.status === 'approved' ? _t('Preview — this is how customers see your page.') : _t('Preview — not public yet. Your page and live services appear the moment Trove approves your profile.');
     $('ppPvBody').innerHTML = `<div class="pv-rib">${rib}</div>
-      <div class="pv-head"><div class="pv-av" style="background:${/^#[0-9a-f]{6}$/i.test(p.color || '') ? p.color : '#F2E9E4'}">${esc((name || '?')[0].toUpperCase())}</div>
+      ${p.cover ? `<div class="pv-cover" style="${bgOf(p.cover)}"></div>` : ''}
+      <div class="pv-head"><div class="pv-av" style="${p.avatar ? bgOf(p.avatar) : `background:${okHex(p.color)}`}">${p.avatar ? '' : esc((name || '?')[0].toUpperCase())}</div>
         <h2 id="ppPvTitle">${esc(name)}</h2>${p.location ? `<div class="pv-loc">${esc(p.location)}</div>` : ''}
         ${cats.length ? `<div class="pv-chips">${cats.map((c) => `<span>${esc(c)}</span>`).join('')}</div>` : ''}
         ${bio ? `<p class="pv-bio">${esc(bio)}</p>` : `<p class="pv-bio" style="color:var(--muted,rgba(41,39,39,.72))">${_t('No story yet — add a few sentences under Your public page.')}</p>`}</div>
@@ -963,7 +1028,7 @@
     init(opts) { PP.opts = opts || {}; injectCss(); return load(); },
     mountOverview, mountServices, mountBookings, mountRequests, showRequests, refresh, stats,
     openEditor, closeEditor, saveService, toggleLive, deleteService, actBooking, declineBooking,
-    addPhotos, addVideo, moveMedia, removeMedia,
+    addPhotos, addVideo, moveMedia, removeMedia, pickImage, removeImage,
     openConfirm, sendConfirm, cancelBooking, openClose, sendClose,
     toggleProfCat, saveProfile, openPreview, closePreview, focusProfile,
     savePayout, usePayoutShop, editPayout, focusPayouts, payoutToggled,

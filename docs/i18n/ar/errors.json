@@ -167,5 +167,6 @@
   "That video upload wasn’t found — add it again": "لم نعثر على هذا الفيديو — أضفه مرة أخرى",
   "Couldn’t reach video storage — try again in a moment": "تعذر الوصول إلى تخزين الفيديو — حاول مرة أخرى بعد قليل",
   "That video didn’t finish uploading — add it again": "لم يكتمل رفع هذا الفيديو — أضفه مرة أخرى",
-  "Each item must be a photo or a video": "يجب أن يكون كل عنصر صورة أو فيديو"
+  "Each item must be a photo or a video": "يجب أن يكون كل عنصر صورة أو فيديو",
+  "kind must be avatar or cover": "نوع الصورة غير معروف"
 }

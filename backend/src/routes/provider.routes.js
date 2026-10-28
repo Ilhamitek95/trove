@@ -29,6 +29,7 @@ function providerMe(p) {
   return {
     id: p.id, name: p.name, slug: p.slug, status: p.status,
     bio: p.bio, location: p.location, color: p.color,
+    avatar: p.avatar || '', cover: p.cover || '',
     categories: parseJson(p.categories, []),
     // Owner, 2026-09-30: listing is free during launch — the monthly fee
     // starts later, with 30 days' notice. sub_started_at is kept as data (the
@@ -89,6 +90,22 @@ router.patch('/me', (req, res) => {
     tq('provider', req.provider.id);
   }
   res.json({ provider: providerMe(db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.provider.id)) });
+});
+
+// POST /api/provider/me/image { kind: 'avatar' | 'cover', image: <data URL> | null, small? }
+// — the profile photo or the page's background image; null goes back to the
+// colour tile. Like the shop photo: the old file is removed once replaced.
+const IMAGE_KINDS = ['avatar', 'cover'];
+router.post('/me/image', (req, res, next) => {
+  try {
+    const { kind, image, small } = req.body || {};
+    if (!IMAGE_KINDS.includes(kind)) return res.status(400).json({ error: 'kind must be avatar or cover' });
+    const url = image ? require('../uploads').saveDataUrl(image, 'providers', `${kind}-${req.provider.id}`, { small: typeof small === 'string' ? small : null }) : '';
+    const before = req.provider[kind];
+    db.prepare(`UPDATE service_providers SET ${kind}=? WHERE id=?`).run(url, req.provider.id);
+    if (before && before !== url) require('../uploads').removeByUrl(before);
+    res.json({ provider: providerMe(db.prepare('SELECT * FROM service_providers WHERE id=?').get(req.provider.id)) });
+  } catch (e) { next(e); }
 });
 
 /* ---------------- Services CRUD ---------------- */

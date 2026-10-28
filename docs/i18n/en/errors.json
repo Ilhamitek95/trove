@@ -167,5 +167,6 @@
   "That video upload wasn’t found — add it again": "That video upload wasn’t found — add it again",
   "Couldn’t reach video storage — try again in a moment": "Couldn’t reach video storage — try again in a moment",
   "That video didn’t finish uploading — add it again": "That video didn’t finish uploading — add it again",
-  "Each item must be a photo or a video": "Each item must be a photo or a video"
+  "Each item must be a photo or a video": "Each item must be a photo or a video",
+  "kind must be avatar or cover": "kind must be avatar or cover"
 }

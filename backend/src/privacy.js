@@ -351,8 +351,11 @@ function anonymise(email) {
       }
       const provider = providerOf(s.user);
       if (provider) {
+        // The profile photo is usually the person's face: it goes with the rest.
+        if (provider.avatar) files.push(provider.avatar);
+        if (provider.cover) files.push(provider.cover);
         db.prepare(`UPDATE service_providers SET status = 'suspended', pitch_services = '', pitch_experience = '',
-          pitch_instagram = '', pitch_links = '', pitch_phone = '' WHERE id = ?`).run(provider.id);
+          pitch_instagram = '', pitch_links = '', pitch_phone = '', avatar = '', cover = '' WHERE id = ?`).run(provider.id);
         db.prepare("UPDATE services SET status = 'hidden' WHERE provider_id = ?").run(provider.id);
         db.prepare('DELETE FROM provider_payout_details WHERE provider_id = ?').run(provider.id);
       }

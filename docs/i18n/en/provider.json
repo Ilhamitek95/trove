@@ -279,5 +279,21 @@
   "Videos can be up to {sec} seconds.": "Videos can be up to {sec} seconds.",
   "The video didn’t upload — try again.": "The video didn’t upload — try again.",
   "Wait for the video to finish uploading.": "Wait for the video to finish uploading.",
-  "Too many new photos for one save — save these, then add the rest.": "Too many new photos for one save — save these, then add the rest."
+  "Too many new photos for one save — save these, then add the rest.": "Too many new photos for one save — save these, then add the rest.",
+  "Photos on your page": "Photos on your page",
+  "A profile photo — you or your logo — and a background image across the top of your page. Both show on the Services Marketplace.": "A profile photo — you or your logo — and a background image across the top of your page. Both show on the Services Marketplace.",
+  "Profile photo": "Profile photo",
+  "Background image": "Background image",
+  "Add a profile photo": "Add a profile photo",
+  "Change profile photo": "Change profile photo",
+  "Remove profile photo": "Remove profile photo",
+  "Add a background image": "Add a background image",
+  "Change background image": "Change background image",
+  "Remove background image": "Remove background image",
+  "Profile photo saved": "Profile photo saved",
+  "Background image saved": "Background image saved",
+  "Profile photo removed": "Profile photo removed",
+  "Background image removed": "Background image removed",
+  "Remove your profile photo?": "Remove your profile photo?",
+  "Remove your background image?": "Remove your background image?"
 }

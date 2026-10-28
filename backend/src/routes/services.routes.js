@@ -35,6 +35,7 @@ const { hashPassword, publicUser, requireAuth, startSession } = require('../midd
 const { normalizeUAEMobile } = require('../phone');
 const tax = require('../service-taxonomy');
 const fees = require('../fees');
+const uploads = require('../uploads');
 
 const router = express.Router();
 const { slugify } = require('../slug'); // the URL rule, for stored slugs too (F375)
@@ -45,6 +46,9 @@ function publicProvider(p) {
   return {
     id: p.id, name: p.name, slug: p.slug, bio: p.bio, location: p.location,
     color: p.color, categories: parseJson(p.categories, []),
+    // Profile photo + page background ('' = colour tile); thumbs for cards.
+    avatar: p.avatar || '', avatarThumb: p.avatar ? uploads.smallOf(p.avatar) || p.avatar : '',
+    cover: p.cover || '', coverThumb: p.cover ? uploads.smallOf(p.cover) || p.cover : '',
   };
 }
 

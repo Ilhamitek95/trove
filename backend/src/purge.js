@@ -50,7 +50,7 @@ const TABLES_WIPED = [
 
 /* The folders the app writes (src/uploads.js, settlement.js); nothing else
    under uploads/ or private/ is ever touched. */
-const UPLOAD_FOLDERS = ['shops', 'products', 'reviews', 'services'];
+const UPLOAD_FOLDERS = ['shops', 'products', 'reviews', 'services', 'providers'];
 const PRIVATE_FOLDERS = ['ids', 'licenses', 'returns', 'purchase-notes'];
 
 /* Translated entities (src/translate.js ENTITIES) and the table each lives in. */
@@ -253,6 +253,10 @@ function survivingFileRefs(db, live) {
   }
   for (const pr of db.prepare(`SELECT images FROM products WHERE id IN ${inList(live.products)}`).all()) {
     for (const u of parseList(pr.images)) ups.add(u);
+  }
+  for (const pr of db.prepare(`SELECT avatar, cover FROM service_providers WHERE id IN ${inList(live.providers)}`).all()) {
+    if (pr.avatar) ups.add(pr.avatar);
+    if (pr.cover) ups.add(pr.cover);
   }
   // A kept provider's service photos and video cover frames.
   for (const sv of db.prepare(`SELECT media FROM services WHERE provider_id IN ${inList(live.providers)}`).all()) {

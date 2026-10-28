@@ -840,6 +840,18 @@ function svCover(s, lang = 'en') {
   if (!img) return svTile(s, lang);
   return `<div class="svtile ph" aria-hidden="true" style="background-image:url(&quot;${esc(img)}&quot;)">${m.type === 'video' ? PLAY_ICON : ''}</div>`;
 }
+/* A provider's background image and profile photo, or the colour tile and
+   initial when they have none (trove-services.html coverAttrs/avAttrs agree). */
+const bgUrl = (u) => `background-image:url(&quot;${esc(u)}&quot;)`;
+const coverAttrs = (p, cls, thumb) => {
+  const u = mediaUrl(thumb ? (p.coverThumb || p.cover) : p.cover);
+  return u ? `class="${cls} ph-img" style="${bgUrl(u)}"` : `class="${cls} vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}"`;
+};
+const avAttrs = (p, cls, thumb) => {
+  const u = mediaUrl(thumb ? (p.avatarThumb || p.avatar) : p.avatar);
+  return u ? `class="${cls} ph-img" style="${bgUrl(u)}"` : `class="${cls}" style="background:${safeColor(p.color)}"`;
+};
+const avLetter = (p) => (mediaUrl(p.avatar) ? '' : esc((p.name || '?')[0]));
 function svGallery(s, lang = 'en') {
   const [T] = tFor(lang);
   const list = (s.media || []).filter((m) => mediaUrl(m.url));
@@ -871,8 +883,8 @@ function provCardHtml(p, lang = 'en') {
   const [T, TN] = tFor(lang);
   const n = Number(p.serviceCount) || 0;
   return `<article class="pcard" role="link" tabindex="0">
-    <div class="cover vpanel" style="--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}"></div>
-    <div class="av" style="background:${safeColor(p.color)}">${esc((p.name || '?')[0])}</div>
+    <div ${coverAttrs(p, 'cover', true)}></div>
+    <div ${avAttrs(p, 'av', true)}>${avLetter(p)}</div>
     <h3><a class="pcard-link" href="${esc(providerUrl(p.slug))}">${esc(p.name)}</a></h3>
     <div class="loc">${esc(p.location || T('Dubai'))}</div>
     <p>${esc(p.bio)}</p>
@@ -1023,9 +1035,11 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
     html = fill(html, 'svModal', svModalHtml(svc, lang));
     html = html.replace('<div class="scrim" id="svScrim"', '<div class="scrim open" id="svScrim"');
   }
-  html = attr(attr(html, 'pvHero', 'class', 'pv-hero vpanel'), 'pvHero', 'style', `--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}`);
-  html = attr(html, 'pvAv', 'style', `background:${safeColor(p.color)}`);
-  html = fill(html, 'pvAv', esc((p.name || '?')[0]));
+  const cv = mediaUrl(p.cover), av = mediaUrl(p.avatar);
+  html = attr(attr(html, 'pvHero', 'class', cv ? 'pv-hero ph-img' : 'pv-hero vpanel'), 'pvHero', 'style', cv ? `background-image:url("${cv}")` : `--t0:${safeColor(p.color)};--t1:${shade(safeColor(p.color), 24)}`);
+  html = attr(attr(html, 'pvAv', 'class', av ? 'pv-av ph-img' : 'pv-av'), 'pvAv', 'style', av ? `background-image:url("${av}")` : `background:${safeColor(p.color)}`);
+  if (av) html = attr(attr(html, 'pvAv', 'role', 'img'), 'pvAv', 'aria-label', T('Profile photo of {name}', { name: p.name }));
+  html = fill(html, 'pvAv', avLetter(p));
   html = fill(html, 'pvName', esc(p.name));
   html = fill(html, 'pvLoc', esc(p.location || T('Dubai')));
   html = fill(html, 'pvBio', esc(p.bio || ''));
@@ -1058,13 +1072,16 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
     ? TN(services.length, '{n} service, from {price}, booked in Dubai, Abu Dhabi and Sharjah. ', '{n} services, from {price}, booked in Dubai, Abu Dhabi and Sharjah. ', { price: moneyCents(minCents, lang) })
     : T('Book in Dubai, Abu Dhabi and Sharjah. ');
   const description = compose(head, p.bio || services.map((s) => s.title).join(lang === 'ar' ? '، ' : ', '), '');
+  // The page's share image: their background image, else their profile photo.
+  const provPic = mediaUrl(p.cover) || mediaUrl(p.avatar);
+  const provImage = provPic ? (provPic.startsWith('/') ? base + provPic : provPic) : '';
   const business = {
     '@type': ['LocalBusiness', 'ProfessionalService'],
     '@id': `${url}#provider`,
     name: p.name,
     url,
     description: p.bio || undefined,
-    image: `${base}${OG_IMAGE}`,
+    image: provImage || `${base}${OG_IMAGE}`,
     address: { '@type': 'PostalAddress', addressLocality: emirateEn, addressCountry: 'AE' },
     areaServed: [
       { '@type': 'City', name: 'Dubai', containedInPlace: { '@type': 'Country', name: 'United Arab Emirates' } },
@@ -1120,7 +1137,7 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
     };
     return {
       html: setHead(html, {
-        base, url: surl, lang, image: photos[0], imageAlt: photos[0] ? svc.title : undefined,
+        base, url: surl, lang, image: photos[0] || provImage || undefined, imageAlt: photos[0] ? svc.title : (provImage ? p.name : undefined),
         title: T('{title} · {name} · Trove Services Marketplace', { title: svc.title, name: p.name }),
         description: compose(T('{price}, booked in Dubai, Abu Dhabi and Sharjah. ', { price: priceLabel(svc, lang) }), svc.description || p.bio || '', ''),
         ld: [JSON.parse(JSON.stringify(serviceLd)), JSON.parse(JSON.stringify(business)),
@@ -1130,7 +1147,7 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
   }
   return {
     html: setHead(html, {
-      base, url, title, description, type: 'profile', lang,
+      base, url, title, description, type: 'profile', lang, image: provImage || undefined, imageAlt: provImage ? p.name : undefined,
       ld: [JSON.parse(JSON.stringify(business)), crumbLd(base, [['Trove', '/'], [T('Services Marketplace'), '/services'], [p.name, u]])],
     }),
   };

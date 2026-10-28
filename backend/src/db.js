@@ -426,6 +426,10 @@ addColumn('shipments', 'delivery_provider', "TEXT NOT NULL DEFAULT ''");
 // address is recorded so a save only accepts the provider's own upload and
 // the hourly sweep can delete one that was never saved onto a service.
 addColumn('services', 'media', "TEXT NOT NULL DEFAULT '[]'");
+// A provider's profile photo and the background image of their page
+// (2026-10-28; /uploads/providers URLs, '' = the colour tile and initial).
+addColumn('service_providers', 'avatar', "TEXT NOT NULL DEFAULT ''");
+addColumn('service_providers', 'cover', "TEXT NOT NULL DEFAULT ''");
 db.exec(`CREATE TABLE IF NOT EXISTS service_media_uploads (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   provider_id  INTEGER NOT NULL,

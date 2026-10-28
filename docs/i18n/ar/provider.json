@@ -283,5 +283,21 @@
   "Videos can be up to {sec} seconds.": "يمكن أن تصل مدة الفيديو إلى {sec} ثانية.",
   "The video didn’t upload — try again.": "لم يكتمل رفع الفيديو — حاول مرة أخرى.",
   "Wait for the video to finish uploading.": "انتظر حتى يكتمل رفع الفيديو.",
-  "Too many new photos for one save — save these, then add the rest.": "صور جديدة كثيرة في حفظ واحد — احفظ هذه أولاً ثم أضف البقية."
+  "Too many new photos for one save — save these, then add the rest.": "صور جديدة كثيرة في حفظ واحد — احفظ هذه أولاً ثم أضف البقية.",
+  "Photos on your page": "الصور على صفحتك",
+  "A profile photo — you or your logo — and a background image across the top of your page. Both show on the Services Marketplace.": "صورة شخصية — صورتك أو شعارك — وصورة خلفية في أعلى صفحتك. تظهر الاثنتان في سوق الخدمات.",
+  "Profile photo": "الصورة الشخصية",
+  "Background image": "صورة الخلفية",
+  "Add a profile photo": "أضف صورة شخصية",
+  "Change profile photo": "غيّر الصورة الشخصية",
+  "Remove profile photo": "إزالة الصورة الشخصية",
+  "Add a background image": "أضف صورة خلفية",
+  "Change background image": "غيّر صورة الخلفية",
+  "Remove background image": "إزالة صورة الخلفية",
+  "Profile photo saved": "تم حفظ الصورة الشخصية",
+  "Background image saved": "تم حفظ صورة الخلفية",
+  "Profile photo removed": "تمت إزالة الصورة الشخصية",
+  "Background image removed": "تمت إزالة صورة الخلفية",
+  "Remove your profile photo?": "هل تريد إزالة صورتك الشخصية؟",
+  "Remove your background image?": "هل تريد إزالة صورة الخلفية؟"
 }
