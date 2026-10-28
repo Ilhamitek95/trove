@@ -2,6 +2,11 @@
 
 Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
 
+## Email confirmation fix (28 Oct, laptop): LIVE `faa4fe2`
+- You reported users couldn't confirm their email. Cause: since 12 Oct (`b877b91`) the "Confirm your email" page sent `Referrer-Policy: no-referrer`, so browsers posted the button with `Origin: null` and the cross-site guard in app.js answered 403 "Not allowed". Every confirm failed.
+- Fix: the page now sends `same-origin` (the token still never reaches Google Fonts or other sites). Regression test in test/account-recovery.test.js; 888/888 tests; checked by clicking the button in real Chrome against a local server.
+- People who signed up 12–21 Oct have expired links (7 days). They press "Resend" on their account page, or simply carry on: unconfirmed accounts use the site as normal.
+
 ## Dashboard tour (27 Oct): LIVE for everyone (you said "push the tour on live website now")
 
 - **What it is:** a one-minute guided tour of the maker dashboard (/sell, 12 steps) and the provider dashboard (/provider, 9 steps). A spotlight moves from one part of the page to the next with a short card (Back, Next, Skip tour). It works on phones (the card sits at the bottom) and in Arabic.
