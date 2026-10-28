@@ -743,6 +743,7 @@ function renderAuth(){
     $('amName').textContent=u.name; $('amEmail').textContent=u.email;
     $('authLabel').textContent=_t('Sign out');
     $('authLink').removeAttribute('href'); $('authLink').style.cursor='pointer'; $('authLink').setAttribute('role','button'); $('authLink').tabIndex=0; $('authLink').onclick=signOut;
+    troveShowDashboard(ME); // a maker or provider gets the way back to their dashboard
   }else{
     $('amName').textContent=_t('Welcome'); $('amEmail').textContent=_t('Sign in to your account'); $('amAv').textContent='·';
     $('authLabel').textContent=_t('Sign in');

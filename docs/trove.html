@@ -3966,6 +3966,7 @@ async function loadAuth(){
     $('authLink').style.cursor='pointer';
     $('authLink').setAttribute('role','button');$('authLink').tabIndex=0;
     $('authLink').onclick=signOut;
+    troveShowDashboard(session); // a maker or provider gets the way back to their dashboard
     if($('coEmail'))$('coEmail').value=ME.email;
     try{
       const {addresses}=await TroveAPI.api('/api/account/addresses');

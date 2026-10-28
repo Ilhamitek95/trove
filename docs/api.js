@@ -81,6 +81,15 @@
   };
   window.troveUrl = function (u) { return LANG === 'ar' ? arUrl(u) : String(u == null ? '' : u); };
   window.trovePath = function (u) { return stripAr(u == null ? location.pathname : u); };
+  /* The dashboard a signed-in account runs, so the storefront's menus can
+     lead back to it: a shop (or the admin's Trove Collection) → /sell, where
+     the Services tab also lives; services only → /provider; a buyer → null. */
+  window.troveDashboard = function (session) {
+    if (!session || !session.user) return null;
+    if (session.shop) return { href: window.troveUrl('/sell'), label: window._t('Your shop dashboard') };
+    if (session.provider) return { href: window.troveUrl('/provider'), label: window._t('Your provider dashboard') };
+    return null;
+  };
   /* The header's language switch: the same page in the other language.
      English is asked for with ?hl=en, which tells the server to forget a
      remembered Arabic choice (cookie + account). */

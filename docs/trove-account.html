@@ -1260,6 +1260,14 @@ async function boot(){
   }
   if(!session||!session.user){ location.href=troveUrl('/login'); return; }
   ME=session.user; initUser();
+  // A maker or provider shopping on the same account: the way back to their dashboard.
+  const dash=troveDashboard(session);
+  if(dash){
+    const a=document.createElement('a'); a.href=dash.href;
+    a.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>';
+    a.append(dash.label);
+    $('signOutLink').before(a); // after 'Continue shopping', whose arrow the RTL rule flips as first child
+  }
   await Promise.all([reloadOrders(), reloadAddresses(), reloadReviews(), reloadBookings()]);
   // A brand-new account isn't 'back' yet (F401).
   if(!ordersErr&&!orders.length&&!bookings.length)TITLES.overview[1]=_t('Welcome');

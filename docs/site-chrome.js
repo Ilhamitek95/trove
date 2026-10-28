@@ -78,6 +78,27 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
+  /* The way back to a maker's or provider's dashboard: signed in with a shop
+     or services, the account menu's 'Sell on Trove ↗' becomes 'Your shop
+     dashboard' / 'Your provider dashboard', and the mobile menu gets the
+     same link. Without it a provider who clicked the logo had only buyer
+     links, and 'Sell on Trove' sent them to the apply form. Every page with
+     the header calls this once it knows the session. */
+  window.troveShowDashboard = function (session) {
+    var d = window.troveDashboard ? window.troveDashboard(session) : null;
+    if (!d) return;
+    var a = document.querySelector('#acctMenu a.sell');
+    if (a) { a.href = d.href; a.lastChild.textContent = d.label; }
+    var foot = document.querySelector('#mnav .mn-foot');
+    if (foot && !foot.querySelector('.mn-dash')) {
+      var m = document.createElement('a');
+      m.className = 'mn-dash'; m.href = d.href;
+      m.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l1.5-5h15L21 9M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/></svg>';
+      m.appendChild(document.createTextNode(d.label));
+      foot.insertBefore(m, foot.querySelector('.mn-lang'));
+    }
+  };
+
   if (ownChrome) return;
 
   /* ---------------- 2. the header on the server-rendered pages ---------------- */
@@ -123,6 +144,7 @@
     var a = $('authLink'); a.removeAttribute('href'); a.style.cursor = 'pointer';
     a.setAttribute('role', 'button'); a.tabIndex = 0;
     a.onclick = async function () { try { await TroveAPI.logout(); } catch (_) {} location.href = window.troveUrl ? troveUrl('/') : '/'; };
+    window.troveShowDashboard(me);
   }
   updateCartCount();
   renderAuth();
