@@ -16,7 +16,7 @@
  */
 (function () {
   'use strict';
-  const PP = { provider: null, tax: null, services: [], bookings: [], payout: null, payoutEditing: false, payoutOpen: false, editing: null, confirming: null, closing: null, els: {}, opts: {} };
+  const PP = { provider: null, tax: null, services: [], bookings: [], media: [], payout: null, payoutEditing: false, payoutOpen: false, editing: null, confirming: null, closing: null, els: {}, opts: {} };
   const $ = (id) => document.getElementById(id);
   // Every API string that reaches innerHTML goes through esc().
   const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -76,6 +76,18 @@
 .pp .pp-field input,.pp .pp-field select,.pp .pp-field textarea{width:100%;border:1px solid var(--line,rgba(41,39,39,.12));border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;font-weight:500;background:var(--cream,#FDF7F5);color:var(--char,#292727);outline:none}
 .pp .pp-field input:focus,.pp .pp-field select:focus,.pp .pp-field textarea:focus{border-color:var(--char,#292727)}
 .pp .pp-field textarea{resize:vertical;min-height:90px;line-height:1.5}
+.pp .pp-media{display:flex;flex-wrap:wrap;gap:10px}
+.pp .pp-mt{position:relative;width:104px;height:104px;border-radius:12px;overflow:hidden;background:var(--rose-tint,#F2E9E4)}
+.pp .pp-mt img{width:100%;height:100%;object-fit:cover;display:block}
+.pp .pp-mt .cv{position:absolute;top:6px;inset-inline-start:6px;font-size:10.5px;font-weight:700;background:var(--cream,#FDF7F5);padding:2px 8px;border-radius:999px}
+.pp .pp-mt .vd{position:absolute;top:6px;inset-inline-end:6px;width:22px;height:22px;border-radius:50%;background:rgba(41,39,39,.72);color:var(--cream,#FDF7F5);display:grid;place-items:center}
+.pp .pp-mt .acts{position:absolute;bottom:5px;left:5px;right:5px;display:flex;gap:4px;justify-content:flex-end}
+.pp .pp-mt .acts button{width:26px;height:26px;border-radius:50%;background:rgba(253,247,245,.94);color:var(--char,#292727);border:0;font-family:inherit;font-size:14px;font-weight:700;line-height:1;padding:0;cursor:pointer;display:grid;place-items:center}
+.pp .pp-mt .acts button:disabled{opacity:.35;cursor:default}
+.pp .pp-mt .prog{position:absolute;inset:0;background:rgba(41,39,39,.6);color:var(--cream,#FDF7F5);display:grid;place-items:center;font-size:12px;font-weight:700;text-align:center;padding:6px}
+.pp .pp-madd{width:104px;height:104px;border-radius:12px;border:1.5px dashed var(--line,rgba(41,39,39,.25));display:grid;place-items:center;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;background:none;color:var(--char,#292727);text-align:center;padding:6px}
+.pp .pp-madd:hover{border-color:var(--char,#292727)}
+[dir="rtl"] .pp .pp-mt .acts .mv{transform:scaleX(-1)}
 .pp .pp-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .pp .pp-three{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 @media(max-width:560px){.pp .pp-two,.pp .pp-three{grid-template-columns:1fr}}
@@ -507,6 +519,12 @@
         <div class="pp-field"><label for="ppEdDuration">${_t('How long? <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>')}</label><input id="ppEdDuration" maxlength="60" placeholder="${esc(_t('e.g. 2–3 hours'))}"></div>
       </div>
       <div class="pp-field"><label for="ppEdDesc">${_t('Description')}</label><textarea id="ppEdDesc" maxlength="2000" placeholder="${esc(_t("What's included, what you bring, how many people it suits, how booking works."))}"></textarea></div>
+      <div class="pp-field"><label id="ppEdMediaLbl">${_t('Photos and videos <span style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span>')}</label>
+        <div class="pp-hint" id="ppEdMediaHint"></div>
+        <div class="pp-media" id="ppEdMedia" role="list" aria-labelledby="ppEdMediaLbl"></div>
+        <input type="file" id="ppEdPhotoFile" accept="image/jpeg,image/png,image/webp" multiple hidden onchange="ProviderPanel.addPhotos(this.files)">
+        <input type="file" id="ppEdVideoFile" accept="video/mp4,video/quicktime,video/webm" hidden onchange="ProviderPanel.addVideo(this.files)">
+      </div>
       <div class="pp-actions">
         <button type="button" class="pp-btn pp-ghost" onclick="ProviderPanel.closeEditor()">${_t('Cancel')}</button>
         <button class="pp-btn pp-dark" id="ppEdSave" onclick="ProviderPanel.saveService()">${_t('Save service')}</button>
@@ -539,6 +557,135 @@
         ? _t('Nothing listed yet — add your first service and set it live to appear on the Services Marketplace.')
         : _t('Nothing listed yet — add your first service and it’s ready the moment you’re approved.')}</div>`;
   }
+  /* Photos and videos on a service (owner, 28 Oct 2026). The editor keeps
+     the whole list and sends it with every save: data URLs for new photos and
+     video cover frames, the stored addresses for kept ones, and for a new
+     video the key of the file this browser already sent straight to video
+     storage (backend/src/service-media.js). The first item is the cover. */
+  const mediaLimits = () => (PP.provider && PP.provider.media) || { maxItems: 8, maxVideos: 2, video: false, videoMaxMb: 50, videoMaxSeconds: 60 };
+  const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
+  const PLAY = '<svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  function mediaErr(m) { const e = $('ppEdErr'); e.textContent = m; e.style.display = 'block'; }
+  function renderMedia() {
+    const box = $('ppEdMedia'); if (!box) return;
+    const L = mediaLimits(), list = PP.media, n = list.length;
+    const videos = list.filter((m) => m.type === 'video').length;
+    $('ppEdMediaHint').textContent = _t('Up to {max} — the first one is the cover of your service card.', { max: L.maxItems }) + ' ' +
+      (L.video ? _t('Videos: up to {n}, {sec} seconds and {mb} MB each. MP4 plays everywhere.', { n: L.maxVideos, sec: L.videoMaxSeconds, mb: L.videoMaxMb })
+        : _t('Videos aren’t switched on yet — photos only for now.'));
+    box.innerHTML = list.map((m, i) => {
+      const name = m.type === 'video' ? _t('Video {n}', { n: i + 1 }) : _t('Photo {n}', { n: i + 1 });
+      return `<div class="pp-mt" role="listitem" aria-label="${esc(name)}">
+        ${m.thumb ? `<img src="${esc(m.thumb)}" alt="">` : ''}
+        ${i === 0 ? `<span class="cv">${_t('Cover')}</span>` : ''}
+        ${m.type === 'video' ? `<span class="vd">${PLAY}</span>` : ''}
+        ${m.uploading != null ? `<span class="prog">${_t('Uploading… {pct}%', { pct: m.uploading })}</span>` : ''}
+        <span class="acts">
+          <button type="button" class="mv" ${i === 0 ? 'disabled' : ''} aria-label="${esc(_t('Move {name} earlier', { name }))}" onclick="ProviderPanel.moveMedia(${i},-1)">‹</button>
+          <button type="button" class="mv" ${i === n - 1 ? 'disabled' : ''} aria-label="${esc(_t('Move {name} later', { name }))}" onclick="ProviderPanel.moveMedia(${i},1)">›</button>
+          <button type="button" aria-label="${esc(_t('Remove {name}', { name }))}" onclick="ProviderPanel.removeMedia(${i})">×</button>
+        </span></div>`;
+    }).join('') +
+      (n < L.maxItems ? `<button type="button" class="pp-madd" onclick="document.getElementById('ppEdPhotoFile').click()">${_t('+ Photo')}</button>` : '') +
+      (n < L.maxItems && L.video && videos < L.maxVideos ? `<button type="button" class="pp-madd" onclick="document.getElementById('ppEdVideoFile').click()">${_t('+ Video')}</button>` : '');
+  }
+  function moveMedia(i, d) {
+    const j = i + d; if (j < 0 || j >= PP.media.length) return;
+    const [m] = PP.media.splice(i, 1); PP.media.splice(j, 0, m); renderMedia();
+  }
+  function removeMedia(i) {
+    const m = PP.media[i]; if (!m) return;
+    if (m.xhr) m.xhr.abort();
+    PP.media.splice(i, 1); renderMedia();
+  }
+  // A canvas copy no wider/taller than `max` px, as a JPEG data URL.
+  function canvasOf(src, w, h, max) {
+    const k = Math.min(1, max / Math.max(w, h));
+    const c = document.createElement('canvas'); c.width = Math.round(w * k); c.height = Math.round(h * k);
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, c.width, c.height);
+    return c;
+  }
+  // The 480 px copy cards use (uploads.smallOf); none when the photo is already that small.
+  function smallOf(c) { return c.width > 480 ? canvasOf(c, c.width, c.height, 480 * Math.max(c.width, c.height) / c.width).toDataURL('image/jpeg', 0.8) : null; }
+  function addPhotos(files) {
+    const room = mediaLimits().maxItems - PP.media.length;
+    [...files].slice(0, Math.max(0, room)).forEach((f) => {
+      const url = URL.createObjectURL(f), im = new Image();
+      im.onload = () => {
+        const c = canvasOf(im, im.naturalWidth, im.naturalHeight, 1600);
+        URL.revokeObjectURL(url);
+        const src = c.toDataURL('image/jpeg', 0.85), small = smallOf(c);
+        if (PP.media.length >= mediaLimits().maxItems) return;
+        PP.media.push({ type: 'image', src, small, thumb: small || src }); renderMedia();
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); mediaErr(_t('That file isn’t a photo we can use.')); };
+      im.src = url;
+    });
+    $('ppEdPhotoFile').value = '';
+  }
+  // Duration and a cover frame, read in the browser. A format this browser
+  // can't decode (an iPhone HEVC .mov on some PCs) still uploads, with a plain cover.
+  function probeVideo(file) {
+    return new Promise((resolve) => {
+      const v = document.createElement('video'), url = URL.createObjectURL(file);
+      let done = false;
+      const finish = (r) => { if (done) return; done = true; URL.revokeObjectURL(url); resolve(r); };
+      v.muted = true; v.playsInline = true; v.preload = 'auto';
+      v.onloadedmetadata = () => { v.currentTime = Math.min(0.5, (v.duration || 1) / 2); };
+      v.onseeked = () => {
+        try { const c = canvasOf(v, v.videoWidth, v.videoHeight, 1280); finish({ duration: v.duration, poster: c.toDataURL('image/jpeg', 0.82), posterSmall: smallOf(c) }); }
+        catch (_) { finish({ duration: v.duration }); }
+      };
+      v.onerror = () => finish({});
+      setTimeout(() => finish({ duration: v.duration }), 8000);
+      v.src = url;
+    });
+  }
+  function plainPoster() {
+    const c = document.createElement('canvas'); c.width = 640; c.height = 480;
+    const g = c.getContext('2d'); g.fillStyle = '#DBC7BD'; g.fillRect(0, 0, 640, 480);
+    g.fillStyle = '#292727'; g.globalAlpha = 0.72; g.beginPath(); g.arc(320, 240, 44, 0, Math.PI * 2); g.fill();
+    g.globalAlpha = 1; g.fillStyle = '#FDF7F5'; g.beginPath(); g.moveTo(306, 218); g.lineTo(306, 262); g.lineTo(342, 240); g.closePath(); g.fill();
+    return { poster: c.toDataURL('image/jpeg', 0.85), posterSmall: smallOf(c) };
+  }
+  async function addVideo(files) {
+    const f = files && files[0]; $('ppEdVideoFile').value = ''; if (!f) return;
+    const L = mediaLimits();
+    $('ppEdErr').style.display = 'none';
+    if (!VIDEO_TYPES.includes(f.type)) return mediaErr(_t('Upload an MP4, MOV or WebM video.'));
+    if (f.size > L.videoMaxMb * 1024 * 1024) return mediaErr(_t('Videos must be under {mb} MB.', { mb: L.videoMaxMb }));
+    if (PP.media.length >= L.maxItems || PP.media.filter((m) => m.type === 'video').length >= L.maxVideos) return;
+    const probe = await probeVideo(f);
+    if (probe.duration && probe.duration > L.videoMaxSeconds + 0.5) return mediaErr(_t('Videos can be up to {sec} seconds.', { sec: L.videoMaxSeconds }));
+    const frame = probe.poster ? probe : plainPoster();
+    const item = { type: 'video', poster: frame.poster, posterSmall: frame.posterSmall, thumb: frame.posterSmall || frame.poster, uploading: 0 };
+    PP.media.push(item); renderMedia();
+    try {
+      const up = await api('/api/provider/media/video', { method: 'POST', body: { contentType: f.type, size: f.size } });
+      await new Promise((resolve, reject) => {
+        const x = new XMLHttpRequest(); item.xhr = x;
+        x.open('PUT', up.uploadUrl);
+        x.setRequestHeader('Content-Type', up.contentType);
+        x.upload.onprogress = (e) => { if (e.lengthComputable) { const pct = Math.floor((e.loaded / e.total) * 100); if (pct !== item.uploading) { item.uploading = pct; renderMedia(); } } };
+        x.onload = () => (x.status >= 200 && x.status < 300 ? resolve() : reject(new Error('upload')));
+        x.onerror = () => reject(new Error('upload'));
+        x.onabort = () => reject(new Error('abort'));
+        x.send(f);
+      });
+      item.key = up.key; item.url = up.url; delete item.uploading; delete item.xhr;
+      renderMedia();
+    } catch (e) {
+      const i = PP.media.indexOf(item);
+      if (i !== -1) { PP.media.splice(i, 1); renderMedia(); }
+      if (e.message !== 'abort') mediaErr(e.message && e.message !== 'upload' ? e.message : _t('The video didn’t upload — try again.'));
+    }
+  }
+  function mediaBody() {
+    return PP.media.map((m) => (m.type === 'video'
+      ? { type: 'video', key: m.key, poster: m.poster, ...(m.posterSmall ? { posterSmall: m.posterSmall } : {}) }
+      : { type: 'image', src: m.src, ...(m.small ? { small: m.small } : {}) }));
+  }
+
   function openEditor(id) {
     const ed = $('ppEditor'); if (!ed) return;
     PP.editing = id ? PP.services.find((s) => s.id === id) : null;
@@ -554,6 +701,11 @@
     $('ppEdPriceType').value = E ? E.priceType : 'fixed';
     $('ppEdDuration').value = E ? E.duration : '';
     $('ppEdDesc').value = E ? E.description : '';
+    (PP.media || []).forEach((m) => { if (m.xhr) m.xhr.abort(); });
+    PP.media = E ? (E.media || []).map((m) => (m.type === 'video'
+      ? { type: 'video', key: m.key, url: m.url, poster: m.poster, thumb: m.thumb || m.poster }
+      : { type: 'image', src: m.url, thumb: m.thumb || m.url })) : [];
+    renderMedia();
     if (ed.style.display !== 'block') PP.edRet = document.activeElement;
     ed.style.display = 'block';
     if (PP.opts.onOpenEditor) PP.opts.onOpenEditor();
@@ -577,7 +729,11 @@
       description: $('ppEdDesc').value.trim(), priceCents: price,
       priceType: $('ppEdPriceType').value, duration: $('ppEdDuration').value.trim(),
       setting: $('ppEdSetting').value,
+      media: mediaBody(),
     };
+    if (PP.media.some((m) => m.uploading != null)) return show(_t('Wait for the video to finish uploading.'));
+    // The server takes up to 6 MB per save; eight brand-new photos can pass that.
+    if (JSON.stringify(body).length > 5.8 * 1024 * 1024) return show(_t('Too many new photos for one save — save these, then add the rest.'));
     const btn = $('ppEdSave'); btn.disabled = true; btn.textContent = _t('Saving…');
     try {
       if (PP.editing) await api('/api/provider/services/' + PP.editing.id, { method: 'PATCH', body });
@@ -807,6 +963,7 @@
     init(opts) { PP.opts = opts || {}; injectCss(); return load(); },
     mountOverview, mountServices, mountBookings, mountRequests, showRequests, refresh, stats,
     openEditor, closeEditor, saveService, toggleLive, deleteService, actBooking, declineBooking,
+    addPhotos, addVideo, moveMedia, removeMedia,
     openConfirm, sendConfirm, cancelBooking, openClose, sendClose,
     toggleProfCat, saveProfile, openPreview, closePreview, focusProfile,
     savePayout, usePayoutShop, editPayout, focusPayouts, payoutToggled,

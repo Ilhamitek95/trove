@@ -154,5 +154,18 @@
   "The identity check is not available right now — please try again later, or add photos of your Emirates ID instead": "The identity check is not available right now — please try again later, or add photos of your Emirates ID instead",
   "You have started several checks today. Please try again tomorrow, or send photos of your Emirates ID instead.": "You have started several checks today. Please try again tomorrow, or send photos of your Emirates ID instead.",
   "We currently deliver in Dubai, Abu Dhabi and Sharjah only": "We currently deliver in Dubai, Abu Dhabi and Sharjah only",
-  "The Services Marketplace is available in Dubai, Abu Dhabi and Sharjah only": "The Services Marketplace is available in Dubai, Abu Dhabi and Sharjah only"
+  "The Services Marketplace is available in Dubai, Abu Dhabi and Sharjah only": "The Services Marketplace is available in Dubai, Abu Dhabi and Sharjah only",
+  "Video uploads aren’t switched on yet": "Video uploads aren’t switched on yet",
+  "Upload an MP4, MOV or WebM video": "Upload an MP4, MOV or WebM video",
+  "Videos must be under 50 MB": "Videos must be under 50 MB",
+  "Up to 8 photos and videos per service": "Up to 8 photos and videos per service",
+  "Up to 2 videos per service": "Up to 2 videos per service",
+  "That’s a lot of videos for one day — try again tomorrow": "That’s a lot of videos for one day — try again tomorrow",
+  "That photo isn’t on this service": "That photo isn’t on this service",
+  "That video is in the list twice": "That video is in the list twice",
+  "Each video needs a cover frame": "Each video needs a cover frame",
+  "That video upload wasn’t found — add it again": "That video upload wasn’t found — add it again",
+  "Couldn’t reach video storage — try again in a moment": "Couldn’t reach video storage — try again in a moment",
+  "That video didn’t finish uploading — add it again": "That video didn’t finish uploading — add it again",
+  "Each item must be a photo or a video": "Each item must be a photo or a video"
 }

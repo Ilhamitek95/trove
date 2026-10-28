@@ -373,7 +373,27 @@
     .modal{border-radius:22px 22px 0 0;max-height:94vh;overflow-y:auto;padding:22px 20px 30px;-webkit-overflow-scrolling:touch}
     .modal h3,.modal h1{font-size:24px}
   }
-  .modal .x{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--rose-tint)}
+  .modal .x{position:absolute;top:16px;right:16px;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--rose-tint);z-index:3}
+  /* A service's photos and videos: the card's cover, and a swipe carousel in the dialog. */
+  .svtile.ph{background-size:cover;background-position:center;height:150px}
+  .svtile.ph::before{display:none}
+  .svplay{position:absolute;inset-inline-end:10px;bottom:10px;width:28px;height:28px;border-radius:50%;background:rgba(41,39,39,.72);color:var(--cream);display:grid;place-items:center}
+  .svplay svg{margin-inline-start:2px}
+  .svgal{position:relative;margin:0 0 18px;border-radius:16px;overflow:hidden;background:var(--rose-tint)}
+  .svg-track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+  .svg-track::-webkit-scrollbar{display:none}
+  .svg-track:focus-visible{outline:3px solid var(--char);outline-offset:-3px}
+  .svg-slide{flex:0 0 100%;scroll-snap-align:center;margin:0;aspect-ratio:4/3}
+  .svg-slide img,.svg-slide video{width:100%;height:100%;object-fit:cover;display:block}
+  .svg-slide video{object-fit:contain;background:var(--char)}
+  .svg-nav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(253,247,245,.92);color:var(--char);display:grid;place-items:center;border:0;cursor:pointer;z-index:2}
+  .svg-nav.prev{inset-inline-start:10px}.svg-nav.next{inset-inline-end:10px}
+  .svg-nav[disabled]{opacity:0;pointer-events:none}
+  .svg-dots{position:absolute;bottom:10px;left:0;right:0;display:flex;justify-content:center;gap:6px;pointer-events:none;z-index:2}
+  .svg-dots button{pointer-events:auto;width:7px;height:7px;border-radius:4px;background:rgba(253,247,245,.65);border:0;padding:0;cursor:pointer;transition:width .15s}
+  .svg-dots button[aria-current="true"]{background:var(--cream);width:18px}
+  @media(hover:none){.svg-nav{display:none}}
+  @media(max-width:620px){.svtile.ph{height:110px}.svgal{margin:-2px -4px 16px}}
   .modal h3,.modal h1{font-size:28px;line-height:1.1;padding-right:40px}
   .modal .who{font-size:13px;color:var(--muted);font-weight:600;margin-top:6px}
   .modal .desc{font-size:14px;font-weight:400;color:var(--ink-80);line-height:1.65;margin:14px 0 4px;white-space:pre-line}
@@ -455,6 +475,7 @@
   [dir="rtl"] .svbody .meta .sv-req{margin-left:0;margin-right:8px}
   [dir="rtl"] .bv-rows b{text-align:left}
   [dir="rtl"] .modal .x{right:auto;left:16px}
+  [dir="rtl"] .svg-nav svg{transform:scaleX(-1)}
   [dir="rtl"] .modal h3,[dir="rtl"] .modal h1{padding-right:0;padding-left:40px}
   [dir="rtl"] .bkcard .s bdi,[dir="rtl"] .kick bdi,[dir="rtl"] .booked .code{direction:ltr;unicode-bidi:isolate}
   [dir="rtl"] .payopt,[dir="rtl"] .terms,[dir="rtl"] .field label{text-align:right}
@@ -756,6 +777,60 @@ function svTile(s){
   return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat?cat.name:_t('Service'))}</span></div>`;
 }
 
+/* A service's photos and videos (owner, 28 Oct 2026): the first is the card's
+   cover, the dialog shows them all as a swipe carousel. backend/src/seo.js
+   (svCover/svGallery) draws the same markup for the server-rendered page. */
+const mediaUrl=u=>/^(\/uploads\/[A-Za-z0-9._\/-]+|https:\/\/[^"'()\\\s<>]+)$/.test(String(u||''))?String(u):'';
+const PLAY_ICON='<span class="svplay" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>';
+function svCover(s){
+  const m=(s.media||[])[0];
+  const img=m&&mediaUrl(m.thumb||(m.type==='video'?m.poster:m.url));
+  if(!img)return svTile(s);
+  return `<div class="svtile ph" aria-hidden="true" style="background-image:url(&quot;${esc(img)}&quot;)">${m.type==='video'?PLAY_ICON:''}</div>`;
+}
+function svGallery(s){
+  const list=(s.media||[]).filter(m=>mediaUrl(m.url));
+  if(!list.length)return '';
+  const n=list.length;
+  const slides=list.map((m,i)=>{
+    const body=m.type==='video'
+      ?`<video src="${esc(mediaUrl(m.url))}"${mediaUrl(m.poster)?` poster="${esc(mediaUrl(m.poster))}"`:''} controls playsinline preload="none"></video>`
+      :`<img src="${esc(mediaUrl(m.url))}" alt="${esc(_t('{title}, photo {n}',{title:s.title,n:i+1}))}"${i?' loading="lazy"':''}>`;
+    return `<figure class="svg-slide" role="group" aria-roledescription="slide" aria-label="${esc(_t('{n} of {total}',{n:i+1,total:n}))}">${body}</figure>`;
+  }).join('');
+  const nav=n>1?`<button type="button" class="svg-nav prev" aria-label="${esc(_t('Previous'))}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button><button type="button" class="svg-nav next" aria-label="${esc(_t('Next'))}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button><div class="svg-dots">${list.map((_,i)=>`<button type="button" aria-label="${esc(_t('Show {n} of {total}',{n:i+1,total:n}))}"${i?'':' aria-current="true"'}></button>`).join('')}</div>`:'';
+  return `<div class="svgal" role="region" aria-roledescription="carousel" aria-label="${esc(_t('Photos and videos of {title}',{title:s.title}))}"><div class="svg-track" tabindex="0">${slides}</div>${nav}</div>`;
+}
+/* One set of listeners for every carousel, the server-drawn one included. */
+function galIndex(track){return Math.round(Math.abs(track.scrollLeft)/Math.max(1,track.clientWidth));}
+function galGo(gal,i){
+  const track=gal.querySelector('.svg-track'),n=track.children.length;
+  i=Math.max(0,Math.min(n-1,i));
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dir=getComputedStyle(track).direction==='rtl'?-1:1;
+  track.scrollTo({left:dir*i*track.clientWidth,behavior:still?'auto':'smooth'});
+}
+function galSync(track){
+  const gal=track.closest('.svgal'),i=galIndex(track),n=track.children.length;
+  gal.querySelectorAll('.svg-dots button').forEach((b,k)=>b.setAttribute('aria-current',k===i?'true':'false'));
+  const p=gal.querySelector('.svg-nav.prev'),x=gal.querySelector('.svg-nav.next');
+  if(p)p.disabled=i===0; if(x)x.disabled=i>=n-1;
+  track.querySelectorAll('video').forEach(v=>{if(v.closest('.svg-slide')!==track.children[i]&&!v.paused)v.pause();});
+}
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('.svgal .svg-nav,.svgal .svg-dots button');if(!b)return;
+  const gal=b.closest('.svgal'),track=gal.querySelector('.svg-track');
+  if(b.classList.contains('svg-nav'))galGo(gal,galIndex(track)+(b.classList.contains('next')?1:-1));
+  else galGo(gal,[...b.parentNode.children].indexOf(b));
+});
+document.addEventListener('scroll',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('svg-track'))galSync(t);},true);
+document.addEventListener('keydown',e=>{
+  const t=e.target;if(!t||!t.classList||!t.classList.contains('svg-track')||(e.key!=='ArrowLeft'&&e.key!=='ArrowRight'))return;
+  e.preventDefault();const rtl=getComputedStyle(t).direction==='rtl';
+  galGo(t.closest('.svgal'),galIndex(t)+((e.key==='ArrowRight')!==rtl?1:-1));
+});
+function galStart(root){root.querySelectorAll('.svg-track').forEach(galSync);}
+
 /* ---------------- rendering ---------------- */
 const AUD_ICON={
   home:{tint:'#CAD5CC',svg:'<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>'},
@@ -812,7 +887,7 @@ function svCardHTML(s){
   // The title is the service's own address (F339): a plain click opens it here,
   // a new-tab click (or a copied link) lands on its own page.
   return `<div class="svcard" onclick="openService(${Number(s.id)})">
-    ${svTile(s)}
+    ${svCover(s)}
     <div class="svbody">
       <div class="t">${s.path?`<a class="svlink" href="${esc(s.path)}" onclick="event.stopPropagation();if(event.metaKey||event.ctrlKey||event.shiftKey||event.button)return true;openService(${Number(s.id)});return false">${esc(s.title)}</a>`:esc(s.title)}</div>
       <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="event.stopPropagation();openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}</div>
@@ -1012,6 +1087,7 @@ function openService(id,push=true){
   // provider directly stays possible, second.
   $('svModal').innerHTML=`
     <button class="x" onclick="closeModal()" aria-label="${esc(_t('Close this service'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    ${svGallery(s)}
     <h3 id="svTitle">${esc(s.title)}</h3>
     <div class="who"><a class="wholink" href="/services/${esc(s.provider.slug)}" onclick="closeModal(false);openProvider(${jsq(s.provider.slug)});return false">${esc(s.provider.name)}</a> · ${esc(s.provider.location||_t('Dubai'))}${cat?` · ${esc(cat.name)}`:''}</div>
     ${s.description?`<div class="desc">${esc(s.description)}</div>`:''}
@@ -1048,6 +1124,7 @@ function openService(id,push=true){
   }
   $('svScrim').classList.add('open');
   document.body.style.overflow='hidden';
+  galStart($('svModal'));
   cookiePad();
   TroveDialog.open($('svModal'),{onClose:closeModal,opener:MODAL_OPENER||document.activeElement,focus:$('svModal')});
   MODAL_OPENER=null;
@@ -1066,6 +1143,7 @@ function cookiePad(){
 function closeModal(pop){
   if(!$('svScrim').classList.contains('open'))return;
   $('svScrim').classList.remove('open');document.body.style.overflow='';TroveDialog.close($('svModal'));
+  $('svModal').querySelectorAll('video').forEach(v=>{if(!v.paused)v.pause();});
   if(pop===false)return;
   const sv=trovePath(location.pathname).match(SV_RE);
   if(!sv)return;

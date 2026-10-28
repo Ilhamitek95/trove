@@ -50,7 +50,7 @@ const TABLES_WIPED = [
 
 /* The folders the app writes (src/uploads.js, settlement.js); nothing else
    under uploads/ or private/ is ever touched. */
-const UPLOAD_FOLDERS = ['shops', 'products', 'reviews'];
+const UPLOAD_FOLDERS = ['shops', 'products', 'reviews', 'services'];
 const PRIVATE_FOLDERS = ['ids', 'licenses', 'returns', 'purchase-notes'];
 
 /* Translated entities (src/translate.js ENTITIES) and the table each lives in. */
@@ -254,6 +254,10 @@ function survivingFileRefs(db, live) {
   for (const pr of db.prepare(`SELECT images FROM products WHERE id IN ${inList(live.products)}`).all()) {
     for (const u of parseList(pr.images)) ups.add(u);
   }
+  // A kept provider's service photos and video cover frames.
+  for (const sv of db.prepare(`SELECT media FROM services WHERE provider_id IN ${inList(live.providers)}`).all()) {
+    for (const m of parseList(sv.media)) { if (m && m.url && m.type === 'image') ups.add(m.url); if (m && m.poster) ups.add(m.poster); }
+  }
   // Anything the site's own copy points at (an image in Site content) stays.
   const content = db.prepare('SELECT value FROM site_content').all().map((r) => r.value).join('\n');
   // reviews, returns and purchase notes are all wiped, so nothing of theirs survives.
@@ -297,6 +301,11 @@ function run(db, opts = {}) {
     if (translated) translationOrphans(db, live, false);
     for (const t of tables) db.prepare(`DELETE FROM ${t}`).run();
     db.prepare(`DELETE FROM services WHERE provider_id NOT IN ${inList(live.providers)}`).run();
+    // Their videos live in R2, not on this disk: hand them to the hourly
+    // never-saved sweep (service-media.js sweepPending), which deletes them there.
+    if (haveTables(db).has('service_media_uploads')) {
+      db.prepare(`UPDATE service_media_uploads SET attached_at = NULL, created_at = '2000-01-01 00:00:00' WHERE provider_id NOT IN ${inList(live.providers)}`).run();
+    }
     db.prepare(`DELETE FROM service_providers WHERE id NOT IN ${inList(live.providers)}`).run();
     db.prepare(`DELETE FROM products WHERE id NOT IN ${inList(live.products)}`).run();
     db.prepare(`DELETE FROM shops WHERE id NOT IN ${inList(live.shops)}`).run();

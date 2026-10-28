@@ -226,6 +226,10 @@ if (process.env.NODE_ENV !== 'test' && process.env.CRON_DISABLED !== '1') {
     } catch (e) {
       console.error('session sweep failed:', e);
     }
+    // Service videos uploaded but never saved onto a service (service-media.js).
+    require('./service-media').sweepPending()
+      .then((n) => { if (n) console.log(`service videos: removed ${n} never-saved upload(s)`); })
+      .catch((e) => console.error('service video sweep failed:', e));
     if (sweepingOrders) return;
     sweepingOrders = true;
     const sweeps = require('./order-sweep');

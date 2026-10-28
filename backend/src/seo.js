@@ -829,11 +829,37 @@ function svTile(s, lang = 'en') {
   const cat = svcCat(s.category, lang);
   return `<div class="svtile" aria-hidden="true"><span class="svt-cat">${esc(cat ? cat.name : i18n.t(lang, 'Service'))}</span></div>`;
 }
+/* A service's photos and videos (src/service-media.js): the first is the
+   card's cover; the dialog shows them all as a swipe carousel. The page's
+   own script (trove-services.html svCover/svGallery) draws the same. */
+const mediaUrl = (u) => (/^(\/uploads\/[A-Za-z0-9._\/-]+|https:\/\/[^"'()\\\s<>]+)$/.test(String(u || '')) ? String(u) : '');
+const PLAY_ICON = '<span class="svplay" aria-hidden="true"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span>';
+function svCover(s, lang = 'en') {
+  const m = (s.media || [])[0];
+  const img = m && mediaUrl(m.thumb || (m.type === 'video' ? m.poster : m.url));
+  if (!img) return svTile(s, lang);
+  return `<div class="svtile ph" aria-hidden="true" style="background-image:url(&quot;${esc(img)}&quot;)">${m.type === 'video' ? PLAY_ICON : ''}</div>`;
+}
+function svGallery(s, lang = 'en') {
+  const [T] = tFor(lang);
+  const list = (s.media || []).filter((m) => mediaUrl(m.url));
+  if (!list.length) return '';
+  const n = list.length;
+  const slides = list.map((m, i) => {
+    const label = esc(T('{n} of {total}', { n: i + 1, total: n }));
+    const body = m.type === 'video'
+      ? `<video src="${esc(mediaUrl(m.url))}"${mediaUrl(m.poster) ? ` poster="${esc(mediaUrl(m.poster))}"` : ''} controls playsinline preload="none"></video>`
+      : `<img src="${esc(mediaUrl(m.url))}" alt="${esc(T('{title}, photo {n}', { title: s.title, n: i + 1 }))}"${i ? ' loading="lazy"' : ''}>`;
+    return `<figure class="svg-slide" role="group" aria-roledescription="slide" aria-label="${label}">${body}</figure>`;
+  }).join('');
+  const nav = n > 1 ? `<button type="button" class="svg-nav prev" aria-label="${esc(T('Previous'))}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg></button><button type="button" class="svg-nav next" aria-label="${esc(T('Next'))}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg></button><div class="svg-dots">${list.map((_, i) => `<button type="button" aria-label="${esc(T('Show {n} of {total}', { n: i + 1, total: n }))}"${i ? '' : ' aria-current="true"'}></button>`).join('')}</div>` : '';
+  return `<div class="svgal" role="region" aria-roledescription="carousel" aria-label="${esc(T('Photos and videos of {title}', { title: s.title }))}"><div class="svg-track" tabindex="0">${slides}</div>${nav}</div>`;
+}
 const catNames = (slugs, lang = 'en') => (slugs || []).map((sl) => { const c = svcCat(sl, lang); return c ? c.name : null; }).filter(Boolean);
 function svCardHtml(s, lang = 'en') {
   const [T] = tFor(lang);
   return `<div class="svcard" onclick="openService(${Number(s.id)})">
-    ${svTile(s, lang)}
+    ${svCover(s, lang)}
     <div class="svbody">
       <div class="t"><a class="svlink" href="${esc(s.path)}">${esc(s.title)}</a></div>
       <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || T('Dubai'))}</div>
@@ -959,6 +985,7 @@ function svModalHtml(s, lang = 'en') {
   const cat = svcCat(s.category, lang);
   return `
     <button class="x" onclick="closeModal()" aria-label="${esc(T('Close this service'))}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 6-12 12M6 6l12 12"/></svg></button>
+    ${svGallery(s, lang)}
     <h1 id="svTitle">${esc(s.title)}</h1>
     <div class="who"><a class="wholink" href="${esc(providerUrl(s.provider.slug))}">${esc(s.provider.name)}</a> · ${esc(s.provider.location || T('Dubai'))}${cat ? ` · ${esc(cat.name)}` : ''}</div>
     ${s.description ? `<div class="desc">${esc(s.description)}</div>` : ''}
@@ -1073,9 +1100,12 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
     const su = svc.path;
     const surl = base + su;
     const price = ((svc.priceCents || 0) / 100).toFixed(2);
+    const photos = (svc.media || []).map((m) => mediaUrl(m.type === 'video' ? m.poster : m.url)).filter(Boolean)
+      .map((u) => (u.startsWith('/') ? base + u : u));
     const serviceLd = {
       '@type': 'Service', '@id': `${surl}#service`, name: svc.title, url: surl,
       description: svc.description || undefined,
+      image: photos.length ? photos : undefined,
       serviceType: (svcCat(svc.category, lang) || {}).name,
       provider: { '@id': `${url}#provider` },
       areaServed: svc.setting === 'remote' ? 'AE' : ['Dubai', 'Abu Dhabi'],
@@ -1090,7 +1120,7 @@ function renderProvider(base, slug, lang = 'en', { serviceId = null } = {}) {
     };
     return {
       html: setHead(html, {
-        base, url: surl, lang,
+        base, url: surl, lang, image: photos[0], imageAlt: photos[0] ? svc.title : undefined,
         title: T('{title} · {name} · Trove Services Marketplace', { title: svc.title, name: p.name }),
         description: compose(T('{price}, booked in Dubai, Abu Dhabi and Sharjah. ', { price: priceLabel(svc, lang) }), svc.description || p.bio || '', ''),
         ld: [JSON.parse(JSON.stringify(serviceLd)), JSON.parse(JSON.stringify(business)),

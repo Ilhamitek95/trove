@@ -154,5 +154,18 @@
   "The identity check is not available right now — please try again later, or add photos of your Emirates ID instead": "فحص الهوية غير متاح حالياً — يُرجى المحاولة لاحقاً، أو إضافة صور هويتك الإماراتية بدلاً من ذلك",
   "You have started several checks today. Please try again tomorrow, or send photos of your Emirates ID instead.": "بدأت عدة فحوص اليوم. يُرجى المحاولة غداً، أو إرسال صور هويتك الإماراتية بدلاً من ذلك.",
   "We currently deliver in Dubai, Abu Dhabi and Sharjah only": "نوصل حالياً إلى دبي وأبوظبي والشارقة فقط",
-  "The Services Marketplace is available in Dubai, Abu Dhabi and Sharjah only": "سوق الخدمات متاح في دبي وأبوظبي والشارقة فقط"
+  "The Services Marketplace is available in Dubai, Abu Dhabi and Sharjah only": "سوق الخدمات متاح في دبي وأبوظبي والشارقة فقط",
+  "Video uploads aren’t switched on yet": "رفع الفيديو غير متاح بعد",
+  "Upload an MP4, MOV or WebM video": "ارفع فيديو بصيغة MP4 أو MOV أو WebM",
+  "Videos must be under 50 MB": "يجب أن يكون حجم الفيديو أقل من 50 ميغابايت",
+  "Up to 8 photos and videos per service": "حتى 8 صور ومقاطع فيديو لكل خدمة",
+  "Up to 2 videos per service": "حتى مقطعَي فيديو لكل خدمة",
+  "That’s a lot of videos for one day — try again tomorrow": "هذا عدد كبير من مقاطع الفيديو في يوم واحد — حاول مرة أخرى غداً",
+  "That photo isn’t on this service": "هذه الصورة ليست ضمن هذه الخدمة",
+  "That video is in the list twice": "هذا الفيديو مكرر في القائمة",
+  "Each video needs a cover frame": "يحتاج كل فيديو إلى صورة غلاف",
+  "That video upload wasn’t found — add it again": "لم نعثر على هذا الفيديو — أضفه مرة أخرى",
+  "Couldn’t reach video storage — try again in a moment": "تعذر الوصول إلى تخزين الفيديو — حاول مرة أخرى بعد قليل",
+  "That video didn’t finish uploading — add it again": "لم يكتمل رفع هذا الفيديو — أضفه مرة أخرى",
+  "Each item must be a photo or a video": "يجب أن يكون كل عنصر صورة أو فيديو"
 }

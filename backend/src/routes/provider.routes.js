@@ -15,6 +15,7 @@ const db = require('../db');
 const { requireProvider, notInShopView } = require('../middleware');
 const tax = require('../service-taxonomy');
 const fees = require('../fees');
+const media = require('../service-media');
 
 const router = express.Router();
 // Arabic (src/translate.js): a save queues its translation; it never waits for it.
@@ -41,6 +42,7 @@ function providerMe(p) {
     commissionPercent: fees.SERVICE_COMMISSION_PERCENT,
     earnings: require('../service-credits').providerBalances(p.id),
     agreement: { version: p.agreement_version || '', acceptedAt: p.agreement_accepted_at || null },
+    media: media.limits(),
     createdAt: p.created_at,
   };
 }
@@ -48,7 +50,7 @@ function providerMe(p) {
 const shapeService = (s) => ({
   id: s.id, title: s.title, category: s.category, description: s.description,
   priceCents: s.price_cents, priceType: s.price_type, duration: s.duration,
-  setting: s.setting, status: s.status, createdAt: s.created_at,
+  setting: s.setting, status: s.status, media: media.ownerMedia(s.media), createdAt: s.created_at,
 });
 
 /* ---------------- Profile ---------------- */
@@ -142,30 +144,63 @@ router.get('/services', (req, res) => {
   res.json({ services: rows.map(shapeService) });
 });
 
-router.post('/services', (req, res) => {
-  const v = serviceFields(req.body || {}, false);
-  if (v.error) return res.status(v.status || 400).json({ error: v.error });
-  const f = { description: '', duration: '', status: 'live', ...v.fields };
-  const info = db.prepare(`INSERT INTO services
-      (provider_id, title, category, description, price_cents, price_type, duration, setting, status)
-    VALUES (?,?,?,?,?,?,?,?,?)`)
-    .run(req.provider.id, f.title, f.category, f.description, f.price_cents, f.price_type, f.duration, f.setting, f.status);
-  tq('service', info.lastInsertRowid);
-  res.status(201).json({ service: shapeService(db.prepare('SELECT * FROM services WHERE id=?').get(info.lastInsertRowid)) });
+// body.media (optional): the FULL list of photos and videos each save, as
+// service-media.js check() describes — checked before anything is written.
+router.post('/services', async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const v = serviceFields(b, false);
+    if (v.error) return res.status(v.status || 400).json({ error: v.error });
+    const m = b.media !== undefined ? await media.check(req.provider.id, b.media, '[]') : null;
+    if (m && m.error) return res.status(m.status || 400).json({ error: m.error });
+    const f = { description: '', duration: '', status: 'live', ...v.fields };
+    const id = db.transaction(() => {
+      const info = db.prepare(`INSERT INTO services
+          (provider_id, title, category, description, price_cents, price_type, duration, setting, status)
+        VALUES (?,?,?,?,?,?,?,?,?)`)
+        .run(req.provider.id, f.title, f.category, f.description, f.price_cents, f.price_type, f.duration, f.setting, f.status);
+      if (m) media.apply(req.provider.id, info.lastInsertRowid, m.plan, '[]');
+      return info.lastInsertRowid;
+    })();
+    tq('service', id);
+    res.status(201).json({ service: shapeService(db.prepare('SELECT * FROM services WHERE id=?').get(id)) });
+  } catch (e) { next(e); }
 });
 
-router.patch('/services/:id', (req, res) => {
-  const s = db.prepare('SELECT * FROM services WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
-  if (!s) return res.status(404).json({ error: 'Not found' });
-  const v = serviceFields(req.body || {}, true);
-  if (v.error) return res.status(v.status || 400).json({ error: v.error });
-  const keys = Object.keys(v.fields);
-  if (keys.length) {
-    db.prepare(`UPDATE services SET ${keys.map((k) => `${k}=?`).join(', ')} WHERE id=?`)
-      .run(...keys.map((k) => v.fields[k]), s.id);
-    tq('service', s.id);
+router.patch('/services/:id', async (req, res, next) => {
+  try {
+    const s = db.prepare('SELECT * FROM services WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
+    if (!s) return res.status(404).json({ error: 'Not found' });
+    const b = req.body || {};
+    const v = serviceFields(b, true);
+    if (v.error) return res.status(v.status || 400).json({ error: v.error });
+    const m = b.media !== undefined ? await media.check(req.provider.id, b.media, s.media) : null;
+    if (m && m.error) return res.status(m.status || 400).json({ error: m.error });
+    const keys = Object.keys(v.fields);
+    const dropped = db.transaction(() => {
+      // Read again inside the transaction: another tab may have saved meanwhile.
+      const now = db.prepare('SELECT media FROM services WHERE id=?').get(s.id).media;
+      if (keys.length) {
+        db.prepare(`UPDATE services SET ${keys.map((k) => `${k}=?`).join(', ')} WHERE id=?`)
+          .run(...keys.map((k) => v.fields[k]), s.id);
+      }
+      return m ? media.apply(req.provider.id, s.id, m.plan, now) : null;
+    })();
+    media.cleanup(dropped);
+    if (keys.length) tq('service', s.id);
+    res.json({ service: shapeService(db.prepare('SELECT * FROM services WHERE id=?').get(s.id)) });
+  } catch (e) { next(e); }
+});
+
+// POST /api/provider/media/video { contentType, size } → a signed address the
+// browser PUTs the file to (straight to video storage, never through here).
+router.post('/media/video', (req, res) => {
+  try {
+    res.json(media.startVideoUpload(req.provider.id, req.body || {}));
+  } catch (e) {
+    if (!e.status) throw e;
+    res.status(e.status).json({ error: e.message });
   }
-  res.json({ service: shapeService(db.prepare('SELECT * FROM services WHERE id=?').get(s.id)) });
 });
 
 router.delete('/services/:id', (req, res) => {
@@ -176,7 +211,7 @@ router.delete('/services/:id', (req, res) => {
   // customers must be dealt with first, and hiding the listing stops new
   // requests without touching them. Only a listing whose bookings are all
   // closed and unpaid (declined / cancelled / done direct) can go.
-  const s = db.prepare('SELECT id FROM services WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
+  const s = db.prepare('SELECT id, media FROM services WHERE id=? AND provider_id=?').get(req.params.id, req.provider.id);
   if (!s) return res.status(404).json({ error: 'Not found' });
   const del = db.transaction(() => {
     const blocking = db.prepare(`SELECT
@@ -190,6 +225,7 @@ router.delete('/services/:id', (req, res) => {
   });
   const err = del();
   if (err) return res.status(err.status).json({ error: err.error });
+  media.cleanup(media.all(s.media));
   res.json({ ok: true });
 });
 

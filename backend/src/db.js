@@ -421,6 +421,20 @@ addColumn('orders', 'attention', "TEXT NOT NULL DEFAULT ''");
 // courier webhook only ever touches its own bookings.
 addColumn('shipments', 'delivery_provider', "TEXT NOT NULL DEFAULT ''");
 
+// Photos and videos on a service (2026-10-28, src/service-media.js): JSON list,
+// max 8, first = the card's cover. Videos sit in R2; every signed upload
+// address is recorded so a save only accepts the provider's own upload and
+// the hourly sweep can delete one that was never saved onto a service.
+addColumn('services', 'media', "TEXT NOT NULL DEFAULT '[]'");
+db.exec(`CREATE TABLE IF NOT EXISTS service_media_uploads (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider_id  INTEGER NOT NULL,
+  key          TEXT NOT NULL UNIQUE,
+  content_type TEXT NOT NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  attached_at  TEXT
+)`);
+
 // Last-modified stamps for the public catalogue (the sitemap's <lastmod>).
 // A trigger stamps every UPDATE, so no route has to remember to; rows never
 // updated since this column arrived fall back to created_at. SQLite leaves

@@ -36,7 +36,7 @@
  *                       POSTs (Stripe/courier webhooks) are never redirected.
  */
 
-const CSP = [
+const BASE_CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://js.stripe.com https://*.js.stripe.com https://*.stripecdn.com https://accounts.google.com https://maps.googleapis.com https://www.googletagmanager.com https://embeds.iubenda.com https://cdn.iubenda.com https://cs.iubenda.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
@@ -48,7 +48,19 @@ const CSP = [
   "base-uri 'self'",
   "object-src 'none'",
   "form-action 'self' https://hooks.stripe.com",
-].join('; ');
+];
+/**
+ * Service videos (src/service-media.js) are uploaded straight to their R2
+ * bucket and played from its public address: with MEDIA_S3_* set, the upload
+ * endpoint joins connect-src and the public host gets a media-src.
+ */
+function buildCsp(env = process.env) {
+  const o = require('./service-media').origins(env);
+  if (!o) return BASE_CSP.join('; ');
+  return BASE_CSP.map((d) => (d.startsWith('connect-src ') ? `${d} ${o.upload}` : d))
+    .concat(`media-src 'self' ${o.media}`).join('; ');
+}
+const CSP = buildCsp();
 
 // Browser features no Trove page uses (F471/F506).
 const PERMISSIONS = 'camera=(), microphone=(), geolocation=()';
@@ -102,4 +114,4 @@ function productionProblems(env = process.env) {
   return problems;
 }
 
-module.exports = { securityHeaders, canonicalHost, CSP, PERMISSIONS, productionProblems, DEV_SESSION_SECRET };
+module.exports = { securityHeaders, canonicalHost, CSP, buildCsp, PERMISSIONS, productionProblems, DEV_SESSION_SECRET };

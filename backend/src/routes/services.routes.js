@@ -64,6 +64,7 @@ function shapeService(row) {
     audience: cat ? cat.audience : 'home',
     description: row.description, priceCents: row.price_cents,
     priceType: row.price_type, duration: row.duration, setting: row.setting,
+    media: require('../service-media').publicMedia(row.media),
     provider: {
       name: row.provider_name, slug: row.provider_slug,
       location: row.provider_location, color: row.provider_color, bio: row.provider_bio,
