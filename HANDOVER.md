@@ -1,6 +1,15 @@
 # Trove — handover
 
-Last updated 27 October 2026 (home PC session: approval email guide). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+Last updated 28 October 2026 (home PC session: way back to the dashboard, R2 bucket). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+
+## Way back to the dashboard (28 Oct, home PC): LIVE `445005b`
+- Feedback you passed on: a provider clicked the logo on their dashboard, landed on the homepage as a shopper, and could only get back by signing out and in. Cause: the account menu always said "Sell on Trove", which sends someone without a shop to the apply form; the phone menu had no dashboard link at all.
+- Now, signed in with a shop or services, the account menu (top right), the phone menu and the My account sidebar show **Your shop dashboard** (makers, also when they offer services; and you, for the Trove Collection) or **Your provider dashboard** (services only). Shoppers still see "Sell on Trove". English and Arabic; on the homepage, Services pages, About/Help/legal pages and My account.
+- Checked in Chrome against a local copy with a provider, a maker+provider and a shopper account; the live site serves the new code.
+
+## Video for services: R2 bucket made, 2 steps wait for your OK (28 Oct, home PC)
+- Done: Cloudflare R2 bucket **`trove-media`** (Eastern Europe, the closest to the UAE; standard storage) with an upload rule (CORS) that only lets troveathome.com upload and read.
+- Waiting: (1) turning on the bucket's public address (r2.dev) so videos can play. Claude's safety check needs you to say yes in chat. Cloudflare says r2.dev is speed-limited and "not for production"; a proper address like media.troveathome.com needs troveathome.com's DNS moved from GoDaddy to Cloudflare (bigger job). (2) a key that can only touch this bucket, put straight into Render's five `MEDIA_*` settings. Then **+ Video** appears in the service editor by itself.
 
 ## Provider profile photo + background image (28 Oct, laptop): LIVE `c0aa2bb`
 - You asked: providers can add a profile picture and a background image. In the dashboard: **Your public page** → **Photos on your page** → **Add a profile photo** / **Add a background image** (saved straight away; Change / Remove links next to them). The profile photo is cropped to a square and shows as a circle.
