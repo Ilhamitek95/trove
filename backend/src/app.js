@@ -421,6 +421,12 @@ function createApp() {
     error: typeof req.query.error === 'string' ? req.query.error.slice(0, 20) : '',
   })));
   app.get('/faq', (req, res) => html(res, sitePages.renderFaq(SITE_BASE(), req.lang)));
+  // Guides (4 Nov 2026): English-only articles that can rank on their own.
+  app.get('/guides', (req, res) => html(res, sitePages.renderGuides(SITE_BASE())));
+  app.get('/guides/:slug', (req, res, next) => {
+    const page = /^[a-z0-9-]{1,80}$/.test(req.params.slug) ? sitePages.renderGuide(SITE_BASE(), req.params.slug) : null;
+    return page ? html(res, page) : next();
+  });
   app.get(['/returns', '/delivery-returns'], (req, res) => html(res, sitePages.renderReturns(SITE_BASE(), req.lang)));
   for (const name of Object.keys(sitePages.LEGAL)) {
     const d = sitePages.LEGAL[name];
@@ -520,6 +526,8 @@ function createApp() {
       const ar = base + i18n.arUrl(u.loc);
       const alt = `<xhtml:link rel="alternate" hreflang="en" href="${esc(en)}"/><xhtml:link rel="alternate" hreflang="ar" href="${esc(ar)}"/><xhtml:link rel="alternate" hreflang="x-default" href="${esc(en)}"/>`;
       const tail = `${u.lastmod ? `<lastmod>${esc(u.lastmod)}</lastmod>` : ''}<changefreq>${u.changefreq}</changefreq><priority>${u.priority}</priority>`;
+      // English-only pages (the guides) have no twin and no alternates.
+      if (i18n.arUrl(u.loc) === u.loc) return [`<url><loc>${esc(en)}</loc>${tail}</url>`];
       return [`<url><loc>${esc(en)}</loc>${tail}${alt}</url>`, `<url><loc>${esc(ar)}</loc>${tail}${alt}</url>`];
     });
     res.type('application/xml').set('Cache-Control', 'public, max-age=3600')

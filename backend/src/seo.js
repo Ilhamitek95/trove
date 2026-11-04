@@ -1200,6 +1200,10 @@ function sitemapEntries() {
     WHERE sv.status = 'live' AND pr.status = 'approved' ORDER BY sv.id`).all()) {
     add(servicesData().servicePath(sv), sv.mod, '0.6');
   }
+  // Guides (src/pages/guides.js): English only, dated by hand.
+  const { GUIDES } = require('./pages/guides');
+  add('/guides', later(...GUIDES.map((g) => g.updated)), '0.6', 'weekly');
+  for (const g of GUIDES) add(`/guides/${g.slug}`, g.updated, '0.6', 'monthly');
   for (const [p, pr, cf] of [['/about', '0.6', 'monthly'], ['/returns', '0.5', 'monthly'], ['/faq', '0.5', 'monthly'], ['/contact', '0.4', 'yearly'],
     ['/terms', '0.3', 'yearly'], ['/privacy', '0.3', 'yearly'], ['/seller-agreement', '0.2', 'yearly'], ['/provider-agreement', '0.2', 'yearly'], ['/services-terms', '0.2', 'yearly']]) {
     add(p, null, pr, cf);

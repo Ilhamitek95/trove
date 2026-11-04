@@ -361,6 +361,59 @@ ${script}
 `;
 }
 
+/* ---- Guides (/guides, /guides/<slug>; src/pages/guides.js) ----
+ * English only: not in i18n LOCALIZED_RE, so no Arabic twin and no hreflang. */
+const { GUIDES } = require('./pages/guides');
+const guideBySlug = (slug) => GUIDES.find((g) => g.slug === slug) || null;
+const GUIDES_DESCRIPTION = 'Trove’s guides to handmade pieces and creative services in Dubai, Abu Dhabi and Sharjah: what things cost, how commissions work, how to sell your own work.';
+
+function articleLd(base, g) {
+  const url = `${base}/guides/${g.slug}`;
+  return {
+    '@type': 'Article', '@id': `${url}#article`, mainEntityOfPage: url, url, headline: g.h1, description: g.description,
+    datePublished: g.updated, dateModified: g.updated, inLanguage: 'en',
+    author: { '@id': `${base}/#organization` }, publisher: { '@id': `${base}/#organization` },
+    isPartOf: { '@id': `${base}/#organization` },
+  };
+}
+function breadcrumbLd(base, items) {
+  return { '@type': 'BreadcrumbList', itemListElement: items.map(([name, p], i) => ({ '@type': 'ListItem', position: i + 1, name, item: `${base}${p}` })) };
+}
+const guideDate = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+
+function renderGuides(base) {
+  const list = GUIDES.map((g) => `<li class="guide"><a href="/guides/${g.slug}"><span class="gt">${esc(g.h1)}</span><span class="gd">${esc(g.description)}</span></a></li>`).join('\n');
+  return shell({
+    base, pathName: '/guides', title: 'Guides', h1: 'Guides',
+    description: GUIDES_DESCRIPTION,
+    body: `<p class="lede">${esc('Plain answers about handmade pieces and creative services in Dubai, Abu Dhabi and Sharjah: what things cost, how long they take, how commissions work, and how to sell your own work. Written by Trove, updated as the market changes.')}</p>
+<ul class="guides">
+${list}
+</ul>
+<p class="prose">Looking for a piece rather than a guide? See <a href="/shop">the shop</a> or the <a href="/services">Services Marketplace</a>.</p>`,
+    ld: [webPageLd(base, '/guides', 'Guides', 'CollectionPage'), breadcrumbLd(base, [['Trove', '/'], ['Guides', '/guides']])],
+    extraHead: '<style>.guides{list-style:none;margin:22px 0 0;padding:0;display:grid;gap:14px}.guide a{display:block;padding:18px 20px;border:1px solid var(--line);border-radius:16px;background:var(--paper);text-decoration:none;color:inherit}.guide a:hover .gt{text-decoration:underline}.guide .gt{display:block;font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--char);line-height:1.15}.guide .gd{display:block;margin-top:6px;font-size:14.5px;color:var(--ink-80);line-height:1.55}</style>',
+  });
+}
+
+function renderGuide(base, slug) {
+  const g = guideBySlug(slug);
+  if (!g) return null;
+  const f = facts();
+  const others = GUIDES.filter((o) => o.slug !== g.slug).slice(0, 3)
+    .map((o) => `<li><a href="/guides/${o.slug}">${esc(o.h1)}</a></li>`).join('');
+  return shell({
+    base, pathName: `/guides/${g.slug}`, title: g.title, h1: g.h1,
+    description: g.description,
+    crumb: '<a href="/guides">Guides</a>',
+    sub: `<p class="lede">${esc(g.intro)}</p><p class="gmeta">By Trove · Updated ${esc(guideDate(g.updated))}</p>`,
+    body: `<article class="prose">${md.toHtml(g.md(f))}</article>
+<aside class="more"><h2>More guides</h2><ul>${others}</ul></aside>`,
+    ld: [articleLd(base, g), breadcrumbLd(base, [['Trove', '/'], ['Guides', '/guides'], [g.title, `/guides/${g.slug}`]])],
+    extraHead: '<style>.gmeta{font-size:13px;color:var(--muted);font-weight:600;margin:8px 0 0}.more{margin-top:44px;padding-top:18px;border-top:1px solid var(--line)}.more h2{font-family:var(--font-display);font-size:24px;font-weight:600;margin:0 0 8px}.more ul{margin:0;padding-left:20px}.more li{margin:6px 0}</style>',
+  });
+}
+
 /* ---- the pages ---- */
 function webPageLd(base, pathName, name, type = 'WebPage') {
   return { '@type': type, '@id': `${base}${pathName}#page`, url: `${base}${pathName}`, name, isPartOf: { '@id': `${base}/#organization` }, inLanguage: 'en' };
@@ -607,6 +660,8 @@ function llmsTxt(base) {
 - [Services Marketplace](${base}/services): in-person creative services
 - [Sell on Trove](${base}/sell-on-trove): how selling on Trove works for makers
 - [Apply](${base}/apply): the maker and provider application
+- [Guides](${base}/guides): Trove’s guides to handmade pieces and creative services in the UAE
+${GUIDES.map((g) => `  - [${g.h1}](${base}/guides/${g.slug}): ${g.description}`).join('\n')}
 
 ## Policies
 
@@ -649,5 +704,5 @@ ${faq}
 
 module.exports = {
   LEGAL, legalDoc, chrome, footerHtml, faqSections, organizationLd, hasHousePieces,
-  renderAbout, renderReturns, renderFaq, renderContact, renderLegal, llmsTxt, llmsFullTxt, TOPICS, CONTACT_ERRORS,
+  renderAbout, renderReturns, renderFaq, renderContact, renderLegal, renderGuides, renderGuide, GUIDES, llmsTxt, llmsFullTxt, TOPICS, CONTACT_ERRORS,
 };

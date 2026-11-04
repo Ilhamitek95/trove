@@ -172,7 +172,8 @@ test('the sitemap lists both languages with their alternates; robots covers the 
   assert.match(map, new RegExp(`<loc>${BASE}/ar/about</loc>`));
   assert.match(map, new RegExp(`<xhtml:link rel="alternate" hreflang="ar" href="${BASE}/ar/faq"/>`));
   assert.match(map, new RegExp(`<xhtml:link rel="alternate" hreflang="x-default" href="${BASE}/faq"/>`));
-  const en = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).filter((l) => !l.startsWith(`${BASE}/ar`));
+  // The guides (/guides…) are English only (4 Nov 2026), so they have no twin.
+  const en = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).filter((l) => !l.startsWith(`${BASE}/ar`) && !l.startsWith(`${BASE}/guides`));
   const ar = [...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]).filter((l) => l.startsWith(`${BASE}/ar`));
   assert.equal(en.length, ar.length, 'one Arabic address per English one');
   const robots = (await ctx.api('GET', '/robots.txt')).text;
