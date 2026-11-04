@@ -52,6 +52,11 @@
   .view.active{display:block}
 
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,calc(50% - 7px)),1fr));gap:14px;margin-bottom:22px} /* wide enough for 'AED 1,234.50' on one line; two a row on phones */
+  /* Since launch: one strip of the counts the site itself has produced since go-live (4 Nov 2026) */
+  .launch-card .lrow{display:flex;flex-wrap:wrap;gap:6px 26px;margin-top:10px}
+  .launch-card .lrow div{min-width:96px}
+  .launch-card .lv{font-family:var(--font-display);font-size:28px;line-height:1.05;color:var(--char)}
+  .launch-card .lk{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-top:2px}
   .stat{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
   .stat .k{font-size:11px;letter-spacing:.05em;color:var(--muted);font-weight:700}
   .stat .v{font-family:var(--font-display);font-size:30px;font-weight:600;margin-top:6px}
@@ -303,6 +308,7 @@
         <div id="needsList"><div class="empty">Loading…</div></div>
       </div>
       <div class="house-slot"></div>
+      <div class="card launch-card" id="launchCard" style="display:none"></div>
       <div class="cards" id="statCards"></div>
       <div class="card">
         <h3>Background jobs</h3>
@@ -776,6 +782,7 @@ async function checkWallet(){
 }
 function renderOverview(){
   const s=STATS;
+  renderSinceLaunch(s.sinceLaunch);
   $('statCards').innerHTML=`
     <div class="stat ${s.shops.pending?'hot':''}"><div class="k">Pending approval</div><div class="v">${s.shops.pending}</div><div class="n">new shop${s.shops.pending===1?'':'s'} waiting</div></div>
     <div class="stat"><div class="k">Live shops</div><div class="v">${s.shops.approved}</div><div class="n">of ${s.shops.total} total</div></div>
@@ -792,6 +799,24 @@ function renderOverview(){
   const pend=SHOPS.filter(x=>x.status==='pending');
   $('pendingList').innerHTML=pend.length?pend.map(applicationCardHTML).join('')
     :`<div class="empty">Nothing waiting — every shop has been reviewed.</div>`;
+}
+
+/* Since launch (4 Nov 2026): the counts the site itself has produced since
+ * go-live, from the database — the truth, unlike GA4 which only sees visitors
+ * who accepted cookies. */
+function renderSinceLaunch(l){
+  const card=$('launchCard');if(!l){card.style.display='none';return;}
+  const d=new Date(l.since+'T00:00:00+04:00');
+  const when=d.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const days=Math.max(1,Math.floor((Date.now()-d.getTime())/86400000));
+  const cell=(v,k)=>`<div><div class="lv">${v}</div><div class="lk">${k}</div></div>`;
+  card.style.display='';
+  card.innerHTML=`<h3>Since launch</h3>
+    <div class="hint">What the site has produced since go-live on ${when} (${days} day${days===1?'':'s'}). Counted in the database, so it includes visitors who refused cookies.</div>
+    <div class="lrow">
+      ${cell(l.accounts,'Accounts')}${cell(l.makerApplications,'Maker applications')}${cell(l.providerApplications,'Provider applications')}
+      ${cell(l.orders,'Orders')}${cell(l.bookings,'Bookings')}${cell(l.messages,'Messages')}${cell(l.searches,'Searches')}
+    </div>`;
 }
 
 /* A full seller application, so approval is an informed decision. */

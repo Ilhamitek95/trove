@@ -574,6 +574,8 @@ async function submitApp(){
     }
     // Analytics (GA4 via Tag Manager): a new account, never whose.
     if(signedUp&&window.troveTrack)troveTrack('sign_up',{method:'email'});
+    // An application is a lead (GA4 key event generate_lead, 4 Nov 2026): which path, never who.
+    if(window.troveTrack)troveTrack('generate_lead',{method:'apply',lead_type:ROLE});
     // Done screen
     const first=name.split(' ')[0];
     const what=ROLE==='both'?_t('<b>{name}</b> — your shop and your services practice — is now with our curation team',{name:esc(practice)}):_t('<b>{name}</b> is now with our curation team',{name:esc(practice)});

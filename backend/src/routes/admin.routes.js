@@ -73,8 +73,35 @@ router.get('/stats', requireAdmin, (_req, res) => {
     WHERE o.status IN ('paid','fulfilled') AND COALESCE(o.rail, '') <> 'connect' AND o.created_at >= datetime('now','-30 days')`).get();
   res.json({ shops, orders, gmvCents: gmv, grossCents: sales.grossCents, refundedCents: sales.refundedCents, buyers, liveProducts: products, providers,
     troveShare30Cents: share.kept - share.makers, railBEnabled: cfg.railBEnabled(),
-    licensed: { total: lic.total, verified: lic.verified, awaiting: lic.total - lic.verified } });
+    licensed: { total: lic.total, verified: lic.verified, awaiting: lic.total - lic.verified },
+    sinceLaunch: sinceLaunch() });
 });
+
+/* 'Since launch' on the Overview (4 Nov 2026): what the site has produced
+ * since the go-live purge on 15 Oct 2026, read from the tables themselves —
+ * GA4 only sees visitors who accepted cookies, so these are the true counts.
+ * LAUNCH_DATE (YYYY-MM-DD, Dubai calendar) moves the start if a relaunch ever
+ * needs it. The admin's own accounts never count. */
+const LAUNCH_DATE = /^\d{4}-\d{2}-\d{2}$/.test(process.env.LAUNCH_DATE || '') ? process.env.LAUNCH_DATE : '2026-10-15';
+function sinceLaunch() {
+  // Rows are stored in UTC; a Dubai day starts 4 h earlier.
+  const since = `${LAUNCH_DATE} 00:00:00`;
+  const at = (sql) => db.prepare(sql).get(since).c;
+  const accounts = db.prepare(`SELECT role, COUNT(*) AS c FROM users WHERE role != 'admin' AND datetime(created_at, '+4 hours') >= ? GROUP BY role`).all(since);
+  const byRole = { buyer: 0, seller: 0, both: 0 };
+  for (const r of accounts) byRole[r.role] = r.c;
+  return {
+    since: LAUNCH_DATE,
+    accounts: byRole.buyer + byRole.seller + byRole.both,
+    buyers: byRole.buyer,
+    makerApplications: at(`SELECT COUNT(*) AS c FROM shops WHERE is_house = 0 AND datetime(created_at, '+4 hours') >= ?`),
+    providerApplications: at(`SELECT COUNT(*) AS c FROM service_providers WHERE datetime(created_at, '+4 hours') >= ?`),
+    orders: at(`SELECT COUNT(*) AS c FROM orders WHERE status IN ('paid','fulfilled') AND datetime(created_at, '+4 hours') >= ?`),
+    bookings: at(`SELECT COUNT(*) AS c FROM service_bookings WHERE datetime(created_at, '+4 hours') >= ?`),
+    messages: at(`SELECT COUNT(*) AS c FROM contact_messages WHERE datetime(created_at, '+4 hours') >= ?`),
+    searches: at(`SELECT COUNT(*) AS c FROM search_log WHERE datetime(created_at, '+4 hours') >= ?`),
+  };
+}
 
 // GET /api/admin/maintenance/qa-cleanup → the one-time QA data cleanup's
 // last run: marker time, what was removed (ids + counts), the backup file
