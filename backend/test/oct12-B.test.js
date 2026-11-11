@@ -13,7 +13,7 @@
  *   F479  00971 and +971 (0) mobiles are understood
  *   F301  the default address can be deleted (the next one takes over); address phones are UAE mobiles
  *   F480  review prompts carry the piece's own photo
- *   F382  a maker can apply with a website instead of Instagram
+ *   F382  a maker can apply with a website instead of Instagram (since 11 Nov: with neither)
  *   F488  'both' applicants get one 'application received' email, not two
  *   F486  the email promises the same review time as the page
  *   F339  every live service has its own address, server-rendered and in the sitemap
@@ -314,13 +314,26 @@ test("F480: review prompts carry the piece's own cover photo", async () => {
 
 /* ---------------- applications ---------------- */
 
-test('F382: a maker can apply with a website instead of Instagram; one of the two is still needed', async () => {
+test('F382 + owner 11 Nov: makers and providers can apply with a website, or with no Instagram or website at all; WhatsApp is still needed', async () => {
   const body = { role: 'seller', name: 'Market Potter', email: 'potter12@test.local', password: 'testpass123', shopName: 'Market Pots', phone: '+971 50 333 4455', location: 'Dubai, UAE', about: 'Stoneware sold at weekend markets.' };
-  let r = await api('POST', '/api/auth/register', { body: { ...body, instagram: '', links: '' } });
-  assert.equal(r.status, 400);
-  assert.match(r.data.error, /Instagram or a website/);
-  r = await api('POST', '/api/auth/register', { body: { ...body, instagram: '', links: 'marketpots.ae' } });
+  let r = await api('POST', '/api/auth/register', { body: { ...body, instagram: '', links: 'marketpots.ae' } });
   assert.equal(r.status, 201, r.text);
+  r = await api('POST', '/api/auth/register', { body: { ...body, email: 'potter13@test.local', shopName: 'Kitchen Table Pots', instagram: '', links: '' } });
+  assert.equal(r.status, 201, r.text);
+  r = await api('POST', '/api/auth/register', { body: { ...body, email: 'potter14@test.local', shopName: 'No Phone Pots', instagram: '', links: '', phone: '' } });
+  assert.equal(r.status, 400);
+  assert.match(r.data.error, /WhatsApp/);
+  // a provider with neither link
+  r = await api('POST', '/api/services/apply', { body: { ...APPLY, email: 'nolinks@test.local', providerName: 'No Links Frames', instagram: '', links: '' } });
+  assert.equal(r.status, 201, r.text);
+  r = await api('POST', '/api/services/apply', { body: { ...APPLY, email: 'nolinks2@test.local', providerName: 'No Phone Frames', instagram: '', links: '', phone: '' } });
+  assert.equal(r.status, 400);
+  assert.match(r.data.error, /WhatsApp/);
+  // the apply page no longer blocks an empty link and says the link is optional
+  const page = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'docs', 'trove-apply.html'), 'utf8');
+  assert.doesNotMatch(page, /if\(!\$\('fInsta'\)\.value\.trim\(\)&&!\$\('fLinks'\)/);
+  assert.match(page, /<label for="fInsta">Instagram <span class="opt">· optional<\/span>/);
+  assert.match(page, /<label for="fLinks">Website or portfolio <span class="opt">· optional<\/span>/);
 });
 
 test("F488: a 'both' applicant gets one 'application received' email; the admin still hears about both", async () => {

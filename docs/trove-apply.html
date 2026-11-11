@@ -199,7 +199,7 @@
       <!-- STEP 1: who you are + what you're bringing -->
       <div id="step1">
         <h2>First, about you.</h2>
-        <p class="lede">One account for everything you do on Trove — pieces, services, or both. Have ready: an Instagram or a website where we can see your work, a WhatsApp number and rough prices.</p>
+        <p class="lede">One account for everything you do on Trove — pieces, services, or both. Have ready: a WhatsApp number and rough prices. An Instagram or a website helps if you have one.</p>
         <div class="note" id="signedNote" data-i18n>You're signed in as <b id="signedWho"></b> — this will be added to your account. <a href="#" onclick="signOutApply();return false">Not you? Sign out</a></div>
         <div class="field"><label id="rolesLabel">What are you bringing to Trove?</label>
           <!-- the choice made on /sell-on-trove (?for= or remembered), shown instead of asking again; Change opens the three doors -->
@@ -280,11 +280,11 @@
           <div class="field"><label for="fCap">Orders you could handle monthly</label>
             <select id="fCap"><option value="Up to 10">Up to 10</option><option value="10–30">10–30</option><option value="30–100">30–100</option><option value="100+">100+</option></select></div>
         </div>
-        <div class="field"><label for="fInsta">Instagram <span class="opt">· or a portfolio link below</span></label>
+        <div class="field"><label for="fInsta">Instagram <span class="opt">· optional</span></label>
           <input id="fInsta" placeholder="@yourwork or instagram.com/yourwork">
-          <div class="help">The fastest way for our curation team to see your work.</div></div>
+          <div class="help">No Instagram or website? That’s fine — we’ll ask for a few photos of your work on WhatsApp.</div></div>
         <div class="ftwo">
-          <div class="field"><label for="fLinks">Website or portfolio <span class="opt">· if no Instagram</span></label>
+          <div class="field"><label for="fLinks">Website or portfolio <span class="opt">· optional</span></label>
             <input id="fLinks" placeholder="yourwork.com"></div>
           <div class="field"><label for="fPhone">WhatsApp</label>
             <input id="fPhone" type="tel" autocomplete="tel" placeholder="+971 50 123 4567">
@@ -539,8 +539,7 @@ async function submitApp(){
   hideErr();clearFieldErrs();
   if(wantsShop()&&!$('fProducts').value.trim()){fieldErr('fProducts',_t('List at least one thing you’re planning to sell.'));return;}
   if(wantsServices()&&!$('fServices').value.trim()){fieldErr('fServices',_t('List at least one service you’re planning to offer.'));return;}
-  // Instagram, or a website/portfolio for makers who sell without one — pieces and services alike (F382).
-  if(!$('fInsta').value.trim()&&!$('fLinks').value.trim()){fieldErr('fInsta',_t('Share your Instagram or a portfolio link — it’s how our curation team sees your work.'));return;}
+  // Instagram and website are optional (owner, 2026-11-11): makers without either send photos on WhatsApp.
   if(!$('fPhone').value.trim()){fieldErr('fPhone',_t('Add your WhatsApp number so our curation team can reach you.'));return;}
   if(wantsServices()&&!$('fAgreeSvc').checked){fieldErr('fAgreeSvc',_t('Tick the services box — it covers the listing fee and the Provider Agreement.'));return;}
   const btn=$('submitBtn');const label=btn.textContent;

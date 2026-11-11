@@ -1,6 +1,12 @@
 # Trove — handover
 
-Last updated 4 November 2026 (home PC session: since-launch report, the pipe, guides). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+Last updated 11 November 2026 (home PC session: snapshot report, apply links optional). The detailed engineering notes live in `CLAUDE.md`; this file is the plain-English version. Start every session with `git pull`.
+
+## Apply without Instagram or a website (11 Nov, home PC)
+- **You said: "let people apply without an instagram or website".** Done. On /apply both link boxes now say "optional", and the help line under Instagram reads "No Instagram or website? That's fine — we'll ask for a few photos of your work on WhatsApp." The top of the form now asks people to have ready a WhatsApp number and rough prices. The server no longer refuses an application with neither link, for makers or providers. WhatsApp is still required.
+- **Sell on Trove** ("What you'll need") now lists "A WhatsApp number" and "Your Instagram or a website (optional)". Arabic done for every new line.
+- **Admin:** when an application comes in with no link, the review card says "No Instagram or website given. Ask for a few photos of their work on WhatsApp." That is now your step before approving.
+- **Snapshot report, 11 Nov:** https://claude.ai/artifact/RPG9rtoyNg5RdBh8sVSm1D. It was a flat week: 1 visitor, no supply. Still open from it: 5 makers by hand, the Meta recruitment test, and checking the Instagram unread activity.
 
 ## Since-launch report, the pipe and the SEO build (4 Nov, home PC): LIVE `c6f4a9f` + `464f230`
 - **The report:** https://claude.ai/artifact/CkMr34pVRzu2BpUpg8Em8m (also `~/trove-social/reports/2026-11-04-since-launch.html`). 15 Oct to 4 Nov: 31 sessions in GA4 (25 direct, 5 social, 1 Google), 47 Google impressions and 2 clicks (all on the homepage), 2 of 29 pages indexed, 138 Instagram followers (+2), 0 pieces for sale, 1 provider (Timo). Diagnosis: no supply yet, no campaign post until 15 Nov, no outreach, no ads.

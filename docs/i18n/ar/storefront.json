@@ -543,7 +543,6 @@
   "A few words about you and your work": "كلمات قليلة عنك وعن عملك",
   "Rough ideas of what you'll sell": "أفكار تقريبية عمّا ستبيعه",
   "One to three service categories, with rough prices": "من فئة إلى ثلاث فئات خدمات، مع أسعار تقريبية",
-  "Your Instagram or a portfolio link, and WhatsApp": "حسابك على إنستغرام أو رابط لأعمالك، ورقم واتساب",
   "A UAE trade licence": "رخصة تجارية إماراتية",
   "optional": "اختياري",
   "Not needed to start. If you have one, add it — it unlocks direct per-sale payouts later.": "ليست مطلوبة للبدء. وإن كانت لديك رخصة فأضفها، فهي تتيح لك لاحقاً استلام المستحقات مباشرة عن كل عملية بيع.",
@@ -586,5 +585,8 @@
   "Hide your arrangement": "أخفِ اتفاقك",
   "Apply": "قدّم طلبك",
   "The first pieces are on their way": "القطع الأولى في طريقها إلينا",
-  "Makers are setting up their shops on Trove now. Make things yourself? Open a shop and be one of the first.": "يجهّز الحرفيون متاجرهم على Trove الآن. هل تصنع أشياء بنفسك؟ افتح متجراً وكن من الأوائل."
+  "Makers are setting up their shops on Trove now. Make things yourself? Open a shop and be one of the first.": "يجهّز الحرفيون متاجرهم على Trove الآن. هل تصنع أشياء بنفسك؟ افتح متجراً وكن من الأوائل.",
+  "A WhatsApp number": "رقم واتساب",
+  "Your Instagram or a website": "حسابك على Instagram أو موقعك الإلكتروني",
+  "No Instagram or website yet? That’s fine. We’ll ask for a few photos of your work on WhatsApp.": "ليس لديك حساب على Instagram أو موقع إلكتروني بعد؟ لا بأس. سنطلب منك بعض الصور لأعمالك عبر واتساب."
 }

@@ -77,7 +77,7 @@ test('what you will need lists only what the application and the dashboard reall
   const needs = sellView.slice(sellView.indexOf('id="spReady"'), sellView.indexOf('id="spFaq"'));
   for (const field of ['fShop', 'fAbout', 'fProducts', 'catPicker', 'fInsta', 'fPhone', 'fLic', 'fAgreeSvc']) assert.match(applyPage, new RegExp(`id="${field}"`), field);
   for (const line of ['A name for your shop', 'A few words about you and your work', "Rough ideas of what you'll sell", 'One to three service categories, with rough prices',
-    'Your Instagram or a portfolio link, and WhatsApp', 'A UAE trade licence', 'The Provider Agreement, to read and accept', 'The Seller Agreement, to read and accept', 'A pickup address and phone number']) {
+    'A WhatsApp number', 'Your Instagram or a website', 'A UAE trade licence', 'The Provider Agreement, to read and accept', 'The Seller Agreement, to read and accept', 'A pickup address and phone number']) {
     assert.ok(needs.includes(line), line);
   }
   // approval waits for the agreement and the pickup details (routes/admin.routes.js approvalMissing)

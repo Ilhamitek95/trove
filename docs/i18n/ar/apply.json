@@ -11,7 +11,6 @@
   "Step 1 of 3 · About you": "الخطوة 1 من 3 · عنك",
   "Step {step} of 3 · {name}": "الخطوة {step} من 3 · {name}",
   "First, about you.": "أولاً، حدّثنا عنك.",
-  "One account for everything you do on Trove — pieces, services, or both. Have ready: an Instagram or a website where we can see your work, a WhatsApp number and rough prices.": "حساب واحد لكل ما تقدّمه على Trove — قطع، أو خدمات، أو كلاهما. جهّز مسبقاً: حساباً على Instagram أو موقعاً إلكترونياً نرى فيه أعمالك، ورقم واتساب، وأسعاراً تقريبية.",
   "You're signed in as <b id=\"signedWho\"></b> — this will be added to your account. <a href=\"#\" onclick=\"signOutApply();return false\">Not you? Sign out</a>": "أنت مسجّل الدخول باسم <b id=\"signedWho\"></b> — وسيُضاف هذا الطلب إلى حسابك. <a href=\"#\" onclick=\"signOutApply();return false\">لست أنت؟ سجّل الخروج</a>",
   "What are you bringing to Trove?": "ماذا ستقدّم على Trove؟",
   "I make things to sell": "أصنع أشياء للبيع",
@@ -77,11 +76,8 @@
   "Orders you could handle monthly": "عدد الطلبات التي يمكنك تلبيتها شهرياً",
   "Up to 10": "حتى 10",
   "Instagram": "إنستغرام",
-  "· or a portfolio link below": "· أو رابط معرض أعمال أدناه",
   "@yourwork or instagram.com/yourwork": "@yourwork أو instagram.com/yourwork",
-  "The fastest way for our curation team to see your work.": "أسرع طريقة ليرى فريق الاختيار أعمالك.",
   "Website or portfolio": "الموقع الإلكتروني أو معرض الأعمال",
-  "· if no Instagram": "· إن لم يكن لديك حساب على Instagram",
   "WhatsApp": "واتساب",
   "So our curation team can reach you.": "ليتمكن فريق الاختيار من التواصل معك.",
   "during launch": "خلال فترة الإطلاق",
@@ -143,7 +139,6 @@
   "List at least one thing you’re planning to sell.": "اذكر شيئاً واحداً على الأقل تخطط لبيعه.",
   "List at least one service you’re planning to offer.": "اذكر خدمة واحدة على الأقل تخطط لتقديمها.",
   "Share your Instagram — it’s how our curation team sees your work.": "شاركنا حسابك على إنستغرام — فمن خلاله يرى فريق الاختيار أعمالك.",
-  "Share your Instagram or a portfolio link — it’s how our curation team sees your work.": "شاركنا حسابك على إنستغرام أو رابط معرض أعمالك — فمن خلاله يرى فريق الاختيار أعمالك.",
   "Add your WhatsApp number so our curation team can reach you.": "أضف رقم واتساب ليتمكن فريق الاختيار من التواصل معك.",
   "Tick the services box — it covers the listing fee and the Provider Agreement.": "ضع علامة في مربع الخدمات — فهو يشمل رسم الإدراج واتفاقية مقدّم الخدمة.",
   "Sending…": "جارٍ الإرسال…",
@@ -165,5 +160,7 @@
   "Applying with <b>pieces</b>, as chosen on the last page.": "طلبك يشمل <b>القطع</b>، كما اخترت في الصفحة السابقة.",
   "Applying with <b>services</b>, as chosen on the last page.": "طلبك يشمل <b>الخدمات</b>، كما اخترت في الصفحة السابقة.",
   "Applying with <b>pieces and services</b>, as chosen on the last page.": "طلبك يشمل <b>القطع والخدمات</b>، كما اخترت في الصفحة السابقة.",
-  "Change": "تغيير"
+  "Change": "تغيير",
+  "One account for everything you do on Trove — pieces, services, or both. Have ready: a WhatsApp number and rough prices. An Instagram or a website helps if you have one.": "حساب واحد لكل ما تقوم به على Trove — قطع أو خدمات أو كلاهما. جهّز رقم واتساب وأسعارًا تقريبية. ويفيدنا حسابك على Instagram أو موقعك الإلكتروني إن وُجد.",
+  "No Instagram or website? That’s fine — we’ll ask for a few photos of your work on WhatsApp.": "ليس لديك حساب على Instagram أو موقع إلكتروني؟ لا بأس — سنطلب منك بعض الصور لأعمالك عبر واتساب."
 }

@@ -11,7 +11,6 @@
   "Step 1 of 3 · About you": "Step 1 of 3 · About you",
   "Step {step} of 3 · {name}": "Step {step} of 3 · {name}",
   "First, about you.": "First, about you.",
-  "One account for everything you do on Trove — pieces, services, or both. Have ready: an Instagram or a website where we can see your work, a WhatsApp number and rough prices.": "One account for everything you do on Trove — pieces, services, or both. Have ready: an Instagram or a website where we can see your work, a WhatsApp number and rough prices.",
   "You're signed in as <b id=\"signedWho\"></b> — this will be added to your account. <a href=\"#\" onclick=\"signOutApply();return false\">Not you? Sign out</a>": "You're signed in as <b id=\"signedWho\"></b> — this will be added to your account. <a href=\"#\" onclick=\"signOutApply();return false\">Not you? Sign out</a>",
   "What are you bringing to Trove?": "What are you bringing to Trove?",
   "I make things to sell": "I make things to sell",
@@ -77,11 +76,8 @@
   "Orders you could handle monthly": "Orders you could handle monthly",
   "Up to 10": "Up to 10",
   "Instagram": "Instagram",
-  "· or a portfolio link below": "· or a portfolio link below",
   "@yourwork or instagram.com/yourwork": "@yourwork or instagram.com/yourwork",
-  "The fastest way for our curation team to see your work.": "The fastest way for our curation team to see your work.",
   "Website or portfolio": "Website or portfolio",
-  "· if no Instagram": "· if no Instagram",
   "WhatsApp": "WhatsApp",
   "So our curation team can reach you.": "So our curation team can reach you.",
   "during launch": "during launch",
@@ -143,7 +139,6 @@
   "List at least one thing you’re planning to sell.": "List at least one thing you’re planning to sell.",
   "List at least one service you’re planning to offer.": "List at least one service you’re planning to offer.",
   "Share your Instagram — it’s how our curation team sees your work.": "Share your Instagram — it’s how our curation team sees your work.",
-  "Share your Instagram or a portfolio link — it’s how our curation team sees your work.": "Share your Instagram or a portfolio link — it’s how our curation team sees your work.",
   "Add your WhatsApp number so our curation team can reach you.": "Add your WhatsApp number so our curation team can reach you.",
   "Tick the services box — it covers the listing fee and the Provider Agreement.": "Tick the services box — it covers the listing fee and the Provider Agreement.",
   "Sending…": "Sending…",
@@ -165,5 +160,7 @@
   "Applying with <b>pieces</b>, as chosen on the last page.": "Applying with <b>pieces</b>, as chosen on the last page.",
   "Applying with <b>services</b>, as chosen on the last page.": "Applying with <b>services</b>, as chosen on the last page.",
   "Applying with <b>pieces and services</b>, as chosen on the last page.": "Applying with <b>pieces and services</b>, as chosen on the last page.",
-  "Change": "Change"
+  "Change": "Change",
+  "One account for everything you do on Trove — pieces, services, or both. Have ready: a WhatsApp number and rough prices. An Instagram or a website helps if you have one.": "One account for everything you do on Trove — pieces, services, or both. Have ready: a WhatsApp number and rough prices. An Instagram or a website helps if you have one.",
+  "No Instagram or website? That’s fine — we’ll ask for a few photos of your work on WhatsApp.": "No Instagram or website? That’s fine — we’ll ask for a few photos of your work on WhatsApp."
 }

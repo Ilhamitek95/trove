@@ -193,9 +193,7 @@ router.post('/apply', (req, res, next) => {
   if (b.agreeTerms !== true) {
     return res.status(400).json({ error: 'The Provider Agreement needs your acceptance to apply' });
   }
-  if (!String(b.instagram || '').trim() && !String(b.links || '').trim()) {
-    return res.status(400).json({ error: 'Share your Instagram or a portfolio link so our curation team can see your work' });
-  }
+  // Instagram and a website are optional (owner, 2026-11-11); WhatsApp is not.
   if (!String(b.phone || '').trim()) return res.status(400).json({ error: 'A WhatsApp number is required to apply' });
   // Providers may be based in Dubai, Abu Dhabi or Sharjah (owner,
   // 2026-10-26); bookings come from homes in the same three (2026-10-27).
