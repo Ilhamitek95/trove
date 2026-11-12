@@ -1,0 +1,13 @@
+{
+  "name": "trove-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser end-to-end journeys for Trove — runs the real site on a throwaway database.",
+  "scripts": {
+    "test": "playwright test",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
